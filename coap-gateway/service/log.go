@@ -188,7 +188,9 @@ func (c *session) msgToLogCoapMessage(req *pool.Message, withToken bool) logCoap
 	rq := coapgwMessage.ToJson(req, c.server.config.Log.DumpBody, withToken)
 	var sub string
 	if v, err := c.GetAuthorizationContext(); err == nil {
-		sub = v.GetJWTClaims().Subject()
+		if subject, err := v.GetJWTClaims().GetSubject(); err == nil {
+			sub = subject
+		}
 	}
 	dumpReq := logCoapMessage{
 		JsonCoapMessage: rq,

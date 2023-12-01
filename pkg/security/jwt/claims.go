@@ -1,191 +1,156 @@
 package jwt
 
 import (
+	"errors"
 	"fmt"
-	gstrings "strings"
-	"time"
+	"strings"
 
-	"github.com/golang-jwt/jwt/v4"
-	"github.com/plgd-dev/hub/v2/pkg/strings"
-	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
+	"github.com/golang-jwt/jwt/v5"
+	pkgStrings "github.com/plgd-dev/hub/v2/pkg/strings"
 )
 
 type Claims jwt.MapClaims
 
 const (
-	ClaimExpiresAt = "exp"
-	ClaimScope     = "scope"
-	ClaimAudience  = "aud"
-	ClaimID        = "jti"
-	ClaimIssuer    = "iss"
-	ClaimSubject   = "sub"
-	ClaimIssuedAt  = "iat"
-	ClaimNotBefore = "nbf"
-	ClaimClientID  = "client_id"
-	ClaimEmail     = "email"
-	ClaimName      = "n"
+	ClaimExpirationTime = "exp"
+	ClaimNotBefore      = "nbf"
+	ClaimIssuedAt       = "iat"
+	ClaimAudience       = "aud"
+	ClaimIssuer         = "iss"
+	ClaimSubject        = "sub"
+	ClaimScope          = "scope"
+	ClaimID             = "jti"
+	ClaimEmail          = "email"
+	ClaimClientID       = "client_id"
+	ClaimName           = "n"
 )
 
-func toNum(v interface{}) (time.Time, error) {
-	switch val := v.(type) {
-	case int64:
-		return pkgTime.Unix(val, 0), nil
-	case float64:
-		return pkgTime.Unix(int64(val), 0), nil
-	default:
-		return time.Time{}, fmt.Errorf("invalid type '%T'", val)
-	}
+var ErrOwnerClaimInvalid = errors.New("owner claim is invalid")
+
+// parseClaimsString tries to parse a key in the map claims type as a
+// [ClaimsStrings] type, which can either be a string or an array of string.
+func (c Claims) parseClaimStrings(claim string) (jwt.ClaimStrings, error) {
+	return pkgStrings.ToSlice(c[claim])
 }
 
-// Get expiration time (exp) from user info map.
-// It might not be set, in that case zero time and no error are returned.
-func (c Claims) ExpiresAt() (time.Time, error) {
-	const expKey = ClaimExpiresAt
-	v, ok := c[expKey]
+// parseString tries to parse a key in the map claims type as a [string] type.
+// If the key does not exist, an empty string is returned. If the key has the
+// wrong type, an error is returned.
+func (c Claims) parseString(claim string) (string, error) {
+	cc, ok := c[claim]
 	if !ok {
-		return time.Time{}, nil
+		return "", nil
 	}
-
-	exp, err := toNum(v)
-	if err != nil {
-		return time.Time{}, fmt.Errorf("expiration claim('%v') is present, but it has an %w", v, err)
+	s, ok := pkgStrings.ToString(cc)
+	if !ok {
+		return "", fmt.Errorf("%s is invalid: %w", claim, jwt.ErrInvalidType)
 	}
-	return exp, nil
+	return s, nil
 }
 
-// Validate that ownerClaim is set and that it matches given user ID
+// GetExpirationTime returns the Expiration Time ("exp") claim. If the claim does not exist,
+// nil is returned. If the claim has the wrong type, an error is returned.
+func (c Claims) GetExpirationTime() (*jwt.NumericDate, error) {
+	return jwt.MapClaims(c).GetExpirationTime()
+}
+
+// GetNotBefore returns the Not Before ("nbf") claim. If the claim does not exist,
+// nil is returned. If the claim has the wrong type, an error is returned.
+func (c Claims) GetNotBefore() (*jwt.NumericDate, error) {
+	return jwt.MapClaims(c).GetNotBefore()
+}
+
+// GetIssuedAt returns the Issued At ("iat") claim. If the claim does not exist,
+// nil is returned. If the claim has the wrong type, an error is returned.
+func (c Claims) GetIssuedAt() (*jwt.NumericDate, error) {
+	return jwt.MapClaims(c).GetIssuedAt()
+}
+
+// GetAudience returns the Audience ("aud") claim. If the claim does not exist,
+// nil is returned. If the claim has the wrong type, an error is returned.
+func (c Claims) GetAudience() (jwt.ClaimStrings, error) {
+	return c.parseClaimStrings(ClaimAudience)
+}
+
+// GetIssuer returns the Issuer ("iss") claim. If the claim does not exist,
+// nil is returned. If the claim has the wrong type, an error is returned.
+func (c Claims) GetIssuer() (string, error) {
+	return jwt.MapClaims(c).GetIssuer()
+}
+
+// GetSubject returns the Subject ("sub") claim. If the claim does not exist,
+// nil is returned. If the claim has the wrong type, an error is returned.
+func (c Claims) GetSubject() (string, error) {
+	return jwt.MapClaims(c).GetSubject()
+}
+
+// GetScope returns the Scope ("scope") claim. If the claim does not exist,
+// nil is returned. If the claim has the wrong type, an error is returned.
+func (c Claims) GetScope() (jwt.ClaimStrings, error) {
+	s, err := c.parseClaimStrings(ClaimScope)
+	if err != nil {
+		return nil, err
+	}
+	if len(s) == 1 {
+		return strings.Split(s[0], " "), nil
+	}
+	return s, nil
+}
+
+// GetID returns the ID ("jti") claim. If the claim does not exist,
+// an empty string is returned. If the claim has the wrong type, an error is returned.
+func (c Claims) GetID() (string, error) {
+	return c.parseString(ClaimID)
+}
+
+// GetEmail returns the Email ("email") claim. If the claim does not exist,
+// an empty string is returned. If the claim has the wrong type, an error is returned.
+func (c Claims) GetEmail() (string, error) {
+	return c.parseString(ClaimEmail)
+}
+
+// GetClientID returns the ClientID ("client_id") claim. If the claim does not exist,
+// an empty string is returned. If the claim has the wrong type, an error is returned.
+func (c Claims) GetClientID() (string, error) {
+	return c.parseString(ClaimClientID)
+}
+
+// GetName returns the Name ("n") claim. If the claim does not exist,
+// an empty string is returned. If the claim has the wrong type, an error is returned.
+func (c Claims) GetName() (string, error) {
+	return c.parseString(ClaimName)
+}
+
+// GetOwner returns the Owner ("owner") claim. If the claim does not exist,
+// an empty string is returned. If the claim has the wrong type, an error is returned.
+func (c Claims) GetOwner(ownerClaim string) (string, error) {
+	return c.parseString(ownerClaim)
+}
+
+// GetDeviceID returns the DeviceID ("device_id") claim. If the claim does not exist,
+// an empty string is returned. If the claim has the wrong type, an error is returned.
+func (c Claims) GetDeviceID(deviceIDClaim string) (string, error) {
+	return c.parseString(deviceIDClaim)
+}
+
+// ValidateOwnerClaim validates that ownerClaim is set and that it matches given user ID
 func (c Claims) ValidateOwnerClaim(ownerClaim string, userID string) error {
 	v, ok := c[ownerClaim]
 	if !ok {
-		return fmt.Errorf("owner claim '%v' is not present", ownerClaim)
+		return fmt.Errorf("%w: owner claim '%v' is not present", ErrOwnerClaimInvalid, ownerClaim)
 	}
 	owner, ok := v.(string)
 	if !ok {
-		return fmt.Errorf("owner claim '%v' is present, but it has an invalid type '%T'", ownerClaim, v)
+		return fmt.Errorf("%w: owner claim '%v' is present, but it has an invalid type '%T'", ErrOwnerClaimInvalid, ownerClaim, v)
 	}
 	if owner != userID {
-		return fmt.Errorf("owner identifier from the token '%v' doesn't match userID '%v' from the device", owner, userID)
+		return fmt.Errorf("%w: owner identifier from the token '%v' doesn't match userID '%v' from the device", ErrOwnerClaimInvalid, owner, userID)
 	}
 	return nil
-}
-
-func (c Claims) Scope() []string {
-	s, err := strings.ToSlice(c[ClaimScope])
-	if err != nil {
-		return nil
-	}
-	if len(s) == 1 {
-		return gstrings.Split(s[0], " ")
-	}
-	return s
-}
-
-func (c Claims) Owner(ownerClaim string) string {
-	s, _ := strings.ToString(c[ownerClaim])
-	return s
-}
-
-func (c Claims) Email() string {
-	s, _ := strings.ToString(c[ClaimEmail])
-	return s
-}
-
-func (c Claims) ClientID() string {
-	s, _ := strings.ToString(c[ClaimClientID])
-	return s
-}
-
-func (c Claims) Name() string {
-	s, _ := strings.ToString(c[ClaimName])
-	return s
-}
-
-func (c Claims) DeviceID(deviceIDClaim string) string {
-	s, _ := strings.ToString(c[deviceIDClaim])
-	return s
-}
-
-func (c Claims) Audience() []string {
-	aud, _ := strings.ToSlice(c[ClaimAudience])
-	return aud
-}
-
-func (c Claims) ID() string {
-	s, _ := strings.ToString(c[ClaimID])
-	return s
-}
-
-func (c Claims) Issuer() string {
-	s, _ := strings.ToString(c[ClaimIssuer])
-	return s
-}
-
-func (c Claims) Subject() string {
-	s, _ := strings.ToString(c[ClaimSubject])
-	return s
-}
-
-func (c Claims) IssuedAt() (time.Time, error) {
-	const expKey = ClaimIssuedAt
-	v, ok := c[expKey]
-	if !ok {
-		return time.Time{}, nil
-	}
-	iat, err := toNum(v)
-	if err != nil {
-		return time.Time{}, fmt.Errorf("issued at claim('%v') is present, but it has an %w", v, err)
-	}
-	return iat, nil
-}
-
-func (c Claims) NotBefore() (time.Time, error) {
-	const expKey = ClaimNotBefore
-	v, ok := c[expKey]
-	if !ok {
-		return time.Time{}, nil
-	}
-
-	nbf, err := toNum(v)
-	if err != nil {
-		return time.Time{}, fmt.Errorf("not before at claim('%v') is present, but it has an %w", v, err)
-	}
-	return nbf, nil
-}
-
-func (c Claims) ValidTimes(now time.Time) error {
-	exp, err := c.ExpiresAt()
-	if err != nil {
-		return err
-	}
-	if !exp.IsZero() && now.After(exp) {
-		return fmt.Errorf("token is expired")
-	}
-	iat, err := c.IssuedAt()
-	if err != nil {
-		return err
-	}
-	if !iat.IsZero() && now.Add(time.Minute).Before(iat) {
-		return fmt.Errorf("token used before issued")
-	}
-	nbf, err := c.NotBefore()
-	if err != nil {
-		return err
-	}
-	if !nbf.IsZero() && now.Add(time.Minute).Before(nbf) {
-		return fmt.Errorf("token is not valid yet")
-	}
-	return nil
-}
-
-func (c Claims) Valid() error {
-	return c.ValidTimes(time.Now())
 }
 
 func ParseToken(token string) (Claims, error) {
-	parser := &jwt.Parser{
-		SkipClaimsValidation: true,
-	}
-
+	parser := jwt.NewParser(jwt.WithoutClaimsValidation())
 	var claims Claims
 	_, _, err := parser.ParseUnverified(token, &claims)
 	if err != nil {

@@ -6,15 +6,15 @@ import (
 	"net/http"
 
 	"github.com/plgd-dev/hub/v2/pkg/net/http/client"
-	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
+	pkgJwt "github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"golang.org/x/oauth2"
 )
 
 // NewPlgdProvider creates OAuth client
 func NewClientCredentialsPlgdProvider(config Config, httpClient *client.Client, jwksURL string, ownerClaim, deviceIDClaim string) *ClientCredentialsPlgdProvider {
-	keyCache := jwt.NewKeyCache(jwksURL, httpClient.HTTP())
+	keyCache := pkgJwt.NewKeyCache(jwksURL, httpClient.HTTP())
 
-	jwtValidator := jwt.NewValidator(keyCache)
+	jwtValidator := pkgJwt.NewValidator(keyCache)
 	return &ClientCredentialsPlgdProvider{
 		Config:        config,
 		HTTPClient:    httpClient,
@@ -30,7 +30,7 @@ type ClientCredentialsPlgdProvider struct {
 	HTTPClient    *client.Client
 	ownerClaim    string
 	deviceIDClaim string
-	jwtValidator  *jwt.Validator
+	jwtValidator  *pkgJwt.Validator
 }
 
 // Exchange Auth Code for Access Token via OAuth
@@ -39,16 +39,22 @@ func (p *ClientCredentialsPlgdProvider) Exchange(ctx context.Context, authorizat
 	if err != nil {
 		return nil, fmt.Errorf("cannot verify authorization code: %w", err)
 	}
-	m := jwt.Claims(claims)
+	m := pkgJwt.Claims(claims)
 	c := p.Config.ToDefaultClientCredentials()
 	if p.deviceIDClaim != "" {
-		deviceID := m.DeviceID(p.deviceIDClaim)
+		deviceID, err := m.GetDeviceID(p.deviceIDClaim)
+		if err != nil {
+			return nil, fmt.Errorf("cannot get deviceIDClaim: %w", err)
+		}
 		if deviceID == "" {
 			return nil, fmt.Errorf("deviceIDClaim('%v') is not set in token", p.deviceIDClaim)
 		}
 		c.EndpointParams.Add(p.deviceIDClaim, deviceID)
 	}
-	owner := m.Owner(p.ownerClaim)
+	owner, err := m.GetOwner(p.ownerClaim)
+	if err != nil {
+		return nil, fmt.Errorf("cannot get ownerClaim: %w", err)
+	}
 	if owner == "" {
 		return nil, fmt.Errorf("ownerClaim('%v') is not set in token", p.ownerClaim)
 	}

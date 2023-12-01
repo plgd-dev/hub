@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/plgd-dev/device/v2/schema"
 	c2curi "github.com/plgd-dev/hub/v2/cloud2cloud-connector/uri"
 	"github.com/plgd-dev/hub/v2/pkg/config/database"
@@ -273,7 +273,7 @@ func MakeAuthURL() string {
 
 const JWTSecret = "secret"
 
-func CreateJwtToken(t *testing.T, claims jwt.MapClaims) string {
+func CreateJwtToken(t *testing.T, claims jwt.Claims) string {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	// Sign and get the complete encoded token as a string using the secret
 	tokenString, err := token.SignedString([]byte(JWTSecret))

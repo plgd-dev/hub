@@ -6,14 +6,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
 	"github.com/plgd-dev/hub/v2/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
-	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
+	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgJwt "github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/attribute"
@@ -149,7 +150,7 @@ func defaultMessageProducer(ctx context.Context, ctxLogger context.Context, msg 
 		req[log.TraceIDKey] = spanCtx.TraceID().String()
 	}
 
-	if sub, err := kitNetGrpc.OwnerFromTokenMD(ctx, "sub"); err == nil {
+	if sub, err := pkgGrpc.OwnerFromTokenMD(ctx, "sub"); err == nil {
 		req[log.JWTKey] = map[string]string{
 			log.SubKey: sub,
 		}
@@ -240,7 +241,7 @@ func wrapServerStream(ctx context.Context, ss grpc.ServerStream) *serverStream {
 	}
 }
 
-func MakeDefaultOptions(auth kitNetGrpc.AuthInterceptors, logger log.Logger, tracerProvider trace.TracerProvider) ([]grpc.ServerOption, error) {
+func MakeDefaultOptions(auth pkgGrpc.AuthInterceptors, logger log.Logger, tracerProvider trace.TracerProvider) ([]grpc.ServerOption, error) {
 	streamInterceptors := []grpc.StreamServerInterceptor{
 		func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 			if !info.IsClientStream {
@@ -296,15 +297,15 @@ func WithWhiteListedMethods(method ...string) Option {
 	}
 }
 
-func NewAuth(validator kitNetGrpc.Validator, opts ...Option) kitNetGrpc.AuthInterceptors {
-	interceptor := kitNetGrpc.ValidateJWTWithValidator(validator, func(ctx context.Context, method string) kitNetGrpc.Claims {
-		return jwt.NewScopeClaims()
+func NewAuth(validator pkgGrpc.Validator, opts ...Option) pkgGrpc.AuthInterceptors {
+	interceptor := pkgGrpc.ValidateJWTWithValidator(validator, func(ctx context.Context, method string) jwt.ClaimsValidator {
+		return pkgJwt.NewScopeClaims()
 	})
 	var cfg config
 	for _, o := range opts {
 		o(&cfg)
 	}
-	return kitNetGrpc.MakeAuthInterceptors(func(ctx context.Context, method string) (context.Context, error) {
+	return pkgGrpc.MakeAuthInterceptors(func(ctx context.Context, method string) (context.Context, error) {
 		ctx, err := interceptor(ctx, method)
 		if err != nil {
 			log.Errorf("auth interceptor %v: %w", method, err)
@@ -312,8 +313,8 @@ func NewAuth(validator kitNetGrpc.Validator, opts ...Option) kitNetGrpc.AuthInte
 		}
 
 		if !cfg.disableTokenForwarding {
-			if token, err := kitNetGrpc.TokenFromMD(ctx); err == nil {
-				ctx = kitNetGrpc.CtxWithToken(ctx, token)
+			if token, err := pkgGrpc.TokenFromMD(ctx); err == nil {
+				ctx = pkgGrpc.CtxWithToken(ctx, token)
 			}
 		}
 

@@ -206,12 +206,15 @@ func HTTPDo(t require.TestingT, req *http.Request, followRedirect bool) *http.Re
 	return resp
 }
 
-func GetAccessToken(t require.TestingT, authServerHost, clientID string) string {
+func GetAccessToken(t require.TestingT, authServerHost, clientID string, claimOverrides map[string]interface{}) string {
 	code := GetAuthorizationCode(t, authServerHost, clientID, "", "r:* w:*")
-	reqBody := map[string]string{
+	reqBody := map[string]interface{}{
 		uri.GrantTypeKey: string(service.AllowedGrantType_AUTHORIZATION_CODE),
 		uri.ClientIDKey:  clientID,
 		uri.CodeKey:      code,
+	}
+	if claimOverrides != nil {
+		reqBody[uri.ClaimOverridesKey] = claimOverrides
 	}
 	d, err := json.Encode(reqBody)
 	require.NoError(t, err)
@@ -231,7 +234,7 @@ func GetAccessToken(t require.TestingT, authServerHost, clientID string) string 
 }
 
 func GetDefaultAccessToken(t require.TestingT) string {
-	return GetAccessToken(t, config.OAUTH_SERVER_HOST, ClientTest)
+	return GetAccessToken(t, config.OAUTH_SERVER_HOST, ClientTest, nil)
 }
 
 func GetJWTValidator(jwkURL string) *jwt.Validator {

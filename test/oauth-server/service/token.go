@@ -34,11 +34,11 @@ func setKeyError(key string, err error) error {
 	return fmt.Errorf("failed to set %v: %w", key, err)
 }
 
-func setKeyErrorExt(key, info string, err error) error {
+func setKeyErrorExt(key, info interface{}, err error) error {
 	return fmt.Errorf("failed to set %v('%v'): %w", key, info, err)
 }
 
-func makeAccessToken(clientID, host, deviceID, scopes string, issuedAt, expires time.Time) (jwt.Token, error) {
+func makeAccessToken(clientID, host, deviceID, scopes string, issuedAt, expires time.Time, overrides map[string]interface{}) (jwt.Token, error) {
 	token := jwt.New()
 
 	if err := token.Set(jwt.SubjectKey, DeviceUserID); err != nil {
@@ -74,6 +74,16 @@ func makeAccessToken(clientID, host, deviceID, scopes string, issuedAt, expires 
 		return nil, setKeyErrorExt(uri.OwnerClaimKey, DeviceUserID, err)
 	}
 
+	for k, v := range overrides {
+		if v == nil {
+			_ = token.Remove(k)
+			continue
+		}
+		if err := token.Set(k, v); err != nil {
+			return nil, setKeyErrorExt(k, v, err)
+		}
+	}
+
 	return token, nil
 }
 
@@ -93,13 +103,13 @@ func makeJWTPayload(key interface{}, jwkKey jwk.Key, data []byte) ([]byte, error
 	return payload, nil
 }
 
-func generateAccessToken(clientID string, lifeTime time.Duration, host, deviceID, scopes string, key interface{}, jwkKey jwk.Key) (string, time.Time, error) {
+func generateAccessToken(clientID string, lifeTime time.Duration, host, deviceID, scopes string, overrides map[string]interface{}, key interface{}, jwkKey jwk.Key) (string, time.Time, error) {
 	now := time.Now()
 	var expires time.Time
 	if lifeTime != 0 {
 		expires = now.Add(lifeTime)
 	}
-	token, err := makeAccessToken(clientID, host, deviceID, scopes, now, expires)
+	token, err := makeAccessToken(clientID, host, deviceID, scopes, now, expires, overrides)
 	if err != nil {
 		return "", time.Time{}, fmt.Errorf("failed to make token: %w", err)
 	}
@@ -152,7 +162,6 @@ func makeIDToken(clientID string, host, nonce string, issuedAt, expires time.Tim
 	if err := token.Set(TokenPictureKey, "https://s.gravatar.com/avatar/319673928161fae8216e9a2225cff4b6?s=480&r=pg&d=https%3A%2F%2Fcdn.auth0.com%2Favatars%2Fte.png"); err != nil {
 		return nil, setKeyError(TokenPictureKey, err)
 	}
-
 	return token, nil
 }
 
@@ -202,7 +211,6 @@ type tokenRequest struct {
 	CodeVerifier string `json:"code_verifier"`
 	GrantType    string `json:"grant_type"`
 	RedirectURI  string `json:"redirect_uri"`
-	//	AuthorizationCode string `json:"authorization_code"`
 	Code         string `json:"code"`
 	Username     string `json:"username"`
 	Password     string `json:"password"`
@@ -211,6 +219,8 @@ type tokenRequest struct {
 	DeviceID     string `json:"https://plgd.dev/deviceId"`
 	// mock-oauth-server always put owner claim to access token
 	Owner string `json:"https://plgd.dev/owner"`
+	// customize claims of the access token
+	ClaimOverrides map[string]interface{} `json:"claimOverrides"`
 
 	host      string
 	tokenType AccessTokenType
@@ -362,7 +372,12 @@ func (requestHandler *RequestHandler) processResponse(w http.ResponseWriter, tok
 		tokenReq.DeviceID = authSession.deviceID
 	}
 
-	idToken, err := generateIDToken(tokenReq.ClientID, clientCfg.AccessTokenLifetime, tokenReq.host, authSession.nonce, requestHandler.idTokenKey, requestHandler.idTokenJwkKey)
+	idToken, err := generateIDToken(tokenReq.ClientID,
+		clientCfg.AccessTokenLifetime,
+		tokenReq.host,
+		authSession.nonce,
+		requestHandler.idTokenKey,
+		requestHandler.idTokenJwkKey)
 	if err != nil {
 		writeError(w, err, http.StatusInternalServerError)
 		return
@@ -373,7 +388,19 @@ func (requestHandler *RequestHandler) processResponse(w http.ResponseWriter, tok
 		scopes = DefaultScope
 	}
 
-	accessToken, accessTokenExpires, err := generateAccessToken(clientCfg.ID, clientCfg.AccessTokenLifetime, tokenReq.host, tokenReq.DeviceID, scopes, requestHandler.accessTokenKey, requestHandler.accessTokenJwkKey)
+	var claimOverrides map[string]interface{}
+	if tokenReq.ClaimOverrides != nil {
+		claimOverrides = tokenReq.ClaimOverrides
+	}
+
+	accessToken, accessTokenExpires, err := generateAccessToken(clientCfg.ID,
+		clientCfg.AccessTokenLifetime,
+		tokenReq.host,
+		tokenReq.DeviceID,
+		scopes,
+		claimOverrides,
+		requestHandler.accessTokenKey,
+		requestHandler.accessTokenJwkKey)
 	if err != nil {
 		writeError(w, err, http.StatusInternalServerError)
 		return
