@@ -23,6 +23,7 @@ import { addRemoteClient, deleteRemoteClients, updateRemoteClients, updateRemote
 import { CombinedStoreType } from '@/store/store'
 import RemoteClientsList from '@/containers/RemoteClients/List/RemoteClientsList'
 import notificationId from '@/notificationId'
+import { PendingCommandsExpandableList } from '@/containers/PendingCommands'
 
 const RemoteClientsListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
@@ -209,7 +210,7 @@ const RemoteClientsListPage: FC<any> = () => {
                                 isFunction(setFooterExpanded) && setFooterExpanded(!footerExpanded)
                             }}
                         >
-                            {_(t.recentCommands)}
+                            {_(t.pendingCommands)}
                         </span>
                     }
                     setFooterExpanded={setFooterExpanded}
@@ -248,6 +249,7 @@ const RemoteClientsListPage: FC<any> = () => {
                 onFormSubmit={handleClientAdd}
                 show={addClientModal}
             />
+            <PendingCommandsExpandableList />
             <RemoteClientsList
                 data={remoteClients || []}
                 handleOpenDeleteModal={handleOpenDeleteModal}

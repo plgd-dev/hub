@@ -256,7 +256,7 @@ const DevicesListPage: FC<any> = () => {
                                 isFunction(setFooterExpanded) && setFooterExpanded(!footerExpanded)
                             }}
                         >
-                            {_(t.recentTasks)}
+                            {_(t.pendingCommands)}
                         </span>
                     }
                     setFooterExpanded={setFooterExpanded}

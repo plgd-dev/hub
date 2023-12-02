@@ -17,6 +17,10 @@ export const messages = defineMessages({
         id: 'remoteClients.recentCommands',
         defaultMessage: 'Recent Commands',
     },
+    pendingCommands: {
+        id: 'remoteClients.pendingCommands',
+        defaultMessage: 'Pending commands',
+    },
     client: {
         id: 'remoteClients.client',
         defaultMessage: 'Client',
