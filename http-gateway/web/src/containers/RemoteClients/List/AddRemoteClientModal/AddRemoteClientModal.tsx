@@ -86,10 +86,10 @@ const AddRemoteClientModal: FC<Props> = (props) => {
         const formValues = getValues()
         const finalData = clientInformation ? cloneDeep(clientInformation) : []
 
-        const authenticationModeIndex = finalData?.findIndex((i) => i.attributeKey === 'authenticationMode')
+        const deviceAuthenticationModeIndex = finalData?.findIndex((i) => i.attributeKey === 'deviceAuthenticationMode')
 
-        if (authenticationModeIndex >= 0) {
-            finalData[authenticationModeIndex].value = formValues.authMode.value
+        if (deviceAuthenticationModeIndex >= 0) {
+            finalData[deviceAuthenticationModeIndex].value = formValues.authMode.value
         }
 
         finalData?.push(
@@ -146,7 +146,7 @@ const AddRemoteClientModal: FC<Props> = (props) => {
                         },
                         {
                             attribute: _(t.deviceAuthenticationMode),
-                            attributeKey: 'authenticationMode',
+                            attributeKey: 'deviceAuthenticationMode',
                             value: result.data?.deviceAuthenticationMode,
                         },
                     ])
@@ -190,7 +190,7 @@ const AddRemoteClientModal: FC<Props> = (props) => {
                     </div>
                     <div css={[styles.getCodeBox, styles.codeBoxWithLines]}>
                         {clientInformation?.map((info: ClientInformationLineType) => {
-                            if (info.attributeKey !== 'authenticationMode') {
+                            if (info.attributeKey !== 'deviceAuthenticationMode') {
                                 return <DeviceInformationLine key={info.attributeKey} {...info} />
                             }
                             return null
@@ -218,7 +218,8 @@ const AddRemoteClientModal: FC<Props> = (props) => {
 
     const isUninitialized = useMemo(
         () =>
-            (clientInformation && clientInformation.find((item) => item.attributeKey === 'authenticationMode')?.value === DEVICE_AUTH_MODE.UNINITIALIZED) ||
+            (clientInformation &&
+                clientInformation.find((item) => item.attributeKey === 'deviceAuthenticationMode')?.value === DEVICE_AUTH_MODE.UNINITIALIZED) ||
             isEditMode,
         [clientInformation, isEditMode]
     )
