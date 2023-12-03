@@ -17,7 +17,7 @@ import { getVersionMarkData } from '@shared-ui/components/Atomic/VersionMark/uti
 import { severities } from '@shared-ui/components/Atomic/VersionMark/constants'
 import { flushDevices } from '@shared-ui/app/clientApp/Devices/slice'
 import { reset } from '@shared-ui/app/clientApp/App/AppRest'
-import { ToastContainer } from '@shared-ui/components/Atomic'
+import { App } from '@shared-ui/components/Atomic'
 import { ThemeType } from '@shared-ui/components/Atomic/_theme'
 import { clientAppSettings } from '@shared-ui/common/services'
 
@@ -134,8 +134,7 @@ const AppLayout: FC<Props> = (props) => {
     clientAppSettings.setUseToken(true)
 
     return (
-        <>
-            <ToastContainer portalTarget={document.getElementById('toast-root')} showNotifications={true} />
+        <App toastContainerPortalTarget={document.getElementById('toast-root')}>
             <Layout
                 content={<Routes />}
                 header={
@@ -204,7 +203,7 @@ const AppLayout: FC<Props> = (props) => {
                     />
                 }
             />
-        </>
+        </App>
     )
 }
 

@@ -22,14 +22,14 @@ import notificationId from '@/notificationId'
 
 const RemoteClientsAuthProvider: FC<Props> = (props) => {
     const { wellKnownConfig, reInitialization, clientData, loading, children, setAuthError, setInitialize, unauthorizedCallback } = props
-    const { clientUrl, authenticationMode, preSharedSubjectId, preSharedKey } = clientData
+    const { clientUrl, deviceAuthenticationMode, preSharedSubjectId, preSharedKey } = clientData
     const { formatMessage: _ } = useIntl()
     const [reInitializationLoading, setReInitializationLoading] = useState(false)
     const [initializationLoading, setInitializationLoading] = useState(false)
     const [reInitializationError, setReInitializationError] = useState(false)
 
     const getData = (data: RemoteClientType) => ({
-        authenticationMode: data.authenticationMode,
+        deviceAuthenticationMode: data.deviceAuthenticationMode,
         preSharedKey: data.preSharedKey,
         preSharedSubjectId: data.preSharedSubjectId,
     })
@@ -60,7 +60,7 @@ const RemoteClientsAuthProvider: FC<Props> = (props) => {
 
     useEffect(() => {
         if (wellKnownConfig && !wellKnownConfig.isInitialized && !initializationLoading && !reInitializationError && !loading) {
-            if (authenticationMode === DEVICE_AUTH_MODE.X509) {
+            if (deviceAuthenticationMode === DEVICE_AUTH_MODE.X509) {
                 try {
                     setInitializationLoading(true)
                     getOpenIdConfiguration(wellKnownConfig.remoteProvisioning?.authority!).then((result) => {
@@ -85,7 +85,7 @@ const RemoteClientsAuthProvider: FC<Props> = (props) => {
                     setInitializationLoading(false)
                     setAuthError(e as string)
                 }
-            } else if (authenticationMode === DEVICE_AUTH_MODE.PRE_SHARED_KEY) {
+            } else if (deviceAuthenticationMode === DEVICE_AUTH_MODE.PRE_SHARED_KEY) {
                 if (preSharedSubjectId && preSharedKey) {
                     try {
                         initializedByPreShared(preSharedSubjectId, preSharedKey)

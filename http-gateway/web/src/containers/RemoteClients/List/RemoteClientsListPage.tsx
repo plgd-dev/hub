@@ -221,7 +221,7 @@ const RemoteClientsListPage: FC<any> = () => {
         >
             <AddRemoteClientModal
                 closeOnBackdrop={false}
-                defaultAuthMode={editRemoteClientData?.authenticationMode}
+                defaultAuthMode={editRemoteClientData?.deviceAuthenticationMode}
                 defaultClientInformation={
                     editRemoteClientData
                         ? [
@@ -232,8 +232,8 @@ const RemoteClientsListPage: FC<any> = () => {
                               },
                               {
                                   attribute: _(t.deviceAuthenticationMode),
-                                  attributeKey: 'authenticationMode',
-                                  value: editRemoteClientData?.authenticationMode,
+                                  attributeKey: 'deviceAuthenticationMode',
+                                  value: editRemoteClientData?.deviceAuthenticationMode,
                               },
                           ]
                         : undefined

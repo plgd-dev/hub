@@ -82,7 +82,7 @@ const RemoteClientsPage: FC<Props> = (props) => {
         () =>
             wellKnownConfig &&
             wellKnownConfig.deviceAuthenticationMode !== DEVICE_AUTH_MODE.UNINITIALIZED &&
-            wellKnownConfig.deviceAuthenticationMode !== clientData.authenticationMode,
+            wellKnownConfig.deviceAuthenticationMode !== clientData.deviceAuthenticationMode,
         [wellKnownConfig, clientData]
     )
 
@@ -92,8 +92,8 @@ const RemoteClientsPage: FC<Props> = (props) => {
     )
 
     useEffect(() => {
-        clientAppSettings.setUseToken(!differentOwner(wellKnownConfig!, clientData) && clientData.authenticationMode === DEVICE_AUTH_MODE.X509)
-    }, [wellKnownConfig, clientData.authenticationMode, differentOwner, clientData])
+        clientAppSettings.setUseToken(!differentOwner(wellKnownConfig!, clientData) && clientData.deviceAuthenticationMode === DEVICE_AUTH_MODE.X509)
+    }, [wellKnownConfig, clientData.deviceAuthenticationMode, differentOwner, clientData])
 
     useEffect(() => {
         if (wellKnownConfig) {
