@@ -15,6 +15,6 @@ dependencies:
     repository: "https://nats-io.github.io/k8s/helm/charts/"
     condition: nats.enabled
   - name: "mongodb"
-    version: "13.4.3"
+    version: "14.3.2"
     repository: "https://charts.bitnami.com/bitnami"
     condition: mongodb.enabled
