@@ -223,6 +223,8 @@ certmanager:
       name: default-issuer
       # -- Kind of default issuer
       kind: Issuer
+      # -- Group of default issuer
+      group: cert-manager.io
       # -- Default issuer specification.
       spec:
         selfSigned: {}
@@ -254,6 +256,8 @@ certmanager:
         kind:
         # -- Name of issuer for sign CA
         name:
+        # -- Group of issuer for sign CA
+        group:
       issuer:
         # -- Enable root issuer
         enabled: true
@@ -263,8 +267,10 @@ certmanager:
         annotations: {}
         # -- Name of root issuer
         name: ca-issuer
-        # -- Kind of default issuer
+        # -- Kind of root issuer
         kind: Issuer
+        # -- Group of root issuer
+        group:
         # -- Default issuer specification.
         spec:
           selfSigned: {}
@@ -279,6 +285,8 @@ certmanager:
       name:
       # -- Kind of internal issuer
       kind:
+      # -- Group of internal issuer
+      group:
       # -- cert-manager issuer spec
       spec:
     cert:
@@ -301,6 +309,8 @@ certmanager:
       name:
       # -- Kind of coap issuer
       kind:
+      # -- Group of coap issuer
+      group:
       # -- cert-manager issuer spec
       spec:
     cert:
@@ -323,6 +333,8 @@ certmanager:
       name:
       # -- Kind of external issuer
       kind:
+      # -- Group of external issuer
+      group:
       # -- cert-manager issuer spec
       spec:
     cert:

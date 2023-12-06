@@ -32,5 +32,5 @@ spec:
   issuerRef:
     name: {{ .Values.certmanager.coap.issuer.name | default .Values.certmanager.default.issuer.name }}
     kind: {{ .Values.certmanager.coap.issuer.kind | default .Values.certmanager.default.issuer.kind }}
-    group: cert-manager.io
+    group: {{ .Values.certmanager.coap.issuer.group | default .Values.certmanager.default.issuer.group }}
 {{- end }}
