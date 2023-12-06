@@ -19,5 +19,5 @@ spec:
   issuerRef:
     name: {{ .Values.certmanager.default.ca.issuerRef.name | default .Values.certmanager.default.ca.issuer.name }}
     kind: {{ .Values.certmanager.default.ca.issuerRef.kind | default .Values.certmanager.default.ca.issuer.kind }}
-    group: cert-manager.io
+    group: {{ .Values.certmanager.default.ca.issuerRef.group | default .Values.certmanager.default.ca.issuer.group }}
 {{- end }}

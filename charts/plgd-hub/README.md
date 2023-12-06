@@ -143,24 +143,27 @@ global:
 | certificateauthority.service.http.type | string | `"ClusterIP"` | Service type |
 | certificateauthority.signer | object | `{"caPool":null,"certFile":null,"expiresIn":"87600h","keyFile":null,"validFrom":"now-1h"}` | For complete certificate-authority service configuration see [plgd/certificate-authority](https://github.com/plgd-dev/hub/tree/main/certificate-authority) |
 | certificateauthority.tolerations | string | `nil` | Toleration definition |
-| certmanager | object | `{"coap":{"cert":{"duration":null,"key":{"algorithm":null,"size":null},"renewBefore":null},"issuer":{"annotations":{},"kind":null,"labels":{},"name":null,"spec":null}},"default":{"ca":{"commonName":"plgd-ca","enabled":true,"issuer":{"annotations":{},"enabled":true,"kind":"Issuer","labels":{},"name":"ca-issuer","spec":{"selfSigned":{}}},"issuerRef":{"kind":null,"name":null},"secret":{"name":"plgd-ca"}},"cert":{"annotations":{},"duration":"8760h0m0s","key":{"algorithm":"ECDSA","size":256},"labels":{},"renewBefore":"360h0m0s"},"issuer":{"annotations":{},"enabled":true,"kind":"Issuer","labels":{},"name":"default-issuer","spec":{"selfSigned":{}}}},"enabled":true,"external":{"cert":{"duration":null,"key":{"algorithm":null,"size":null},"renewBefore":null},"issuer":{"annotations":{},"kind":null,"labels":{},"name":null,"spec":null}},"internal":{"cert":{"duration":null,"key":{"algorithm":null,"size":null},"renewBefore":null},"issuer":{"annotations":{},"kind":null,"labels":{},"name":null,"spec":null}}}` | Cert-manager integration section |
+| certmanager | object | `{"coap":{"cert":{"duration":null,"key":{"algorithm":null,"size":null},"renewBefore":null},"issuer":{"annotations":{},"group":null,"kind":null,"labels":{},"name":null,"spec":null}},"default":{"ca":{"commonName":"plgd-ca","enabled":true,"issuer":{"annotations":{},"enabled":true,"group":null,"kind":"Issuer","labels":{},"name":"ca-issuer","spec":{"selfSigned":{}}},"issuerRef":{"group":null,"kind":null,"name":null},"secret":{"name":"plgd-ca"}},"cert":{"annotations":{},"duration":"8760h0m0s","key":{"algorithm":"ECDSA","size":256},"labels":{},"renewBefore":"360h0m0s"},"issuer":{"annotations":{},"enabled":true,"group":"cert-manager.io","kind":"Issuer","labels":{},"name":"default-issuer","spec":{"selfSigned":{}}}},"enabled":true,"external":{"cert":{"duration":null,"key":{"algorithm":null,"size":null},"renewBefore":null},"issuer":{"annotations":{},"group":null,"kind":null,"labels":{},"name":null,"spec":null}},"internal":{"cert":{"duration":null,"key":{"algorithm":null,"size":null},"renewBefore":null},"issuer":{"annotations":{},"group":null,"kind":null,"labels":{},"name":null,"spec":null}}}` | Cert-manager integration section |
 | certmanager.coap.cert.duration | string | `nil` | Certificate duration |
 | certmanager.coap.cert.key.algorithm | string | `nil` | Certificate key algorithm |
 | certmanager.coap.cert.key.size | string | `nil` | Certificate key size |
 | certmanager.coap.cert.renewBefore | string | `nil` | Certificate renew before |
 | certmanager.coap.issuer.annotations | object | `{}` | Annotations |
+| certmanager.coap.issuer.group | string | `nil` | Group of coap issuer |
 | certmanager.coap.issuer.kind | string | `nil` | Kind of coap issuer |
 | certmanager.coap.issuer.labels | object | `{}` | Labels |
 | certmanager.coap.issuer.name | string | `nil` | Name |
 | certmanager.coap.issuer.spec | string | `nil` | cert-manager issuer spec |
-| certmanager.default | object | `{"ca":{"commonName":"plgd-ca","enabled":true,"issuer":{"annotations":{},"enabled":true,"kind":"Issuer","labels":{},"name":"ca-issuer","spec":{"selfSigned":{}}},"issuerRef":{"kind":null,"name":null},"secret":{"name":"plgd-ca"}},"cert":{"annotations":{},"duration":"8760h0m0s","key":{"algorithm":"ECDSA","size":256},"labels":{},"renewBefore":"360h0m0s"},"issuer":{"annotations":{},"enabled":true,"kind":"Issuer","labels":{},"name":"default-issuer","spec":{"selfSigned":{}}}}` | Default cert-manager section |
+| certmanager.default | object | `{"ca":{"commonName":"plgd-ca","enabled":true,"issuer":{"annotations":{},"enabled":true,"group":null,"kind":"Issuer","labels":{},"name":"ca-issuer","spec":{"selfSigned":{}}},"issuerRef":{"group":null,"kind":null,"name":null},"secret":{"name":"plgd-ca"}},"cert":{"annotations":{},"duration":"8760h0m0s","key":{"algorithm":"ECDSA","size":256},"labels":{},"renewBefore":"360h0m0s"},"issuer":{"annotations":{},"enabled":true,"group":"cert-manager.io","kind":"Issuer","labels":{},"name":"default-issuer","spec":{"selfSigned":{}}}}` | Default cert-manager section |
 | certmanager.default.ca.commonName | string | `"plgd-ca"` | Common name for CA created as default issuer |
 | certmanager.default.ca.issuer.annotations | object | `{}` | Annotation for root issuer |
 | certmanager.default.ca.issuer.enabled | bool | `true` | Enable root issuer |
-| certmanager.default.ca.issuer.kind | string | `"Issuer"` | Kind of default issuer |
+| certmanager.default.ca.issuer.group | string | `nil` | Group of root issuer |
+| certmanager.default.ca.issuer.kind | string | `"Issuer"` | Kind of root issuer |
 | certmanager.default.ca.issuer.labels | object | `{}` | Labels for root issuer |
 | certmanager.default.ca.issuer.name | string | `"ca-issuer"` | Name of root issuer |
 | certmanager.default.ca.issuer.spec | object | `{"selfSigned":{}}` | Default issuer specification. |
+| certmanager.default.ca.issuerRef.group | string | `nil` | Group of issuer for sign CA |
 | certmanager.default.ca.issuerRef.kind | string | `nil` | Kind of CA issuer |
 | certmanager.default.ca.issuerRef.name | string | `nil` | Name of issuer for sign CA |
 | certmanager.default.ca.secret.name | string | `"plgd-ca"` | Name of secret |
@@ -172,9 +175,10 @@ global:
 | certmanager.default.cert.key.size | int | `256` | Key size |
 | certmanager.default.cert.labels | object | `{}` | Certificate labels |
 | certmanager.default.cert.renewBefore | string | `"360h0m0s"` | Certificate renew before |
-| certmanager.default.issuer | object | `{"annotations":{},"enabled":true,"kind":"Issuer","labels":{},"name":"default-issuer","spec":{"selfSigned":{}}}` | Default cert-manager issuer |
+| certmanager.default.issuer | object | `{"annotations":{},"enabled":true,"group":"cert-manager.io","kind":"Issuer","labels":{},"name":"default-issuer","spec":{"selfSigned":{}}}` | Default cert-manager issuer |
 | certmanager.default.issuer.annotations | object | `{}` | Annotation for default issuer |
 | certmanager.default.issuer.enabled | bool | `true` | Enable Default issuer |
+| certmanager.default.issuer.group | string | `"cert-manager.io"` | Group of default issuer |
 | certmanager.default.issuer.kind | string | `"Issuer"` | Kind of default issuer |
 | certmanager.default.issuer.labels | object | `{}` | Labels for default issuer |
 | certmanager.default.issuer.name | string | `"default-issuer"` | Name of default issuer |
@@ -185,6 +189,7 @@ global:
 | certmanager.external.cert.key.size | string | `nil` | Certificate key size |
 | certmanager.external.cert.renewBefore | string | `nil` | Certificate renew before |
 | certmanager.external.issuer.annotations | object | `{}` | Annotations |
+| certmanager.external.issuer.group | string | `nil` | Group of external issuer |
 | certmanager.external.issuer.kind | string | `nil` | Kind of external issuer |
 | certmanager.external.issuer.labels | object | `{}` | Labels |
 | certmanager.external.issuer.name | string | `nil` | Name |
@@ -193,8 +198,9 @@ global:
 | certmanager.internal.cert.key.algorithm | string | `nil` | Certificate key algorithm |
 | certmanager.internal.cert.key.size | string | `nil` | Certificate key size |
 | certmanager.internal.cert.renewBefore | string | `nil` | Certificate renew before |
-| certmanager.internal.issuer | object | `{"annotations":{},"kind":null,"labels":{},"name":null,"spec":null}` | Internal issuer. In case you want to create your own issuer for internal certs |
+| certmanager.internal.issuer | object | `{"annotations":{},"group":null,"kind":null,"labels":{},"name":null,"spec":null}` | Internal issuer. In case you want to create your own issuer for internal certs |
 | certmanager.internal.issuer.annotations | object | `{}` | Annotations |
+| certmanager.internal.issuer.group | string | `nil` | Group of internal issuer |
 | certmanager.internal.issuer.kind | string | `nil` | Kind of internal issuer |
 | certmanager.internal.issuer.labels | object | `{}` | Labels |
 | certmanager.internal.issuer.name | string | `nil` | Name |
