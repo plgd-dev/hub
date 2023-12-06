@@ -1,9 +1,8 @@
-import { useContext, useState, useEffect, useCallback, useMemo } from 'react'
+import { useContext, useState, useEffect, useMemo } from 'react'
 import { useIntl } from 'react-intl'
 import { AuthProvider, UserManager } from 'oidc-react'
 import { BrowserRouter } from 'react-router-dom'
 import { useSelector } from 'react-redux'
-import get from 'lodash/get'
 import { ThemeProvider } from '@emotion/react'
 
 import PageLoader from '@shared-ui/components/Atomic/PageLoader'
@@ -73,24 +72,13 @@ const App = (props: { mockApp: boolean }) => {
         }
     }, [wellKnownConfig, wellKnownConfigFetched])
 
-    const [theme, themeError] = useAppTheme({
+    const [theme, themeError, getThemeData] = useAppTheme({
         getTheme,
         setTheme,
         setThemes,
     })
 
     const currentTheme = useMemo(() => appStore.configuration?.theme ?? defaultTheme, [appStore.configuration?.theme])
-
-    const getThemeData = useCallback(() => {
-        if (theme) {
-            const index = theme.findIndex((i: any) => Object.keys(i)[0] === currentTheme)
-            if (index >= 0) {
-                return get(theme[index], `${currentTheme}`, {})
-            }
-        }
-
-        return {}
-    }, [theme, currentTheme])
 
     // Render an error box with an auth error
     if (configError || themeError) {
@@ -140,7 +128,7 @@ const App = (props: { mockApp: boolean }) => {
 
     if (props.mockApp) {
         return (
-            <ThemeProvider theme={getThemeData()}>
+            <ThemeProvider theme={getThemeData(currentTheme)}>
                 <BrowserRouter>
                     <AppLayout buildInformation={wellKnownConfig?.buildInfo} collapsed={collapsed} mockApp={true} setCollapsed={setCollapsed} />
                 </BrowserRouter>
@@ -149,7 +137,7 @@ const App = (props: { mockApp: boolean }) => {
     }
 
     return (
-        <ThemeProvider theme={getThemeData()}>
+        <ThemeProvider theme={getThemeData(currentTheme)}>
             <ConditionalWrapper condition={!props.mockApp} wrapper={Wrapper}>
                 <AppInner collapsed={collapsed} openTelemetry={openTelemetry} setCollapsed={setCollapsed} wellKnownConfig={wellKnownConfig} />
             </ConditionalWrapper>
