@@ -4,6 +4,7 @@ import { useIntl } from 'react-intl'
 import { useDispatch, useSelector } from 'react-redux'
 import isFunction from 'lodash/isFunction'
 import { useTheme } from '@emotion/react'
+import isEqual from 'lodash/isEqual'
 
 import Header from '@shared-ui/components/Layout/Header'
 import NotificationCenter from '@shared-ui/components/Atomic/NotificationCenter'
@@ -12,7 +13,6 @@ import VersionMark from '@shared-ui/components/Atomic/VersionMark'
 import Layout from '@shared-ui/components/Layout'
 import { MenuItem } from '@shared-ui/components/Layout/LeftPanel/LeftPanel.types'
 import { parseActiveItem } from '@shared-ui/components/Layout/LeftPanel/utils'
-import { getMinutesBetweenDates } from '@shared-ui/common/utils'
 import { getVersionMarkData } from '@shared-ui/components/Atomic/VersionMark/utils'
 import { severities } from '@shared-ui/components/Atomic/VersionMark/constants'
 import { flushDevices } from '@shared-ui/app/clientApp/Devices/slice'
@@ -20,6 +20,8 @@ import { reset } from '@shared-ui/app/clientApp/App/AppRest'
 import { App } from '@shared-ui/components/Atomic'
 import { ThemeType } from '@shared-ui/components/Atomic/_theme'
 import { clientAppSettings } from '@shared-ui/common/services'
+import { useAppVersion } from '@shared-ui/common/hooks'
+import Logo from '@shared-ui/components/Atomic/Logo'
 
 import { Props } from './AppLayout.types'
 import { mather, menu, Routes } from '@/routes'
@@ -28,15 +30,8 @@ import { readAllNotifications, setNotifications } from '@/containers/Notificatio
 import LeftPanelWrapper from '@/containers/App/AppInner/LeftPanelWrapper/LeftPanelWrapper'
 import { CombinedStoreType } from '@/store/store'
 import { setVersion } from '@/containers/App/slice'
-import { getVersionNumberFromGithub } from '@/containers/App/AppRest'
-import { GITHUB_VERSION_REQUEST_INTERVAL } from '@/constants'
 import { deleteAllRemoteClients } from '@/containers/RemoteClients/slice'
 import testId from '@/testId'
-
-const LogoElement = (props: any) => {
-    const { css, logo, className, onClick } = props
-    return <img alt='' className={className} css={css} height={logo.height} onClick={onClick} src={logo.source} width={logo.width} />
-}
 
 const AppLayout: FC<Props> = (props) => {
     const { buildInformation, collapsed, mockApp, userData, signOutRedirect, setCollapsed } = props
@@ -52,32 +47,13 @@ const AppLayout: FC<Props> = (props) => {
 
     const theme: ThemeType = useTheme()
 
-    const requestVersion = useCallback((now: Date) => {
-        getVersionNumberFromGithub().then((ret) => {
-            dispatch(
-                setVersion({
-                    requestedDatetime: now,
-                    latest: ret.data.tag_name.replace('v', ''),
-                    latest_url: ret.data.html_url,
-                })
-            )
-        })
-
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+    const [version] = useAppVersion({ requestedDatetime: appStore.version.requestedDatetime })
 
     useEffect(() => {
-        const now: Date = new Date()
-
-        if (
-            !appStore.version.requestedDatetime ||
-            getMinutesBetweenDates(new Date(appStore.version.requestedDatetime), now) > GITHUB_VERSION_REQUEST_INTERVAL
-        ) {
-            requestVersion(now)
+        if (version && !isEqual(appStore.version, version)) {
+            dispatch(setVersion(version))
         }
-
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+    }, [appStore.version, dispatch, version])
 
     const handleItemClick = (item: MenuItem, e: SyntheticEvent) => {
         e.preventDefault()
@@ -172,7 +148,7 @@ const AppLayout: FC<Props> = (props) => {
                     <LeftPanelWrapper
                         activeId={activeItem}
                         collapsed={collapsed}
-                        logo={<LogoElement logo={theme.logo} onClick={() => navigate(`/`)} />}
+                        logo={theme.logo && <Logo logo={theme.logo} onClick={() => navigate(`/`)} />}
                         menu={menu}
                         onItemClick={handleItemClick}
                         onLocationChange={handleLocationChange}
