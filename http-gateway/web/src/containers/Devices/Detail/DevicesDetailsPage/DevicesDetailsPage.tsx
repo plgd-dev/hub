@@ -194,7 +194,7 @@ const DevicesDetailsPage: FC<Props> = (props) => {
                                 isFunction(setFooterExpanded) && setFooterExpanded(!footerExpanded)
                             }}
                         >
-                            {_(t.recentTasks)}
+                            {_(t.pendingCommands)}
                         </span>
                     }
                     setFooterExpanded={setFooterExpanded}
