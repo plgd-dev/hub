@@ -31,6 +31,7 @@ runs:
         filter-tags: vnext-*
         skip-tags: main
         token: ${{ inputs.token }}
+        token-type: pat
 
     - name: Set up Docker Buildx for delete untagged images action
       uses: docker/setup-buildx-action@v3
