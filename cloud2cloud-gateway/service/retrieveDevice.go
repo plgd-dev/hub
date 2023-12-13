@@ -76,32 +76,35 @@ type Representation struct {
 	Status         commands.Status `json:"-"`
 }
 
-type RetrieveDeviceAllResponse struct {
-	Device
-	Links []Representation `json:"links"`
-}
-
-func unmarshalContent(c *commands.Content) (interface{}, error) {
-	var m interface{}
+func unmarshalContent(c *commands.Content, m interface{}) error {
 	switch c.GetContentType() {
 	case message.AppCBOR.String(), message.AppOcfCbor.String():
-		err := cbor.Decode(c.GetData(), &m)
+		err := cbor.Decode(c.GetData(), m)
 		if err != nil {
-			return nil, fmt.Errorf("cannot unmarshal resource content: %w", err)
+			return fmt.Errorf("cannot unmarshal resource content: %w", err)
 		}
 	case message.AppJSON.String():
-		err := json.Decode(c.GetData(), &m)
+		err := json.Decode(c.GetData(), m)
 		if err != nil {
-			return nil, fmt.Errorf("cannot unmarshal resource content: %w", err)
+			return fmt.Errorf("cannot unmarshal resource content: %w", err)
 		}
 	case message.TextPlain.String():
-		m = string(c.Data)
+		switch v := m.(type) {
+		case *string:
+			*v = string(c.Data)
+		case *[]byte:
+			*v = c.Data
+		case *interface{}:
+			*v = string(c.Data)
+		default:
+			return fmt.Errorf("cannot unmarshal resource content: invalid type (%T)", m)
+		}
 	case "":
-		return nil, nil
+		return nil
 	default:
-		return nil, fmt.Errorf("cannot unmarshal resource content: unknown content type (%v)", c.GetContentType())
+		return fmt.Errorf("cannot unmarshal resource content: unknown content type (%v)", c.GetContentType())
 	}
-	return m, nil
+	return nil
 }
 
 func (rh *RequestHandler) RetrieveResources(ctx context.Context, resourceIdFilter []*pbGRPC.ResourceIdFilter, deviceIdFilter []string) (map[string][]Representation, error) {
@@ -130,7 +133,8 @@ func (rh *RequestHandler) RetrieveResources(ctx context.Context, resourceIdFilte
 		if content.GetData().GetResourceId().GetHref() == commands.StatusHref {
 			continue
 		}
-		rep, err := unmarshalContent(content.GetData().GetContent())
+		var rep interface{}
+		err = unmarshalContent(content.GetData().GetContent(), &rep)
 		if err != nil {
 			log.Errorf("cannot retrieve resources values: %v", err)
 			continue

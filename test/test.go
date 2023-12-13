@@ -25,6 +25,7 @@ import (
 	"github.com/plgd-dev/device/v2/schema/platform"
 	"github.com/plgd-dev/device/v2/schema/plgdtime"
 	"github.com/plgd-dev/device/v2/schema/resources"
+	"github.com/plgd-dev/device/v2/schema/softwareupdate"
 	"github.com/plgd-dev/device/v2/test/resource/types"
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/go-coap/v3/pkg/sync"
@@ -140,6 +141,8 @@ func (d *ResourceLinkRepresentation) UnmarshalJSON(data []byte) error {
 var (
 	TestDeviceName                     string
 	TestDeviceNameWithOicResObservable string
+	TestDeviceModelNumber              = "CS-0"
+	TestDeviceSoftwareVersion          = "1.0.1-rc1"
 
 	TestDevsimResources        []schema.ResourceLink
 	TestDevsimBackendResources []schema.ResourceLink
@@ -253,6 +256,15 @@ func init() {
 				BitMask: 3,
 			},
 		},
+
+		{
+			Href:          softwareupdate.ResourceURI,
+			ResourceTypes: []string{softwareupdate.ResourceType},
+			Interfaces:    []string{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
+			Policy: &schema.Policy{
+				BitMask: 3,
+			},
+		},
 	}
 
 	testIovityLiteVersion = sync.NewMap[string, uint32]()
@@ -266,6 +278,8 @@ func GetDeviceResourceRepresentation(deviceID, deviceName string) device.Device 
 		ResourceTypes:        []string{types.DEVICE_CLOUD, device.ResourceType},
 		DataModelVersion:     "ocf.res.1.3.0",
 		SpecificationVersion: "ocf.2.0.5",
+		ModelNumber:          TestDeviceModelNumber,
+		SoftwareVersion:      TestDeviceSoftwareVersion,
 	}
 }
 
@@ -320,6 +334,18 @@ func GetAllBackendResourceRepresentations(t *testing.T, deviceID, deviceName str
 		{
 			Href:           "/" + commands.NewResourceID(deviceID, plgdtime.ResourceURI).ToString(),
 			Representation: PlgdTimeResourceRepresentation{},
+		},
+		{
+			Href: "/" + commands.NewResourceID(deviceID, softwareupdate.ResourceURI).ToString(),
+			Representation: map[interface{}]interface{}{
+				"purl":           "",
+				"nv":             "",
+				"signed":         "vendor",
+				"swupdateaction": "idle",
+				"swupdatestate":  "idle",
+				"swupdateresult": uint64(0),
+				"updatetime":     "1970-01-01T00:00:00Z",
+			},
 		},
 	}
 }

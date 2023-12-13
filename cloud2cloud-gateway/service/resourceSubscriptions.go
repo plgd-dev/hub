@@ -19,7 +19,8 @@ func (h *resourceSubscriptionHandler) HandleResourceContentChanged(ctx context.C
 	if val.GetStatus() != commands.Status_OK && val.GetStatus() != commands.Status_UNKNOWN {
 		return fmt.Errorf("resourceSubscriptionHandler.HandleResourceContentChanged: cannot emit event for bad status %v of response", val.GetStatus())
 	}
-	rep, err := unmarshalContent(val.GetContent())
+	var rep interface{}
+	err := unmarshalContent(val.GetContent(), &rep)
 	if err != nil {
 		return fmt.Errorf("resourceSubscriptionHandler.HandleResourceContentChanged: cannot emit event: cannot unmarshal content: %w", err)
 	}

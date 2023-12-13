@@ -19,6 +19,7 @@ import (
 func TestRequestHandlerGetHubConfiguration(t *testing.T) {
 	expected := rdTest.MakeConfig(t).ExposedHubConfiguration.ToProto(config.HubID())
 	expected.CurrentTime = 0
+	expected.BuildInfo.ReleaseUrl = "release-url"
 	tests := []struct {
 		name string
 		want *pb.HubConfigurationResponse
@@ -49,6 +50,8 @@ func TestRequestHandlerGetHubConfiguration(t *testing.T) {
 			ctxWithoutToken := context.Background()
 			got, err := c.GetHubConfiguration(ctxWithoutToken, &pb.HubConfigurationRequest{})
 			require.NoError(t, err)
+			require.NotEmpty(t, got.GetBuildInfo())
+			got.BuildInfo.ReleaseUrl = expected.BuildInfo.ReleaseUrl
 			pbTest.CmpHubConfigurationResponse(t, tt.want, got)
 		})
 	}
