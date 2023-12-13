@@ -27,6 +27,7 @@ global:
 #       useInUi: true
    web:
     clientID:
+    scopes: [ "openid" ]
   # -- Custom CA certificate for authorization endpoint in PEM format
   authorizationCAPool:
   # -- Global Open Telemetry exporter configuration

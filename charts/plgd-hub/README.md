@@ -281,7 +281,7 @@ global:
 | extraAuthorizationCAPool.mountPath | string | `"/certs/extra"` | Mount path for custom auth ca pool |
 | extraAuthorizationCAPool.name | string | `"authorization-ca-pool"` | Name of secret for storing custom auth ca pool |
 | extraDeploy | string | `nil` | Extra deploy. Resolved as template |
-| global | object | `{"audience":"","authority":null,"authorizationCAPool":null,"defaultCommandTimeToLive":"10s","deviceIdClaim":null,"domain":null,"enableWildCartCert":true,"hubId":null,"oauth":{"device":[],"web":{"clientID":null}},"openTelemetryExporter":{"address":null,"enabled":false,"keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}},"ownerClaim":"sub"}` | Global config variables |
+| global | object | `{"audience":"","authority":null,"authorizationCAPool":null,"defaultCommandTimeToLive":"10s","deviceIdClaim":null,"domain":null,"enableWildCartCert":true,"hubId":null,"oauth":{"device":[],"web":{"clientID":null,"scopes":["openid"]}},"openTelemetryExporter":{"address":null,"enabled":false,"keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}},"ownerClaim":"sub"}` | Global config variables |
 | global.audience | string | `""` | OAuth audience |
 | global.authority | string | `nil` | OAuth authority |
 | global.authorizationCAPool | string | `nil` | Custom CA certificate for authorization endpoint in PEM format |
@@ -290,7 +290,7 @@ global:
 | global.domain | string | `nil` | Global domain |
 | global.enableWildCartCert | bool | `true` | Enable *.{{ global.domain }} for all external domain |
 | global.hubId | string | `nil` | hubId. Used by coapgateway, resourceaggregate, resourcedirectory, indentitystore, certificateauthority. It must be unique |
-| global.oauth | object | `{"device":[],"web":{"clientID":null}}` | Global OAuth configuration used by multiple services |
+| global.oauth | object | `{"device":[],"web":{"clientID":null,"scopes":["openid"]}}` | Global OAuth configuration used by multiple services |
 | global.openTelemetryExporter | object | `{"address":null,"enabled":false,"keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}` | Global Open Telemetry exporter configuration |
 | global.openTelemetryExporter.address | string | `nil` | The gRPC collector to which the exporter is going to send data |
 | global.openTelemetryExporter.enabled | bool | `false` | Enable OTLP gRPC exporter |
