@@ -35,8 +35,6 @@ type DevicesBaseRepresentation struct {
 
 func GetDeviceResourceRepresentation(deviceID, deviceName string) device.Device {
 	d := test.GetDeviceResourceRepresentation(deviceID, deviceName)
-	d.DataModelVersion = ""
-	d.SpecificationVersion = ""
 	return d
 }
 

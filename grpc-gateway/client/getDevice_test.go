@@ -35,9 +35,10 @@ func NewTestDeviceSimulator(deviceID, deviceName string, withResources bool) cli
 	return client.DeviceDetails{
 		ID: deviceID,
 		Device: &pb.Device{
-			Id:    deviceID,
-			Name:  deviceName,
-			Types: []string{types.DEVICE_CLOUD, device.ResourceType},
+			Id:          deviceID,
+			Name:        deviceName,
+			ModelNumber: test.TestDeviceModelNumber,
+			Types:       []string{types.DEVICE_CLOUD, device.ResourceType},
 			Metadata: &pb.Device_Metadata{
 				Connection: &commands.Connection{
 					Status:   commands.Connection_ONLINE,

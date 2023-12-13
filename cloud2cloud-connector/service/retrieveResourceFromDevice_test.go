@@ -81,10 +81,12 @@ func testRequestHandlerGetResourceFromDevice(t *testing.T, events store.Events) 
 			},
 			wantContentType: message.AppOcfCbor.String(),
 			want: pbTest.MakeResourceRetrieved(t, deviceID, device.ResourceURI, "", map[string]interface{}{
-				"di":  deviceID,
-				"dmv": "ocf.res.1.3.0",
-				"icv": "ocf.2.0.5",
-				"n":   test.TestDeviceName,
+				"di":   deviceID,
+				"dmv":  "ocf.res.1.3.0",
+				"icv":  "ocf.2.0.5",
+				"n":    test.TestDeviceName,
+				"dmno": test.TestDeviceModelNumber,
+				"sv":   test.TestDeviceSoftwareVersion,
 			}),
 		},
 		{

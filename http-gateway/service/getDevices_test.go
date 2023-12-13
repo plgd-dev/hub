@@ -31,10 +31,11 @@ import (
 
 func makeDefaultDevice(deviceID string) *pb.Device {
 	return &pb.Device{
-		Types:      []string{types.DEVICE_CLOUD, device.ResourceType},
-		Interfaces: []string{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
-		Id:         deviceID,
-		Name:       test.TestDeviceName,
+		Types:       []string{types.DEVICE_CLOUD, device.ResourceType},
+		Interfaces:  []string{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
+		Id:          deviceID,
+		Name:        test.TestDeviceName,
+		ModelNumber: test.TestDeviceModelNumber,
 		Metadata: &pb.Device_Metadata{
 			Connection: &commands.Connection{
 				Status:   commands.Connection_ONLINE,
