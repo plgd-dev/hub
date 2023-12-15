@@ -174,7 +174,7 @@ entries:
   plgd-hub:
   - apiVersion: v2
     appVersion: 2.16.0
-    created: "2023-12-15T09:29:56.440880541Z"
+    created: "2023-12-15T10:59:33.485638692Z"
     dependencies:
     - condition: nats.enabled
       name: nats
@@ -189,7 +189,7 @@ entries:
       repository: https://scylla-operator-charts.storage.googleapis.com/stable
       version: 1.10.0
     description: A Helm chart for plgd-hub
-    digest: 50ae1cf10d789851e28304cdfb22f217876a7f22effd43c3c3553fae88726a8a
+    digest: 551e3a36a535cf9ca5fbdae79895e87d4246f91a53be64772b6a62f4e818c0c0
     name: plgd-hub
     type: application
     urls:
@@ -1430,4 +1430,4 @@ entries:
     urls:
     - https://charts.plgd.dev/plgd-hub-0.1.0.tgz
     version: 0.1.0
-generated: "2023-12-15T09:29:56.426816772Z"
+generated: "2023-12-15T10:59:33.472133722Z"
