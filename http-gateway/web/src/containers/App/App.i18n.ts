@@ -69,13 +69,13 @@ export const messages = defineMessages({
         id: 'app.menuDeviceProvisioning',
         defaultMessage: 'Device provisioning',
     },
-    menuQuickstart: {
-        id: 'app.menuQuickstart',
-        defaultMessage: 'Quickstart',
+    enrollmentGroups: {
+        id: 'app.enrollmentGroups',
+        defaultMessage: 'Enrollment groups',
     },
-    menuManageEnrollments: {
-        id: 'app.menuManageEnrollments',
-        defaultMessage: 'Manage enrollments',
+    provisioningRecords: {
+        id: 'app.provisioningRecords',
+        defaultMessage: 'Provisioning records',
     },
     menuLinkedHubs: {
         id: 'app.menuLinkedHubs',

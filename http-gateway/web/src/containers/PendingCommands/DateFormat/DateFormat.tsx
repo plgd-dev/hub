@@ -1,10 +1,10 @@
+import { FC } from 'react'
 import { useIntl } from 'react-intl'
 import { Props } from './DateFormat.types'
 // @ts-ignore
 import * as converter from 'units-converter/dist/es/index'
 
 import { dateFormat, timeFormatLong } from '../constants'
-import { FC } from 'react'
 
 const time = converter.time
 

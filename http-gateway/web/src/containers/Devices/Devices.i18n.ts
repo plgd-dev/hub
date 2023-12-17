@@ -13,6 +13,10 @@ export const messages = defineMessages({
         id: 'devices.device',
         defaultMessage: 'Device',
     },
+    devices: {
+        id: 'devices.devices',
+        defaultMessage: 'Devices',
+    },
     addDevice: {
         id: 'devices.addDevice',
         defaultMessage: 'Add Device',

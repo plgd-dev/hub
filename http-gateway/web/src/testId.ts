@@ -25,6 +25,39 @@ const testId = {
             tabConfiguration: 'hub-remote-clients-detail-tab-configuration',
         },
     },
+    dps: {
+        provisioningRecords: {
+            detail: {
+                deleteButton: 'hub-dps-provisioning-records-detail-delete-button',
+                editNameButton: 'hub-dps-provisioning-records-detail-edit-name-button',
+                deleteButtonCancel: 'hub-dps-provisioning-records-detail-delete-button-cancel',
+                deleteButtonConfirm: 'hub-dps-provisioning-records-detail-delete-button-confirm',
+                editNameModal: 'hub-dps-provisioning-records-detail-edit-name-modal',
+            },
+        },
+        enrollmentGroups: {
+            detail: {
+                tabEnrollmentConfiguration: 'hub-dps-enrollment-groups-detail-tab-enrollment-configuration',
+                tabDeviceCredentials: 'hub-dps-enrollment-groups-detail-tab-device-credentials',
+                deleteButton: 'hub-dps-enrollment-groups-detail-delete-button',
+                deleteButtonCancel: 'hub-dps-enrollment-groups-detail-delete-button-cancel',
+                deleteButtonConfirm: 'hub-dps-enrollment-groups-detail-delete-button-confirm',
+                editNameButton: 'hub-dps-enrollment-groups-detail-edit-name-button',
+                editNameModal: 'hub-dps-enrollment-groups-detail-edit-name-modal',
+            },
+        },
+        linkedHubs: {
+            detail: {
+                tabCertificateAuthorityConfiguration: 'hub-dps-linked-hubs-detail-tab-certificate-authority-configuration',
+                tabAuthorization: 'hub-dps-linked-hubs-detail-tab-Authorization',
+                deleteButton: 'hub-dps-linked-hubs-detail-delete-button',
+                editNameButton: 'hub-dps-linked-hubs-detail-edit-name-button',
+                deleteButtonCancel: 'hub-dps-linked-hubs-detail-delete-button-cancel',
+                deleteButtonConfirm: 'hub-dps-linked-hubs-detail-delete-button-confirm',
+                editNameModal: 'hub-dps-linked-hubs-detail-edit-name-modal',
+            },
+        },
+    },
 }
 
 export default testId

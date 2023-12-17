@@ -11,7 +11,7 @@ import NotificationCenter from '@shared-ui/components/Atomic/NotificationCenter'
 import UserWidget from '@shared-ui/components/Layout/Header/UserWidget'
 import VersionMark from '@shared-ui/components/Atomic/VersionMark'
 import Layout from '@shared-ui/components/Layout'
-import { MenuItem } from '@shared-ui/components/Layout/LeftPanel/LeftPanel.types'
+import { MenuItem, SubMenuItem } from '@shared-ui/components/Layout/LeftPanel/LeftPanel.types'
 import { parseActiveItem } from '@shared-ui/components/Layout/LeftPanel/utils'
 import { getVersionMarkData } from '@shared-ui/components/Atomic/VersionMark/utils'
 import { severities } from '@shared-ui/components/Atomic/VersionMark/constants'
@@ -19,12 +19,12 @@ import { flushDevices } from '@shared-ui/app/clientApp/Devices/slice'
 import { reset } from '@shared-ui/app/clientApp/App/AppRest'
 import { App } from '@shared-ui/components/Atomic'
 import { ThemeType } from '@shared-ui/components/Atomic/_theme'
-import { clientAppSettings } from '@shared-ui/common/services'
-import { useAppVersion } from '@shared-ui/common/hooks'
+import { clientAppSettings, security } from '@shared-ui/common/services'
+import { useAppVersion, WellKnownConfigType } from '@shared-ui/common/hooks'
 import Logo from '@shared-ui/components/Atomic/Logo'
 
 import { Props } from './AppLayout.types'
-import { mather, menu, Routes } from '@/routes'
+import { mather, getMenu, Routes } from '@/routes'
 import { messages as t } from '@/containers/App/App.i18n'
 import { readAllNotifications, setNotifications } from '@/containers/Notifications/slice'
 import LeftPanelWrapper from '@/containers/App/AppInner/LeftPanelWrapper/LeftPanelWrapper'
@@ -39,6 +39,12 @@ const AppLayout: FC<Props> = (props) => {
     const location = useLocation()
     const dispatch = useDispatch()
     const navigate = useNavigate()
+
+    const wellKnownConfig = security.getWellKnowConfig() as WellKnownConfigType & {
+        defaultCommandTimeToLive: number
+    }
+
+    const menu = useMemo(() => getMenu(wellKnownConfig.ui.menu), [wellKnownConfig.ui.menu])
 
     const [activeItem, setActiveItem] = useState(parseActiveItem(location.pathname, menu, mather))
     const notifications = useSelector((state: CombinedStoreType) => state.notifications)
@@ -55,7 +61,7 @@ const AppLayout: FC<Props> = (props) => {
         }
     }, [appStore.version, dispatch, version])
 
-    const handleItemClick = (item: MenuItem, e: SyntheticEvent) => {
+    const handleItemClick = (item: MenuItem | SubMenuItem, e: SyntheticEvent) => {
         e.preventDefault()
 
         setActiveItem(item.id)

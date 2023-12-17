@@ -42,156 +42,147 @@ const PendingCommandsListPage = () => {
     }, [])
 
     const columns = useMemo(
-        () => {
-            const cols = [
-                {
-                    Header: _(t.type),
-                    accessor: 'commandType',
-                    Cell: ({ value, row }: { value: any; row: any }) => {
-                        const {
-                            original: { content },
-                        } = row
-                        const href = row.original?.resourceId?.href
+        () => [
+            {
+                Header: _(t.type),
+                accessor: 'commandType',
+                Cell: ({ value, row }: { value: any; row: any }) => {
+                    const {
+                        original: { content },
+                    } = row
+                    const href = row.original?.resourceId?.href
+                    // @ts-ignore
+                    const text = _(t[value])
+
+                    if (!content && !href) {
                         // @ts-ignore
-                        const text = _(t[value])
+                        return <span className='no-wrap-text'>{text}</span>
+                    }
 
-                        if (!content && !href) {
-                            // @ts-ignore
-                            return <span className='no-wrap-text'>{text}</span>
-                        }
-
-                        return (
-                            <a
-                                className='no-wrap-text'
-                                href={href}
-                                onClick={(e) => {
-                                    e.preventDefault()
-                                    pendingCommandsListRef?.current?.setDetailsModalData({
-                                        content,
-                                        commandType: value,
-                                    })
-                                }}
-                            >
-                                {text}
-                            </a>
-                        )
-                    },
+                    return (
+                        <a
+                            className='no-wrap-text'
+                            href={href}
+                            onClick={(e) => {
+                                e.preventDefault()
+                                pendingCommandsListRef?.current?.setDetailsModalData({
+                                    content,
+                                    commandType: value,
+                                })
+                            }}
+                        >
+                            {text}
+                        </a>
+                    )
                 },
-                {
-                    Header: _(t.deviceId),
-                    accessor: 'resourceId.deviceId',
-                    Cell: ({ row }: { row: any }) => <span className='no-wrap-text'>{row?.original?.resourceId?.deviceId || row?.original?.deviceId}</span>,
+            },
+            {
+                Header: _(t.deviceId),
+                accessor: 'resourceId.deviceId',
+                Cell: ({ row }: { row: any }) => <span className='no-wrap-text'>{row?.original?.resourceId?.deviceId || row?.original?.deviceId}</span>,
+            },
+            {
+                Header: _(t.resourceHref),
+                accessor: 'resourceId.href',
+                Cell: ({ value, row }: { value: any; row: any }) => {
+                    const {
+                        original: { content },
+                    } = row
+
+                    return (
+                        <a
+                            className='no-wrap-text link'
+                            href={value}
+                            onClick={(e) => {
+                                e.preventDefault()
+                                pendingCommandsListRef?.current?.setDetailsModalData({
+                                    content,
+                                    commandType: row.original.commandType,
+                                })
+                            }}
+                        >
+                            {value || '-'}
+                        </a>
+                    )
                 },
-                {
-                    Header: _(t.resourceHref),
-                    accessor: 'resourceId.href',
-                    Cell: ({ value, row }: { value: any; row: any }) => {
-                        const {
-                            original: { content },
-                        } = row
+            },
+            {
+                Header: _(t.status),
+                accessor: 'status',
+                Cell: ({ value, row }: { value: any; row: any }) => {
+                    const { validUntil } = row.original
+                    const { color, label } = getPendingCommandStatusColorAndLabel(value, validUntil, currentTime)
 
-                        return (
-                            <a
-                                className='no-wrap-text link'
-                                href={value}
-                                onClick={(e) => {
-                                    e.preventDefault()
-                                    pendingCommandsListRef?.current?.setDetailsModalData({
-                                        content,
-                                        commandType: row.original.commandType,
-                                    })
-                                }}
-                            >
-                                {value || '-'}
-                            </a>
-                        )
-                    },
-                },
-                {
-                    Header: _(t.status),
-                    accessor: 'status',
-                    Cell: ({ value, row }: { value: any; row: any }) => {
-                        const { validUntil } = row.original
-                        const { color, label } = getPendingCommandStatusColorAndLabel(value, validUntil, currentTime)
-
-                        if (!value) {
-                            return <StatusTag variant={color as TagTypeType}>{_(label)}</StatusTag>
-                        }
-
+                    if (!value) {
                         return <StatusTag variant={color as TagTypeType}>{_(label)}</StatusTag>
-                    },
+                    }
+
+                    return <StatusTag variant={color as TagTypeType}>{_(label)}</StatusTag>
                 },
-                {
-                    Header: _(t.initiator),
-                    accessor: 'auditContext.userId',
-                    Cell: ({ value }: { value: any }) => value,
+            },
+            {
+                Header: _(t.initiator),
+                accessor: 'auditContext.userId',
+                Cell: ({ value }: { value: any }) => value,
+            },
+
+            {
+                Header: _(t.expiresAt),
+                accessor: 'validUntil',
+                Cell: ({ value }: { value: any }) => {
+                    if (value === '0') return _(t.forever)
+
+                    return <DateFormat value={value} />
                 },
+            },
+            {
+                Header: _(t.actions),
+                accessor: 'actions',
+                disableSortBy: true,
+                Cell: ({ row }: { row: any }) => {
+                    const {
+                        original: {
+                            auditContext: { correlationId },
+                            status,
+                            validUntil,
+                        },
+                    }: any = row
 
-                {
-                    Header: _(t.expiresAt),
-                    accessor: 'validUntil',
-                    Cell: ({ value }: { value: any }) => {
-                        if (value === '0') return _(t.forever)
+                    const href = row.original?.resourceId?.href
+                    const rowDeviceId = row?.original?.resourceId?.deviceId || row?.original?.deviceId
 
-                        return <DateFormat value={value} />
-                    },
+                    return (
+                        <TableActions
+                            items={[
+                                {
+                                    icon: <IconTrash />,
+                                    onClick: () => pendingCommandsListRef?.current?.setConfirmModalData({ deviceId: rowDeviceId, href, correlationId }),
+                                    id: `delete-row-${rowDeviceId}`,
+                                    tooltipText: _(t.cancel),
+                                    hidden: status || hasCommandExpired(validUntil, currentTime),
+                                },
+                                {
+                                    icon: <IconArrowRight />,
+                                    onClick: () =>
+                                        pendingCommandsListRef?.current?.setDetailsModalData({
+                                            content: row.original.content,
+                                            commandType: row.original.commandType,
+                                        }),
+                                    id: `detail-row-${rowDeviceId}`,
+                                    tooltipText: _(t.details),
+                                },
+                            ]}
+                        />
+                    )
                 },
-                {
-                    Header: _(t.actions),
-                    accessor: 'actions',
-                    disableSortBy: true,
-                    Cell: ({ row }: { row: any }) => {
-                        const {
-                            original: {
-                                auditContext: { correlationId },
-                                status,
-                                validUntil,
-                            },
-                        }: any = row
-
-                        const href = row.original?.resourceId?.href
-                        const rowDeviceId = row?.original?.resourceId?.deviceId || row?.original?.deviceId
-
-                        return (
-                            <TableActions
-                                items={[
-                                    {
-                                        icon: <IconTrash />,
-                                        onClick: () => pendingCommandsListRef?.current?.setConfirmModalData({ deviceId: rowDeviceId, href, correlationId }),
-                                        id: `delete-row-${rowDeviceId}`,
-                                        tooltipText: _(t.cancel),
-                                        hidden: status || hasCommandExpired(validUntil, currentTime),
-                                    },
-                                    {
-                                        icon: <IconArrowRight />,
-                                        onClick: () =>
-                                            pendingCommandsListRef?.current?.setDetailsModalData({
-                                                content: row.original.content,
-                                                commandType: row.original.commandType,
-                                            }),
-                                        id: `detail-row-${rowDeviceId}`,
-                                        tooltipText: _(t.details),
-                                    },
-                                ]}
-                            />
-                        )
-                    },
-                    className: 'actions',
-                },
-            ]
-
-            return cols
-        },
+                className: 'actions',
+            },
+        ],
         [currentTime] // eslint-disable-line
     )
 
     return (
         <PageLayout
-            breadcrumbs={[
-                {
-                    label: _(menuT.pendingCommands),
-                },
-            ]}
             footer={<Footer footerExpanded={false} paginationComponent={<div id='paginationPortalTarget'></div>} />}
             loading={loading}
             title={_(menuT.pendingCommands)}

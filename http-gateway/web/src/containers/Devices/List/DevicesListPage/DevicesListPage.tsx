@@ -1,27 +1,19 @@
-import React, { FC, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
-import isFunction from 'lodash/isFunction'
 import { useNavigate } from 'react-router-dom'
-import ReactDOM from 'react-dom'
 
 import { getApiErrorMessage } from '@shared-ui/common/utils'
 import { useIsMounted } from '@shared-ui/common/hooks'
 import { Emitter } from '@shared-ui/common/services/emitter'
 import { messages as menuT } from '@shared-ui/components/Atomic/Menu/Menu.i18n'
-import PageLayout from '@shared-ui/components/Atomic/PageLayout'
 import { DeleteModal } from '@shared-ui/components/Atomic/Modal'
-import Footer from '@shared-ui/components/Layout/Footer'
-import DevicesList from '@shared-ui/components/Organisms/DevicesList/DevicesList'
 import StatusPill from '@shared-ui/components/Atomic/StatusPill'
 import { states } from '@shared-ui/components/Atomic/StatusPill/constants'
 import TableActionButton from '@shared-ui/components/Organisms/TableActionButton'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
-import { IconShowPassword, IconTrash, StatusTag } from '@shared-ui/components/Atomic'
-import Breadcrumbs from '@shared-ui/components/Layout/Header/Breadcrumbs'
+import { IconArrowDetail, IconTrash, StatusTag } from '@shared-ui/components/Atomic'
 import { clientAppSettings } from '@shared-ui/common/services'
-import AppContext from '@shared-ui/app/share/AppContext'
 
-import { PendingCommandsExpandableList } from '@/containers/PendingCommands'
 import { DEVICES_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY, devicesStatuses, NO_DEVICE_NAME, RESET_COUNTER } from '../../constants'
 import { useDevicesList } from '../../hooks'
 import DevicesListHeader from '../DevicesListHeader/DevicesListHeader'
@@ -31,6 +23,8 @@ import { messages as t } from '../../Devices.i18n'
 import DateFormat from '@/containers/PendingCommands/DateFormat'
 import { messages as g } from '@/containers/Global.i18n'
 import notificationId from '@/notificationId'
+import PageLayout from '@/containers/Common/PageLayout'
+import TableList from '@/containers/Common/TableList/TableList'
 
 const { UNREGISTERED } = devicesStatuses
 
@@ -47,18 +41,12 @@ const DevicesListPage: FC<any> = () => {
         error: any
         refresh: () => void
     } = useDevicesList()
-    const [deleteModalOpen, setDeleteModalOpen] = useState(false)
-    const [isAllSelected, setIsAllSelected] = useState(false)
-    const [selectedDevices, setSelectedDevices] = useState([])
-    const [singleDevice, setSingleDevice] = useState<null | string>(null)
+
+    const [selected, setSelected] = useState<string[]>([])
     const [deleting, setDeleting] = useState(false)
     const [unselectRowsToken, setUnselectRowsToken] = useState(1)
     const isMounted = useIsMounted()
-    const [isDomReady, setIsDomReady] = useState(false)
     const navigate = useNavigate()
-
-    const combinedSelectedDevices = singleDevice ? [singleDevice] : selectedDevices
-    const { footerExpanded, setFooterExpanded, collapsed } = useContext(AppContext)
 
     clientAppSettings.reset()
 
@@ -71,26 +59,13 @@ const DevicesListPage: FC<any> = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [deviceError])
 
-    useEffect(() => {
-        setIsDomReady(true)
+    const handleOpenDeleteModal = useCallback((_isAllSelected: boolean, selection: string[]) => {
+        setSelected(selection)
     }, [])
 
-    const handleOpenDeleteModal = useCallback(
-        (deviceId?: string) => {
-            if (typeof deviceId === 'string') {
-                setSingleDevice(deviceId)
-            } else if (singleDevice && !deviceId) {
-                setSingleDevice(null)
-            }
-
-            setDeleteModalOpen(true)
-        },
-        [singleDevice]
-    )
-
     const handleCloseDeleteModal = () => {
-        setSingleDevice(null)
-        setDeleteModalOpen(false)
+        setSelected([])
+        setUnselectRowsToken((prev) => prev + 1)
     }
 
     const handleRefresh = () => {
@@ -106,7 +81,7 @@ const DevicesListPage: FC<any> = () => {
     const deleteDevices = async () => {
         try {
             setDeleting(true)
-            await deleteDevicesApi(combinedSelectedDevices)
+            await deleteDevicesApi(selected)
             await sleep(200)
 
             if (isMounted.current) {
@@ -116,10 +91,7 @@ const DevicesListPage: FC<any> = () => {
                 )
 
                 setDeleting(false)
-                setDeleteModalOpen(false)
-                setSingleDevice(null)
-                setUnselectRowsToken((prevValue) => prevValue + 1)
-                setSelectedDevices([])
+                setSelected([])
                 handleCloseDeleteModal()
                 handleRefresh()
             }
@@ -170,7 +142,6 @@ const DevicesListPage: FC<any> = () => {
                     return (
                         <StatusPill
                             label={isOnline ? _(t.online) : _(t.offline)}
-                            // pending={value.pending.show ? { text: `${value.pending.number} pending commands`, onClick: console.log } : undefined}
                             status={isOnline ? states.ONLINE : states.OFFLINE}
                             tooltipText={
                                 <DateFormat
@@ -182,23 +153,6 @@ const DevicesListPage: FC<any> = () => {
                     )
                 },
             },
-            // {
-            //     Header: 'Protocol',
-            //     accessor: 'protocol',
-            //     Cell: ({ row }: { row: any }) => {
-            //         return 'Protocol'
-            //     },
-            // },
-            // {
-            //     Header: 'Shared',
-            //     accessor: 'shared',
-            //     style: { width: '120px' },
-            //     Cell: ({ row }: { row: any }) => (
-            //         <Tag icon='link' onClick={console.log}>
-            //             Yes
-            //         </Tag>
-            //     ),
-            // },
             {
                 Header: _(t.twinSynchronization),
                 accessor: 'metadata.twinEnabled',
@@ -208,7 +162,7 @@ const DevicesListPage: FC<any> = () => {
                 },
             },
             {
-                Header: _(t.action),
+                Header: _(g.action),
                 accessor: 'action',
                 disableSortBy: true,
                 Cell: ({ row }: any) => {
@@ -219,14 +173,14 @@ const DevicesListPage: FC<any> = () => {
                         <TableActionButton
                             items={[
                                 {
-                                    onClick: () => handleOpenDeleteModal(id),
+                                    onClick: () => handleOpenDeleteModal(false, [id]),
                                     label: _(t.delete),
                                     icon: <IconTrash />,
                                 },
                                 {
                                     onClick: () => navigate(`/devices/${id}`),
                                     label: _(t.view),
-                                    icon: <IconShowPassword />,
+                                    icon: <IconArrowDetail />,
                                 },
                             ]}
                         />
@@ -238,66 +192,42 @@ const DevicesListPage: FC<any> = () => {
         [] // eslint-disable-line
     )
 
-    const selectedDevicesCount = combinedSelectedDevices.length
-    const selectedDeviceName = selectedDevicesCount === 1 && data ? data.find?.((d: any) => d.id === combinedSelectedDevices[0])?.name : null
-    const loadingOrDeleting = loading || deleting
+    const selectedDevicesCount = useMemo(() => selected.length, [selected])
+    const selectedDeviceName = useMemo(
+        () => (selectedDevicesCount === 1 && data ? data.find?.((d: any) => d.id === selected[0])?.name : null),
+        [selected, selectedDevicesCount, data]
+    )
 
     return (
         <PageLayout
-            footer={
-                <Footer
-                    footerExpanded={footerExpanded}
-                    paginationComponent={<div id='paginationPortalTarget'></div>}
-                    recentTasksPortal={<div id='recentTasksPortalTarget'></div>}
-                    recentTasksPortalTitle={
-                        <span
-                            id='recentTasksPortalTitleTarget'
-                            onClick={() => {
-                                isFunction(setFooterExpanded) && setFooterExpanded(!footerExpanded)
-                            }}
-                        >
-                            {_(t.pendingCommands)}
-                        </span>
-                    }
-                    setFooterExpanded={setFooterExpanded}
-                />
-            }
+            breadcrumbs={[{ label: _(menuT.devices), link: '/' }]}
             header={<DevicesListHeader loading={loading} refresh={handleRefresh} />}
             loading={loading}
             title={_(menuT.devices)}
         >
-            {isDomReady &&
-                ReactDOM.createPortal(
-                    <Breadcrumbs items={[{ label: _(menuT.devices), link: '/' }]} />,
-                    document.querySelector('#breadcrumbsPortalTarget') as Element
-                )}
-            <DevicesList
-                collapsed={collapsed ?? false}
+            <TableList
                 columns={columns}
                 data={data}
+                defaultSortBy={[
+                    {
+                        id: 'name',
+                        desc: false,
+                    },
+                ]}
                 i18n={{
-                    delete: _(g.delete),
-                    search: _(g.search),
-                    select: _(g.select),
+                    multiSelected: _(t.devices),
+                    singleSelected: _(t.device),
                 }}
-                isActiveTab={true}
-                isAllSelected={isAllSelected}
-                loading={loadingOrDeleting}
                 onDeleteClick={handleOpenDeleteModal}
-                selectedDevices={selectedDevices}
-                setIsAllSelected={setIsAllSelected}
-                setSelectedDevices={setSelectedDevices}
                 unselectRowsToken={unselectRowsToken}
             />
-
-            <PendingCommandsExpandableList />
 
             <DeleteModal
                 deleteInformation={
                     selectedDevicesCount === 1
                         ? [
                               { label: _(t.deviceName), value: selectedDeviceName },
-                              { label: _(t.deviceId), value: combinedSelectedDevices[0] },
+                              { label: _(t.deviceId), value: selected[0] },
                           ]
                         : undefined
                 }
@@ -306,18 +236,22 @@ const DevicesListPage: FC<any> = () => {
                         label: _(t.cancel),
                         onClick: handleCloseDeleteModal,
                         variant: 'tertiary',
+                        disabled: loading,
                     },
                     {
                         label: _(t.delete),
                         onClick: deleteDevices,
                         variant: 'primary',
+                        loading: deleting,
+                        loadingText: _(g.loading),
+                        disabled: loading,
                     },
                 ]}
                 fullSizeButtons={selectedDevicesCount > 1}
                 maxWidth={440}
                 maxWidthTitle={320}
                 onClose={handleCloseDeleteModal}
-                show={deleteModalOpen}
+                show={selectedDevicesCount > 0}
                 subTitle={_(t.deleteDeviceMessageSubTitle)}
                 title={selectedDevicesCount === 1 ? _(t.deleteDeviceMessage) : _(t.deleteDevicesMessage, { count: selectedDevicesCount })}
             />

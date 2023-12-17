@@ -23,6 +23,7 @@ import AppInner from '@/containers/App/AppInner/AppInner'
 import AppLayout from '@/containers/App/AppLayout/AppLayout'
 import { setTheme, setThemes } from './slice'
 import { CombinedStoreType } from '@/store/store'
+import { defaultMenu } from '@/routes'
 
 const App = (props: { mockApp: boolean }) => {
     const { formatMessage: _ } = useIntl()
@@ -45,6 +46,13 @@ const App = (props: { mockApp: boolean }) => {
                     )
 
                     const { webOauthClient, deviceOauthClient, ...generalConfig } = wellKnown
+
+                    // UI tmp
+                    wellKnown.ui = {
+                        menu: {
+                            ...defaultMenu,
+                        },
+                    }
 
                     const clientId = webOauthClient?.clientId
                     const httpGatewayAddress = wellKnown.httpGatewayAddress
@@ -89,7 +97,7 @@ const App = (props: { mockApp: boolean }) => {
     if (!wellKnownConfig || !theme) {
         return (
             <>
-                <PageLoader loading className='auth-loader' />
+                <PageLoader loading className='auth-loader ' noOffset={true} />
                 <div className='page-loading-text'>{`${_(g.loading)}...`}</div>
             </>
         )

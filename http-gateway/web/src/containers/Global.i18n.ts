@@ -9,6 +9,10 @@ export const messages = defineMessages({
         id: 'global.delete',
         defaultMessage: 'Delete',
     },
+    deleting: {
+        id: 'global.deleting',
+        defaultMessage: 'Deleting',
+    },
     name: {
         id: 'global.name',
         defaultMessage: 'Name',
@@ -29,6 +33,10 @@ export const messages = defineMessages({
         id: 'global.cancel',
         defaultMessage: 'Cancel',
     },
+    view: {
+        id: 'global.view',
+        defaultMessage: 'View',
+    },
     pageNotFound: {
         id: 'global.pageNotFound',
         defaultMessage: 'Page not found',
@@ -44,5 +52,49 @@ export const messages = defineMessages({
     reset: {
         id: 'app.reset',
         defaultMessage: 'Reset',
+    },
+    pendingCommands: {
+        id: 'app.pendingCommands',
+        defaultMessage: 'Pending commands',
+    },
+    online: {
+        id: 'app.online',
+        defaultMessage: 'online',
+    },
+    offline: {
+        id: 'app.offline',
+        defaultMessage: 'offline',
+    },
+    id: {
+        id: 'app.id',
+        defaultMessage: 'ID',
+    },
+    copy: {
+        id: 'app.copy',
+        defaultMessage: 'Copy',
+    },
+    information: {
+        id: 'app.information',
+        defaultMessage: 'Information',
+    },
+    editName: {
+        id: 'app.editName',
+        defaultMessage: 'Edit name',
+    },
+    close: {
+        id: 'app.close',
+        defaultMessage: 'Close',
+    },
+    saveChange: {
+        id: 'app.saveChange',
+        defaultMessage: 'Save Change',
+    },
+    savingChanges: {
+        id: 'app.savingChanges',
+        defaultMessage: 'Saving Changes',
+    },
+    done: {
+        id: 'app.done',
+        defaultMessage: 'Done',
     },
 })

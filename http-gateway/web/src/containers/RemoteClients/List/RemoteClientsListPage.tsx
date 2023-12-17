@@ -1,18 +1,19 @@
-import React, { FC, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
-import isFunction from 'lodash/isFunction'
 import { nanoid } from '@reduxjs/toolkit'
 import { useDispatch, useSelector } from 'react-redux'
+import { Link, useNavigate } from 'react-router-dom'
 
-import PageLayout from '@shared-ui/components/Atomic/PageLayout'
-import Footer from '@shared-ui/components/Layout/Footer'
 import { fetchApi } from '@shared-ui/common/services'
-import { DeleteModal } from '@shared-ui/components/Atomic'
+import { DeleteModal, IconTrash } from '@shared-ui/components/Atomic'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import { RemoteClientType } from '@shared-ui/app/clientApp/RemoteClients/RemoteClients.types'
-import { remoteClientStatuses } from '@shared-ui/app/clientApp/RemoteClients/constants'
-import AppContext from '@shared-ui/app/share/AppContext'
+import { remoteClientStatuses, RemoteClientStatusesType } from '@shared-ui/app/clientApp/RemoteClients/constants'
 import { hasDifferentOwner } from '@shared-ui/common/services/api-utils'
+import StatusPill from '@shared-ui/components/Atomic/StatusPill'
+import TableActionButton from '@shared-ui/components/Organisms/TableActionButton'
+import IconEdit from '@shared-ui/components/Atomic/Icon/components/IconEdit'
+import { states } from '@shared-ui/components/Atomic/StatusPill/constants'
 
 import { messages as t } from '../RemoteClients.i18n'
 import { messages as g } from '../../Global.i18n'
@@ -21,32 +22,31 @@ import AddRemoteClientModal from '@/containers/RemoteClients/List/AddRemoteClien
 import { ClientInformationLineType } from '@/containers/RemoteClients/List/AddRemoteClientModal/AddRemoteClientModal.types'
 import { addRemoteClient, deleteRemoteClients, updateRemoteClients, updateRemoteClient } from '@/containers/RemoteClients/slice'
 import { CombinedStoreType } from '@/store/store'
-import RemoteClientsList from '@/containers/RemoteClients/List/RemoteClientsList'
 import notificationId from '@/notificationId'
-import { PendingCommandsExpandableList } from '@/containers/PendingCommands'
+import PageLayout from '@/containers/Common/PageLayout'
+import { NO_DEVICE_NAME } from '@/containers/Devices/constants'
+import TableList from '@/containers/Common/TableList/TableList'
 
 const RemoteClientsListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
-    const { footerExpanded, setFooterExpanded } = useContext(AppContext)
     const [addClientModal, setAddClientModal] = useState(false)
     const [dataLoading, setDataLoading] = useState(false)
     const [remoteClients, setRemoteClients] = useState<RemoteClientType[] | undefined>(undefined)
-    const [isAllSelected, setIsAllSelected] = useState(false)
-    const [deleteModalOpen, setDeleteModalOpen] = useState(false)
-    const [singleDelete, setSingleDelete] = useState<null | string>(null)
-    const [selectedClients, setSelectedClients] = useState([])
+    const [selected, setSelected] = useState<string[]>([])
     const [unselectRowsToken, setUnselectRowsToken] = useState(1)
+
+    const navigate = useNavigate()
 
     const [editRemoteClientId, setEditRemoteClientId] = useState<undefined | string>(undefined)
 
     const dispatch = useDispatch()
     const storedRemoteStore = useSelector((state: CombinedStoreType) => state.remoteClients)
 
-    const combinedSelectedClients = useMemo(() => (singleDelete ? [singleDelete] : selectedClients), [singleDelete, selectedClients])
-
-    const selectedClientsCount = combinedSelectedClients.length
-    const selectedRemoteClient =
-        selectedClientsCount === 1 && remoteClients ? remoteClients.find?.((remoteClient) => remoteClient.id === combinedSelectedClients[0]) : null
+    const selectedCount = useMemo(() => selected.length, [selected])
+    const selectedRemoteClient = useMemo(
+        () => (selectedCount === 1 && remoteClients ? remoteClients.find?.((remoteClient) => remoteClient.id === selected[0]) : null),
+        [remoteClients, selected, selectedCount]
+    )
 
     const editRemoteClientData = useMemo(() => {
         const remoteClientData = remoteClients?.find((remoteClient) => remoteClient.id === editRemoteClientId)
@@ -89,38 +89,28 @@ const RemoteClientsListPage: FC<any> = () => {
         [editRemoteClientData]
     )
 
-    const handleOpenDeleteModal = useCallback(
-        (clientId?: string) => {
-            if (typeof clientId === 'string') {
-                setSingleDelete(clientId)
-            } else if (singleDelete && !clientId) {
-                setSingleDelete(null)
-            }
-
-            setDeleteModalOpen(true)
-        },
-        [singleDelete]
-    )
+    const handleOpenDeleteModal = useCallback((_isAllSelected: boolean, selection: string[]) => {
+        setSelected(selection)
+    }, [])
 
     const handleCloseDeleteModal = useCallback(() => {
-        setSingleDelete(null)
-        setDeleteModalOpen(false)
+        setSelected([])
+        setUnselectRowsToken((prev) => prev + 1)
     }, [])
 
     const deleteClients = useCallback(() => {
-        dispatch(deleteRemoteClients(combinedSelectedClients))
+        dispatch(deleteRemoteClients(selected))
 
         Notification.success(
             { title: _(t.clientsDeleted), message: _(t.clientsDeletedMessage) },
             { notificationId: notificationId.HUB_REMOTE_CLIENTS_LIST_PAGE_DELETE_CLIENTS }
         )
 
-        setSingleDelete(null)
-        setDeleteModalOpen(false)
+        setSelected([])
         setUnselectRowsToken((prevValue) => prevValue + 1)
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [combinedSelectedClients])
+    }, [selected])
 
     useEffect(() => {
         setDataLoading(true)
@@ -191,31 +181,98 @@ const RemoteClientsListPage: FC<any> = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [storedRemoteStore.remoteClients])
 
+    const getStatusData = useCallback((status: RemoteClientStatusesType) => {
+        switch (status) {
+            case remoteClientStatuses.DIFFERENT_OWNER:
+                return {
+                    message: _(t.occupied),
+                    status: states.OCCUPIED,
+                }
+            case remoteClientStatuses.UNREACHABLE:
+                return {
+                    message: _(t.unReachable),
+                    status: states.OFFLINE,
+                }
+            case remoteClientStatuses.REACHABLE:
+            default:
+                return {
+                    message: _(t.reachable),
+                    status: states.ONLINE,
+                }
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
+    const columns = useMemo(
+        () => [
+            {
+                Header: _(g.name),
+                accessor: 'clientName',
+                Cell: ({ value, row }: { value: string; row: any }) => {
+                    const remoteClientName = value || NO_DEVICE_NAME
+
+                    if (row.original.status === remoteClientStatuses.UNREACHABLE) {
+                        return <span>{remoteClientName}</span>
+                    }
+                    return (
+                        <Link to={`/remote-clients/${row.original?.id}`}>
+                            <span className='no-wrap-text'>{remoteClientName}</span>
+                        </Link>
+                    )
+                },
+            },
+            {
+                Header: _(t.ipAddress),
+                accessor: 'clientUrl',
+                style: { width: '350px' },
+                Cell: ({ value }: { value: string }) => <span className='no-wrap-text'>{value}</span>,
+            },
+            {
+                Header: _(g.status),
+                accessor: 'status',
+                style: { width: '200px' },
+                Cell: ({ row }: { row: any }) => {
+                    const statusData = getStatusData(row.original.status)
+                    return <StatusPill label={statusData.message} status={statusData.status} />
+                },
+            },
+            {
+                Header: _(t.version),
+                accessor: 'version',
+                style: { width: '200px' },
+                Cell: ({ value }: { value: string }) => <span className='no-wrap-text'>{value}</span>,
+            },
+            {
+                Header: _(g.action),
+                accessor: 'action',
+                style: { width: '66px' },
+                disableSortBy: true,
+                Cell: ({ row }: any) => (
+                    <TableActionButton
+                        items={[
+                            {
+                                onClick: () => handleOpenDeleteModal(false, [row.original.id]),
+                                label: _(g.delete),
+                                icon: <IconTrash />,
+                            },
+                            {
+                                onClick: () => navigate(`/remote-clients/${row.original.id}/configuration`),
+                                label: _(g.edit),
+                                icon: <IconEdit />,
+                            },
+                        ]}
+                    />
+                ),
+                className: 'actions',
+            },
+        ],
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        []
+    )
+
     return (
         <PageLayout
-            breadcrumbs={[
-                {
-                    label: _(t.remoteUiClient),
-                },
-            ]}
-            footer={
-                <Footer
-                    footerExpanded={footerExpanded}
-                    paginationComponent={<div id='paginationPortalTarget'></div>}
-                    recentTasksPortal={<div id='recentTasksPortalTarget'></div>}
-                    recentTasksPortalTitle={
-                        <span
-                            id='recentTasksPortalTitleTarget'
-                            onClick={() => {
-                                isFunction(setFooterExpanded) && setFooterExpanded(!footerExpanded)
-                            }}
-                        >
-                            {_(t.pendingCommands)}
-                        </span>
-                    }
-                    setFooterExpanded={setFooterExpanded}
-                />
-            }
+            breadcrumbs={[{ label: _(t.remoteClients), link: '/' }]}
             header={<RemoteClientsListHeader dataLoading={dataLoading} onClientClick={() => setAddClientModal(true)} />}
             title={_(t.remoteUiClient)}
         >
@@ -249,16 +306,25 @@ const RemoteClientsListPage: FC<any> = () => {
                 onFormSubmit={handleClientAdd}
                 show={addClientModal}
             />
-            <PendingCommandsExpandableList />
-            <RemoteClientsList
-                data={remoteClients || []}
-                handleOpenDeleteModal={handleOpenDeleteModal}
-                isAllSelected={isAllSelected}
-                selectedClients={selectedClients}
-                setIsAllSelected={setIsAllSelected}
-                setSelectedClients={setSelectedClients}
+
+            <TableList
+                columns={columns}
+                data={remoteClients}
+                defaultSortBy={[
+                    {
+                        id: 'clientName',
+                        desc: false,
+                    },
+                ]}
+                i18n={{
+                    multiSelected: _(t.remoteClients),
+                    singleSelected: _(t.remoteClient),
+                }}
+                onDeleteClick={handleOpenDeleteModal}
+                primaryAttribute='clientName'
                 unselectRowsToken={unselectRowsToken}
             />
+
             <DeleteModal
                 footerActions={[
                     {
@@ -277,9 +343,9 @@ const RemoteClientsListPage: FC<any> = () => {
                 maxWidthTitle={320}
                 minWidth={440}
                 onClose={handleCloseDeleteModal}
-                show={deleteModalOpen}
-                subTitle={selectedClientsCount === 1 && selectedRemoteClient ? selectedRemoteClient?.clientName : null}
-                title={selectedClientsCount === 1 ? _(t.deleteClientMessage) : _(t.deleteClientsMessage, { count: selectedClientsCount })}
+                show={selectedCount > 0}
+                subTitle={selectedCount === 1 && selectedRemoteClient ? selectedRemoteClient?.clientName : null}
+                title={selectedCount === 1 ? _(t.deleteClientMessage) : _(t.deleteClientsMessage, { count: selectedCount })}
             />
         </PageLayout>
     )
