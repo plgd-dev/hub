@@ -66,6 +66,8 @@ export const defaultMenu = {
     remoteClients: 'ENABLED',
     pendingCommands: 'ENABLED',
     deviceProvisioning: 'ENABLED',
+    docs: 'ENABLED',
+    chatRoom: 'ENABLED',
 }
 
 export const getMenu = (menuConfig: any): MenuGroup[] => [
@@ -226,20 +228,14 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                 icon: <IconDocs />,
                 id: '20',
                 title: <MenuTranslate id='menuDocs' />,
-                link: '/docs',
-                paths: ['/docs'],
-                exact: true,
-                disabled: true,
+                link: '//docs.plgd.dev',
                 visibility: menuConfig.docs,
             },
             {
                 icon: <IconChat />,
                 id: '21',
                 title: <MenuTranslate id='menuChatRoom' />,
-                link: '/chat-room',
-                paths: ['/hat-room'],
-                exact: true,
-                disabled: true,
+                link: '//discord.com/channels/978923432056066059/978923432836218882',
                 visibility: menuConfig.chatRoom,
             },
         ],
