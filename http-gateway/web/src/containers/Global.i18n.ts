@@ -97,4 +97,12 @@ export const messages = defineMessages({
         id: 'app.done',
         defaultMessage: 'Done',
     },
+    created: {
+        id: 'app.created',
+        defaultMessage: 'Created',
+    },
+    expires: {
+        id: 'app.expires',
+        defaultMessage: 'Expires',
+    },
 })

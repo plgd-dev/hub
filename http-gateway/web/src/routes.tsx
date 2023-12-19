@@ -41,6 +41,8 @@ const ProvisioningRecordsDetailPage = lazy(() => import('@/containers/DeviceProv
 const EnrollmentGroupsListPage = lazy(() => import('./containers/DeviceProvisioning/EnrollmentGroups/ListPage'))
 const LinkedHubsListPage = lazy(() => import('./containers/DeviceProvisioning/LinkedHubs'))
 const LinkedHubsDetailPage = lazy(() => import('./containers/DeviceProvisioning/LinkedHubs/DetailPage'))
+const CertificatesListPage = lazy(() => import('./containers/DeviceProvisioning/Certificates'))
+const CertificatesDetailPage = lazy(() => import('./containers/DeviceProvisioning/Certificates/DetailPage'))
 
 // Pending commands
 const PendingCommandsListPage = lazy(() => import('./containers/PendingCommands/PendingCommandsListPage'))
@@ -155,7 +157,12 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                         link: '/linked-hubs',
                         paths: ['/device-provisioning/linked-hubs', '/device-provisioning/linked-hubs/:hubId'],
                     },
-                    { id: '104', title: <MenuTranslate id='menuCertificates' />, disabled: true, tag: { variant: 'info', text: 'Soon!' } },
+                    {
+                        id: '104',
+                        title: <MenuTranslate id='menuCertificates' />,
+                        link: '/certificates',
+                        paths: ['/device-provisioning/certificates', '/device-provisioning/certificates/:certificateId'],
+                    },
                 ],
             },
             {
@@ -395,6 +402,24 @@ export const Routes = () => {
                     </Suspense>
                 }
                 path='/device-provisioning/linked-hubs/:hubId'
+            />
+
+            <Route
+                element={
+                    <Suspense fallback={<Loader />}>
+                        <CertificatesListPage />
+                    </Suspense>
+                }
+                path='/device-provisioning/certificates'
+            />
+
+            <Route
+                element={
+                    <Suspense fallback={<Loader />}>
+                        <CertificatesDetailPage />
+                    </Suspense>
+                }
+                path='/device-provisioning/certificates/certificateId'
             />
 
             <Route

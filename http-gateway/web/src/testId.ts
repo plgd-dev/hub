@@ -57,6 +57,17 @@ const testId = {
                 editNameModal: 'hub-dps-linked-hubs-detail-edit-name-modal',
             },
         },
+        certificates: {
+            detail: {
+                tabCertificateAuthorityConfiguration: 'hub-dps-certificates-detail-tab-certificate-authority-configuration',
+                tabAuthorization: 'hub-dps-certificates-detail-tab-Authorization',
+                deleteButton: 'hub-dps-certificates-detail-delete-button',
+                editNameButton: 'hub-dps-certificates-detail-edit-name-button',
+                deleteButtonCancel: 'hub-dps-certificates-detail-delete-button-cancel',
+                deleteButtonConfirm: 'hub-dps-certificates-detail-delete-button-confirm',
+                editNameModal: 'hub-dps-certificates-detail-edit-name-modal',
+            },
+        },
     },
 }
 
