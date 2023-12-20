@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"time"
 
 	ca "github.com/plgd-dev/hub/v2/certificate-authority/service"
 	caService "github.com/plgd-dev/hub/v2/certificate-authority/test"
@@ -176,6 +177,9 @@ func SetUp(ctx context.Context, t require.TestingT, opts ...SetUpOption) (tearDo
 	caShutdown := caService.New(t, config.CA)
 	secureGWShutdown := coapgwTest.New(t, config.COAPGW)
 
+	// wait for all services to start
+	time.Sleep(time.Second)
+
 	return func() {
 		caShutdown()
 		c2cgwShutdown()
@@ -185,6 +189,9 @@ func SetUp(ctx context.Context, t require.TestingT, opts ...SetUpOption) (tearDo
 		raShutdown()
 		isShutdown()
 		oauthShutdown()
+
+		// wait for all services to be closed
+		time.Sleep(time.Second)
 	}
 }
 

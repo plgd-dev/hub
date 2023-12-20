@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"os"
 	"os/exec"
 	"sort"
@@ -572,13 +573,7 @@ func OnboardDevSimForClient(ctx context.Context, t *testing.T, c pb.GrpcGatewayC
 	}
 
 	return deviceID, func() {
-		client, err := NewSDKClient()
-		require.NoError(t, err)
-		err = client.DisownDevice(ctx, deviceID)
-		require.NoError(t, err)
-		err = client.Close(ctx)
-		require.NoError(t, err)
-		time.Sleep(time.Second * 2)
+		DisownDevice(t, deviceID)
 	}
 }
 
@@ -595,6 +590,19 @@ func OffBoardDevSim(ctx context.Context, t *testing.T, deviceID string) {
 
 	err = devClient.OffboardDevice(ctx, deviceID)
 	require.NoError(t, err)
+}
+
+func DisownDevice(t *testing.T, deviceID string) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*8)
+	defer cancel()
+	client, err := NewSDKClient()
+	require.NoError(t, err)
+	defer func() {
+		_ = client.Close(ctx)
+	}()
+	err = client.DisownDevice(ctx, deviceID)
+	require.NoError(t, err)
+	time.Sleep(time.Second * 2)
 }
 
 func WaitForDevice(t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, deviceID, subID, correlationID string, expectedResources []schema.ResourceLink) {
@@ -996,4 +1004,27 @@ func GenerateIDbyIdx(prefix string, deviceIndex int) string {
 
 func GenerateDeviceIDbyIdx(deviceIndex int) string {
 	return GenerateIDbyIdx("d", deviceIndex)
+}
+
+func IsListenSocketClosed(t require.TestingT, target string, addStr string) bool {
+	if strings.Contains(target, "udp") {
+		addr, err := net.ResolveUDPAddr(target, addStr)
+		require.NoError(t, err)
+		c, err := net.ListenUDP(target, addr)
+		if err != nil {
+			return false
+		}
+		err = c.Close()
+		require.NoError(t, err)
+		return true
+	}
+	addr, err := net.ResolveTCPAddr(target, addStr)
+	require.NoError(t, err)
+	c, err := net.ListenTCP(target, addr)
+	if err != nil {
+		return false
+	}
+	err = c.Close()
+	require.NoError(t, err)
+	return true
 }
