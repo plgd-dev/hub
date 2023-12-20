@@ -11,6 +11,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	coapService "github.com/plgd-dev/hub/v2/pkg/net/coap/service"
+	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
 )
@@ -69,6 +70,29 @@ func SetUp(t require.TestingT) (tearDown func()) {
 	return New(t, MakeConfig(t))
 }
 
+func checkForClosedSockets(t require.TestingT, cfg service.Config) {
+	protocolClosed := make([]bool, len(cfg.APIs.COAP.Protocols))
+	// wait for all sockets to be closed - max 3 minutes = 900*200
+	for j := 0; j < 900; j++ {
+		allClosed := true
+		for i, protocol := range cfg.APIs.COAP.Protocols {
+			if protocolClosed[i] {
+				continue
+			}
+			protocolClosed[i] = test.IsListenSocketClosed(t, string(protocol), cfg.APIs.COAP.Addr)
+			if protocolClosed[i] {
+				continue
+			}
+			allClosed = false
+			break
+		}
+		if allClosed {
+			break
+		}
+		time.Sleep(time.Millisecond * 200)
+	}
+}
+
 // New creates test coap-gateway.
 func New(t require.TestingT, cfg service.Config) func() {
 	ctx := context.Background()
@@ -92,5 +116,7 @@ func New(t require.TestingT, cfg service.Config) func() {
 		wg.Wait()
 		err = fileWatcher.Close()
 		require.NoError(t, err)
+
+		checkForClosedSockets(t, cfg)
 	}
 }

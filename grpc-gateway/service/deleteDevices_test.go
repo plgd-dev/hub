@@ -59,6 +59,7 @@ func TestRequestHandlerDeleteDevices(t *testing.T) {
 
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
+
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
