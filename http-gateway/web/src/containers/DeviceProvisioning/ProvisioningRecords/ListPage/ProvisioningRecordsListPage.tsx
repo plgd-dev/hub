@@ -21,6 +21,7 @@ const ProvisioningRecordsListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
 
     const { data, loading, error, refresh } = useProvisioningRecordsList()
+
     const navigate = useNavigate()
 
     const [selected, setSelected] = useState<string[]>([])
@@ -50,6 +51,11 @@ const ProvisioningRecordsListPage: FC<any> = () => {
 
     const columns = useMemo(
         () => [
+            {
+                Header: _(t.attestationID),
+                accessor: 'attestation.x509.commonName',
+                Cell: ({ value }: { value: string | number }) => <span className='no-wrap-text'>{value || '-'}</span>,
+            },
             {
                 Header: _(t.enrollmentGroup),
                 accessor: 'enrollmentGroupData.name',

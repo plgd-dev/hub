@@ -203,6 +203,7 @@ const DevicesListPage: FC<any> = () => {
             breadcrumbs={[{ label: _(menuT.devices), link: '/' }]}
             header={<DevicesListHeader loading={loading} refresh={handleRefresh} />}
             loading={loading}
+            pendingCommands={true}
             title={_(menuT.devices)}
         >
             <TableList

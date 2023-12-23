@@ -16,11 +16,20 @@ import DevicesDetailsHeader from '../DevicesDetailsHeader'
 import { devicesStatuses, NO_DEVICE_NAME } from '../../constants'
 import { getDeviceChangeResourceHref, handleTwinSynchronizationErrors, isDeviceOnline } from '../../utils'
 import { updateDevicesResourceApi, updateDeviceTwinSynchronizationApi } from '../../rest'
-import { useDeviceDetails, useDevicePendingCommands, useDevicesResources, useDeviceSoftwareUpdateDetails } from '../../hooks'
+import {
+    useDeviceDetails,
+    useDevicePendingCommands,
+    useDevicesResources,
+    useDeviceSoftwareUpdateDetails,
+    useDeviceCertificates,
+    useDeviceProvisioningRecords,
+} from '../../hooks'
 import { messages as t } from '../../Devices.i18n'
 import './DevicesDetailsPage.scss'
 import Tab1 from './Tabs/Tab1'
 import Tab2 from './Tabs/Tab2'
+import Tab3 from './Tabs/Tab3'
+import Tab4 from './Tabs/Tab4'
 import { Props } from './DevicesDetailsPage.types'
 import notificationId from '@/notificationId'
 import testId from '@/testId'
@@ -40,7 +49,9 @@ const DevicesDetailsPage: FC<Props> = (props) => {
     const { data, updateData, loading, error: deviceError } = useDeviceDetails(id)
     const { data: softwareUpdateData, refresh: refreshSoftwareUpdate } = useDeviceSoftwareUpdateDetails(id)
     const { data: resourcesData, loading: loadingResources, error: resourcesError, refresh } = useDevicesResources(id)
-    const { data: pendingCommandsData, refresh: refreshPendingCommands } = useDevicePendingCommands(id)
+    const { data: pendingCommandsData, refresh: refreshPendingCommands, loading: pendingCommandsLoading } = useDevicePendingCommands(id)
+    const { data: certificates, loading: certificatesLoading } = useDeviceCertificates(id)
+    const { data: provisioningRecords, loading: provisioningRecordsLoading } = useDeviceProvisioningRecords(id)
 
     const wellKnownConfig = security.getWellKnowConfig() as WellKnownConfigType & {
         defaultCommandTimeToLive: number
@@ -69,15 +80,29 @@ const DevicesDetailsPage: FC<Props> = (props) => {
         setShowEditNameModal(true)
     }, [])
 
-    const handleTabChange = useCallback((i: number) => {
-        setActiveTabItem(i)
-
-        navigate(`/devices/${id}${i === 1 ? '/resources' : ''}`, { replace: true })
-
-        refreshPendingCommands()
-        refreshSoftwareUpdate()
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+    const getNavigationByTab = useCallback((i: number) => {
+        switch (i) {
+            case 0:
+                return ''
+            case 1:
+                return '/resources'
+            case 2:
+                return '/certificates'
+        }
     }, [])
+
+    const handleTabChange = useCallback(
+        (i: number) => {
+            setActiveTabItem(i)
+
+            navigate(`/devices/${id}${getNavigationByTab(i)}`, { replace: true })
+
+            refreshPendingCommands()
+            refreshSoftwareUpdate()
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [getNavigationByTab, id]
+    )
 
     if (deviceError) {
         return <NotFoundPage message={_(t.deviceNotFoundMessage, { id })} title={_(t.deviceNotFound)} />
@@ -181,7 +206,8 @@ const DevicesDetailsPage: FC<Props> = (props) => {
                 />
             }
             headlineStatusTag={<StatusTag variant={isOnline ? 'success' : 'error'}>{isOnline ? _(t.online) : _(t.offline)}</StatusTag>}
-            loading={loading || twinSyncLoading}
+            loading={loading || twinSyncLoading || pendingCommandsLoading || certificatesLoading || provisioningRecordsLoading}
+            pendingCommands={true}
             title={deviceName}
         >
             <Tabs
@@ -226,6 +252,20 @@ const DevicesDetailsPage: FC<Props> = (props) => {
                                 resourcesData={resourcesData}
                             />
                         ),
+                    },
+                    {
+                        content: <Tab3 certificates={certificates} />,
+                        dataTestId: testId.devices.detail.tabCertificates,
+                        disabled: certificates?.length === 0 || certificatesLoading,
+                        id: 2,
+                        name: _(t.certificates),
+                    },
+                    {
+                        content: <Tab4 provisioningRecords={provisioningRecords} />,
+                        dataTestId: testId.devices.detail.tabProvisioningRecords,
+                        disabled: provisioningRecords?.length === 0 || provisioningRecordsLoading,
+                        id: 3,
+                        name: _(t.dps),
                     },
                 ]}
             />

@@ -41,8 +41,8 @@ const ProvisioningRecordsDetailPage = lazy(() => import('@/containers/DeviceProv
 const EnrollmentGroupsListPage = lazy(() => import('./containers/DeviceProvisioning/EnrollmentGroups/ListPage'))
 const LinkedHubsListPage = lazy(() => import('./containers/DeviceProvisioning/LinkedHubs'))
 const LinkedHubsDetailPage = lazy(() => import('./containers/DeviceProvisioning/LinkedHubs/DetailPage'))
-const CertificatesListPage = lazy(() => import('./containers/DeviceProvisioning/Certificates'))
-const CertificatesDetailPage = lazy(() => import('./containers/DeviceProvisioning/Certificates/DetailPage'))
+const CertificatesListPage = lazy(() => import('./containers/Certificates'))
+const CertificatesDetailPage = lazy(() => import('@/containers/Certificates/DetailPage'))
 
 // Pending commands
 const PendingCommandsListPage = lazy(() => import('./containers/PendingCommands/PendingCommandsListPage'))
@@ -65,6 +65,7 @@ export const defaultMenu = {
     configuration: 'ENABLED',
     remoteClients: 'ENABLED',
     pendingCommands: 'ENABLED',
+    certificates: 'ENABLED',
     deviceProvisioning: 'ENABLED',
     docs: 'ENABLED',
     chatRoom: 'ENABLED',
@@ -88,7 +89,7 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                 id: '1',
                 title: <MenuTranslate id='menuDevices' />,
                 link: '/',
-                paths: ['/', '/devices/:id', '/devices/:id/resources', '/devices/:id/resources/:href'],
+                paths: ['/', '/devices/:id', '/devices/:id/resources', '/devices/:id/resources/:href', '/devices/:id/certificates', '/devices/:id/dps'],
                 exact: true,
                 dataTestId: testId.menu.devices,
                 visibility: menuConfig.devices,
@@ -127,6 +128,15 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                 exact: true,
                 visibility: menuConfig.pendingCommands,
             },
+            {
+                icon: <IconPendingCommands />,
+                id: '5',
+                title: <MenuTranslate id='menuCertificates' />,
+                link: '/certificates',
+                paths: ['/certificates', '/certificates/:certificateId'],
+                exact: true,
+                visibility: menuConfig.certificates,
+            },
         ],
     },
     {
@@ -158,12 +168,6 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                         title: <MenuTranslate id='menuLinkedHubs' />,
                         link: '/linked-hubs',
                         paths: ['/device-provisioning/linked-hubs', '/device-provisioning/linked-hubs/:hubId'],
-                    },
-                    {
-                        id: '104',
-                        title: <MenuTranslate id='menuCertificates' />,
-                        link: '/certificates',
-                        paths: ['/device-provisioning/certificates', '/device-provisioning/certificates/:certificateId'],
                     },
                 ],
             },
@@ -272,6 +276,7 @@ export const Routes = () => {
                 }
                 path='/'
             />
+
             <Route
                 element={
                     <Suspense fallback={<Loader />}>
@@ -280,6 +285,7 @@ export const Routes = () => {
                 }
                 path='/devices/:id'
             />
+
             <Route
                 element={
                     <Suspense fallback={<Loader />}>
@@ -288,6 +294,7 @@ export const Routes = () => {
                 }
                 path='/devices/:id/resources'
             />
+
             <Route
                 element={
                     <Suspense fallback={<Loader />}>
@@ -300,11 +307,30 @@ export const Routes = () => {
             <Route
                 element={
                     <Suspense fallback={<Loader />}>
+                        <DevicesDetailsPage defaultActiveTab={2} />
+                    </Suspense>
+                }
+                path='/devices/:id/certificates'
+            />
+
+            <Route
+                element={
+                    <Suspense fallback={<Loader />}>
+                        <DevicesDetailsPage defaultActiveTab={3} />
+                    </Suspense>
+                }
+                path='/devices/:id/dps'
+            />
+
+            <Route
+                element={
+                    <Suspense fallback={<Loader />}>
                         <RemoteClientsListPage />
                     </Suspense>
                 }
                 path='/remote-clients'
             />
+
             <Route
                 element={
                     <Suspense fallback={<Loader />}>
@@ -313,6 +339,7 @@ export const Routes = () => {
                 }
                 path='/remote-clients/:id'
             />
+
             <Route
                 element={
                     <Suspense fallback={<Loader />}>
@@ -321,6 +348,7 @@ export const Routes = () => {
                 }
                 path='/remote-clients/:id/configuration'
             />
+
             <Route
                 element={
                     <Suspense fallback={<Loader />}>
@@ -329,6 +357,7 @@ export const Routes = () => {
                 }
                 path='/remote-clients/:id/devices/:deviceId'
             />
+
             <Route
                 element={
                     <Suspense fallback={<Loader />}>
@@ -337,6 +366,7 @@ export const Routes = () => {
                 }
                 path='/remote-clients/:id/devices/:deviceId/resources'
             />
+
             <Route
                 element={
                     <Suspense fallback={<Loader />}>
@@ -344,6 +374,24 @@ export const Routes = () => {
                     </Suspense>
                 }
                 path='/remote-clients/:id/devices/:deviceId/resources/*'
+            />
+
+            <Route
+                element={
+                    <Suspense fallback={<Loader />}>
+                        <CertificatesListPage />
+                    </Suspense>
+                }
+                path='/certificates'
+            />
+
+            <Route
+                element={
+                    <Suspense fallback={<Loader />}>
+                        <CertificatesDetailPage />
+                    </Suspense>
+                }
+                path='/certificates/:certificateId'
             />
 
             <Route
@@ -398,24 +446,6 @@ export const Routes = () => {
                     </Suspense>
                 }
                 path='/device-provisioning/linked-hubs/:hubId'
-            />
-
-            <Route
-                element={
-                    <Suspense fallback={<Loader />}>
-                        <CertificatesListPage />
-                    </Suspense>
-                }
-                path='/device-provisioning/certificates'
-            />
-
-            <Route
-                element={
-                    <Suspense fallback={<Loader />}>
-                        <CertificatesDetailPage />
-                    </Suspense>
-                }
-                path='/device-provisioning/certificates/certificateId'
             />
 
             <Route

@@ -62,21 +62,16 @@ export const useDeviceDetails = (deviceId: string) => {
     return { data, updateData, ...rest }
 }
 
-export const useDeviceSoftwareUpdateDetails = (deviceId: string) => {
+export const useDeviceSoftwareUpdateDetails = (deviceId: string): StreamApiPropsType => {
     const { telemetryWebTracer } = useContext(AppContext)
-    const { data, updateData, ...rest }: StreamApiPropsType = useStreamApi(
-        `${getConfig().httpGatewayAddress}${devicesApiEndpoints.DEVICES}/${deviceId}/resources?type=oic.r.softwareupdate`,
-        {
-            streamApi: false,
-            telemetryWebTracer,
-            telemetrySpan: 'get-device-software-update-detail',
-        }
-    )
-
-    return { data, updateData, ...rest }
+    return useStreamApi(`${getConfig().httpGatewayAddress}${devicesApiEndpoints.DEVICES}/${deviceId}/resources?type=oic.r.softwareupdate`, {
+        streamApi: false,
+        telemetryWebTracer,
+        telemetrySpan: 'get-device-software-update-detail',
+    })
 }
 
-export const useDevicesResources = (deviceId: string) => {
+export const useDevicesResources = (deviceId: string): StreamApiPropsType => {
     const { telemetryWebTracer } = useContext(AppContext)
     const { data, updateData, ...rest }: StreamApiPropsType = useStreamApi(
         `${getConfig().httpGatewayAddress}${devicesApiEndpoints.DEVICES_RESOURCES}?device_id_filter=${deviceId}`,
@@ -115,12 +110,26 @@ export const useDevicesResources = (deviceId: string) => {
     return { data, updateData, ...rest }
 }
 
-export const useDevicePendingCommands = (deviceId: string) => {
+export const useDevicePendingCommands = (deviceId: string): StreamApiPropsType => {
     const { telemetryWebTracer } = useContext(AppContext)
-    const { data, updateData, ...rest }: StreamApiPropsType = useStreamApi(
-        `${getConfig().httpGatewayAddress}${devicesApiEndpoints.DEVICES}/${deviceId}/pending-commands`,
-        { telemetryWebTracer, telemetrySpan: 'get-device-pending-commands' }
-    )
+    return useStreamApi(`${getConfig().httpGatewayAddress}${devicesApiEndpoints.DEVICES}/${deviceId}/pending-commands`, {
+        telemetryWebTracer,
+        telemetrySpan: 'get-device-pending-commands',
+    })
+}
 
-    return { data, updateData, ...rest }
+export const useDeviceCertificates = (deviceId: string): StreamApiPropsType => {
+    const { telemetryWebTracer } = useContext(AppContext)
+    return useStreamApi(`${getConfig().httpGatewayAddress}/api/v1/signing/records?deviceIdFilter=${deviceId}`, {
+        telemetryWebTracer,
+        telemetrySpan: 'get-device-certificates',
+    })
+}
+
+export const useDeviceProvisioningRecords = (deviceId: string): StreamApiPropsType => {
+    const { telemetryWebTracer } = useContext(AppContext)
+    return useStreamApi(`${getConfig().httpGatewayAddress}/api/v1/provisioning-records?deviceIdFilter=${deviceId}`, {
+        telemetryWebTracer,
+        telemetrySpan: 'get-device-provisioning-records',
+    })
 }

@@ -10,6 +10,8 @@ const testId = {
             layout: 'hub-devices-detail-layout',
             tabInformation: 'hub-devices-detail-tab-information',
             tabResources: 'hub-devices-detail-tab-resources',
+            tabCertificates: 'hub-devices-detail-tab-certificates',
+            tabProvisioningRecords: 'hub-devices-detail-tab-provisioning-records',
             informationTableId: 'hub-devices-detail-information-table-id',
             editNameButton: 'hub-devices-detail-edit-name-button',
             editNameModal: 'hub-devices-detail-edit-name-modal',

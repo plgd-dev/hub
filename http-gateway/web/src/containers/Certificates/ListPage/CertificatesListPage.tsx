@@ -9,20 +9,17 @@ import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 
 import PageLayout from '@/containers/Common/PageLayout'
 import TableList from '@/containers/Common/TableList/TableList'
-import { messages as dpsT } from '../../DeviceProvisioning.i18n'
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '../Certificates.i18n'
 import notificationId from '@/notificationId'
 import ListHeader from '../ListHeader'
+import { useCertificatesList } from '@/containers/Certificates/hooks'
+import DateFormat from '@/containers/PendingCommands/DateFormat'
 
 const CertificatesListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
 
-    // tmp
-    const data: any = useMemo(() => [], [])
-    const loading = false
-    const error = false
-    const refresh = () => {}
+    const { data, error, loading, refresh } = useCertificatesList()
 
     const navigate = useNavigate()
 
@@ -31,7 +28,7 @@ const CertificatesListPage: FC<any> = () => {
     const [deleting, setDeleting] = useState(false)
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    const breadcrumbs = useMemo(() => [{ label: _(dpsT.deviceProvisioning), link: '/device-provisioning' }, { label: _(t.certificate) }], [])
+    const breadcrumbs = useMemo(() => [{ label: _(t.certificate) }], [])
 
     const handleOpenDeleteModal = useCallback((_isAllSelected: boolean, selection: string[]) => {
         setSelected(selection)
@@ -70,14 +67,14 @@ const CertificatesListPage: FC<any> = () => {
         () => [
             {
                 Header: _(g.name),
-                accessor: 'name',
+                accessor: 'commonName',
                 Cell: ({ value, row }: { value: string | number; row: any }) => (
                     <a
                         data-test-id={`dps-certificates-${row.id}`}
-                        href={`/device-provisioning/certificates/${row.original.id}`}
+                        href={`/certificates/${row.original.id}`}
                         onClick={(e) => {
                             e.preventDefault()
-                            navigate(`/device-provisioning/certificates/${row.original.id}`)
+                            navigate(`/certificates/${row.original.id}`)
                         }}
                     >
                         <span className='no-wrap-text'>{value}</span>
@@ -86,13 +83,13 @@ const CertificatesListPage: FC<any> = () => {
             },
             {
                 Header: _(g.created),
-                accessor: 'created',
-                Cell: ({ value }: { value: string | number }) => <span className='no-wrap-text'>{value}</span>,
+                accessor: 'creationDate',
+                Cell: ({ value }: { value: string | number }) => <DateFormat value={value} />,
             },
             {
                 Header: _(g.expires),
-                accessor: 'expires',
-                Cell: ({ value }: { value: string | number }) => <span className='no-wrap-text'>{value}</span>,
+                accessor: 'credential.validUntilDate',
+                Cell: ({ value }: { value: string | number }) => (value ? <DateFormat value={value} /> : '-'),
             },
             {
                 Header: _(t.subject),
@@ -121,7 +118,7 @@ const CertificatesListPage: FC<any> = () => {
                                     icon: <IconTrash />,
                                 },
                                 {
-                                    onClick: () => navigate(`/device-provisioning/certificates/${id}`),
+                                    onClick: () => navigate(`/certificates/${id}`),
                                     label: _(g.view),
                                     icon: <IconArrowDetail />,
                                 },
@@ -149,7 +146,7 @@ const CertificatesListPage: FC<any> = () => {
                 data={data}
                 defaultSortBy={[
                     {
-                        id: 'name',
+                        id: 'commonName',
                         desc: false,
                     },
                 ]}

@@ -7,7 +7,7 @@ import Modal from '@shared-ui/components/Atomic/Modal'
 
 import { Props } from './ListHeader.types'
 import { messages as t } from '../Certificates.i18n'
-import { messages as g } from '../../../Global.i18n'
+import { messages as g } from '../../Global.i18n'
 
 const ListHeader: FC<Props> = (props) => {
     const { formatMessage: _ } = useIntl()

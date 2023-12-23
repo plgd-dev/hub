@@ -14,7 +14,7 @@ import { PendingCommandsExpandableList } from '@/containers/PendingCommands'
 
 const PageLayout: FC<Props> = (props) => {
     const { formatMessage: _ } = useIntl()
-    const { children, breadcrumbs, deviceId, ...rest } = props
+    const { children, breadcrumbs, deviceId, pendingCommands, ...rest } = props
     const { footerExpanded, setFooterExpanded, collapsed } = useContext(AppContext)
 
     const [isDomReady, setIsDomReady] = useState(false)
@@ -31,23 +31,25 @@ const PageLayout: FC<Props> = (props) => {
                 <Footer
                     footerExpanded={footerExpanded}
                     paginationComponent={<div id='paginationPortalTarget'></div>}
-                    recentTasksPortal={<div id='recentTasksPortalTarget'></div>}
+                    recentTasksPortal={pendingCommands && <div id='recentTasksPortalTarget'></div>}
                     recentTasksPortalTitle={
-                        <span
-                            id='recentTasksPortalTitleTarget'
-                            onClick={() => {
-                                isFunction(setFooterExpanded) && setFooterExpanded(!footerExpanded)
-                            }}
-                        >
-                            {_(g.pendingCommands)}
-                        </span>
+                        pendingCommands && (
+                            <span
+                                id='recentTasksPortalTitleTarget'
+                                onClick={() => {
+                                    isFunction(setFooterExpanded) && setFooterExpanded(!footerExpanded)
+                                }}
+                            >
+                                {_(g.pendingCommands)}
+                            </span>
+                        )
                     }
                     setFooterExpanded={setFooterExpanded}
                 />
             }
         >
             {isDomReady && ReactDOM.createPortal(<Breadcrumbs items={breadcrumbs} />, document.querySelector('#breadcrumbsPortalTarget') as Element)}
-            <PendingCommandsExpandableList deviceId={deviceId} />
+            {pendingCommands && <PendingCommandsExpandableList deviceId={deviceId} />}
             {children}
         </PageLayoutShared>
     )

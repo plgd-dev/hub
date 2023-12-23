@@ -23,6 +23,8 @@ const EnrollmentGroupsListPage: FC<any> = () => {
     const { data, loading, error, refresh } = useEnrollmentGroupDataList()
     const navigate = useNavigate()
 
+    console.log(data)
+
     const [selected, setSelected] = useState<string[]>([])
     const [unselectRowsToken, setUnselectRowsToken] = useState(1)
     const [deleting, setDeleting] = useState(false)

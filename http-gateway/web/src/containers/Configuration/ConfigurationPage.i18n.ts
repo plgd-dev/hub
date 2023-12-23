@@ -1,9 +1,9 @@
 import { defineMessages } from '@formatjs/intl'
 
 export const messages = defineMessages({
-    configurationPage: {
-        id: 'configurationPage.configurationPage',
-        defaultMessage: 'Configuration Page',
+    configuration: {
+        id: 'configurationPage.configuration',
+        defaultMessage: 'Configuration',
     },
     configurationUpdated: {
         id: 'configurationPage.configurationUpdated',
@@ -32,5 +32,53 @@ export const messages = defineMessages({
     settings: {
         id: 'configurationPage.settings',
         defaultMessage: 'settings',
+    },
+    theme: {
+        id: 'configurationPage.theme',
+        defaultMessage: 'Theme',
+    },
+    colorPalette: {
+        id: 'configurationPage.colorPalette',
+        defaultMessage: 'Color Palette',
+    },
+    general: {
+        id: 'configurationPage.general',
+        defaultMessage: 'General',
+    },
+    themeGenerator: {
+        id: 'configurationPage.themeGenerator',
+        defaultMessage: 'Theme Generator',
+    },
+    logoHeight: {
+        id: 'configurationPage.logoHeight',
+        defaultMessage: 'Logo Height (px)',
+    },
+    logoHeightError: {
+        id: 'configurationPage.logoHeightError',
+        defaultMessage: 'Invalid Logo Height',
+    },
+    logoWidth: {
+        id: 'configurationPage.logoWidth',
+        defaultMessage: 'Logo Width (px)',
+    },
+    logoWidthError: {
+        id: 'configurationPage.logoWidthError',
+        defaultMessage: 'Invalid Logo Width',
+    },
+    generate: {
+        id: 'configurationPage.generate',
+        defaultMessage: 'Generate',
+    },
+    themeName: {
+        id: 'configurationPage.themeName',
+        defaultMessage: 'Theme name',
+    },
+    themeNameError: {
+        id: 'configurationPage.themeNameError',
+        defaultMessage: 'Invalid Theme name',
+    },
+    logoSource: {
+        id: 'configurationPage.logoSource',
+        defaultMessage: 'Logo source',
     },
 })

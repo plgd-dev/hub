@@ -4,4 +4,5 @@ import { BreadcrumbItem } from '@shared-ui/components/Layout/Header/Breadcrumbs/
 export type Props = PageLayoutProps & {
     breadcrumbs: BreadcrumbItem[]
     deviceId?: string
+    pendingCommands?: boolean
 }

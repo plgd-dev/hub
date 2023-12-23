@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom'
 import { useIntl } from 'react-intl'
 
 import PageLayout from '@/containers/Common/PageLayout'
-import { messages as dpsT } from '../../DeviceProvisioning.i18n'
+import { messages as dpsT } from '../../DeviceProvisioning/DeviceProvisioning.i18n'
 import { Props } from './CertificatesDetailPage.types'
 import DetailHeader from '../DetailHeader'
 
