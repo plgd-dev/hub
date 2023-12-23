@@ -88,6 +88,8 @@ const DevicesDetailsPage: FC<Props> = (props) => {
                 return '/resources'
             case 2:
                 return '/certificates'
+            case 4:
+                return '/dps'
         }
     }, [])
 
