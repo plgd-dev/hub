@@ -1,7 +1,9 @@
-import React, { FC, useCallback, useContext, useEffect, useState } from 'react'
+import React, { FC, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { Controller, SubmitHandler, useForm } from 'react-hook-form'
 import { useIntl } from 'react-intl'
 import ReactDOM from 'react-dom'
+import debounce from 'lodash/debounce'
+import { useDispatch, useSelector } from 'react-redux'
 
 import { colors } from '@shared-ui/components/Atomic/_utils/colors'
 import { getThemeTemplate } from '@shared-ui/components/Atomic/_theme/template'
@@ -15,22 +17,38 @@ import { useIsMounted } from '@shared-ui/common/hooks'
 import AppContext from '@shared-ui/app/share/AppContext'
 import FormGroup from '@shared-ui/components/Atomic/FormGroup'
 import FormInput, { inputAligns } from '@shared-ui/components/Atomic/FormInput'
+import { isValidHex } from '@shared-ui/components/Atomic/_theme'
 
 import { Props, Inputs } from './Tab2.types'
 import { messages as t } from '../../ConfigurationPage.i18n'
 import { messages as g } from '@/containers/Global.i18n'
+import { setPreviewTheme } from '@/containers/App/slice'
+import { EditorRefType } from '@shared-ui/components/Atomic/Editor/Editor.types'
 
 const Tab2: FC<Props> = (props) => {
     const { isTabActive, resetForm } = props
     const { formatMessage: _ } = useIntl()
     const { collapsed } = useContext(AppContext)
     const isMounted = useIsMounted()
+    const dispatch = useDispatch()
+
+    const appStore = useSelector((state: any) => state.app)
+
+    const editorRef = useRef<EditorRefType>(null)
 
     const [loading, setLoading] = useState(false)
 
+    const defaultColorPalette = useMemo(() => {
+        if (appStore.configuration.previewTheme?.palette) {
+            return appStore.configuration.previewTheme?.palette
+        } else {
+            return colors ?? {}
+        }
+    }, [appStore.configuration.previewTheme])
+
     const {
         handleSubmit,
-        formState: { errors },
+        formState: { errors, isDirty },
         getValues,
         reset,
         control,
@@ -41,7 +59,7 @@ const Tab2: FC<Props> = (props) => {
         reValidateMode: 'onSubmit',
         values: {
             themeName: 'custom theme',
-            colorPalette: colors ?? {},
+            colorPalette: defaultColorPalette,
             logoHeight: 0,
             logoWidth: 0,
             logoSource: '',
@@ -82,6 +100,23 @@ const Tab2: FC<Props> = (props) => {
         })
     }
 
+    const onPaletteSubmit = debounce((jsonPalette) => {
+        const values = getValues()
+
+        if (Object.values(jsonPalette).every(isValidHex)) {
+            dispatch(
+                setPreviewTheme({
+                    palette: jsonPalette,
+                    theme: getThemeTemplate(values.colorPalette, {
+                        height: `${values.logoHeight}px`,
+                        width: `${values.logoWidth}px`,
+                        source: values.logoSource,
+                    }),
+                })
+            )
+        }
+    }, 1000)
+
     const rows: Row[] = [
         {
             attribute: _(t.themeName),
@@ -105,7 +140,16 @@ const Tab2: FC<Props> = (props) => {
                     name='colorPalette'
                     render={({ field: { onChange, value } }) => (
                         <Spacer style={{ width: '100%' }} type='py-4'>
-                            <Editor height='500px' json={value} onChange={(data) => onChange(JSON.parse(data))} />
+                            <Editor
+                                height='500px'
+                                json={value}
+                                onChange={(data) => {
+                                    const json = JSON.parse(data)
+                                    onChange(json)
+                                    onPaletteSubmit(json)
+                                }}
+                                ref={editorRef}
+                            />
                         </Spacer>
                     )}
                 />
@@ -177,15 +221,23 @@ const Tab2: FC<Props> = (props) => {
         link.click()
         document.body.removeChild(link)
         setLoading(false)
+        handleReset()
     }
+
+    const handleReset = useCallback(() => {
+        dispatch(setPreviewTheme(undefined))
+        setValue('colorPalette', colors)
+        editorRef?.current?.setValue(colors)
+        reset()
+    }, [])
 
     return (
         <div>
             <form onSubmit={handleSubmit(onSubmit)}>
-                <SimpleStripTable rows={rows} />
+                <SimpleStripTable leftColSize={6} rightColSize={6} rows={rows} />
             </form>
             {isMounted &&
-                document.querySelector('#modal-root') &&
+                document.querySelector('#innerFooterPortalTarget') &&
                 ReactDOM.createPortal(
                     <BottomPanel
                         actionPrimary={
@@ -200,14 +252,14 @@ const Tab2: FC<Props> = (props) => {
                             </Button>
                         }
                         actionSecondary={
-                            <Button disabled={loading} onClick={() => reset()} variant='secondary'>
+                            <Button disabled={loading} onClick={handleReset} variant='secondary'>
                                 {_(t.reset)}
                             </Button>
                         }
                         leftPanelCollapsed={collapsed}
                         show={isTabActive}
                     />,
-                    document.querySelector('#modal-root') as Element
+                    document.querySelector('#innerFooterPortalTarget') as Element
                 )}
         </div>
     )

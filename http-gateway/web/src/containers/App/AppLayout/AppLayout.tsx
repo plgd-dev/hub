@@ -1,5 +1,5 @@
 import React, { FC, SyntheticEvent, useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, NavLink } from 'react-router-dom'
 import { useIntl } from 'react-intl'
 import { useDispatch, useSelector } from 'react-redux'
 import isFunction from 'lodash/isFunction'
@@ -26,6 +26,7 @@ import Logo from '@shared-ui/components/Atomic/Logo'
 import { Props } from './AppLayout.types'
 import { mather, getMenu, Routes } from '@/routes'
 import { messages as t } from '@/containers/App/App.i18n'
+import { messages as g } from '../../Global.i18n'
 import { readAllNotifications, setNotifications } from '@/containers/Notifications/slice'
 import LeftPanelWrapper from '@/containers/App/AppInner/LeftPanelWrapper/LeftPanelWrapper'
 import { CombinedStoreType } from '@/store/store'
@@ -50,6 +51,8 @@ const AppLayout: FC<Props> = (props) => {
     const notifications = useSelector((state: CombinedStoreType) => state.notifications)
     const appStore = useSelector((state: CombinedStoreType) => state.app)
     const storedRemoteStore = useSelector((state: CombinedStoreType) => state.remoteClients)
+
+    console.log(appStore.configuration.previewTheme)
 
     const theme: ThemeType = useTheme()
 
@@ -183,6 +186,13 @@ const AppLayout: FC<Props> = (props) => {
                             )
                         }
                     />
+                }
+                previewMode={
+                    appStore.configuration.previewTheme ? (
+                        <span>
+                            {_(g.themePreviewMode)} <NavLink to='/configuration/theme-generator'>{_(g.configuration)}</NavLink>
+                        </span>
+                    ) : undefined
                 }
             />
         </App>

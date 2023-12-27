@@ -105,4 +105,12 @@ export const messages = defineMessages({
         id: 'app.expires',
         defaultMessage: 'Expires',
     },
+    configuration: {
+        id: 'app.configuration',
+        defaultMessage: 'Configuration',
+    },
+    themePreviewMode: {
+        id: 'app.themePreviewMode',
+        defaultMessage: 'Theme Preview Mode.',
+    },
 })

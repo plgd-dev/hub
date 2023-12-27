@@ -97,7 +97,7 @@ const App = (props: { mockApp: boolean }) => {
     if (!wellKnownConfig || !theme) {
         return (
             <>
-                <PageLoader loading className='auth-loader ' noOffset={true} />
+                <PageLoader loading className='auth-loader' noOffset={true} />
                 <div className='page-loading-text'>{`${_(g.loading)}...`}</div>
             </>
         )

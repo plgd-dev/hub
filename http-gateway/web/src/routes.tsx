@@ -219,7 +219,7 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                 id: '15',
                 title: <MenuTranslate id='menuConfiguration' />,
                 link: '/configuration',
-                paths: ['/configuration'],
+                paths: ['/configuration', '/configuration/theme-generator'],
                 exact: true,
                 visibility: menuConfig.configuration,
             },
@@ -473,6 +473,15 @@ export const Routes = () => {
                     </Suspense>
                 }
                 path='/configuration'
+            />
+
+            <Route
+                element={
+                    <Suspense fallback={<Loader />}>
+                        <ConfigurationPage defaultActiveTab={1} />
+                    </Suspense>
+                }
+                path='/configuration/theme-generator'
             />
 
             {process.env?.REACT_APP_TEST_VIEW === 'true' && <Route element={<TestPage />} path='/test' />}

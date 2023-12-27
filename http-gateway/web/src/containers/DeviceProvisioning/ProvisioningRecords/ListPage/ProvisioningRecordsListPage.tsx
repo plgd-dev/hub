@@ -16,6 +16,7 @@ import DateFormat from '@/containers/PendingCommands/DateFormat'
 import notificationId from '@/notificationId'
 import PageLayout from '@/containers/Common/PageLayout'
 import TableList from '@/containers/Common/TableList/TableList'
+import StatusTag from '@shared-ui/components/Atomic/StatusTag'
 
 const ProvisioningRecordsListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
@@ -75,6 +76,11 @@ const ProvisioningRecordsListPage: FC<any> = () => {
                 Header: _(t.deviceID),
                 accessor: 'deviceId',
                 Cell: ({ value }: { value: string | number }) => <span className='no-wrap-text'>{value}</span>,
+            },
+            {
+                Header: _(g.status),
+                accessor: 'status',
+                Cell: ({ value }: { value: string | number }) => <StatusTag variant='success'>TODO</StatusTag>,
             },
             {
                 Header: _(t.firstAttestation),
