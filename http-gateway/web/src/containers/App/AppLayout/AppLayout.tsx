@@ -52,8 +52,6 @@ const AppLayout: FC<Props> = (props) => {
     const appStore = useSelector((state: CombinedStoreType) => state.app)
     const storedRemoteStore = useSelector((state: CombinedStoreType) => state.remoteClients)
 
-    console.log(appStore.configuration.previewTheme)
-
     const theme: ThemeType = useTheme()
 
     const [version] = useAppVersion({ requestedDatetime: appStore.version.requestedDatetime })
