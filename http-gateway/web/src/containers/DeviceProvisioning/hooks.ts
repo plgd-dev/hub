@@ -27,7 +27,7 @@ export const useProvisioningRecordsList = (): StreamApiPropsType => {
 
     const { data: enrollmentGroupsData }: StreamApiPropsType = useStreamApi(`${getConfig().httpGatewayAddress}${dpsApiEndpoints.ENROLLMENT_GROUPS}`, {
         telemetryWebTracer,
-        telemetrySpan: 'get-provisioning-records',
+        telemetrySpan: 'get-enrollment-groups',
     })
 
     if (data && enrollmentGroupsData) {
@@ -64,7 +64,7 @@ export const useProvisioningRecordsDetail = (provisioningRecordId?: string): Str
         `${getConfig().httpGatewayAddress}${dpsApiEndpoints.ENROLLMENT_GROUPS}?idFilter=${enrollmentGroupId}`,
         {
             telemetryWebTracer,
-            telemetrySpan: `get-provisioning-record-${enrollmentGroupId}`,
+            telemetrySpan: `get-enrollment-group-${enrollmentGroupId}`,
         }
     )
 
@@ -85,17 +85,31 @@ export const useProvisioningRecordsDetail = (provisioningRecordId?: string): Str
 export const useEnrollmentGroupDataList = (): StreamApiPropsType => {
     const { telemetryWebTracer } = useContext(AppContext)
 
-    const { data, refresh, ...rest }: StreamApiPropsType = useStreamApi(`${getConfig().httpGatewayAddress}${dpsApiEndpoints.ENROLLMENT_GROUPS}`, {
+    return useStreamApi(`${getConfig().httpGatewayAddress}${dpsApiEndpoints.ENROLLMENT_GROUPS}`, {
         telemetryWebTracer,
-        telemetrySpan: 'get-provisioning-records',
+        telemetrySpan: 'get-enrollment-groups-data',
     })
+}
 
-    // const { data: hubsData }: StreamApiPropsType = useStreamApi(`${getConfig().httpGatewayAddress}${dpsApiEndpoints.HUBS}`, {
-    //     telemetryWebTracer,
-    //     telemetrySpan: 'get-hubs',
-    // })
+export const useEnrollmentGroupDetail = (enrollmentGroupId?: string): StreamApiPropsType => {
+    const { telemetryWebTracer } = useContext(AppContext)
 
-    return { data, refresh, ...rest }
+    const { data, ...rest }: StreamApiPropsType = useStreamApi(
+        `${getConfig().httpGatewayAddress}${dpsApiEndpoints.ENROLLMENT_GROUPS}?idFilter=${enrollmentGroupId}`,
+        {
+            telemetryWebTracer,
+            telemetrySpan: `get-enrollment-group-${enrollmentGroupId}`,
+        }
+    )
+
+    if (data) {
+        return {
+            data: data[0],
+            ...rest,
+        }
+    }
+
+    return { data, ...rest }
 }
 
 export const useLinkedHubsList = (): StreamApiPropsType => {
@@ -104,5 +118,14 @@ export const useLinkedHubsList = (): StreamApiPropsType => {
     return useStreamApi(`${getConfig().httpGatewayAddress}${dpsApiEndpoints.HUBS}`, {
         telemetryWebTracer,
         telemetrySpan: 'get-hubs',
+    })
+}
+
+export const useHubDetail = (hubId: string): StreamApiPropsType => {
+    const { telemetryWebTracer } = useContext(AppContext)
+
+    return useStreamApi(`${getConfig().httpGatewayAddress}${dpsApiEndpoints.HUBS}?idFilter=${hubId}}`, {
+        telemetryWebTracer,
+        telemetrySpan: `get-hub-${hubId}`,
     })
 }

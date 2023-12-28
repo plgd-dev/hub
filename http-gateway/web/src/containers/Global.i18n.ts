@@ -111,6 +111,10 @@ export const messages = defineMessages({
     },
     themePreviewMode: {
         id: 'app.themePreviewMode',
-        defaultMessage: 'Theme Preview Mode.',
+        defaultMessage: 'Theme Preview Mode',
+    },
+    ownerID: {
+        id: 'app.ownerID',
+        defaultMessage: 'Owner ID',
     },
 })

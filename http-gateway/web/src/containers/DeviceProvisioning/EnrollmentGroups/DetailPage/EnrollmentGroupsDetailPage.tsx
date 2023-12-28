@@ -1,8 +1,9 @@
-import React, { FC, useCallback, useMemo, useState } from 'react'
+import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useIntl } from 'react-intl'
 
 import Tabs from '@shared-ui/components/Atomic/Tabs'
+import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 
 import PageLayout from '@/containers/Common/PageLayout'
 import { messages as dpsT } from '../../DeviceProvisioning.i18n'
@@ -10,6 +11,9 @@ import { messages as t } from '../EnrollmentGroups.i18n'
 import testId from '@/testId'
 import { Props } from './EnrollmentGroupsDetailPage.types'
 import DetailHeader from '../DetailHeader'
+import Tab1 from './Tabs/Tab1'
+import { useEnrollmentGroupDetail, useHubDetail } from '@/containers/DeviceProvisioning/hooks'
+import notificationId from '@/notificationId'
 
 const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
     const { formatMessage: _ } = useIntl()
@@ -18,7 +22,22 @@ const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
 
     const [activeTabItem, setActiveTabItem] = useState(defaultActiveTab ?? 0)
 
-    console.log(enrollmentId)
+    const { data, loading, error } = useEnrollmentGroupDetail(enrollmentId!)
+    const { data: hubData, loading: hubLoading, error: hubError } = useHubDetail(data?.hubId!)
+
+    console.log(hubData)
+
+    useEffect(() => {
+        const errorF = error || hubError
+
+        if (errorF) {
+            Notification.error(
+                { title: _(t.enrollmentGroupsError), message: errorF },
+                { notificationId: notificationId.HUB_DPS_ENROLLMENT_GROUP_DETAIL_PAGE_ERROR }
+            )
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [error])
 
     const handleTabChange = useCallback((i: number) => {
         setActiveTabItem(i)
@@ -39,7 +58,12 @@ const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
     )
 
     return (
-        <PageLayout breadcrumbs={breadcrumbs} header={<DetailHeader id={enrollmentId!} refresh={() => {}} />} loading={false} title={enrollmentId}>
+        <PageLayout
+            breadcrumbs={breadcrumbs}
+            header={<DetailHeader id={enrollmentId!} refresh={() => {}} />}
+            loading={loading || hubLoading}
+            title={enrollmentId}
+        >
             <Tabs
                 activeItem={activeTabItem}
                 fullHeight={true}
@@ -49,7 +73,7 @@ const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
                         name: _(t.enrollmentConfiguration),
                         id: 0,
                         dataTestId: testId.dps.enrollmentGroups.detail.tabEnrollmentConfiguration,
-                        content: <div>Tab1</div>,
+                        content: <Tab1 data={data} />,
                     },
                     {
                         name: _(t.deviceCredentials),

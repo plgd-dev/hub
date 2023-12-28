@@ -18,12 +18,12 @@ import AppContext from '@shared-ui/app/share/AppContext'
 import FormGroup from '@shared-ui/components/Atomic/FormGroup'
 import FormInput, { inputAligns } from '@shared-ui/components/Atomic/FormInput'
 import { isValidHex } from '@shared-ui/components/Atomic/_theme'
+import { EditorRefType } from '@shared-ui/components/Atomic/Editor/Editor.types'
 
 import { Props, Inputs } from './Tab2.types'
 import { messages as t } from '../../ConfigurationPage.i18n'
 import { messages as g } from '@/containers/Global.i18n'
 import { setPreviewTheme } from '@/containers/App/slice'
-import { EditorRefType } from '@shared-ui/components/Atomic/Editor/Editor.types'
 
 const Tab2: FC<Props> = (props) => {
     const { isTabActive, resetForm } = props
@@ -39,8 +39,8 @@ const Tab2: FC<Props> = (props) => {
     const [loading, setLoading] = useState(false)
 
     const defaultColorPalette = useMemo(() => {
-        if (appStore.configuration.previewTheme?.palette) {
-            return appStore.configuration.previewTheme?.palette
+        if (appStore.configuration.previewTheme?.colorPalette) {
+            return appStore.configuration.previewTheme?.colorPalette
         } else {
             return colors ?? {}
         }
@@ -105,14 +105,13 @@ const Tab2: FC<Props> = (props) => {
 
         if (Object.values(jsonPalette).every(isValidHex)) {
             dispatch(
-                setPreviewTheme({
-                    palette: jsonPalette,
-                    theme: getThemeTemplate(values.colorPalette, {
+                setPreviewTheme(
+                    getThemeTemplate(values.colorPalette, {
                         height: `${values.logoHeight}px`,
                         width: `${values.logoWidth}px`,
                         source: values.logoSource,
-                    }),
-                })
+                    })
+                )
             )
         }
     }, 1000)
