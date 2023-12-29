@@ -37,4 +37,28 @@ export const messages = defineMessages({
         id: 'enrollmentGroups.deleteProvisioningRecordTitle',
         defaultMessage: 'Delete Provisioning Record',
     },
+    deviceAuthentication: {
+        id: 'enrollmentGroups.deviceAuthentication',
+        defaultMessage: 'Device authentication',
+    },
+    matchingCertificate: {
+        id: 'enrollmentGroups.matchingCertificate',
+        defaultMessage: 'Matching Certificate',
+    },
+    enableExpiredCertificates: {
+        id: 'enrollmentGroups.enableExpiredCertificates',
+        defaultMessage: 'Enable Expired Certificates',
+    },
+    nameError: {
+        id: 'enrollmentGroups.nameError',
+        defaultMessage: 'Name error',
+    },
+    fields: {
+        id: 'enrollmentGroups.fields',
+        defaultMessage: 'fields',
+    },
+    field: {
+        id: 'enrollmentGroups.field',
+        defaultMessage: 'field',
+    },
 })

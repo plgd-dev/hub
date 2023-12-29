@@ -15,6 +15,7 @@ import { useIsMounted } from '@shared-ui/common/hooks'
 
 import { Props } from './Tab1.types'
 import { messages as t } from '@/containers/Configuration/ConfigurationPage.i18n'
+import { messages as g } from '../../../Global.i18n'
 import { Inputs } from '@/containers/Configuration/ConfigurationPage.types'
 import { CombinedStoreType } from '@/store/store'
 import { setTheme } from '@/containers/App/slice'
@@ -96,15 +97,15 @@ const Tab1: FC<Props> = (props) => {
                     <BottomPanel
                         actionPrimary={
                             <Button disabled={Object.keys(errors).length > 0} onClick={() => onSubmit(getValues())} variant='primary'>
-                                {_(t.saveChanges)}
+                                {_(g.saveChanges)}
                             </Button>
                         }
                         actionSecondary={
                             <Button onClick={() => reset()} variant='secondary'>
-                                {_(t.reset)}
+                                {_(g.reset)}
                             </Button>
                         }
-                        attribute={_(t.changesMade)}
+                        attribute={_(g.changesMade)}
                         leftPanelCollapsed={collapsed}
                         show={isDirty}
                         value={`${Object.keys(dirtyFields).length} ${Object.keys(dirtyFields).length > 1 ? _(t.settings) : _(t.setting)}`}

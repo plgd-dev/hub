@@ -23,9 +23,7 @@ const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
     const [activeTabItem, setActiveTabItem] = useState(defaultActiveTab ?? 0)
 
     const { data, loading, error } = useEnrollmentGroupDetail(enrollmentId!)
-    const { data: hubData, loading: hubLoading, error: hubError } = useHubDetail(data?.hubId!)
-
-    console.log(hubData)
+    const { data: hubData, loading: hubLoading, error: hubError } = useHubDetail(data?.hubId!, !!data?.hubId)
 
     useEffect(() => {
         const errorF = error || hubError
@@ -73,7 +71,7 @@ const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
                         name: _(t.enrollmentConfiguration),
                         id: 0,
                         dataTestId: testId.dps.enrollmentGroups.detail.tabEnrollmentConfiguration,
-                        content: <Tab1 data={data} />,
+                        content: <Tab1 data={data} hubData={hubData} />,
                     },
                     {
                         name: _(t.deviceCredentials),

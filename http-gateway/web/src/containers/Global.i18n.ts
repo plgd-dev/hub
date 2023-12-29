@@ -117,4 +117,20 @@ export const messages = defineMessages({
         id: 'app.ownerID',
         defaultMessage: 'Owner ID',
     },
+    linkedHub: {
+        id: 'app.linkedHub',
+        defaultMessage: 'Linked Hub',
+    },
+    certificate: {
+        id: 'app.certificate',
+        defaultMessage: 'Certificate',
+    },
+    changesMade: {
+        id: 'configurationPage.changesMade',
+        defaultMessage: 'Changes made',
+    },
+    saveChanges: {
+        id: 'configurationPage.saveChanges',
+        defaultMessage: 'Save changes',
+    },
 })

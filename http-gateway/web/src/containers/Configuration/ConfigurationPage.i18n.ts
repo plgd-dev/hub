@@ -17,14 +17,6 @@ export const messages = defineMessages({
         id: 'configurationPage.reset',
         defaultMessage: 'Reset',
     },
-    saveChanges: {
-        id: 'configurationPage.saveChanges',
-        defaultMessage: 'Save changes',
-    },
-    changesMade: {
-        id: 'configurationPage.changesMade',
-        defaultMessage: 'Changes made',
-    },
     setting: {
         id: 'configurationPage.setting',
         defaultMessage: 'setting',
@@ -79,6 +71,6 @@ export const messages = defineMessages({
     },
     logoSource: {
         id: 'configurationPage.logoSource',
-        defaultMessage: 'Logo source',
+        defaultMessage: 'Logo Source',
     },
 })

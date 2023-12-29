@@ -121,11 +121,21 @@ export const useLinkedHubsList = (): StreamApiPropsType => {
     })
 }
 
-export const useHubDetail = (hubId: string): StreamApiPropsType => {
+export const useHubDetail = (hubId: string, requestActive = false): StreamApiPropsType => {
     const { telemetryWebTracer } = useContext(AppContext)
 
-    return useStreamApi(`${getConfig().httpGatewayAddress}${dpsApiEndpoints.HUBS}?idFilter=${hubId}}`, {
+    const { data, ...rest } = useStreamApi(`${getConfig().httpGatewayAddress}${dpsApiEndpoints.HUBS}?idFilter=${hubId}`, {
         telemetryWebTracer,
         telemetrySpan: `get-hub-${hubId}`,
+        requestActive,
     })
+
+    if (data) {
+        return {
+            data: data[0],
+            ...rest,
+        }
+    }
+
+    return { data, ...rest }
 }

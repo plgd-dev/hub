@@ -54,14 +54,15 @@ const Tab2: FC<Props> = (props) => {
         control,
         register,
         setValue,
+        watch,
     } = useForm<Inputs>({
         mode: 'all',
         reValidateMode: 'onSubmit',
         values: {
             themeName: 'custom theme',
             colorPalette: defaultColorPalette,
-            logoHeight: 0,
-            logoWidth: 0,
+            logoHeight: 32,
+            logoWidth: 140,
             logoSource: '',
         },
     })
@@ -100,7 +101,7 @@ const Tab2: FC<Props> = (props) => {
         })
     }
 
-    const onPaletteSubmit = debounce((jsonPalette) => {
+    const onPreviewSubmit = debounce((jsonPalette) => {
         const values = getValues()
 
         if (Object.values(jsonPalette).every(isValidHex)) {
@@ -145,7 +146,7 @@ const Tab2: FC<Props> = (props) => {
                                 onChange={(data) => {
                                     const json = JSON.parse(data)
                                     onChange(json)
-                                    onPaletteSubmit(json)
+                                    onPreviewSubmit(json)
                                 }}
                                 ref={editorRef}
                             />
@@ -193,6 +194,19 @@ const Tab2: FC<Props> = (props) => {
             ),
         },
     ]
+
+    const logoSource = watch('logoSource')
+    const logoHeight = watch('logoHeight')
+    const logoWidth = watch('logoWidth')
+
+    useEffect(() => {
+        if (logoSource && logoHeight > 0 && logoWidth) {
+            const values = getValues()
+
+            onPreviewSubmit(values.colorPalette)
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [logoHeight, logoSource, logoWidth])
 
     const onSubmit: SubmitHandler<Inputs> = () => {
         const values = getValues()
