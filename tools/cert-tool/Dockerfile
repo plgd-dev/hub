@@ -15,7 +15,7 @@ RUN ( cd /usr/local/go && patch -p1 < $GOPATH/src/github.com/plgd-dev/hub/tools/
 WORKDIR $GOPATH/src/github.com/plgd-dev/hub/tools/cert-tool
 RUN CGO_ENABLED=0 go build -ldflags "-X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" -o /go/bin/cert-tool ./
 
-FROM alpine:3.18 AS security-provider
+FROM alpine:3.19 AS security-provider
 RUN addgroup -S nonroot \
     && adduser -S nonroot -G nonroot
 

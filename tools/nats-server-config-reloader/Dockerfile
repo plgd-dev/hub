@@ -10,7 +10,7 @@ RUN ( cd ./vendor/golang.org/x/oauth2 && patch -p1 < $GOPATH/src/github.com/plgd
 WORKDIR $GOPATH/src/github.com/plgd-dev/hub/tools/nats-server-config-reloader
 RUN CGO_ENABLED=0 go build -mod=vendor -o /go/bin/nats-server-config-reloader .
 
-FROM alpine:3.18 AS security-provider
+FROM alpine:3.19 AS security-provider
 RUN apk add -U --no-cache ca-certificates
 
 FROM scratch AS service

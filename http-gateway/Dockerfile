@@ -16,7 +16,7 @@ RUN ( cd ./vendor/golang.org/x/oauth2 && patch -p1 < $GOPATH/src/github.com/plgd
 WORKDIR $GOPATH/src/github.com/plgd-dev/hub/http-gateway
 RUN CGO_ENABLED=0 go build -mod=vendor -ldflags "-linkmode external -extldflags -static -X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" -o /go/bin/http-gateway ./cmd/service
 
-FROM alpine:3.18 AS security-provider
+FROM alpine:3.19 AS security-provider
 RUN apk add -U --no-cache ca-certificates
 RUN addgroup -S nonroot \
     && adduser -S nonroot -G nonroot
