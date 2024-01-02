@@ -769,6 +769,8 @@ components:
           $ref: '#/components/schemas/webOAuthClient'
         deviceOauthClient:
           $ref: '#/components/schemas/deviceOAuthClient'
+        ui:
+          $ref: '#/components/schemas/UIConfiguration'
         buildInfo:
           $ref: '#/components/schemas/buildInfo'
       example:
@@ -804,6 +806,17 @@ components:
           commitHash: "abfe0011"
           commitDate: "2023-07-04T15:30:33Z"
           buildDate: "2023-07-04T15:31:17Z"
+        ui:
+          visibility:
+            mainSidebar:
+              certificates : true
+              chatRoom : true
+              configuration : true
+              deviceProvisioning : true
+              devices : true
+              docs : true
+              pendingCommands : true
+              remoteClients : true
     webOAuthClient:
       type: object
       properties:
@@ -1583,6 +1596,40 @@ components:
         - "RESOURCE_CREATE_PENDING"
         - "RESOURCE_CREATED"
         - "RESOURCE_CHANGED"
+    UIVisibilityMainSidebar:
+      type: object
+      properties:
+        devices:
+          type: boolean
+        configuration:
+          type: boolean
+        remoteClients:
+          "type": boolean
+        pendingCommands:
+          "type": boolean
+        certificates:
+          "type": boolean
+        deviceProvisioning:
+          "type": boolean
+        docs:
+          "type": boolean
+        chatRoom:
+          "type": boolean
+    UIConfiguration:
+      title: UI configuration
+      type: object
+      properties:
+        visibility:
+          $ref: "#/components/schemas/UIVisibility"
+          title: "Visibility"
+    UIVisibility:
+      type: object
+      description: |
+        true - show, false - hide
+      properties:
+        mainSidebar:
+          $ref: "#/definitions/UIVisibilityMainSidebar"
+          title: "Main sidebar visibility"
   parameters:
     deviceId:
       name: deviceId
