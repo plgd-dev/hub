@@ -107,5 +107,21 @@ data:
           providerName: {{ .name | quote }}
           {{- end }}
         {{- end }}
+        visibility:
+          mainSidebar:
+            certificates : {{ .ui.webConfiguration.visibility.mainSidebar.certificates }}
+            chatRoom : {{ .ui.webConfiguration.visibility.mainSidebar.chatRoom }}
+            configuration : {{ .ui.webConfiguration.visibility.mainSidebar.configuration }}
+            deviceProvisioning : {{ .ui.webConfiguration.visibility.mainSidebar.deviceProvisioning }}
+            devices : {{ .ui.webConfiguration.visibility.mainSidebar.devices }}
+            docs : {{ .ui.webConfiguration.visibility.mainSidebar.docs }}
+            pendingCommands : {{ .ui.webConfiguration.visibility.mainSidebar.pendingCommands }}
+            remoteClients : {{ .ui.webConfiguration.visibility.mainSidebar.remoteClients }}
+            dashboard : {{ .ui.webConfiguration.visibility.mainSidebar.dashboard }}
+            integrations : {{ .ui.webConfiguration.visibility.mainSidebar.integrations }}
+            deviceFirmwareUpdate : {{ .ui.webConfiguration.visibility.mainSidebar.deviceFirmwareUpdate }}
+            deviceLogs : {{ .ui.webConfiguration.visibility.mainSidebar.deviceLogs }}
+            apiTokens : {{ .ui.webConfiguration.visibility.mainSidebar.apiTokens }}
+            schemaHub : {{ .ui.webConfiguration.visibility.mainSidebar.schemaHub }}
       {{- end }}
 {{- end }}

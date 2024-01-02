@@ -24,6 +24,9 @@ func TestRequestHandlerGetHubConfiguration(t *testing.T) {
 	expected.WebOauthClient = httpCfg.UI.WebConfiguration.WebOAuthClient.ToProto()
 	expected.DeviceOauthClient = httpCfg.UI.WebConfiguration.DeviceOAuthClient.ToProto()
 	expected.HttpGatewayAddress = httpCfg.UI.WebConfiguration.HTTPGatewayAddress
+	expected.Ui = &pb.UIConfiguration{
+		Visibility: httpCfg.UI.WebConfiguration.Visibility.ToProto(),
+	}
 	tests := []struct {
 		name   string
 		accept string

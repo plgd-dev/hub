@@ -1116,6 +1116,53 @@
       "default": "OUT_OF_SYNC",
       "description": " - OUT_OF_SYNC: As soon as it connects after it was offline or when it goes errorless offline or when twin enabled has been changed to true.\n - DISABLED: As soon as twin enabled is set to false.\n - SYNCING: As soon as device connects, successfully signs in and batch observe is called on device from the cloud.\n - IN_SYNC: As soon as current device resources values are received and applied to twin database. Twin was successfully reconciled after device reconnect and is kept up to date using an active subscription to device resource changes."
     },
+    "UIVisibilityMainSidebar": {
+      "type": "object",
+      "properties": {
+        "devices": {
+          "type": "boolean"
+        },
+        "configuration": {
+          "type": "boolean"
+        },
+        "remoteClients": {
+          "type": "boolean"
+        },
+        "pendingCommands": {
+          "type": "boolean"
+        },
+        "certificates": {
+          "type": "boolean"
+        },
+        "deviceProvisioning": {
+          "type": "boolean"
+        },
+        "docs": {
+          "type": "boolean"
+        },
+        "chatRoom": {
+          "type": "boolean"
+        },
+        "dashboard": {
+          "type": "boolean"
+        },
+        "integrations": {
+          "type": "boolean"
+        },
+        "deviceFirmwareUpdate": {
+          "type": "boolean"
+        },
+        "deviceLogs": {
+          "type": "boolean"
+        },
+        "apiTokens": {
+          "type": "boolean"
+        },
+        "schemaHub": {
+          "type": "boolean"
+        }
+      }
+    },
     "googlerpcStatus": {
       "type": "object",
       "properties": {
@@ -1646,6 +1693,9 @@
         "deviceOauthClient": {
           "$ref": "#/definitions/pbDeviceOAuthClient"
         },
+        "ui": {
+          "$ref": "#/definitions/pbUIConfiguration"
+        },
         "buildInfo": {
           "$ref": "#/definitions/pbBuildInfo",
           "title": "build info"
@@ -2157,6 +2207,25 @@
           "description": "unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when the force synchronization has been started. 0 means force synchronization has never started."
         }
       }
+    },
+    "pbUIConfiguration": {
+      "type": "object",
+      "properties": {
+        "visibility": {
+          "$ref": "#/definitions/pbUIVisibility"
+        }
+      },
+      "title": "UI configuration"
+    },
+    "pbUIVisibility": {
+      "type": "object",
+      "properties": {
+        "mainSidebar": {
+          "$ref": "#/definitions/UIVisibilityMainSidebar",
+          "title": "Main sidebar visibility"
+        }
+      },
+      "title": "UI visibility configuration\nIf true - show UI element, if false - hide UI element"
     },
     "pbWebOAuthClient": {
       "type": "object",
