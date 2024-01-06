@@ -42,95 +42,103 @@ export const messages = defineMessages({
         defaultMessage: 'Page not found',
     },
     loading: {
-        id: 'app.loading',
+        id: 'global.loading',
         defaultMessage: 'Loading',
     },
     edit: {
-        id: 'app.edit',
+        id: 'global.edit',
         defaultMessage: 'Edit',
     },
     reset: {
-        id: 'app.reset',
+        id: 'global.reset',
         defaultMessage: 'Reset',
     },
     pendingCommands: {
-        id: 'app.pendingCommands',
+        id: 'global.pendingCommands',
         defaultMessage: 'Pending commands',
     },
     online: {
-        id: 'app.online',
+        id: 'global.online',
         defaultMessage: 'online',
     },
     offline: {
-        id: 'app.offline',
+        id: 'global.offline',
         defaultMessage: 'offline',
     },
     id: {
-        id: 'app.id',
+        id: 'global.id',
         defaultMessage: 'ID',
     },
     copy: {
-        id: 'app.copy',
+        id: 'global.copy',
         defaultMessage: 'Copy',
     },
     information: {
-        id: 'app.information',
+        id: 'global.information',
         defaultMessage: 'Information',
     },
     editName: {
-        id: 'app.editName',
+        id: 'global.editName',
         defaultMessage: 'Edit name',
     },
     close: {
-        id: 'app.close',
+        id: 'global.close',
         defaultMessage: 'Close',
     },
     saveChange: {
-        id: 'app.saveChange',
+        id: 'global.saveChange',
         defaultMessage: 'Save Change',
     },
     savingChanges: {
-        id: 'app.savingChanges',
+        id: 'global.savingChanges',
         defaultMessage: 'Saving Changes',
     },
     done: {
-        id: 'app.done',
+        id: 'global.done',
         defaultMessage: 'Done',
     },
     created: {
-        id: 'app.created',
+        id: 'global.created',
         defaultMessage: 'Created',
     },
     expires: {
-        id: 'app.expires',
+        id: 'global.expires',
         defaultMessage: 'Expires',
     },
     configuration: {
-        id: 'app.configuration',
+        id: 'global.configuration',
         defaultMessage: 'Configuration',
     },
     themePreviewMode: {
-        id: 'app.themePreviewMode',
+        id: 'global.themePreviewMode',
         defaultMessage: 'Theme Preview Mode',
     },
     ownerID: {
-        id: 'app.ownerID',
+        id: 'global.ownerID',
         defaultMessage: 'Owner ID',
     },
     linkedHub: {
-        id: 'app.linkedHub',
+        id: 'global.linkedHub',
         defaultMessage: 'Linked Hub',
     },
     certificate: {
-        id: 'app.certificate',
+        id: 'global.certificate',
         defaultMessage: 'Certificate',
     },
     changesMade: {
-        id: 'configurationPage.changesMade',
+        id: 'global.changesMade',
         defaultMessage: 'Changes made',
     },
     saveChanges: {
-        id: 'configurationPage.saveChanges',
+        id: 'global.saveChanges',
         defaultMessage: 'Save changes',
+    },
+    ok: {
+        id: 'global.ok',
+        defaultMessage: 'Ok',
+    },
+    logOut: {
+        id: 'global.logOut',
+        defaultMessage: 'Log out',
     },
 })

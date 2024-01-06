@@ -1,5 +1,5 @@
 import React, { FC, SyntheticEvent, useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate, useLocation, NavLink } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useIntl } from 'react-intl'
 import { useDispatch, useSelector } from 'react-redux'
 import isFunction from 'lodash/isFunction'
@@ -33,6 +33,8 @@ import { CombinedStoreType } from '@/store/store'
 import { setVersion } from '@/containers/App/slice'
 import { deleteAllRemoteClients } from '@/containers/RemoteClients/slice'
 import testId from '@/testId'
+import PreviewApp from '@/containers/Configuration/PreviewApp/PreviewApp'
+import { CONFIGURATION_PAGE_FRAME } from '@/constants'
 
 const AppLayout: FC<Props> = (props) => {
     const { buildInformation, collapsed, mockApp, userData, signOutRedirect, setCollapsed } = props
@@ -40,6 +42,7 @@ const AppLayout: FC<Props> = (props) => {
     const location = useLocation()
     const dispatch = useDispatch()
     const navigate = useNavigate()
+    const configurationPageFrame = window.location.pathname === `/${CONFIGURATION_PAGE_FRAME}`
 
     const wellKnownConfig = security.getWellKnowConfig() as WellKnownConfigType & {
         defaultCommandTimeToLive: number
@@ -116,6 +119,14 @@ const AppLayout: FC<Props> = (props) => {
     // reset
     clientAppSettings.setUseToken(true)
 
+    if (configurationPageFrame) {
+        return (
+            <App toastContainerPortalTarget={document.getElementById('toast-root')}>
+                <PreviewApp />
+            </App>
+        )
+    }
+
     return (
         <App toastContainerPortalTarget={document.getElementById('toast-root')}>
             <Layout
@@ -144,7 +155,7 @@ const AppLayout: FC<Props> = (props) => {
                                 dataTestId={testId.app.logout}
                                 description={userData?.profile?.family_name}
                                 image={userData?.profile?.picture}
-                                logoutTitle={_(t.logOut)}
+                                logoutTitle={_(g.logOut)}
                                 name={userData?.profile?.name ?? ''}
                                 onLogout={logout}
                             />
@@ -184,13 +195,6 @@ const AppLayout: FC<Props> = (props) => {
                             )
                         }
                     />
-                }
-                previewMode={
-                    appStore.configuration.previewTheme ? (
-                        <span>
-                            {_(g.themePreviewMode)} <NavLink to='/configuration/theme-generator'>{_(g.configuration)}</NavLink>
-                        </span>
-                    ) : undefined
                 }
             />
         </App>

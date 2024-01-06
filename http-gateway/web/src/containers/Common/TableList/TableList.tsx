@@ -16,7 +16,19 @@ const DEFAULT_PAGE_SIZE = 10
 const TableList: FC<Props> = (props) => {
     const { formatMessage: _ } = useIntl()
     const { collapsed } = useContext(AppContext)
-    const { columns, data, defaultPageSize, defaultSortBy, i18n, paginationPortalTargetId, primaryAttribute, onDeleteClick, unselectRowsToken } = {
+    const {
+        columns,
+        data,
+        defaultPageSize,
+        defaultSortBy,
+        i18n,
+        iframeMode,
+        paginationPortalTargetId,
+        primaryAttribute,
+        onDeleteClick,
+        unselectRowsToken,
+        tableSelectionPanelPortalTargetId,
+    } = {
         ...defaultPops,
         ...props,
     }
@@ -66,7 +78,8 @@ const TableList: FC<Props> = (props) => {
             />
 
             {isMounted &&
-                document.querySelector('#root') &&
+                tableSelectionPanelPortalTargetId &&
+                document.getElementById(tableSelectionPanelPortalTargetId) &&
                 ReactDOM.createPortal(
                     <TableSelectionPanel
                         actionPrimary={
@@ -77,11 +90,12 @@ const TableList: FC<Props> = (props) => {
                         i18n={{
                             select: _(g.select),
                         }}
+                        iframeMode={iframeMode}
                         leftPanelCollapsed={collapsed}
                         selectionInfo={`${selectedCount} ${selectedCount > 1 ? i18n.multiSelected : i18n.singleSelected}`}
                         show={selectedCount > 0}
                     />,
-                    document.querySelector('#root') as Element
+                    document.getElementById(tableSelectionPanelPortalTargetId) as Element
                 )}
         </div>
     )

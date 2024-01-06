@@ -17,6 +17,7 @@ import {
     IconNet,
     IconDocs,
     IconChat,
+    IconCertificate,
 } from '@shared-ui/components/Atomic/Icon/'
 import { MenuGroup } from '@shared-ui/components/Layout/LeftPanel/LeftPanel.types'
 import FullPageLoader from '@shared-ui/components/Atomic/FullPageLoader'
@@ -129,7 +130,7 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                 visibility: menuConfig.pendingCommands,
             },
             {
-                icon: <IconPendingCommands />,
+                icon: <IconCertificate />,
                 id: '5',
                 title: <MenuTranslate id='menuCertificates' />,
                 link: '/certificates',

@@ -73,4 +73,8 @@ export const messages = defineMessages({
         id: 'configurationPage.logoSource',
         defaultMessage: 'Logo Source',
     },
+    colorConfigurator: {
+        id: 'configurationPage.colorConfigurator',
+        defaultMessage: 'Color configurator',
+    },
 })

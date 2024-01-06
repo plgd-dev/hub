@@ -24,6 +24,7 @@ import { Props, Inputs } from './Tab2.types'
 import { messages as t } from '../../ConfigurationPage.i18n'
 import { messages as g } from '@/containers/Global.i18n'
 import { setPreviewTheme } from '@/containers/App/slice'
+import AppColorsPicker from './AppColorsPicker'
 
 const Tab2: FC<Props> = (props) => {
     const { isTabActive, resetForm } = props
@@ -48,7 +49,7 @@ const Tab2: FC<Props> = (props) => {
 
     const {
         handleSubmit,
-        formState: { errors, isDirty },
+        formState: { errors },
         getValues,
         reset,
         control,
@@ -72,6 +73,13 @@ const Tab2: FC<Props> = (props) => {
             reset()
         }
     }, [reset, resetForm])
+
+    useEffect(() => {
+        if (appStore.configuration.previewTheme?.colorPalette) {
+            editorRef?.current?.setValue(appStore.configuration.previewTheme?.colorPalette)
+            setValue('colorPalette', appStore.configuration.previewTheme?.colorPalette)
+        }
+    }, [appStore.configuration.previewTheme?.colorPalette, setValue])
 
     const getBase64 = useCallback(
         (file: any) =>
@@ -143,7 +151,7 @@ const Tab2: FC<Props> = (props) => {
                             <Editor
                                 height='500px'
                                 json={value}
-                                onChange={(data) => {
+                                onBlur={(data) => {
                                     const json = JSON.parse(data)
                                     onChange(json)
                                     onPreviewSubmit(json)
@@ -234,18 +242,20 @@ const Tab2: FC<Props> = (props) => {
         link.click()
         document.body.removeChild(link)
         setLoading(false)
-        handleReset()
     }
 
     const handleReset = useCallback(() => {
-        dispatch(setPreviewTheme(undefined))
+        reset()
+        dispatch(setPreviewTheme(colors))
         setValue('colorPalette', colors)
         editorRef?.current?.setValue(colors)
-        reset()
-    }, [])
+    }, [dispatch, reset, setValue])
 
     return (
         <div>
+            <Spacer type='mb-4'>
+                <AppColorsPicker onChange={(c: any) => console.log(c)} />
+            </Spacer>
             <form onSubmit={handleSubmit(onSubmit)}>
                 <SimpleStripTable leftColSize={6} rightColSize={6} rows={rows} />
             </form>

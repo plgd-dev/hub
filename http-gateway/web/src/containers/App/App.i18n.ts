@@ -121,8 +121,4 @@ export const messages = defineMessages({
         id: 'app.menuConfiguration',
         defaultMessage: 'Configuration',
     },
-    logOut: {
-        id: 'app.logOut',
-        defaultMessage: 'Log out',
-    },
 })
