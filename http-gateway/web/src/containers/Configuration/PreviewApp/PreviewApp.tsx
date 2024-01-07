@@ -194,13 +194,13 @@ const PreviewApp = forwardRef<PreviewAppRefType, any>((props, ref) => {
                                                         icon: <IconDashboard />,
                                                         id: '1',
                                                         title: 'Item 1',
-                                                        visibility: 'ENABLED',
+                                                        visibility: true,
                                                     },
                                                     {
                                                         icon: <IconDevices />,
                                                         id: '2',
                                                         title: 'Item 2',
-                                                        visibility: 'ENABLED',
+                                                        visibility: true,
                                                     },
                                                 ],
                                             },
@@ -211,7 +211,7 @@ const PreviewApp = forwardRef<PreviewAppRefType, any>((props, ref) => {
                                                         icon: <IconNetwork />,
                                                         id: '10',
                                                         title: 'Sub menu',
-                                                        visibility: 'ENABLED',
+                                                        visibility: true,
                                                         children: [
                                                             {
                                                                 id: '101',
@@ -231,7 +231,7 @@ const PreviewApp = forwardRef<PreviewAppRefType, any>((props, ref) => {
                                                         icon: <IconDeviceUpdate />,
                                                         id: '3',
                                                         title: 'Item 4',
-                                                        visibility: 'ENABLED',
+                                                        visibility: true,
                                                     },
                                                 ],
                                             },

@@ -47,11 +47,8 @@ const App = (props: { mockApp: boolean }) => {
 
                     const { webOauthClient, deviceOauthClient, ...generalConfig } = wellKnown
 
-                    // UI tmp
-                    wellKnown.ui = {
-                        menu: {
-                            ...defaultMenu,
-                        },
+                    if (!wellKnown.ui.visibility.mainSidebar) {
+                        wellKnown.ui.visibility.mainSidebar = defaultMenu
                     }
 
                     const clientId = webOauthClient?.clientId

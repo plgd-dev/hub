@@ -48,7 +48,7 @@ const AppLayout: FC<Props> = (props) => {
         defaultCommandTimeToLive: number
     }
 
-    const menu = useMemo(() => getMenu(wellKnownConfig.ui.menu), [wellKnownConfig.ui.menu])
+    const menu = useMemo(() => getMenu(wellKnownConfig.ui.visibility.mainSidebar), [wellKnownConfig.ui.visibility.mainSidebar])
 
     const [activeItem, setActiveItem] = useState(parseActiveItem(location.pathname, menu, mather))
     const notifications = useSelector((state: CombinedStoreType) => state.notifications)

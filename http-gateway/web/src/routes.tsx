@@ -62,14 +62,14 @@ const MenuTranslate = (props: { id: string }) => {
 }
 
 export const defaultMenu = {
-    devices: 'ENABLED',
-    configuration: 'ENABLED',
-    remoteClients: 'ENABLED',
-    pendingCommands: 'ENABLED',
-    certificates: 'ENABLED',
-    deviceProvisioning: 'ENABLED',
-    docs: 'ENABLED',
-    chatRoom: 'ENABLED',
+    devices: true,
+    configuration: true,
+    remoteClients: true,
+    pendingCommands: true,
+    certificates: true,
+    deviceProvisioning: true,
+    docs: true,
+    chatRoom: true,
 }
 
 export const getMenu = (menuConfig: any): MenuGroup[] => [
@@ -83,7 +83,7 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                 link: '/dashboard',
                 paths: ['/dashboard'],
                 exact: true,
-                visibility: menuConfig.dashboard,
+                visibility: menuConfig?.dashboard ? 'disabled' : false,
             },
             {
                 icon: <IconDevices />,
@@ -102,7 +102,7 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                 link: '/integrations',
                 paths: ['/integrations'],
                 exact: true,
-                visibility: menuConfig.integrations,
+                visibility: menuConfig.integrations ? 'disabled' : false,
             },
             {
                 icon: <IconRemoteClients />,
@@ -179,7 +179,7 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                 link: '/device-firmware-update',
                 paths: ['/device-firmware-update'],
                 exact: true,
-                visibility: menuConfig.deviceFirmwareUpdate,
+                visibility: menuConfig.deviceFirmwareUpdate ? 'disabled' : false,
                 children: [
                     { id: '111', title: 'Quickstart 2' },
                     { id: '112', title: 'Manage enrollments 2' },
@@ -195,7 +195,7 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                 link: '/device-logs',
                 paths: ['/device-logs'],
                 exact: true,
-                visibility: menuConfig.deviceLogs,
+                visibility: menuConfig.deviceLogs ? 'disabled' : false,
             },
             {
                 icon: <IconLock />,
@@ -204,7 +204,7 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                 link: '/api-tokens',
                 paths: ['/api-tokens'],
                 exact: true,
-                visibility: menuConfig.apiTokens,
+                visibility: menuConfig.apiTokens ? 'disabled' : false,
             },
             {
                 icon: <IconNet />,
@@ -213,7 +213,7 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                 link: '/schema-hub',
                 paths: ['/schema-hub'],
                 exact: true,
-                visibility: menuConfig.schemaHub,
+                visibility: menuConfig.schemaHub ? 'disabled' : false,
             },
             {
                 icon: <IconSettings />,
