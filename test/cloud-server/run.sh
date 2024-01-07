@@ -177,7 +177,7 @@ while true; do
 done
 
 echo "starting grpc-gateway test"
-grpc-gateway.test -test.v -test.timeout 600s
+grpc-gateway.test -test.v -test.timeout 600s -test.parallel 1
 
 echo "starting test/iotivity-lite test"
-test-iotivity-lite.test -test.v -test.timeout 600s
+test-iotivity-lite.test -test.v -test.timeout 600s -test.parallel 1

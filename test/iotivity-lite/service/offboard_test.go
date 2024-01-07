@@ -21,6 +21,7 @@ import (
 	iotService "github.com/plgd-dev/hub/v2/test/iotivity-lite/service"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/plgd-dev/hub/v2/test/service"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/atomic"
 	"google.golang.org/grpc"
@@ -77,6 +78,9 @@ func TestOffboard(t *testing.T) {
 	// _, _ = test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, nil)
 	_, _ = test.OnboardDevSim(ctx, t, c, deviceID, string(schema.TCPSecureScheme)+"://"+config.COAP_GW_HOST, nil)
 	require.True(t, ch.WaitForFirstSignIn(time.Second*20))
+	t.Cleanup(func() {
+		test.DisownDevice(t, deviceID)
+	})
 
 	test.OffBoardDevSim(ctx, t, deviceID)
 	require.True(t, ch.WaitForFirstSignOff(time.Second*20))
@@ -238,11 +242,15 @@ func TestOffboardWithoutSignIn(t *testing.T) {
 
 	// deviceID, _ = test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, nil)
 	deviceID, _ = test.OnboardDevSim(ctx, t, c, deviceID, string(schema.TCPSecureScheme)+"://"+config.COAP_GW_HOST, nil)
+	t.Cleanup(func() {
+		test.DisownDevice(t, deviceID)
+	})
 	require.True(t, sh.WaitForFirstSignIn(time.Second*20))
-
 	// first retry after failure is after 2 seconds, so hopefully it doesn't trigger, if this test
 	// behaves flakily then we will have to update simulator to have a configurable retry
 	sh.failSignIn.Store(false)
+	// wait for sign-in to be called again
+	time.Sleep(time.Second * 3)
 	test.OffBoardDevSim(ctx, t, deviceID)
 	require.True(t, sh.WaitForFirstSignOff(time.Second*20))
 }
@@ -297,6 +305,9 @@ func TestOffboardWithSignIn(t *testing.T) {
 
 	// deviceID, _ = test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, nil)
 	deviceID, _ = test.OnboardDevSim(ctx, t, c, deviceID, string(schema.TCPSecureScheme)+"://"+config.COAP_GW_HOST, nil)
+	t.Cleanup(func() {
+		test.DisownDevice(t, deviceID)
+	})
 	require.True(t, sh.WaitForFirstSignIn(time.Second*20))
 
 	// first retry after failure is after 2 seconds, so hopefully it doesn't trigger, if this test
@@ -333,18 +344,17 @@ func TestOffboardWithSignInByRefreshToken(t *testing.T) {
 		defer h.CallCounter.Lock.Unlock()
 		log.Debugf("%+v", h.CallCounter.Data)
 		signInCount, ok := h.CallCounter.Data[iotService.SignInKey]
-		require.True(t, ok)
-		require.True(t, signInCount > 1)
+		assert.True(t, ok)
+		assert.True(t, signInCount > 1)
 		refreshCount, ok := h.CallCounter.Data[iotService.RefreshTokenKey]
-		require.Equal(t, 1, refreshCount)
-		require.True(t, ok)
+		assert.True(t, ok)
+		assert.True(t, refreshCount > 0)
 		signOffCount, ok := h.CallCounter.Data[iotService.SignOffKey]
-		require.True(t, ok)
-		require.Equal(t, 1, signOffCount)
+		assert.True(t, ok)
+		assert.Equal(t, 1, signOffCount)
 	}
 
-	coapShutdown := coapgwTest.SetUp(t, makeHandler, validateHandler)
-	defer coapShutdown()
+	coapShutdown := coapgwTest.SetUp(t, makeHandler, func(handler coapgwTestService.ServiceHandler) {})
 
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
@@ -357,16 +367,30 @@ func TestOffboardWithSignInByRefreshToken(t *testing.T) {
 	}()
 	c := pb.NewGrpcGatewayClient(conn)
 
+	// register device first time
 	// deviceID, _ = test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, nil)
 	deviceID, _ = test.OnboardDevSim(ctx, t, c, deviceID, string(schema.TCPSecureScheme)+"://"+config.COAP_GW_HOST, nil)
+	t.Cleanup(func() {
+		test.DisownDevice(t, deviceID)
+	})
 	require.True(t, sh.WaitForFirstSignIn(time.Second*20))
-
-	// sleep to get response to the device
-	time.Sleep(time.Second)
 
 	// first retry after failure is after 2 seconds, so hopefully it doesn't trigger, if this test
 	// behaves flakily then we will have to update simulator to have a configurable retry
+
+	coapShutdown()
+
+	// force to sign in with refresh token
 	sh.failSignIn.Store(false)
+	sh.ResetRefreshToken()
+	sh.ResetSignIn()
+	sh.ResetSignOff()
+	coapShutdown = coapgwTest.SetUp(t, makeHandler, validateHandler)
+	defer coapShutdown()
+
+	// wait for refresh token and sign-in to be called again
+	sh.WaitForSignIn(time.Second * 20)
+
 	test.OffBoardDevSim(ctx, t, deviceID)
 	require.True(t, sh.WaitForFirstRefreshToken(time.Second*20))
 	require.True(t, sh.WaitForFirstSignOff(time.Second*20))
@@ -416,6 +440,9 @@ func TestOffboardWithRepeat(t *testing.T) {
 
 	// deviceID, _ = test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, nil)
 	deviceID, _ = test.OnboardDevSim(ctx, t, c, deviceID, string(schema.TCPSecureScheme)+"://"+config.COAP_GW_HOST, nil)
+	t.Cleanup(func() {
+		test.DisownDevice(t, deviceID)
+	})
 	require.True(t, sh.WaitForFirstSignIn(time.Second*20))
 
 	time.Sleep(time.Second)

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"time"
 
 	ca "github.com/plgd-dev/hub/v2/certificate-authority/service"
 	caService "github.com/plgd-dev/hub/v2/certificate-authority/test"
@@ -38,22 +39,14 @@ var filterOutClearDB = map[string]bool{
 	"local":  true,
 }
 
-func ClearDB(ctx context.Context, t require.TestingT) {
-	logCfg := log.MakeDefaultConfig()
-	logger := log.NewLogger(logCfg)
-	tlsConfig := config.MakeTLSClientConfig()
-	fileWatcher, err := fsnotify.NewWatcher(logger)
-	require.NoError(t, err)
-	defer func() {
-		err = fileWatcher.Close()
-		require.NoError(t, err)
-	}()
-	certManager, err := cmClient.New(tlsConfig, fileWatcher, logger)
-	require.NoError(t, err)
-	defer certManager.Close()
-
+func clearMongoDB(ctx context.Context, t require.TestingT, certManager *cmClient.CertManager, logger *log.WrapSuggarLogger) {
+	// clear mongoDB
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://localhost:27017").SetTLSConfig(certManager.GetTLSConfig()))
-	require.NoError(t, err)
+	if err != nil {
+		logger.Infof("cannot connect to mongoDB: %v", err)
+		// if mongoDB is not running, we can skip clearing it
+		return
+	}
 	dbs, err := client.ListDatabaseNames(ctx, bson.M{})
 	if errors.Is(err, mongo.ErrNilDocument) {
 		return
@@ -68,16 +61,41 @@ func ClearDB(ctx context.Context, t require.TestingT) {
 	}
 	err = client.Disconnect(ctx)
 	require.NoError(t, err)
+}
 
+func clearCqlDB(ctx context.Context, t require.TestingT, certManager *cmClient.CertManager, logger *log.WrapSuggarLogger) {
 	// clear cqlDB
 	cqlCfg := config.MakeEventsStoreCqlDBConfig()
 	cql, err := cqldb.New(ctx, cqlCfg.Embedded, certManager.GetTLSConfig(), logger, trace.NewNoopTracerProvider())
+	if err != nil {
+		logger.Infof("cannot connect to cqlDB: %v", err)
+		// if cqlDB is not running, we can skip clearing it
+		return
+	}
 	require.NoError(t, err)
 	defer cql.Close()
 
 	// we need to use same key-space for all services
 	err = cql.DropKeyspace(ctx)
 	require.NoError(t, err)
+}
+
+func ClearDB(ctx context.Context, t require.TestingT) {
+	logCfg := log.MakeDefaultConfig()
+	logger := log.NewLogger(logCfg)
+	tlsConfig := config.MakeTLSClientConfig()
+	fileWatcher, err := fsnotify.NewWatcher(logger)
+	require.NoError(t, err)
+	defer func() {
+		err = fileWatcher.Close()
+		require.NoError(t, err)
+	}()
+	certManager, err := cmClient.New(tlsConfig, fileWatcher, logger)
+	require.NoError(t, err)
+	defer certManager.Close()
+
+	clearMongoDB(ctx, t, certManager, logger)
+	clearCqlDB(ctx, t, certManager, logger)
 }
 
 type Config struct {
@@ -159,6 +177,9 @@ func SetUp(ctx context.Context, t require.TestingT, opts ...SetUpOption) (tearDo
 	caShutdown := caService.New(t, config.CA)
 	secureGWShutdown := coapgwTest.New(t, config.COAPGW)
 
+	// wait for all services to start
+	time.Sleep(time.Second)
+
 	return func() {
 		caShutdown()
 		c2cgwShutdown()
@@ -168,6 +189,9 @@ func SetUp(ctx context.Context, t require.TestingT, opts ...SetUpOption) (tearDo
 		raShutdown()
 		isShutdown()
 		oauthShutdown()
+
+		// wait for all services to be closed
+		time.Sleep(time.Second)
 	}
 }
 

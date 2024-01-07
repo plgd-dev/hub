@@ -157,10 +157,11 @@ jobs:
           build-args: |
             DIRECTORY=${{ inputs.directory }}
             NAME=${{ inputs.name }}
-            COMMIT_DATE=${{ steps.build-args.outputs.commit-date }}
-            SHORT_COMMIT=${{ steps.build-args.outputs.short-commit }}
+            COMMIT_DATE=${{ steps.build-args.outputs.commit_date }}
+            SHORT_COMMIT=${{ steps.build-args.outputs.short_commit }}
             DATE=${{ steps.build-args.outputs.date }}
             VERSION=${{ steps.build-args.outputs.version }}
+            RELEASE_URL=${{ steps.build-args.outputs.release_url }}
           file: ${{ inputs.file }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}

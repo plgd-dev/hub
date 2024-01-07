@@ -48,7 +48,8 @@ func statusToHttpStatus(status commands.Status) int {
 func sendResponse(w http.ResponseWriter, processed *raEvents.ResourceUpdated) (int, error) {
 	statusCode := statusToHttpStatus(processed.GetStatus())
 	if processed.Content != nil {
-		content, err := unmarshalContent(processed.GetContent())
+		var content interface{}
+		err := unmarshalContent(processed.GetContent(), &content)
 		if err != nil {
 			logAndWriteErrorResponse(fmt.Errorf("cannot unmarshal content: %w", err), statusCode, w)
 			return statusCode, nil

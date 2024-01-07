@@ -52,7 +52,7 @@ func (rh *RequestHandler) GetDevices(ctx context.Context, deviceIdFilter []strin
 
 	devices := make([]Device, 0, 32)
 	for {
-		device, err := getDevicesClient.Recv()
+		grpcDevice, err := getDevicesClient.Recv()
 		if errors.Is(err, io.EOF) {
 			break
 		}
@@ -60,9 +60,19 @@ func (rh *RequestHandler) GetDevices(ctx context.Context, deviceIdFilter []strin
 			return nil, fmt.Errorf("cannot get devices: %w", err)
 		}
 
+		var d device.Device
+		if err = unmarshalContent(grpcDevice.GetData().GetContent(), &d); err != nil {
+			d = grpcDevice.ToSchema()
+		}
+		if len(d.Interfaces) == 0 {
+			d.Interfaces = grpcDevice.GetInterfaces()
+		}
+		if len(d.ResourceTypes) == 0 {
+			d.ResourceTypes = grpcDevice.GetTypes()
+		}
 		devices = append(devices, Device{
-			Device: device.ToSchema(),
-			Status: toStatus(device.GetMetadata().GetConnection().IsOnline()),
+			Device: d,
+			Status: toStatus(grpcDevice.GetMetadata().GetConnection().IsOnline()),
 		})
 	}
 	if len(devices) == 0 {

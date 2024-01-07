@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"os"
 	"os/exec"
 	"sort"
@@ -25,6 +26,7 @@ import (
 	"github.com/plgd-dev/device/v2/schema/platform"
 	"github.com/plgd-dev/device/v2/schema/plgdtime"
 	"github.com/plgd-dev/device/v2/schema/resources"
+	"github.com/plgd-dev/device/v2/schema/softwareupdate"
 	"github.com/plgd-dev/device/v2/test/resource/types"
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/go-coap/v3/pkg/sync"
@@ -140,6 +142,8 @@ func (d *ResourceLinkRepresentation) UnmarshalJSON(data []byte) error {
 var (
 	TestDeviceName                     string
 	TestDeviceNameWithOicResObservable string
+	TestDeviceModelNumber              = "CS-0"
+	TestDeviceSoftwareVersion          = "1.0.1-rc1"
 
 	TestDevsimResources        []schema.ResourceLink
 	TestDevsimBackendResources []schema.ResourceLink
@@ -253,6 +257,15 @@ func init() {
 				BitMask: 3,
 			},
 		},
+
+		{
+			Href:          softwareupdate.ResourceURI,
+			ResourceTypes: []string{softwareupdate.ResourceType},
+			Interfaces:    []string{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
+			Policy: &schema.Policy{
+				BitMask: 3,
+			},
+		},
 	}
 
 	testIovityLiteVersion = sync.NewMap[string, uint32]()
@@ -266,6 +279,8 @@ func GetDeviceResourceRepresentation(deviceID, deviceName string) device.Device 
 		ResourceTypes:        []string{types.DEVICE_CLOUD, device.ResourceType},
 		DataModelVersion:     "ocf.res.1.3.0",
 		SpecificationVersion: "ocf.2.0.5",
+		ModelNumber:          TestDeviceModelNumber,
+		SoftwareVersion:      TestDeviceSoftwareVersion,
 	}
 }
 
@@ -320,6 +335,18 @@ func GetAllBackendResourceRepresentations(t *testing.T, deviceID, deviceName str
 		{
 			Href:           "/" + commands.NewResourceID(deviceID, plgdtime.ResourceURI).ToString(),
 			Representation: PlgdTimeResourceRepresentation{},
+		},
+		{
+			Href: "/" + commands.NewResourceID(deviceID, softwareupdate.ResourceURI).ToString(),
+			Representation: map[interface{}]interface{}{
+				"purl":           "",
+				"nv":             "",
+				"signed":         "vendor",
+				"swupdateaction": "idle",
+				"swupdatestate":  "idle",
+				"swupdateresult": uint64(0),
+				"updatetime":     "1970-01-01T00:00:00Z",
+			},
 		},
 	}
 }
@@ -546,13 +573,7 @@ func OnboardDevSimForClient(ctx context.Context, t *testing.T, c pb.GrpcGatewayC
 	}
 
 	return deviceID, func() {
-		client, err := NewSDKClient()
-		require.NoError(t, err)
-		err = client.DisownDevice(ctx, deviceID)
-		require.NoError(t, err)
-		err = client.Close(ctx)
-		require.NoError(t, err)
-		time.Sleep(time.Second * 2)
+		DisownDevice(t, deviceID)
 	}
 }
 
@@ -569,6 +590,19 @@ func OffBoardDevSim(ctx context.Context, t *testing.T, deviceID string) {
 
 	err = devClient.OffboardDevice(ctx, deviceID)
 	require.NoError(t, err)
+}
+
+func DisownDevice(t *testing.T, deviceID string) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*8)
+	defer cancel()
+	client, err := NewSDKClient()
+	require.NoError(t, err)
+	defer func() {
+		_ = client.Close(ctx)
+	}()
+	err = client.DisownDevice(ctx, deviceID)
+	require.NoError(t, err)
+	time.Sleep(time.Second * 2)
 }
 
 func WaitForDevice(t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, deviceID, subID, correlationID string, expectedResources []schema.ResourceLink) {
@@ -970,4 +1004,27 @@ func GenerateIDbyIdx(prefix string, deviceIndex int) string {
 
 func GenerateDeviceIDbyIdx(deviceIndex int) string {
 	return GenerateIDbyIdx("d", deviceIndex)
+}
+
+func IsListenSocketClosed(t require.TestingT, target string, addStr string) bool {
+	if strings.Contains(target, "udp") {
+		addr, err := net.ResolveUDPAddr(target, addStr)
+		require.NoError(t, err)
+		c, err := net.ListenUDP(target, addr)
+		if err != nil {
+			return false
+		}
+		err = c.Close()
+		require.NoError(t, err)
+		return true
+	}
+	addr, err := net.ResolveTCPAddr(target, addStr)
+	require.NoError(t, err)
+	c, err := net.ListenTCP(target, addr)
+	if err != nil {
+		return false
+	}
+	err = c.Close()
+	require.NoError(t, err)
+	return true
 }
