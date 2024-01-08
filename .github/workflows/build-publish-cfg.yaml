@@ -66,7 +66,7 @@ jobs:
           fi
           echo "Both inputs are either empty or set. Validation successful."
 
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         if: ${{ inputs.www-name && inputs.www-build-dir }}
         with:
           name: ${{ inputs.www-name }}

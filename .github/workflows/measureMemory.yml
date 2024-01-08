@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: outputs
       - name: Update summary
@@ -306,7 +306,7 @@ jobs:
 
       - name: Upload file
         if: success()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ hashFiles('out.json') || 'none' }}
           path: out.json
