@@ -197,11 +197,12 @@ func (c *VisibilityConfig) ToProto() *pb.UIVisibility {
 
 // WebConfiguration represents web configuration for user interface exposed via getOAuthConfiguration handler
 type WebConfiguration struct {
-	Authority          string            `yaml:"-" json:"authority"`
-	HTTPGatewayAddress string            `yaml:"httpGatewayAddress" json:"httpGatewayAddress"`
-	WebOAuthClient     BasicOAuthClient  `yaml:"webOAuthClient" json:"webOauthClient"`
-	DeviceOAuthClient  DeviceOAuthClient `yaml:"deviceOAuthClient" json:"deviceOauthClient"`
-	Visibility         VisibilityConfig  `yaml:"visibility" json:"visibility"`
+	Authority                 string            `yaml:"-" json:"authority"`
+	HTTPGatewayAddress        string            `yaml:"httpGatewayAddress" json:"httpGatewayAddress"`
+	DeviceProvisioningService string            `yaml:"deviceProvisioningService" json:"deviceProvisioningService"`
+	WebOAuthClient            BasicOAuthClient  `yaml:"webOAuthClient" json:"webOauthClient"`
+	DeviceOAuthClient         DeviceOAuthClient `yaml:"deviceOAuthClient" json:"deviceOauthClient"`
+	Visibility                VisibilityConfig  `yaml:"visibility" json:"visibility"`
 }
 
 func (c *WebConfiguration) Validate() error {
