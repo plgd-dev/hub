@@ -1046,6 +1046,7 @@ UI configuration
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | visibility | [UIVisibility](#grpcgateway-pb-UIVisibility) |  |  |
+| device_provisioning_service | [string](#string) |  | Address to device provisioning service HTTP API in format https://host:port |
 
 
 

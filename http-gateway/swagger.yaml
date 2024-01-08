@@ -1604,17 +1604,29 @@ components:
         configuration:
           type: boolean
         remoteClients:
-          "type": boolean
+          type: boolean
         pendingCommands:
-          "type": boolean
+          type: boolean
         certificates:
-          "type": boolean
+          type: boolean
         deviceProvisioning:
-          "type": boolean
+          type: boolean
         docs:
-          "type": boolean
+          type: boolean
         chatRoom:
-          "type": boolean
+          type: boolean
+        dashboard:
+          type: boolean
+        integrations:
+          type: boolean
+        deviceFirmwareUpdate:
+          type: boolean
+        deviceLogs:
+          type: boolean
+        apiTokens:
+          type: boolean
+        schemaHub:
+          type: boolean
     UIConfiguration:
       title: UI configuration
       type: object
@@ -1622,6 +1634,9 @@ components:
         visibility:
           $ref: "#/components/schemas/UIVisibility"
           title: "Visibility"
+        deviceProvisioningService:
+          type: string
+          title": "Address to device provisioning service HTTP API in format https://host:port"
     UIVisibility:
       type: object
       description: |
