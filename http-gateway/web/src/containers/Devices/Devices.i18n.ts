@@ -13,6 +13,10 @@ export const messages = defineMessages({
         id: 'devices.device',
         defaultMessage: 'Device',
     },
+    devices: {
+        id: 'devices.devices',
+        defaultMessage: 'Devices',
+    },
     addDevice: {
         id: 'devices.addDevice',
         defaultMessage: 'Add Device',
@@ -28,6 +32,10 @@ export const messages = defineMessages({
     interfaces: {
         id: 'devices.interfaces',
         defaultMessage: 'Interfaces',
+    },
+    certificates: {
+        id: 'devices.certificates',
+        defaultMessage: 'Certificates',
     },
     resourceInterfaces: {
         id: 'devices.resourceInterfaces',
@@ -548,5 +556,13 @@ export const messages = defineMessages({
     compactView: {
         id: 'devices.compactView',
         defaultMessage: 'Compact View',
+    },
+    certificateName: {
+        id: 'devices.certificateName',
+        defaultMessage: 'Certificate name',
+    },
+    dps: {
+        id: 'devices.dps',
+        defaultMessage: 'DPS',
     },
 })

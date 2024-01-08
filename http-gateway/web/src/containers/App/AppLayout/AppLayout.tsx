@@ -11,7 +11,7 @@ import NotificationCenter from '@shared-ui/components/Atomic/NotificationCenter'
 import UserWidget from '@shared-ui/components/Layout/Header/UserWidget'
 import VersionMark from '@shared-ui/components/Atomic/VersionMark'
 import Layout from '@shared-ui/components/Layout'
-import { MenuItem } from '@shared-ui/components/Layout/LeftPanel/LeftPanel.types'
+import { MenuItem, SubMenuItem } from '@shared-ui/components/Layout/LeftPanel/LeftPanel.types'
 import { parseActiveItem } from '@shared-ui/components/Layout/LeftPanel/utils'
 import { getVersionMarkData } from '@shared-ui/components/Atomic/VersionMark/utils'
 import { severities } from '@shared-ui/components/Atomic/VersionMark/constants'
@@ -19,19 +19,22 @@ import { flushDevices } from '@shared-ui/app/clientApp/Devices/slice'
 import { reset } from '@shared-ui/app/clientApp/App/AppRest'
 import { App } from '@shared-ui/components/Atomic'
 import { ThemeType } from '@shared-ui/components/Atomic/_theme'
-import { clientAppSettings } from '@shared-ui/common/services'
-import { useAppVersion } from '@shared-ui/common/hooks'
+import { clientAppSettings, security } from '@shared-ui/common/services'
+import { useAppVersion, WellKnownConfigType } from '@shared-ui/common/hooks'
 import Logo from '@shared-ui/components/Atomic/Logo'
 
 import { Props } from './AppLayout.types'
-import { mather, menu, Routes } from '@/routes'
+import { mather, getMenu, Routes } from '@/routes'
 import { messages as t } from '@/containers/App/App.i18n'
+import { messages as g } from '../../Global.i18n'
 import { readAllNotifications, setNotifications } from '@/containers/Notifications/slice'
 import LeftPanelWrapper from '@/containers/App/AppInner/LeftPanelWrapper/LeftPanelWrapper'
 import { CombinedStoreType } from '@/store/store'
 import { setVersion } from '@/containers/App/slice'
 import { deleteAllRemoteClients } from '@/containers/RemoteClients/slice'
 import testId from '@/testId'
+import PreviewApp from '@/containers/Configuration/PreviewApp/PreviewApp'
+import { CONFIGURATION_PAGE_FRAME } from '@/constants'
 
 const AppLayout: FC<Props> = (props) => {
     const { buildInformation, collapsed, mockApp, userData, signOutRedirect, setCollapsed } = props
@@ -39,6 +42,13 @@ const AppLayout: FC<Props> = (props) => {
     const location = useLocation()
     const dispatch = useDispatch()
     const navigate = useNavigate()
+    const configurationPageFrame = window.location.pathname === `/${CONFIGURATION_PAGE_FRAME}`
+
+    const wellKnownConfig = security.getWellKnowConfig() as WellKnownConfigType & {
+        defaultCommandTimeToLive: number
+    }
+
+    const menu = useMemo(() => getMenu(wellKnownConfig.ui.visibility.mainSidebar), [wellKnownConfig.ui.visibility.mainSidebar])
 
     const [activeItem, setActiveItem] = useState(parseActiveItem(location.pathname, menu, mather))
     const notifications = useSelector((state: CombinedStoreType) => state.notifications)
@@ -55,7 +65,7 @@ const AppLayout: FC<Props> = (props) => {
         }
     }, [appStore.version, dispatch, version])
 
-    const handleItemClick = (item: MenuItem, e: SyntheticEvent) => {
+    const handleItemClick = (item: MenuItem | SubMenuItem, e: SyntheticEvent) => {
         e.preventDefault()
 
         setActiveItem(item.id)
@@ -109,6 +119,14 @@ const AppLayout: FC<Props> = (props) => {
     // reset
     clientAppSettings.setUseToken(true)
 
+    if (configurationPageFrame) {
+        return (
+            <App toastContainerPortalTarget={document.getElementById('toast-root')}>
+                <PreviewApp />
+            </App>
+        )
+    }
+
     return (
         <App toastContainerPortalTarget={document.getElementById('toast-root')}>
             <Layout
@@ -137,7 +155,7 @@ const AppLayout: FC<Props> = (props) => {
                                 dataTestId={testId.app.logout}
                                 description={userData?.profile?.family_name}
                                 image={userData?.profile?.picture}
-                                logoutTitle={_(t.logOut)}
+                                logoutTitle={_(g.logOut)}
                                 name={userData?.profile?.name ?? ''}
                                 onLogout={logout}
                             />

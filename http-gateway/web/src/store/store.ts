@@ -1,7 +1,8 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { setupListeners } from '@reduxjs/toolkit/query'
-import { persistReducer } from 'redux-persist'
+import { PERSIST, persistReducer, PURGE, REHYDRATE } from 'redux-persist'
 import storage from 'redux-persist/lib/storage'
+import { createStateSyncMiddleware, initMessageListener } from 'redux-state-sync'
 
 import { createRootReducer } from './reducers'
 import { StoreType as NotificationStoreType } from '../containers/Notifications/slice'
@@ -32,9 +33,23 @@ const store = configureStore({
         getDefaultMiddleware({
             serializableCheck: false,
             immutableCheck: false,
-        }),
+        }).concat(
+            createStateSyncMiddleware({
+                predicate: (action) => {
+                    // console.log({ action })
+                    const blacklist = [PERSIST, PURGE, REHYDRATE]
+                    if (typeof action !== 'function') {
+                        if (Array.isArray(blacklist)) {
+                            return blacklist.indexOf(action.type) < 0
+                        }
+                    }
+                    return false
+                },
+            })
+        ),
 })
 
+initMessageListener(store)
 setupListeners(store.dispatch)
 
 export default store

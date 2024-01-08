@@ -9,6 +9,8 @@ export type StoreType = {
     configuration: {
         theme: string
         themes: string[]
+        themeModal: boolean
+        previewTheme: any
     }
 }
 
@@ -17,6 +19,8 @@ const initialState: StoreType = {
     configuration: {
         theme: '',
         themes: [],
+        themeModal: false,
+        previewTheme: {},
     },
 }
 
@@ -33,11 +37,17 @@ const { reducer, actions } = createSlice({
         setTheme(state, { payload }) {
             state.configuration.theme = payload
         },
+        setPreviewTheme(state, { payload }) {
+            state.configuration.previewTheme = payload
+        },
+        setThemeModal(state, { payload }) {
+            state.configuration.themeModal = payload
+        },
     },
 })
 
 // Actions
-export const { setVersion, setThemes, setTheme } = actions
+export const { setVersion, setThemes, setTheme, setPreviewTheme, setThemeModal } = actions
 
 // Reducer
 export default reducer
