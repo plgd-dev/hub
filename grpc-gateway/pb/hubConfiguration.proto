@@ -60,6 +60,8 @@ message UIVisibility {
 // UI configuration
 message UIConfiguration {
     UIVisibility visibility = 1;
+    // Address to device provisioning service HTTP API in format https://host:port  
+    string device_provisioning_service = 2;
 }
 
 message HubConfigurationResponse {
