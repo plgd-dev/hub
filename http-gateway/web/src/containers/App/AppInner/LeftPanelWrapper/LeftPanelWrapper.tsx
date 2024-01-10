@@ -22,7 +22,7 @@ const LeftPanelWrapper: FC<LeftPanelWrapperType> = (props) => {
 
             const activeId = parseActiveItem(location.pathname, props.menu, mather)
 
-            if (firstActivePage && firstActivePage?.id !== activeId) {
+            if (firstActivePage && location.pathname === '/' && firstActivePage?.id !== activeId) {
                 navigate(firstActivePage.link)
             }
         }
