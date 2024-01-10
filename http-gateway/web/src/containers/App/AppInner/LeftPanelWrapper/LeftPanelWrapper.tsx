@@ -26,7 +26,8 @@ const LeftPanelWrapper: FC<LeftPanelWrapperType> = (props) => {
                 navigate(firstActivePage.link)
             }
         }
-    }, [location, navigate, props.menu])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [props.menu])
 
     useEffect(() => {
         onLocationChange(parseActiveItem(location.pathname, props.menu!, mather))
