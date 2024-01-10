@@ -47,8 +47,8 @@ const App = (props: { mockApp: boolean }) => {
 
                     const { webOauthClient, deviceOauthClient, ...generalConfig } = wellKnown
 
-                    if (!wellKnown.ui.visibility.mainSidebar) {
-                        wellKnown.ui.visibility.mainSidebar = defaultMenu
+                    if (!wellKnown?.ui?.visibility?.mainSidebar) {
+                        wellKnown.ui = { visibility: { mainSidebar: defaultMenu } }
                     }
 
                     const clientId = webOauthClient?.clientId
@@ -69,6 +69,7 @@ const App = (props: { mockApp: boolean }) => {
                         setWellKnownConfig(wellKnown)
                     }
                 } catch (e) {
+                    console.error(e)
                     setConfigError(new Error('Could not retrieve the well-known configuration.'))
                 }
             }

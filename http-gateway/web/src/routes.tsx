@@ -50,7 +50,6 @@ const PendingCommandsListPage = lazy(() => import('./containers/PendingCommands/
 
 // Internal
 const MockApp = lazy(() => import('@shared-ui/app/clientApp/MockApp'))
-const TestPage = lazy(() => import('./containers/Test'))
 const ConfigurationPage = lazy(() => import('./containers/Configuration'))
 
 const MenuTranslate = (props: { id: string }) => {
@@ -80,17 +79,17 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                 icon: <IconDashboard />,
                 id: '0',
                 title: <MenuTranslate id='menuDashboard' />,
-                link: '/dashboard',
-                paths: ['/dashboard'],
+                link: '/',
+                paths: ['/'],
                 exact: true,
-                visibility: menuConfig?.dashboard ? 'disabled' : false,
+                visibility: menuConfig?.dashboard === false ? false : 'disabled',
             },
             {
                 icon: <IconDevices />,
                 id: '1',
                 title: <MenuTranslate id='menuDevices' />,
-                link: '/',
-                paths: ['/', '/devices/:id', '/devices/:id/resources', '/devices/:id/resources/:href', '/devices/:id/certificates', '/devices/:id/dps'],
+                link: '/devices',
+                paths: ['/devices', '/devices/:id', '/devices/:id/resources', '/devices/:id/resources/:href', '/devices/:id/certificates', '/devices/:id/dps'],
                 exact: true,
                 dataTestId: testId.menu.devices,
                 visibility: menuConfig.devices,
@@ -102,7 +101,7 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                 link: '/integrations',
                 paths: ['/integrations'],
                 exact: true,
-                visibility: menuConfig.integrations ? 'disabled' : false,
+                visibility: menuConfig.integrations === false ? false : 'disabled',
             },
             {
                 icon: <IconRemoteClients />,
@@ -179,7 +178,7 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                 link: '/device-firmware-update',
                 paths: ['/device-firmware-update'],
                 exact: true,
-                visibility: menuConfig.deviceFirmwareUpdate ? 'disabled' : false,
+                visibility: menuConfig.deviceFirmwareUpdate === false ? false : 'disabled',
                 children: [
                     { id: '111', title: 'Quickstart 2' },
                     { id: '112', title: 'Manage enrollments 2' },
@@ -195,7 +194,7 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                 link: '/device-logs',
                 paths: ['/device-logs'],
                 exact: true,
-                visibility: menuConfig.deviceLogs ? 'disabled' : false,
+                visibility: menuConfig.deviceLogs === false ? false : 'disabled',
             },
             {
                 icon: <IconLock />,
@@ -204,7 +203,7 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                 link: '/api-tokens',
                 paths: ['/api-tokens'],
                 exact: true,
-                visibility: menuConfig.apiTokens ? 'disabled' : false,
+                visibility: menuConfig.apiTokens === false ? false : 'disabled',
             },
             {
                 icon: <IconNet />,
@@ -213,7 +212,7 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                 link: '/schema-hub',
                 paths: ['/schema-hub'],
                 exact: true,
-                visibility: menuConfig.schemaHub ? 'disabled' : false,
+                visibility: menuConfig.schemaHub === false ? false : 'disabled',
             },
             {
                 icon: <IconSettings />,
@@ -247,17 +246,6 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
     },
 ]
 
-// if (process.env?.REACT_APP_TEST_VIEW === 'true') {
-//     menu[0]?.items?.push({
-//         icon: <IconSettings />,
-//         id: '999',
-//         title: 'Test',
-//         link: '/test',
-//         paths: ['/test'],
-//         exact: false,
-//     })
-// }
-
 export const mather = (pathname: string, pattern: string) => matchPath(pattern, pathname)
 
 const Loader = () => {
@@ -275,7 +263,7 @@ export const Routes = () => {
                         <DevicesListPage />
                     </Suspense>
                 }
-                path='/'
+                path='/devices'
             />
 
             <Route
@@ -485,7 +473,6 @@ export const Routes = () => {
                 path='/configuration/theme-generator'
             />
 
-            {process.env?.REACT_APP_TEST_VIEW === 'true' && <Route element={<TestPage />} path='/test' />}
             <Route element={<NotFoundPage message={_(t.notFoundPageDefaultMessage)} title={_(t.pageTitle)} />} path='*' />
         </RoutesGroup>
     )
