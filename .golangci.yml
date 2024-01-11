@@ -22,7 +22,7 @@ linters-settings:
     excludes:
       - G402
   stylecheck:
-    go: "1.18"
+    go: "1.20"
     checks: ["all", "-ST1003"]
 
 linters:
