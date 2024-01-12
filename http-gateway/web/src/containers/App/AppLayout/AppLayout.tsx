@@ -12,7 +12,7 @@ import UserWidget from '@shared-ui/components/Layout/Header/UserWidget'
 import VersionMark from '@shared-ui/components/Atomic/VersionMark'
 import Layout from '@shared-ui/components/Layout'
 import { MenuItem, SubMenuItem } from '@shared-ui/components/Layout/LeftPanel/LeftPanel.types'
-import { parseActiveItem } from '@shared-ui/components/Layout/LeftPanel/utils'
+import { getFirstActiveItemFromMenu, parseActiveItem } from '@shared-ui/components/Layout/LeftPanel/utils'
 import { getVersionMarkData } from '@shared-ui/components/Atomic/VersionMark/utils'
 import { severities } from '@shared-ui/components/Atomic/VersionMark/constants'
 import { flushDevices } from '@shared-ui/app/clientApp/Devices/slice'
@@ -51,6 +51,7 @@ const AppLayout: FC<Props> = (props) => {
     const menu = useMemo(() => getMenu(wellKnownConfig.ui.visibility.mainSidebar), [wellKnownConfig.ui.visibility.mainSidebar])
 
     const [activeItem, setActiveItem] = useState(parseActiveItem(location.pathname, menu, mather))
+
     const notifications = useSelector((state: CombinedStoreType) => state.notifications)
     const appStore = useSelector((state: CombinedStoreType) => state.app)
     const storedRemoteStore = useSelector((state: CombinedStoreType) => state.remoteClients)
@@ -89,6 +90,8 @@ const AppLayout: FC<Props> = (props) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [appStore.version.latest, buildInformation.version]
     )
+
+    const firstActivePage: any = useMemo(() => getFirstActiveItemFromMenu(menu), [menu])
 
     const logout = useCallback(() => {
         if (storedRemoteStore.remoteClients.length && !mockApp) {
@@ -166,7 +169,16 @@ const AppLayout: FC<Props> = (props) => {
                     <LeftPanelWrapper
                         activeId={activeItem}
                         collapsed={collapsed}
-                        logo={theme.logo && <Logo logo={theme.logo} onClick={() => navigate(`/`)} />}
+                        logo={
+                            theme.logo && (
+                                <Logo
+                                    logo={theme.logo}
+                                    onClick={() => {
+                                        navigate(firstActivePage ? firstActivePage.link : '/')
+                                    }}
+                                />
+                            )
+                        }
                         menu={menu}
                         onItemClick={handleItemClick}
                         onLocationChange={handleLocationChange}

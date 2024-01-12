@@ -77,4 +77,8 @@ export const messages = defineMessages({
         id: 'configurationPage.colorConfigurator',
         defaultMessage: 'Color configurator',
     },
+    generateThemeJson: {
+        id: 'configurationPage.generateThemeJson',
+        defaultMessage: 'Generate theme.json format',
+    },
 })
