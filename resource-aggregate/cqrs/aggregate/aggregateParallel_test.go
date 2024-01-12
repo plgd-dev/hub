@@ -20,7 +20,7 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 	"go.uber.org/atomic"
 )
 
@@ -36,7 +36,7 @@ func testNewEventstore(ctx context.Context, t *testing.T) (eventstore.EventStore
 	}
 	switch config.Use {
 	case database.MongoDB:
-		s, err := mongodb.New(ctx, config.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider())
+		s, err := mongodb.New(ctx, config.MongoDB, fileWatcher, logger, noop.NewTracerProvider())
 		require.NoError(t, err)
 		return s, func() {
 			errC := s.Clear(ctx)
@@ -47,7 +47,7 @@ func testNewEventstore(ctx context.Context, t *testing.T) (eventstore.EventStore
 			require.NoError(t, errC)
 		}
 	case database.CqlDB:
-		s, err := cqldb.New(ctx, config.CqlDB, fileWatcher, logger, trace.NewNoopTracerProvider())
+		s, err := cqldb.New(ctx, config.CqlDB, fileWatcher, logger, noop.NewTracerProvider())
 		require.NoError(t, err)
 		return s, func() {
 			errC := s.Clear(ctx)

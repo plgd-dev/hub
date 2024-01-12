@@ -37,7 +37,7 @@ import (
 	serviceTest "github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -833,7 +833,7 @@ func TestRequestHandlerIssue270(t *testing.T) {
 		require.NoError(t, errC)
 	}()
 
-	rdConn, err := grpcClient.New(ctx, config.MakeGrpcClientConfig(config.GRPC_GW_HOST), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
+	rdConn, err := grpcClient.New(ctx, config.MakeGrpcClientConfig(config.GRPC_GW_HOST), fileWatcher, log.Get(), noop.NewTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = rdConn.Close()
@@ -1012,7 +1012,7 @@ func TestCoAPGatewayServiceHeartbeat(t *testing.T) {
 		require.NoError(t, errC)
 	}()
 
-	rdConn, err := grpcClient.New(ctx, config.MakeGrpcClientConfig(config.GRPC_GW_HOST), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
+	rdConn, err := grpcClient.New(ctx, config.MakeGrpcClientConfig(config.GRPC_GW_HOST), fileWatcher, log.Get(), noop.NewTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = rdConn.Close()

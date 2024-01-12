@@ -18,7 +18,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 )
 
 func TestPublishUnpublish(t *testing.T) {
@@ -47,14 +47,14 @@ func TestPublishUnpublish(t *testing.T) {
 		require.NoError(t, errC)
 	}()
 
-	idConn, err := client.New(ctx, config.MakeGrpcClientConfig(cfg.Clients.IdentityStore.Connection.Addr), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
+	idConn, err := client.New(ctx, config.MakeGrpcClientConfig(cfg.Clients.IdentityStore.Connection.Addr), fileWatcher, log.Get(), noop.NewTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = idConn.Close()
 	}()
 	idClient := pbIS.NewIdentityStoreClient(idConn.GRPC())
 
-	raConn, err := client.New(ctx, config.MakeGrpcClientConfig(cfg.APIs.GRPC.Addr), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
+	raConn, err := client.New(ctx, config.MakeGrpcClientConfig(cfg.APIs.GRPC.Addr), fileWatcher, log.Get(), noop.NewTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = raConn.Close()

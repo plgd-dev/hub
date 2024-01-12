@@ -41,7 +41,7 @@ import (
 	"github.com/plgd-dev/kit/v2/strings"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 	"go.uber.org/atomic"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -396,7 +396,7 @@ func runTestDeviceObserverRegister(ctx context.Context, t *testing.T, deviceID s
 		require.NoError(t, err)
 	}()
 
-	rdConn, err := grpcClient.New(ctx, config.MakeGrpcClientConfig(config.GRPC_GW_HOST), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
+	rdConn, err := grpcClient.New(ctx, config.MakeGrpcClientConfig(config.GRPC_GW_HOST), fileWatcher, log.Get(), noop.NewTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = rdConn.Close()
@@ -408,7 +408,7 @@ func runTestDeviceObserverRegister(ctx context.Context, t *testing.T, deviceID s
 		ResourceDirectoryClient: rdC,
 	}
 
-	raConn, err := grpcClient.New(ctx, config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
+	raConn, err := grpcClient.New(ctx, config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST), fileWatcher, log.Get(), noop.NewTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = raConn.Close()

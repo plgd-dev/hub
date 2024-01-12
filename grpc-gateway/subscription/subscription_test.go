@@ -27,7 +27,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 )
 
 func waitForEvent(ctx context.Context, t *testing.T, recvChan <-chan *pb.Event) *pb.Event {
@@ -180,14 +180,14 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 		require.NoError(t, errC)
 	}()
 
-	rdConn, err := grpcClient.New(ctx, config.MakeGrpcClientConfig(config.RESOURCE_DIRECTORY_HOST), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
+	rdConn, err := grpcClient.New(ctx, config.MakeGrpcClientConfig(config.RESOURCE_DIRECTORY_HOST), fileWatcher, log.Get(), noop.NewTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = rdConn.Close()
 	}()
 	rdc := pb.NewGrpcGatewayClient(rdConn.GRPC())
 
-	raConn, err := grpcClient.New(ctx, config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
+	raConn, err := grpcClient.New(ctx, config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST), fileWatcher, log.Get(), noop.NewTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = raConn.Close()

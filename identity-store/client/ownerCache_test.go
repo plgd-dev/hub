@@ -24,7 +24,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
 )
@@ -59,7 +59,7 @@ func TestOwnerCacheSubscribe(t *testing.T) {
 			CertFile: cfg.APIs.GRPC.TLS.CertFile,
 			KeyFile:  cfg.APIs.GRPC.TLS.KeyFile,
 		},
-	}, fileWatcher, log.Get(), trace.NewNoopTracerProvider(), grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(func(ctx context.Context) (*oauth2.Token, error) {
+	}, fileWatcher, log.Get(), noop.NewTracerProvider(), grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(func(ctx context.Context) (*oauth2.Token, error) {
 		return &oauth2.Token{
 			AccessToken:  token,
 			TokenType:    "Bearer",

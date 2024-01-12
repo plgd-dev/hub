@@ -18,7 +18,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/mongodb"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 )
 
 func MakeConfig(t require.TestingT) service.Config {
@@ -110,7 +110,7 @@ func NewCQLStore(t require.TestingT) (*storeCqlDB.Store, func()) {
 	require.NoError(t, err)
 
 	ctx := context.Background()
-	store, err := storeCqlDB.New(ctx, cfg.Clients.Storage.Embedded.CqlDB, fileWatcher, logger, trace.NewNoopTracerProvider())
+	store, err := storeCqlDB.New(ctx, cfg.Clients.Storage.Embedded.CqlDB, fileWatcher, logger, noop.NewTracerProvider())
 	require.NoError(t, err)
 
 	cleanUp := func() {
@@ -141,7 +141,7 @@ func NewMongoStore(t require.TestingT) (*storeMongo.Store, func()) {
 	require.NoError(t, err)
 
 	ctx := context.Background()
-	store, err := storeMongo.New(ctx, cfg.Clients.Storage.Embedded.MongoDB, fileWatcher, logger, trace.NewNoopTracerProvider())
+	store, err := storeMongo.New(ctx, cfg.Clients.Storage.Embedded.MongoDB, fileWatcher, logger, noop.NewTracerProvider())
 	require.NoError(t, err)
 
 	cleanUp := func() {
