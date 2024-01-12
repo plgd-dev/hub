@@ -10,11 +10,10 @@ import Row from '@shared-ui/components/Atomic/Grid/Row'
 import Column from '@shared-ui/components/Atomic/Grid/Column'
 import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
 import ColorPicker from '@shared-ui/components/Atomic/ColorPicker'
-import { colors } from '@shared-ui/components/Atomic/_utils/colors'
 import VersionMark from '@shared-ui/components/Atomic/VersionMark'
 import { severities } from '@shared-ui/components/Atomic/VersionMark/constants'
 import LeftPanel from '@shared-ui/components/Layout/LeftPanel'
-import { IconDashboard, IconDevices, IconDeviceUpdate, IconNetwork } from '@shared-ui/components/Atomic'
+import { IconDashboard, IconDevices, IconDeviceUpdate, IconLoader, IconNetwork } from '@shared-ui/components/Atomic'
 import Logo from '@shared-ui/components/Atomic/Logo'
 import Layout from '@shared-ui/components/Layout'
 import Header from '@shared-ui/components/Layout/Header'
@@ -26,11 +25,13 @@ import PageLayout from '@shared-ui/components/Atomic/PageLayout'
 import Button from '@shared-ui/components/Atomic/Button'
 import Footer from '@shared-ui/components/Layout/Footer'
 import { useIsMounted } from '@shared-ui/common/hooks'
+import { getTheme } from '@shared-ui/app/clientApp/App/AppRest'
 
 import { messages as g } from '@/containers/Global.i18n'
 import { PreviewAppRefType } from './PreviewApp.types'
 import * as styles from './PreviewApp.styles'
 import { setPreviewTheme, setThemeModal } from '@/containers/App/slice'
+import { RGBColor } from 'react-color'
 
 const Tab1 = lazy(() => import('./Tabs/Tab1'))
 const Tab2 = lazy(() => import('./Tabs/Tab2'))
@@ -49,10 +50,42 @@ const PreviewApp = forwardRef<PreviewAppRefType, any>((props, ref) => {
 
     const [activeId, setActiveId] = useState('1')
     const [collapsed, setCollapsed] = useState(false)
-    const [colorPalette, setColorPalette] = useState(colors)
+    const [colorPalette, setColorPalette] = useState<any>(undefined)
+    const [defaultColorPalette, setDefaultColorPalette] = useState<any>(undefined)
     const [activeTabItem, setActiveTabItem] = useState(0)
 
     const isMounted = useIsMounted()
+
+    useEffect(() => {
+        const getThemeData = async (theme: string) => {
+            try {
+                const { data: themeData } = await getTheme(window.location.origin)
+
+                if (themeData) {
+                    let themeNames: string[] = []
+                    let themes: any = {}
+
+                    themeData.themes.forEach((t: any) => {
+                        themeNames = themeNames.concat(Object.keys(t))
+                        themes[Object.keys(t)[0]] = t[Object.keys(t)[0]]
+                    })
+
+                    if (themes.hasOwnProperty(theme)) {
+                        return themes[theme].colorPalette
+                    }
+                }
+            } catch (e) {
+                console.log(e)
+            }
+        }
+
+        if (colorPalette === undefined) {
+            getThemeData(appStore.configuration.theme).then((palette) => {
+                setColorPalette(palette)
+                setDefaultColorPalette(palette)
+            })
+        }
+    }, [colorPalette, appStore.configuration])
 
     useEffect(() => {
         if (appStore.configuration.previewTheme?.colorPalette) {
@@ -108,10 +141,10 @@ const PreviewApp = forwardRef<PreviewAppRefType, any>((props, ref) => {
     )
 
     const handleReset = useCallback(() => {
-        setColorPalette(colors)
-        dispatch(setPreviewTheme(getThemeTemplate(colors, defaultLogo)))
+        setColorPalette(defaultColorPalette)
+        dispatch(setPreviewTheme(undefined))
         dispatch(setThemeModal(false))
-    }, [defaultLogo, dispatch])
+    }, [defaultColorPalette, dispatch])
 
     return (
         <div
@@ -124,156 +157,175 @@ const PreviewApp = forwardRef<PreviewAppRefType, any>((props, ref) => {
                 overflow: 'hidden',
             }}
         >
-            <Row>
-                <Column size={9}>
-                    <div style={{ height, position: 'relative' }}>
-                        <ThemeProvider theme={getThemeTemplate(colorPalette, defaultLogo)}>
-                            <Layout
-                                content={
-                                    <PageLayout
-                                        footer={
-                                            <Footer
-                                                css={styles.relative}
-                                                footerExpanded={false}
-                                                paginationComponent={<div id='paginationPortalTargetPreviewApp'></div>}
-                                            />
-                                        }
-                                        header={
-                                            <div css={styles.itemWrapper}>
-                                                <Button css={styles.item}>Secondary CTA</Button>
-                                                <Button css={styles.item} variant='primary'>
-                                                    Primary CTA
-                                                </Button>
-                                            </div>
-                                        }
-                                        title='Example page'
-                                        xPadding={false}
-                                    >
-                                        {isMounted &&
-                                            document.querySelector('#breadcrumbsPortalTargetPreviewApp') &&
-                                            ReactDOM.createPortal(
-                                                <Breadcrumbs
-                                                    items={[
-                                                        {
-                                                            label: 'Parent page',
-                                                            link: '/',
-                                                        },
-                                                        { label: 'Current page' },
-                                                    ]}
-                                                />,
-                                                document.querySelector('#breadcrumbsPortalTargetPreviewApp') as Element
-                                            )}
+            {colorPalette && (
+                <Row>
+                    <Column size={9}>
+                        <div style={{ height, position: 'relative' }}>
+                            <ThemeProvider theme={getThemeTemplate(colorPalette, defaultLogo)}>
+                                <Layout
+                                    content={
+                                        <PageLayout
+                                            footer={
+                                                <Footer
+                                                    css={styles.relative}
+                                                    footerExpanded={false}
+                                                    paginationComponent={<div id='paginationPortalTargetPreviewApp'></div>}
+                                                />
+                                            }
+                                            header={
+                                                <div css={styles.itemWrapper}>
+                                                    <Button css={styles.item}>Secondary CTA</Button>
+                                                    <Button css={styles.item} variant='primary'>
+                                                        Primary CTA
+                                                    </Button>
+                                                </div>
+                                            }
+                                            title='Example page'
+                                            xPadding={false}
+                                        >
+                                            {isMounted &&
+                                                document.querySelector('#breadcrumbsPortalTargetPreviewApp') &&
+                                                ReactDOM.createPortal(
+                                                    <Breadcrumbs
+                                                        items={[
+                                                            {
+                                                                label: 'Parent page',
+                                                                link: '/',
+                                                            },
+                                                            { label: 'Current page' },
+                                                        ]}
+                                                    />,
+                                                    document.querySelector('#breadcrumbsPortalTargetPreviewApp') as Element
+                                                )}
 
-                                        <Tabs fullHeight innerPadding isAsync activeItem={activeTabItem} onItemChange={onTabItemChange} tabs={tabs} />
-                                    </PageLayout>
-                                }
-                                header={
-                                    <Header
-                                        breadcrumbs={<div id='breadcrumbsPortalTargetPreviewApp'></div>}
-                                        userWidget={
-                                            <UserWidget
-                                                description='Description'
-                                                image='https://place-hold.it/300x300?text=UN&fontsize=56'
-                                                logoutTitle={_(g.logOut)}
-                                                name='User name'
-                                                onLogout={() => console.log('logout')}
-                                            />
-                                        }
-                                    />
-                                }
-                                leftPanel={
-                                    <LeftPanel
-                                        activeId={activeId}
-                                        collapsed={collapsed}
-                                        logo={<Logo logo={defaultLogo} />}
-                                        menu={[
-                                            {
-                                                title: 'Main menu',
-                                                items: [
-                                                    {
-                                                        icon: <IconDashboard />,
-                                                        id: '1',
-                                                        title: 'Item 1',
-                                                        visibility: true,
-                                                    },
-                                                    {
-                                                        icon: <IconDevices />,
-                                                        id: '2',
-                                                        title: 'Item 2',
-                                                        visibility: true,
-                                                    },
-                                                ],
-                                            },
-                                            {
-                                                title: 'Other',
-                                                items: [
-                                                    {
-                                                        icon: <IconNetwork />,
-                                                        id: '10',
-                                                        title: 'Sub menu',
-                                                        visibility: true,
-                                                        children: [
-                                                            {
-                                                                id: '101',
-                                                                title: 'Sub item 1',
-                                                                tag: { variant: 'success', text: 'New' },
-                                                            },
-                                                            { id: '102', title: 'Sub item 2' },
-                                                            { id: '103', title: 'Sub item 3' },
-                                                            {
-                                                                id: '104',
-                                                                title: 'Sub item 4',
-                                                                tag: { variant: 'info', text: 'Soon!' },
-                                                            },
-                                                        ],
-                                                    },
-                                                    {
-                                                        icon: <IconDeviceUpdate />,
-                                                        id: '3',
-                                                        title: 'Item 4',
-                                                        visibility: true,
-                                                    },
-                                                ],
-                                            },
-                                        ]}
-                                        onItemClick={(item, e) => {
-                                            e.preventDefault()
-                                            e.stopPropagation()
-                                            setActiveId(item.id)
-                                        }}
-                                        setCollapsed={setCollapsed}
-                                        versionMark={<VersionMark severity={severities.SUCCESS} versionText='Version 2.02' />}
-                                    />
-                                }
-                            />
-                            <div id='rootPreviewApp' />
-                        </ThemeProvider>
-                    </div>
-                </Column>
-                <Column css={styles.border} size={3}>
-                    <div css={styles.rightPanel} style={{ height }}>
-                        <div css={styles.colors}>
-                            <SimpleStripTable
-                                rows={Object.entries(colorPalette).map((colorArray) => ({
-                                    attribute: colorArray[0],
-                                    value: (
-                                        <ColorPicker
-                                            defaultColor={colorArray[1] === undefined ? 'rgba(255,255,255,0)' : colorArray[1]}
-                                            onColorChange={(color) => handleColorChange(colorArray[0], color)}
+                                            <Tabs fullHeight innerPadding isAsync activeItem={activeTabItem} onItemChange={onTabItemChange} tabs={tabs} />
+                                        </PageLayout>
+                                    }
+                                    header={
+                                        <Header
+                                            breadcrumbs={<div id='breadcrumbsPortalTargetPreviewApp'></div>}
+                                            userWidget={
+                                                <UserWidget
+                                                    description='Description'
+                                                    image='https://place-hold.it/300x300?text=UN&fontsize=56'
+                                                    logoutTitle={_(g.logOut)}
+                                                    name='User name'
+                                                    onLogout={() => console.log('logout')}
+                                                />
+                                            }
                                         />
-                                    ),
-                                }))}
-                            />
+                                    }
+                                    leftPanel={
+                                        <LeftPanel
+                                            activeId={activeId}
+                                            collapsed={collapsed}
+                                            logo={<Logo logo={defaultLogo} />}
+                                            menu={[
+                                                {
+                                                    title: 'Main menu',
+                                                    items: [
+                                                        {
+                                                            icon: <IconDashboard />,
+                                                            id: '1',
+                                                            title: 'Item 1',
+                                                            visibility: true,
+                                                        },
+                                                        {
+                                                            icon: <IconDevices />,
+                                                            id: '2',
+                                                            title: 'Item 2',
+                                                            visibility: true,
+                                                        },
+                                                    ],
+                                                },
+                                                {
+                                                    title: 'Other',
+                                                    items: [
+                                                        {
+                                                            icon: <IconNetwork />,
+                                                            id: '10',
+                                                            title: 'Sub menu',
+                                                            visibility: true,
+                                                            children: [
+                                                                {
+                                                                    id: '101',
+                                                                    title: 'Sub item 1',
+                                                                    tag: { variant: 'success', text: 'New' },
+                                                                },
+                                                                { id: '102', title: 'Sub item 2' },
+                                                                { id: '103', title: 'Sub item 3' },
+                                                                {
+                                                                    id: '104',
+                                                                    title: 'Sub item 4',
+                                                                    tag: { variant: 'info', text: 'Soon!' },
+                                                                },
+                                                            ],
+                                                        },
+                                                        {
+                                                            icon: <IconDeviceUpdate />,
+                                                            id: '3',
+                                                            title: 'Item 4',
+                                                            visibility: true,
+                                                        },
+                                                    ],
+                                                },
+                                            ]}
+                                            onItemClick={(item, e) => {
+                                                e.preventDefault()
+                                                e.stopPropagation()
+                                                setActiveId(item.id)
+                                            }}
+                                            setCollapsed={setCollapsed}
+                                            versionMark={<VersionMark severity={severities.SUCCESS} versionText='Version 2.02' />}
+                                        />
+                                    }
+                                />
+                                <div id='rootPreviewApp' />
+                            </ThemeProvider>
                         </div>
-                        <div css={styles.buttons}>
-                            <Button onClick={handleReset}>{_(g.reset)}</Button>
-                            <Button onClick={handleThemeUpdate} variant='primary'>
-                                {_(g.saveChanges)}
-                            </Button>
+                    </Column>
+                    <Column css={styles.border} size={3}>
+                        <div css={styles.rightPanel} style={{ height }}>
+                            <div css={styles.colors}>
+                                <SimpleStripTable
+                                    rows={Object.entries(colorPalette).map((colorArray) => ({
+                                        attribute: colorArray[0],
+                                        value: (
+                                            <ColorPicker
+                                                defaultColor={(colorArray[1] === undefined ? 'rgba(255,255,255,0)' : colorArray[1]) as RGBColor}
+                                                onColorChange={(color) => handleColorChange(colorArray[0], color)}
+                                            />
+                                        ),
+                                    }))}
+                                />
+                            </div>
+                            <div css={styles.buttons}>
+                                {defaultColorPalette && (
+                                    <ThemeProvider theme={getThemeTemplate(defaultColorPalette, defaultLogo)}>
+                                        <Button onClick={handleReset}>{_(g.reset)}</Button>
+                                        <Button onClick={handleThemeUpdate} variant='primary'>
+                                            {_(g.saveChanges)}
+                                        </Button>
+                                    </ThemeProvider>
+                                )}
+                            </div>
                         </div>
-                    </div>
-                </Column>
-            </Row>
+                    </Column>
+                </Row>
+            )}
+            {!colorPalette && (
+                <div
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: '100%',
+                        height: '100%',
+                    }}
+                >
+                    <IconLoader size={40} type='secondary' />
+                </div>
+            )}
         </div>
     )
 })

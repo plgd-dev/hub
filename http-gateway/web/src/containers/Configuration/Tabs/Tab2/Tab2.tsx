@@ -4,8 +4,8 @@ import { useIntl } from 'react-intl'
 import ReactDOM from 'react-dom'
 import debounce from 'lodash/debounce'
 import { useDispatch, useSelector } from 'react-redux'
+import { useTheme } from '@emotion/react'
 
-import { colors } from '@shared-ui/components/Atomic/_utils/colors'
 import { getThemeTemplate } from '@shared-ui/components/Atomic/_theme/template'
 import Editor from '@shared-ui/components/Atomic/Editor'
 import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
@@ -17,7 +17,7 @@ import { useIsMounted } from '@shared-ui/common/hooks'
 import AppContext from '@shared-ui/app/share/AppContext'
 import FormGroup from '@shared-ui/components/Atomic/FormGroup'
 import FormInput, { inputAligns } from '@shared-ui/components/Atomic/FormInput'
-import { isValidHex } from '@shared-ui/components/Atomic/_theme'
+import { isValidHex, ThemeType } from '@shared-ui/components/Atomic/_theme'
 import { EditorRefType } from '@shared-ui/components/Atomic/Editor/Editor.types'
 
 import { Props, Inputs } from './Tab2.types'
@@ -25,6 +25,7 @@ import { messages as t } from '../../ConfigurationPage.i18n'
 import { messages as g } from '@/containers/Global.i18n'
 import { setPreviewTheme } from '@/containers/App/slice'
 import AppColorsPicker from './AppColorsPicker'
+import Switch from '@shared-ui/components/Atomic/Switch'
 
 const Tab2: FC<Props> = (props) => {
     const { isTabActive, resetForm } = props
@@ -39,13 +40,15 @@ const Tab2: FC<Props> = (props) => {
 
     const [loading, setLoading] = useState(false)
 
+    const theme: ThemeType = useTheme()
+
     const defaultColorPalette = useMemo(() => {
         if (appStore.configuration.previewTheme?.colorPalette) {
             return appStore.configuration.previewTheme?.colorPalette
         } else {
-            return colors ?? {}
+            return theme.colorPalette ?? {}
         }
-    }, [appStore.configuration.previewTheme])
+    }, [appStore.configuration.previewTheme?.colorPalette, theme.colorPalette])
 
     const {
         handleSubmit,
@@ -65,6 +68,7 @@ const Tab2: FC<Props> = (props) => {
             logoHeight: 32,
             logoWidth: 140,
             logoSource: '',
+            themeFormat: true,
         },
     })
 
@@ -201,6 +205,10 @@ const Tab2: FC<Props> = (props) => {
                 </FormGroup>
             ),
         },
+        {
+            attribute: _(t.generateThemeJson),
+            value: <Switch {...register('themeFormat')} />,
+        },
     ]
 
     const logoSource = watch('logoSource')
@@ -220,17 +228,25 @@ const Tab2: FC<Props> = (props) => {
         const values = getValues()
         setLoading(true)
         const customThemeName = values.themeName.replace(/\s+/g, '_').toLowerCase()
+        const themeData = {
+            [customThemeName]: getThemeTemplate(values.colorPalette, {
+                height: `${values.logoHeight}px`,
+                width: `${values.logoWidth}px`,
+                source: values.logoSource,
+            }),
+        }
 
         const fileName = `${customThemeName}.json`
         const data = new Blob(
             [
-                JSON.stringify({
-                    [customThemeName]: getThemeTemplate(values.colorPalette, {
-                        height: `${values.logoHeight}px`,
-                        width: `${values.logoWidth}px`,
-                        source: values.logoSource,
-                    }),
-                }),
+                JSON.stringify(
+                    values.themeFormat
+                        ? {
+                              defaultTheme: customThemeName,
+                              themes: [themeData],
+                          }
+                        : themeData
+                ),
             ],
             { type: 'text/json' }
         )
@@ -246,10 +262,10 @@ const Tab2: FC<Props> = (props) => {
 
     const handleReset = useCallback(() => {
         reset()
-        dispatch(setPreviewTheme(colors))
-        setValue('colorPalette', colors)
-        editorRef?.current?.setValue(colors)
-    }, [dispatch, reset, setValue])
+        dispatch(setPreviewTheme(undefined))
+        setValue('colorPalette', theme.colorPalette)
+        editorRef?.current?.setValue(theme.colorPalette)
+    }, [dispatch, reset, setValue, theme.colorPalette])
 
     return (
         <div>

@@ -4,9 +4,10 @@ export type Props = {
 }
 
 export type Inputs = {
-    themeName: string
     colorPalette: any
     logoHeight: number
     logoSource: string
     logoWidth: number
+    themeFormat?: boolean
+    themeName: string
 }

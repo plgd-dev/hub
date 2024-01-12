@@ -1,6 +1,6 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { setupListeners } from '@reduxjs/toolkit/query'
-import { PERSIST, persistReducer, PURGE, REHYDRATE } from 'redux-persist'
+import { persistReducer } from 'redux-persist'
 import storage from 'redux-persist/lib/storage'
 import { createStateSyncMiddleware, initMessageListener } from 'redux-state-sync'
 
@@ -36,12 +36,9 @@ const store = configureStore({
         }).concat(
             createStateSyncMiddleware({
                 predicate: (action) => {
-                    // console.log({ action })
-                    const blacklist = [PERSIST, PURGE, REHYDRATE]
+                    const whitelist = ['app/setThemeModal', 'app/setTheme', 'app/setPreviewTheme']
                     if (typeof action !== 'function') {
-                        if (Array.isArray(blacklist)) {
-                            return blacklist.indexOf(action.type) < 0
-                        }
+                        return whitelist.indexOf(action.type) >= 0
                     }
                     return false
                 },
