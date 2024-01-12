@@ -1,6 +1,7 @@
-import React, { FC, useCallback, useEffect, useState } from 'react'
+import React, { FC, lazy, useCallback, useEffect, useState } from 'react'
 import { useIntl } from 'react-intl'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useResizeDetector } from 'react-resize-detector'
 
 import NotFoundPage from '@shared-ui/components/Templates/NotFoundPage'
 import { useIsMounted, WellKnownConfigType } from '@shared-ui/common/hooks'
@@ -26,14 +27,15 @@ import {
 } from '../../hooks'
 import { messages as t } from '../../Devices.i18n'
 import './DevicesDetailsPage.scss'
-import Tab1 from './Tabs/Tab1'
-import Tab2 from './Tabs/Tab2'
-import Tab3 from './Tabs/Tab3'
-import Tab4 from './Tabs/Tab4'
 import { Props } from './DevicesDetailsPage.types'
 import notificationId from '@/notificationId'
 import testId from '@/testId'
 import PageLayout from '@/containers/Common/PageLayout'
+
+const Tab1 = lazy(() => import('./Tabs/Tab1'))
+const Tab2 = lazy(() => import('./Tabs/Tab2'))
+const Tab3 = lazy(() => import('./Tabs/Tab3'))
+const Tab4 = lazy(() => import('./Tabs/Tab4'))
 
 const DevicesDetailsPage: FC<Props> = (props) => {
     const { defaultActiveTab } = props
@@ -52,6 +54,8 @@ const DevicesDetailsPage: FC<Props> = (props) => {
     const { data: pendingCommandsData, refresh: refreshPendingCommands, loading: pendingCommandsLoading } = useDevicePendingCommands(id)
     const { data: certificates, loading: certificatesLoading } = useDeviceCertificates(id)
     const { data: provisioningRecords, loading: provisioningRecordsLoading } = useDeviceProvisioningRecords(id)
+
+    const { ref, width, height } = useResizeDetector()
 
     const wellKnownConfig = security.getWellKnowConfig() as WellKnownConfigType & {
         defaultCommandTimeToLive: number
@@ -193,103 +197,114 @@ const DevicesDetailsPage: FC<Props> = (props) => {
     }
 
     return (
-        <PageLayout
-            breadcrumbs={[{ label: _(menuT.devices), link: '/' }, { label: deviceName }]}
-            dataTestId={testId.devices.detail.layout}
-            deviceId={id}
-            header={
-                <DevicesDetailsHeader
-                    deviceId={id}
-                    deviceName={deviceName}
-                    handleOpenEditDeviceNameModal={handleOpenEditDeviceNameModal}
-                    isOnline={isOnline}
-                    isUnregistered={isUnregistered}
-                    links={resources}
-                />
-            }
-            headlineStatusTag={<StatusTag variant={isOnline ? 'success' : 'error'}>{isOnline ? _(t.online) : _(t.offline)}</StatusTag>}
-            loading={loading || twinSyncLoading || pendingCommandsLoading || certificatesLoading || provisioningRecordsLoading}
-            pendingCommands={true}
-            title={deviceName}
+        <div
+            ref={ref}
+            style={{
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+            }}
         >
-            <Tabs
-                activeItem={activeTabItem}
-                fullHeight={true}
-                onItemChange={handleTabChange}
-                tabs={[
-                    {
-                        name: _(t.deviceInformation),
-                        id: 0,
-                        dataTestId: testId.devices.detail.tabInformation,
-                        content: (
-                            <Tab1
-                                deviceId={id}
-                                deviceName={deviceName}
-                                firmware={data?.data?.content?.sv}
-                                isActiveTab={activeTabItem === 0}
-                                isTwinEnabled={isTwinEnabled}
-                                model={data?.data?.content?.dmno}
-                                pendingCommandsData={pendingCommandsData}
-                                setTwinSynchronization={setTwinSynchronization}
-                                softwareUpdateData={softwareUpdateData?.result?.data?.content}
-                                twinSyncLoading={twinSyncLoading}
-                                types={data?.types}
-                            />
-                        ),
-                    },
-                    {
-                        name: _(t.resources),
-                        id: 1,
-                        dataTestId: testId.devices.detail.tabResources,
-                        content: (
-                            <Tab2
-                                deviceName={deviceName}
-                                deviceStatus={deviceStatus}
-                                isActiveTab={activeTabItem === 1}
-                                isOnline={isOnline}
-                                isUnregistered={isUnregistered}
-                                loading={loading}
-                                loadingResources={loadingResources}
-                                refreshResources={refreshResources}
-                                resourcesData={resourcesData}
-                            />
-                        ),
-                    },
-                    {
-                        content: <Tab3 certificates={certificates} />,
-                        dataTestId: testId.devices.detail.tabCertificates,
-                        disabled: certificates?.length === 0 || certificatesLoading,
-                        id: 2,
-                        name: _(t.certificates),
-                    },
-                    {
-                        content: <Tab4 provisioningRecords={provisioningRecords} />,
-                        dataTestId: testId.devices.detail.tabProvisioningRecords,
-                        disabled: provisioningRecords?.length === 0 || provisioningRecordsLoading,
-                        id: 3,
-                        name: _(t.dps),
-                    },
-                ]}
-            />
+            <PageLayout
+                breadcrumbs={[{ label: _(menuT.devices), link: '/' }, { label: deviceName }]}
+                dataTestId={testId.devices.detail.layout}
+                deviceId={id}
+                header={
+                    <DevicesDetailsHeader
+                        deviceId={id}
+                        deviceName={deviceName}
+                        handleOpenEditDeviceNameModal={handleOpenEditDeviceNameModal}
+                        isOnline={isOnline}
+                        isUnregistered={isUnregistered}
+                        links={resources}
+                    />
+                }
+                headlineStatusTag={<StatusTag variant={isOnline ? 'success' : 'error'}>{isOnline ? _(t.online) : _(t.offline)}</StatusTag>}
+                loading={loading || twinSyncLoading || pendingCommandsLoading || certificatesLoading || provisioningRecordsLoading}
+                pendingCommands={true}
+                title={deviceName}
+            >
+                <Tabs
+                    fullHeight
+                    isAsync
+                    activeItem={activeTabItem}
+                    onItemChange={handleTabChange}
+                    tabs={[
+                        {
+                            name: _(t.deviceInformation),
+                            id: 0,
+                            dataTestId: testId.devices.detail.tabInformation,
+                            content: (
+                                <Tab1
+                                    deviceId={id}
+                                    deviceName={deviceName}
+                                    firmware={data?.data?.content?.sv}
+                                    isActiveTab={activeTabItem === 0}
+                                    isTwinEnabled={isTwinEnabled}
+                                    model={data?.data?.content?.dmno}
+                                    pendingCommandsData={pendingCommandsData}
+                                    setTwinSynchronization={setTwinSynchronization}
+                                    softwareUpdateData={softwareUpdateData?.result?.data?.content}
+                                    twinSyncLoading={twinSyncLoading}
+                                    types={data?.types}
+                                />
+                            ),
+                        },
+                        {
+                            name: _(t.resources),
+                            id: 1,
+                            dataTestId: testId.devices.detail.tabResources,
+                            content: (
+                                <Tab2
+                                    deviceName={deviceName}
+                                    deviceStatus={deviceStatus}
+                                    isActiveTab={activeTabItem === 1}
+                                    isOnline={isOnline}
+                                    isUnregistered={isUnregistered}
+                                    loading={loading}
+                                    loadingResources={loadingResources}
+                                    pageSize={{ height, width }}
+                                    refreshResources={refreshResources}
+                                    resourcesData={resourcesData}
+                                />
+                            ),
+                        },
+                        {
+                            content: <Tab3 certificates={certificates} />,
+                            dataTestId: testId.devices.detail.tabCertificates,
+                            disabled: certificates?.length === 0 || certificatesLoading,
+                            id: 2,
+                            name: _(t.certificates),
+                        },
+                        {
+                            content: <Tab4 provisioningRecords={provisioningRecords} />,
+                            dataTestId: testId.devices.detail.tabProvisioningRecords,
+                            disabled: provisioningRecords?.length === 0 || provisioningRecordsLoading,
+                            id: 3,
+                            name: _(t.dps),
+                        },
+                    ]}
+                />
 
-            <EditNameModal
-                dataTestId={testId.devices.detail.editNameModal}
-                handleClose={() => setShowEditNameModal(false)}
-                handleSubmit={updateDeviceName}
-                i18n={{
-                    close: _(t.close),
-                    namePlaceholder: _(t.deviceName),
-                    edit: _(t.edit),
-                    name: _(t.name),
-                    reset: _(t.reset),
-                    saveChange: _(t.saveChange),
-                    savingChanges: _(t.savingChanges),
-                }}
-                loading={deviceNameLoading}
-                name={deviceName}
-                show={showEditNameModal}
-            />
-        </PageLayout>
+                <EditNameModal
+                    dataTestId={testId.devices.detail.editNameModal}
+                    handleClose={() => setShowEditNameModal(false)}
+                    handleSubmit={updateDeviceName}
+                    i18n={{
+                        close: _(t.close),
+                        namePlaceholder: _(t.deviceName),
+                        edit: _(t.edit),
+                        name: _(t.name),
+                        reset: _(t.reset),
+                        saveChange: _(t.saveChange),
+                        savingChanges: _(t.savingChanges),
+                    }}
+                    loading={deviceNameLoading}
+                    name={deviceName}
+                    show={showEditNameModal}
+                />
+            </PageLayout>
+        </div>
     )
 }
 

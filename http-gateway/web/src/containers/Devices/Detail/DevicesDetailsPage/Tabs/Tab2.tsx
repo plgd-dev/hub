@@ -1,7 +1,6 @@
 import React, { FC, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useIntl } from 'react-intl'
-import { useResizeDetector } from 'react-resize-detector'
 import omit from 'lodash/omit'
 
 import { useIsMounted, WellKnownConfigType } from '@shared-ui/common/hooks'
@@ -26,7 +25,7 @@ import { createResourceNotificationId } from '@/containers/PendingCommands/utils
 import notificationId from '@/notificationId'
 
 const Tab2: FC<Props> = (props) => {
-    const { deviceStatus, deviceName, isOnline, isActiveTab, isUnregistered, loading, resourcesData, loadingResources, refreshResources } = props
+    const { deviceStatus, deviceName, isOnline, isActiveTab, isUnregistered, loading, resourcesData, loadingResources, pageSize, refreshResources } = props
     const { id: routerId, ...others } = useParams()
     const id = routerId || ''
     const hrefParam = others['*'] || ''
@@ -45,8 +44,6 @@ const Tab2: FC<Props> = (props) => {
         defaultCommandTimeToLive: number
     }
     const [ttl, setTtl] = useState(wellKnownConfig?.defaultCommandTimeToLive || 0)
-
-    const { ref, width, height } = useResizeDetector()
 
     // Open the resource modal when href is present
     useEffect(
@@ -262,14 +259,7 @@ const Tab2: FC<Props> = (props) => {
     }
 
     return (
-        <div
-            ref={ref}
-            style={{
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-            }}
-        >
+        <>
             <DevicesResources
                 data={resources}
                 deviceStatus={deviceStatus}
@@ -278,7 +268,7 @@ const Tab2: FC<Props> = (props) => {
                 onCreate={openCreateModal}
                 onDelete={openDeleteModal}
                 onUpdate={openUpdateModal}
-                pageSize={{ width, height: height ? height - 32 : 0 }} // tree switch
+                pageSize={{ width: pageSize.width, height: pageSize.height }} // tree switch
             />
             <DevicesResourcesModal
                 {...resourceModalData}
@@ -373,7 +363,7 @@ const Tab2: FC<Props> = (props) => {
                 subTitle={_(t.deleteResourceMessageSubtitle)}
                 title={_(t.deleteResourceMessage)}
             />
-        </div>
+        </>
     )
 }
 

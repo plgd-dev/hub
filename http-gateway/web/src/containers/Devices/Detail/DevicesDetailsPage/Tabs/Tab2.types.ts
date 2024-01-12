@@ -6,6 +6,10 @@ export type Props = {
     isUnregistered: boolean
     loading: boolean
     loadingResources?: boolean
+    pageSize: {
+        height?: number
+        width?: number
+    }
     refreshResources: () => void
     resourcesData?: any
 }
