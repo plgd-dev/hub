@@ -6,7 +6,6 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"math/rand"
 	"os"
@@ -52,7 +51,7 @@ func (r *Reloader) waitForProcess() error {
 
 	startTime := time.Now()
 	for {
-		pidfile, err := ioutil.ReadFile(r.PidFile)
+		pidfile, err := os.ReadFile(r.PidFile)
 		if err != nil {
 			goto WaitAndRetry
 		}

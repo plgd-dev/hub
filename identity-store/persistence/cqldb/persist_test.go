@@ -13,7 +13,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 )
 
 func newTestPersistence(t *testing.T) *cqldb.Store {
@@ -27,7 +27,7 @@ func newTestPersistence(t *testing.T) *cqldb.Store {
 	p, err := cqldb.New(ctx, &cqldb.Config{
 		Embedded: cfg,
 		Table:    "testDeviceOwnership",
-	}, fileWatcher, log.Get(), trace.NewNoopTracerProvider())
+	}, fileWatcher, log.Get(), noop.NewTracerProvider())
 	assert.NoError(t, err)
 
 	p.AddCloseFunc(func() {

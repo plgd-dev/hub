@@ -12,7 +12,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 )
 
 func TestEventStore(t *testing.T) {
@@ -65,7 +65,7 @@ func NewTestEventStore(ctx context.Context, fileWatcher *fsnotify.Watcher, logge
 		},
 		fileWatcher,
 		logger,
-		trace.NewNoopTracerProvider(),
+		noop.NewTracerProvider(),
 		cqldb.WithMarshaler(bson.Marshal),
 		cqldb.WithUnmarshaler(bson.Unmarshal),
 	)
