@@ -29,7 +29,7 @@ require (
 	github.com/pion/dtls/v2 v2.2.8-0.20240102042511-9ffd96c827fe
 	github.com/pion/logging v0.2.2
 	github.com/plgd-dev/device/v2 v2.2.5-0.20240112105119-e165727b7d41
-	github.com/plgd-dev/go-coap/v3 v3.3.1-0.20240110124809-39a46aa9ae36
+	github.com/plgd-dev/go-coap/v3 v3.3.1
 	github.com/plgd-dev/kit/v2 v2.0.0-20211006190727-057b33161b90
 	github.com/pseudomuto/protoc-gen-doc v1.5.1
 	github.com/sirupsen/logrus v1.9.3

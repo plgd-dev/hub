@@ -175,6 +175,9 @@ func TestBatchDeleteResources(t *testing.T) {
 	// _, _ = test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, nil)
 	_, _ = test.OnboardDevSim(ctx, t, c, deviceID, string(schema.TCPSecureScheme)+"://"+config.COAP_GW_HOST, nil)
 	require.True(t, bh.WaitForFirstSignIn(time.Second*20))
+	t.Cleanup(func() {
+		test.DisownDevice(t, deviceID)
+	})
 
 	devClient, err := test.NewSDKClient()
 	require.NoError(t, err)
