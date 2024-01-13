@@ -506,7 +506,7 @@ func TestOffboardInterrupt(t *testing.T) {
 	deviceID, _ = test.OnboardDevSim(ctx, t, c, deviceID, string(schema.TCPSecureScheme)+"://"+config.COAP_GW_HOST, nil)
 	require.True(t, sh.WaitForFirstSignIn(time.Second*20))
 
-	time.Sleep(time.Second)
+	time.Sleep(time.Second * 3)
 
 	test.OffBoardDevSim(ctx, t, deviceID)
 	require.True(t, sh.WaitForFirstRefreshToken(time.Second*20))
