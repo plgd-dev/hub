@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 )
 
 type mockRecordHandler struct {
@@ -71,7 +71,7 @@ func TestMaintenance(t *testing.T) {
 		},
 		fileWatcher,
 		logger,
-		trace.NewNoopTracerProvider(),
+		noop.NewTracerProvider(),
 		mongodb.WithMarshaler(bson.Marshal),
 		mongodb.WithUnmarshaler(bson.Unmarshal),
 	)

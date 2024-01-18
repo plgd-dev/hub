@@ -70,6 +70,7 @@ ui:
   directory: "/usr/local/var/www"
   webConfiguration:
     httpGatewayAddress: ""
+    deviceProvisioningService: ""
     webOAuthClient:
       clientID: ""
       audience: ""
@@ -79,3 +80,19 @@ ui:
       audience: ""
       scopes: []
       providerName: ""
+    visibility:
+      mainSidebar:
+        certificates : true
+        chatRoom : true
+        configuration : true
+        deviceProvisioning : true
+        devices : true
+        docs : true
+        pendingCommands : true
+        remoteClients : true
+        dashboard : false
+        integrations : false
+        deviceFirmwareUpdate : false
+        deviceLogs : false
+        apiTokens : false
+        schemaHub : false

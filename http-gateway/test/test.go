@@ -13,6 +13,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/test/config"
+	testHttp "github.com/plgd-dev/hub/v2/test/http"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -20,8 +21,9 @@ import (
 
 func MakeWebConfigurationConfig() service.WebConfiguration {
 	return service.WebConfiguration{
-		Authority:          "https://" + config.OAUTH_SERVER_HOST,
-		HTTPGatewayAddress: "https://" + config.HTTP_GW_HOST,
+		Authority:                 testHttp.HTTPS_SCHEME + config.OAUTH_SERVER_HOST,
+		HTTPGatewayAddress:        testHttp.HTTPS_SCHEME + config.HTTP_GW_HOST,
+		DeviceProvisioningService: testHttp.HTTPS_SCHEME + config.HTTP_GW_HOST,
 		WebOAuthClient: service.BasicOAuthClient{
 			ClientID: config.OAUTH_MANAGER_CLIENT_ID,
 			Audience: config.OAUTH_MANAGER_AUDIENCE,

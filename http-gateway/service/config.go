@@ -149,12 +149,60 @@ func (c *DeviceOAuthClient) Validate() error {
 	return nil
 }
 
+type MainSidebarConfig struct {
+	Devices              bool `yaml:"devices" json:"devices"`
+	Configuration        bool `yaml:"configuration" json:"configuration"`
+	RemoteClients        bool `yaml:"remoteClients" json:"remoteClients"`
+	PendingCommands      bool `yaml:"pendingCommands" json:"pendingCommands"`
+	Certificates         bool `yaml:"certificates" json:"certificates"`
+	DeviceProvisioning   bool `yaml:"deviceProvisioning" json:"deviceProvisioning"`
+	Docs                 bool `yaml:"docs" json:"docs"`
+	ChatRoom             bool `yaml:"chatRoom" json:"chatRoom"`
+	Dashboard            bool `yaml:"dashboard" json:"dashboard"`
+	Integrations         bool `yaml:"integrations" json:"integrations"`
+	DeviceFirmwareUpdate bool `yaml:"deviceFirmwareUpdate" json:"deviceFirmwareUpdate"`
+	DeviceLogs           bool `yaml:"deviceLogs" json:"deviceLogs"`
+	ApiTokens            bool `yaml:"apiTokens" json:"apiTokens"`
+	SchemaHub            bool `yaml:"schemaHub" json:"schemaHub"`
+}
+
+func (c *MainSidebarConfig) ToProto() *pb.UIVisibility_MainSidebar {
+	return &pb.UIVisibility_MainSidebar{
+		Devices:              c.Devices,
+		Configuration:        c.Configuration,
+		RemoteClients:        c.RemoteClients,
+		PendingCommands:      c.PendingCommands,
+		Certificates:         c.Certificates,
+		DeviceProvisioning:   c.DeviceProvisioning,
+		Docs:                 c.Docs,
+		ChatRoom:             c.ChatRoom,
+		Dashboard:            c.Dashboard,
+		Integrations:         c.Integrations,
+		DeviceFirmwareUpdate: c.DeviceFirmwareUpdate,
+		DeviceLogs:           c.DeviceLogs,
+		ApiTokens:            c.ApiTokens,
+		SchemaHub:            c.SchemaHub,
+	}
+}
+
+type VisibilityConfig struct {
+	MainSidebar MainSidebarConfig `yaml:"mainSidebar" json:"mainSidebar"`
+}
+
+func (c *VisibilityConfig) ToProto() *pb.UIVisibility {
+	return &pb.UIVisibility{
+		MainSidebar: c.MainSidebar.ToProto(),
+	}
+}
+
 // WebConfiguration represents web configuration for user interface exposed via getOAuthConfiguration handler
 type WebConfiguration struct {
-	Authority          string            `yaml:"-" json:"authority"`
-	HTTPGatewayAddress string            `yaml:"httpGatewayAddress" json:"httpGatewayAddress"`
-	WebOAuthClient     BasicOAuthClient  `yaml:"webOAuthClient" json:"webOauthClient"`
-	DeviceOAuthClient  DeviceOAuthClient `yaml:"deviceOAuthClient" json:"deviceOauthClient"`
+	Authority                 string            `yaml:"-" json:"authority"`
+	HTTPGatewayAddress        string            `yaml:"httpGatewayAddress" json:"httpGatewayAddress"`
+	DeviceProvisioningService string            `yaml:"deviceProvisioningService" json:"deviceProvisioningService"`
+	WebOAuthClient            BasicOAuthClient  `yaml:"webOAuthClient" json:"webOauthClient"`
+	DeviceOAuthClient         DeviceOAuthClient `yaml:"deviceOAuthClient" json:"deviceOauthClient"`
+	Visibility                VisibilityConfig  `yaml:"visibility" json:"visibility"`
 }
 
 func (c *WebConfiguration) Validate() error {

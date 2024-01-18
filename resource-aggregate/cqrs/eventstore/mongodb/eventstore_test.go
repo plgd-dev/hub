@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 )
 
 func NewTestEventStore(ctx context.Context, fileWatcher *fsnotify.Watcher, logger log.Logger) (*mongodb.EventStore, error) {
@@ -26,7 +26,7 @@ func NewTestEventStore(ctx context.Context, fileWatcher *fsnotify.Watcher, logge
 		},
 		fileWatcher,
 		logger,
-		trace.NewNoopTracerProvider(),
+		noop.NewTracerProvider(),
 		mongodb.WithMarshaler(bson.Marshal),
 		mongodb.WithUnmarshaler(bson.Unmarshal),
 	)

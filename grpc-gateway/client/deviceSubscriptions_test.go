@@ -25,7 +25,7 @@ import (
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 )
 
 type testDeviceResourcesBaseObservationHandler struct {
@@ -76,7 +76,7 @@ func TestObserveDeviceResourcesRetrieve(t *testing.T) {
 		require.NoError(t, errC)
 	}()
 
-	raConn, err := grpcClient.New(ctx, config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
+	raConn, err := grpcClient.New(ctx, config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST), fileWatcher, log.Get(), noop.NewTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = raConn.Close()
@@ -171,7 +171,7 @@ func TestObserveDeviceResourcesUpdate(t *testing.T) {
 		require.NoError(t, errC)
 	}()
 
-	raConn, err := grpcClient.New(ctx, config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
+	raConn, err := grpcClient.New(ctx, config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST), fileWatcher, log.Get(), noop.NewTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = raConn.Close()
@@ -299,7 +299,7 @@ func TestObserveDeviceResourcesCreateAndDelete(t *testing.T) {
 		require.NoError(t, errC)
 	}()
 
-	raConn, err := grpcClient.New(ctx, config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST), fileWatcher, log.Get(), trace.NewNoopTracerProvider())
+	raConn, err := grpcClient.New(ctx, config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST), fileWatcher, log.Get(), noop.NewTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = raConn.Close()

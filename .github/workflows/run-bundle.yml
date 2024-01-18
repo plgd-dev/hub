@@ -178,7 +178,7 @@ jobs:
 
     - name: Collect bundle logs
       if: cancelled() || failure() || success()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: bundle_logs
         path: .tmp/bundle/log/*.log
@@ -186,7 +186,7 @@ jobs:
     
     - name: Collect devices logs
       if: cancelled() || failure() || success()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: devices_logs
         path: .tmp/devices/*.log

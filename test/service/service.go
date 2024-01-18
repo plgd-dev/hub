@@ -30,7 +30,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 )
 
 var filterOutClearDB = map[string]bool{
@@ -66,7 +66,7 @@ func clearMongoDB(ctx context.Context, t require.TestingT, certManager *cmClient
 func clearCqlDB(ctx context.Context, t require.TestingT, certManager *cmClient.CertManager, logger *log.WrapSuggarLogger) {
 	// clear cqlDB
 	cqlCfg := config.MakeEventsStoreCqlDBConfig()
-	cql, err := cqldb.New(ctx, cqlCfg.Embedded, certManager.GetTLSConfig(), logger, trace.NewNoopTracerProvider())
+	cql, err := cqldb.New(ctx, cqlCfg.Embedded, certManager.GetTLSConfig(), logger, noop.NewTracerProvider())
 	if err != nil {
 		logger.Infof("cannot connect to cqlDB: %v", err)
 		// if cqlDB is not running, we can skip clearing it

@@ -16,6 +16,7 @@ import (
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.10.0"
 	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 )
 
 type Client struct {
@@ -34,7 +35,7 @@ func (c *Client) AddCloseFunc(f func()) {
 
 func (c *Client) GetTracerProvider() trace.TracerProvider {
 	if c.tracerProvider == nil {
-		return trace.NewNoopTracerProvider()
+		return noop.NewTracerProvider()
 	}
 	return c.tracerProvider
 }
@@ -86,7 +87,7 @@ func New(ctx context.Context, cfg Config, serviceName string, fileWatcher *fsnot
 	// `localhost:30080` endpoint. Otherwise, replace `localhost` with the
 	// endpoint of your cluster. If you run the app inside k8s, then you can
 	// probably connect directly to the service through dns
-	client, err := client.New(ctx, cfg.GRPC.Connection, fileWatcher, logger, trace.NewNoopTracerProvider())
+	client, err := client.New(ctx, cfg.GRPC.Connection, fileWatcher, logger, noop.NewTracerProvider())
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gRPC connection to collector: %w", err)
 	}
