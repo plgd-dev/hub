@@ -1,5 +1,5 @@
-//go:build test
-// +build test
+//go:build test || device_integration
+// +build test device_integration
 
 package service_test
 
@@ -18,6 +18,7 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	test "github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
+	"github.com/plgd-dev/hub/v2/test/device"
 	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/plgd-dev/hub/v2/test/service"
@@ -27,7 +28,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func onboardDeviceAndGetDevice(ctx context.Context, t *testing.T, deviceID string, oauthCfg oauthService.Config, coapCfg coapService.Config) (*pb.Device, time.Time /*startOnboard*/, time.Duration /*delta*/) {
+func onboardDeviceAndGetDevice(ctx context.Context, t *testing.T, device device.Device, oauthCfg oauthService.Config, coapCfg coapService.Config) (*pb.Device, time.Time /*startOnboard*/, time.Duration /*delta*/) {
 	tearDown := service.SetUp(ctx, t, service.WithOAuthConfig(oauthCfg), service.WithCOAPGWConfig(coapCfg))
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
@@ -42,7 +43,7 @@ func onboardDeviceAndGetDevice(ctx context.Context, t *testing.T, deviceID strin
 	c := pb.NewGrpcGatewayClient(conn)
 
 	startOnboard := time.Now()
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
+	shutdownDevSim := test.OnboardDevice(ctx, t, c, device, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, device.GetDefaultResources())
 	defer shutdownDevSim()
 	deltaOnboard := time.Since(startOnboard) / 2
 
@@ -67,7 +68,7 @@ func onboardDeviceAndGetDevice(ctx context.Context, t *testing.T, deviceID strin
 }
 
 func TestDevicesStatusUpdaterDisabledAndDeviceAccessTokenHasNoExpiration(t *testing.T) {
-	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	d := test.MustFindTestDevice()
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
@@ -75,13 +76,13 @@ func TestDevicesStatusUpdaterDisabledAndDeviceAccessTokenHasNoExpiration(t *test
 	oauthCfg.OAuthSigner.Clients.Find(config.OAUTH_MANAGER_CLIENT_ID).AccessTokenLifetime = 0
 	coapCfg := coapgwTest.MakeConfig(t)
 
-	device, _, _ := onboardDeviceAndGetDevice(ctx, t, deviceID, oauthCfg, coapCfg)
+	device, _, _ := onboardDeviceAndGetDevice(ctx, t, d, oauthCfg, coapCfg)
 
 	assert.Equal(t, commands.Connection_ONLINE, device.Metadata.Connection.Status)
 }
 
 func TestDevicesStatusUpdaterDisabledAndDeviceAccessTokenHasExpiration(t *testing.T) {
-	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	d := test.MustFindTestDevice()
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
@@ -90,7 +91,7 @@ func TestDevicesStatusUpdaterDisabledAndDeviceAccessTokenHasExpiration(t *testin
 	oauthCfg.OAuthSigner.Clients.Find(config.OAUTH_MANAGER_CLIENT_ID).AccessTokenLifetime = accessTokenLifetime
 	coapCfg := coapgwTest.MakeConfig(t)
 
-	device, _, _ := onboardDeviceAndGetDevice(ctx, t, deviceID, oauthCfg, coapCfg)
+	device, _, _ := onboardDeviceAndGetDevice(ctx, t, d, oauthCfg, coapCfg)
 
 	assert.Equal(t, commands.Connection_ONLINE, device.Metadata.Connection.Status)
 }

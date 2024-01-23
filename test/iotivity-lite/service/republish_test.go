@@ -23,7 +23,7 @@ import (
 )
 
 func TestRepublishAfterRefresh(t *testing.T) {
-	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	d := test.MustFindTestDevice()
 
 	atLifetime := time.Second * 20
 	deadline := time.Now().Add(time.Minute)
@@ -65,8 +65,8 @@ func TestRepublishAfterRefresh(t *testing.T) {
 	}()
 	c := pb.NewGrpcGatewayClient(conn)
 
-	// _, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, nil)
-	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, string(schema.TCPSecureScheme)+"://"+config.COAP_GW_HOST, nil)
+	// shutdownDevSim := test.OnboardDevice(ctx, t, c, d, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, nil)
+	shutdownDevSim := test.OnboardDevice(ctx, t, c, d, string(schema.TCPSecureScheme)+"://"+config.COAP_GW_HOST, nil)
 	defer shutdownDevSim()
 
 	for {

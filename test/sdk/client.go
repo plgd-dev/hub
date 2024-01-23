@@ -1,4 +1,4 @@
-package test
+package sdk
 
 import (
 	"context"
@@ -55,6 +55,8 @@ type sdkConfig struct {
 	// TODO: replace by notBefore and notAfter
 	validFrom string // RFC3339, or relative time such as now-1m
 	validFor  string // string parsable by time.ParseDuration
+
+	useDeviceIDInQuery bool
 }
 
 // Option interface used for setting optional sdkConfig properties.
@@ -92,6 +94,12 @@ func WithValidity(validFrom, validFor string) Option {
 	})
 }
 
+func WithUseDeviceIDInQuery(useDeviceIDInQuery bool) Option {
+	return optionFunc(func(cfg *sdkConfig) {
+		cfg.useDeviceIDInQuery = useDeviceIDInQuery
+	})
+}
+
 func getSDKConfig(opts ...Option) (*sdkConfig, error) {
 	c := &sdkConfig{
 		id: CertIdentity,
@@ -116,7 +124,7 @@ func getSDKConfig(opts ...Option) (*sdkConfig, error) {
 	return c, nil
 }
 
-func NewSDKClient(opts ...Option) (*client.Client, error) {
+func NewClient(opts ...Option) (*client.Client, error) {
 	c, err := getSDKConfig(opts...)
 	if err != nil {
 		return nil, err
@@ -172,6 +180,7 @@ func NewSDKClient(opts ...Option) (*client.Client, error) {
 	cfg := client.Config{
 		DisablePeerTCPSignalMessageCSMs: true,
 		DeviceOwnershipSDK:              devCfg,
+		UseDeviceIDInQuery:              c.useDeviceIDInQuery,
 	}
 
 	client, err := client.NewClientFromConfig(&cfg, &testSetupSecureClient{

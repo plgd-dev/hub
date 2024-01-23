@@ -198,19 +198,19 @@ func TestDeviceObserverRegisterForPublishedResources(t *testing.T) {
 		require.Equal(t, observation.ObservationType_PerResource, obs.GetObservationType())
 		res, err := obs.GetResources()
 		require.NoError(t, err)
-		pbTest.CmpResourceIds(t, test.ResourceLinksToResourceIds(deviceID, test.TestDevsimResources), res)
+		pbTest.CmpResourceIds(t, test.ResourceLinksToResourceIds(deviceID, test.GetAllBackendResourceLinks()), res)
 	}
 
 	expectedObserved := strings.MakeSet()
 	for _, resID := range test.ResourceLinksToResourceIds(deviceID, test.FilterResourceLink(func(rl schema.ResourceLink) bool {
 		return rl.Policy.BitMask.Has(schema.Observable)
-	}, test.TestDevsimResources)) {
+	}, test.GetAllBackendResourceLinks())) {
 		expectedObserved.Add(resID.ToString())
 	}
 	expectedRetrieved := strings.MakeSet()
 	for _, resID := range test.ResourceLinksToResourceIds(deviceID, test.FilterResourceLink(func(rl schema.ResourceLink) bool {
 		return !rl.Policy.BitMask.Has(schema.Observable)
-	}, test.TestDevsimResources)) {
+	}, test.GetAllBackendResourceLinks())) {
 		expectedRetrieved.Add(resID.ToString())
 	}
 	runTestDeviceObserverRegister(ctx, t, deviceID, expectedObserved, expectedRetrieved, validateData, nil, nil, false)
@@ -230,19 +230,19 @@ func TestDeviceObserverRegisterForPublishedResourcesWithAlreadyPublishedResource
 		require.Equal(t, observation.ObservationType_PerResource, obs.GetObservationType())
 		res, err := obs.GetResources()
 		require.NoError(t, err)
-		pbTest.CmpResourceIds(t, test.ResourceLinksToResourceIds(deviceID, test.TestDevsimResources), res)
+		pbTest.CmpResourceIds(t, test.ResourceLinksToResourceIds(deviceID, test.GetAllBackendResourceLinks()), res)
 	}
 
 	expectedObserved := strings.MakeSet()
 	for _, resID := range test.ResourceLinksToResourceIds(deviceID, test.FilterResourceLink(func(rl schema.ResourceLink) bool {
 		return rl.Policy.BitMask.Has(schema.Observable)
-	}, test.TestDevsimResources)) {
+	}, test.GetAllBackendResourceLinks())) {
 		expectedObserved.Add(resID.ToString())
 	}
 	expectedRetrieved := strings.MakeSet()
 	for _, resID := range test.ResourceLinksToResourceIds(deviceID, test.FilterResourceLink(func(rl schema.ResourceLink) bool {
 		return !rl.Policy.BitMask.Has(schema.Observable)
-	}, test.TestDevsimResources)) {
+	}, test.GetAllBackendResourceLinks())) {
 		expectedRetrieved.Add(resID.ToString())
 	}
 	runTestDeviceObserverRegister(ctx, t, deviceID, expectedObserved, expectedRetrieved, validateData, testPreregisterVirtualDevice, testValidateResourceLinks, false)

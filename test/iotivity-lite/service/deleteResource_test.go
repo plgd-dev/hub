@@ -20,6 +20,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test/config"
 	iotService "github.com/plgd-dev/hub/v2/test/iotivity-lite/service"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	"github.com/plgd-dev/hub/v2/test/sdk"
 	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/maps"
@@ -173,13 +174,13 @@ func TestBatchDeleteResources(t *testing.T) {
 	// TODO: copy services initialization from the real coap-gw to the mock coap-gw,
 	// for now we must force TCP when mock coap-gw is used
 	// _, _ = test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, nil)
-	_, _ = test.OnboardDevSim(ctx, t, c, deviceID, string(schema.TCPSecureScheme)+"://"+config.COAP_GW_HOST, nil)
+	_, shutdown := test.OnboardDevSim(ctx, t, c, deviceID, string(schema.TCPSecureScheme)+"://"+config.COAP_GW_HOST, nil)
 	require.True(t, bh.WaitForFirstSignIn(time.Second*20))
 	t.Cleanup(func() {
-		test.DisownDevice(t, deviceID)
+		shutdown()
 	})
 
-	devClient, err := test.NewSDKClient()
+	devClient, err := sdk.NewClient()
 	require.NoError(t, err)
 	defer func() {
 		_ = devClient.Close(ctx)
