@@ -24,6 +24,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
+	"github.com/plgd-dev/hub/v2/test/sdk"
 	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -174,7 +175,7 @@ func TestRequestHandlerGetResourceFromDevice(t *testing.T) {
 }
 
 func validateETags(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, deviceID, href string) {
-	sdkClient, err := test.NewSDKClient()
+	sdkClient, err := sdk.NewClient()
 	require.NoError(t, err)
 
 	defer func() {
