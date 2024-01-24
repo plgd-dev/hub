@@ -2,8 +2,7 @@ import React, { FC, useCallback, useState } from 'react'
 import { useIntl } from 'react-intl'
 
 import Button from '@shared-ui/components/Atomic/Button'
-import { DeleteModal, IconEdit, IconTrash } from '@shared-ui/components/Atomic'
-import EditNameModal from '@shared-ui/components/Organisms/EditNameModal'
+import { DeleteModal, IconTrash } from '@shared-ui/components/Atomic'
 
 import { Props } from './DetailHeader.types'
 import * as styles from './DetailHeader.styles'
@@ -18,8 +17,6 @@ const DetailHeader: FC<Props> = (props) => {
 
     const [deleteModal, setDeleteModal] = useState(false)
     const [deleting, setDeleting] = useState(false)
-    const [editNameModal, setEditNameModal] = useState(false)
-    const [editing, setEditing] = useState(false)
 
     const handleDelete = useCallback(async () => {
         try {
@@ -39,47 +36,17 @@ const DetailHeader: FC<Props> = (props) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id])
 
-    const handleUpdateName = useCallback(
-        async (name: string) => {
-            try {
-                setEditing(true)
-
-                // UPDATE
-                console.log(name)
-
-                setEditing(false)
-                setEditNameModal(false)
-                refresh()
-            } catch (e: any) {
-                setEditing(false)
-                setEditNameModal(false)
-            }
-        },
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        []
-    )
-
     return (
         <div css={styles.list}>
             <Button
                 dataTestId={testId.dps.linkedHubs.detail.deleteButton}
                 disabled={loading}
+                htmlType='button'
                 icon={<IconTrash />}
                 onClick={() => setDeleteModal(true)}
                 variant='tertiary'
             >
                 {_(g.delete)}
-            </Button>
-
-            <Button
-                dataTestId={testId.dps.linkedHubs.detail.editNameButton}
-                disabled={loading}
-                icon={<IconEdit />}
-                onClick={() => setEditNameModal(true)}
-                style={{ marginLeft: 8 }}
-                variant='tertiary'
-            >
-                {_(g.editName)}
             </Button>
 
             <DeleteModal
@@ -107,24 +74,6 @@ const DetailHeader: FC<Props> = (props) => {
                 show={deleteModal}
                 subTitle={_(t.deleteLinkedHubsTitle)}
                 title={_(t.deleteLinkedHubMessage)}
-            />
-
-            <EditNameModal
-                dataTestId={testId.dps.linkedHubs.detail.editNameModal}
-                handleClose={() => setEditNameModal(false)}
-                handleSubmit={handleUpdateName}
-                i18n={{
-                    close: _(g.close),
-                    namePlaceholder: id,
-                    edit: _(g.edit),
-                    name: _(g.name),
-                    reset: _(g.reset),
-                    saveChange: _(g.saveChange),
-                    savingChanges: _(g.savingChanges),
-                }}
-                loading={editing}
-                name={id}
-                show={editNameModal}
             />
         </div>
     )

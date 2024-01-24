@@ -19,13 +19,14 @@ import FormGroup from '@shared-ui/components/Atomic/FormGroup'
 import FormInput, { inputAligns } from '@shared-ui/components/Atomic/FormInput'
 import { isValidHex, ThemeType } from '@shared-ui/components/Atomic/_theme'
 import { EditorRefType } from '@shared-ui/components/Atomic/Editor/Editor.types'
+import Switch from '@shared-ui/components/Atomic/Switch'
 
 import { Props, Inputs } from './Tab2.types'
 import { messages as t } from '../../ConfigurationPage.i18n'
 import { messages as g } from '@/containers/Global.i18n'
 import { setPreviewTheme } from '@/containers/App/slice'
 import AppColorsPicker from './AppColorsPicker'
-import Switch from '@shared-ui/components/Atomic/Switch'
+import { getNumberFromPx } from '@shared-ui/components/Atomic/_utils/commonStyles'
 
 const Tab2: FC<Props> = (props) => {
     const { isTabActive, resetForm } = props
@@ -79,11 +80,22 @@ const Tab2: FC<Props> = (props) => {
     }, [reset, resetForm])
 
     useEffect(() => {
-        if (appStore.configuration.previewTheme?.colorPalette) {
-            editorRef?.current?.setValue(appStore.configuration.previewTheme?.colorPalette)
-            setValue('colorPalette', appStore.configuration.previewTheme?.colorPalette)
+        const values = getValues()
+        const { logo, colorPalette } = appStore.configuration.previewTheme
+
+        if (colorPalette) {
+            editorRef?.current?.setValue(colorPalette)
+            setValue('colorPalette', colorPalette)
         }
-    }, [appStore.configuration.previewTheme?.colorPalette, setValue])
+
+        if (logo.height && logo.height !== values.logoHeight) {
+            setValue('logoHeight', typeof logo.height === 'string' ? getNumberFromPx(logo.height) : logo.height)
+        }
+
+        if (logo.width && logo.width !== values.logoWidth) {
+            setValue('logoWidth', typeof logo.width === 'string' ? getNumberFromPx(logo.width) : logo.width)
+        }
+    }, [appStore.configuration.previewTheme, getValues, setValue])
 
     const getBase64 = useCallback(
         (file: any) =>
@@ -120,8 +132,8 @@ const Tab2: FC<Props> = (props) => {
             dispatch(
                 setPreviewTheme(
                     getThemeTemplate(values.colorPalette, {
-                        height: `${values.logoHeight}px`,
-                        width: `${values.logoWidth}px`,
+                        height: values.logoHeight,
+                        width: values.logoWidth,
                         source: values.logoSource,
                     })
                 )
@@ -133,7 +145,7 @@ const Tab2: FC<Props> = (props) => {
         {
             attribute: _(t.themeName),
             value: (
-                <FormGroup error={errors.themeName ? _(t.themeNameError) : undefined} errorTooltip={true} fullSize={true} id='theme-name' marginBottom={false}>
+                <FormGroup errorTooltip fullSize error={errors.themeName ? _(t.themeNameError) : undefined} id='theme-name' marginBottom={false}>
                     <FormInput
                         inlineStyle
                         align={inputAligns.RIGHT}
@@ -174,13 +186,7 @@ const Tab2: FC<Props> = (props) => {
         {
             attribute: _(t.logoHeight),
             value: (
-                <FormGroup
-                    error={errors.logoHeight ? _(t.logoHeightError) : undefined}
-                    errorTooltip={true}
-                    fullSize={true}
-                    id='logo-height'
-                    marginBottom={false}
-                >
+                <FormGroup errorTooltip fullSize error={errors.logoHeight ? _(t.logoHeightError) : undefined} id='logo-height' marginBottom={false}>
                     <FormInput
                         inlineStyle
                         align={inputAligns.RIGHT}
@@ -194,7 +200,7 @@ const Tab2: FC<Props> = (props) => {
         {
             attribute: _(t.logoWidth),
             value: (
-                <FormGroup error={errors.logoWidth ? _(t.logoWidthError) : undefined} errorTooltip={true} fullSize={true} id='logo-width' marginBottom={false}>
+                <FormGroup errorTooltip fullSize error={errors.logoWidth ? _(t.logoWidthError) : undefined} id='logo-width' marginBottom={false}>
                     <FormInput
                         inlineStyle
                         align={inputAligns.RIGHT}
@@ -230,8 +236,8 @@ const Tab2: FC<Props> = (props) => {
         const customThemeName = values.themeName.replace(/\s+/g, '_').toLowerCase()
         const themeData = {
             [customThemeName]: getThemeTemplate(values.colorPalette, {
-                height: `${values.logoHeight}px`,
-                width: `${values.logoWidth}px`,
+                height: values.logoHeight,
+                width: values.logoWidth,
                 source: values.logoSource,
             }),
         }
@@ -268,7 +274,7 @@ const Tab2: FC<Props> = (props) => {
     }, [dispatch, reset, setValue, theme.colorPalette])
 
     return (
-        <div>
+        <Spacer type='pb-8'>
             <Spacer type='mb-4'>
                 <AppColorsPicker onChange={(c: any) => console.log(c)} />
             </Spacer>
@@ -300,7 +306,7 @@ const Tab2: FC<Props> = (props) => {
                     />,
                     document.querySelector('#innerFooterPortalTarget') as Element
                 )}
-        </div>
+        </Spacer>
     )
 }
 

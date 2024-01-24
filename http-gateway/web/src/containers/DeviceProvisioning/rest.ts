@@ -5,6 +5,7 @@ import { withTelemetry } from '@shared-ui/common/services/opentelemetry'
 
 import { SecurityConfig } from '@/containers/App/App.types'
 import { DPS_DELETE_CHUNK_SIZE, dpsApiEndpoints } from './constants'
+import { HubDataType } from '@/containers/DeviceProvisioning/LinkedHubs/DetailPage/LinkedHubsDetailPage.types'
 
 export const deleteProvisioningRecordsApi = (provisioningRecordsIds: string[]) => {
     // We split the fetch into multiple chunks due to the URL being too long for the browser to handle
@@ -90,5 +91,18 @@ export const deleteLinkedHubsApi = (linkedHubsIds: string[]) => {
                 'delete-linked-hubs'
             )
         })
+    )
+}
+
+export const updateLinkedHubData = (linkedHubsId: string, body: Omit<HubDataType, 'id'>) => {
+    const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
+    return withTelemetry(
+        () =>
+            fetchApi(`${httpGatewayAddress}${dpsApiEndpoints.HUBS}/${linkedHubsId}`, {
+                method: 'PUT',
+                cancelRequestDeadlineTimeout,
+                body,
+            }),
+        'update-linked-hub'
     )
 }

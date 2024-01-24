@@ -523,7 +523,7 @@ export const messages = defineMessages({
     },
     duration: {
         id: 'devices.duration',
-        defaultMessage: 'duration',
+        defaultMessage: 'Duration',
     },
     placeholder: {
         id: 'devices.placeholder',
@@ -531,7 +531,7 @@ export const messages = defineMessages({
     },
     unit: {
         id: 'devices.unit',
-        defaultMessage: 'ID',
+        defaultMessage: 'Unit',
     },
     newDeviceFirmware: {
         id: 'devices.newDeviceFirmware',

@@ -41,9 +41,9 @@ const ConfigurationPage: FC<Props> = (props) => {
             xPadding={false}
         >
             <Tabs
+                fullHeight
+                innerPadding
                 activeItem={activeTabItem}
-                fullHeight={true}
-                innerPadding={true}
                 onItemChange={handleTabChange}
                 tabs={[
                     {

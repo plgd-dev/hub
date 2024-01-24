@@ -50,7 +50,8 @@ const testId = {
         },
         linkedHubs: {
             detail: {
-                tabCertificateAuthorityConfiguration: 'hub-dps-linked-hubs-detail-tab-certificate-authority-configuration',
+                tabDetails: 'hub-dps-linked-hubs-detail-tab-details',
+                tabCertificateAuthority: 'hub-dps-linked-hubs-detail-tab-certificate-authority',
                 tabAuthorization: 'hub-dps-linked-hubs-detail-tab-Authorization',
                 deleteButton: 'hub-dps-linked-hubs-detail-delete-button',
                 editNameButton: 'hub-dps-linked-hubs-detail-edit-name-button',

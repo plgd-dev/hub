@@ -102,7 +102,7 @@ export const useEnrollmentGroupDetail = (enrollmentGroupId?: string): StreamApiP
         }
     )
 
-    if (data) {
+    if (data && Array.isArray(data)) {
         return {
             data: data[0],
             ...rest,
@@ -130,7 +130,7 @@ export const useHubDetail = (hubId: string, requestActive = false): StreamApiPro
         requestActive,
     })
 
-    if (data) {
+    if (data && Array.isArray(data)) {
         return {
             data: data[0],
             ...rest,

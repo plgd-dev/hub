@@ -37,6 +37,10 @@ export const messages = defineMessages({
         id: 'global.view',
         defaultMessage: 'View',
     },
+    update: {
+        id: 'global.update',
+        defaultMessage: 'Update',
+    },
     pageNotFound: {
         id: 'global.pageNotFound',
         defaultMessage: 'Page not found',
@@ -133,6 +137,10 @@ export const messages = defineMessages({
         id: 'global.saveChanges',
         defaultMessage: 'Save changes',
     },
+    resetChanges: {
+        id: 'global.resetChanges',
+        defaultMessage: 'Reset changes',
+    },
     ok: {
         id: 'global.ok',
         defaultMessage: 'Ok',
@@ -140,5 +148,29 @@ export const messages = defineMessages({
     logOut: {
         id: 'global.logOut',
         defaultMessage: 'Log out',
+    },
+    navigation: {
+        id: 'global.navigation',
+        defaultMessage: 'Navigation',
+    },
+    on: {
+        id: 'global.on',
+        defaultMessage: 'On',
+    },
+    off: {
+        id: 'global.off',
+        defaultMessage: 'Off',
+    },
+    tls: {
+        id: 'global.tls',
+        defaultMessage: 'TLS',
+    },
+    showMore: {
+        id: 'global.showMore',
+        defaultMessage: 'Show More',
+    },
+    requiredField: {
+        id: 'global.requiredField',
+        defaultMessage: 'Required field {field}',
     },
 })

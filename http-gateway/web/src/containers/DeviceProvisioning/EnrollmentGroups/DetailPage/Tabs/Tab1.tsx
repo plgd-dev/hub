@@ -45,7 +45,7 @@ const Tab1: FC<Props> = (props) => {
             {
                 attribute: _(g.name),
                 value: (
-                    <FormGroup error={errors.name ? _(t.nameError) : undefined} errorTooltip={true} fullSize={true} id='name' marginBottom={false}>
+                    <FormGroup errorTooltip fullSize error={errors.name ? _(t.nameError) : undefined} id='name' marginBottom={false}>
                         <FormInput inlineStyle align={selectAligns.RIGHT} placeholder={_(g.name)} {...register('name', { validate: (val) => val !== '' })} />
                     </FormGroup>
                 ),

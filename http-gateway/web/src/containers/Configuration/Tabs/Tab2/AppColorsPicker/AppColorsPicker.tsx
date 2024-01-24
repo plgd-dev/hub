@@ -38,11 +38,11 @@ const AppColorsPicker: FC<Props> = (props) => {
                 {_(t.colorConfigurator)}
             </Button>
             <Modal
+                fullSize
                 appRoot={document.getElementById('root')}
                 bodyStyle={{
                     overflow: 'hidden',
                 }}
-                fullSize={true}
                 onClose={() => changeView(false)}
                 portalTarget={document.getElementById('modal-root')}
                 renderBody={

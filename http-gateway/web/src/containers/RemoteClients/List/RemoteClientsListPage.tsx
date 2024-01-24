@@ -326,6 +326,7 @@ const RemoteClientsListPage: FC<any> = () => {
             />
 
             <DeleteModal
+                fullSizeButtons
                 footerActions={[
                     {
                         label: _(g.cancel),
@@ -338,7 +339,6 @@ const RemoteClientsListPage: FC<any> = () => {
                         variant: 'primary',
                     },
                 ]}
-                fullSizeButtons={true}
                 maxWidth={440}
                 maxWidthTitle={320}
                 minWidth={440}

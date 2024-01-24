@@ -206,6 +206,7 @@ const DevicesDetailsPage: FC<Props> = (props) => {
             }}
         >
             <PageLayout
+                pendingCommands
                 breadcrumbs={[{ label: _(menuT.devices), link: '/' }, { label: deviceName }]}
                 dataTestId={testId.devices.detail.layout}
                 deviceId={id}
@@ -221,7 +222,6 @@ const DevicesDetailsPage: FC<Props> = (props) => {
                 }
                 headlineStatusTag={<StatusTag variant={isOnline ? 'success' : 'error'}>{isOnline ? _(t.online) : _(t.offline)}</StatusTag>}
                 loading={loading || twinSyncLoading || pendingCommandsLoading || certificatesLoading || provisioningRecordsLoading}
-                pendingCommands={true}
                 title={deviceName}
             >
                 <Tabs

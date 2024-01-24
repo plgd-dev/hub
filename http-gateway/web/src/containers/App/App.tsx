@@ -95,7 +95,7 @@ const App = (props: { mockApp: boolean }) => {
     if (!wellKnownConfig || !theme) {
         return (
             <>
-                <PageLoader loading className='auth-loader' noOffset={true} />
+                <PageLoader loading noOffset className='auth-loader' />
                 <div className='page-loading-text'>{`${_(g.loading)}...`}</div>
             </>
         )
@@ -136,7 +136,7 @@ const App = (props: { mockApp: boolean }) => {
         return (
             <ThemeProvider theme={getThemeData(currentTheme)}>
                 <BrowserRouter>
-                    <AppLayout buildInformation={wellKnownConfig?.buildInfo} collapsed={collapsed} mockApp={true} setCollapsed={setCollapsed} />
+                    <AppLayout mockApp buildInformation={wellKnownConfig?.buildInfo} collapsed={collapsed} setCollapsed={setCollapsed} />
                 </BrowserRouter>
             </ThemeProvider>
         )

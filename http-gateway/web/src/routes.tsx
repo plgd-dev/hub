@@ -167,7 +167,14 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                         id: '103',
                         title: <MenuTranslate id='menuLinkedHubs' />,
                         link: '/linked-hubs',
-                        paths: ['/device-provisioning/linked-hubs', '/device-provisioning/linked-hubs/:hubId'],
+                        paths: [
+                            '/device-provisioning/linked-hubs',
+                            '/device-provisioning/linked-hubs/:hubId',
+                            '/device-provisioning/linked-hubs/:hubId/certificate-authority',
+                            '/device-provisioning/linked-hubs/:hubId/certificate-authority/:section',
+                            '/device-provisioning/linked-hubs/:hubId/authorization',
+                            '/device-provisioning/linked-hubs/:hubId/authorization/:section',
+                        ],
                     },
                 ],
             },
@@ -431,10 +438,46 @@ export const Routes = () => {
             <Route
                 element={
                     <Suspense fallback={<Loader />}>
-                        <LinkedHubsDetailPage />
+                        <LinkedHubsDetailPage defaultActiveTab={0} />
                     </Suspense>
                 }
                 path='/device-provisioning/linked-hubs/:hubId'
+            />
+
+            <Route
+                element={
+                    <Suspense fallback={<Loader />}>
+                        <LinkedHubsDetailPage defaultActiveTab={1} />
+                    </Suspense>
+                }
+                path='/device-provisioning/linked-hubs/:hubId/certificate-authority'
+            />
+
+            <Route
+                element={
+                    <Suspense fallback={<Loader />}>
+                        <LinkedHubsDetailPage defaultActiveTab={1} />
+                    </Suspense>
+                }
+                path='/device-provisioning/linked-hubs/:hubId/certificate-authority/:section'
+            />
+
+            <Route
+                element={
+                    <Suspense fallback={<Loader />}>
+                        <LinkedHubsDetailPage defaultActiveTab={2} />
+                    </Suspense>
+                }
+                path='/device-provisioning/linked-hubs/:hubId/authorization'
+            />
+
+            <Route
+                element={
+                    <Suspense fallback={<Loader />}>
+                        <LinkedHubsDetailPage defaultActiveTab={2} />
+                    </Suspense>
+                }
+                path='/device-provisioning/linked-hubs/:hubId/authorization/:section'
             />
 
             <Route

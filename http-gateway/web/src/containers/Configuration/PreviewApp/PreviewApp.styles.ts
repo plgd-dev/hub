@@ -38,3 +38,7 @@ export const buttons = css`
     justify-content: flex-end;
     gap: 4px;
 `
+
+export const logo = css`
+    border: 1px dashed #ccc;
+`

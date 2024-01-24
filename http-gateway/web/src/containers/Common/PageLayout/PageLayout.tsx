@@ -14,7 +14,7 @@ import { PendingCommandsExpandableList } from '@/containers/PendingCommands'
 
 const PageLayout: FC<Props> = (props) => {
     const { formatMessage: _ } = useIntl()
-    const { children, breadcrumbs, deviceId, pendingCommands, ...rest } = props
+    const { children, breadcrumbs, deviceId, pendingCommands, innerPortalTarget, size, ...rest } = props
     const { footerExpanded, setFooterExpanded, collapsed } = useContext(AppContext)
 
     const [isDomReady, setIsDomReady] = useState(false)
@@ -30,6 +30,7 @@ const PageLayout: FC<Props> = (props) => {
             footer={
                 <Footer
                     footerExpanded={footerExpanded}
+                    innerPortalTarget={innerPortalTarget}
                     paginationComponent={<div id='paginationPortalTarget'></div>}
                     recentTasksPortal={pendingCommands && <div id='recentTasksPortalTarget'></div>}
                     recentTasksPortalTitle={
@@ -45,6 +46,7 @@ const PageLayout: FC<Props> = (props) => {
                         )
                     }
                     setFooterExpanded={setFooterExpanded}
+                    size={size}
                 />
             }
         >

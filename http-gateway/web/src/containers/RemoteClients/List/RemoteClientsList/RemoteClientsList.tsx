@@ -141,7 +141,7 @@ const RemoteClientsList: FC<Props> = (props) => {
                     document.querySelector('#breadcrumbsPortalTarget') as Element
                 )}
             <Table
-                autoHeight={true}
+                autoHeight
                 columns={columns}
                 data={data}
                 defaultPageSize={DEVICES_DEFAULT_PAGE_SIZE}

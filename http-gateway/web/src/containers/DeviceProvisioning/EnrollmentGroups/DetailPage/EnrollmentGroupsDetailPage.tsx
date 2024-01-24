@@ -63,8 +63,8 @@ const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
             title={enrollmentId}
         >
             <Tabs
+                fullHeight
                 activeItem={activeTabItem}
-                fullHeight={true}
                 onItemChange={handleTabChange}
                 tabs={[
                     {
