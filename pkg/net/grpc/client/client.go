@@ -53,8 +53,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 			Timeout:             config.KeepAlive.Timeout,
 			PermitWithoutStream: config.KeepAlive.PermitWithoutStream,
 		}),
-		grpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor(otelgrpc.WithTracerProvider(tracerProvider))),
-		grpc.WithStreamInterceptor(otelgrpc.StreamClientInterceptor(otelgrpc.WithTracerProvider(tracerProvider))),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler(otelgrpc.WithTracerProvider(tracerProvider))),
 		grpc.WithDefaultCallOptions(grpc.MaxCallSendMsgSize(config.SendMsgSize), grpc.MaxCallRecvMsgSize(config.RecvMsgSize)),
 	}
 	if len(opts) > 0 {

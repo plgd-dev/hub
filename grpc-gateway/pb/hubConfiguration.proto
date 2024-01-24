@@ -34,6 +34,36 @@ message BuildInfo {
     string release_url = 5;
 }
 
+// UI visibility configuration
+// If true - show UI element, if false - hide UI element
+message UIVisibility {
+    message MainSidebar {
+        bool devices = 1;
+        bool configuration = 2;
+        bool remote_clients = 3;
+        bool pending_commands = 4;
+        bool certificates = 5;
+        bool device_provisioning = 6;
+        bool docs = 7;
+        bool chat_room = 8;
+        bool dashboard = 9;
+        bool integrations = 10;
+        bool device_firmware_update = 11;
+        bool device_logs = 12;
+        bool api_tokens = 13;
+        bool schema_hub = 14;
+    }
+    // Main sidebar visibility
+    MainSidebar main_sidebar = 1;
+}
+
+// UI configuration
+message UIConfiguration {
+    UIVisibility visibility = 1;
+    // Address to device provisioning service HTTP API in format https://host:port  
+    string device_provisioning_service = 2;
+}
+
 message HubConfigurationResponse {
     // provides a current time of server in nanoseconds.
     int64 current_time = 1;
@@ -52,6 +82,7 @@ message HubConfigurationResponse {
     string http_gateway_address = 10;
     WebOAuthClient web_oauth_client = 11;
     DeviceOAuthClient device_oauth_client = 12;
+    UIConfiguration ui = 14;
 
     // build info
     BuildInfo build_info = 13;

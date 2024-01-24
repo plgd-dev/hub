@@ -36,7 +36,7 @@ jobs:
           make build-www 
 
       - name: Upload www
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: www
           path: http-gateway/web/build
@@ -112,13 +112,6 @@ jobs:
           - name: nats-server-config-reloader
             directory: tools/nats-server-config-reloader
             file: tools/nats-server-config-reloader/Dockerfile  
-          # coap-gateway builded by Golang 1.19.4 has an issue with TLS handshake.
-          # This issue is reproducible with real devices that connect to AWS.
-          # This seems to be caused by the device's old mbedtls library:
-          # https://github.com/Mbed-TLS/mbedtls/tree/d81c11b8ab61fd5b2da8133aa73c5fe33a0633eb
-          - name: coap-gateway-go1-18
-            directory: coap-gateway
-            file: tools/docker/Dockerfile.go1.18
     uses: ./.github/workflows/build-publish-cfg.yaml
     with:
       name: ${{ matrix.name }}

@@ -125,7 +125,7 @@ jobs:
           cp -r .tmp/report ./outputs/
 
       - name: Upload coverage and report files
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ hashFiles('./outputs') || 'none' }}
           path: ./outputs
@@ -143,7 +143,7 @@ jobs:
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
 
       - name: Download artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: ./outputs
 

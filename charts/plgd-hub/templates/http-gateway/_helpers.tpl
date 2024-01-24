@@ -78,6 +78,18 @@
   {{- end }}
 {{- end }}
 
+{{- define "plgd-hub.httpgateway.dpsApiDomain" -}}
+  {{- if .Values.deviceProvisioningService }}
+    {{- if .Values.deviceProvisioningService.apiDomain }}
+      {{- printf "https://%s" .Values.deviceProvisioningService.apiDomain }}
+    {{- else }}
+      {{- printf "https://api.%s" .Values.global.domain }}
+    {{- end }}
+  {{- else }}
+    {{- printf "" }}
+  {{- end }}
+{{- end }}
+
 {{- define "plgd-hub.httpgateway.uiDomain" -}}
   {{- if .Values.httpgateway.uiDomain }}
     {{- printf "%s" .Values.httpgateway.uiDomain }}

@@ -17,6 +17,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test/config"
 	kitStrings "github.com/plgd-dev/kit/v2/strings"
 	"go.uber.org/atomic"
+	"golang.org/x/exp/slices"
 )
 
 type SendEventFunc = func(e *pb.Event) error
@@ -88,36 +89,16 @@ type devicesByHub struct {
 	hubID     string
 }
 
-// Find returns the smallest index i in [0, n) at which f(i) is true, assuming that on the range [0, n),
-// for go1.18 - it is not implemented there
-func find(n int, cmp func(int) int) (i int, found bool) {
-	// The invariants here are similar to the ones in Search.
-	// Define cmp(-1) > 0 and cmp(n) <= 0
-	// Invariant: cmp(i-1) > 0, cmp(j) <= 0
-	i, j := 0, n
-	for i < j {
-		h := int(uint(i+j) >> 1) // avoid overflow when computing h
-		// i ≤ h < j
-		if cmp(h) > 0 {
-			i = h + 1 // preserves cmp(i-1) > 0
-		} else {
-			j = h // preserves cmp(j) <= 0
-		}
-	}
-	// i == j, cmp(i-1) > 0 and cmp(j) <= 0
-	return i, i < n && cmp(i) == 0
-}
-
 func convDevicesToDevicesByHub(devices []*pb.Device) []devicesByHub {
 	list := make([]devicesByHub, 0, 32)
 	for _, d := range devices {
 		sort.Slice(list, func(i, j int) bool {
 			return list[i].hubID < list[j].hubID
 		})
-		i, ok := find(len(list), func(i int) int {
-			return strings.Compare(d.GetData().GetEventMetadata().GetHubId(), list[i].hubID)
+		i := slices.IndexFunc[[]devicesByHub](list, func(elem devicesByHub) bool {
+			return strings.Compare(d.GetData().GetEventMetadata().GetHubId(), elem.hubID) == 0
 		})
-		if ok {
+		if i != -1 {
 			list[i].deviceIDs = append(list[i].deviceIDs, d.GetId())
 			continue
 		}

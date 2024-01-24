@@ -16,13 +16,13 @@ import (
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 )
 
 func getProvider(t *testing.T, fileWatcher *fsnotify.Watcher, logger log.Logger) *oauth2.PlgdProvider {
 	cfg := config.MakeDeviceAuthorization()
 	cfg.ClientID = oauthTest.ClientTestRestrictedAuth
-	provider, err := oauth2.NewPlgdProvider(context.Background(), cfg, fileWatcher, logger, trace.NewNoopTracerProvider(), "", "")
+	provider, err := oauth2.NewPlgdProvider(context.Background(), cfg, fileWatcher, logger, noop.NewTracerProvider(), "", "")
 	require.NoError(t, err)
 	return provider
 }

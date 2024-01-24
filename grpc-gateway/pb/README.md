@@ -63,6 +63,9 @@
     - [DeviceOAuthClient](#grpcgateway-pb-DeviceOAuthClient)
     - [HubConfigurationRequest](#grpcgateway-pb-HubConfigurationRequest)
     - [HubConfigurationResponse](#grpcgateway-pb-HubConfigurationResponse)
+    - [UIConfiguration](#grpcgateway-pb-UIConfiguration)
+    - [UIVisibility](#grpcgateway-pb-UIVisibility)
+    - [UIVisibility.MainSidebar](#grpcgateway-pb-UIVisibility-MainSidebar)
     - [WebOAuthClient](#grpcgateway-pb-WebOAuthClient)
   
 - [grpc-gateway/pb/service.proto](#grpc-gateway_pb_service-proto)
@@ -1026,7 +1029,68 @@ Certain filters perform a logical &#34;or&#34; operation among the elements of t
 | http_gateway_address | [string](#string) |  | cfg for UI http-gateway |
 | web_oauth_client | [WebOAuthClient](#grpcgateway-pb-WebOAuthClient) |  |  |
 | device_oauth_client | [DeviceOAuthClient](#grpcgateway-pb-DeviceOAuthClient) |  |  |
+| ui | [UIConfiguration](#grpcgateway-pb-UIConfiguration) |  |  |
 | build_info | [BuildInfo](#grpcgateway-pb-BuildInfo) |  | build info |
+
+
+
+
+
+
+<a name="grpcgateway-pb-UIConfiguration"></a>
+
+### UIConfiguration
+UI configuration
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| visibility | [UIVisibility](#grpcgateway-pb-UIVisibility) |  |  |
+| device_provisioning_service | [string](#string) |  | Address to device provisioning service HTTP API in format https://host:port |
+
+
+
+
+
+
+<a name="grpcgateway-pb-UIVisibility"></a>
+
+### UIVisibility
+UI visibility configuration
+If true - show UI element, if false - hide UI element
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| main_sidebar | [UIVisibility.MainSidebar](#grpcgateway-pb-UIVisibility-MainSidebar) |  | Main sidebar visibility |
+
+
+
+
+
+
+<a name="grpcgateway-pb-UIVisibility-MainSidebar"></a>
+
+### UIVisibility.MainSidebar
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| devices | [bool](#bool) |  |  |
+| configuration | [bool](#bool) |  |  |
+| remote_clients | [bool](#bool) |  |  |
+| pending_commands | [bool](#bool) |  |  |
+| certificates | [bool](#bool) |  |  |
+| device_provisioning | [bool](#bool) |  |  |
+| docs | [bool](#bool) |  |  |
+| chat_room | [bool](#bool) |  |  |
+| dashboard | [bool](#bool) |  |  |
+| integrations | [bool](#bool) |  |  |
+| device_firmware_update | [bool](#bool) |  |  |
+| device_logs | [bool](#bool) |  |  |
+| api_tokens | [bool](#bool) |  |  |
+| schema_hub | [bool](#bool) |  |  |
 
 
 

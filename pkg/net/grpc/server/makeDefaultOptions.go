@@ -242,7 +242,7 @@ func wrapServerStream(ctx context.Context, ss grpc.ServerStream) *serverStream {
 
 func MakeDefaultOptions(auth kitNetGrpc.AuthInterceptors, logger log.Logger, tracerProvider trace.TracerProvider) ([]grpc.ServerOption, error) {
 	streamInterceptors := []grpc.StreamServerInterceptor{
-		otelgrpc.StreamServerInterceptor(otelgrpc.WithTracerProvider(tracerProvider)), func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 			if !info.IsClientStream {
 				return handler(srv, wrapServerStream(ss.Context(), ss))
 			}
@@ -250,7 +250,7 @@ func MakeDefaultOptions(auth kitNetGrpc.AuthInterceptors, logger log.Logger, tra
 		},
 	}
 	unaryInterceptors := []grpc.UnaryServerInterceptor{
-		otelgrpc.UnaryServerInterceptor(otelgrpc.WithTracerProvider(tracerProvider)), func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+		func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 			setGrpcRequest(ctx, req)
 			return handler(ctx, req)
 		},
@@ -267,6 +267,7 @@ func MakeDefaultOptions(auth kitNetGrpc.AuthInterceptors, logger log.Logger, tra
 	unaryInterceptors = append(unaryInterceptors, auth.Unary())
 
 	return []grpc.ServerOption{
+		grpc.StatsHandler(otelgrpc.NewServerHandler(otelgrpc.WithTracerProvider(tracerProvider))),
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
 			streamInterceptors...,
 		)),

@@ -13,7 +13,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 )
 
 func newTestStore(t *testing.T) (*mongodb.Store, func()) {
@@ -28,7 +28,7 @@ func newTestStore(t *testing.T) (*mongodb.Store, func()) {
 	require.NoError(t, err)
 
 	ctx := context.Background()
-	s, err := mongodb.NewStore(ctx, cfg.Clients.Storage.MongoDB, certManager.GetTLSConfig(), trace.NewNoopTracerProvider())
+	s, err := mongodb.NewStore(ctx, cfg.Clients.Storage.MongoDB, certManager.GetTLSConfig(), noop.NewTracerProvider())
 	require.NoError(t, err)
 
 	return s, func() {
