@@ -137,8 +137,8 @@ const Tab1: FC<Props> = (props) => {
                                             content={
                                                 softwareUpdateData?.lastupdate ? (
                                                     <DateFormat
+                                                        rawValue
                                                         prefixTest={`${_(t.deviceFirmwareUpToDate)}: `}
-                                                        rawValue={true}
                                                         value={softwareUpdateData?.lastupdate}
                                                     />
                                                 ) : (

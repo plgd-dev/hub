@@ -7,18 +7,7 @@ const Notifications = () => {
     const { formatMessage: _ } = useIntl()
 
     return (
-        <PageLayout
-            breadcrumbs={[
-                {
-                    to: '/',
-                    label: _(menuT.dashboard),
-                },
-                {
-                    label: _(menuT.notifications),
-                },
-            ]}
-            title={_(menuT.notifications)}
-        >
+        <PageLayout title={_(menuT.notifications)}>
             <div />
         </PageLayout>
     )

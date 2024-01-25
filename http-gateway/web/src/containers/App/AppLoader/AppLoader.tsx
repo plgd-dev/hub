@@ -9,7 +9,7 @@ const AppLoader = () => {
 
     return (
         <>
-            <PageLoader loading className='auth-loader' />
+            <PageLoader loading noOffset className='auth-loader' />
             <div className='page-loading-text'>{`${_(g.loading)}...`}</div>
         </>
     )

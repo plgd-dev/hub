@@ -1,20 +1,16 @@
-import React, { FC, useCallback, useContext, useEffect, useState } from 'react'
-import ReactDOM from 'react-dom'
+import React, { FC, lazy, useCallback, useEffect, useState } from 'react'
 import { useIntl } from 'react-intl'
 import { useNavigate, useParams } from 'react-router-dom'
-import isFunction from 'lodash/isFunction'
+import { useResizeDetector } from 'react-resize-detector'
 
 import NotFoundPage from '@shared-ui/components/Templates/NotFoundPage'
 import { useIsMounted, WellKnownConfigType } from '@shared-ui/common/hooks'
 import { messages as menuT } from '@shared-ui/components/Atomic/Menu/Menu.i18n'
-import PageLayout from '@shared-ui/components/Atomic/PageLayout'
 import Tabs from '@shared-ui/components/Atomic/Tabs'
-import Breadcrumbs from '@shared-ui/components/Layout/Header/Breadcrumbs'
 import StatusTag from '@shared-ui/components/Atomic/StatusTag'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
 import { clientAppSettings, security } from '@shared-ui/common/services'
-import Footer from '@shared-ui/components/Layout/Footer'
-import EditDeviceNameModal from '@shared-ui/components/Organisms/EditDeviceNameModal'
+import EditNameModal from '@shared-ui/components/Organisms/EditNameModal'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 
 import DevicesDetailsHeader from '../DevicesDetailsHeader'
@@ -24,13 +20,13 @@ import { updateDevicesResourceApi, updateDeviceTwinSynchronizationApi } from '..
 import { useDeviceDetails, useDevicePendingCommands, useDevicesResources, useDeviceSoftwareUpdateDetails } from '../../hooks'
 import { messages as t } from '../../Devices.i18n'
 import './DevicesDetailsPage.scss'
-import Tab1 from './Tabs/Tab1'
-import Tab2 from './Tabs/Tab2'
-import { PendingCommandsExpandableList } from '@/containers/PendingCommands'
-import AppContext from '@shared-ui/app/share/AppContext'
 import { Props } from './DevicesDetailsPage.types'
 import notificationId from '@/notificationId'
 import testId from '@/testId'
+import PageLayout from '@/containers/Common/PageLayout'
+
+const Tab1 = lazy(() => import('./Tabs/Tab1'))
+const Tab2 = lazy(() => import('./Tabs/Tab2'))
 
 const DevicesDetailsPage: FC<Props> = (props) => {
     const { defaultActiveTab } = props
@@ -39,7 +35,6 @@ const DevicesDetailsPage: FC<Props> = (props) => {
     const navigate = useNavigate()
     const id = routerId || ''
 
-    const [domReady, setDomReady] = useState(false)
     const [activeTabItem, setActiveTabItem] = useState(defaultActiveTab ?? 0)
     const [twinSyncLoading, setTwinSyncLoading] = useState(false)
 
@@ -47,7 +42,9 @@ const DevicesDetailsPage: FC<Props> = (props) => {
     const { data, updateData, loading, error: deviceError } = useDeviceDetails(id)
     const { data: softwareUpdateData, refresh: refreshSoftwareUpdate } = useDeviceSoftwareUpdateDetails(id)
     const { data: resourcesData, loading: loadingResources, error: resourcesError, refresh } = useDevicesResources(id)
-    const { data: pendingCommandsData, refresh: refreshPendingCommands } = useDevicePendingCommands(id)
+    const { data: pendingCommandsData, refresh: refreshPendingCommands, loading: pendingCommandsLoading } = useDevicePendingCommands(id)
+
+    const { ref, width, height } = useResizeDetector()
 
     const wellKnownConfig = security.getWellKnowConfig() as WellKnownConfigType & {
         defaultCommandTimeToLive: number
@@ -58,13 +55,7 @@ const DevicesDetailsPage: FC<Props> = (props) => {
     const [showEditNameModal, setShowEditNameModal] = useState(false)
     const [deviceNameLoading, setDeviceNameLoading] = useState(false)
 
-    const { footerExpanded, setFooterExpanded } = useContext(AppContext)
-
     clientAppSettings.reset()
-
-    useEffect(() => {
-        setDomReady(true)
-    }, [])
 
     useEffect(() => {
         if (data?.metadata?.twinEnabled !== isTwinEnabled) {
@@ -82,15 +73,31 @@ const DevicesDetailsPage: FC<Props> = (props) => {
         setShowEditNameModal(true)
     }, [])
 
-    const handleTabChange = useCallback((i: number) => {
-        setActiveTabItem(i)
-
-        navigate(`/devices/${id}${i === 1 ? '/resources' : ''}`, { replace: true })
-
-        refreshPendingCommands()
-        refreshSoftwareUpdate()
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+    const getNavigationByTab = useCallback((i: number) => {
+        switch (i) {
+            case 0:
+                return ''
+            case 1:
+                return '/resources'
+            case 2:
+                return '/certificates'
+            case 4:
+                return '/dps'
+        }
     }, [])
+
+    const handleTabChange = useCallback(
+        (i: number) => {
+            setActiveTabItem(i)
+
+            navigate(`/devices/${id}${getNavigationByTab(i)}`, { replace: true })
+
+            refreshPendingCommands()
+            refreshSoftwareUpdate()
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [getNavigationByTab, id]
+    )
 
     if (deviceError) {
         return <NotFoundPage message={_(t.deviceNotFoundMessage, { id })} title={_(t.deviceNotFound)} />
@@ -179,113 +186,100 @@ const DevicesDetailsPage: FC<Props> = (props) => {
     }
 
     return (
-        <PageLayout
-            breadcrumbs={breadcrumbs}
-            dataTestId={testId.devices.detail.layout}
-            footer={
-                <Footer
-                    footerExpanded={footerExpanded}
-                    paginationComponent={<div id='paginationPortalTarget'></div>}
-                    recentTasksPortal={<div id='recentTasksPortalTarget'></div>}
-                    recentTasksPortalTitle={
-                        <span
-                            id='recentTasksPortalTitleTarget'
-                            onClick={() => {
-                                isFunction(setFooterExpanded) && setFooterExpanded(!footerExpanded)
-                            }}
-                        >
-                            {_(t.pendingCommands)}
-                        </span>
-                    }
-                    setFooterExpanded={setFooterExpanded}
-                />
-            }
-            header={
-                <DevicesDetailsHeader
-                    deviceId={id}
-                    deviceName={deviceName}
-                    handleOpenEditDeviceNameModal={handleOpenEditDeviceNameModal}
-                    isOnline={isOnline}
-                    isUnregistered={isUnregistered}
-                    links={resources}
-                />
-            }
-            headlineStatusTag={<StatusTag variant={isOnline ? 'success' : 'error'}>{isOnline ? _(t.online) : _(t.offline)}</StatusTag>}
-            loading={loading || twinSyncLoading}
-            title={deviceName}
+        <div
+            ref={ref}
+            style={{
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+            }}
         >
-            {domReady &&
-                ReactDOM.createPortal(
-                    <Breadcrumbs items={[{ label: _(menuT.devices), link: '/' }, { label: deviceName }]} />,
-                    document.querySelector('#breadcrumbsPortalTarget') as Element
-                )}
+            <PageLayout
+                pendingCommands
+                breadcrumbs={[{ label: _(menuT.devices), link: '/' }, { label: deviceName }]}
+                dataTestId={testId.devices.detail.layout}
+                deviceId={id}
+                header={
+                    <DevicesDetailsHeader
+                        deviceId={id}
+                        deviceName={deviceName}
+                        handleOpenEditDeviceNameModal={handleOpenEditDeviceNameModal}
+                        isOnline={isOnline}
+                        isUnregistered={isUnregistered}
+                        links={resources}
+                    />
+                }
+                headlineStatusTag={<StatusTag variant={isOnline ? 'success' : 'error'}>{isOnline ? _(t.online) : _(t.offline)}</StatusTag>}
+                loading={loading || twinSyncLoading || pendingCommandsLoading}
+                title={deviceName}
+            >
+                <Tabs
+                    fullHeight
+                    isAsync
+                    activeItem={activeTabItem}
+                    onItemChange={handleTabChange}
+                    tabs={[
+                        {
+                            name: _(t.deviceInformation),
+                            id: 0,
+                            dataTestId: testId.devices.detail.tabInformation,
+                            content: (
+                                <Tab1
+                                    deviceId={id}
+                                    deviceName={deviceName}
+                                    firmware={data?.data?.content?.sv}
+                                    isActiveTab={activeTabItem === 0}
+                                    isTwinEnabled={isTwinEnabled}
+                                    model={data?.data?.content?.dmno}
+                                    pendingCommandsData={pendingCommandsData}
+                                    setTwinSynchronization={setTwinSynchronization}
+                                    softwareUpdateData={softwareUpdateData?.result?.data?.content}
+                                    twinSyncLoading={twinSyncLoading}
+                                    types={data?.types}
+                                />
+                            ),
+                        },
+                        {
+                            name: _(t.resources),
+                            id: 1,
+                            dataTestId: testId.devices.detail.tabResources,
+                            content: (
+                                <Tab2
+                                    deviceName={deviceName}
+                                    deviceStatus={deviceStatus}
+                                    isActiveTab={activeTabItem === 1}
+                                    isOnline={isOnline}
+                                    isUnregistered={isUnregistered}
+                                    loading={loading}
+                                    loadingResources={loadingResources}
+                                    pageSize={{ height, width }}
+                                    refreshResources={refreshResources}
+                                    resourcesData={resourcesData}
+                                />
+                            ),
+                        },
+                    ]}
+                />
 
-            <Tabs
-                activeItem={activeTabItem}
-                fullHeight={true}
-                onItemChange={handleTabChange}
-                tabs={[
-                    {
-                        name: _(t.deviceInformation),
-                        id: 0,
-                        dataTestId: testId.devices.detail.tabInformation,
-                        content: (
-                            <Tab1
-                                deviceId={id}
-                                deviceName={deviceName}
-                                firmware={data?.data?.content?.sv}
-                                isActiveTab={activeTabItem === 0}
-                                isTwinEnabled={isTwinEnabled}
-                                model={data?.data?.content?.dmno}
-                                pendingCommandsData={pendingCommandsData}
-                                setTwinSynchronization={setTwinSynchronization}
-                                softwareUpdateData={softwareUpdateData?.result?.data?.content}
-                                twinSyncLoading={twinSyncLoading}
-                                types={data?.types}
-                            />
-                        ),
-                    },
-                    {
-                        name: _(t.resources),
-                        id: 1,
-                        dataTestId: testId.devices.detail.tabResources,
-                        content: (
-                            <Tab2
-                                deviceName={deviceName}
-                                deviceStatus={deviceStatus}
-                                isActiveTab={activeTabItem === 1}
-                                isOnline={isOnline}
-                                isUnregistered={isUnregistered}
-                                loading={loading}
-                                loadingResources={loadingResources}
-                                refreshResources={refreshResources}
-                                resourcesData={resourcesData}
-                            />
-                        ),
-                    },
-                ]}
-            />
-
-            <EditDeviceNameModal
-                dataTestId={testId.devices.detail.editNameModal}
-                deviceName={deviceName}
-                deviceNameLoading={deviceNameLoading}
-                handleClose={() => setShowEditNameModal(false)}
-                handleSubmit={updateDeviceName}
-                i18n={{
-                    close: _(t.close),
-                    deviceName: _(t.deviceName),
-                    edit: _(t.edit),
-                    name: _(t.name),
-                    reset: _(t.reset),
-                    saveChange: _(t.saveChange),
-                    savingChanges: _(t.savingChanges),
-                }}
-                show={showEditNameModal}
-            />
-
-            <PendingCommandsExpandableList deviceId={id} />
-        </PageLayout>
+                <EditNameModal
+                    dataTestId={testId.devices.detail.editNameModal}
+                    handleClose={() => setShowEditNameModal(false)}
+                    handleSubmit={updateDeviceName}
+                    i18n={{
+                        close: _(t.close),
+                        namePlaceholder: _(t.deviceName),
+                        edit: _(t.edit),
+                        name: _(t.name),
+                        reset: _(t.reset),
+                        saveChange: _(t.saveChange),
+                        savingChanges: _(t.savingChanges),
+                    }}
+                    loading={deviceNameLoading}
+                    name={deviceName}
+                    show={showEditNameModal}
+                />
+            </PageLayout>
+        </div>
     )
 }
 

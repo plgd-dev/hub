@@ -9,6 +9,10 @@ export const messages = defineMessages({
         id: 'global.delete',
         defaultMessage: 'Delete',
     },
+    deleting: {
+        id: 'global.deleting',
+        defaultMessage: 'Deleting',
+    },
     name: {
         id: 'global.name',
         defaultMessage: 'Name',
@@ -29,20 +33,144 @@ export const messages = defineMessages({
         id: 'global.cancel',
         defaultMessage: 'Cancel',
     },
+    view: {
+        id: 'global.view',
+        defaultMessage: 'View',
+    },
+    update: {
+        id: 'global.update',
+        defaultMessage: 'Update',
+    },
     pageNotFound: {
         id: 'global.pageNotFound',
         defaultMessage: 'Page not found',
     },
     loading: {
-        id: 'app.loading',
+        id: 'global.loading',
         defaultMessage: 'Loading',
     },
     edit: {
-        id: 'app.edit',
+        id: 'global.edit',
         defaultMessage: 'Edit',
     },
     reset: {
-        id: 'app.reset',
+        id: 'global.reset',
         defaultMessage: 'Reset',
+    },
+    pendingCommands: {
+        id: 'global.pendingCommands',
+        defaultMessage: 'Pending commands',
+    },
+    online: {
+        id: 'global.online',
+        defaultMessage: 'online',
+    },
+    offline: {
+        id: 'global.offline',
+        defaultMessage: 'offline',
+    },
+    id: {
+        id: 'global.id',
+        defaultMessage: 'ID',
+    },
+    copy: {
+        id: 'global.copy',
+        defaultMessage: 'Copy',
+    },
+    information: {
+        id: 'global.information',
+        defaultMessage: 'Information',
+    },
+    editName: {
+        id: 'global.editName',
+        defaultMessage: 'Edit name',
+    },
+    close: {
+        id: 'global.close',
+        defaultMessage: 'Close',
+    },
+    saveChange: {
+        id: 'global.saveChange',
+        defaultMessage: 'Save Change',
+    },
+    savingChanges: {
+        id: 'global.savingChanges',
+        defaultMessage: 'Saving Changes',
+    },
+    done: {
+        id: 'global.done',
+        defaultMessage: 'Done',
+    },
+    created: {
+        id: 'global.created',
+        defaultMessage: 'Created',
+    },
+    expires: {
+        id: 'global.expires',
+        defaultMessage: 'Expires',
+    },
+    configuration: {
+        id: 'global.configuration',
+        defaultMessage: 'Configuration',
+    },
+    themePreviewMode: {
+        id: 'global.themePreviewMode',
+        defaultMessage: 'Theme Preview Mode',
+    },
+    ownerID: {
+        id: 'global.ownerID',
+        defaultMessage: 'Owner ID',
+    },
+    linkedHub: {
+        id: 'global.linkedHub',
+        defaultMessage: 'Linked Hub',
+    },
+    certificate: {
+        id: 'global.certificate',
+        defaultMessage: 'Certificate',
+    },
+    changesMade: {
+        id: 'global.changesMade',
+        defaultMessage: 'Changes made',
+    },
+    saveChanges: {
+        id: 'global.saveChanges',
+        defaultMessage: 'Save changes',
+    },
+    resetChanges: {
+        id: 'global.resetChanges',
+        defaultMessage: 'Reset changes',
+    },
+    ok: {
+        id: 'global.ok',
+        defaultMessage: 'Ok',
+    },
+    logOut: {
+        id: 'global.logOut',
+        defaultMessage: 'Log out',
+    },
+    navigation: {
+        id: 'global.navigation',
+        defaultMessage: 'Navigation',
+    },
+    on: {
+        id: 'global.on',
+        defaultMessage: 'On',
+    },
+    off: {
+        id: 'global.off',
+        defaultMessage: 'Off',
+    },
+    tls: {
+        id: 'global.tls',
+        defaultMessage: 'TLS',
+    },
+    showMore: {
+        id: 'global.showMore',
+        defaultMessage: 'Show More',
+    },
+    requiredField: {
+        id: 'global.requiredField',
+        defaultMessage: 'Required field {field}',
     },
 })

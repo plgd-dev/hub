@@ -2,6 +2,7 @@ import { configureStore } from '@reduxjs/toolkit'
 import { setupListeners } from '@reduxjs/toolkit/query'
 import { persistReducer } from 'redux-persist'
 import storage from 'redux-persist/lib/storage'
+import { createStateSyncMiddleware, initMessageListener } from 'redux-state-sync'
 
 import { createRootReducer } from './reducers'
 import { StoreType as NotificationStoreType } from '../containers/Notifications/slice'
@@ -32,9 +33,20 @@ const store = configureStore({
         getDefaultMiddleware({
             serializableCheck: false,
             immutableCheck: false,
-        }),
+        }).concat(
+            createStateSyncMiddleware({
+                predicate: (action) => {
+                    const whitelist = ['app/setThemeModal', 'app/setTheme', 'app/setPreviewTheme']
+                    if (typeof action !== 'function') {
+                        return whitelist.indexOf(action.type) >= 0
+                    }
+                    return false
+                },
+            })
+        ),
 })
 
+initMessageListener(store)
 setupListeners(store.dispatch)
 
 export default store

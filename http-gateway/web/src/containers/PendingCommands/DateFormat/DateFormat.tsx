@@ -1,16 +1,21 @@
+import { FC } from 'react'
 import { useIntl } from 'react-intl'
 import { Props } from './DateFormat.types'
 // @ts-ignore
 import * as converter from 'units-converter/dist/es/index'
 
 import { dateFormat, timeFormatLong } from '../constants'
-import { FC } from 'react'
 
 const time = converter.time
 
 const DateFormat: FC<Props> = (props) => {
     const { prefixTest, rawValue, value } = props
     const { formatDate, formatTime } = useIntl()
+
+    if (!value) {
+        return null
+    }
+
     const date = new Date(rawValue ? value : time(value).from('ns').to('ms').value)
 
     return (
