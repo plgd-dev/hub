@@ -17,14 +17,7 @@ import DevicesDetailsHeader from '../DevicesDetailsHeader'
 import { devicesStatuses, NO_DEVICE_NAME } from '../../constants'
 import { getDeviceChangeResourceHref, handleTwinSynchronizationErrors, isDeviceOnline } from '../../utils'
 import { updateDevicesResourceApi, updateDeviceTwinSynchronizationApi } from '../../rest'
-import {
-    useDeviceDetails,
-    useDevicePendingCommands,
-    useDevicesResources,
-    useDeviceSoftwareUpdateDetails,
-    useDeviceCertificates,
-    useDeviceProvisioningRecords,
-} from '../../hooks'
+import { useDeviceDetails, useDevicePendingCommands, useDevicesResources, useDeviceSoftwareUpdateDetails } from '../../hooks'
 import { messages as t } from '../../Devices.i18n'
 import './DevicesDetailsPage.scss'
 import { Props } from './DevicesDetailsPage.types'
@@ -34,8 +27,6 @@ import PageLayout from '@/containers/Common/PageLayout'
 
 const Tab1 = lazy(() => import('./Tabs/Tab1'))
 const Tab2 = lazy(() => import('./Tabs/Tab2'))
-const Tab3 = lazy(() => import('./Tabs/Tab3'))
-const Tab4 = lazy(() => import('./Tabs/Tab4'))
 
 const DevicesDetailsPage: FC<Props> = (props) => {
     const { defaultActiveTab } = props
@@ -52,8 +43,6 @@ const DevicesDetailsPage: FC<Props> = (props) => {
     const { data: softwareUpdateData, refresh: refreshSoftwareUpdate } = useDeviceSoftwareUpdateDetails(id)
     const { data: resourcesData, loading: loadingResources, error: resourcesError, refresh } = useDevicesResources(id)
     const { data: pendingCommandsData, refresh: refreshPendingCommands, loading: pendingCommandsLoading } = useDevicePendingCommands(id)
-    const { data: certificates, loading: certificatesLoading } = useDeviceCertificates(id)
-    const { data: provisioningRecords, loading: provisioningRecordsLoading } = useDeviceProvisioningRecords(id)
 
     const { ref, width, height } = useResizeDetector()
 
@@ -221,7 +210,7 @@ const DevicesDetailsPage: FC<Props> = (props) => {
                     />
                 }
                 headlineStatusTag={<StatusTag variant={isOnline ? 'success' : 'error'}>{isOnline ? _(t.online) : _(t.offline)}</StatusTag>}
-                loading={loading || twinSyncLoading || pendingCommandsLoading || certificatesLoading || provisioningRecordsLoading}
+                loading={loading || twinSyncLoading || pendingCommandsLoading}
                 title={deviceName}
             >
                 <Tabs
@@ -268,20 +257,6 @@ const DevicesDetailsPage: FC<Props> = (props) => {
                                     resourcesData={resourcesData}
                                 />
                             ),
-                        },
-                        {
-                            content: <Tab3 certificates={certificates} />,
-                            dataTestId: testId.devices.detail.tabCertificates,
-                            disabled: certificates?.length === 0 || certificatesLoading,
-                            id: 2,
-                            name: _(t.certificates),
-                        },
-                        {
-                            content: <Tab4 provisioningRecords={provisioningRecords} />,
-                            dataTestId: testId.devices.detail.tabProvisioningRecords,
-                            disabled: provisioningRecords?.length === 0 || provisioningRecordsLoading,
-                            id: 3,
-                            name: _(t.dps),
                         },
                     ]}
                 />

@@ -25,7 +25,6 @@ import FullPageLoader from '@shared-ui/components/Atomic/FullPageLoader'
 import { messages as t } from './containers/App/App.i18n'
 import { messages as g } from './containers/Global.i18n'
 import testId from '@/testId'
-import EnrollmentGroupsDetailPage from '@/containers/DeviceProvisioning/EnrollmentGroups/DetailPage/EnrollmentGroupsDetailPage'
 
 // Devices
 const DevicesListPage = lazy(() => import('./containers/Devices/List/DevicesListPage'))
@@ -35,15 +34,6 @@ const DevicesDetailsPage = lazy(() => import('./containers/Devices/Detail/Device
 const RemoteClientsListPage = lazy(() => import('./containers/RemoteClients/List/RemoteClientsListPage'))
 const RemoteClientDetailPage = lazy(() => import('./containers/RemoteClients/Detail/RemoteClientDetailPage'))
 const RemoteClientDevicesDetailPage = lazy(() => import('./containers/RemoteClients/Device/Detail/RemoteClientDevicesDetailPage'))
-
-// DPS
-const ProvisioningRecordsListPage = lazy(() => import('./containers/DeviceProvisioning/ProvisioningRecords/ListPage/ProvisioningRecordsListPage'))
-const ProvisioningRecordsDetailPage = lazy(() => import('@/containers/DeviceProvisioning/ProvisioningRecords/DetailPage/ProvisioningRecordsDetailPage'))
-const EnrollmentGroupsListPage = lazy(() => import('./containers/DeviceProvisioning/EnrollmentGroups/ListPage'))
-const LinkedHubsListPage = lazy(() => import('./containers/DeviceProvisioning/LinkedHubs'))
-const LinkedHubsDetailPage = lazy(() => import('./containers/DeviceProvisioning/LinkedHubs/DetailPage'))
-const CertificatesListPage = lazy(() => import('./containers/Certificates'))
-const CertificatesDetailPage = lazy(() => import('@/containers/Certificates/DetailPage'))
 
 // Pending commands
 const PendingCommandsListPage = lazy(() => import('./containers/PendingCommands/PendingCommandsListPage'))
@@ -135,7 +125,7 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                 link: '/certificates',
                 paths: ['/certificates', '/certificates/:certificateId'],
                 exact: true,
-                visibility: menuConfig.certificates,
+                visibility: 'disabled',
             },
         ],
     },
@@ -149,7 +139,7 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                 link: '/device-provisioning',
                 paths: ['/device-provisioning'],
                 exact: true,
-                visibility: menuConfig.deviceProvisioning,
+                visibility: 'disabled',
                 children: [
                     {
                         id: '101',
@@ -303,24 +293,6 @@ export const Routes = () => {
             <Route
                 element={
                     <Suspense fallback={<Loader />}>
-                        <DevicesDetailsPage defaultActiveTab={2} />
-                    </Suspense>
-                }
-                path='/devices/:id/certificates'
-            />
-
-            <Route
-                element={
-                    <Suspense fallback={<Loader />}>
-                        <DevicesDetailsPage defaultActiveTab={3} />
-                    </Suspense>
-                }
-                path='/devices/:id/dps'
-            />
-
-            <Route
-                element={
-                    <Suspense fallback={<Loader />}>
                         <RemoteClientsListPage />
                     </Suspense>
                 }
@@ -370,114 +342,6 @@ export const Routes = () => {
                     </Suspense>
                 }
                 path='/remote-clients/:id/devices/:deviceId/resources/*'
-            />
-
-            <Route
-                element={
-                    <Suspense fallback={<Loader />}>
-                        <CertificatesListPage />
-                    </Suspense>
-                }
-                path='/certificates'
-            />
-
-            <Route
-                element={
-                    <Suspense fallback={<Loader />}>
-                        <CertificatesDetailPage />
-                    </Suspense>
-                }
-                path='/certificates/:certificateId'
-            />
-
-            <Route
-                element={
-                    <Suspense fallback={<Loader />}>
-                        <EnrollmentGroupsListPage />
-                    </Suspense>
-                }
-                path='/device-provisioning/enrollment-groups'
-            />
-
-            <Route
-                element={
-                    <Suspense fallback={<Loader />}>
-                        <EnrollmentGroupsDetailPage />
-                    </Suspense>
-                }
-                path='/device-provisioning/enrollment-groups/:enrollmentId'
-            />
-
-            <Route
-                element={
-                    <Suspense fallback={<Loader />}>
-                        <ProvisioningRecordsListPage />
-                    </Suspense>
-                }
-                path='/device-provisioning/provisioning-records'
-            />
-
-            <Route
-                element={
-                    <Suspense fallback={<Loader />}>
-                        <ProvisioningRecordsDetailPage />
-                    </Suspense>
-                }
-                path='/device-provisioning/provisioning-records/:recordId'
-            />
-
-            <Route
-                element={
-                    <Suspense fallback={<Loader />}>
-                        <LinkedHubsListPage />
-                    </Suspense>
-                }
-                path='/device-provisioning/linked-hubs'
-            />
-
-            <Route
-                element={
-                    <Suspense fallback={<Loader />}>
-                        <LinkedHubsDetailPage defaultActiveTab={0} />
-                    </Suspense>
-                }
-                path='/device-provisioning/linked-hubs/:hubId'
-            />
-
-            <Route
-                element={
-                    <Suspense fallback={<Loader />}>
-                        <LinkedHubsDetailPage defaultActiveTab={1} />
-                    </Suspense>
-                }
-                path='/device-provisioning/linked-hubs/:hubId/certificate-authority'
-            />
-
-            <Route
-                element={
-                    <Suspense fallback={<Loader />}>
-                        <LinkedHubsDetailPage defaultActiveTab={1} />
-                    </Suspense>
-                }
-                path='/device-provisioning/linked-hubs/:hubId/certificate-authority/:section'
-            />
-
-            <Route
-                element={
-                    <Suspense fallback={<Loader />}>
-                        <LinkedHubsDetailPage defaultActiveTab={2} />
-                    </Suspense>
-                }
-                path='/device-provisioning/linked-hubs/:hubId/authorization'
-            />
-
-            <Route
-                element={
-                    <Suspense fallback={<Loader />}>
-                        <LinkedHubsDetailPage defaultActiveTab={2} />
-                    </Suspense>
-                }
-                path='/device-provisioning/linked-hubs/:hubId/authorization/:section'
             />
 
             <Route
