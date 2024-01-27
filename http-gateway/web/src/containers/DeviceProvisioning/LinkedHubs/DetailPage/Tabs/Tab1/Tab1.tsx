@@ -23,10 +23,10 @@ const Tab1: FC<Props> = (props) => {
         handleSubmit,
     } = useForm<Inputs>({ mode: 'all', reValidateMode: 'onSubmit', values: defaultFormData })
 
-    const { onSubmit } = useContext(FormContext)
+    // const { onSubmit } = useContext(FormContext)
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form>
             <SimpleStripTable
                 rows={[
                     {

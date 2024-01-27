@@ -20,7 +20,7 @@ import { updateLinkedHubData } from '@/containers/DeviceProvisioning/rest'
 import PageLayout from '@/containers/Common/PageLayout'
 import DetailHeader from '@/containers/DeviceProvisioning/LinkedHubs/DetailHeader'
 import isEqual from 'lodash/isEqual'
-import { FormContext } from '@shared-ui/common/context/FormContext'
+import { FormContext, getFormContextDefault } from '@shared-ui/common/context/FormContext'
 
 const Tab1 = lazy(() => import('./Tabs/Tab1/Tab1'))
 const Tab2 = lazy(() => import('./Tabs/Tab2/Tab2'))
@@ -110,8 +110,8 @@ const LinkedHubsDetail: FC<any> = (props) => {
 
     const context = useMemo(
         () => ({
-            onSubmit: onSubmitForm,
-            updateData: (field: string, d: any) => console.log(field, d),
+            ...getFormContextDefault('default'),
+            updateData: (data: any) => console.log(data),
         }),
         []
     )

@@ -34,7 +34,7 @@ const TabContent2: FC<Props> = (props) => {
         control,
     } = useForm<Inputs>({ mode: 'all', reValidateMode: 'onSubmit', values: defaultFormData })
 
-    const { onSubmit } = useContext(FormContext)
+    // const { onSubmit } = useContext(FormContext)
 
     const defaultModalData = useMemo(
         () => ({
@@ -77,7 +77,7 @@ const TabContent2: FC<Props> = (props) => {
     }, [caPool, defaultModalData, modalData.value, setValue])
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form>
             <Headline type='h5'>{_(g.tls)}</Headline>
             <p>Short description...</p>
             <hr css={styles.separator} />
