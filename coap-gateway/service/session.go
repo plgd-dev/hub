@@ -28,7 +28,7 @@ import (
 	coapService "github.com/plgd-dev/hub/v2/pkg/net/coap/service"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/pkg/opentelemetry/otelcoap"
-	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
+	pkgJwt "github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/pkg/sync/task/future"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
@@ -69,14 +69,14 @@ func (a *authorizationContext) GetAccessToken() string {
 	return ""
 }
 
-func (a *authorizationContext) GetJWTClaims() jwt.Claims {
+func (a *authorizationContext) GetJWTClaims() pkgJwt.Claims {
 	if a != nil {
-		jwtClaims, err := jwt.ParseToken(a.AccessToken)
+		jwtClaims, err := pkgJwt.ParseToken(a.AccessToken)
 		if err == nil {
 			return jwtClaims
 		}
 	}
-	return make(jwt.Claims)
+	return make(pkgJwt.Claims)
 }
 
 func (a *authorizationContext) IsValid() error {
@@ -998,7 +998,7 @@ func (c *session) UpdateDeviceMetadata(ctx context.Context, event *events.Device
 	return err
 }
 
-func (c *session) ValidateToken(ctx context.Context, token string) (jwt.Claims, error) {
+func (c *session) ValidateToken(ctx context.Context, token string) (pkgJwt.Claims, error) {
 	return c.server.ValidateToken(ctx, token)
 }
 
@@ -1024,16 +1024,6 @@ func (c *session) unsubscribeFromDeviceEvents() {
 	}
 	c.private.mutex.Unlock()
 	closeFn()
-}
-
-func (c *session) ResolveDeviceID(claim jwt.Claims, paramDeviceID string) string {
-	if c.server.config.APIs.COAP.Authorization.DeviceIDClaim != "" {
-		return claim.DeviceID(c.server.config.APIs.COAP.Authorization.DeviceIDClaim)
-	}
-	if c.server.config.APIs.COAP.TLS.IsEnabled() && c.server.config.APIs.COAP.TLS.Embedded.ClientCertificateRequired {
-		return c.tlsDeviceID
-	}
-	return paramDeviceID
 }
 
 func (c *session) UpdateTwinSynchronizationStatus(ctx context.Context, deviceID string, state commands.TwinSynchronization_State, t time.Time) error {

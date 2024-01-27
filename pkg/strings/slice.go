@@ -1,5 +1,9 @@
 package strings
 
+import "errors"
+
+var ErrInvalidType = errors.New("invalid type")
+
 // Return slice of unique elements contained by both input slices
 func Intersection(s1, s2 []string) []string {
 	hash := make(map[string]bool)
@@ -70,35 +74,35 @@ func Contains(slice []string, s string) bool {
 	return false
 }
 
-// ToSlice converts a string or []string.
-func ToSlice(v interface{}) []string {
+// ToSlice converts a string or a []string.
+func ToSlice(v interface{}) ([]string, error) {
 	if v == nil {
-		return nil
+		return nil, nil
 	}
 
 	if s, ok := v.(string); ok {
 		if s == "" {
-			return nil
+			return nil, nil
 		}
-		return []string{s}
+		return []string{s}, nil
 	}
 
 	if a, ok := v.([]string); ok {
-		return a
+		return a, nil
 	}
 	a, ok := v.([]interface{})
 	if !ok {
-		return nil
+		return nil, ErrInvalidType
 	}
 	o := make([]string, len(a))
 	i := 0
 	for _, e := range a {
 		s, ok := e.(string)
 		if !ok {
-			return nil
+			return nil, ErrInvalidType
 		}
 		o[i] = s
 		i++
 	}
-	return o
+	return o, nil
 }

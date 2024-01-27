@@ -119,3 +119,17 @@ jobs:
       file: ${{ matrix.file }}
       template-file: ${{ matrix.template-file }}
 
+  generate-sbom:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Generate SBOM
+      uses: anchore/sbom-action@v0
+      with:
+        path: .
+        artifact-name: sbom.spdx
+        upload-artifact-retention: 14
+

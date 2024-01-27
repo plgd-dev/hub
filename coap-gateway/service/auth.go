@@ -48,27 +48,35 @@ func (s *Service) ValidateToken(ctx context.Context, token string) (pkgJwt.Claim
 	return pkgJwt.Claims(m), nil
 }
 
-func (s *Service) VerifyDeviceID(tlsDeviceID string, claim pkgJwt.Claims) error {
-	jwtDeviceID := claim.DeviceID(s.config.APIs.COAP.Authorization.DeviceIDClaim)
+func (s *Service) verifyDeviceID(tlsDeviceID string, claim pkgJwt.Claims) (string, error) {
+	jwtDeviceID, err := claim.GetDeviceID(s.config.APIs.COAP.Authorization.DeviceIDClaim)
+	if err != nil {
+		return "", fmt.Errorf("cannot get device id claim from access token: %w", err)
+	}
 	if s.config.APIs.COAP.Authorization.DeviceIDClaim != "" && jwtDeviceID == "" {
-		return fmt.Errorf("access token doesn't contain the required device id claim('%v')", s.config.APIs.COAP.Authorization.DeviceIDClaim)
+		return "", fmt.Errorf("access token doesn't contain the required device id claim('%v')", s.config.APIs.COAP.Authorization.DeviceIDClaim)
 	}
-	if !s.config.APIs.COAP.TLS.IsEnabled() {
-		return nil
-	}
-	if !s.config.APIs.COAP.TLS.Embedded.ClientCertificateRequired {
-		return nil
+	if !s.config.APIs.COAP.TLS.IsEnabled() || !s.config.APIs.COAP.TLS.Embedded.ClientCertificateRequired {
+		return jwtDeviceID, nil
 	}
 	if tlsDeviceID == "" {
-		return fmt.Errorf("certificate of device doesn't contains device id")
+		return "", fmt.Errorf("certificate of device doesn't contain device id")
 	}
-	if s.config.APIs.COAP.Authorization.DeviceIDClaim == "" {
-		return nil
+	if s.config.APIs.COAP.Authorization.DeviceIDClaim != "" && jwtDeviceID != tlsDeviceID {
+		return "", fmt.Errorf("access token issued to the device ('%v') used by the different device ('%v')", jwtDeviceID, tlsDeviceID)
 	}
-	if jwtDeviceID != tlsDeviceID {
-		return fmt.Errorf("access token issued to the device ('%v') used by the different device ('%v')", jwtDeviceID, tlsDeviceID)
+	return tlsDeviceID, nil
+}
+
+func (s *Service) VerifyAndResolveDeviceID(tlsDeviceID, paramDeviceID string, claim pkgJwt.Claims) (string, error) {
+	deviceID, err := s.verifyDeviceID(tlsDeviceID, claim)
+	if err != nil {
+		return "", err
 	}
-	return nil
+	if deviceID == "" {
+		return paramDeviceID, nil
+	}
+	return deviceID, nil
 }
 
 func verifyChain(chain []*x509.Certificate, capool *x509.CertPool, identityPropertiesRequired bool) error {

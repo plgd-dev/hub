@@ -82,18 +82,18 @@ func TestRequestHandlerRetrieveDeviceSubscription(t *testing.T) {
 			},
 			wantCode:        http.StatusUnauthorized,
 			wantContentType: textPlain,
-			want:            "invalid token: could not parse token: token contains an invalid number of segments",
+			want:            "invalid token: could not parse token: token is malformed: token contains an invalid number of segments",
 		},
 		{
 			name: "expired token",
 			args: args{
 				deviceID: deviceID,
 				subID:    subID,
-				token:    oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTestExpired),
+				token:    oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTestExpired, nil),
 			},
 			wantCode:        http.StatusUnauthorized,
 			wantContentType: textPlain,
-			want:            "invalid token: could not parse token: token is expired",
+			want:            "invalid token: could not parse token: token has invalid claims: token is expired",
 		},
 		{
 			name: "invalid deviceID",

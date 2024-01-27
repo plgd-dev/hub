@@ -215,3 +215,31 @@ func TestContains(t *testing.T) {
 		})
 	}
 }
+
+func TestToSlice(t *testing.T) {
+	s, err := ToSlice(nil)
+	require.NoError(t, err)
+	require.Nil(t, s)
+
+	s, err = ToSlice("")
+	require.NoError(t, err)
+	require.Nil(t, s)
+
+	s, err = ToSlice("a")
+	require.NoError(t, err)
+	require.Equal(t, []string{"a"}, s)
+
+	s, err = ToSlice([]string{"a", "b", "c"})
+	require.NoError(t, err)
+	require.Equal(t, []string{"a", "b", "c"}, s)
+
+	s, err = ToSlice([]interface{}{"a", "b", "c"})
+	require.NoError(t, err)
+	require.Equal(t, []string{"a", "b", "c"}, s)
+
+	_, err = ToSlice(42)
+	require.Error(t, err)
+
+	_, err = ToSlice([]interface{}{"a", 42, "c"})
+	require.Error(t, err)
+}

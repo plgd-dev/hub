@@ -99,7 +99,7 @@ func (s *Service) DeleteDevices(ctx context.Context, request *pb.DeleteDevicesRe
 	tx := s.persistence.NewTransaction(ctx)
 	defer tx.Close()
 
-	owner, userID, err := s.parseTokenMD(ctx)
+	owner, userID, err := parseTokenMD(ctx, s.ownerClaim)
 	if err != nil {
 		return nil, log.LogAndReturnError(grpc.ForwardFromError(codes.InvalidArgument, fmt.Errorf("cannot delete devices: %w", err)))
 	}

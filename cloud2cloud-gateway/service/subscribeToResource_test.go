@@ -87,7 +87,7 @@ func TestRequestHandlerSubscribeToResourceTokenTimeout(t *testing.T) {
 		_ = conn.Close()
 	}()
 
-	token := oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTestShortExpiration)
+	token := oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTestShortExpiration, nil)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
 	_, shutdownDevSim := test.OnboardDevSimForClient(ctx, t, c, oauthTest.ClientTestShortExpiration, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST,

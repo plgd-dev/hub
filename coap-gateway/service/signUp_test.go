@@ -32,7 +32,9 @@ func TestSignUpPostHandler(t *testing.T) {
 
 	tbl := []testEl{
 		{"BadRequest (invalid)", input{coapCodes.POST, `{}`, nil}, output{coapCodes.BadRequest, `invalid device id`, nil}, true},
+		{"BadRequest (missing access token)", input{coapCodes.POST, `{"di": "` + CertIdentity + `"}`, nil}, output{coapCodes.BadRequest, `invalid authorization code`, nil}, true},
 		{"BadRequest (invalid access token)", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": 123}`, nil}, output{coapCodes.BadRequest, `cannot handle sign up: cbor: cannot unmarshal positive`, nil}, true},
+		{"BadRequest (unknown provider)", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + codeEl + `", "authprovider": "test"}`, nil}, output{coapCodes.Unauthorized, `unknown authorization provider`, nil}, true},
 		{"Changed", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + codeEl + `", "authprovider": "` + config.DEVICE_PROVIDER + `"}`, nil}, output{coapCodes.Changed, TestCoapSignUpResponse{RefreshToken: AuthorizationRefreshToken, UserID: "1"}, nil}, false},
 	}
 

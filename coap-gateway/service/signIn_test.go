@@ -41,9 +41,10 @@ func TestSignInPostHandler(t *testing.T) {
 
 	tbl := []testEl{
 		{"BadRequest (invalid request)", input{coapCodes.POST, `{"login": true}`, nil}, output{coapCodes.BadRequest, `invalid device id`, nil}, true},
+		{"BadRequest (missing userID)", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": "", "login": true}`, nil}, output{coapCodes.BadRequest, `cannot handle sign in: invalid user id`, nil}, true},
 		{"Unauthorized (invalid userID)", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid": "0", "accesstoken":"%%ACCESS_TOKEN%%", "login": true }`, nil}, output{coapCodes.Unauthorized, `doesn't match userID`, nil}, true},
 		{"BadRequest (missing access token)", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid": "0", "login": true }`, nil}, output{coapCodes.BadRequest, `invalid access token`, nil}, true},
-		{"BadRequest (invalid access token)", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": 123, "login": true}`, nil}, output{coapCodes.BadRequest, `cannot handle sign in: cannot decode body: cbor`, nil}, true},
+		{"BadRequest (invalid access token type)", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": 123, "login": true}`, nil}, output{coapCodes.BadRequest, `cannot handle sign in: cannot decode body: cbor`, nil}, true},
 		{"Changed1", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"%%USER_ID%%", "accesstoken":"%%ACCESS_TOKEN%%", "login": true }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}, false},
 	}
 
@@ -182,31 +183,62 @@ func TestDontCreateObservationAfterRefreshTokenAndSignIn(t *testing.T) {
 	}
 }
 
+func TestSignOutPostHandlerWithInvalidData(t *testing.T) {
+	shutdown := setUp(t)
+	defer shutdown()
+
+	// not signed up
+	tbl := []testEl{
+		{"BadRequest (invalid access token)", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": "123", "login": false }`, nil}, output{coapCodes.BadRequest, `cannot handle sign out: invalid authorization context`, nil}, false},
+	}
+
+	for _, tt := range tbl {
+		tf := func(t *testing.T) {
+			co := testCoapDial(t, "", true, true, time.Now().Add(time.Minute))
+			if co == nil {
+				return
+			}
+			defer func() {
+				_ = co.Close()
+			}()
+
+			testPostHandler(t, uri.SignIn, tt, co)
+		}
+		t.Run(tt.name, tf)
+	}
+}
+
 func TestSignOutPostHandler(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 
-	co := testCoapDial(t, "", true, true, time.Now().Add(time.Minute))
-	if co == nil {
-		return
-	}
-	defer func() {
-		_ = co.Close()
-	}()
-
-	signUpResp := testSignUp(t, CertIdentity, co)
-	testSignIn(t, CertIdentity, signUpResp, co)
-
 	tbl := []testEl{
-		{"Changed (uid from ctx)", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"` + signUpResp.AccessToken + `", "login": false }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}, false},
-		{"Changed1", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"` + signUpResp.UserID + `", "accesstoken":"` + signUpResp.AccessToken + `", "login": false }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}, false},
+		{"BadRequest (invalid access token type)", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken": 123, "login": false }`, nil}, output{coapCodes.BadRequest, `cannot handle sign in: cannot decode body: cbor`, nil}, false},
+		{"Changed (uid from ctx)", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "accesstoken":"%%ACCESS_TOKEN%%", "login": false }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}, false},
+		{"Changed1", input{coapCodes.POST, `{"di": "` + CertIdentity + `", "uid":"%%USER_ID%%", "accesstoken":"%%ACCESS_TOKEN%%", "login": false }`, nil}, output{coapCodes.Changed, TestCoapSignInResponse{}, nil}, false},
 	}
 
-	for _, test := range tbl {
+	for _, tt := range tbl {
 		tf := func(t *testing.T) {
-			testPostHandler(t, uri.SignIn, test, co)
+			co := testCoapDial(t, "", true, true, time.Now().Add(time.Minute))
+			if co == nil {
+				return
+			}
+			defer func() {
+				_ = co.Close()
+			}()
+
+			signUpResp := testSignUp(t, CertIdentity, co)
+			testSignIn(t, CertIdentity, signUpResp, co)
+
+			payload := tt.in.payload.(string)
+			payload = strings.ReplaceAll(payload, "%%USER_ID%%", signUpResp.UserID)
+			payload = strings.ReplaceAll(payload, "%%ACCESS_TOKEN%%", signUpResp.AccessToken)
+			tt.in.payload = payload
+
+			testPostHandler(t, uri.SignIn, tt, co)
 		}
-		t.Run(test.name, tf)
+		t.Run(tt.name, tf)
 	}
 }
 
