@@ -1,11 +1,11 @@
 import React, { FC, useContext } from 'react'
 import { useIntl } from 'react-intl'
-import { useForm } from 'react-hook-form'
 import { useParams } from 'react-router-dom'
+import { useForm } from '@shared-ui/common/hooks'
 
 import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
 import FormGroup from '@shared-ui/components/Atomic/FormGroup'
-import FormInput, { inputAligns } from '@shared-ui/components/Atomic/FormInput'
+import FormInput from '@shared-ui/components/Atomic/FormInput'
 import { FormContext } from '@shared-ui/common/context/FormContext'
 
 import { Props, Inputs } from './Tab1.types'
@@ -17,35 +17,27 @@ const Tab1: FC<Props> = (props) => {
     const { formatMessage: _ } = useIntl()
     const { hubId } = useParams()
 
+    const { updateData, setFormError, commonFormGroupProps, commonInputProps } = useContext(FormContext)
+
     const {
         formState: { errors },
         register,
-        handleSubmit,
-    } = useForm<Inputs>({ mode: 'all', reValidateMode: 'onSubmit', values: defaultFormData })
-
-    const { onSubmit } = useContext(FormContext)
+    } = useForm<Inputs>({ defaultFormData, updateData, setFormError, errorKey: 'tab1' })
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form>
             <SimpleStripTable
                 rows={[
                     {
                         attribute: _(g.id),
-                        value: <FormInput disabled inlineStyle align={inputAligns.RIGHT} value={hubId} />,
+                        value: <FormInput {...commonInputProps} disabled value={hubId} />,
                     },
                     {
                         attribute: _(g.name),
                         value: (
-                            <FormGroup
-                                errorTooltip
-                                fullSize
-                                error={errors.name ? _(g.requiredField, { field: _(g.name) }) : undefined}
-                                id='name'
-                                marginBottom={false}
-                            >
+                            <FormGroup {...commonFormGroupProps} error={errors.name ? _(g.requiredField, { field: _(g.name) }) : undefined} id='name'>
                                 <FormInput
-                                    inlineStyle
-                                    align={inputAligns.RIGHT}
+                                    {...commonInputProps}
                                     placeholder={_(g.name)}
                                     {...register('name', { required: true, validate: (val) => val !== '' })}
                                 />
@@ -56,15 +48,12 @@ const Tab1: FC<Props> = (props) => {
                         attribute: _(t.coapGateway),
                         value: (
                             <FormGroup
-                                errorTooltip
-                                fullSize
+                                {...commonFormGroupProps}
                                 error={errors.coapGateway ? _(g.requiredField, { field: _(t.coapGateway) }) : undefined}
                                 id='coapGateway'
-                                marginBottom={false}
                             >
                                 <FormInput
-                                    inlineStyle
-                                    align={inputAligns.RIGHT}
+                                    {...commonInputProps}
                                     placeholder={_(t.coapGateway)}
                                     {...register('coapGateway', { required: true, validate: (val) => val !== '' })}
                                 />

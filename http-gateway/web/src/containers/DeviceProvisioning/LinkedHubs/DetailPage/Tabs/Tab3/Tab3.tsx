@@ -23,7 +23,7 @@ const TabContent3 = lazy(() => import('./Contents/TabContent3'))
 const TabContent4 = lazy(() => import('./Contents/TabContent4'))
 
 const Tab3: FC<Props> = (props) => {
-    const { loading } = props
+    const { defaultFormData, loading } = props
     const { formatMessage: _ } = useIntl()
     const { section, hubId } = useParams()
     const navigate = useNavigate()
@@ -51,6 +51,7 @@ const Tab3: FC<Props> = (props) => {
             },
             { id: '3', link: '/http', icon: <IconGlobe />, title: _(t.hTTP) },
         ],
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         []
     )
 
@@ -93,8 +94,8 @@ const Tab3: FC<Props> = (props) => {
                 }}
             >
                 <ContentSwitch activeItem={parseInt(activeItem)}>
-                    <TabContent1 loading={loading} />
-                    <TabContent2 loading={loading} />
+                    <TabContent1 defaultFormData={defaultFormData} loading={loading} />
+                    <TabContent2 defaultFormData={defaultFormData} loading={loading} />
                     <TabContent3
                         contentRefs={{
                             ref1: contentRef1,
@@ -102,9 +103,10 @@ const Tab3: FC<Props> = (props) => {
                             ref3: contentRef3,
                             ref4: contentRef4,
                         }}
+                        defaultFormData={defaultFormData}
                         loading={loading}
                     />
-                    <TabContent4 loading={loading} />
+                    <TabContent4 defaultFormData={defaultFormData} loading={loading} />
                 </ContentSwitch>
             </Column>
         </Row>

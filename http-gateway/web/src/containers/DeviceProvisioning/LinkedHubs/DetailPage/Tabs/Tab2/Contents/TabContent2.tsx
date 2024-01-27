@@ -1,6 +1,8 @@
-import React, { FC, useCallback, useContext, useMemo, useState } from 'react'
+import React, { FC, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { Controller, useForm, useFormContext } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
+import cloneDeep from 'lodash/cloneDeep'
+import isFunction from 'lodash/isFunction'
 
 import Headline from '@shared-ui/components/Atomic/Headline'
 import CaPool from '@shared-ui/components/Organisms/CaPool'
@@ -9,13 +11,13 @@ import TileToggle from '@shared-ui/components/Atomic/TileToggle'
 import Modal from '@shared-ui/components/Atomic/Modal'
 import CodeEditor from '@shared-ui/components/Atomic/CodeEditor'
 import Loadable from '@shared-ui/components/Atomic/Loadable'
+import { setProperty } from '@shared-ui/components/Atomic/_utils/utils'
+import { FormContext } from '@shared-ui/common/context/FormContext'
 
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '../../../../LinkedHubs.i18n'
 import * as styles from '../../Tab.styles'
-import { Props } from './TabContent2.types'
-import { Inputs } from '@/containers/DeviceProvisioning/LinkedHubs/DetailPage/Tabs/Tab2/Contents/TabContent1.types'
-import { FormContext } from '@shared-ui/common/context/FormContext'
+import { Props, Inputs } from './TabContent2.types'
 
 type ModalData = {
     title: string
@@ -27,14 +29,11 @@ const TabContent2: FC<Props> = (props) => {
     const { contentRefs, defaultFormData, loading } = props
     const { formatMessage: _ } = useIntl()
     const {
-        formState: { errors },
-        handleSubmit,
+        formState: { errors, isDirty },
         watch,
         setValue,
         control,
     } = useForm<Inputs>({ mode: 'all', reValidateMode: 'onSubmit', values: defaultFormData })
-
-    const { onSubmit } = useContext(FormContext)
 
     const defaultModalData = useMemo(
         () => ({
@@ -45,6 +44,8 @@ const TabContent2: FC<Props> = (props) => {
         []
     )
 
+    const { updateData, setFormError } = useContext(FormContext)
+
     const [modalData, setModalData] = useState<ModalData>(defaultModalData)
 
     const caPool = watch('certificateAuthority.grpc.tls.caPool')
@@ -52,6 +53,28 @@ const TabContent2: FC<Props> = (props) => {
     const cert = watch('certificateAuthority.grpc.tls.cert')
 
     const caPoolData = useMemo(() => (caPool ? caPool.map((p: string, key: number) => ({ id: key, name: p })) : []), [caPool])
+
+    useEffect(() => {
+        if (defaultFormData && isDirty) {
+            const copy = cloneDeep(defaultFormData)
+
+            if (defaultFormData.certificateAuthority.grpc.tls.caPool !== caPool) {
+                updateData(setProperty(copy, 'certificateAuthority.grpc.tls.caPool', caPool))
+            }
+
+            if (defaultFormData.certificateAuthority.grpc.tls.key !== key) {
+                updateData(setProperty(copy, 'certificateAuthority.grpc.keepAlive.timeout', key))
+            }
+
+            if (defaultFormData.certificateAuthority.grpc.tls.cert !== cert) {
+                updateData(setProperty(copy, 'certificateAuthority.grpc.keepAlive.permitWithoutStream', cert))
+            }
+        }
+    }, [caPool, cert, defaultFormData, isDirty, key, updateData])
+
+    useEffect(() => {
+        isFunction(setFormError) && setFormError((prevState: any) => ({ ...prevState, tab2Content2: Object.keys(errors).length > 0 }))
+    }, [errors, setFormError])
 
     const getModalData = useCallback(
         (variant = 'add') => {
@@ -70,14 +93,13 @@ const TabContent2: FC<Props> = (props) => {
 
     const handleSaveModalData = useCallback(() => {
         console.log([...caPool, btoa(modalData.value)])
-        // setValue('certificateAuthority.grpc.tls.caPool', [...caPool, btoa(modalData.value)], { shouldDirty: true, shouldTouch: true })
-        // setValue('certificateAuthority.grpc.tls.caPool', [...caPool, btoa(modalData.value)])
+        setValue('certificateAuthority.grpc.tls.caPool', [...caPool, btoa(modalData.value)], { shouldDirty: true, shouldTouch: true })
 
         setModalData(defaultModalData)
     }, [caPool, defaultModalData, modalData.value, setValue])
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form>
             <Headline type='h5'>{_(g.tls)}</Headline>
             <p>Short description...</p>
             <hr css={styles.separator} />
@@ -143,7 +165,7 @@ const TabContent2: FC<Props> = (props) => {
                         <Controller
                             control={control}
                             name='certificateAuthority.grpc.tls.useSystemCaPool'
-                            render={({ field: { onChange, value } }) => <TileToggle checked={value} name={_(g.status)} onChange={onChange} />}
+                            render={({ field: { onChange, value } }) => <TileToggle checked={value ?? false} name={_(g.status)} onChange={onChange} />}
                         />
                     </Loadable>
                 </Spacer>

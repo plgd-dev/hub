@@ -1,5 +1,5 @@
 import { RefObject } from 'react'
-import { HubDataType } from '@/containers/DeviceProvisioning/LinkedHubs/DetailPage/LinkedHubsDetailPage.types'
+import { GRPCData, HubDataType } from '../../../LinkedHubsDetailPage.types'
 
 export type Props = {
     defaultFormData: HubDataType
@@ -9,5 +9,11 @@ export type Props = {
         ref2: RefObject<HTMLHeadingElement>
         ref3: RefObject<HTMLHeadingElement>
         ref4: RefObject<HTMLHeadingElement>
+    }
+}
+
+export type Inputs = {
+    certificateAuthority: {
+        grpc: GRPCData
     }
 }

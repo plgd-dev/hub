@@ -173,4 +173,8 @@ export const messages = defineMessages({
         id: 'global.requiredField',
         defaultMessage: 'Required field {field}',
     },
+    default: {
+        id: 'global.default',
+        defaultMessage: 'default',
+    },
 })

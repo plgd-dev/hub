@@ -1,7 +1,6 @@
 import React, { FC, lazy, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useIntl } from 'react-intl'
-import { FormProvider, SubmitHandler, useForm } from 'react-hook-form'
 import ReactDOM from 'react-dom'
 
 import Tabs from '@shared-ui/components/Atomic/Tabs'
@@ -15,16 +14,16 @@ import testId from '@/testId'
 import { messages as g } from '@/containers/Global.i18n'
 import { getTabRoute } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
 import { messages as dpsT } from '@/containers/DeviceProvisioning/DeviceProvisioning.i18n'
-import { Inputs } from '@/containers/DeviceProvisioning/LinkedHubs/DetailPage/LinkedHubsDetailPage.types'
+import { HubDataType } from '@/containers/DeviceProvisioning/LinkedHubs/DetailPage/LinkedHubsDetailPage.types'
 import { updateLinkedHubData } from '@/containers/DeviceProvisioning/rest'
 import PageLayout from '@/containers/Common/PageLayout'
 import DetailHeader from '@/containers/DeviceProvisioning/LinkedHubs/DetailHeader'
 import isEqual from 'lodash/isEqual'
-import { FormContext } from '@shared-ui/common/context/FormContext'
+import { FormContext, getFormContextDefault } from '@shared-ui/common/context/FormContext'
 
 const Tab1 = lazy(() => import('./Tabs/Tab1/Tab1'))
 const Tab2 = lazy(() => import('./Tabs/Tab2/Tab2'))
-// const Tab3 = lazy(() => import('./Tabs/Tab3/Tab3'))
+const Tab3 = lazy(() => import('./Tabs/Tab3/Tab3'))
 
 const LinkedHubsDetail: FC<any> = (props) => {
     const { data, loading, defaultActiveTab } = props
@@ -39,10 +38,21 @@ const LinkedHubsDetail: FC<any> = (props) => {
     const [activeTabItem, setActiveTabItem] = useState(defaultActiveTab ?? 0)
     const [pageLoading, setPageLoading] = useState(false)
     const [formData, setFormData] = useState(data)
+    const [formError, setFormError] = useState({
+        tab1: false,
+        tab2Content1: false,
+        tab2Content2: false,
+        tab3Content1: false,
+        tab3Content2: false,
+        tab3Content3: false,
+        tab3Content4: false,
+    })
 
     useEffect(() => {
         setFormData(data)
     }, [data])
+
+    const isDirty = useMemo(() => !isEqual(data, formData), [data, formData])
 
     // const [dirty, setDirty] = useState(false)
     //
@@ -81,24 +91,24 @@ const LinkedHubsDetail: FC<any> = (props) => {
         []
     )
 
-    const onSubmitForm = (data: any) => {
-        console.log('%c onSubmit!', 'background: #222; color: #bada55')
-        console.log(data)
-
-        setPageLoading(true)
-
-        try {
-            // const { data: newData } = await updateLinkedHubData(hubId!, values)
-            // updateData(newData)
-            // console.log({ newData })
-
-            setPageLoading(false)
-        } catch (error) {
-            console.log('error')
-
-            setPageLoading(false)
-        }
-    }
+    // const onSubmitForm = (data: any) => {
+    //     console.log('%c onSubmit!', 'background: #222; color: #bada55')
+    //     console.log(data)
+    //
+    //     setPageLoading(true)
+    //
+    //     try {
+    //         // const { data: newData } = await updateLinkedHubData(hubId!, values)
+    //         // updateData(newData)
+    //         // console.log({ newData })
+    //
+    //         setPageLoading(false)
+    //     } catch (error) {
+    //         console.log('error')
+    //
+    //         setPageLoading(false)
+    //     }
+    // }
 
     const onSubmit = () => {
         console.log('onSubmit')
@@ -110,11 +120,17 @@ const LinkedHubsDetail: FC<any> = (props) => {
 
     const context = useMemo(
         () => ({
-            onSubmit: onSubmitForm,
-            updateData: (field: string, d: any) => console.log(field, d),
+            ...getFormContextDefault(_(g.default)),
+            updateData: (newFormData: HubDataType) => setFormData(newFormData),
+            setFormError,
         }),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         []
     )
+
+    console.log('form data:')
+    console.log(formData)
+    console.log('defaultActiveTab', defaultActiveTab)
 
     // console.log({ dirty: formMethods.formState.isDirty })
     // console.log({ isDirty: dirty })
@@ -150,12 +166,12 @@ const LinkedHubsDetail: FC<any> = (props) => {
                             dataTestId: testId.dps.linkedHubs.detail.tabCertificateAuthority,
                             content: <Tab2 defaultFormData={formData} loading={loading} />,
                         },
-                        // {
-                        //     name: _(t.authorization),
-                        //     id: 2,
-                        //     dataTestId: testId.dps.linkedHubs.detail.tabAuthorization,
-                        //     content: <Tab3 loading={loading} />,
-                        // },
+                        {
+                            name: _(t.authorization),
+                            id: 2,
+                            dataTestId: testId.dps.linkedHubs.detail.tabAuthorization,
+                            content: <Tab3 defaultFormData={formData} loading={loading} />,
+                        },
                     ]}
                 />
             </FormContext.Provider>
@@ -180,7 +196,7 @@ const LinkedHubsDetail: FC<any> = (props) => {
                             </Button>
                         }
                         leftPanelCollapsed={collapsed}
-                        show={false}
+                        show={isDirty}
                     />,
                     document.querySelector('#modal-root') as Element
                 )}

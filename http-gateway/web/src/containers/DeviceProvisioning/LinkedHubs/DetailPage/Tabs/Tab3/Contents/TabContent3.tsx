@@ -1,6 +1,8 @@
-import React, { FC, useCallback, useMemo, useState } from 'react'
+import React, { FC, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { Controller, useFormContext } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
+import cloneDeep from 'lodash/cloneDeep'
+import isFunction from 'lodash/isFunction'
 
 import Headline from '@shared-ui/components/Atomic/Headline'
 import CaPool from '@shared-ui/components/Organisms/CaPool'
@@ -9,11 +11,13 @@ import TileToggle from '@shared-ui/components/Atomic/TileToggle'
 import CodeEditor from '@shared-ui/components/Atomic/CodeEditor'
 import Modal from '@shared-ui/components/Atomic/Modal'
 import Loadable from '@shared-ui/components/Atomic/Loadable'
+import { setProperty } from '@shared-ui/components/Atomic/_utils/utils'
+import { FormContext } from '@shared-ui/common/context/FormContext'
 
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
 import * as styles from '../../Tab.styles'
-import { Props } from './TabContent3.types'
+import { Props, Inputs } from './TabContent3.types'
 
 type ModalData = {
     title: string
@@ -22,10 +26,14 @@ type ModalData = {
 }
 
 const TabContent3: FC<Props> = (props) => {
-    const { contentRefs, loading } = props
+    const { contentRefs, defaultFormData, loading } = props
     const { formatMessage: _ } = useIntl()
 
-    const { control, watch } = useFormContext()
+    const {
+        formState: { errors, isDirty },
+        control,
+        watch,
+    } = useForm<Inputs>({ mode: 'all', reValidateMode: 'onSubmit', values: defaultFormData })
 
     const defaultModalData = useMemo(
         () => ({
@@ -41,6 +49,33 @@ const TabContent3: FC<Props> = (props) => {
     const useSystemCaPool = watch('authorization.provider.http.tls.useSystemCaPool')
 
     const [modalData, setModalData] = useState<ModalData>(defaultModalData)
+    const { updateData, setFormError } = useContext(FormContext)
+
+    useEffect(() => {
+        if (defaultFormData && isDirty) {
+            const copy = cloneDeep(defaultFormData)
+
+            if (defaultFormData.authorization.provider.http.tls.caPool !== caPool) {
+                updateData(setProperty(copy, 'authorization.provider.http.tls.caPool', caPool))
+            }
+
+            if (defaultFormData.authorization.provider.http.tls.key !== key) {
+                updateData(setProperty(copy, 'authorization.provider.http.tls.key', key))
+            }
+
+            if (defaultFormData.authorization.provider.http.tls.cert !== cert) {
+                updateData(setProperty(copy, 'authorization.provider.http.tls.cert', cert))
+            }
+
+            if (defaultFormData.authorization.provider.http.tls.useSystemCaPool !== useSystemCaPool) {
+                updateData(setProperty(copy, 'authorization.provider.http.tls.useSystemCaPool', useSystemCaPool))
+            }
+        }
+    }, [caPool, cert, defaultFormData, isDirty, key, updateData, useSystemCaPool])
+
+    useEffect(() => {
+        isFunction(setFormError) && setFormError((prevState: any) => ({ ...prevState, tab3Content3: Object.keys(errors).length > 0 }))
+    }, [errors, setFormError])
 
     const caPoolData = useMemo(() => (caPool ? caPool.map((p: string, key: number) => ({ id: key, name: p })) : []), [caPool])
 
@@ -56,11 +91,12 @@ const TabContent3: FC<Props> = (props) => {
 
             return defaultModalData
         },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [defaultModalData]
     )
 
     return (
-        <div>
+        <form>
             <Headline type='h5'>{_(g.tls)}</Headline>
             <p>Short description...</p>
             <hr css={styles.separator} />
@@ -156,7 +192,7 @@ const TabContent3: FC<Props> = (props) => {
                 title={modalData?.title}
                 width='100%'
             />
-        </div>
+        </form>
     )
 }
 

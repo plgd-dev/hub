@@ -1,4 +1,5 @@
 import { RefObject } from 'react'
+import { AuthorizationDataType, HubDataType } from '../../../LinkedHubsDetailPage.types'
 
 export type Props = {
     contentRefs: {
@@ -7,5 +8,10 @@ export type Props = {
         ref3: RefObject<HTMLHeadingElement>
         ref4: RefObject<HTMLHeadingElement>
     }
+    defaultFormData: HubDataType
     loading: boolean
+}
+
+export type Inputs = {
+    authorization: AuthorizationDataType
 }
