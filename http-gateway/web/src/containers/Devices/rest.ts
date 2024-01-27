@@ -184,6 +184,7 @@ export const getDeviceAuthCode = (deviceId: string) => {
 
             const destroyIframe = () => {
                 sessionStorage.removeItem(DEVICE_AUTH_CODE_SESSION_KEY)
+                localStorage.removeItem(DEVICE_AUTH_CODE_SESSION_KEY)
                 iframe.parentNode?.removeChild(iframe)
             }
 

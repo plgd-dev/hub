@@ -46,6 +46,7 @@ const ProvisionNewDeviceCore = () => {
 
     const openModal = () => {
         setShow(true)
+        localStorage.removeItem(DEVICE_AUTH_CODE_SESSION_KEY)
         sessionStorage.removeItem(DEVICE_AUTH_CODE_SESSION_KEY)
         inputRef?.current?.focus()
     }
@@ -53,6 +54,7 @@ const ProvisionNewDeviceCore = () => {
     const onClose = () => {
         setShow(false)
         setCode(undefined)
+        localStorage.removeItem(DEVICE_AUTH_CODE_SESSION_KEY)
         sessionStorage.removeItem(DEVICE_AUTH_CODE_SESSION_KEY)
         setDeviceId(null)
     }
