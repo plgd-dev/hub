@@ -21,7 +21,7 @@ const TabContent1: FC<Props> = (props) => {
     const { defaultFormData, loading } = props
     const { formatMessage: _ } = useIntl()
 
-    const { onSubmit } = useContext(FormContext)
+    // const { onSubmit } = useContext(FormContext)
 
     const {
         formState: { errors, isDirty, touchedFields, dirtyFields, defaultValues },

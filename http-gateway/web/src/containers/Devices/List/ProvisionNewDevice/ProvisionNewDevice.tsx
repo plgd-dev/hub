@@ -10,7 +10,9 @@ import { getApiErrorMessage } from '@shared-ui/common/utils'
 
 import { getDeviceAuthCode } from '@/containers/Devices/rest'
 import { messages as t } from '@/containers/Devices/Devices.i18n'
+import { messages as g } from '@/containers/Global.i18n'
 import notificationId from '@/notificationId'
+import { DEVICE_AUTH_CODE_SESSION_KEY } from '@/constants'
 
 const ProvisionNewDeviceCore = () => {
     const [show, setShow] = useState(false)
@@ -44,12 +46,16 @@ const ProvisionNewDeviceCore = () => {
 
     const openModal = () => {
         setShow(true)
+        localStorage.removeItem(DEVICE_AUTH_CODE_SESSION_KEY)
+        sessionStorage.removeItem(DEVICE_AUTH_CODE_SESSION_KEY)
         inputRef?.current?.focus()
     }
 
     const onClose = () => {
         setShow(false)
         setCode(undefined)
+        localStorage.removeItem(DEVICE_AUTH_CODE_SESSION_KEY)
+        sessionStorage.removeItem(DEVICE_AUTH_CODE_SESSION_KEY)
         setDeviceId(null)
     }
 
@@ -62,7 +68,7 @@ const ProvisionNewDeviceCore = () => {
                 {_(t.addDevice)}
             </Button>
             <ProvisionDeviceModal
-                closeButtonText={_(t.cancel)}
+                closeButtonText={_(g.close)}
                 deviceAuthCode={code}
                 deviceAuthLoading={fetching}
                 deviceInformation={
@@ -84,13 +90,8 @@ const ProvisionNewDeviceCore = () => {
                 }
                 footerActions={[
                     {
-                        label: _(t.cancel),
-                        onClick: () => setShow(false),
-                        variant: 'tertiary',
-                    },
-                    {
-                        label: _(t.delete),
-                        onClick: () => setShow(false),
+                        label: _(t.close),
+                        onClick: onClose,
                         variant: 'primary',
                     },
                 ]}
