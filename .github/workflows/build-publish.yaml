@@ -126,10 +126,19 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
+        submodules: recursive
+    - name: Install npm
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18
+    - name: Get npm dependencies
+      run: |
+        cd http-gateway/web
+        npm install
     - name: Generate SBOM
       uses: anchore/sbom-action@v0
       with:
         path: .
-        artifact-name: sbom.spdx
+        artifact-name: sbom.spdx.json
         upload-artifact-retention: 14
 
