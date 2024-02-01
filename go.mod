@@ -8,7 +8,7 @@ require (
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/fullstorydev/grpchan v1.1.1
 	github.com/fxamacker/cbor/v2 v2.5.0
-	github.com/go-co-op/gocron v1.37.0
+	github.com/go-co-op/gocron/v2 v2.2.2
 	github.com/gocql/gocql v1.6.0
 	github.com/golang-jwt/jwt/v5 v5.2.0
 	github.com/golang/snappy v0.0.4
@@ -88,6 +88,7 @@ require (
 	github.com/huandu/xstrings v1.0.0 // indirect
 	github.com/imdario/mergo v0.3.4 // indirect
 	github.com/jhump/protoreflect v1.15.6 // indirect
+	github.com/jonboulle/clockwork v0.4.0 // indirect
 	github.com/klauspost/compress v1.17.5 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.2 // indirect
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect

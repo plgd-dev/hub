@@ -3,6 +3,7 @@ package service_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"testing"
 	"time"
@@ -26,6 +27,7 @@ func TestCertificateAuthorityServerCleanUpSigningRecords(t *testing.T) {
 	cfg := test.MakeConfig(t)
 	cfg.Clients.Storage.ExtendCronParserBySeconds = true
 	cfg.Clients.Storage.CleanUpRecords = "*/1 * * * * *"
+	fmt.Printf("%v\n\n", test.MakeConfig(t))
 
 	shutDown := testService.SetUpServices(context.Background(), t, testService.SetUpServicesCertificateAuthority|testService.SetUpServicesOAuth, testService.WithCAConfig(cfg))
 	defer shutDown()

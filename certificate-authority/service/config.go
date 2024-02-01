@@ -5,7 +5,7 @@ import (
 	"net"
 	"time"
 
-	gocron "github.com/go-co-op/gocron"
+	"github.com/go-co-op/gocron/v2"
 	"github.com/google/uuid"
 	grpcService "github.com/plgd-dev/hub/v2/certificate-authority/service/grpc"
 	storeConfig "github.com/plgd-dev/hub/v2/certificate-authority/store/config"
@@ -89,20 +89,22 @@ func (c *StorageConfig) Validate() error {
 	if c.CleanUpRecords == "" {
 		return nil
 	}
-	s := gocron.NewScheduler(time.Local)
-	if c.ExtendCronParserBySeconds {
-		s = s.CronWithSeconds(c.CleanUpRecords)
-	} else {
-		s = s.Cron(c.CleanUpRecords)
+	s, err := gocron.NewScheduler(gocron.WithLocation(time.Local))
+	if err != nil {
+		return fmt.Errorf("cannot create cron job: %w", err)
 	}
-	_, err := s.Do(func() {
-		// do nothing
-	})
+	defer func() {
+		if errS := s.Shutdown(); errS != nil {
+			log.Errorf("failed to shutdown cron job: %w", errS)
+		}
+	}()
+	_, err = s.NewJob(gocron.CronJob(c.CleanUpRecords, c.ExtendCronParserBySeconds),
+		gocron.NewTask(func() {
+			// do nothing
+		}))
 	if err != nil {
 		return fmt.Errorf("cleanUpRecords('%v') - %w", c.CleanUpRecords, err)
 	}
-	s.Clear()
-	s.Stop()
 	return nil
 }
 
