@@ -1,0 +1,109 @@
+syntax = "proto3";
+
+package snapshotservice.pb;
+
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+import "snapshot-service/pb/snapshots.proto";
+import "snapshot-service/pb/snapshotAssociations.proto";
+import "snapshot-service/pb/snapshotStatuses.proto";
+
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "PLGD Snapshot Service API";
+    version: "1.0";
+    description: "API for managing snapshots in PLGD";
+    contact: {
+      name: "plgd.dev";
+      url: "https://github.com/plgd-dev/hub";
+      email: "info@plgd.dev";
+    };
+    license: {
+      name: "Apache License 2.0";
+      url: "https://github.com/plgd-dev/hub/blob/v2/LICENSE";
+    };
+  };
+  schemes: [ HTTPS ];
+  consumes: [ "application/json", "application/protojson" ];
+  produces: [ "application/json", "application/protojson" ];
+};
+
+option go_package = "github.com/plgd-dev/hub/v2/snapshot-service/pb;pb";
+
+service SnapshotService {
+  rpc CreateSnapshot(CreateSnapshotRequest) returns (CreateSnapshotResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/snapshots";
+      body: "*";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "snapshots" ];
+    };
+  }
+
+  rpc GetSnapshots(GetSnapshotsRequest) returns (stream Snapshot) {
+    option (google.api.http) = {
+      get: "/api/v1/snapshots";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "snapshots" ];
+    };
+  }
+
+  rpc DeleteSnapshots(DeleteSnapshotsRequest) returns (DeleteSnapshotsResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/snapshots";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "snapshots" ];
+    };
+  }
+
+  rpc ApplySnapshot(ApplySnapshotRequest) returns (ApplySnapshotResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/snapshots/{id}";
+      body: "*";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "snapshots" ];
+    };
+  }
+
+  rpc CreateSnapshotAssociation(CreateSnapshotAssociationRequest) returns (CreateSnapshotAssociationResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/snapshot-associations";
+      body: "*";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "snapshots" ];
+    };
+  }
+
+  rpc DeleteSnapshotAssociations(DeleteSnapshotAssociationsRequest) returns (DeleteSnapshotAssociationsResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/snapshot-associations";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "snapshots" ];
+    };
+  }
+
+  rpc GetSnapshotStatuses(GetSnapshotStatusesRequest) returns (stream SnapshotStatus) {
+    option (google.api.http) = {
+      get: "/api/v1/snapshot-statuses";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "snapshots" ];
+    };
+  }
+
+  rpc DeleteSnapshotStatuses(DeleteSnapshotStatusesRequest) returns (DeleteSnapshotStatusesResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/snapshot-statuses";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "snapshots" ];
+    };
+  }
+}

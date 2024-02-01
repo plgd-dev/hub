@@ -1,0 +1,644 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "PLGD Snapshot Service API",
+    "description": "API for managing snapshots in PLGD",
+    "version": "1.0",
+    "contact": {
+      "name": "plgd.dev",
+      "url": "https://github.com/plgd-dev/hub",
+      "email": "info@plgd.dev"
+    },
+    "license": {
+      "name": "Apache License 2.0",
+      "url": "https://github.com/plgd-dev/hub/blob/v2/LICENSE"
+    }
+  },
+  "tags": [
+    {
+      "name": "SnapshotService"
+    }
+  ],
+  "schemes": [
+    "https"
+  ],
+  "consumes": [
+    "application/json",
+    "application/protojson"
+  ],
+  "produces": [
+    "application/json",
+    "application/protojson"
+  ],
+  "paths": {
+    "/api/v1/snapshot-associations": {
+      "delete": {
+        "operationId": "SnapshotService_DeleteSnapshotAssociations",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbDeleteSnapshotAssociationsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idFilter",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "snapshots"
+        ]
+      },
+      "post": {
+        "operationId": "SnapshotService_CreateSnapshotAssociation",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbCreateSnapshotAssociationResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbCreateSnapshotAssociationRequest"
+            }
+          }
+        ],
+        "tags": [
+          "snapshots"
+        ]
+      }
+    },
+    "/api/v1/snapshot-statuses": {
+      "get": {
+        "operationId": "SnapshotService_GetSnapshotStatuses",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/pbSnapshotStatus"
+                },
+                "error": {
+                  "$ref": "#/definitions/googlerpcStatus"
+                }
+              },
+              "title": "Stream result of pbSnapshotStatus"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "snapshotIdFilter",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "deviceIdFilter",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "snapshots"
+        ]
+      },
+      "delete": {
+        "operationId": "SnapshotService_DeleteSnapshotStatuses",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbDeleteSnapshotStatusesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idFilter",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "snapshots"
+        ]
+      }
+    },
+    "/api/v1/snapshots": {
+      "get": {
+        "operationId": "SnapshotService_GetSnapshots",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/pbSnapshot"
+                },
+                "error": {
+                  "$ref": "#/definitions/googlerpcStatus"
+                }
+              },
+              "title": "Stream result of pbSnapshot"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idFilter",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "snapshots"
+        ]
+      },
+      "delete": {
+        "operationId": "SnapshotService_DeleteSnapshots",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbDeleteSnapshotsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idFilter",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "snapshots"
+        ]
+      },
+      "post": {
+        "operationId": "SnapshotService_CreateSnapshot",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbCreateSnapshotResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbCreateSnapshotRequest"
+            }
+          }
+        ],
+        "tags": [
+          "snapshots"
+        ]
+      }
+    },
+    "/api/v1/snapshots/{id}": {
+      "post": {
+        "operationId": "SnapshotService_ApplySnapshot",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbApplySnapshotResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "deviceIdFilter": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "snapshots"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "googlerpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "pbApplySnapshotResponse": {
+      "type": "object"
+    },
+    "pbAuditContext": {
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string"
+        },
+        "correlationId": {
+          "type": "string"
+        },
+        "owner": {
+          "type": "string"
+        }
+      }
+    },
+    "pbContent": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "string",
+          "format": "byte"
+        },
+        "contentType": {
+          "type": "string"
+        },
+        "coapContentFormat": {
+          "type": "integer",
+          "format": "int32",
+          "title": "-1 means content-format was not provided"
+        }
+      }
+    },
+    "pbCreateSnapshotAssociationRequest": {
+      "type": "object",
+      "properties": {
+        "snapshotId": {
+          "type": "string"
+        },
+        "resourceFilter": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/pbResourceFilter"
+          }
+        },
+        "applyTimeToLive": {
+          "type": "string",
+          "format": "int64",
+          "title": "in nanoseconds how long will try to apply snapshot to resources which match resource_filter"
+        }
+      }
+    },
+    "pbCreateSnapshotAssociationResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      }
+    },
+    "pbCreateSnapshotRequest": {
+      "type": "object",
+      "properties": {
+        "resources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/pbResourceSnapshot"
+          }
+        }
+      }
+    },
+    "pbCreateSnapshotResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      }
+    },
+    "pbDeleteSnapshotAssociationsResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "pbDeleteSnapshotStatusesResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "pbDeleteSnapshotsResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "pbEventMetadata": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "int64"
+        },
+        "connectionId": {
+          "type": "string"
+        },
+        "sequence": {
+          "type": "string",
+          "format": "uint64",
+          "title": "sequence number within the same connection_id; the ResourceChanged event uses the value to skip old events, other event types might not fill the value"
+        },
+        "hubId": {
+          "type": "string",
+          "title": "the hub which sent the event"
+        }
+      }
+    },
+    "pbResourceFilter": {
+      "type": "object",
+      "properties": {
+        "href": {
+          "type": "string",
+          "title": "required eg \"/oic/d\""
+        },
+        "propertyPath": {
+          "type": "string",
+          "title": "optional in format \".di\""
+        },
+        "content": {
+          "$ref": "#/definitions/pbContent",
+          "title": "required"
+        }
+      }
+    },
+    "pbResourceId": {
+      "type": "object",
+      "properties": {
+        "deviceId": {
+          "type": "string"
+        },
+        "href": {
+          "type": "string"
+        }
+      }
+    },
+    "pbResourceSnapshot": {
+      "type": "object",
+      "properties": {
+        "href": {
+          "type": "string"
+        },
+        "content": {
+          "$ref": "#/definitions/pbContent"
+        },
+        "resourceInterface": {
+          "type": "string"
+        },
+        "timeToLive": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "pbResourceUpdated": {
+      "type": "object",
+      "properties": {
+        "resourceId": {
+          "$ref": "#/definitions/pbResourceId"
+        },
+        "status": {
+          "$ref": "#/definitions/resourceaggregatepbStatus"
+        },
+        "content": {
+          "$ref": "#/definitions/pbContent"
+        },
+        "auditContext": {
+          "$ref": "#/definitions/pbAuditContext"
+        },
+        "eventMetadata": {
+          "$ref": "#/definitions/pbEventMetadata"
+        },
+        "openTelemetryCarrier": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Open telemetry data propagated to asynchronous events"
+        }
+      }
+    },
+    "pbSnapshot": {
+      "type": "object",
+      "properties": {
+        "resources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/pbResourceSnapshot"
+          }
+        }
+      }
+    },
+    "pbSnapshotStatus": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        },
+        "deviceId": {
+          "type": "string"
+        },
+        "snapshotId": {
+          "type": "string"
+        },
+        "associationSnapshotId": {
+          "type": "string"
+        },
+        "timestampStart": {
+          "type": "string",
+          "format": "int64"
+        },
+        "timestampEnd": {
+          "type": "string",
+          "format": "int64"
+        },
+        "validUntil": {
+          "type": "string",
+          "format": "int64"
+        },
+        "resourcesUpdated": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/pbResourceUpdated"
+          }
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "resourceaggregatepbStatus": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "OK",
+        "BAD_REQUEST",
+        "UNAUTHORIZED",
+        "FORBIDDEN",
+        "NOT_FOUND",
+        "UNAVAILABLE",
+        "NOT_IMPLEMENTED",
+        "ACCEPTED",
+        "ERROR",
+        "METHOD_NOT_ALLOWED",
+        "CREATED",
+        "CANCELED",
+        "NOT_MODIFIED"
+      ],
+      "default": "UNKNOWN",
+      "description": " - CANCELED: Canceled indicates the operation was canceled (typically by the user).\n - NOT_MODIFIED: Valid indicates the content hasn't changed. (provided etag in GET request is same as the resource etag)."
+    }
+  }
+}

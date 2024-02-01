@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package snapshotservice.pb;
+
+option go_package = "github.com/plgd-dev/hub/v2/snapshot-service/pb;pb";
+
+import "resource-aggregate/pb/resources.proto";
+
+message ResourceFilter {
+    string href = 1; // required eg "/oic/d"
+    string property_path = 2; // optional in format ".di"
+    resourceaggregate.pb.Content content = 3; // required
+}
+
+message CreateSnapshotAssociationRequest{
+    string snapshot_id = 1;
+    repeated ResourceFilter resource_filter = 2;
+    int64 apply_time_to_live = 4; // in nanoseconds how long will try to apply snapshot to resources which match resource_filter
+}
+
+message CreateSnapshotAssociationResponse{
+    string id = 2;
+}
+
+message DeleteSnapshotAssociationsRequest {
+    repeated string id_filter = 1;
+}
+
+message DeleteSnapshotAssociationsResponse {
+    int64 count = 1;
+}
