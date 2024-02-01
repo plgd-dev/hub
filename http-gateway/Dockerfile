@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM golang:1.20.13-alpine AS build
+FROM golang:1.21.6-alpine AS build
 ARG VERSION
 ARG COMMIT_DATE
 ARG SHORT_COMMIT
