@@ -62,7 +62,7 @@ const PreviewApp = forwardRef<PreviewAppRefType, any>((props, ref) => {
     const [colorPalette, setColorPalette] = useState<any>(undefined)
     const [defaultColorPalette, setDefaultColorPalette] = useState<any>(undefined)
     const [activeTabItem, setActiveTabItem] = useState(0)
-    const [logoData, setLogoData] = useState(appStore.configuration.previewTheme.logo || defaultLogo)
+    const [logoData, setLogoData] = useState(appStore.configuration.previewTheme?.logo || defaultLogo)
 
     const isMounted = useIsMounted()
 
