@@ -1,7 +1,6 @@
-import React, { FC, useContext, useEffect } from 'react'
+import React, { FC, useContext } from 'react'
 import { useIntl } from 'react-intl'
-import { Controller, useForm } from 'react-hook-form'
-import cloneDeep from 'lodash/cloneDeep'
+import { Controller } from 'react-hook-form'
 
 import Headline from '@shared-ui/components/Atomic/Headline'
 import FormInput from '@shared-ui/components/Atomic/FormInput'
@@ -10,9 +9,8 @@ import Spacer from '@shared-ui/components/Atomic/Spacer'
 import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
 import FormGroup from '@shared-ui/components/Atomic/FormGroup'
 import TimeoutControl from '@shared-ui/components/Atomic/TimeoutControl'
-import { setProperty } from '@shared-ui/components/Atomic/_utils/utils'
 import { FormContext } from '@shared-ui/common/context/FormContext'
-import isFunction from 'lodash/isFunction'
+import { useForm } from '@shared-ui/common/hooks'
 
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
 import { messages as g } from '@/containers/Global.i18n'
@@ -20,48 +18,19 @@ import { Props, Inputs } from './TabContent4.types'
 
 const TabContent4: FC<Props> = (props) => {
     const { defaultFormData, loading } = props
+
     const { formatMessage: _ } = useIntl()
+    const { updateData, setFormError, commonFormGroupProps, commonInputProps, commonTimeoutControlProps } = useContext(FormContext)
 
     const {
-        formState: { errors, isDirty },
+        formState: { errors },
         register,
         watch,
         control,
-    } = useForm<Inputs>({ mode: 'all', reValidateMode: 'onSubmit', values: defaultFormData })
+    } = useForm<Inputs>({ defaultFormData, updateData, setFormError, errorKey: 'tab3Content4' })
 
-    const { updateData, setFormError, commonFormGroupProps, commonInputProps, commonTimeoutControlProps } = useContext(FormContext)
-
-    const maxIdleConns = watch('authorization.provider.http.maxIdleConns')
-    const maxConnsPerHost = watch('authorization.provider.http.maxConnsPerHost')
-    const maxIdleConnsPerHost = watch('authorization.provider.http.maxIdleConnsPerHost')
     const timeoutN = watch('authorization.provider.http.timeout')
     const idleConnTimeout = watch('authorization.provider.http.idleConnTimeout')
-
-    useEffect(() => {
-        if (defaultFormData && isDirty) {
-            const copy = cloneDeep(defaultFormData)
-
-            if (defaultFormData.authorization.provider.http.maxIdleConns !== maxIdleConns) {
-                updateData(setProperty(copy, 'authorization.provider.http.maxIdleConns', maxIdleConns))
-            }
-
-            if (defaultFormData.authorization.provider.http.maxConnsPerHost !== maxConnsPerHost) {
-                updateData(setProperty(copy, 'authorization.provider.http.maxConnsPerHost', maxConnsPerHost))
-            }
-
-            if (defaultFormData.authorization.provider.http.maxIdleConnsPerHost !== maxIdleConnsPerHost) {
-                updateData(setProperty(copy, 'authorization.provider.http.maxIdleConnsPerHost', maxIdleConnsPerHost))
-            }
-
-            if (defaultFormData.authorization.provider.http.timeout !== timeoutN) {
-                updateData(setProperty(copy, 'authorization.provider.http.timeout', timeoutN))
-            }
-        }
-    }, [defaultFormData, isDirty, maxConnsPerHost, maxIdleConns, maxIdleConnsPerHost, timeoutN, updateData])
-
-    useEffect(() => {
-        isFunction(setFormError) && setFormError((prevState: any) => ({ ...prevState, tab3Content4: Object.keys(errors).length > 0 }))
-    }, [errors, setFormError])
 
     return (
         <form>

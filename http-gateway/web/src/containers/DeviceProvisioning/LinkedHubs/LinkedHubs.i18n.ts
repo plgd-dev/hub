@@ -89,6 +89,10 @@ export const messages = defineMessages({
         id: 'linkedHubs.certificate',
         defaultMessage: 'Certificate',
     },
+    certificates: {
+        id: 'linkedHubs.certificates',
+        defaultMessage: 'Certificates',
+    },
     useSystemCAPool: {
         id: 'linkedHubs.useSystemCAPool',
         defaultMessage: 'Use system CA Pool',
@@ -140,5 +144,93 @@ export const messages = defineMessages({
     idleConnectionTimeout: {
         id: 'linkedHubs.idleConnectionTimeout',
         defaultMessage: 'Idle connection timeout',
+    },
+    caPoolDetail: {
+        id: 'linkedHubs.caPoolDetail',
+        defaultMessage: 'CA Pool Detail',
+    },
+    certificationParsingError: {
+        id: 'linkedHubs.certificationParsingError',
+        defaultMessage: 'Certification Parsing Error',
+    },
+    commonName: {
+        id: 'linkedHubs.commonName',
+        defaultMessage: 'Common Name',
+    },
+    subjectName: {
+        id: 'linkedHubs.subjectName',
+        defaultMessage: 'Subject Name',
+    },
+    issuerName: {
+        id: 'linkedHubs.issuerName',
+        defaultMessage: 'Issuer Name',
+    },
+    country: {
+        id: 'linkedHubs.country',
+        defaultMessage: 'Country',
+    },
+    organization: {
+        id: 'linkedHubs.organization',
+        defaultMessage: 'Organization',
+    },
+    validity: {
+        id: 'linkedHubs.validity',
+        defaultMessage: 'Validity',
+    },
+    notBefore: {
+        id: 'linkedHubs.notBefore',
+        defaultMessage: 'Not Before',
+    },
+    notAfter: {
+        id: 'linkedHubs.notAfter',
+        defaultMessage: 'Not After',
+    },
+    publicKeyInfo: {
+        id: 'linkedHubs.publicKeyInfo',
+        defaultMessage: 'Public Key Info',
+    },
+    algorithm: {
+        id: 'linkedHubs.algorithm',
+        defaultMessage: 'Algorithm',
+    },
+    keySize: {
+        id: 'linkedHubs.keySize',
+        defaultMessage: 'Key Size',
+    },
+    exponent: {
+        id: 'linkedHubs.exponent',
+        defaultMessage: 'Exponent',
+    },
+    modules: {
+        id: 'linkedHubs.modules',
+        defaultMessage: 'Modules',
+    },
+    fingerprints: {
+        id: 'linkedHubs.fingerprints',
+        defaultMessage: 'Fingerprints',
+    },
+    basicConstraints: {
+        id: 'linkedHubs.basicConstraints',
+        defaultMessage: 'Basic Constraints',
+    },
+    keyUsages: {
+        id: 'linkedHubs.keyUsages',
+        defaultMessage: 'Key Usages',
+    },
+    purposes: {
+        id: 'linkedHubs.purposes',
+        defaultMessage: 'Purposes',
+    },
+    extendedKeyUsages: {
+        id: 'linkedHubs.extendedKeyUsages',
+        defaultMessage: 'Extended Key Usages',
+    },
+    subjectKeyID: {
+        id: 'linkedHubs.subjectKeyID',
+        defaultMessage: 'Subject Key ID',
+    },
+    authorityKeyID: {
+        id: 'linkedHubs.authorityKeyID',
+        defaultMessage: 'Authority Key ID',
     },
 })

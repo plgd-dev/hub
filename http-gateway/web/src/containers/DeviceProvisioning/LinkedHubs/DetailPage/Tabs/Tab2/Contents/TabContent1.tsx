@@ -1,8 +1,6 @@
-import React, { FC, useContext, useEffect } from 'react'
+import React, { FC, useContext } from 'react'
 import { useIntl } from 'react-intl'
-import { Controller, useForm } from 'react-hook-form'
-import cloneDeep from 'lodash/cloneDeep'
-import isFunction from 'lodash/isFunction'
+import { Controller } from 'react-hook-form'
 
 import Headline from '@shared-ui/components/Atomic/Headline'
 import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
@@ -13,7 +11,7 @@ import Loadable from '@shared-ui/components/Atomic/Loadable/Loadable'
 import FormGroup from '@shared-ui/components/Atomic/FormGroup'
 import FormInput from '@shared-ui/components/Atomic/FormInput'
 import { FormContext } from '@shared-ui/common/context/FormContext'
-import { setProperty } from '@shared-ui/components/Atomic/_utils/utils'
+import { useForm } from '@shared-ui/common/hooks'
 
 import { messages as t } from '../../../../LinkedHubs.i18n'
 import { messages as g } from '@/containers/Global.i18n'
@@ -21,42 +19,25 @@ import { Props, Inputs } from './TabContent1.types'
 
 const TabContent1: FC<Props> = (props) => {
     const { defaultFormData, loading } = props
+
     const { formatMessage: _ } = useIntl()
+    const { updateData, setFormError, commonTimeoutControlProps, commonInputProps, commonFormGroupProps } = useContext(FormContext)
 
     const {
-        formState: { errors, isDirty },
+        formState: { errors },
         register,
         watch,
         control,
-    } = useForm<Inputs>({ mode: 'all', reValidateMode: 'onSubmit', values: defaultFormData })
-
-    const { updateData, setFormError, commonTimeoutControlProps, commonInputProps, commonFormGroupProps } = useContext(FormContext)
+    } = useForm<Inputs>({
+        defaultFormData,
+        updateData,
+        setFormError,
+        errorKey: 'tab2Content1',
+    })
 
     const time = watch('certificateAuthority.grpc.keepAlive.time')
     const timeoutN = watch('certificateAuthority.grpc.keepAlive.timeout')
     const permitWithoutStream = watch('certificateAuthority.grpc.keepAlive.permitWithoutStream')
-
-    useEffect(() => {
-        if (defaultFormData && isDirty) {
-            const copy = cloneDeep(defaultFormData)
-
-            if (defaultFormData.certificateAuthority.grpc.keepAlive.time !== time) {
-                updateData(setProperty(copy, 'certificateAuthority.grpc.keepAlive.time', time))
-            }
-
-            if (defaultFormData.certificateAuthority.grpc.keepAlive.timeout !== timeoutN) {
-                updateData(setProperty(copy, 'certificateAuthority.grpc.keepAlive.timeout', timeoutN))
-            }
-
-            if (defaultFormData.certificateAuthority.grpc.keepAlive.permitWithoutStream !== permitWithoutStream) {
-                updateData(setProperty(copy, 'certificateAuthority.grpc.keepAlive.permitWithoutStream', permitWithoutStream))
-            }
-        }
-    }, [defaultFormData, isDirty, permitWithoutStream, time, timeoutN, updateData])
-
-    useEffect(() => {
-        isFunction(setFormError) && setFormError((prevState: any) => ({ ...prevState, tab2Content1: Object.keys(errors).length > 0 }))
-    }, [errors, setFormError])
 
     return (
         <form>

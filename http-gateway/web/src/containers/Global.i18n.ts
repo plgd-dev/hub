@@ -177,4 +177,12 @@ export const messages = defineMessages({
         id: 'global.default',
         defaultMessage: 'default',
     },
+    yes: {
+        id: 'global.yes',
+        defaultMessage: 'Yes',
+    },
+    no: {
+        id: 'global.no',
+        defaultMessage: 'No',
+    },
 })

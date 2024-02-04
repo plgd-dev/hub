@@ -46,6 +46,7 @@ const Tab2: FC<Props> = (props) => {
                 ],
             },
         ],
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         []
     )
 
