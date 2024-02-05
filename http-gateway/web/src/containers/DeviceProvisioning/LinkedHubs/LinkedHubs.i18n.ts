@@ -233,4 +233,12 @@ export const messages = defineMessages({
         id: 'linkedHubs.authorityKeyID',
         defaultMessage: 'Authority Key ID',
     },
+    editPrivateKey: {
+        id: 'linkedHubs.editPrivateKey',
+        defaultMessage: 'Edit Private Key',
+    },
+    editCertificate: {
+        id: 'linkedHubs.editCertificate',
+        defaultMessage: 'Edit Certificate',
+    },
 })

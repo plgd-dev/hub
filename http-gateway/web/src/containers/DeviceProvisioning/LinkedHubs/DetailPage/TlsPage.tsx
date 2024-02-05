@@ -20,10 +20,17 @@ import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
 import notificationId from '@/notificationId'
 
+const modalVariants = {
+    ADD_CA_POOL: 'addCaPool',
+    EDIT_PRIVATE_KEY: 'editPrivateKey',
+    EDIT_CERT: 'editCert',
+}
+
 type ModalData = {
     title: string
     description?: string
     value: string
+    variant: (typeof modalVariants)[keyof typeof modalVariants]
 }
 
 const TlsPage: FC<any> = (props) => {
@@ -43,6 +50,7 @@ const TlsPage: FC<any> = (props) => {
             title: '',
             value: '',
             description: undefined,
+            variant: modalVariants.ADD_CA_POOL,
         }),
         []
     )
@@ -50,33 +58,39 @@ const TlsPage: FC<any> = (props) => {
     const [modalData, setModalData] = useState<ModalData>(defaultModalData)
     const [caModalData, setCaModalData] = useState<{}[] | undefined>(undefined)
 
-    const getModalData = useCallback(
-        (variant = 'add') => {
-            if (variant === 'add') {
-                return {
-                    title: _(t.addCaPool),
-                    description: undefined,
-                    value: '',
-                }
-            }
-
-            return defaultModalData
-        },
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [defaultModalData]
-    )
-
     const handleSaveModalData = useCallback(() => {
-        setValue('certificateAuthority.grpc.tls.caPool', [...caPool, `${CA_BASE64_PREFIX}${btoa(modalData.value)}`], { shouldDirty: true, shouldTouch: true })
+        switch (modalData.variant) {
+            case modalVariants.ADD_CA_POOL: {
+                setValue(`${prefix}tls.caPool`, [...caPool, `${CA_BASE64_PREFIX}${btoa(modalData.value)}`], {
+                    shouldDirty: true,
+                    shouldTouch: true,
+                })
+                return
+            }
+            case modalVariants.EDIT_PRIVATE_KEY: {
+                setValue(`${prefix}tls.key`, modalData.value, {
+                    shouldDirty: true,
+                    shouldTouch: true,
+                })
+                return
+            }
+            case modalVariants.EDIT_CERT: {
+                setValue(`${prefix}tls.cert`, modalData.value, {
+                    shouldDirty: true,
+                    shouldTouch: true,
+                })
+                return
+            }
+        }
 
         setModalData(defaultModalData)
-    }, [caPool, defaultModalData, modalData.value, setValue])
+    }, [caPool, defaultModalData, modalData.value, modalData.variant, prefix, setValue])
 
-    const handleDelete = useCallback(
+    const handleDeleteCaItem = useCallback(
         (id: string) => {
             const newData = cloneDeep(caPool)
             newData.splice(parseInt(id, 10), 1)
-            setValue('certificateAuthority.grpc.tls.caPool', newData, { shouldDirty: true, shouldTouch: true })
+            setValue(`${prefix}tls.caPool`, newData, { shouldDirty: true, shouldTouch: true })
         },
         [caPool, setValue]
     )
@@ -130,8 +144,15 @@ const TlsPage: FC<any> = (props) => {
                     headline={_(t.caPool)}
                     headlineRef={contentRefs.ref1}
                     i18n={commonI18n}
-                    onAdd={() => setModalData(getModalData('add'))}
-                    onDelete={handleDelete}
+                    onAdd={() =>
+                        setModalData({
+                            title: _(t.addCaPool),
+                            description: undefined,
+                            value: '',
+                            variant: modalVariants.ADD_CA_POOL,
+                        })
+                    }
+                    onDelete={handleDeleteCaItem}
                     onView={handleViewCa}
                     tableSearch={true}
                 />
@@ -139,23 +160,39 @@ const TlsPage: FC<any> = (props) => {
             <Spacer type='pt-8'>
                 <Loadable condition={!loading}>
                     <CaPool
+                        singleItemMode
                         data={[{ id: '0', name: key }]}
                         headline={_(t.privateKey)}
                         headlineRef={contentRefs.ref2}
                         i18n={commonI18n}
-                        onView={() => console.log()}
+                        onView={() =>
+                            setModalData({
+                                title: _(t.editPrivateKey),
+                                description: undefined,
+                                value: key.startsWith('/') ? '' : key,
+                                variant: modalVariants.EDIT_PRIVATE_KEY,
+                            })
+                        }
                     />
                 </Loadable>
             </Spacer>
             <Spacer type='pt-8'>
                 <Loadable condition={!loading}>
                     <CaPool
+                        singleItemMode
                         data={[{ id: '0', name: cert }]}
                         headline={_(t.certificate)}
                         headlineRef={contentRefs.ref3}
                         i18n={commonI18n}
                         onDelete={() => console.log()}
-                        onView={() => console.log()}
+                        onView={() =>
+                            setModalData({
+                                title: _(t.editCertificate),
+                                description: undefined,
+                                value: cert.startsWith('/') ? '' : cert,
+                                variant: modalVariants.EDIT_CERT,
+                            })
+                        }
                     />
                 </Loadable>
             </Spacer>
