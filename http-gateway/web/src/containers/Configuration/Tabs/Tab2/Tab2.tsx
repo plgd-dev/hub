@@ -89,11 +89,11 @@ const Tab2: FC<Props> = (props) => {
                 setValue('colorPalette', colorPalette)
             }
 
-            if (logo.height && logo.height !== values.logoHeight) {
+            if (logo && logo.height && logo.height !== values.logoHeight) {
                 setValue('logoHeight', typeof logo.height === 'string' ? getNumberFromPx(logo.height) : logo.height)
             }
 
-            if (logo.width && logo.width !== values.logoWidth) {
+            if (logo && logo.width && logo.width !== values.logoWidth) {
                 setValue('logoWidth', typeof logo.width === 'string' ? getNumberFromPx(logo.width) : logo.width)
             }
         }
