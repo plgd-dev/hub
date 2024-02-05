@@ -2,9 +2,7 @@ package test
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"log"
 	"net"
 	"os"
 	"os/exec"
@@ -15,12 +13,12 @@ import (
 
 	deviceClient "github.com/plgd-dev/device/v2/client"
 	"github.com/plgd-dev/device/v2/client/core"
+	deviceCoap "github.com/plgd-dev/device/v2/pkg/net/coap"
 	"github.com/plgd-dev/device/v2/schema"
 	"github.com/plgd-dev/device/v2/schema/acl"
 	"github.com/plgd-dev/device/v2/schema/cloud"
-	"github.com/plgd-dev/device/v2/schema/collection"
 	"github.com/plgd-dev/device/v2/schema/configuration"
-	"github.com/plgd-dev/device/v2/schema/device"
+	schemaDevice "github.com/plgd-dev/device/v2/schema/device"
 	"github.com/plgd-dev/device/v2/schema/interfaces"
 	"github.com/plgd-dev/device/v2/schema/maintenance"
 	"github.com/plgd-dev/device/v2/schema/platform"
@@ -37,12 +35,15 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/hub/v2/test/config"
+	"github.com/plgd-dev/hub/v2/test/device"
+	"github.com/plgd-dev/hub/v2/test/device/bridge"
+	"github.com/plgd-dev/hub/v2/test/device/ocf"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	"github.com/plgd-dev/hub/v2/test/sdk"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/ugorji/go/codec"
-	"go.uber.org/atomic"
 )
 
 type ResourceLinkRepresentation struct {
@@ -65,8 +66,8 @@ func (d *ResourceLinkRepresentation) UnmarshalJSON(data []byte) error {
 			err := json.Decode(data, &r)
 			return r, err
 		},
-		device.ResourceURI: func(data []byte) (interface{}, error) {
-			var r device.Device
+		schemaDevice.ResourceURI: func(data []byte) (interface{}, error) {
+			var r schemaDevice.Device
 			err := json.Decode(data, &r)
 			r.ProtocolIndependentID = ""
 			return r, err
@@ -144,9 +145,7 @@ var (
 	TestDeviceNameWithOicResObservable string
 	TestDeviceModelNumber              = "CS-0"
 	TestDeviceSoftwareVersion          = "1.0.1-rc1"
-
-	TestDevsimResources        []schema.ResourceLink
-	TestDevsimBackendResources []schema.ResourceLink
+	TestDeviceType                     device.Type
 
 	testIovityLiteVersion *sync.Map[string, uint32]
 )
@@ -190,93 +189,27 @@ type CollectionLinkRepresentation struct {
 type CollectionLinkRepresentations []CollectionLinkRepresentation
 
 func init() {
-	TestDeviceName = "devsim-" + MustGetHostname()
+	if name := os.Getenv("TEST_DEVICE_NAME"); name != "" {
+		TestDeviceName = name
+	} else {
+		TestDeviceName = "devsim-" + MustGetHostname()
+	}
 	TestDeviceNameWithOicResObservable = "devsim-resobs-" + MustGetHostname()
-
-	// when adding new resource, add also representation to GetAllBackendResourceRepresentations func
-	TestDevsimResources = []schema.ResourceLink{
-		{
-			Href:          platform.ResourceURI,
-			ResourceTypes: []string{platform.ResourceType},
-			Interfaces:    []string{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
-			Policy: &schema.Policy{
-				BitMask: 3,
-			},
-		},
-
-		{
-			Href:          device.ResourceURI,
-			ResourceTypes: []string{types.DEVICE_CLOUD, device.ResourceType},
-			Interfaces:    []string{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
-			Policy: &schema.Policy{
-				BitMask: 3,
-			},
-		},
-
-		{
-			Href:          configuration.ResourceURI,
-			ResourceTypes: []string{configuration.ResourceType},
-			Interfaces:    []string{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
-			Policy: &schema.Policy{
-				BitMask: 3,
-			},
-		},
-
-		{
-			Href:          TestResourceLightInstanceHref("1"),
-			ResourceTypes: []string{types.CORE_LIGHT},
-			Interfaces:    []string{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
-			Policy: &schema.Policy{
-				BitMask: 3,
-			},
-		},
-
-		{
-			Href:          TestResourceSwitchesHref,
-			ResourceTypes: []string{collection.ResourceType},
-			Interfaces:    []string{interfaces.OC_IF_LL, interfaces.OC_IF_CREATE, interfaces.OC_IF_B, interfaces.OC_IF_BASELINE},
-			Policy: &schema.Policy{
-				BitMask: 3,
-			},
-		},
-
-		{
-			Href:          maintenance.ResourceURI,
-			ResourceTypes: []string{maintenance.ResourceType},
-			Interfaces:    []string{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
-			Policy: &schema.Policy{
-				BitMask: 1,
-			},
-		},
-
-		{
-			Href:          plgdtime.ResourceURI,
-			ResourceTypes: []string{plgdtime.ResourceType},
-			Interfaces:    []string{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
-			Policy: &schema.Policy{
-				BitMask: 3,
-			},
-		},
-
-		{
-			Href:          softwareupdate.ResourceURI,
-			ResourceTypes: []string{softwareupdate.ResourceType},
-			Interfaces:    []string{interfaces.OC_IF_RW, interfaces.OC_IF_BASELINE},
-			Policy: &schema.Policy{
-				BitMask: 3,
-			},
-		},
+	if dtype := os.Getenv("TEST_DEVICE_TYPE"); dtype == "bridged" {
+		TestDeviceType = device.Bridged
+	} else {
+		TestDeviceType = device.OCF
 	}
 
 	testIovityLiteVersion = sync.NewMap[string, uint32]()
 }
 
-func GetDeviceResourceRepresentation(deviceID, deviceName string) device.Device {
-	return device.Device{
+func GetDeviceResourceRepresentation(deviceID, deviceName string) schemaDevice.Device {
+	return schemaDevice.Device{
 		ID:                   deviceID,
 		Interfaces:           []string{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
 		Name:                 deviceName,
-		ResourceTypes:        []string{types.DEVICE_CLOUD, device.ResourceType},
+		ResourceTypes:        []string{types.DEVICE_CLOUD, schemaDevice.ResourceType},
 		DataModelVersion:     "ocf.res.1.3.0",
 		SpecificationVersion: "ocf.2.0.5",
 		ModelNumber:          TestDeviceModelNumber,
@@ -314,7 +247,7 @@ func GetAllBackendResourceRepresentations(t *testing.T, deviceID, deviceName str
 			},
 		},
 		{
-			Href:           "/" + commands.NewResourceID(deviceID, device.ResourceURI).ToString(),
+			Href:           "/" + commands.NewResourceID(deviceID, schemaDevice.ResourceURI).ToString(),
 			Representation: dev,
 		},
 		{
@@ -461,25 +394,32 @@ func AddDeviceSwitchResources(ctx context.Context, t *testing.T, deviceID string
 	return links
 }
 
-func setAccessForCloud(ctx context.Context, t *testing.T, c *deviceClient.Client, deviceID string) {
-	cloudSID := config.HubID()
-	require.NotEmpty(t, cloudSID)
-
+func setAccessForCloud(ctx context.Context, c *deviceClient.Client, deviceID, cloudSID string) error {
 	d, links, err := c.GetDevice(ctx, deviceID)
-	require.NoError(t, err)
-
+	if err != nil {
+		return err
+	}
 	defer func() {
-		errC := d.Close(ctx)
-		require.NoError(t, errC)
+		_ = d.Close(ctx)
 	}()
+
+	// skip setting of ACLs for insecure devices
+	if !d.IsSecured() {
+		return nil
+	}
+
 	p, err := d.Provision(ctx, links)
-	require.NoError(t, err)
+	if err != nil {
+		return err
+	}
 	defer func() {
 		_ = p.Close(ctx)
 	}()
 
 	link, err := core.GetResourceLink(links, acl.ResourceURI)
-	require.NoError(t, err)
+	if err != nil {
+		return err
+	}
 	confResources := acl.AllResources
 	for _, href := range links.GetResourceHrefs(maintenance.ResourceType) {
 		confResources = append(confResources, acl.Resource{
@@ -507,37 +447,56 @@ func setAccessForCloud(ctx context.Context, t *testing.T, c *deviceClient.Client
 		},
 	}
 
-	err = p.UpdateResource(ctx, link, setAcl, nil)
-	require.NoError(t, err)
+	return p.UpdateResource(ctx, link, setAcl, nil)
 }
 
-func OnboardDevSimForClient(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, clientID, deviceID, hubEndpoint string, expectedResources []schema.ResourceLink) (string, func()) {
+func disownDevice(t *testing.T, d device.Device) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*8)
+	defer cancel()
+	client, err := sdk.NewClient(d.GetSDKClientOptions()...)
+	require.NoError(t, err)
+	defer func() {
+		_ = client.Close(ctx)
+	}()
+	err = client.DisownDevice(ctx, d.GetID())
+	require.NoError(t, err)
+	time.Sleep(time.Second * 2)
+}
+
+func OnboardDevice(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, d device.Device, hubEndpoint string, expectedResources []schema.ResourceLink) func() {
+	return OnboardDeviceForClient(ctx, t, c, d, config.OAUTH_MANAGER_CLIENT_ID, hubEndpoint, expectedResources)
+}
+
+func OnboardDeviceForClient(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, d device.Device, clientID, hubEndpoint string, expectedResources []schema.ResourceLink) func() {
 	cloudSID := config.HubID()
 	require.NotEmpty(t, cloudSID)
-	devClient, err := NewSDKClient()
+	devClient, err := sdk.NewClient(d.GetSDKClientOptions()...)
 	require.NoError(t, err)
 	defer func() {
 		_ = devClient.Close(ctx)
 	}()
-	deviceID, err = devClient.OwnDevice(ctx, deviceID, deviceClient.WithOTM(deviceClient.OTMType_JustWorks))
+
+	deviceID, err := devClient.OwnDevice(ctx, d.GetID(), deviceClient.WithOTM(deviceClient.OTMType_JustWorks))
+	require.NoError(t, err)
+	d.SetID(deviceID)
+
+	err = setAccessForCloud(ctx, devClient, d.GetID(), cloudSID)
 	require.NoError(t, err)
 
-	setAccessForCloud(ctx, t, devClient, deviceID)
-
-	code := oauthTest.GetAuthorizationCode(t, config.OAUTH_SERVER_HOST, clientID, deviceID, "")
+	code := oauthTest.GetAuthorizationCode(t, config.OAUTH_SERVER_HOST, clientID, d.GetID(), "")
 
 	onboard := func() {
 		var cloudRes cloud.Configuration
-		err = devClient.GetResource(ctx, deviceID, cloud.ResourceURI, &cloudRes)
+		err = devClient.GetResource(ctx, d.GetID(), cloud.ResourceURI, &cloudRes)
 		require.NoError(t, err)
 
 		if cloudRes.ProvisioningStatus != cloud.ProvisioningStatus_UNINITIALIZED {
 			// device cloud is configured so we need to remove it first
-			err = devClient.OffboardDevice(ctx, deviceID)
+			err = devClient.OffboardDevice(ctx, d.GetID())
 			require.NoError(t, err)
 		}
 
-		err = devClient.OnboardDevice(ctx, deviceID, config.DEVICE_PROVIDER, hubEndpoint, code, cloudSID)
+		err = devClient.OnboardDevice(ctx, d.GetID(), config.DEVICE_PROVIDER, hubEndpoint, code, cloudSID)
 		require.NoError(t, err)
 	}
 	if len(expectedResources) > 0 {
@@ -565,44 +524,40 @@ func OnboardDevSimForClient(ctx context.Context, t *testing.T, c pb.GrpcGatewayC
 		}
 		CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
 		onboard()
-		WaitForDevice(t, subClient, deviceID, ev.GetSubscriptionId(), ev.GetCorrelationId(), expectedResources)
+		WaitForDevice(t, subClient, d.GetID(), ev.GetSubscriptionId(), ev.GetCorrelationId(), expectedResources)
 		err = subClient.CloseSend()
 		require.NoError(t, err)
 	} else {
 		onboard()
 	}
 
-	return deviceID, func() {
-		DisownDevice(t, deviceID)
+	return func() {
+		disownDevice(t, d)
 	}
+}
+
+func OnboardDevSimForClient(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, clientID, deviceID, hubEndpoint string, expectedResources []schema.ResourceLink) (string, func()) {
+	d := ocf.NewDevice(deviceID, TestDeviceName)
+	cleanup := OnboardDeviceForClient(ctx, t, c, d, clientID, hubEndpoint, expectedResources)
+	return d.GetID(), cleanup
 }
 
 func OnboardDevSim(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, deviceID, hubEndpoint string, expectedResources []schema.ResourceLink) (string, func()) {
 	return OnboardDevSimForClient(ctx, t, c, config.OAUTH_MANAGER_CLIENT_ID, deviceID, hubEndpoint, expectedResources)
 }
 
-func OffBoardDevSim(ctx context.Context, t *testing.T, deviceID string) {
-	devClient, err := NewSDKClient()
+func OffboardDevice(ctx context.Context, t *testing.T, d device.Device) {
+	devClient, err := sdk.NewClient(d.GetSDKClientOptions()...)
 	require.NoError(t, err)
 	defer func() {
 		_ = devClient.Close(ctx)
 	}()
-
-	err = devClient.OffboardDevice(ctx, deviceID)
+	err = devClient.OffboardDevice(ctx, d.GetID())
 	require.NoError(t, err)
 }
 
-func DisownDevice(t *testing.T, deviceID string) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*8)
-	defer cancel()
-	client, err := NewSDKClient()
-	require.NoError(t, err)
-	defer func() {
-		_ = client.Close(ctx)
-	}()
-	err = client.DisownDevice(ctx, deviceID)
-	require.NoError(t, err)
-	time.Sleep(time.Second * 2)
+func OffBoardDevSim(ctx context.Context, t *testing.T, deviceID string) {
+	OffboardDevice(ctx, t, ocf.NewDevice(deviceID, TestDeviceName))
 }
 
 func WaitForDevice(t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, deviceID, subID, correlationID string, expectedResources []schema.ResourceLink) {
@@ -822,7 +777,7 @@ func MustFindDeviceByName(name string) (deviceID string) {
 	for i := 0; i < 3; i++ {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
-		deviceID, err = FindDeviceByName(ctx, name)
+		deviceID, err = device.FindDeviceByName(ctx, name, nil)
 		if err == nil {
 			return deviceID
 		}
@@ -830,70 +785,37 @@ func MustFindDeviceByName(name string) (deviceID string) {
 	panic(err)
 }
 
-type findDeviceIDByNameHandler struct {
-	id     atomic.Value
-	name   string
-	cancel context.CancelFunc
-}
-
-func (h *findDeviceIDByNameHandler) Handle(ctx context.Context, dev *core.Device) {
-	defer func() {
-		if errC := dev.Close(ctx); errC != nil {
-			h.Error(errC)
+func MustFindTestDevice() device.Device {
+	var getResourceOpts func(*core.Device) deviceCoap.OptionFunc
+	if TestDeviceType == device.Bridged {
+		getResourceOpts = func(d *core.Device) deviceCoap.OptionFunc {
+			return deviceCoap.WithQuery("di=" + d.DeviceID())
 		}
-	}()
-	deviceLinks, err := dev.GetResourceLinks(ctx, dev.GetEndpoints())
+	}
+
+	var deviceID string
+	var err error
+	for i := 0; i < 3; i++ {
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		deviceID, err = device.FindDeviceByName(ctx, TestDeviceName, getResourceOpts)
+		if err == nil {
+			break
+		}
+	}
+
 	if err != nil {
-		h.Error(err)
-		return
-	}
-	l, ok := deviceLinks.GetResourceLink(device.ResourceURI)
-	if !ok {
-		return
-	}
-	var d device.Device
-	err = dev.GetResource(ctx, l, &d)
-	if err != nil {
-		h.Error(err)
-		return
-	}
-	if d.Name == h.name {
-		h.id.Store(d.ID)
-		h.cancel()
-	}
-}
-
-func (h *findDeviceIDByNameHandler) Error(err error) {
-	if errors.Is(err, context.Canceled) {
-		return
-	}
-	log.Printf("find device ID by name handler error: %v", err.Error())
-}
-
-func FindDeviceByName(ctx context.Context, name string) (deviceID string, _ error) {
-	client := core.NewClient()
-
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	h := findDeviceIDByNameHandler{
-		name:   name,
-		cancel: cancel,
+		panic(err)
 	}
 
-	err := client.GetDevicesByMulticast(ctx, core.DefaultDiscoveryConfiguration(), &h)
-	if err != nil {
-		return "", fmt.Errorf("could not find the device named %s: %w", name, err)
+	if TestDeviceType == device.Bridged {
+		return bridge.NewDevice(deviceID, TestDeviceName)
 	}
-	id, ok := h.id.Load().(string)
-	if !ok || id == "" {
-		return "", fmt.Errorf("could not find the device named %s: not found", name)
-	}
-	return id, nil
+	return ocf.NewDevice(deviceID, TestDeviceName)
 }
 
 func IsDiscoveryResourceBatchObservable(ctx context.Context, t *testing.T, deviceID string) bool {
-	devClient, err := NewSDKClient()
+	devClient, err := sdk.NewClient()
 	require.NoError(t, err)
 	defer func() {
 		_ = devClient.Close(ctx)
@@ -913,15 +835,16 @@ func IsDiscoveryResourceBatchObservable(ctx context.Context, t *testing.T, devic
 	return false
 }
 
-func GetResource(ctx context.Context, deviceID, resourceURI, resourceType string, resp interface{}) error {
-	devClient, err := NewSDKClient()
+func GetResource(ctx context.Context, deviceID, resourceURI, resourceType string, resp interface{}, opts ...deviceClient.GetOption) error {
+	devClient, err := sdk.NewClient()
 	defer func() {
 		_ = devClient.Close(ctx)
 	}()
 	if err != nil {
 		return err
 	}
-	err = devClient.GetResource(ctx, deviceID, resourceURI, resp, deviceClient.WithResourceTypes(resourceType))
+	opts = append(opts, deviceClient.WithResourceTypes(resourceType))
+	err = devClient.GetResource(ctx, deviceID, resourceURI, resp, opts...)
 	if err != nil {
 		return err
 	}
@@ -944,7 +867,7 @@ func GetIotivityLiteVersion(t *testing.T, deviceID string) uint32 {
 
 func DeviceIsBatchObservable(ctx context.Context, t *testing.T, deviceID string) bool {
 	var links schema.ResourceLinks
-	err := GetResource(ctx, deviceID, resources.ResourceURI, resources.ResourceType, &links)
+	err := GetResource(ctx, deviceID, resources.ResourceURI, resources.ResourceType, &links, deviceClient.WithQuery("di="+deviceID))
 	require.NoError(t, err)
 	require.Equal(t, 1, len(links))
 	return links[0].Policy.BitMask.Has(schema.Observable) &&
@@ -952,7 +875,7 @@ func DeviceIsBatchObservable(ctx context.Context, t *testing.T, deviceID string)
 }
 
 func GetAllBackendResourceLinks() schema.ResourceLinks {
-	return append(TestDevsimResources, TestDevsimBackendResources...)
+	return ocf.TestResources
 }
 
 func ProtobufToInterface(t *testing.T, val interface{}) interface{} {

@@ -66,7 +66,7 @@ func TestRequestHandlerSubscribeToDevicePublishedOnly(t *testing.T) {
 	subID := subscriber.Subscribe(ctx, t, token, deviceID, "", c2cEvents.EventTypes{c2cEvents.EventType_ResourcesPublished})
 
 	ev := <-dataChan
-	publishedResources := test.ResourceLinksToResources(deviceID, test.TestDevsimResources)
+	publishedResources := test.ResourceLinksToResources(deviceID, test.GetAllBackendResourceLinks())
 	assert.Equal(t, c2cEvents.EventType_ResourcesPublished, ev.GetHeader().EventType)
 	links := ev.GetData().(schema.ResourceLinks)
 	resources := testSubscribeToDeviceDecodeResources(links)
@@ -118,7 +118,7 @@ func TestRequestHandlerSubscribeToDevice(t *testing.T) {
 	require.Len(t, events, 2)
 	for _, ev := range events {
 		if ev.GetHeader().EventType == c2cEvents.EventType_ResourcesPublished {
-			publishedResources := test.ResourceLinksToResources(deviceID, test.TestDevsimResources)
+			publishedResources := test.ResourceLinksToResources(deviceID, test.GetAllBackendResourceLinks())
 			links := ev.GetData().(schema.ResourceLinks)
 			resources := testSubscribeToDeviceDecodeResources(links)
 			test.CheckProtobufs(t, publishedResources, resources, test.RequireToCheckFunc(require.Equal))

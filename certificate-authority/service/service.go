@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	gocron "github.com/go-co-op/gocron"
+	"github.com/go-co-op/gocron/v2"
 	grpcService "github.com/plgd-dev/hub/v2/certificate-authority/service/grpc"
 	httpService "github.com/plgd-dev/hub/v2/certificate-authority/service/http"
 	"github.com/plgd-dev/hub/v2/certificate-authority/store"
@@ -59,26 +59,28 @@ func newStore(ctx context.Context, config StorageConfig, fileWatcher *fsnotify.W
 	if config.CleanUpRecords == "" {
 		return db, fl.ToFunction(), nil
 	}
-	s := gocron.NewScheduler(time.Local)
-	if config.ExtendCronParserBySeconds {
-		s = s.CronWithSeconds(config.CleanUpRecords)
-	} else {
-		s = s.Cron(config.CleanUpRecords)
-	}
-	_, err = s.Do(func() {
-		_, errDel := db.DeleteNonDeviceExpiredRecords(ctx, time.Now())
-		if errDel != nil && !errors.Is(errDel, store.ErrNotSupported) {
-			log.Errorf("failed to delete expired signing records: %w", errDel)
-		}
-	})
+	s, err := gocron.NewScheduler(gocron.WithLocation(time.Local))
 	if err != nil {
 		fl.Execute()
 		return nil, nil, fmt.Errorf("cannot create cron job: %w", err)
 	}
-	fl.AddFunc(s.Clear)
-	fl.AddFunc(s.Stop)
-	s.StartAsync()
 
+	_, err = s.NewJob(gocron.CronJob(config.CleanUpRecords, config.ExtendCronParserBySeconds), gocron.NewTask(func() {
+		_, errDel := db.DeleteNonDeviceExpiredRecords(ctx, time.Now())
+		if errDel != nil && !errors.Is(errDel, store.ErrNotSupported) {
+			log.Errorf("failed to delete expired signing records: %w", errDel)
+		}
+	}))
+	if err != nil {
+		fl.Execute()
+		return nil, nil, fmt.Errorf("cannot create cron job: %w", err)
+	}
+	fl.AddFunc(func() {
+		if errS := s.Shutdown(); errS != nil {
+			log.Errorf("failed to shutdown cron job: %w", errS)
+		}
+	})
+	s.Start()
 	return db, fl.ToFunction(), nil
 }
 
