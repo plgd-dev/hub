@@ -96,6 +96,10 @@ const Tab2: FC<Props> = (props) => {
             if (logo && logo.width && logo.width !== values.logoWidth) {
                 setValue('logoWidth', typeof logo.width === 'string' ? getNumberFromPx(logo.width) : logo.width)
             }
+
+            if (logo && logo.source && logo.source !== values.logoSource) {
+                setValue('logoSource', logo.source)
+            }
         }
     }, [appStore.configuration.previewTheme, getValues, setValue])
 

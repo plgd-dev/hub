@@ -92,7 +92,7 @@ const TlsPage: FC<any> = (props) => {
             newData.splice(parseInt(id, 10), 1)
             setValue(`${prefix}tls.caPool`, newData, { shouldDirty: true, shouldTouch: true })
         },
-        [caPool, setValue]
+        [caPool, prefix, setValue]
     )
 
     const handleViewCa = useCallback(

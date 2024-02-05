@@ -32,6 +32,7 @@ import { messages as g } from '@/containers/Global.i18n'
 import { PreviewAppRefType } from './PreviewApp.types'
 import * as styles from './PreviewApp.styles'
 import { setPreviewTheme, setThemeModal } from '@/containers/App/slice'
+import isEqual from 'lodash/isEqual'
 
 const Tab1 = lazy(() => import('./Tabs/Tab1'))
 const Tab2 = lazy(() => import('./Tabs/Tab2'))
@@ -97,11 +98,21 @@ const PreviewApp = forwardRef<PreviewAppRefType, any>((props, ref) => {
         }
     }, [colorPalette, appStore.configuration])
 
+    console.log(logoData)
+
     useEffect(() => {
-        if (appStore.configuration.previewTheme?.colorPalette) {
-            setColorPalette(appStore.configuration.previewTheme?.colorPalette)
+        if (appStore.configuration.previewTheme) {
+            const { logo, colorPalette } = appStore.configuration.previewTheme
+
+            if (colorPalette) {
+                setColorPalette(colorPalette)
+            }
+
+            if (logo && !isEqual(logoData, logo)) {
+                setLogoData(logo)
+            }
         }
-    }, [appStore.configuration.previewTheme?.colorPalette])
+    }, [appStore.configuration.previewTheme, logoData])
 
     useImperativeHandle(ref, () => ({
         getThemeData: () => getThemeTemplate(colorPalette, logoData),
