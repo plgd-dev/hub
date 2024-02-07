@@ -141,6 +141,24 @@ const TlsPage: FC<any> = (props) => {
         [caPool, prefix, setValue]
     )
 
+    const handleDownload = useCallback(
+        (id: string) => {
+            const caItem = caPoolData.find((item: { id: string; name: string; data: {}[] }) => item.id === id)
+
+            const link = document.createElement('a')
+            document.body.appendChild(link)
+            link.href = window.URL.createObjectURL(
+                new Blob([atob(caItem.dataChain.replace(CA_BASE64_PREFIX, ''))], {
+                    type: 'application/x-pem-file',
+                })
+            )
+            link.setAttribute('download', 'PEM(chain).pem')
+            link.click()
+            document.body.removeChild(link)
+        },
+        [caPoolData]
+    )
+
     const handleViewCa = useCallback(
         (id: string) => {
             const caItem = caPoolData.find((item: { id: string; name: string; data: {}[] }) => item.id === id)
@@ -151,6 +169,7 @@ const TlsPage: FC<any> = (props) => {
 
     const commonI18n = useMemo(
         () => ({
+            download: _(g.download),
             delete: _(g.delete),
             search: _(g.search),
             showMore: _(g.showMore),
@@ -192,6 +211,7 @@ const TlsPage: FC<any> = (props) => {
                         })
                     }
                     onDelete={handleDeleteCaItem}
+                    onDownload={handleDownload}
                     onView={handleViewCa}
                     tableSearch={true}
                 />

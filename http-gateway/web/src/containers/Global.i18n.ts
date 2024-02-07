@@ -189,4 +189,8 @@ export const messages = defineMessages({
         id: 'global.version',
         defaultMessage: 'Version',
     },
+    download: {
+        id: 'global.download',
+        defaultMessage: 'Download',
+    },
 })
