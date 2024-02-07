@@ -1,4 +1,4 @@
-import React, { FC, useCallback, useContext, useMemo, useState } from 'react'
+import React, { FC, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
 import cloneDeep from 'lodash/cloneDeep'
 import { Controller } from 'react-hook-form'
@@ -14,6 +14,7 @@ import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import { parse, pemToDER } from '@shared-ui/common/utils/cert-decoder.mjs'
 import TileToggle from '@shared-ui/components/Atomic/TileToggle'
 import Spacer from '@shared-ui/components/Atomic/Spacer'
+import { findCertName } from '@shared-ui/components/Organisms/CaPool/utils'
 
 import * as styles from '@/containers/DeviceProvisioning/LinkedHubs/DetailPage/Tabs/Tab.styles'
 import { messages as g } from '@/containers/Global.i18n'
@@ -38,12 +39,51 @@ const TlsPage: FC<any> = (props) => {
 
     const { formatMessage: _ } = useIntl()
     const { i18n } = useContext(FormContext)
+    const [caPoolData, setCaPoolData] = useState<any>([])
+    const [caPoolLoading, setCaPoolLoading] = useState(true)
 
     const caPool = watch(`${prefix}tls.caPool`)
     const key = watch(`${prefix}tls.key`)
     const cert = watch(`${prefix}tls.cert`)
 
-    const caPoolData = useMemo(() => (caPool ? caPool.map((p: string, key: number) => ({ id: key.toString(), name: p })) : []), [caPool])
+    useEffect(() => {
+        const parseCaPool = async () => {
+            const prom = caPool?.map(async (p: string, key: number) => {
+                try {
+                    if (p.startsWith('/')) {
+                        return { id: key, name: p, data: undefined }
+                    }
+
+                    const certsData = atob(p.replace(CA_BASE64_PREFIX, ''))
+                    const groups = [...certsData.matchAll(/(-----[BEGIN \S]+?-----[\S\s]+?-----[END \S]+?-----)/g)]
+                    const certs = groups.map((g) => parse(pemToDER(g[0].replace(/(-----(BEGIN|END) CERTIFICATE-----|[\n\r])/g, ''))).then((c) => c))
+                    const data = await Promise.all(certs)
+
+                    return { id: key, name: findCertName(data), data, dataChain: p }
+                } catch (e: any) {
+                    console.log(e)
+                    Notification.error(
+                        { title: _(t.certificationParsingError), message: e },
+                        { notificationId: notificationId.HUB_DPS_LINKED_HUBS_DETAIL_PAGE_CERT_PARSE_ERROR }
+                    )
+                }
+            })
+
+            return await Promise.all(prom)
+        }
+
+        if (caPool) {
+            setCaPoolLoading(true)
+            parseCaPool()
+                .catch(console.error)
+                .then((c) => {
+                    setCaPoolLoading(false)
+                    setCaPoolData(c)
+                })
+        }
+
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [caPool])
 
     const defaultModalData = useMemo(
         () => ({
@@ -56,15 +96,21 @@ const TlsPage: FC<any> = (props) => {
     )
 
     const [modalData, setModalData] = useState<ModalData>(defaultModalData)
-    const [caModalData, setCaModalData] = useState<{}[] | undefined>(undefined)
+    const [caModalData, setCaModalData] = useState<{ subTitle: string; data?: {}[] | string; dataChain: any }>({
+        subTitle: '',
+        data: undefined,
+        dataChain: undefined,
+    })
 
     const handleSaveModalData = useCallback(() => {
         switch (modalData.variant) {
             case modalVariants.ADD_CA_POOL: {
+                console.log('save')
                 setValue(`${prefix}tls.caPool`, [...caPool, `${CA_BASE64_PREFIX}${btoa(modalData.value)}`], {
                     shouldDirty: true,
                     shouldTouch: true,
                 })
+                setModalData(defaultModalData)
                 return
             }
             case modalVariants.EDIT_PRIVATE_KEY: {
@@ -97,27 +143,9 @@ const TlsPage: FC<any> = (props) => {
 
     const handleViewCa = useCallback(
         (id: string) => {
-            const caItem = caPoolData.find((item: { id: string; name: string }) => item.id === id)
-
-            if (caItem) {
-                try {
-                    const certsData = atob(caItem.name.replace(CA_BASE64_PREFIX, ''))
-                    const groups = [...certsData.matchAll(/(-----[BEGIN \S]+?-----[\S\s]+?-----[END \S]+?-----)/g)]
-                    const certs = groups.map((g) => parse(pemToDER(g[0].replace(/(-----(BEGIN|END) CERTIFICATE-----|[\n\r])/g, ''))).then((c) => c))
-
-                    Promise.all(certs).then((c) => {
-                        setCaModalData(c)
-                    })
-                } catch (e: any) {
-                    console.log(e)
-                    Notification.error(
-                        { title: _(t.certificationParsingError), message: e },
-                        { notificationId: notificationId.HUB_DPS_LINKED_HUBS_DETAIL_PAGE_CERT_PARSE_ERROR }
-                    )
-                }
-            }
+            const caItem = caPoolData.find((item: { id: string; name: string; data: {}[] }) => item.id === id)
+            setCaModalData({ subTitle: caItem.name, data: caItem.data || caItem.name, dataChain: caItem.dataChain })
         },
-        // eslint-disable-next-line react-hooks/exhaustive-deps
         [caPoolData]
     )
 
@@ -138,8 +166,19 @@ const TlsPage: FC<any> = (props) => {
             <Headline type='h5'>{_(g.tls)}</Headline>
             <p>Short description...</p>
             <hr css={styles.separator} />
-            <Loadable condition={caPool !== undefined}>
+            <Loadable condition={caPool !== undefined || caPoolLoading}>
                 <CaPool
+                    customComponent={
+                        <Loadable condition={!loading}>
+                            <Controller
+                                control={control}
+                                name='certificateAuthority.grpc.tls.useSystemCaPool'
+                                render={({ field: { onChange, value } }) => (
+                                    <TileToggle checked={value ?? false} name={_(t.useSystemCAPool)} onChange={onChange} />
+                                )}
+                            />
+                        </Loadable>
+                    }
                     data={caPoolData}
                     headline={_(t.caPool)}
                     headlineRef={contentRefs.ref1}
@@ -160,7 +199,6 @@ const TlsPage: FC<any> = (props) => {
             <Spacer type='pt-8'>
                 <Loadable condition={!loading}>
                     <CaPool
-                        singleItemMode
                         data={[{ id: '0', name: key }]}
                         headline={_(t.privateKey)}
                         headlineRef={contentRefs.ref2}
@@ -179,7 +217,6 @@ const TlsPage: FC<any> = (props) => {
             <Spacer type='pt-8'>
                 <Loadable condition={!loading}>
                     <CaPool
-                        singleItemMode
                         data={[{ id: '0', name: cert }]}
                         headline={_(t.certificate)}
                         headlineRef={contentRefs.ref3}
@@ -196,26 +233,13 @@ const TlsPage: FC<any> = (props) => {
                     />
                 </Loadable>
             </Spacer>
-            <Spacer type='py-8'>
-                <Headline ref={contentRefs.ref4} type='h6'>
-                    {_(t.useSystemCAPool)}
-                </Headline>
-                <Spacer type='py-4'>
-                    <Loadable condition={!loading}>
-                        <Controller
-                            control={control}
-                            name='certificateAuthority.grpc.tls.useSystemCaPool'
-                            render={({ field: { onChange, value } }) => <TileToggle checked={value ?? false} name={_(g.status)} onChange={onChange} />}
-                        />
-                    </Loadable>
-                </Spacer>
-            </Spacer>
             <CaPoolModal
-                data={caModalData}
+                data={caModalData?.data}
+                dataChain={caModalData?.dataChain}
                 i18n={i18n}
-                onClose={() => setCaModalData(undefined)}
-                show={caModalData !== undefined}
-                subTitle='try_plgd_clound_long:name_preview_for_dev'
+                onClose={() => setCaModalData({ subTitle: '', data: undefined, dataChain: undefined })}
+                show={caModalData?.data !== undefined}
+                subTitle={caModalData.subTitle}
                 title={_(t.caPoolDetail)}
             />
             <Modal

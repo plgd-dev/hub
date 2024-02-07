@@ -241,4 +241,64 @@ export const messages = defineMessages({
         id: 'linkedHubs.editCertificate',
         defaultMessage: 'Edit Certificate',
     },
+    miscellaneous: {
+        id: 'linkedHubs.miscellaneous',
+        defaultMessage: 'Miscellaneous',
+    },
+    serialNumber: {
+        id: 'linkedHubs.serialNumber',
+        defaultMessage: 'Serial Number',
+    },
+    signatureAlgorithm: {
+        id: 'linkedHubs.signatureAlgorithm',
+        defaultMessage: 'Signature Algorithm',
+    },
+    download: {
+        id: 'linkedHubs.download',
+        defaultMessage: 'Download',
+    },
+    authorityInfoAIA: {
+        id: 'linkedHubs.authorityInfoAIA',
+        defaultMessage: 'Authority Info (AIA)',
+    },
+    location: {
+        id: 'linkedHubs.location',
+        defaultMessage: 'Location',
+    },
+    method: {
+        id: 'linkedHubs.method',
+        defaultMessage: 'Method',
+    },
+    certificatePolicies: {
+        id: 'linkedHubs.certificatePolicies',
+        defaultMessage: 'Certificate Policies',
+    },
+    policy: {
+        id: 'linkedHubs.policy',
+        defaultMessage: 'Policy',
+    },
+    value: {
+        id: 'linkedHubs.value',
+        defaultMessage: 'Value',
+    },
+    embeddedSCTs: {
+        id: 'linkedHubs.embeddedSCTs',
+        defaultMessage: 'Embedded SCTs',
+    },
+    logID: {
+        id: 'linkedHubs.logID',
+        defaultMessage: 'logID',
+    },
+    timestamp: {
+        id: 'linkedHubs.timestamp',
+        defaultMessage: 'Timestamp',
+    },
+    subjectAltNames: {
+        id: 'linkedHubs.subjectAltNames',
+        defaultMessage: 'Subject Alt Names',
+    },
+    dNSName: {
+        id: 'linkedHubs.dNSName',
+        defaultMessage: 'DNS Name',
+    },
 })

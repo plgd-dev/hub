@@ -28,7 +28,6 @@ const Tab2: FC<Props> = (props) => {
     const contentRef1 = useRef<HTMLHeadingElement | null>(null)
     const contentRef2 = useRef<HTMLHeadingElement | null>(null)
     const contentRef3 = useRef<HTMLHeadingElement | null>(null)
-    const contentRef4 = useRef<HTMLHeadingElement | null>(null)
 
     const menu = useMemo(
         () => [
@@ -42,7 +41,6 @@ const Tab2: FC<Props> = (props) => {
                     { id: '10', title: _(t.caPool), contentRef: contentRef1 },
                     { id: '11', title: _(t.privateKey), contentRef: contentRef2 },
                     { id: '12', title: _(t.certificate), contentRef: contentRef3 },
-                    { id: '13', title: _(t.useSystemCAPool), contentRef: contentRef4 },
                 ],
             },
         ],
@@ -94,7 +92,6 @@ const Tab2: FC<Props> = (props) => {
                             ref1: contentRef1,
                             ref2: contentRef2,
                             ref3: contentRef3,
-                            ref4: contentRef4,
                         }}
                         defaultFormData={defaultFormData}
                         loading={loading}
