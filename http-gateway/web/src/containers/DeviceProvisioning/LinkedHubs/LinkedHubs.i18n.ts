@@ -237,6 +237,14 @@ export const messages = defineMessages({
         id: 'linkedHubs.editPrivateKey',
         defaultMessage: 'Edit Private Key',
     },
+    addPrivateKey: {
+        id: 'linkedHubs.addPrivateKey',
+        defaultMessage: 'Add Private Key',
+    },
+    addCertificate: {
+        id: 'linkedHubs.addCertificate',
+        defaultMessage: 'Add Certificate',
+    },
     editCertificate: {
         id: 'linkedHubs.editCertificate',
         defaultMessage: 'Edit Certificate',
@@ -300,5 +308,9 @@ export const messages = defineMessages({
     dNSName: {
         id: 'linkedHubs.dNSName',
         defaultMessage: 'DNS Name',
+    },
+    certificateDetail: {
+        id: 'linkedHubs.certificateDetail',
+        defaultMessage: 'Certificate Detail',
     },
 })

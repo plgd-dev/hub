@@ -14,7 +14,7 @@ import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import { parse, pemToDER } from '@shared-ui/common/utils/cert-decoder.mjs'
 import TileToggle from '@shared-ui/components/Atomic/TileToggle'
 import Spacer from '@shared-ui/components/Atomic/Spacer'
-import { findCertName } from '@shared-ui/components/Organisms/CaPool/utils'
+import { findCertName, formatCertName } from '@shared-ui/components/Organisms/CaPool/utils'
 
 import * as styles from '@/containers/DeviceProvisioning/LinkedHubs/DetailPage/Tabs/Tab.styles'
 import { messages as g } from '@/containers/Global.i18n'
@@ -39,42 +39,55 @@ const TlsPage: FC<any> = (props) => {
 
     const { formatMessage: _ } = useIntl()
     const { i18n } = useContext(FormContext)
+
     const [caPoolData, setCaPoolData] = useState<any>([])
     const [caPoolLoading, setCaPoolLoading] = useState(true)
+    const [certData, setCertData] = useState<any>([])
+    const [certLoading, setCertLoading] = useState<any>(true)
 
     const caPool = watch(`${prefix}tls.caPool`)
     const key = watch(`${prefix}tls.key`)
     const cert = watch(`${prefix}tls.cert`)
 
     useEffect(() => {
-        const parseCaPool = async () => {
-            const prom = caPool?.map(async (p: string, key: number) => {
+        const parseCaPool = async (certs: any, singleMode = false) => {
+            const parsed = certs?.map(async (p: string, key: number) => {
                 try {
                     if (p.startsWith('/')) {
                         return { id: key, name: p, data: undefined }
                     }
 
                     const certsData = atob(p.replace(CA_BASE64_PREFIX, ''))
-                    const groups = [...certsData.matchAll(/(-----[BEGIN \S]+?-----[\S\s]+?-----[END \S]+?-----)/g)]
-                    const certs = groups.map((g) => parse(pemToDER(g[0].replace(/(-----(BEGIN|END) CERTIFICATE-----|[\n\r])/g, ''))).then((c) => c))
-                    const data = await Promise.all(certs)
 
-                    return { id: key, name: findCertName(data), data, dataChain: p }
+                    if (singleMode) {
+                        const data = await parse(pemToDER(certsData.replace(/(-----(BEGIN|END) CERTIFICATE-----|[\n\r])/g, ''))).then((c) => c)
+                        return { id: key, name: formatCertName(data), data: data, dataChain: p }
+                    } else {
+                        const groups = [...certsData.matchAll(/(-----[BEGIN \S]+?-----[\S\s]+?-----[END \S]+?-----)/g)]
+                        const certs = groups.map((g) => parse(pemToDER(g[0].replace(/(-----(BEGIN|END) CERTIFICATE-----|[\n\r])/g, ''))).then((c) => c))
+                        const data = await Promise.all(certs)
+
+                        return { id: key, name: findCertName(data), data, dataChain: p }
+                    }
                 } catch (e: any) {
-                    console.log(e)
+                    let error = e
+                    if (!(error instanceof Error)) {
+                        error = new Error(e)
+                    }
+
                     Notification.error(
-                        { title: _(t.certificationParsingError), message: e },
+                        { title: _(t.certificationParsingError), message: error.message },
                         { notificationId: notificationId.HUB_DPS_LINKED_HUBS_DETAIL_PAGE_CERT_PARSE_ERROR }
                     )
                 }
             })
 
-            return await Promise.all(prom)
+            return await Promise.all(parsed)
         }
 
         if (caPool) {
             setCaPoolLoading(true)
-            parseCaPool()
+            parseCaPool(caPool)
                 .catch(console.error)
                 .then((c) => {
                     setCaPoolLoading(false)
@@ -82,8 +95,18 @@ const TlsPage: FC<any> = (props) => {
                 })
         }
 
+        if (cert) {
+            setCertLoading(true)
+            parseCaPool([cert], true)
+                .catch(console.error)
+                .then((c) => {
+                    setCertLoading(false)
+                    setCertData(c)
+                })
+        }
+
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [caPool])
+    }, [caPool, cert])
 
     const defaultModalData = useMemo(
         () => ({
@@ -96,41 +119,42 @@ const TlsPage: FC<any> = (props) => {
     )
 
     const [modalData, setModalData] = useState<ModalData>(defaultModalData)
-    const [caModalData, setCaModalData] = useState<{ subTitle: string; data?: {}[] | string; dataChain: any }>({
+    const [caModalData, setCaModalData] = useState<{ title: string; subTitle: string; data?: {}[] | string; dataChain: any }>({
+        title: _(t.caPoolDetail),
         subTitle: '',
         data: undefined,
         dataChain: undefined,
     })
 
+    const pemToString = useCallback((pem: string) => `${CA_BASE64_PREFIX}${btoa(pem)}`, [])
+
     const handleSaveModalData = useCallback(() => {
         switch (modalData.variant) {
             case modalVariants.ADD_CA_POOL: {
-                console.log('save')
-                setValue(`${prefix}tls.caPool`, [...caPool, `${CA_BASE64_PREFIX}${btoa(modalData.value)}`], {
+                setValue(`${prefix}tls.caPool`, [...caPool, pemToString(modalData.value)], {
                     shouldDirty: true,
                     shouldTouch: true,
                 })
-                setModalData(defaultModalData)
-                return
+                break
             }
             case modalVariants.EDIT_PRIVATE_KEY: {
-                setValue(`${prefix}tls.key`, modalData.value, {
+                setValue(`${prefix}tls.key`, pemToString(modalData.value), {
                     shouldDirty: true,
                     shouldTouch: true,
                 })
-                return
+                break
             }
             case modalVariants.EDIT_CERT: {
-                setValue(`${prefix}tls.cert`, modalData.value, {
+                setValue(`${prefix}tls.cert`, pemToString(modalData.value), {
                     shouldDirty: true,
                     shouldTouch: true,
                 })
-                return
+                break
             }
         }
 
         setModalData(defaultModalData)
-    }, [caPool, defaultModalData, modalData.value, modalData.variant, prefix, setValue])
+    }, [caPool, defaultModalData, modalData.value, modalData.variant, pemToString, prefix, setValue])
 
     const handleDeleteCaItem = useCallback(
         (id: string) => {
@@ -162,14 +186,25 @@ const TlsPage: FC<any> = (props) => {
     const handleViewCa = useCallback(
         (id: string) => {
             const caItem = caPoolData.find((item: { id: string; name: string; data: {}[] }) => item.id === id)
-            setCaModalData({ subTitle: caItem.name, data: caItem.data || caItem.name, dataChain: caItem.dataChain })
+            setCaModalData({ title: _(t.caPoolDetail), subTitle: caItem.name, data: caItem.data || caItem.name, dataChain: caItem.dataChain })
         },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [caPoolData]
+    )
+
+    const handleViewCert = useCallback(
+        (id: string) => {
+            const certItem = certData.find((item: { id: string; name: string; data: {}[] }) => item.id === id)
+            setCaModalData({ title: _(t.certificateDetail), subTitle: certItem.name, data: [certItem.data] || certItem.name, dataChain: certItem.dataChain })
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [certData]
     )
 
     const commonI18n = useMemo(
         () => ({
             download: _(g.download),
+            edit: _(g.edit),
             delete: _(g.delete),
             search: _(g.search),
             showMore: _(g.showMore),
@@ -185,7 +220,7 @@ const TlsPage: FC<any> = (props) => {
             <Headline type='h5'>{_(g.tls)}</Headline>
             <p>Short description...</p>
             <hr css={styles.separator} />
-            <Loadable condition={caPool !== undefined || caPoolLoading}>
+            <Loadable condition={caPool !== undefined && !caPoolLoading}>
                 <CaPool
                     customComponent={
                         <Loadable condition={!loading}>
@@ -219,10 +254,22 @@ const TlsPage: FC<any> = (props) => {
             <Spacer type='pt-8'>
                 <Loadable condition={!loading}>
                     <CaPool
-                        data={[{ id: '0', name: key }]}
+                        data={key ? [{ id: '0', name: key }] : []}
                         headline={_(t.privateKey)}
                         headlineRef={contentRefs.ref2}
                         i18n={commonI18n}
+                        onAdd={
+                            key
+                                ? undefined
+                                : () =>
+                                      setModalData({
+                                          title: _(t.addPrivateKey),
+                                          description: undefined,
+                                          value: '',
+                                          variant: modalVariants.EDIT_PRIVATE_KEY,
+                                      })
+                        }
+                        onDelete={() => setValue(`${prefix}tls.key`, '', { shouldDirty: true, shouldTouch: true })}
                         onView={() =>
                             setModalData({
                                 title: _(t.editPrivateKey),
@@ -235,21 +282,36 @@ const TlsPage: FC<any> = (props) => {
                 </Loadable>
             </Spacer>
             <Spacer type='pt-8'>
-                <Loadable condition={!loading}>
+                <Loadable condition={!loading && !certLoading}>
                     <CaPool
-                        data={[{ id: '0', name: cert }]}
+                        data={cert ? certData : []}
                         headline={_(t.certificate)}
                         headlineRef={contentRefs.ref3}
                         i18n={commonI18n}
-                        onDelete={() => console.log()}
-                        onView={() =>
-                            setModalData({
-                                title: _(t.editCertificate),
-                                description: undefined,
-                                value: cert.startsWith('/') ? '' : cert,
-                                variant: modalVariants.EDIT_CERT,
-                            })
+                        onAdd={
+                            cert
+                                ? undefined
+                                : () =>
+                                      setModalData({
+                                          title: _(t.addCertificate),
+                                          description: undefined,
+                                          value: '',
+                                          variant: modalVariants.EDIT_CERT,
+                                      })
                         }
+                        onDelete={() => setValue(`${prefix}tls.cert`, '', { shouldDirty: true, shouldTouch: true })}
+                        onEdit={
+                            cert && certData[0]
+                                ? () =>
+                                      setModalData({
+                                          title: _(t.editCertificate),
+                                          description: undefined,
+                                          value: certData[0].data.files.pem.replace(/%0D%0A/g, '\n').replace(/%20/g, ' '),
+                                          variant: modalVariants.EDIT_CERT,
+                                      })
+                                : undefined
+                        }
+                        onView={handleViewCert}
                     />
                 </Loadable>
             </Spacer>
@@ -257,10 +319,10 @@ const TlsPage: FC<any> = (props) => {
                 data={caModalData?.data}
                 dataChain={caModalData?.dataChain}
                 i18n={i18n}
-                onClose={() => setCaModalData({ subTitle: '', data: undefined, dataChain: undefined })}
+                onClose={() => setCaModalData({ title: '', subTitle: '', data: undefined, dataChain: undefined })}
                 show={caModalData?.data !== undefined}
                 subTitle={caModalData.subTitle}
-                title={_(t.caPoolDetail)}
+                title={caModalData.title}
             />
             <Modal
                 appRoot={document.getElementById('root')}
@@ -286,6 +348,7 @@ const TlsPage: FC<any> = (props) => {
                 show={modalData.title !== ''}
                 title={modalData?.title}
                 width='100%'
+                zIndex={25}
             />
         </form>
     )
