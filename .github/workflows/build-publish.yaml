@@ -111,7 +111,11 @@ jobs:
             file: tools/cert-tool/Dockerfile
           - name: nats-server-config-reloader
             directory: tools/nats-server-config-reloader
-            file: tools/nats-server-config-reloader/Dockerfile  
+            file: tools/nats-server-config-reloader/Dockerfile
+          - name: snapshot-service
+            directory: snapshot-service
+            file: .tmp/docker/snapshot-service/Dockerfile
+            template-file: tools/docker/Dockerfile.in 
     uses: ./.github/workflows/build-publish-cfg.yaml
     with:
       name: ${{ matrix.name }}

@@ -69,6 +69,11 @@ ARG tool=cert-tool
 WORKDIR $root_directory/tools/$tool
 RUN go build -ldflags "-linkmode external -extldflags -static -X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" -o /go/bin/$tool ./
 
+#snapshot-service
+ARG service=snapshot-service
+WORKDIR $root_directory/$service
+RUN go build -ldflags "-linkmode external -extldflags -static -X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" -o /go/bin/$service ./cmd/service
+
 #nats
 WORKDIR $root_directory
 RUN apkArch="$(apk --print-arch)"; \
@@ -130,6 +135,8 @@ COPY --from=build /go/bin/cloud2cloud-connector /usr/local/bin/cloud2cloud-conne
 COPY --from=build /go/src/github.com/plgd-dev/hub/cloud2cloud-connector/config.yaml /configs/cloud2cloud-connector.yaml
 COPY --from=build /go/src/github.com/plgd-dev/hub/bundle/run.sh /usr/local/bin/run.sh
 COPY --from=build /go/src/github.com/plgd-dev/hub/bundle/nginx /nginx
+COPY --from=build /go/bin/snapshot-service /usr/local/bin/snapshot-service
+COPY --from=build /go/src/github.com/plgd-dev/hub/snapshot-service/config.yaml /configs/snapshot-service.yaml
 
 # install scylla
 RUN curl -sSf get.scylladb.com/server | sudo bash -s -- --scylla-version 5.2
@@ -184,6 +191,8 @@ ENV NATS_PORT=10001
 ENV SCYLLA_SMP=1
 ENV SCYLLA_DEVELOPER_MODE=true
 ENV SCYLLA_PORT=29142
+ENV SNAPSHOT_SERVICE_PORT=9091
+ENV HTTP_SNAPSHOT_SERVICE_PORT=9092
 
 # OAuth
 ENV DEVICE_PROVIDER=plgd
