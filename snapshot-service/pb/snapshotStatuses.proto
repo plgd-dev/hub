@@ -18,7 +18,8 @@ message SnapshotResourceStatus {
 message SnapshotStatus {
     string id = 1;
     string version = 2;
-    string device_id = 3;
+    string device_id = 3; // don't update device again
+    flags // enforce always, once, on snapshot change
     string snapshot_id = 4;
     string association_snapshot_id = 5;
     int64 timestamp_start = 6;

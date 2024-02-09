@@ -7,14 +7,22 @@ option go_package = "github.com/plgd-dev/hub/v2/snapshot-service/pb;pb";
 import "resource-aggregate/pb/resources.proto";
 
 message ResourceSnapshot {
-    string href = 1;
-    resourceaggregate.pb.Content content = 2;
-    string resource_interface = 3;
-    int64 time_to_live = 4;
+    oneof resource {
+        string href = 1; // /data/datasource/1 
+                         // /data/datasource/2
+                         // /data/datasource/3
+        repeated string types = 2;
+    }
+    string id = 3; // resource id
+
+    resourceaggregate.pb.Content content = 3;
+    string resource_interface = 4; // optional update interface
+    int64 time_to_live = 5; // optional update command time to live
 }
 
 message CreateSnapshotRequest {
     repeated ResourceSnapshot resources = 1;
+    int64 version = 2; // resource version
 }
 
 message CreateSnapshotResponse {
@@ -36,6 +44,8 @@ message DeleteSnapshotsRequest {
 message DeleteSnapshotsResponse {
     int64 count = 1;
 }
+
+// ondemand by user
 
 message ApplySnapshotRequest {
     string id = 1;

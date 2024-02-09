@@ -8,24 +8,25 @@ import "resource-aggregate/pb/resources.proto";
 
 message ResourceFilter {
     string href = 1; // required eg "/oic/d"
-    string property_path = 2; // optional in format ".di"
-    resourceaggregate.pb.Content content = 3; // required
+    string property_path = 4; // optional in format ".sn"
+    resourceaggregate.pb.Content content = 5; // required
 }
 
-message CreateSnapshotAssociationRequest{
+message CreateSnapshotConditionRequest{
     string snapshot_id = 1;
     repeated ResourceFilter resource_filter = 2;
     int64 apply_time_to_live = 4; // in nanoseconds how long will try to apply snapshot to resources which match resource_filter
+    string owner = 5;
 }
 
-message CreateSnapshotAssociationResponse{
+message CreateSnapshotConditionResponse{
     string id = 2;
 }
 
-message DeleteSnapshotAssociationsRequest {
+message DeleteSnapshotConditionsRequest {
     repeated string id_filter = 1;
 }
 
-message DeleteSnapshotAssociationsResponse {
+message DeleteSnapshotConditionsResponse {
     int64 count = 1;
 }
