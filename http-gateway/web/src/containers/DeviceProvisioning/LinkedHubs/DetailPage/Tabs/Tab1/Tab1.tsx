@@ -27,6 +27,8 @@ const Tab1: FC<Props> = (props) => {
     return (
         <form>
             <SimpleStripTable
+                leftColSize={7}
+                rightColSize={5}
                 rows={[
                     {
                         attribute: _(g.id),

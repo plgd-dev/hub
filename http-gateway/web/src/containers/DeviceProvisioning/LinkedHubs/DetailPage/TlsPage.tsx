@@ -126,6 +126,11 @@ const TlsPage: FC<any> = (props) => {
         dataChain: undefined,
     })
 
+    const caModalDataValid = useMemo(
+        () => modalData.value === undefined || modalData.value.startsWith('/') || modalData.value.startsWith('-----BEGIN'),
+        [modalData.value]
+    )
+
     const pemToString = useCallback((pem: string) => `${CA_BASE64_PREFIX}${btoa(pem)}`, [])
 
     const handleSaveModalData = useCallback(() => {
@@ -270,11 +275,11 @@ const TlsPage: FC<any> = (props) => {
                                       })
                         }
                         onDelete={() => setValue(`${prefix}tls.key`, '', { shouldDirty: true, shouldTouch: true })}
-                        onView={() =>
+                        onEdit={() =>
                             setModalData({
                                 title: _(t.editPrivateKey),
                                 description: undefined,
-                                value: key.startsWith('/') ? '' : key,
+                                value: key.startsWith('/') ? key : atob(key.replace(CA_BASE64_PREFIX, '')),
                                 variant: modalVariants.EDIT_PRIVATE_KEY,
                             })
                         }
@@ -339,6 +344,7 @@ const TlsPage: FC<any> = (props) => {
                         label: _(g.saveChanges),
                         onClick: handleSaveModalData,
                         variant: 'primary',
+                        disabled: !caModalDataValid,
                     },
                 ]}
                 maxWidth={1100}
