@@ -109,9 +109,6 @@ jobs:
           - name: cert-tool
             directory: tools/cert-tool
             file: tools/cert-tool/Dockerfile
-          - name: nats-server-config-reloader
-            directory: tools/nats-server-config-reloader
-            file: tools/nats-server-config-reloader/Dockerfile  
     uses: ./.github/workflows/build-publish-cfg.yaml
     with:
       name: ${{ matrix.name }}

@@ -56,25 +56,20 @@ extraDeploy:
 # -- External nats dependency setup
 nats:
   enabled: true
-  nats:
-    tls:
-      secret:
-        name: nats-service-crt
-      ca: ca.crt
-      cert: tls.crt
-      key: tls.key
-      verify: true
-  cluster:
+  tlsCA:
+    enabled: true
+    secretName: nats-service-crt
+  config:
+    nats:
+      tls:
+        enabled: true
+        secretName: nats-service-crt
+        merge:
+          verify: true
+  natsBox:
     enabled: false
-    noAdvertise: false
-  leafnodes:
+  monitor:
     enabled: false
-    noAdvertise: false
-  natsbox:
-    enabled: false
-  reloader:
-    image: ghcr.io/plgd-dev/hub/nats-server-config-reloader:vnext
-    pullPolicy: Always
 
 
 # -- External mongodb-replica dependency setup
@@ -92,8 +87,6 @@ mongodb:
     enabled: false
   image:
     debug: true
-    net:
-      port: 27017
   tls:
     enabled: false
   extraEnvVars:
