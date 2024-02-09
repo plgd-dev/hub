@@ -1,14 +1,14 @@
-{{- if and .Values.nats.enabled .Values.certmanager.enabled }}
+{{- if and .Values.nats.enabled .Values.certmanager.enabled .Values.nats.config.nats.tls.enabled }}
 {{- $natsServiceName := printf "%s-nats" ( include "nats.fullname" . ) }}
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: {{ .Values.nats.nats.tls.secret.name }}
+  name: {{ .Values.nats.config.nats.tls.secretName }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "plgd-hub.labels" . | nindent 4 }}
 spec:
-  secretName: {{ .Values.nats.nats.tls.secret.name }}
+  secretName: {{ .Values.nats.config.nats.tls.secretName }}
   privateKey:
     algorithm: {{ .Values.certmanager.internal.cert.key.algorithm | default .Values.certmanager.default.cert.key.algorithm }}
     size: {{ .Values.certmanager.internal.cert.key.size | default .Values.certmanager.default.cert.key.size }}
