@@ -306,17 +306,17 @@ const TlsPage: FC<any> = (props) => {
                         }
                         onDelete={() => setValue(`${prefix}tls.cert`, '', { shouldDirty: true, shouldTouch: true })}
                         onEdit={
-                            cert && certData[0]
+                            cert && (cert?.startsWith('/') || certData[0])
                                 ? () =>
                                       setModalData({
                                           title: _(t.editCertificate),
                                           description: undefined,
-                                          value: certData[0].data.files.pem.replace(/%0D%0A/g, '\n').replace(/%20/g, ' '),
+                                          value: key.startsWith('/') ? cert : certData[0].data.files.pem.replace(/%0D%0A/g, '\n').replace(/%20/g, ' '),
                                           variant: modalVariants.EDIT_CERT,
                                       })
                                 : undefined
                         }
-                        onView={handleViewCert}
+                        onView={cert?.startsWith('/') ? undefined : handleViewCert}
                     />
                 </Loadable>
             </Spacer>
