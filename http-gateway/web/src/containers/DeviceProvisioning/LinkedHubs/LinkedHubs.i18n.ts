@@ -313,4 +313,90 @@ export const messages = defineMessages({
         id: 'linkedHubs.certificateDetail',
         defaultMessage: 'Certificate Detail',
     },
+    hubName: {
+        id: 'linkedHubs.hubName',
+        defaultMessage: 'Hub Name',
+    },
+    endpoint: {
+        id: 'linkedHubs.endpoint',
+        defaultMessage: 'Endpoint',
+    },
+    continue: {
+        id: 'linkedHubs.continue',
+        defaultMessage: 'Continue',
+    },
+    endpointDescription: {
+        id: 'linkedHubs.endpointDescription',
+        defaultMessage: 'Provide the endpoint where the plgd hub instance can be accessed by this DPS service.',
+    },
+    certificateDescription: {
+        id: 'linkedHubs.endpointDescription',
+        defaultMessage: 'A CA pool is a trusted root certificate(s) used to verify the authenticity plgd hub instance.',
+    },
+    linkNewHub: {
+        id: 'linkedHubs.linkNewHub',
+        defaultMessage: 'Link a new hub',
+    },
+    registerNewCertificate: {
+        id: 'linkedHubs.registerNewCertificate',
+        defaultMessage: 'Register a newCertificate',
+    },
+    certificateName: {
+        id: 'linkedHubs.certificateName',
+        defaultMessage: 'Certificate name',
+    },
+    saveCertificate: {
+        id: 'linkedHubs.saveCertificate',
+        defaultMessage: 'Save certificate',
+    },
+    uploadCertDescription: {
+        id: 'linkedHubs.uploadCertDescription',
+        defaultMessage: 'Supported formats:  PEM or CER (max 1 MB)',
+    },
+    uploadCertTitle: {
+        id: 'linkedHubs.uploadCertTitle',
+        defaultMessage: 'Drag & Drop or Choose file to upload',
+    },
+    certificateAuthorityConfiguration: {
+        id: 'linkedHubs.certificateAuthorityConfiguration',
+        defaultMessage: 'Certificate authority configuration',
+    },
+    disableIssuingIdentityCertificate: {
+        id: 'linkedHubs.disableIssuingIdentityCertificate',
+        defaultMessage: 'Disable issuing identity certificate',
+    },
+    disableIssuingIdentityCertificateDescription: {
+        id: 'linkedHubs.disableIssuingIdentityCertificateDescription',
+        defaultMessage:
+            'By selecting this option, a unique identity certificate will not be issued for each device, which is typically used for device identification and authentication purposes.',
+    },
+    certificateAuthorityAddress: {
+        id: 'linkedHubs.certificateAuthorityAddress',
+        defaultMessage: 'Certificate authority address',
+    },
+    certificateAuthorityAddressDescription: {
+        id: 'linkedHubs.certificateAuthorityAddressDescription',
+        defaultMessage:
+            'Endpoint of the plgd Certificate Authority that needs to be accessible from this service to request identity certificates for each provisioned device.',
+    },
+    advancedConfiguration: {
+        id: 'linkedHubs.advancedConfiguration',
+        defaultMessage: 'advanced configuration',
+    },
+    clientCertificate: {
+        id: 'linkedHubs.clientCertificate',
+        defaultMessage: 'Client certificate',
+    },
+    clientCertificatePrivateKey: {
+        id: 'linkedHubs.clientCertificatePrivateKey',
+        defaultMessage: 'Client certificate private key',
+    },
+    keepAliveTime: {
+        id: 'linkedHubs.keepAliveTime',
+        defaultMessage: 'Keep alive time',
+    },
+    keepAliveTimeout: {
+        id: 'linkedHubs.keepAliveTimeout',
+        defaultMessage: 'Keep alive timeout',
+    },
 })

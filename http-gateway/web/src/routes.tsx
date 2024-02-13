@@ -42,6 +42,7 @@ const ProvisioningRecordsDetailPage = lazy(() => import('@/containers/DeviceProv
 const EnrollmentGroupsListPage = lazy(() => import('./containers/DeviceProvisioning/EnrollmentGroups/ListPage'))
 const LinkedHubsListPage = lazy(() => import('./containers/DeviceProvisioning/LinkedHubs'))
 const LinkedHubsDetailPage = lazy(() => import('./containers/DeviceProvisioning/LinkedHubs/DetailPage'))
+const LinkNewHubPage = lazy(() => import('./containers/DeviceProvisioning/LinkedHubs/LinkNewHubPage'))
 const CertificatesListPage = lazy(() => import('./containers/Certificates'))
 const CertificatesDetailPage = lazy(() => import('@/containers/Certificates/DetailPage'))
 
@@ -174,6 +175,7 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                             '/device-provisioning/linked-hubs/:hubId/certificate-authority/:section',
                             '/device-provisioning/linked-hubs/:hubId/authorization',
                             '/device-provisioning/linked-hubs/:hubId/authorization/:section',
+                            '/device-provisioning/linked-hubs/link-new-hub',
                         ],
                     },
                 ],
@@ -478,6 +480,15 @@ export const Routes = () => {
                     </Suspense>
                 }
                 path='/device-provisioning/linked-hubs/:hubId/authorization/:section'
+            />
+
+            <Route
+                element={
+                    <Suspense fallback={<Loader />}>
+                        <LinkNewHubPage />
+                    </Suspense>
+                }
+                path='/device-provisioning/linked-hubs/link-new-hub'
             />
 
             <Route

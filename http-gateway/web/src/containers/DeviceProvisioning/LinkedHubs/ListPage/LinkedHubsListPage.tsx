@@ -4,8 +4,9 @@ import { useNavigate } from 'react-router-dom'
 
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import TableActionButton from '@shared-ui//components/Organisms/TableActionButton'
-import { DeleteModal, IconArrowDetail, IconTrash } from '@shared-ui/components/Atomic'
+import { DeleteModal, IconArrowDetail, IconPlus, IconTrash } from '@shared-ui/components/Atomic'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
+import Button from '@shared-ui/components/Atomic/Button'
 
 import { messages as dpsT } from '../../DeviceProvisioning.i18n'
 import { messages as t } from '../LinkedHubs.i18n'
@@ -15,15 +16,12 @@ import { messages as g } from '@/containers/Global.i18n'
 import notificationId from '@/notificationId'
 import TableList from '@/containers/Common/TableList/TableList'
 import { deleteLinkedHubsApi } from '@/containers/DeviceProvisioning/rest'
-import ListHeader from '@/containers/DeviceProvisioning/LinkedHubs/ListHeader'
 
 const LinkedHubsListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
 
     const { data, loading, error, refresh } = useLinkedHubsList()
     const navigate = useNavigate()
-
-    console.log(data)
 
     const [selected, setSelected] = useState<string[]>([])
     const [unselectRowsToken, setUnselectRowsToken] = useState(1)
@@ -90,7 +88,7 @@ const LinkedHubsListPage: FC<any> = () => {
                                     icon: <IconTrash />,
                                 },
                                 {
-                                    onClick: () => navigate(`/device-provisioning/provisioning-records/${id}`),
+                                    onClick: () => navigate(`/device-provisioning/linked-hubs/${id}`),
                                     label: _(g.view),
                                     icon: <IconArrowDetail />,
                                 },
@@ -131,7 +129,16 @@ const LinkedHubsListPage: FC<any> = () => {
     )
 
     return (
-        <PageLayout breadcrumbs={breadcrumbs} header={<ListHeader />} loading={loading || deleting} title={_(t.linkedHubs)}>
+        <PageLayout
+            breadcrumbs={breadcrumbs}
+            header={
+                <Button icon={<IconPlus />} onClick={() => navigate(`/device-provisioning/linked-hubs/link-new-hub`)} variant='primary'>
+                    {_(t.linkedHub)}
+                </Button>
+            }
+            loading={loading || deleting}
+            title={_(t.linkedHubs)}
+        >
             <TableList
                 columns={columns}
                 data={data}
