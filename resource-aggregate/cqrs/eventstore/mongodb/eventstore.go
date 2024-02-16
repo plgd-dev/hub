@@ -168,7 +168,7 @@ func newEventStoreWithClient(ctx context.Context, store *pkgMongo.Store, dbPrefi
 	}
 
 	if logDebugfFunc == nil {
-		logDebugfFunc = func(fmt string, args ...interface{}) {
+		logDebugfFunc = func(string, ...interface{}) {
 			// no-op if not set
 		}
 	}

@@ -197,7 +197,7 @@ func (s *ServiceHeartbeat) updateServiceMetadata(aggregate *Aggregate, r UpdateS
 func (s *ServiceHeartbeat) processRequest(r UpdateServiceMetadataReqResp) time.Time {
 	resID := commands.NewResourceID(s.config.HubID, commands.ServicesResourceHref)
 	var snapshot *events.ServiceMetadataSnapshotTakenForCommand
-	newServicesMetadataFactoryModelFunc := func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
+	newServicesMetadataFactoryModelFunc := func(context.Context) (cqrsAggregate.AggregateModel, error) {
 		snapshot = events.NewServiceMetadataSnapshotTakenForCommand(ServiceUserID, ServiceUserID, s.config.HubID)
 		return snapshot, nil
 	}
@@ -372,7 +372,7 @@ func (s *ServiceHeartbeat) updateDeviceToExpired(ctx context.Context, serviceID,
 	resID := commands.NewResourceID(deviceID, commands.StatusHref)
 
 	var latestSnapshot *events.DeviceMetadataSnapshotTakenForCommand
-	deviceMetadataFactoryModel := func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
+	deviceMetadataFactoryModel := func(context.Context) (cqrsAggregate.AggregateModel, error) {
 		latestSnapshot = events.NewDeviceMetadataSnapshotTakenForCommand(userID, "", s.config.HubID)
 		return latestSnapshot, nil
 	}

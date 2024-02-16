@@ -34,7 +34,7 @@ func TestRepublishAfterRefresh(t *testing.T) {
 	tearDown := service.SetUpServices(ctx, t, services)
 	defer tearDown()
 
-	makeHandler := func(s *coapgwTestService.Service, opts ...coapgwTestService.Option) coapgwTestService.ServiceHandler {
+	makeHandler := func(*coapgwTestService.Service, ...coapgwTestService.Option) coapgwTestService.ServiceHandler {
 		return iotService.NewCoapHandlerWithCounter(int64(atLifetime.Seconds()))
 	}
 	validateHandler := func(handler coapgwTestService.ServiceHandler) {

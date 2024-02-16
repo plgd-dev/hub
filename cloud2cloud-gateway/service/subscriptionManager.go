@@ -108,7 +108,7 @@ func (s *SubscriptionManager) Load(id string) (store.Subscription, bool) {
 }
 
 func cancelSubscription(ctx context.Context, emitEvent emitEventFunc, sub store.Subscription) error {
-	_, err := emitEvent(ctx, events.EventType_SubscriptionCanceled, sub, func(ctx context.Context) (uint64, error) {
+	_, err := emitEvent(ctx, events.EventType_SubscriptionCanceled, sub, func(_ context.Context) (uint64, error) {
 		return sub.SequenceNumber, nil
 	}, nil)
 	return err

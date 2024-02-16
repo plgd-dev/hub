@@ -70,7 +70,7 @@ func (r RequestHandler) updateDeviceMetadata(ctx context.Context, request *comma
 	resID := commands.NewResourceID(request.GetDeviceId(), commands.StatusHref)
 
 	var latestSnapshot *events.DeviceMetadataSnapshotTakenForCommand
-	deviceMetadataFactoryModel := func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
+	deviceMetadataFactoryModel := func(context.Context) (cqrsAggregate.AggregateModel, error) {
 		latestSnapshot = events.NewDeviceMetadataSnapshotTakenForCommand(userID, owner, r.config.HubID)
 		return latestSnapshot, nil
 	}

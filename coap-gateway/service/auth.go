@@ -20,7 +20,7 @@ import (
 type Interceptor = func(ctx context.Context, code codes.Code, path string) (context.Context, error)
 
 func newAuthInterceptor() Interceptor {
-	return func(ctx context.Context, code codes.Code, path string) (context.Context, error) {
+	return func(ctx context.Context, _ codes.Code, path string) (context.Context, error) {
 		switch path {
 		case uri.RefreshToken, uri.SignUp, uri.SignIn, plgdtime.ResourceURI:
 			return ctx, nil
@@ -130,7 +130,7 @@ func MakeGetConfigForClient(tlsCfg *tls.Config, identityPropertiesRequired bool)
 		MinVersion:     tlsCfg.MinVersion,
 		ClientAuth:     tlsCfg.ClientAuth,
 		ClientCAs:      tlsCfg.ClientCAs,
-		VerifyPeerCertificate: func(rawCerts [][]byte, chains [][]*x509.Certificate) error {
+		VerifyPeerCertificate: func(_ [][]byte, chains [][]*x509.Certificate) error {
 			var errors *multierror.Error
 			for _, chain := range chains {
 				err := verifyChain(chain, tlsCfg.ClientCAs, identityPropertiesRequired)

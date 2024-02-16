@@ -467,7 +467,7 @@ func TestParseToken(t *testing.T) {
 
 func checkClaims(t *testing.T, tokenClaims jwt.Claims, expError error) {
 	token := config.CreateJwtToken(t, tokenClaims)
-	_, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
+	_, err := jwt.Parse(token, func(*jwt.Token) (interface{}, error) {
 		return jwt.VerificationKeySet{
 			Keys: []jwt.VerificationKey{
 				[]uint8(config.JWTSecret),

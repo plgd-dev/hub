@@ -115,7 +115,7 @@ func (c *DevicesSubscription) Add(ctx context.Context, deviceID string, linkedAc
 			return retrieveResource(ctx, c.tracerProvider, c.raClient, val, linkedAccount, linkedCloud)
 		},
 		onError: func(err error) {
-			log.Errorf("device %v subscription(ResourceUpdatePending, ResourceRetrievePending) was closed", deviceID)
+			log.Errorf("device %v subscription(ResourceUpdatePending, ResourceRetrievePending) was closed: %w", deviceID, err)
 			c.data.Delete(getKey(linkedAccount.UserID, deviceID))
 		},
 	})

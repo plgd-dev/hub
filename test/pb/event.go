@@ -180,10 +180,10 @@ var cleanupEventFn = map[string]func(ev *pb.Event){
 	getTypeName(&pb.Event_ResourceChanged{}): func(ev *pb.Event) {
 		CleanUpResourceChanged(ev.GetResourceChanged(), false)
 	},
-	getTypeName(&pb.Event_OperationProcessed_{}): func(ev *pb.Event) {
+	getTypeName(&pb.Event_OperationProcessed_{}): func(*pb.Event) {
 		// nothing to do
 	},
-	getTypeName(&pb.Event_SubscriptionCanceled_{}): func(ev *pb.Event) {
+	getTypeName(&pb.Event_SubscriptionCanceled_{}): func(*pb.Event) {
 		// nothing to do
 	},
 	getTypeName(&pb.Event_ResourceUpdatePending{}): func(ev *pb.Event) {
@@ -283,34 +283,34 @@ var compareEventFn = map[string]func(t *testing.T, e, g *pb.Event, cmpInterface 
 	getTypeName(&pb.Event_ResourceChanged{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) {
 		CmpResourceChanged(t, e.GetResourceChanged(), g.GetResourceChanged(), cmpInterface)
 	},
-	getTypeName(&pb.Event_ResourceUpdatePending{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) { //nolint:unparam
+	getTypeName(&pb.Event_ResourceUpdatePending{}): func(t *testing.T, e, g *pb.Event, _ string) {
 		CmpResourceUpdatePending(t, e.GetResourceUpdatePending(), g.GetResourceUpdatePending())
 	},
-	getTypeName(&pb.Event_ResourceUpdated{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) { //nolint:unparam
+	getTypeName(&pb.Event_ResourceUpdated{}): func(t *testing.T, e, g *pb.Event, _ string) {
 		CmpResourceUpdated(t, e.GetResourceUpdated(), g.GetResourceUpdated())
 	},
-	getTypeName(&pb.Event_ResourceRetrievePending{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) { //nolint:unparam
+	getTypeName(&pb.Event_ResourceRetrievePending{}): func(t *testing.T, e, g *pb.Event, _ string) {
 		CmpResourceRetrievePending(t, e.GetResourceRetrievePending(), g.GetResourceRetrievePending())
 	},
-	getTypeName(&pb.Event_ResourceRetrieved{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) { //nolint:unparam
+	getTypeName(&pb.Event_ResourceRetrieved{}): func(t *testing.T, e, g *pb.Event, _ string) {
 		CmpResourceRetrieved(t, e.GetResourceRetrieved(), g.GetResourceRetrieved())
 	},
-	getTypeName(&pb.Event_ResourceDeletePending{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) { //nolint:unparam
+	getTypeName(&pb.Event_ResourceDeletePending{}): func(t *testing.T, e, g *pb.Event, _ string) {
 		CmpResourceDeletePending(t, e.GetResourceDeletePending(), g.GetResourceDeletePending())
 	},
-	getTypeName(&pb.Event_ResourceDeleted{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) { //nolint:unparam
+	getTypeName(&pb.Event_ResourceDeleted{}): func(t *testing.T, e, g *pb.Event, _ string) {
 		CmpResourceDeleted(t, e.GetResourceDeleted(), g.GetResourceDeleted())
 	},
-	getTypeName(&pb.Event_ResourceCreatePending{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) { //nolint:unparam
+	getTypeName(&pb.Event_ResourceCreatePending{}): func(t *testing.T, e, g *pb.Event, _ string) {
 		CmpResourceCreatePending(t, e.GetResourceCreatePending(), g.GetResourceCreatePending())
 	},
-	getTypeName(&pb.Event_ResourceCreated{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) { //nolint:unparam
+	getTypeName(&pb.Event_ResourceCreated{}): func(t *testing.T, e, g *pb.Event, _ string) {
 		CmpResourceCreated(t, e.GetResourceCreated(), g.GetResourceCreated())
 	},
-	getTypeName(&pb.Event_DeviceMetadataUpdatePending{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) { //nolint:unparam
+	getTypeName(&pb.Event_DeviceMetadataUpdatePending{}): func(t *testing.T, e, g *pb.Event, _ string) {
 		CmpDeviceMetadataUpdatePending(t, e.GetDeviceMetadataUpdatePending(), g.GetDeviceMetadataUpdatePending())
 	},
-	getTypeName(&pb.Event_DeviceMetadataUpdated{}): func(t *testing.T, e, g *pb.Event, cmpInterface string) { //nolint:unparam
+	getTypeName(&pb.Event_DeviceMetadataUpdated{}): func(t *testing.T, e, g *pb.Event, _ string) {
 		CmpDeviceMetadataUpdated(t, e.GetDeviceMetadataUpdated(), g.GetDeviceMetadataUpdated())
 	},
 }
@@ -319,7 +319,7 @@ func CmpEvent(t *testing.T, expected, got *pb.Event, cmpInterface string) {
 	require.Equal(t, GetEventType(expected), GetEventType(got))
 	cmp, ok := compareEventFn[GetEventType(expected)]
 	if !ok {
-		cmp = func(t *testing.T, e, g *pb.Event, cmpInterface string) {
+		cmp = func(t *testing.T, e, g *pb.Event, _ string) {
 			CleanUpEvent(t, e)
 			CleanUpEvent(t, g)
 			test.CheckProtobufs(t, e, g, test.RequireToCheckFunc(require.Equal))

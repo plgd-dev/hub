@@ -24,7 +24,7 @@ type Projection struct {
 
 // NewProjection creates new resource projection.
 func NewProjection(ctx context.Context, name string, store eventstore.EventStore, subscriber eventbus.Subscriber, factoryModel eventstore.FactoryModelFunc) (*Projection, error) {
-	cqrsProjection, err := newProjection(ctx, store, name, subscriber, factoryModel, func(template string, args ...interface{}) {})
+	cqrsProjection, err := newProjection(ctx, store, name, subscriber, factoryModel, func(string, ...interface{}) {})
 	if err != nil {
 		return nil, fmt.Errorf("cannot create Projection: %w", err)
 	}
@@ -52,7 +52,7 @@ func (p *Projection) Register(ctx context.Context, deviceID string) (created boo
 	}, func() interface{} {
 		return kitSync.NewRefCounter(&deviceProjection{
 			deviceID: deviceID,
-		}, func(ctx context.Context, data interface{}) error {
+		}, func(_ context.Context, data interface{}) error {
 			d := data.(*deviceProjection)
 			d.released = true
 			return nil
@@ -151,7 +151,7 @@ func (p *Projection) ForceUpdate(ctx context.Context, resourceID *commands.Resou
 func (p *Projection) release(v *kitSync.RefCounter) error {
 	data := v.Data().(*deviceProjection)
 	deviceID := data.deviceID
-	p.refCountMap.ReplaceWithFunc(deviceID, func(oldValue interface{}, oldLoaded bool) (newValue interface{}, doDelete bool) {
+	p.refCountMap.ReplaceWithFunc(deviceID, func(oldValue interface{}, _ bool) (newValue interface{}, doDelete bool) {
 		o := oldValue.(*kitSync.RefCounter)
 		d := o.Data().(*deviceProjection)
 		if err := o.Release(context.Background()); err != nil {

@@ -252,7 +252,6 @@ func (c *OwnerCache) Update(ctx context.Context) (added []string, removed []stri
 		added, removed, err = s.syncDevicesLocked(ctx, owner, c)
 		return err
 	})
-
 	if err != nil {
 		return nil, nil, err
 	}

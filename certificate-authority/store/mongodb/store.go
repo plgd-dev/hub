@@ -49,9 +49,7 @@ func New(ctx context.Context, cfg *Config, fileWatcher *fsnotify.Watcher, logger
 		certManager.Close()
 		return nil, err
 	}
-	s.SetOnClear(func(c context.Context) error {
-		return s.clearDatabases(ctx)
-	})
+	s.SetOnClear(s.clearDatabases)
 	s.AddCloseFunc(certManager.Close)
 	return &s, nil
 }

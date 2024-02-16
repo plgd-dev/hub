@@ -41,7 +41,7 @@ func TestOffboard(t *testing.T) {
 	defer tearDown()
 
 	ch := iotService.NewCoapHandlerWithCounter(0)
-	makeHandler := func(s *coapgwTestService.Service, opts ...coapgwTestService.Option) coapgwTestService.ServiceHandler {
+	makeHandler := func(*coapgwTestService.Service, ...coapgwTestService.Option) coapgwTestService.ServiceHandler {
 		return ch
 	}
 
@@ -195,7 +195,7 @@ func TestOffboardWithoutSignIn(t *testing.T) {
 
 	sh := NewSwitchableHandler(-1)
 	sh.failSignIn.Store(true)
-	makeHandler := func(s *coapgwTestService.Service, opts ...coapgwTestService.Option) coapgwTestService.ServiceHandler {
+	makeHandler := func(*coapgwTestService.Service, ...coapgwTestService.Option) coapgwTestService.ServiceHandler {
 		return sh
 	}
 
@@ -259,7 +259,7 @@ func TestOffboardWithSignIn(t *testing.T) {
 	sh := NewSwitchableHandler(-1)
 	sh.failSignIn.Store(true)
 	sh.SetAccessToken(strings.Repeat("this-access-token-is-so-long-that-its-size-is-longer-than-the-allowed-request-header-size", 5))
-	makeHandler := func(s *coapgwTestService.Service, opts ...coapgwTestService.Option) coapgwTestService.ServiceHandler {
+	makeHandler := func(*coapgwTestService.Service, ...coapgwTestService.Option) coapgwTestService.ServiceHandler {
 		return sh
 	}
 
@@ -324,7 +324,7 @@ func TestOffboardWithSignInByRefreshToken(t *testing.T) {
 	sh := NewSwitchableHandler(20)
 	sh.failSignIn.Store(true)
 	sh.SetAccessToken(strings.Repeat("this-access-token-is-so-long-that-its-size-is-longer-than-the-allowed-request-header-size", 5))
-	makeHandler := func(s *coapgwTestService.Service, opts ...coapgwTestService.Option) coapgwTestService.ServiceHandler {
+	makeHandler := func(*coapgwTestService.Service, ...coapgwTestService.Option) coapgwTestService.ServiceHandler {
 		return sh
 	}
 
@@ -344,7 +344,7 @@ func TestOffboardWithSignInByRefreshToken(t *testing.T) {
 		assert.Equal(t, 1, signOffCount)
 	}
 
-	coapShutdown := coapgwTest.SetUp(t, makeHandler, func(handler coapgwTestService.ServiceHandler) {})
+	coapShutdown := coapgwTest.SetUp(t, makeHandler, func(coapgwTestService.ServiceHandler) {})
 
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
@@ -400,7 +400,7 @@ func TestOffboardWithRepeat(t *testing.T) {
 
 	sh := NewSwitchableHandler(-1)
 	sh.blockSignOff()
-	makeHandler := func(s *coapgwTestService.Service, opts ...coapgwTestService.Option) coapgwTestService.ServiceHandler {
+	makeHandler := func(*coapgwTestService.Service, ...coapgwTestService.Option) coapgwTestService.ServiceHandler {
 		return sh
 	}
 
@@ -467,7 +467,7 @@ func TestOffboardInterrupt(t *testing.T) {
 	// off-boarding will try login by refresh token, but block the sending of response
 	blockRefreshCh := sh.blockRefresh()
 
-	makeHandler := func(s *coapgwTestService.Service, opts ...coapgwTestService.Option) coapgwTestService.ServiceHandler {
+	makeHandler := func(*coapgwTestService.Service, ...coapgwTestService.Option) coapgwTestService.ServiceHandler {
 		return sh
 	}
 

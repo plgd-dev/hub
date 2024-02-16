@@ -51,7 +51,7 @@ func TestIsResourceObservableWithInterface(t *testing.T) {
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	handlerFuture, setHandler := future.New()
-	makeHandler := func(service *coapgwTestService.Service, opts ...coapgwTestService.Option) coapgwTestService.ServiceHandler {
+	makeHandler := func(_ *coapgwTestService.Service, opts ...coapgwTestService.Option) coapgwTestService.ServiceHandler {
 		cfg := coapgwTestService.ServiceHandlerConfig{}
 		for _, o := range opts {
 			o.Apply(&cfg)

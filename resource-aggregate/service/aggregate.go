@@ -22,25 +22,25 @@ type Aggregate struct {
 }
 
 func NewResourceStateFactoryModel(userID, owner, hubID string) func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
-	return func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
+	return func(context.Context) (cqrsAggregate.AggregateModel, error) {
 		return events.NewResourceStateSnapshotTakenForCommand(userID, owner, hubID), nil
 	}
 }
 
 func NewResourceLinksFactoryModel(userID, owner, hubID string) func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
-	return func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
+	return func(context.Context) (cqrsAggregate.AggregateModel, error) {
 		return events.NewResourceLinksSnapshotTakenForCommand(userID, owner, hubID), nil
 	}
 }
 
 func NewDeviceMetadataFactoryModel(userID, owner, hubID string) func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
-	return func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
+	return func(context.Context) (cqrsAggregate.AggregateModel, error) {
 		return events.NewDeviceMetadataSnapshotTakenForCommand(userID, owner, hubID), nil
 	}
 }
 
 func NewServicesMetadataFactoryModel(userID, owner, hubID string) func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
-	return func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
+	return func(context.Context) (cqrsAggregate.AggregateModel, error) {
 		return events.NewServiceMetadataSnapshotTakenForCommand(userID, owner, hubID), nil
 	}
 }
@@ -55,7 +55,7 @@ func NewAggregate(resourceID *commands.ResourceId, store eventstore.EventStore, 
 		retry,
 		store,
 		factoryModel,
-		func(template string, args ...interface{}) {
+		func(string, ...interface{}) {
 			// TODO: add debug log
 		})
 	if err != nil {

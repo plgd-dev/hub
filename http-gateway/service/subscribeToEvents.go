@@ -28,7 +28,7 @@ func modifyResourceIdFilter(data []byte) []byte {
 	resourceIdFilter := gjson.Get(string(data), "createSubscription.resourceIdFilter")
 	newData := string(data)
 	// append resourceIdFilter to httpResourceIdFilter
-	resourceIdFilter.ForEach(func(key, value gjson.Result) bool {
+	resourceIdFilter.ForEach(func(_, value gjson.Result) bool {
 		newData, _ = sjson.Set(newData, "createSubscription.httpResourceIdFilter.-1", value.Str)
 		return true
 	})
