@@ -195,7 +195,7 @@ func NewRequestHandler(
 }
 
 func NewEventStoreModelFactory() func(context.Context, string, string) (eventstore.Model, error) {
-	return func(ctx context.Context, deviceID, resourceID string) (eventstore.Model, error) {
+	return func(_ context.Context, deviceID, resourceID string) (eventstore.Model, error) {
 		switch resourceID {
 		case commands.MakeLinksResourceUUID(deviceID).String():
 			return NewResourceLinksProjection(deviceID), nil

@@ -73,7 +73,7 @@ func generateIdentityCert(deviceID string, signerCert []*x509.Certificate, signe
 }
 
 func makeVerifyCertificate(signerCert []*x509.Certificate) func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
-	return func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
+	return func(rawCerts [][]byte, _ [][]*x509.Certificate) error {
 		if len(rawCerts) == 0 {
 			return fmt.Errorf("empty certificates chain")
 		}

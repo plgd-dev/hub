@@ -46,7 +46,7 @@ func (c DeniedClaims) Validate() error {
 }
 
 func MakeClaimsFunc(methods map[string][]AuthArgs) ClaimsFunc {
-	return func(ctx context.Context, method, uri string) jwt.ClaimsValidator {
+	return func(_ context.Context, method, uri string) jwt.ClaimsValidator {
 		args, ok := methods[method]
 		if !ok {
 			return &DeniedClaims{Err: fmt.Errorf("inaccessible method: %v", method)}

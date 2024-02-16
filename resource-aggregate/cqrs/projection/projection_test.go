@@ -185,7 +185,7 @@ func TestResourceProjectionTestLoadParallelModels(t *testing.T) {
 		"test",
 		eventstore,
 		nil,
-		func(ctx context.Context, groupID, aggregateID string) (cqrsEventStore.Model, error) {
+		func(_ context.Context, _, _ string) (cqrsEventStore.Model, error) {
 			return events.NewResourceLinksSnapshotTaken(), nil
 		},
 	)
@@ -201,7 +201,7 @@ func TestResourceProjectionTestLoadParallelModels(t *testing.T) {
 		go func(v int) {
 			defer wg.Done()
 			n := time.Now()
-			p.cqrsProjection.Models(nil, func(m cqrsEventStore.Model) (wantNext bool) { return true })
+			p.cqrsProjection.Models(nil, func(cqrsEventStore.Model) (wantNext bool) { return true })
 			diff := -1 * time.Until(n)
 			t.Logf("%v models time %v\n", v, diff)
 		}(i)
@@ -248,7 +248,7 @@ func TestResourceProjection_Register(t *testing.T) {
 		"test",
 		eventstore,
 		nil,
-		func(ctx context.Context, groupID, aggregateID string) (cqrsEventStore.Model, error) {
+		func(_ context.Context, _, _ string) (cqrsEventStore.Model, error) {
 			return events.NewResourceLinksSnapshotTaken(), nil
 		},
 	)
@@ -315,7 +315,7 @@ func TestResourceProjection_Unregister(t *testing.T) {
 		"test",
 		eventstore,
 		nil,
-		func(ctx context.Context, groupID, aggregateID string) (cqrsEventStore.Model, error) {
+		func(_ context.Context, _, _ string) (cqrsEventStore.Model, error) {
 			return events.NewResourceLinksSnapshotTaken(), nil
 		},
 	)
@@ -454,7 +454,7 @@ func TestResourceLinksProjection_Models(t *testing.T) {
 		"test",
 		eventstore,
 		nil,
-		func(ctx context.Context, groupID, aggregateID string) (cqrsEventStore.Model, error) {
+		func(_ context.Context, _, _ string) (cqrsEventStore.Model, error) {
 			return events.NewResourceLinksSnapshotTaken(), nil
 		},
 	)
@@ -722,7 +722,7 @@ func TestResourceStateProjection_Models(t *testing.T) {
 		"test",
 		eventstore,
 		nil,
-		func(ctx context.Context, groupID, aggregateID string) (cqrsEventStore.Model, error) {
+		func(_ context.Context, _, _ string) (cqrsEventStore.Model, error) {
 			return events.NewResourceStateSnapshotTaken(), nil
 		},
 	)
@@ -785,7 +785,7 @@ func TestResourceProjection_ForceUpdate(t *testing.T) {
 		"test",
 		eventstore,
 		nil,
-		func(ctx context.Context, groupID, aggregateID string) (cqrsEventStore.Model, error) {
+		func(_ context.Context, _, _ string) (cqrsEventStore.Model, error) {
 			return events.NewResourceStateSnapshotTaken(), nil
 		},
 	)

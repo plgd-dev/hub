@@ -164,7 +164,7 @@ func NewService(ctx context.Context, config Config, fileWatcher *fsnotify.Watche
 	serviceHeartbeat := NewServiceHeartbeat(config, eventStore, publisher, logger)
 	grpcServer.AddCloseFunc(serviceHeartbeat.Close)
 
-	requestHandler := NewRequestHandler(config, eventStore, publisher, func(getCtx context.Context, owner string, deviceIDs []string) ([]string, error) {
+	requestHandler := NewRequestHandler(config, eventStore, publisher, func(getCtx context.Context, _ string, deviceIDs []string) ([]string, error) {
 		getAllDevices := len(deviceIDs) == 0
 		if !getAllDevices {
 			return ownerCache.GetSelectedDevices(getCtx, deviceIDs)

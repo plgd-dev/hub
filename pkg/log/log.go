@@ -293,7 +293,7 @@ var getLogFuncMap = map[zapcore.Level]func(l *WrapSuggarLogger) func(args ...int
 	FatalLevel: func(l *WrapSuggarLogger) func(args ...interface{}) { return l.Fatal },
 }
 
-var emptyLogFunc = func(args ...interface{}) {
+var emptyLogFunc = func(...interface{}) {
 	// do nothing
 }
 

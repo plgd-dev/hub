@@ -22,8 +22,8 @@ func NewStore(ctx context.Context, cfg pkgMongo.Config, tls *tls.Config, tracerP
 	if err != nil {
 		return nil, err
 	}
-	s.SetOnClear(func(c context.Context) error {
-		return s.DropCollection(ctx, subscriptionsCName)
+	s.SetOnClear(func(clearCtx context.Context) error {
+		return s.DropCollection(clearCtx, subscriptionsCName)
 	})
 	return &Store{s}, nil
 }

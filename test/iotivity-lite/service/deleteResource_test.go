@@ -143,7 +143,7 @@ func TestBatchDeleteResources(t *testing.T) {
 	}, func(unpublished map[int64]struct{}) bool {
 		return len(unpublished) == numSwitches
 	})
-	getHandler := func(s *coapgwTestService.Service, opts ...coapgwTestService.Option) coapgwTestService.ServiceHandler {
+	getHandler := func(*coapgwTestService.Service, ...coapgwTestService.Option) coapgwTestService.ServiceHandler {
 		return bh
 	}
 

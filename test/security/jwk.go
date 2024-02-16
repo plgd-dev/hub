@@ -70,7 +70,7 @@ func NewTestJwks(t *testing.T) JWKServer {
 	require.NoError(t, err)
 
 	mux := http.NewServeMux()
-	mux.HandleFunc(jwksUri, func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc(jwksUri, func(w http.ResponseWriter, _ *http.Request) {
 		if _, err := io.WriteString(w, string(jwks)); err != nil {
 			log.Debugf("failed to write jwks: %v", err)
 		}

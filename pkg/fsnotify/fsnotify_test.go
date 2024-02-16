@@ -25,7 +25,7 @@ func TestWatcher(t *testing.T) {
 	err = w.Add("/tmp")
 	require.NoError(t, err)
 
-	onEventHandler := func(event Event) {}
+	onEventHandler := func(Event) {}
 	w.AddOnEventHandler(&onEventHandler)
 	w.RemoveOnEventHandler(&onEventHandler)
 

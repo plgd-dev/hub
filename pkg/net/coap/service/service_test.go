@@ -60,8 +60,8 @@ func TestNew(t *testing.T) {
 				},
 				options: []func(*Options){
 					WithMessagePool(pool.New(uint32(1024), 1024)),
-					WithOnNewConnection(func(conn mux.Conn) {}),
-					WithOnInactivityConnection(func(conn mux.Conn) {}),
+					WithOnNewConnection(func(mux.Conn) {}),
+					WithOnInactivityConnection(func(mux.Conn) {}),
 					WithOverrideTLS(func(cfg *tls.Config) *tls.Config { return cfg }),
 				},
 			},
@@ -87,8 +87,8 @@ func TestNew(t *testing.T) {
 				},
 				options: []func(*Options){
 					WithMessagePool(pool.New(uint32(1024), 1024)),
-					WithOnNewConnection(func(conn mux.Conn) {}),
-					WithOnInactivityConnection(func(conn mux.Conn) {}),
+					WithOnNewConnection(func(mux.Conn) {}),
+					WithOnInactivityConnection(func(mux.Conn) {}),
 					WithOverrideTLS(func(cfg *tls.Config) *tls.Config { return cfg }),
 				},
 			},

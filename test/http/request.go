@@ -143,7 +143,7 @@ func DoHTTPRequest(t *testing.T, req *http.Request) *http.Response {
 }
 
 func ReadHTTPResponse(t *testing.T, w io.Reader, contentType string, data interface{}) {
-	readFrom := func(w io.Reader, v interface{}) error {
+	readFrom := func(_ io.Reader, _ interface{}) error {
 		return fmt.Errorf("not supported")
 	}
 	switch contentType {
