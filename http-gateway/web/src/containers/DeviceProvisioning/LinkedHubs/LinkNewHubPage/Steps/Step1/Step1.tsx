@@ -9,14 +9,16 @@ import FormInput from '@shared-ui/components/Atomic/FormInput'
 import { useForm } from '@shared-ui/common/hooks'
 import Button from '@shared-ui/components/Atomic/Button'
 import { FormContext } from '@shared-ui/common/context/FormContext'
+import { openTelemetry } from '@shared-ui/common/services/opentelemetry'
 
 import { messages as t } from '../../../LinkedHubs.i18n'
 import * as styles from './Step1.styles'
 import { messages as g } from '@/containers/Global.i18n'
 import { Props, Inputs } from './Step1.types'
+import { getAppWellKnownConfiguration } from '@/containers/App/AppRest'
 
 const Step1: FC<Props> = (props) => {
-    const { defaultFormData } = props
+    const { defaultFormData, presetData } = props
 
     const { formatMessage: _ } = useIntl()
     const { updateData, setFormError } = useContext(FormContext)
@@ -26,11 +28,36 @@ const Step1: FC<Props> = (props) => {
     const {
         formState: { errors },
         register,
+        getValues,
     } = useForm<Inputs>({ defaultFormData, updateData, setFormError, errorKey: 'step1' })
 
     const handleFormSubmit = useCallback((e: FormEvent) => {
         e.preventDefault()
         setLoading(true)
+
+        const values = getValues()
+
+        const fetchWellKnownConfig = async () => {
+            try {
+                const { data: wellKnown } = await openTelemetry.withTelemetry(
+                    () => getAppWellKnownConfiguration(values.endpoint),
+                    'get-endpoint-hub-configuration'
+                )
+
+                console.log(wellKnown)
+
+                presetData({
+                    certificateAuthorities: wellKnown.certificateAuthorities,
+                })
+
+                setLoading(false)
+            } catch (e) {
+                console.error(e)
+                setLoading(false)
+            }
+        }
+
+        fetchWellKnownConfig().then()
     }, [])
 
     return (

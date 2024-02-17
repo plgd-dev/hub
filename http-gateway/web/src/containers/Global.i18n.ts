@@ -205,4 +205,8 @@ export const messages = defineMessages({
         id: 'global.hide',
         defaultMessage: 'Hide',
     },
+    editorPlaceholder: {
+        id: 'global.editorPlaceholder',
+        defaultMessage: 'Write your code or Drag & Drop your file here',
+    },
 })

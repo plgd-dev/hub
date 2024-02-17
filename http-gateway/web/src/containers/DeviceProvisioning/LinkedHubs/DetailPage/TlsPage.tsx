@@ -350,7 +350,13 @@ const TlsPage: FC<any> = (props) => {
                 maxWidth={1100}
                 onClose={() => setModalData(defaultModalData)}
                 portalTarget={document.getElementById('modal-root')}
-                renderBody={<CodeEditor onChange={(v) => setModalData((p) => ({ ...p, value: v }))} value={modalData?.value || ''} />}
+                renderBody={
+                    <CodeEditor
+                        onChange={(v) => setModalData((p) => ({ ...p, value: v }))}
+                        placeholderText={_(g.editorPlaceholder)}
+                        value={modalData?.value || ''}
+                    />
+                }
                 show={modalData.title !== ''}
                 title={modalData?.title}
                 width='100%'

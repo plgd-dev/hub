@@ -1,4 +1,4 @@
-import React, { FC, lazy, useMemo, useState } from 'react'
+import React, { FC, lazy, useCallback, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
 
 import PageLayout from '@shared-ui/components/Atomic/PageLayout'
@@ -15,7 +15,7 @@ const Step2 = lazy(() => import('./Steps/Step2'))
 const LinkNewHubPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
 
-    const [activeItem, setActiveItem] = useState(1)
+    const [activeItem, setActiveItem] = useState(0)
     const [formData, setFormData] = useState()
     const [formError, setFormError] = useState({
         step1: false,
@@ -32,13 +32,18 @@ const LinkNewHubPage: FC<any> = () => {
         []
     )
 
+    const presetData = useCallback((data: any) => {
+        setFormData(data)
+        setActiveItem(1)
+    }, [])
+
     return (
         <PageLayout headerBorder={true} title={_(t.linkNewHub)} xPadding={false}>
             <div css={styles.formContent}>
                 <FormContext.Provider value={context}>
                     <ContentSwitch activeItem={activeItem} style={{ width: '100%' }}>
-                        <Step1 defaultFormData={{ hubName: '', endpoinit: '' }} />
-                        <Step2 defaultFormData={{ hubName: '', endpoinit: '' }} />
+                        <Step1 defaultFormData={{ hubName: '', endpoinit: '' }} presetData={presetData} />
+                        <Step2 defaultFormData={formData} />
                     </ContentSwitch>
                 </FormContext.Provider>
             </div>
