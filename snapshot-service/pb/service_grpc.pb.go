@@ -19,53 +19,69 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	SnapshotService_CreateSnapshot_FullMethodName             = "/snapshotservice.pb.SnapshotService/CreateSnapshot"
-	SnapshotService_GetSnapshots_FullMethodName               = "/snapshotservice.pb.SnapshotService/GetSnapshots"
-	SnapshotService_DeleteSnapshots_FullMethodName            = "/snapshotservice.pb.SnapshotService/DeleteSnapshots"
-	SnapshotService_ApplySnapshot_FullMethodName              = "/snapshotservice.pb.SnapshotService/ApplySnapshot"
-	SnapshotService_CreateSnapshotAssociation_FullMethodName  = "/snapshotservice.pb.SnapshotService/CreateSnapshotAssociation"
-	SnapshotService_DeleteSnapshotAssociations_FullMethodName = "/snapshotservice.pb.SnapshotService/DeleteSnapshotAssociations"
-	SnapshotService_GetSnapshotStatuses_FullMethodName        = "/snapshotservice.pb.SnapshotService/GetSnapshotStatuses"
-	SnapshotService_DeleteSnapshotStatuses_FullMethodName     = "/snapshotservice.pb.SnapshotService/DeleteSnapshotStatuses"
+	RuleEngine_CreateScene_FullMethodName                 = "/snapshotservice.pb.RuleEngine/CreateScene"
+	RuleEngine_GetScenes_FullMethodName                   = "/snapshotservice.pb.RuleEngine/GetScenes"
+	RuleEngine_DeleteScenes_FullMethodName                = "/snapshotservice.pb.RuleEngine/DeleteScenes"
+	RuleEngine_UpdateScene_FullMethodName                 = "/snapshotservice.pb.RuleEngine/UpdateScene"
+	RuleEngine_CreateRule_FullMethodName                  = "/snapshotservice.pb.RuleEngine/CreateRule"
+	RuleEngine_GetRules_FullMethodName                    = "/snapshotservice.pb.RuleEngine/GetRules"
+	RuleEngine_DeleteRules_FullMethodName                 = "/snapshotservice.pb.RuleEngine/DeleteRules"
+	RuleEngine_UpdateRule_FullMethodName                  = "/snapshotservice.pb.RuleEngine/UpdateRule"
+	RuleEngine_InvokeRule_FullMethodName                  = "/snapshotservice.pb.RuleEngine/InvokeRule"
+	RuleEngine_CreateRuleActionLink_FullMethodName        = "/snapshotservice.pb.RuleEngine/CreateRuleActionLink"
+	RuleEngine_GetRuleActionLinks_FullMethodName          = "/snapshotservice.pb.RuleEngine/GetRuleActionLinks"
+	RuleEngine_DeleteRuleActionLinks_FullMethodName       = "/snapshotservice.pb.RuleEngine/DeleteRuleActionLinks"
+	RuleEngine_UpdateRuleActionLink_FullMethodName        = "/snapshotservice.pb.RuleEngine/UpdateRuleActionLink"
+	RuleEngine_InvokeRuleActionLink_FullMethodName        = "/snapshotservice.pb.RuleEngine/InvokeRuleActionLink"
+	RuleEngine_GetAppliedRuleActionLinks_FullMethodName   = "/snapshotservice.pb.RuleEngine/GetAppliedRuleActionLinks"
+	RuleEngine_DeleteAppliedRuleActionLink_FullMethodName = "/snapshotservice.pb.RuleEngine/DeleteAppliedRuleActionLink"
 )
 
-// SnapshotServiceClient is the client API for SnapshotService service.
+// RuleEngineClient is the client API for RuleEngine service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type SnapshotServiceClient interface {
-	CreateSnapshot(ctx context.Context, in *CreateSnapshotRequest, opts ...grpc.CallOption) (*CreateSnapshotResponse, error)
-	GetSnapshots(ctx context.Context, in *GetSnapshotsRequest, opts ...grpc.CallOption) (SnapshotService_GetSnapshotsClient, error)
-	DeleteSnapshots(ctx context.Context, in *DeleteSnapshotsRequest, opts ...grpc.CallOption) (*DeleteSnapshotsResponse, error)
-	ApplySnapshot(ctx context.Context, in *ApplySnapshotRequest, opts ...grpc.CallOption) (*ApplySnapshotResponse, error)
-	CreateSnapshotAssociation(ctx context.Context, in *CreateSnapshotAssociationRequest, opts ...grpc.CallOption) (*CreateSnapshotAssociationResponse, error)
-	DeleteSnapshotAssociations(ctx context.Context, in *DeleteSnapshotAssociationsRequest, opts ...grpc.CallOption) (*DeleteSnapshotAssociationsResponse, error)
-	GetSnapshotStatuses(ctx context.Context, in *GetSnapshotStatusesRequest, opts ...grpc.CallOption) (SnapshotService_GetSnapshotStatusesClient, error)
-	DeleteSnapshotStatuses(ctx context.Context, in *DeleteSnapshotStatusesRequest, opts ...grpc.CallOption) (*DeleteSnapshotStatusesResponse, error)
+type RuleEngineClient interface {
+	CreateScene(ctx context.Context, in *Scene, opts ...grpc.CallOption) (*CreateSceneResponse, error)
+	GetScenes(ctx context.Context, in *GetScenesRequest, opts ...grpc.CallOption) (RuleEngine_GetScenesClient, error)
+	DeleteScenes(ctx context.Context, in *DeleteScenesRequest, opts ...grpc.CallOption) (*DeleteScenesResponse, error)
+	UpdateScene(ctx context.Context, in *Scene, opts ...grpc.CallOption) (*UpdateSceneResponse, error)
+	CreateRule(ctx context.Context, in *Rule, opts ...grpc.CallOption) (*CreateRuleResponse, error)
+	GetRules(ctx context.Context, in *GetRulesRequest, opts ...grpc.CallOption) (RuleEngine_GetRulesClient, error)
+	DeleteRules(ctx context.Context, in *DeleteRulesRequest, opts ...grpc.CallOption) (*DeleteRulesResponse, error)
+	UpdateRule(ctx context.Context, in *Rule, opts ...grpc.CallOption) (*UpdateRuleResponse, error)
+	InvokeRule(ctx context.Context, in *InvokeRuleRequest, opts ...grpc.CallOption) (*InvokeRuleResponse, error)
+	CreateRuleActionLink(ctx context.Context, in *RuleActionLink, opts ...grpc.CallOption) (*CreateRuleActionLinkResponse, error)
+	GetRuleActionLinks(ctx context.Context, in *GetRuleActionLinksRequest, opts ...grpc.CallOption) (RuleEngine_GetRuleActionLinksClient, error)
+	DeleteRuleActionLinks(ctx context.Context, in *DeleteRuleActionLinksRequest, opts ...grpc.CallOption) (*DeleteRuleActionLinksResponse, error)
+	UpdateRuleActionLink(ctx context.Context, in *RuleActionLink, opts ...grpc.CallOption) (*UpdateRuleActionLinkResponse, error)
+	InvokeRuleActionLink(ctx context.Context, in *InvokeRuleActionLinkRequest, opts ...grpc.CallOption) (*InvokeRuleActionLinkResponse, error)
+	GetAppliedRuleActionLinks(ctx context.Context, in *GetAppliedRuleActionLinksRequest, opts ...grpc.CallOption) (*AppliedRuleActionLink, error)
+	DeleteAppliedRuleActionLink(ctx context.Context, in *DeleteAppliedRuleActionLinkRequest, opts ...grpc.CallOption) (*DeleteAppliedRuleActionLinkResponse, error)
 }
 
-type snapshotServiceClient struct {
+type ruleEngineClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewSnapshotServiceClient(cc grpc.ClientConnInterface) SnapshotServiceClient {
-	return &snapshotServiceClient{cc}
+func NewRuleEngineClient(cc grpc.ClientConnInterface) RuleEngineClient {
+	return &ruleEngineClient{cc}
 }
 
-func (c *snapshotServiceClient) CreateSnapshot(ctx context.Context, in *CreateSnapshotRequest, opts ...grpc.CallOption) (*CreateSnapshotResponse, error) {
-	out := new(CreateSnapshotResponse)
-	err := c.cc.Invoke(ctx, SnapshotService_CreateSnapshot_FullMethodName, in, out, opts...)
+func (c *ruleEngineClient) CreateScene(ctx context.Context, in *Scene, opts ...grpc.CallOption) (*CreateSceneResponse, error) {
+	out := new(CreateSceneResponse)
+	err := c.cc.Invoke(ctx, RuleEngine_CreateScene_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *snapshotServiceClient) GetSnapshots(ctx context.Context, in *GetSnapshotsRequest, opts ...grpc.CallOption) (SnapshotService_GetSnapshotsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &SnapshotService_ServiceDesc.Streams[0], SnapshotService_GetSnapshots_FullMethodName, opts...)
+func (c *ruleEngineClient) GetScenes(ctx context.Context, in *GetScenesRequest, opts ...grpc.CallOption) (RuleEngine_GetScenesClient, error) {
+	stream, err := c.cc.NewStream(ctx, &RuleEngine_ServiceDesc.Streams[0], RuleEngine_GetScenes_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &snapshotServiceGetSnapshotsClient{stream}
+	x := &ruleEngineGetScenesClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -75,65 +91,56 @@ func (c *snapshotServiceClient) GetSnapshots(ctx context.Context, in *GetSnapsho
 	return x, nil
 }
 
-type SnapshotService_GetSnapshotsClient interface {
-	Recv() (*Snapshot, error)
+type RuleEngine_GetScenesClient interface {
+	Recv() (*Scene, error)
 	grpc.ClientStream
 }
 
-type snapshotServiceGetSnapshotsClient struct {
+type ruleEngineGetScenesClient struct {
 	grpc.ClientStream
 }
 
-func (x *snapshotServiceGetSnapshotsClient) Recv() (*Snapshot, error) {
-	m := new(Snapshot)
+func (x *ruleEngineGetScenesClient) Recv() (*Scene, error) {
+	m := new(Scene)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
 	return m, nil
 }
 
-func (c *snapshotServiceClient) DeleteSnapshots(ctx context.Context, in *DeleteSnapshotsRequest, opts ...grpc.CallOption) (*DeleteSnapshotsResponse, error) {
-	out := new(DeleteSnapshotsResponse)
-	err := c.cc.Invoke(ctx, SnapshotService_DeleteSnapshots_FullMethodName, in, out, opts...)
+func (c *ruleEngineClient) DeleteScenes(ctx context.Context, in *DeleteScenesRequest, opts ...grpc.CallOption) (*DeleteScenesResponse, error) {
+	out := new(DeleteScenesResponse)
+	err := c.cc.Invoke(ctx, RuleEngine_DeleteScenes_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *snapshotServiceClient) ApplySnapshot(ctx context.Context, in *ApplySnapshotRequest, opts ...grpc.CallOption) (*ApplySnapshotResponse, error) {
-	out := new(ApplySnapshotResponse)
-	err := c.cc.Invoke(ctx, SnapshotService_ApplySnapshot_FullMethodName, in, out, opts...)
+func (c *ruleEngineClient) UpdateScene(ctx context.Context, in *Scene, opts ...grpc.CallOption) (*UpdateSceneResponse, error) {
+	out := new(UpdateSceneResponse)
+	err := c.cc.Invoke(ctx, RuleEngine_UpdateScene_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *snapshotServiceClient) CreateSnapshotAssociation(ctx context.Context, in *CreateSnapshotAssociationRequest, opts ...grpc.CallOption) (*CreateSnapshotAssociationResponse, error) {
-	out := new(CreateSnapshotAssociationResponse)
-	err := c.cc.Invoke(ctx, SnapshotService_CreateSnapshotAssociation_FullMethodName, in, out, opts...)
+func (c *ruleEngineClient) CreateRule(ctx context.Context, in *Rule, opts ...grpc.CallOption) (*CreateRuleResponse, error) {
+	out := new(CreateRuleResponse)
+	err := c.cc.Invoke(ctx, RuleEngine_CreateRule_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *snapshotServiceClient) DeleteSnapshotAssociations(ctx context.Context, in *DeleteSnapshotAssociationsRequest, opts ...grpc.CallOption) (*DeleteSnapshotAssociationsResponse, error) {
-	out := new(DeleteSnapshotAssociationsResponse)
-	err := c.cc.Invoke(ctx, SnapshotService_DeleteSnapshotAssociations_FullMethodName, in, out, opts...)
+func (c *ruleEngineClient) GetRules(ctx context.Context, in *GetRulesRequest, opts ...grpc.CallOption) (RuleEngine_GetRulesClient, error) {
+	stream, err := c.cc.NewStream(ctx, &RuleEngine_ServiceDesc.Streams[1], RuleEngine_GetRules_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
-}
-
-func (c *snapshotServiceClient) GetSnapshotStatuses(ctx context.Context, in *GetSnapshotStatusesRequest, opts ...grpc.CallOption) (SnapshotService_GetSnapshotStatusesClient, error) {
-	stream, err := c.cc.NewStream(ctx, &SnapshotService_ServiceDesc.Streams[1], SnapshotService_GetSnapshotStatuses_FullMethodName, opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &snapshotServiceGetSnapshotStatusesClient{stream}
+	x := &ruleEngineGetRulesClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -143,279 +150,595 @@ func (c *snapshotServiceClient) GetSnapshotStatuses(ctx context.Context, in *Get
 	return x, nil
 }
 
-type SnapshotService_GetSnapshotStatusesClient interface {
-	Recv() (*SnapshotStatus, error)
+type RuleEngine_GetRulesClient interface {
+	Recv() (*Rule, error)
 	grpc.ClientStream
 }
 
-type snapshotServiceGetSnapshotStatusesClient struct {
+type ruleEngineGetRulesClient struct {
 	grpc.ClientStream
 }
 
-func (x *snapshotServiceGetSnapshotStatusesClient) Recv() (*SnapshotStatus, error) {
-	m := new(SnapshotStatus)
+func (x *ruleEngineGetRulesClient) Recv() (*Rule, error) {
+	m := new(Rule)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
 	return m, nil
 }
 
-func (c *snapshotServiceClient) DeleteSnapshotStatuses(ctx context.Context, in *DeleteSnapshotStatusesRequest, opts ...grpc.CallOption) (*DeleteSnapshotStatusesResponse, error) {
-	out := new(DeleteSnapshotStatusesResponse)
-	err := c.cc.Invoke(ctx, SnapshotService_DeleteSnapshotStatuses_FullMethodName, in, out, opts...)
+func (c *ruleEngineClient) DeleteRules(ctx context.Context, in *DeleteRulesRequest, opts ...grpc.CallOption) (*DeleteRulesResponse, error) {
+	out := new(DeleteRulesResponse)
+	err := c.cc.Invoke(ctx, RuleEngine_DeleteRules_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// SnapshotServiceServer is the server API for SnapshotService service.
-// All implementations must embed UnimplementedSnapshotServiceServer
+func (c *ruleEngineClient) UpdateRule(ctx context.Context, in *Rule, opts ...grpc.CallOption) (*UpdateRuleResponse, error) {
+	out := new(UpdateRuleResponse)
+	err := c.cc.Invoke(ctx, RuleEngine_UpdateRule_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ruleEngineClient) InvokeRule(ctx context.Context, in *InvokeRuleRequest, opts ...grpc.CallOption) (*InvokeRuleResponse, error) {
+	out := new(InvokeRuleResponse)
+	err := c.cc.Invoke(ctx, RuleEngine_InvokeRule_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ruleEngineClient) CreateRuleActionLink(ctx context.Context, in *RuleActionLink, opts ...grpc.CallOption) (*CreateRuleActionLinkResponse, error) {
+	out := new(CreateRuleActionLinkResponse)
+	err := c.cc.Invoke(ctx, RuleEngine_CreateRuleActionLink_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ruleEngineClient) GetRuleActionLinks(ctx context.Context, in *GetRuleActionLinksRequest, opts ...grpc.CallOption) (RuleEngine_GetRuleActionLinksClient, error) {
+	stream, err := c.cc.NewStream(ctx, &RuleEngine_ServiceDesc.Streams[2], RuleEngine_GetRuleActionLinks_FullMethodName, opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &ruleEngineGetRuleActionLinksClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type RuleEngine_GetRuleActionLinksClient interface {
+	Recv() (*RuleActionLink, error)
+	grpc.ClientStream
+}
+
+type ruleEngineGetRuleActionLinksClient struct {
+	grpc.ClientStream
+}
+
+func (x *ruleEngineGetRuleActionLinksClient) Recv() (*RuleActionLink, error) {
+	m := new(RuleActionLink)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *ruleEngineClient) DeleteRuleActionLinks(ctx context.Context, in *DeleteRuleActionLinksRequest, opts ...grpc.CallOption) (*DeleteRuleActionLinksResponse, error) {
+	out := new(DeleteRuleActionLinksResponse)
+	err := c.cc.Invoke(ctx, RuleEngine_DeleteRuleActionLinks_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ruleEngineClient) UpdateRuleActionLink(ctx context.Context, in *RuleActionLink, opts ...grpc.CallOption) (*UpdateRuleActionLinkResponse, error) {
+	out := new(UpdateRuleActionLinkResponse)
+	err := c.cc.Invoke(ctx, RuleEngine_UpdateRuleActionLink_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ruleEngineClient) InvokeRuleActionLink(ctx context.Context, in *InvokeRuleActionLinkRequest, opts ...grpc.CallOption) (*InvokeRuleActionLinkResponse, error) {
+	out := new(InvokeRuleActionLinkResponse)
+	err := c.cc.Invoke(ctx, RuleEngine_InvokeRuleActionLink_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ruleEngineClient) GetAppliedRuleActionLinks(ctx context.Context, in *GetAppliedRuleActionLinksRequest, opts ...grpc.CallOption) (*AppliedRuleActionLink, error) {
+	out := new(AppliedRuleActionLink)
+	err := c.cc.Invoke(ctx, RuleEngine_GetAppliedRuleActionLinks_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *ruleEngineClient) DeleteAppliedRuleActionLink(ctx context.Context, in *DeleteAppliedRuleActionLinkRequest, opts ...grpc.CallOption) (*DeleteAppliedRuleActionLinkResponse, error) {
+	out := new(DeleteAppliedRuleActionLinkResponse)
+	err := c.cc.Invoke(ctx, RuleEngine_DeleteAppliedRuleActionLink_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// RuleEngineServer is the server API for RuleEngine service.
+// All implementations must embed UnimplementedRuleEngineServer
 // for forward compatibility
-type SnapshotServiceServer interface {
-	CreateSnapshot(context.Context, *CreateSnapshotRequest) (*CreateSnapshotResponse, error)
-	GetSnapshots(*GetSnapshotsRequest, SnapshotService_GetSnapshotsServer) error
-	DeleteSnapshots(context.Context, *DeleteSnapshotsRequest) (*DeleteSnapshotsResponse, error)
-	ApplySnapshot(context.Context, *ApplySnapshotRequest) (*ApplySnapshotResponse, error)
-	CreateSnapshotAssociation(context.Context, *CreateSnapshotAssociationRequest) (*CreateSnapshotAssociationResponse, error)
-	DeleteSnapshotAssociations(context.Context, *DeleteSnapshotAssociationsRequest) (*DeleteSnapshotAssociationsResponse, error)
-	GetSnapshotStatuses(*GetSnapshotStatusesRequest, SnapshotService_GetSnapshotStatusesServer) error
-	DeleteSnapshotStatuses(context.Context, *DeleteSnapshotStatusesRequest) (*DeleteSnapshotStatusesResponse, error)
-	mustEmbedUnimplementedSnapshotServiceServer()
+type RuleEngineServer interface {
+	CreateScene(context.Context, *Scene) (*CreateSceneResponse, error)
+	GetScenes(*GetScenesRequest, RuleEngine_GetScenesServer) error
+	DeleteScenes(context.Context, *DeleteScenesRequest) (*DeleteScenesResponse, error)
+	UpdateScene(context.Context, *Scene) (*UpdateSceneResponse, error)
+	CreateRule(context.Context, *Rule) (*CreateRuleResponse, error)
+	GetRules(*GetRulesRequest, RuleEngine_GetRulesServer) error
+	DeleteRules(context.Context, *DeleteRulesRequest) (*DeleteRulesResponse, error)
+	UpdateRule(context.Context, *Rule) (*UpdateRuleResponse, error)
+	InvokeRule(context.Context, *InvokeRuleRequest) (*InvokeRuleResponse, error)
+	CreateRuleActionLink(context.Context, *RuleActionLink) (*CreateRuleActionLinkResponse, error)
+	GetRuleActionLinks(*GetRuleActionLinksRequest, RuleEngine_GetRuleActionLinksServer) error
+	DeleteRuleActionLinks(context.Context, *DeleteRuleActionLinksRequest) (*DeleteRuleActionLinksResponse, error)
+	UpdateRuleActionLink(context.Context, *RuleActionLink) (*UpdateRuleActionLinkResponse, error)
+	InvokeRuleActionLink(context.Context, *InvokeRuleActionLinkRequest) (*InvokeRuleActionLinkResponse, error)
+	GetAppliedRuleActionLinks(context.Context, *GetAppliedRuleActionLinksRequest) (*AppliedRuleActionLink, error)
+	DeleteAppliedRuleActionLink(context.Context, *DeleteAppliedRuleActionLinkRequest) (*DeleteAppliedRuleActionLinkResponse, error)
+	mustEmbedUnimplementedRuleEngineServer()
 }
 
-// UnimplementedSnapshotServiceServer must be embedded to have forward compatible implementations.
-type UnimplementedSnapshotServiceServer struct {
+// UnimplementedRuleEngineServer must be embedded to have forward compatible implementations.
+type UnimplementedRuleEngineServer struct {
 }
 
-func (UnimplementedSnapshotServiceServer) CreateSnapshot(context.Context, *CreateSnapshotRequest) (*CreateSnapshotResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateSnapshot not implemented")
+func (UnimplementedRuleEngineServer) CreateScene(context.Context, *Scene) (*CreateSceneResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateScene not implemented")
 }
-func (UnimplementedSnapshotServiceServer) GetSnapshots(*GetSnapshotsRequest, SnapshotService_GetSnapshotsServer) error {
-	return status.Errorf(codes.Unimplemented, "method GetSnapshots not implemented")
+func (UnimplementedRuleEngineServer) GetScenes(*GetScenesRequest, RuleEngine_GetScenesServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetScenes not implemented")
 }
-func (UnimplementedSnapshotServiceServer) DeleteSnapshots(context.Context, *DeleteSnapshotsRequest) (*DeleteSnapshotsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteSnapshots not implemented")
+func (UnimplementedRuleEngineServer) DeleteScenes(context.Context, *DeleteScenesRequest) (*DeleteScenesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteScenes not implemented")
 }
-func (UnimplementedSnapshotServiceServer) ApplySnapshot(context.Context, *ApplySnapshotRequest) (*ApplySnapshotResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ApplySnapshot not implemented")
+func (UnimplementedRuleEngineServer) UpdateScene(context.Context, *Scene) (*UpdateSceneResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateScene not implemented")
 }
-func (UnimplementedSnapshotServiceServer) CreateSnapshotAssociation(context.Context, *CreateSnapshotAssociationRequest) (*CreateSnapshotAssociationResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateSnapshotAssociation not implemented")
+func (UnimplementedRuleEngineServer) CreateRule(context.Context, *Rule) (*CreateRuleResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateRule not implemented")
 }
-func (UnimplementedSnapshotServiceServer) DeleteSnapshotAssociations(context.Context, *DeleteSnapshotAssociationsRequest) (*DeleteSnapshotAssociationsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteSnapshotAssociations not implemented")
+func (UnimplementedRuleEngineServer) GetRules(*GetRulesRequest, RuleEngine_GetRulesServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetRules not implemented")
 }
-func (UnimplementedSnapshotServiceServer) GetSnapshotStatuses(*GetSnapshotStatusesRequest, SnapshotService_GetSnapshotStatusesServer) error {
-	return status.Errorf(codes.Unimplemented, "method GetSnapshotStatuses not implemented")
+func (UnimplementedRuleEngineServer) DeleteRules(context.Context, *DeleteRulesRequest) (*DeleteRulesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteRules not implemented")
 }
-func (UnimplementedSnapshotServiceServer) DeleteSnapshotStatuses(context.Context, *DeleteSnapshotStatusesRequest) (*DeleteSnapshotStatusesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method DeleteSnapshotStatuses not implemented")
+func (UnimplementedRuleEngineServer) UpdateRule(context.Context, *Rule) (*UpdateRuleResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateRule not implemented")
 }
-func (UnimplementedSnapshotServiceServer) mustEmbedUnimplementedSnapshotServiceServer() {}
+func (UnimplementedRuleEngineServer) InvokeRule(context.Context, *InvokeRuleRequest) (*InvokeRuleResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method InvokeRule not implemented")
+}
+func (UnimplementedRuleEngineServer) CreateRuleActionLink(context.Context, *RuleActionLink) (*CreateRuleActionLinkResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateRuleActionLink not implemented")
+}
+func (UnimplementedRuleEngineServer) GetRuleActionLinks(*GetRuleActionLinksRequest, RuleEngine_GetRuleActionLinksServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetRuleActionLinks not implemented")
+}
+func (UnimplementedRuleEngineServer) DeleteRuleActionLinks(context.Context, *DeleteRuleActionLinksRequest) (*DeleteRuleActionLinksResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteRuleActionLinks not implemented")
+}
+func (UnimplementedRuleEngineServer) UpdateRuleActionLink(context.Context, *RuleActionLink) (*UpdateRuleActionLinkResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateRuleActionLink not implemented")
+}
+func (UnimplementedRuleEngineServer) InvokeRuleActionLink(context.Context, *InvokeRuleActionLinkRequest) (*InvokeRuleActionLinkResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method InvokeRuleActionLink not implemented")
+}
+func (UnimplementedRuleEngineServer) GetAppliedRuleActionLinks(context.Context, *GetAppliedRuleActionLinksRequest) (*AppliedRuleActionLink, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAppliedRuleActionLinks not implemented")
+}
+func (UnimplementedRuleEngineServer) DeleteAppliedRuleActionLink(context.Context, *DeleteAppliedRuleActionLinkRequest) (*DeleteAppliedRuleActionLinkResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteAppliedRuleActionLink not implemented")
+}
+func (UnimplementedRuleEngineServer) mustEmbedUnimplementedRuleEngineServer() {}
 
-// UnsafeSnapshotServiceServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to SnapshotServiceServer will
+// UnsafeRuleEngineServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to RuleEngineServer will
 // result in compilation errors.
-type UnsafeSnapshotServiceServer interface {
-	mustEmbedUnimplementedSnapshotServiceServer()
+type UnsafeRuleEngineServer interface {
+	mustEmbedUnimplementedRuleEngineServer()
 }
 
-func RegisterSnapshotServiceServer(s grpc.ServiceRegistrar, srv SnapshotServiceServer) {
-	s.RegisterService(&SnapshotService_ServiceDesc, srv)
+func RegisterRuleEngineServer(s grpc.ServiceRegistrar, srv RuleEngineServer) {
+	s.RegisterService(&RuleEngine_ServiceDesc, srv)
 }
 
-func _SnapshotService_CreateSnapshot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateSnapshotRequest)
+func _RuleEngine_CreateScene_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Scene)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SnapshotServiceServer).CreateSnapshot(ctx, in)
+		return srv.(RuleEngineServer).CreateScene(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: SnapshotService_CreateSnapshot_FullMethodName,
+		FullMethod: RuleEngine_CreateScene_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SnapshotServiceServer).CreateSnapshot(ctx, req.(*CreateSnapshotRequest))
+		return srv.(RuleEngineServer).CreateScene(ctx, req.(*Scene))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SnapshotService_GetSnapshots_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(GetSnapshotsRequest)
+func _RuleEngine_GetScenes_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetScenesRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(SnapshotServiceServer).GetSnapshots(m, &snapshotServiceGetSnapshotsServer{stream})
+	return srv.(RuleEngineServer).GetScenes(m, &ruleEngineGetScenesServer{stream})
 }
 
-type SnapshotService_GetSnapshotsServer interface {
-	Send(*Snapshot) error
+type RuleEngine_GetScenesServer interface {
+	Send(*Scene) error
 	grpc.ServerStream
 }
 
-type snapshotServiceGetSnapshotsServer struct {
+type ruleEngineGetScenesServer struct {
 	grpc.ServerStream
 }
 
-func (x *snapshotServiceGetSnapshotsServer) Send(m *Snapshot) error {
+func (x *ruleEngineGetScenesServer) Send(m *Scene) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _SnapshotService_DeleteSnapshots_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteSnapshotsRequest)
+func _RuleEngine_DeleteScenes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteScenesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SnapshotServiceServer).DeleteSnapshots(ctx, in)
+		return srv.(RuleEngineServer).DeleteScenes(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: SnapshotService_DeleteSnapshots_FullMethodName,
+		FullMethod: RuleEngine_DeleteScenes_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SnapshotServiceServer).DeleteSnapshots(ctx, req.(*DeleteSnapshotsRequest))
+		return srv.(RuleEngineServer).DeleteScenes(ctx, req.(*DeleteScenesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SnapshotService_ApplySnapshot_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ApplySnapshotRequest)
+func _RuleEngine_UpdateScene_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Scene)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SnapshotServiceServer).ApplySnapshot(ctx, in)
+		return srv.(RuleEngineServer).UpdateScene(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: SnapshotService_ApplySnapshot_FullMethodName,
+		FullMethod: RuleEngine_UpdateScene_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SnapshotServiceServer).ApplySnapshot(ctx, req.(*ApplySnapshotRequest))
+		return srv.(RuleEngineServer).UpdateScene(ctx, req.(*Scene))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SnapshotService_CreateSnapshotAssociation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateSnapshotAssociationRequest)
+func _RuleEngine_CreateRule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Rule)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SnapshotServiceServer).CreateSnapshotAssociation(ctx, in)
+		return srv.(RuleEngineServer).CreateRule(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: SnapshotService_CreateSnapshotAssociation_FullMethodName,
+		FullMethod: RuleEngine_CreateRule_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SnapshotServiceServer).CreateSnapshotAssociation(ctx, req.(*CreateSnapshotAssociationRequest))
+		return srv.(RuleEngineServer).CreateRule(ctx, req.(*Rule))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SnapshotService_DeleteSnapshotAssociations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteSnapshotAssociationsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(SnapshotServiceServer).DeleteSnapshotAssociations(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: SnapshotService_DeleteSnapshotAssociations_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SnapshotServiceServer).DeleteSnapshotAssociations(ctx, req.(*DeleteSnapshotAssociationsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _SnapshotService_GetSnapshotStatuses_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(GetSnapshotStatusesRequest)
+func _RuleEngine_GetRules_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetRulesRequest)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(SnapshotServiceServer).GetSnapshotStatuses(m, &snapshotServiceGetSnapshotStatusesServer{stream})
+	return srv.(RuleEngineServer).GetRules(m, &ruleEngineGetRulesServer{stream})
 }
 
-type SnapshotService_GetSnapshotStatusesServer interface {
-	Send(*SnapshotStatus) error
+type RuleEngine_GetRulesServer interface {
+	Send(*Rule) error
 	grpc.ServerStream
 }
 
-type snapshotServiceGetSnapshotStatusesServer struct {
+type ruleEngineGetRulesServer struct {
 	grpc.ServerStream
 }
 
-func (x *snapshotServiceGetSnapshotStatusesServer) Send(m *SnapshotStatus) error {
+func (x *ruleEngineGetRulesServer) Send(m *Rule) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _SnapshotService_DeleteSnapshotStatuses_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(DeleteSnapshotStatusesRequest)
+func _RuleEngine_DeleteRules_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteRulesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SnapshotServiceServer).DeleteSnapshotStatuses(ctx, in)
+		return srv.(RuleEngineServer).DeleteRules(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: SnapshotService_DeleteSnapshotStatuses_FullMethodName,
+		FullMethod: RuleEngine_DeleteRules_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SnapshotServiceServer).DeleteSnapshotStatuses(ctx, req.(*DeleteSnapshotStatusesRequest))
+		return srv.(RuleEngineServer).DeleteRules(ctx, req.(*DeleteRulesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// SnapshotService_ServiceDesc is the grpc.ServiceDesc for SnapshotService service.
+func _RuleEngine_UpdateRule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Rule)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RuleEngineServer).UpdateRule(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RuleEngine_UpdateRule_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RuleEngineServer).UpdateRule(ctx, req.(*Rule))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RuleEngine_InvokeRule_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InvokeRuleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RuleEngineServer).InvokeRule(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RuleEngine_InvokeRule_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RuleEngineServer).InvokeRule(ctx, req.(*InvokeRuleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RuleEngine_CreateRuleActionLink_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RuleActionLink)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RuleEngineServer).CreateRuleActionLink(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RuleEngine_CreateRuleActionLink_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RuleEngineServer).CreateRuleActionLink(ctx, req.(*RuleActionLink))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RuleEngine_GetRuleActionLinks_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetRuleActionLinksRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(RuleEngineServer).GetRuleActionLinks(m, &ruleEngineGetRuleActionLinksServer{stream})
+}
+
+type RuleEngine_GetRuleActionLinksServer interface {
+	Send(*RuleActionLink) error
+	grpc.ServerStream
+}
+
+type ruleEngineGetRuleActionLinksServer struct {
+	grpc.ServerStream
+}
+
+func (x *ruleEngineGetRuleActionLinksServer) Send(m *RuleActionLink) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _RuleEngine_DeleteRuleActionLinks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteRuleActionLinksRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RuleEngineServer).DeleteRuleActionLinks(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RuleEngine_DeleteRuleActionLinks_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RuleEngineServer).DeleteRuleActionLinks(ctx, req.(*DeleteRuleActionLinksRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RuleEngine_UpdateRuleActionLink_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RuleActionLink)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RuleEngineServer).UpdateRuleActionLink(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RuleEngine_UpdateRuleActionLink_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RuleEngineServer).UpdateRuleActionLink(ctx, req.(*RuleActionLink))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RuleEngine_InvokeRuleActionLink_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InvokeRuleActionLinkRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RuleEngineServer).InvokeRuleActionLink(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RuleEngine_InvokeRuleActionLink_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RuleEngineServer).InvokeRuleActionLink(ctx, req.(*InvokeRuleActionLinkRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RuleEngine_GetAppliedRuleActionLinks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetAppliedRuleActionLinksRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RuleEngineServer).GetAppliedRuleActionLinks(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RuleEngine_GetAppliedRuleActionLinks_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RuleEngineServer).GetAppliedRuleActionLinks(ctx, req.(*GetAppliedRuleActionLinksRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _RuleEngine_DeleteAppliedRuleActionLink_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteAppliedRuleActionLinkRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RuleEngineServer).DeleteAppliedRuleActionLink(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: RuleEngine_DeleteAppliedRuleActionLink_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RuleEngineServer).DeleteAppliedRuleActionLink(ctx, req.(*DeleteAppliedRuleActionLinkRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// RuleEngine_ServiceDesc is the grpc.ServiceDesc for RuleEngine service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var SnapshotService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "snapshotservice.pb.SnapshotService",
-	HandlerType: (*SnapshotServiceServer)(nil),
+var RuleEngine_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "snapshotservice.pb.RuleEngine",
+	HandlerType: (*RuleEngineServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "CreateSnapshot",
-			Handler:    _SnapshotService_CreateSnapshot_Handler,
+			MethodName: "CreateScene",
+			Handler:    _RuleEngine_CreateScene_Handler,
 		},
 		{
-			MethodName: "DeleteSnapshots",
-			Handler:    _SnapshotService_DeleteSnapshots_Handler,
+			MethodName: "DeleteScenes",
+			Handler:    _RuleEngine_DeleteScenes_Handler,
 		},
 		{
-			MethodName: "ApplySnapshot",
-			Handler:    _SnapshotService_ApplySnapshot_Handler,
+			MethodName: "UpdateScene",
+			Handler:    _RuleEngine_UpdateScene_Handler,
 		},
 		{
-			MethodName: "CreateSnapshotAssociation",
-			Handler:    _SnapshotService_CreateSnapshotAssociation_Handler,
+			MethodName: "CreateRule",
+			Handler:    _RuleEngine_CreateRule_Handler,
 		},
 		{
-			MethodName: "DeleteSnapshotAssociations",
-			Handler:    _SnapshotService_DeleteSnapshotAssociations_Handler,
+			MethodName: "DeleteRules",
+			Handler:    _RuleEngine_DeleteRules_Handler,
 		},
 		{
-			MethodName: "DeleteSnapshotStatuses",
-			Handler:    _SnapshotService_DeleteSnapshotStatuses_Handler,
+			MethodName: "UpdateRule",
+			Handler:    _RuleEngine_UpdateRule_Handler,
+		},
+		{
+			MethodName: "InvokeRule",
+			Handler:    _RuleEngine_InvokeRule_Handler,
+		},
+		{
+			MethodName: "CreateRuleActionLink",
+			Handler:    _RuleEngine_CreateRuleActionLink_Handler,
+		},
+		{
+			MethodName: "DeleteRuleActionLinks",
+			Handler:    _RuleEngine_DeleteRuleActionLinks_Handler,
+		},
+		{
+			MethodName: "UpdateRuleActionLink",
+			Handler:    _RuleEngine_UpdateRuleActionLink_Handler,
+		},
+		{
+			MethodName: "InvokeRuleActionLink",
+			Handler:    _RuleEngine_InvokeRuleActionLink_Handler,
+		},
+		{
+			MethodName: "GetAppliedRuleActionLinks",
+			Handler:    _RuleEngine_GetAppliedRuleActionLinks_Handler,
+		},
+		{
+			MethodName: "DeleteAppliedRuleActionLink",
+			Handler:    _RuleEngine_DeleteAppliedRuleActionLink_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "GetSnapshots",
-			Handler:       _SnapshotService_GetSnapshots_Handler,
+			StreamName:    "GetScenes",
+			Handler:       _RuleEngine_GetScenes_Handler,
 			ServerStreams: true,
 		},
 		{
-			StreamName:    "GetSnapshotStatuses",
-			Handler:       _SnapshotService_GetSnapshotStatuses_Handler,
+			StreamName:    "GetRules",
+			Handler:       _RuleEngine_GetRules_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "GetRuleActionLinks",
+			Handler:       _RuleEngine_GetRuleActionLinks_Handler,
 			ServerStreams: true,
 		},
 	},

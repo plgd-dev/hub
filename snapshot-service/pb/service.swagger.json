@@ -1,8 +1,8 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "PLGD Snapshot Service API",
-    "description": "API for managing snapshots in PLGD",
+    "title": "PLGD Rule Engine API",
+    "description": "API for configuring rule engine in PLGD",
     "version": "1.0",
     "contact": {
       "name": "plgd.dev",
@@ -16,7 +16,7 @@
   },
   "tags": [
     {
-      "name": "SnapshotService"
+      "name": "RuleEngine"
     }
   ],
   "schemes": [
@@ -31,14 +31,14 @@
     "application/protojson"
   ],
   "paths": {
-    "/api/v1/snapshot-associations": {
+    "/api/v1/Rules": {
       "delete": {
-        "operationId": "SnapshotService_DeleteSnapshotAssociations",
+        "operationId": "RuleEngine_DeleteRules",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/pbDeleteSnapshotAssociationsResponse"
+              "$ref": "#/definitions/pbDeleteRulesResponse"
             }
           },
           "default": {
@@ -61,16 +61,18 @@
           }
         ],
         "tags": [
-          "snapshots"
+          "Rules"
         ]
-      },
-      "post": {
-        "operationId": "SnapshotService_CreateSnapshotAssociation",
+      }
+    },
+    "/api/v1/Scenes": {
+      "delete": {
+        "operationId": "RuleEngine_DeleteScenes",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/pbCreateSnapshotAssociationResponse"
+              "$ref": "#/definitions/pbDeleteScenesResponse"
             }
           },
           "default": {
@@ -82,36 +84,29 @@
         },
         "parameters": [
           {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/pbCreateSnapshotAssociationRequest"
-            }
+            "name": "idFilter",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
           }
         ],
         "tags": [
-          "snapshots"
+          "Scenes"
         ]
       }
     },
-    "/api/v1/snapshot-statuses": {
+    "/api/v1/applied-rules-action-links": {
       "get": {
-        "operationId": "SnapshotService_GetSnapshotStatuses",
+        "operationId": "RuleEngine_GetAppliedRuleActionLinks",
         "responses": {
           "200": {
-            "description": "A successful response.(streaming responses)",
+            "description": "A successful response.",
             "schema": {
-              "type": "object",
-              "properties": {
-                "result": {
-                  "$ref": "#/definitions/pbSnapshotStatus"
-                },
-                "error": {
-                  "$ref": "#/definitions/googlerpcStatus"
-                }
-              },
-              "title": "Stream result of pbSnapshotStatus"
+              "$ref": "#/definitions/pbAppliedRuleActionLink"
             }
           },
           "default": {
@@ -123,7 +118,17 @@
         },
         "parameters": [
           {
-            "name": "snapshotIdFilter",
+            "name": "idFilter",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "ruleIdFilter",
             "in": "query",
             "required": false,
             "type": "array",
@@ -144,16 +149,16 @@
           }
         ],
         "tags": [
-          "snapshots"
+          "Rules"
         ]
       },
       "delete": {
-        "operationId": "SnapshotService_DeleteSnapshotStatuses",
+        "operationId": "RuleEngine_DeleteAppliedRuleActionLink",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/pbDeleteSnapshotStatusesResponse"
+              "$ref": "#/definitions/pbDeleteAppliedRuleActionLinkResponse"
             }
           },
           "default": {
@@ -176,13 +181,13 @@
           }
         ],
         "tags": [
-          "snapshots"
+          "Rules"
         ]
       }
     },
-    "/api/v1/snapshots": {
+    "/api/v1/rules": {
       "get": {
-        "operationId": "SnapshotService_GetSnapshots",
+        "operationId": "RuleEngine_GetRules",
         "responses": {
           "200": {
             "description": "A successful response.(streaming responses)",
@@ -190,13 +195,13 @@
               "type": "object",
               "properties": {
                 "result": {
-                  "$ref": "#/definitions/pbSnapshot"
+                  "$ref": "#/definitions/pbRule"
                 },
                 "error": {
                   "$ref": "#/definitions/googlerpcStatus"
                 }
               },
-              "title": "Stream result of pbSnapshot"
+              "title": "Stream result of pbRule"
             }
           },
           "default": {
@@ -219,48 +224,16 @@
           }
         ],
         "tags": [
-          "snapshots"
-        ]
-      },
-      "delete": {
-        "operationId": "SnapshotService_DeleteSnapshots",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/pbDeleteSnapshotsResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "idFilter",
-            "in": "query",
-            "required": false,
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "collectionFormat": "multi"
-          }
-        ],
-        "tags": [
-          "snapshots"
+          "Rules"
         ]
       },
       "post": {
-        "operationId": "SnapshotService_CreateSnapshot",
+        "operationId": "RuleEngine_CreateRule",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/pbCreateSnapshotResponse"
+              "$ref": "#/definitions/pbCreateRuleResponse"
             }
           },
           "default": {
@@ -276,23 +249,128 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/pbCreateSnapshotRequest"
+              "$ref": "#/definitions/pbRule"
             }
           }
         ],
         "tags": [
-          "snapshots"
+          "Rules"
         ]
       }
     },
-    "/api/v1/snapshots/{id}": {
-      "post": {
-        "operationId": "SnapshotService_ApplySnapshot",
+    "/api/v1/rules-action-links": {
+      "get": {
+        "operationId": "RuleEngine_GetRuleActionLinks",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/pbRuleActionLink"
+                },
+                "error": {
+                  "$ref": "#/definitions/googlerpcStatus"
+                }
+              },
+              "title": "Stream result of pbRuleActionLink"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idFilter",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "Rules"
+        ]
+      },
+      "delete": {
+        "operationId": "RuleEngine_DeleteRuleActionLinks",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/pbApplySnapshotResponse"
+              "$ref": "#/definitions/pbDeleteRuleActionLinksResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idFilter",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "Rules"
+        ]
+      },
+      "post": {
+        "operationId": "RuleEngine_CreateRuleActionLink",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbCreateRuleActionLinkResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbRuleActionLink"
+            }
+          }
+        ],
+        "tags": [
+          "Rules"
+        ]
+      }
+    },
+    "/api/v1/rules-action-links/{id}": {
+      "post": {
+        "operationId": "RuleEngine_InvokeRuleActionLink",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbInvokeRuleActionLinkResponse"
             }
           },
           "default": {
@@ -316,10 +394,323 @@
             "schema": {
               "type": "object",
               "properties": {
-                "deviceIdFilter": {
+                "resourceId": {
+                  "$ref": "#/definitions/pbResourceId",
+                  "title": "for once_per_device or once_per_resource"
+                },
+                "force": {
+                  "type": "boolean",
+                  "title": "override the frequency"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "Rules"
+        ]
+      },
+      "put": {
+        "operationId": "RuleEngine_UpdateRuleActionLink",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbUpdateRuleActionLinkResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "enabled": {
+                  "type": "boolean"
+                },
+                "ruleId": {
+                  "type": "string"
+                },
+                "owner": {
+                  "type": "string"
+                },
+                "oncePerDevice": {
+                  "type": "boolean",
+                  "title": "the rule association is applied once per device"
+                },
+                "oncePerResource": {
+                  "type": "boolean",
+                  "title": "the rule will be invoked once per resource"
+                },
+                "intervalPerDevice": {
+                  "type": "string",
+                  "format": "int64",
+                  "title": "in nanoseconds"
+                },
+                "intervalPerResource": {
+                  "type": "string",
+                  "format": "int64",
+                  "title": "in nanoseconds"
+                },
+                "always": {
+                  "type": "boolean"
+                },
+                "scenes": {
                   "type": "array",
                   "items": {
-                    "type": "string"
+                    "type": "object",
+                    "$ref": "#/definitions/pbRuleActionParameters"
+                  },
+                  "title": "scenes to invoke"
+                },
+                "rules": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "$ref": "#/definitions/pbRuleActionParameters"
+                  },
+                  "title": "rules to invoke"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "Rules"
+        ]
+      }
+    },
+    "/api/v1/rules/{id}": {
+      "post": {
+        "operationId": "RuleEngine_InvokeRule",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbInvokeRuleResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "resourceId": {
+                  "$ref": "#/definitions/pbResourceId",
+                  "title": "origin resource that starts the execution"
+                },
+                "content": {
+                  "$ref": "#/definitions/pbContent",
+                  "title": "use content instead of load it for resource_id"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "Rules"
+        ]
+      },
+      "put": {
+        "operationId": "RuleEngine_UpdateRule",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbUpdateRuleResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                },
+                "expression": {
+                  "$ref": "#/definitions/pbRuleExpression"
+                },
+                "enabled": {
+                  "type": "boolean"
+                },
+                "owner": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "Rules"
+        ]
+      }
+    },
+    "/api/v1/scenes": {
+      "get": {
+        "operationId": "RuleEngine_GetScenes",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/pbScene"
+                },
+                "error": {
+                  "$ref": "#/definitions/googlerpcStatus"
+                }
+              },
+              "title": "Stream result of pbScene"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idFilter",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "Scenes"
+        ]
+      },
+      "post": {
+        "operationId": "RuleEngine_CreateScene",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbCreateSceneResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbScene"
+            }
+          }
+        ],
+        "tags": [
+          "Scenes"
+        ]
+      }
+    },
+    "/api/v1/scenes/{id}": {
+      "put": {
+        "operationId": "RuleEngine_UpdateScene",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbUpdateSceneResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "resources": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "$ref": "#/definitions/pbResourceSnapshot"
                   }
                 }
               }
@@ -327,12 +718,63 @@
           }
         ],
         "tags": [
-          "snapshots"
+          "Scenes"
         ]
       }
     }
   },
   "definitions": {
+    "ResourceSnapshotApplyToDevices": {
+      "type": "object",
+      "properties": {
+        "origin": {
+          "type": "boolean",
+          "title": "device that is originally started the scene"
+        },
+        "deviceIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "identifies devices"
+        },
+        "deviceTypes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "device type just for filtering device when device_ids and current device is not set"
+        }
+      }
+    },
+    "ResourceSnapshotApplyToResources": {
+      "type": "object",
+      "properties": {
+        "hrefs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "identifies resources at the device."
+        },
+        "types": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "and operator among types -\u003e type defines a list of properties in content"
+        }
+      }
+    },
+    "RuleActionParametersOrigin": {
+      "type": "object",
+      "properties": {
+        "newHref": {
+          "type": "string",
+          "title": "replace the origin href with the given href"
+        }
+      }
+    },
     "googlerpcStatus": {
       "type": "object",
       "properties": {
@@ -352,8 +794,35 @@
         }
       }
     },
-    "pbApplySnapshotResponse": {
-      "type": "object"
+    "pbAppliedRuleActionLink": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "the id of the rule link"
+        },
+        "originInvoker": {
+          "$ref": "#/definitions/pbResourceId",
+          "title": "for once_per_device or once_per_resource"
+        },
+        "timestampStart": {
+          "type": "string",
+          "format": "int64",
+          "title": "when the rule association was applied"
+        },
+        "timestampEnd": {
+          "type": "string",
+          "format": "int64",
+          "title": "when the rule association was removed"
+        },
+        "resourcesUpdated": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/pbResourceUpdated"
+          }
+        }
+      }
     },
     "pbAuditContext": {
       "type": "object",
@@ -386,27 +855,7 @@
         }
       }
     },
-    "pbCreateSnapshotAssociationRequest": {
-      "type": "object",
-      "properties": {
-        "snapshotId": {
-          "type": "string"
-        },
-        "resourceFilter": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/pbResourceFilter"
-          }
-        },
-        "applyTimeToLive": {
-          "type": "string",
-          "format": "int64",
-          "title": "in nanoseconds how long will try to apply snapshot to resources which match resource_filter"
-        }
-      }
-    },
-    "pbCreateSnapshotAssociationResponse": {
+    "pbCreateRuleActionLinkResponse": {
       "type": "object",
       "properties": {
         "id": {
@@ -414,19 +863,7 @@
         }
       }
     },
-    "pbCreateSnapshotRequest": {
-      "type": "object",
-      "properties": {
-        "resources": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/pbResourceSnapshot"
-          }
-        }
-      }
-    },
-    "pbCreateSnapshotResponse": {
+    "pbCreateRuleResponse": {
       "type": "object",
       "properties": {
         "id": {
@@ -434,7 +871,15 @@
         }
       }
     },
-    "pbDeleteSnapshotAssociationsResponse": {
+    "pbCreateSceneResponse": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        }
+      }
+    },
+    "pbDeleteAppliedRuleActionLinkResponse": {
       "type": "object",
       "properties": {
         "count": {
@@ -443,7 +888,7 @@
         }
       }
     },
-    "pbDeleteSnapshotStatusesResponse": {
+    "pbDeleteRuleActionLinksResponse": {
       "type": "object",
       "properties": {
         "count": {
@@ -452,7 +897,16 @@
         }
       }
     },
-    "pbDeleteSnapshotsResponse": {
+    "pbDeleteRulesResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "pbDeleteScenesResponse": {
       "type": "object",
       "properties": {
         "count": {
@@ -486,20 +940,109 @@
         }
       }
     },
-    "pbResourceFilter": {
+    "pbInvokeRuleActionLinkResponse": {
+      "type": "object"
+    },
+    "pbInvokeRuleResponse": {
+      "type": "object"
+    },
+    "pbLogicalExpression": {
+      "type": "object",
+      "properties": {
+        "leftExpression": {
+          "$ref": "#/definitions/pbRuleExpression"
+        },
+        "operator": {
+          "$ref": "#/definitions/pbLogicalOperator"
+        },
+        "rightExpression": {
+          "$ref": "#/definitions/pbRuleExpression"
+        }
+      }
+    },
+    "pbLogicalOperator": {
+      "type": "string",
+      "enum": [
+        "AND",
+        "OR"
+      ],
+      "default": "AND"
+    },
+    "pbNegationExpression": {
+      "type": "object",
+      "properties": {
+        "innerExpression": {
+          "$ref": "#/definitions/pbRuleExpression"
+        }
+      }
+    },
+    "pbOriginId": {
       "type": "object",
       "properties": {
         "href": {
           "type": "string",
-          "title": "required eg \"/oic/d\""
+          "title": "path to resource in the device (e.g. /oic/d )"
         },
-        "propertyPath": {
-          "type": "string",
-          "title": "optional in format \".di\""
+        "types": {
+          "$ref": "#/definitions/pbRepeatedString",
+          "title": "resource must contains all types (e.g. [oic.r.switch.binary])"
+        }
+      }
+    },
+    "pbParenthesesExpression": {
+      "type": "object",
+      "properties": {
+        "innerExpression": {
+          "$ref": "#/definitions/pbRuleExpression"
+        }
+      }
+    },
+    "pbRelationalExpression": {
+      "type": "object",
+      "properties": {
+        "leftOperand": {
+          "$ref": "#/definitions/pbRelationalOperand"
         },
-        "content": {
-          "$ref": "#/definitions/pbContent",
-          "title": "required"
+        "compare": {
+          "$ref": "#/definitions/pbRelationalOperator"
+        },
+        "string": {
+          "$ref": "#/definitions/pbStringOperator"
+        },
+        "rightOperand": {
+          "$ref": "#/definitions/pbRelationalOperand"
+        }
+      }
+    },
+    "pbRelationalOperand": {
+      "type": "object",
+      "properties": {
+        "scalar": {},
+        "resourceProperty": {
+          "$ref": "#/definitions/pbResourceProperty"
+        }
+      }
+    },
+    "pbRelationalOperator": {
+      "type": "string",
+      "enum": [
+        "EQUAL",
+        "NOT_EQUAL",
+        "LESS_THAN",
+        "LESS_THAN_OR_EQUAL",
+        "GREATER_THAN",
+        "GREATER_THAN_OR_EQUAL"
+      ],
+      "default": "EQUAL"
+    },
+    "pbRepeatedString": {
+      "type": "object",
+      "properties": {
+        "list": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
@@ -514,21 +1057,41 @@
         }
       }
     },
+    "pbResourceProperty": {
+      "type": "object",
+      "properties": {
+        "originId": {
+          "$ref": "#/definitions/pbOriginId"
+        },
+        "resourceId": {
+          "$ref": "#/definitions/pbResourceId"
+        },
+        "propertyPath": {
+          "type": "string",
+          "title": "jq-like path"
+        }
+      }
+    },
     "pbResourceSnapshot": {
       "type": "object",
       "properties": {
-        "href": {
-          "type": "string"
+        "deviceFilter": {
+          "$ref": "#/definitions/ResourceSnapshotApplyToDevices"
+        },
+        "resourceFilter": {
+          "$ref": "#/definitions/ResourceSnapshotApplyToResources"
         },
         "content": {
           "$ref": "#/definitions/pbContent"
         },
         "resourceInterface": {
-          "type": "string"
+          "type": "string",
+          "title": "optional update interface"
         },
         "timeToLive": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "title": "optional update command time to live"
         }
       }
     },
@@ -559,9 +1122,128 @@
         }
       }
     },
-    "pbSnapshot": {
+    "pbRule": {
       "type": "object",
       "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "expression": {
+          "$ref": "#/definitions/pbRuleExpression"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "owner": {
+          "type": "string"
+        }
+      }
+    },
+    "pbRuleActionLink": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "ruleId": {
+          "type": "string"
+        },
+        "owner": {
+          "type": "string"
+        },
+        "oncePerDevice": {
+          "type": "boolean",
+          "title": "the rule association is applied once per device"
+        },
+        "oncePerResource": {
+          "type": "boolean",
+          "title": "the rule will be invoked once per resource"
+        },
+        "intervalPerDevice": {
+          "type": "string",
+          "format": "int64",
+          "title": "in nanoseconds"
+        },
+        "intervalPerResource": {
+          "type": "string",
+          "format": "int64",
+          "title": "in nanoseconds"
+        },
+        "always": {
+          "type": "boolean"
+        },
+        "scenes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/pbRuleActionParameters"
+          },
+          "title": "scenes to invoke"
+        },
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/pbRuleActionParameters"
+          },
+          "title": "rules to invoke"
+        }
+      }
+    },
+    "pbRuleActionParameters": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "origin": {
+          "$ref": "#/definitions/RuleActionParametersOrigin",
+          "title": "use the origin resource"
+        },
+        "resourceId": {
+          "$ref": "#/definitions/pbResourceId",
+          "title": "use the given resource"
+        }
+      }
+    },
+    "pbRuleExpression": {
+      "type": "object",
+      "properties": {
+        "relationalExpression": {
+          "$ref": "#/definitions/pbRelationalExpression"
+        },
+        "logicalExpression": {
+          "$ref": "#/definitions/pbLogicalExpression"
+        },
+        "parenthesesExpression": {
+          "$ref": "#/definitions/pbParenthesesExpression"
+        },
+        "negationExpression": {
+          "$ref": "#/definitions/pbNegationExpression"
+        }
+      }
+    },
+    "pbScene": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
         "resources": {
           "type": "array",
           "items": {
@@ -571,44 +1253,24 @@
         }
       }
     },
-    "pbSnapshotStatus": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "version": {
-          "type": "string"
-        },
-        "deviceId": {
-          "type": "string"
-        },
-        "snapshotId": {
-          "type": "string"
-        },
-        "associationSnapshotId": {
-          "type": "string"
-        },
-        "timestampStart": {
-          "type": "string",
-          "format": "int64"
-        },
-        "timestampEnd": {
-          "type": "string",
-          "format": "int64"
-        },
-        "validUntil": {
-          "type": "string",
-          "format": "int64"
-        },
-        "resourcesUpdated": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/pbResourceUpdated"
-          }
-        }
-      }
+    "pbStringOperator": {
+      "type": "string",
+      "enum": [
+        "CONTAINS",
+        "DOES_NOT_CONTAIN",
+        "STARTS_WITH",
+        "ENDS_WITH"
+      ],
+      "default": "CONTAINS"
+    },
+    "pbUpdateRuleActionLinkResponse": {
+      "type": "object"
+    },
+    "pbUpdateRuleResponse": {
+      "type": "object"
+    },
+    "pbUpdateSceneResponse": {
+      "type": "object"
     },
     "protobufAny": {
       "type": "object",
@@ -618,6 +1280,14 @@
         }
       },
       "additionalProperties": {}
+    },
+    "protobufNullValue": {
+      "type": "string",
+      "enum": [
+        "NULL_VALUE"
+      ],
+      "default": "NULL_VALUE",
+      "description": "`NullValue` is a singleton enumeration to represent the null value for the\n`Value` type union.\n\nThe JSON representation for `NullValue` is JSON `null`.\n\n - NULL_VALUE: Null value."
     },
     "resourceaggregatepbStatus": {
       "type": "string",

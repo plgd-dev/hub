@@ -2,18 +2,19 @@ syntax = "proto3";
 
 package snapshotservice.pb;
 
+import "resource-aggregate/pb/resources.proto";
+import "snapshot-service/pb/scene.proto";
+import "snapshot-service/pb/rule.proto";
+import "snapshot-service/pb/ruleActionLink.proto";
+
 import "google/api/annotations.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
 
-import "snapshot-service/pb/snapshots.proto";
-import "snapshot-service/pb/snapshotAssociations.proto";
-import "snapshot-service/pb/snapshotStatuses.proto";
-
 option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
   info: {
-    title: "PLGD Snapshot Service API";
+    title: "PLGD Rule Engine API";
     version: "1.0";
-    description: "API for managing snapshots in PLGD";
+    description: "API for configuring rule engine in PLGD";
     contact: {
       name: "plgd.dev";
       url: "https://github.com/plgd-dev/hub";
@@ -24,86 +25,228 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
       url: "https://github.com/plgd-dev/hub/blob/v2/LICENSE";
     };
   };
-  schemes: [ HTTPS ];
-  consumes: [ "application/json", "application/protojson" ];
-  produces: [ "application/json", "application/protojson" ];
+  schemes: [HTTPS];
+  consumes: ["application/json", "application/protojson"];
+  produces: ["application/json", "application/protojson"];
 };
 
 option go_package = "github.com/plgd-dev/hub/v2/snapshot-service/pb;pb";
 
-service SnapshotService {
-  rpc CreateSnapshot(CreateSnapshotRequest) returns (CreateSnapshotResponse) {
+message CreateSceneRequest {
+  string name = 1;
+  repeated ResourceSnapshot resources = 2;
+  repeated string device_id_filter = 3;
+  repeated resourceaggregate.pb.ResourceId resource_id = 4;
+  repeated string type_filter = 5;
+}
+
+message CreateSceneResponse { string id = 1; }
+
+message UpdateSceneResponse {}
+
+message GetScenesRequest { repeated string id_filter = 1; }
+
+message DeleteScenesRequest { repeated string id_filter = 1; }
+
+message DeleteScenesResponse { int64 count = 1; }
+
+message CreateRuleResponse { string id = 1; }
+
+message UpdateRuleResponse {}
+
+message GetRulesRequest { repeated string id_filter = 1; }
+
+message DeleteRulesRequest { repeated string id_filter = 1; }
+
+message DeleteRulesResponse { int64 count = 1; }
+
+message CreateRuleActionLinkResponse { string id = 1; }
+
+message UpdateRuleActionLinkResponse {}
+
+message GetRuleActionLinksRequest { repeated string id_filter = 1; }
+
+message DeleteRuleActionLinksRequest { repeated string id_filter = 1; }
+
+message DeleteRuleActionLinksResponse { int64 count = 1; }
+
+message GetAppliedRuleActionLinksRequest {
+  repeated string id_filter = 1;
+  repeated string rule_id_filter = 2;
+  repeated string device_id_filter = 3;
+  repeated resourceaggregate.pb.ResourceId resource_id_filter = 4;
+}
+
+message DeleteAppliedRuleActionLinkRequest { repeated string id_filter = 1; }
+
+message DeleteAppliedRuleActionLinkResponse { int64 count = 1; }
+
+message InvokeRuleRequest {
+  string id = 1;
+  resourceaggregate.pb.ResourceId resource_id = 2; // origin resource that starts the execution
+  resourceaggregate.pb.Content content = 3; // use content instead of load it for resource_id
+}
+
+message InvokeRuleResponse {}
+
+message InvokeRuleActionLinkRequest {
+  string id = 1;
+  resourceaggregate.pb.ResourceId resource_id = 2; // for once_per_device or once_per_resource
+  bool force = 3; // override the frequency
+}
+
+message InvokeRuleActionLinkResponse {}
+
+service RuleEngine {
+  rpc CreateScene(Scene) returns (CreateSceneResponse) {
     option (google.api.http) = {
-      post: "/api/v1/snapshots";
+      post: "/api/v1/scenes";
       body: "*";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "snapshots" ];
+      tags: [ "Scenes" ];
     };
   }
 
-  rpc GetSnapshots(GetSnapshotsRequest) returns (stream Snapshot) {
+  rpc GetScenes(GetScenesRequest) returns (stream Scene) {
     option (google.api.http) = {
-      get: "/api/v1/snapshots";
+      get: "/api/v1/scenes";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "snapshots" ];
+      tags: [ "Scenes" ];
     };
   }
 
-  rpc DeleteSnapshots(DeleteSnapshotsRequest) returns (DeleteSnapshotsResponse) {
+  rpc DeleteScenes(DeleteScenesRequest) returns (DeleteScenesResponse) {
     option (google.api.http) = {
-      delete: "/api/v1/snapshots";
+      delete: "/api/v1/Scenes";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "snapshots" ];
+      tags: [ "Scenes" ];
     };
   }
 
-  rpc ApplySnapshot(ApplySnapshotRequest) returns (ApplySnapshotResponse) {
+  rpc UpdateScene(Scene) returns (UpdateSceneResponse) {
     option (google.api.http) = {
-      post: "/api/v1/snapshots/{id}";
+      put: "/api/v1/scenes/{id}";
       body: "*";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "snapshots" ];
+      tags: [ "Scenes" ];
     };
   }
 
-  rpc CreateSnapshotAssociation(CreateSnapshotAssociationRequest) returns (CreateSnapshotAssociationResponse) {
+  rpc CreateRule(Rule) returns (CreateRuleResponse) {
     option (google.api.http) = {
-      post: "/api/v1/snapshot-associations";
+      post: "/api/v1/rules";
       body: "*";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "snapshots" ];
+      tags: [ "Rules" ];
     };
   }
 
-  rpc DeleteSnapshotAssociations(DeleteSnapshotAssociationsRequest) returns (DeleteSnapshotAssociationsResponse) {
+  rpc GetRules(GetRulesRequest) returns (stream Rule) {
     option (google.api.http) = {
-      delete: "/api/v1/snapshot-associations";
+      get: "/api/v1/rules";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "snapshots" ];
+      tags: [ "Rules" ];
     };
   }
 
-  rpc GetSnapshotStatuses(GetSnapshotStatusesRequest) returns (stream SnapshotStatus) {
+  rpc DeleteRules(DeleteRulesRequest) returns (DeleteRulesResponse) {
     option (google.api.http) = {
-      get: "/api/v1/snapshot-statuses";
+      delete: "/api/v1/Rules";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "snapshots" ];
+      tags: [ "Rules" ];
     };
   }
 
-  rpc DeleteSnapshotStatuses(DeleteSnapshotStatusesRequest) returns (DeleteSnapshotStatusesResponse) {
+  rpc UpdateRule(Rule) returns (UpdateRuleResponse) {
     option (google.api.http) = {
-      delete: "/api/v1/snapshot-statuses";
+      put: "/api/v1/rules/{id}";
+      body: "*";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "snapshots" ];
+      tags: [ "Rules" ];
+    };
+  }
+
+  rpc InvokeRule(InvokeRuleRequest) returns (InvokeRuleResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/rules/{id}";
+      body: "*";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Rules" ];
+    };
+  }
+
+  rpc CreateRuleActionLink(RuleActionLink) returns (CreateRuleActionLinkResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/rules-action-links";
+      body: "*";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Rules" ];
+    };
+  }
+
+  rpc GetRuleActionLinks(GetRuleActionLinksRequest) returns (stream RuleActionLink) {
+    option (google.api.http) = {
+      get: "/api/v1/rules-action-links";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Rules" ];
+    };
+  }
+
+  rpc DeleteRuleActionLinks(DeleteRuleActionLinksRequest) returns (DeleteRuleActionLinksResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/rules-action-links";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Rules" ];
+    };
+  }
+
+  rpc UpdateRuleActionLink(RuleActionLink) returns (UpdateRuleActionLinkResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/rules-action-links/{id}";
+      body: "*";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Rules" ];
+    };
+  }
+
+  rpc InvokeRuleActionLink(InvokeRuleActionLinkRequest) returns (InvokeRuleActionLinkResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/rules-action-links/{id}";
+      body: "*";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Rules" ];
+    };
+  }
+
+  rpc GetAppliedRuleActionLinks(GetAppliedRuleActionLinksRequest) returns (AppliedRuleActionLink) {
+    option (google.api.http) = {
+      get: "/api/v1/applied-rules-action-links";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Rules" ];
+    };
+  }
+
+  rpc DeleteAppliedRuleActionLink(DeleteAppliedRuleActionLinkRequest) returns (DeleteAppliedRuleActionLinkResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/applied-rules-action-links";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Rules" ];
     };
   }
 }

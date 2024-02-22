@@ -1,0 +1,57 @@
+@startuml
+
+actor "Client/ResourceChanged event" as Client
+participant "Rule Engine" as RuleEngine
+participant "Rule Engine (Evaluation)" as RuleEvaluationService
+database "RuleActionLink Store" as RuleActionLinkStore
+database "AppliedRuleActionLink Store" as AppliedRuleActionLinkStore
+database "Event Store" as EventStore
+control "Event Bus" as Bus
+
+participant "Rule Engine (Scene and Rule Trigger)" as SceneRuleTrigger
+participant "Resource Aggregate" as RA
+
+Client -> RuleEngine: InvokeRule
+activate RuleEngine
+
+RuleEngine -> RuleEvaluationService: EvaluateRule
+activate RuleEvaluationService
+RuleEvaluationService -> EventStore: Load all needed resources for evaluation.
+EventStore --> RuleEvaluationService: Resources
+
+alt Rule evaluation successful
+    RuleEvaluationService --> RuleEngine: Success
+    RuleEngine -> RuleActionLinkStore: GetAssociatedRuleActionLinks
+    activate RuleActionLinkStore
+
+    loop for each RuleActionLink
+        RuleActionLinkStore --> RuleEngine: RuleActionLink
+        RuleEngine -> AppliedRuleActionLinkStore: CreateAppliedRuleActionLink
+        activate AppliedRuleActionLinkStore
+        AppliedRuleActionLinkStore --> RuleEngine: AppliedRuleActionLink
+        RuleEngine -> SceneRuleTrigger: ApplyScenesAndTriggerRules
+        activate SceneRuleTrigger
+        loop for each resource in scene
+          SceneRuleTrigger -> RA: Update resource from scene
+          RA -> Bus: Resource Update Pending
+          Bus --> SceneRuleTrigger: Resource updated
+        end
+        loop for each trigger rule
+          SceneRuleTrigger -> RuleEngine: Invoke rule
+          RuleEngine --> SceneRuleTrigger: Success
+        end
+        SceneRuleTrigger --> RuleEngine: Success
+        deactivate SceneRuleTrigger
+        RuleEngine -> AppliedRuleActionLinkStore: UpdateStatus
+        AppliedRuleActionLinkStore --> RuleEngine: Updated Status
+        deactivate AppliedRuleActionLinkStore
+    end
+
+else Rule evaluation failed
+    RuleEvaluationService --> RuleEngine: Failure
+end
+deactivate RuleEvaluationService
+
+RuleEngine --> Client: InvokeRuleResponse
+deactivate RuleEngine
+@enduml

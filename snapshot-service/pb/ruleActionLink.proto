@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package snapshotservice.pb;
+
+option go_package = "github.com/plgd-dev/hub/v2/snapshot-service/pb;pb";
+
+import "resource-aggregate/pb/resources.proto";
+import "resource-aggregate/pb/events.proto";
+
+message RuleActionParameters {
+    string id = 1;
+    message Origin {
+       string new_href = 1; // replace the origin href with the given href
+    }
+    oneof action {
+        Origin origin = 2; // use the origin resource
+        resourceaggregate.pb.ResourceId resource_id = 3; // use the given resource
+    }
+}
+
+message RuleActionLink {
+  string id = 1;
+  string name = 2;
+  bool enabled = 3;
+  string rule_id = 4;
+  string owner = 5;
+
+  oneof frequency {
+    bool once_per_device = 16; // the rule association is applied once per device
+    bool once_per_resource = 17; // the rule will be invoked once per resource
+    int64 interval_per_device = 18;   // in nanoseconds
+    int64 interval_per_resource = 19; // in nanoseconds
+    bool always = 20;
+  }
+
+  repeated RuleActionParameters scenes = 32; // scenes to invoke
+  repeated RuleActionParameters rules = 33; // rules to invoke
+}
+
+message AppliedRuleActionLink {
+  string id = 1; // the id of the rule link
+  resourceaggregate.pb.ResourceId origin_invoker = 2; // for once_per_device or once_per_resource
+  int64 timestamp_start = 3; // when the rule association was applied
+  int64 timestamp_end = 4; // when the rule association was removed
+  repeated resourceaggregate.pb.ResourceUpdated resources_updated = 16;
+}
