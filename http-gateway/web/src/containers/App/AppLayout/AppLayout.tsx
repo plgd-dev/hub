@@ -12,7 +12,7 @@ import UserWidget from '@shared-ui/components/Layout/Header/UserWidget'
 import VersionMark from '@shared-ui/components/Atomic/VersionMark'
 import Layout from '@shared-ui/components/Layout'
 import { MenuItem, SubMenuItem } from '@shared-ui/components/Layout/LeftPanel/LeftPanel.types'
-import { getFirstActiveItemFromMenu, parseActiveItem } from '@shared-ui/components/Layout/LeftPanel/utils'
+import { findRouteMatch, getFirstActiveItemFromMenu, parseActiveItem } from '@shared-ui/components/Layout/LeftPanel/utils'
 import { getVersionMarkData } from '@shared-ui/components/Atomic/VersionMark/utils'
 import { severities } from '@shared-ui/components/Atomic/VersionMark/constants'
 import { flushDevices } from '@shared-ui/app/clientApp/Devices/slice'
@@ -24,7 +24,7 @@ import { useAppVersion, WellKnownConfigType } from '@shared-ui/common/hooks'
 import Logo from '@shared-ui/components/Atomic/Logo'
 
 import { Props } from './AppLayout.types'
-import { mather, getMenu, Routes } from '@/routes'
+import { mather, getMenu, Routes, noLayoutPages, NoLayoutRoutes } from '@/routes'
 import { messages as t } from '@/containers/App/App.i18n'
 import { messages as g } from '../../Global.i18n'
 import { readAllNotifications, setNotifications } from '@/containers/Notifications/slice'
@@ -122,10 +122,13 @@ const AppLayout: FC<Props> = (props) => {
     // reset
     clientAppSettings.setUseToken(true)
 
-    if (configurationPageFrame) {
+    const noLayoutPage = useMemo(() => !!findRouteMatch(noLayoutPages, location.pathname, mather), [location])
+
+    if (configurationPageFrame || noLayoutPage) {
         return (
             <App toastContainerPortalTarget={document.getElementById('toast-root')}>
-                <PreviewApp />
+                {configurationPageFrame && <PreviewApp />}
+                {noLayoutPage && <NoLayoutRoutes />}
             </App>
         )
     }

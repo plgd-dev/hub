@@ -106,3 +106,16 @@ export const updateLinkedHubData = (linkedHubsId: string, body: Omit<HubDataType
         'update-linked-hub'
     )
 }
+
+export const createLinkedHub = (body: Omit<HubDataType, 'id'>) => {
+    const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
+    return withTelemetry(
+        () =>
+            fetchApi(`${httpGatewayAddress}${dpsApiEndpoints.HUBS}`, {
+                method: 'POST',
+                cancelRequestDeadlineTimeout,
+                body,
+            }),
+        'update-linked-hub'
+    )
+}

@@ -39,6 +39,8 @@ const LinkedHubsDetailPage: FC<Props> = (props) => {
 
     const { data, loading, error, refresh } = useHubDetail(hubId!, !!hubId)
 
+    console.log(data)
+
     const [activeTabItem, setActiveTabItem] = useState(defaultActiveTab ?? 0)
     const [pageLoading, setPageLoading] = useState(false)
     const [formData, setFormData] = useState(data)

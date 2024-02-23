@@ -175,7 +175,6 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                             '/device-provisioning/linked-hubs/:hubId/certificate-authority/:section',
                             '/device-provisioning/linked-hubs/:hubId/authorization',
                             '/device-provisioning/linked-hubs/:hubId/authorization/:section',
-                            '/device-provisioning/linked-hubs/link-new-hub',
                         ],
                     },
                 ],
@@ -255,12 +254,35 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
     },
 ]
 
+export const noLayoutPages = ['/device-provisioning/linked-hubs/link-new-hub', '/device-provisioning/linked-hubs/link-new-hub/:step']
+
 export const mather = (pathname: string, pattern: string) => matchPath(pattern, pathname)
 
 const Loader = () => {
     const { formatMessage: _ } = useIntl()
     return <FullPageLoader i18n={{ loading: _(g.loading) }} />
 }
+
+export const NoLayoutRoutes = () => (
+    <RoutesGroup>
+        <Route
+            element={
+                <Suspense fallback={<Loader />}>
+                    <LinkNewHubPage />
+                </Suspense>
+            }
+            path='/device-provisioning/linked-hubs/link-new-hub'
+        />
+        <Route
+            element={
+                <Suspense fallback={<Loader />}>
+                    <LinkNewHubPage />
+                </Suspense>
+            }
+            path='/device-provisioning/linked-hubs/link-new-hub/:step'
+        />
+    </RoutesGroup>
+)
 
 export const Routes = () => {
     const { formatMessage: _ } = useIntl()
@@ -480,15 +502,6 @@ export const Routes = () => {
                     </Suspense>
                 }
                 path='/device-provisioning/linked-hubs/:hubId/authorization/:section'
-            />
-
-            <Route
-                element={
-                    <Suspense fallback={<Loader />}>
-                        <LinkNewHubPage />
-                    </Suspense>
-                }
-                path='/device-provisioning/linked-hubs/link-new-hub'
             />
 
             <Route

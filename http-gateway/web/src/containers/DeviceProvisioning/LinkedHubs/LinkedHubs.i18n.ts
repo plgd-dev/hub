@@ -399,4 +399,20 @@ export const messages = defineMessages({
         id: 'linkedHubs.keepAliveTimeout',
         defaultMessage: 'Keep alive timeout',
     },
+    linkHub: {
+        id: 'linkedHubs.linkHub',
+        defaultMessage: 'Link Hub',
+    },
+    hubDetails: {
+        id: 'linkedHubs.hubDetails',
+        defaultMessage: 'Hub Details',
+    },
+    name: {
+        id: 'linkedHubs.name',
+        defaultMessage: 'Name',
+    },
+    scopes: {
+        id: 'linkedHubs.scopes',
+        defaultMessage: 'Scopes',
+    },
 })

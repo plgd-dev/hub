@@ -57,6 +57,7 @@ const TabContent4: FC<Props> = (props) => {
                                             {...commonInputProps}
                                             {...register('authorization.provider.http.maxIdleConns', {
                                                 required: true,
+                                                valueAsNumber: true,
                                             })}
                                             placeholder={_(t.maxIdleConnections)}
                                             type='number'
@@ -80,6 +81,7 @@ const TabContent4: FC<Props> = (props) => {
                                             {...commonInputProps}
                                             {...register('authorization.provider.http.maxConnsPerHost', {
                                                 required: true,
+                                                valueAsNumber: true,
                                             })}
                                             placeholder={_(t.maxConnectionsPerHost)}
                                         />
@@ -102,6 +104,7 @@ const TabContent4: FC<Props> = (props) => {
                                             {...commonInputProps}
                                             {...register('authorization.provider.http.maxIdleConnsPerHost', {
                                                 required: true,
+                                                valueAsNumber: true,
                                             })}
                                             placeholder={_(t.maxIdleConnectionsPerHost)}
                                             type='number'

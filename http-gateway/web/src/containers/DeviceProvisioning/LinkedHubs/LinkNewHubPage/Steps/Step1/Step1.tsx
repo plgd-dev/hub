@@ -1,4 +1,4 @@
-import React, { FC, FormEvent, FormEventHandler, useCallback, useContext, useState } from 'react'
+import React, { FC, FormEvent, useCallback, useContext, useState } from 'react'
 import { useIntl } from 'react-intl'
 
 import Row from '@shared-ui/components/Atomic/Grid/Row'
@@ -13,15 +13,17 @@ import { openTelemetry } from '@shared-ui/common/services/opentelemetry'
 
 import { messages as t } from '../../../LinkedHubs.i18n'
 import * as styles from './Step1.styles'
+import * as commonStyles from '../../LinkNewHubPage.styles'
 import { messages as g } from '@/containers/Global.i18n'
 import { Props, Inputs } from './Step1.types'
 import { getAppWellKnownConfiguration } from '@/containers/App/AppRest'
+import { DEFAULT_FORM_DATA } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
 
 const Step1: FC<Props> = (props) => {
-    const { defaultFormData, presetData } = props
+    const { defaultFormData } = props
 
     const { formatMessage: _ } = useIntl()
-    const { updateData, setFormError } = useContext(FormContext)
+    const { updateData, setFormError, setStep } = useContext(FormContext)
 
     const [loading, setLoading] = useState(false)
 
@@ -29,7 +31,11 @@ const Step1: FC<Props> = (props) => {
         formState: { errors },
         register,
         getValues,
+        watch,
     } = useForm<Inputs>({ defaultFormData, updateData, setFormError, errorKey: 'step1' })
+
+    const name = watch('name')
+    const endpoint = watch('endpoint')
 
     const handleFormSubmit = useCallback((e: FormEvent) => {
         e.preventDefault()
@@ -44,11 +50,15 @@ const Step1: FC<Props> = (props) => {
                     'get-endpoint-hub-configuration'
                 )
 
-                console.log(wellKnown)
-
-                presetData({
-                    certificateAuthorities: wellKnown.certificateAuthorities,
+                updateData({
+                    ...DEFAULT_FORM_DATA,
+                    name: values.name,
+                    endpoint: values.endpoint,
+                    id: wellKnown.id,
+                    coapGateway: wellKnown.coapGateway,
                 })
+
+                setStep?.(1)
 
                 setLoading(false)
             } catch (e) {
@@ -62,39 +72,38 @@ const Step1: FC<Props> = (props) => {
 
     return (
         <form>
+            <h1 css={commonStyles.headline}>{_(t.linkNewHub)}</h1>
+            <p css={[commonStyles.description, commonStyles.descriptionLarge]}>
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna
+            </p>
             <Row>
-                <Column lg={3} size={3} sm={2}></Column>
                 <Column size={6}>
-                    <Row>
-                        <Column size={6}>
-                            <FormGroup error={errors.hubName ? _(g.requiredField, { field: _(t.hubName) }) : undefined} id='hubName'>
-                                <FormLabel text={_(t.hubName)} />
-                                <FormInput {...register('hubName', { required: true, validate: (val) => val !== '' })} />
-                            </FormGroup>
-                        </Column>
-                        <Column size={6}>
-                            <FormGroup error={errors.endpoint ? _(g.requiredField, { field: _(t.endpoint) }) : undefined} id='endpoint'>
-                                <FormLabel text={_(t.endpoint)} tooltipMaxWidth={270} tooltipText={_(t.endpointDescription)} />
-                                <FormInput {...register('endpoint', { required: true, validate: (val) => val !== '' })} />
-                            </FormGroup>
-                        </Column>
-                    </Row>
-                    <div css={styles.loadingButtonWrapper}>
-                        <Button
-                            css={styles.continueBtn}
-                            htmlType='submit'
-                            loading={loading}
-                            loadingText={_(t.continue)}
-                            onClick={handleFormSubmit}
-                            size='big'
-                            variant='primary'
-                        >
-                            {_(t.continue)}
-                        </Button>
-                    </div>
+                    <FormGroup error={errors.name ? _(g.requiredField, { field: _(g.name) }) : undefined} id='name'>
+                        <FormLabel text={_(g.name)} />
+                        <FormInput {...register('name', { required: true, validate: (val) => val !== '' })} />
+                    </FormGroup>
                 </Column>
-                <Column size={3}></Column>
+                <Column size={6}>
+                    <FormGroup error={errors.endpoint ? _(g.requiredField, { field: _(t.endpoint) }) : undefined} id='endpoint'>
+                        <FormLabel text={_(t.endpoint)} tooltipMaxWidth={270} tooltipText={_(t.endpointDescription)} />
+                        <FormInput {...register('endpoint', { required: true, validate: (val) => val !== '' })} />
+                    </FormGroup>
+                </Column>
             </Row>
+            <div css={styles.loadingButtonWrapper}>
+                <Button
+                    css={styles.continueBtn}
+                    disabled={name === '' || endpoint === ''}
+                    htmlType='submit'
+                    loading={loading}
+                    loadingText={_(t.continue)}
+                    onClick={handleFormSubmit}
+                    size='big'
+                    variant='primary'
+                >
+                    {_(t.continue)}
+                </Button>
+            </div>
         </form>
     )
 }

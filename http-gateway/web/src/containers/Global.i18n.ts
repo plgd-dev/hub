@@ -209,4 +209,32 @@ export const messages = defineMessages({
         id: 'global.editorPlaceholder',
         defaultMessage: 'Write your code or Drag & Drop your file here',
     },
+    back: {
+        id: 'global.back',
+        defaultMessage: 'Back',
+    },
+    continue: {
+        id: 'global.continue',
+        defaultMessage: 'Continue',
+    },
+    unit: {
+        id: 'global.unit',
+        defaultMessage: 'Unit',
+    },
+    placeholder: {
+        id: 'global.placeholder',
+        defaultMessage: 'Placeholder',
+    },
+    time: {
+        id: 'global.time',
+        defaultMessage: 'Time',
+    },
+    timeout: {
+        id: 'global.timeout',
+        defaultMessage: 'Timeout',
+    },
+    metric: {
+        id: 'global.metric',
+        defaultMessage: 'Metric',
+    },
 })

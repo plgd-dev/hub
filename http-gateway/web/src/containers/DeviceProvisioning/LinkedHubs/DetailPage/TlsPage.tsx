@@ -20,6 +20,7 @@ import * as styles from '@/containers/DeviceProvisioning/LinkedHubs/DetailPage/T
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
 import notificationId from '@/notificationId'
+import { pemToString } from '../utils'
 
 const modalVariants = {
     ADD_CA_POOL: 'addCaPool',
@@ -130,8 +131,6 @@ const TlsPage: FC<any> = (props) => {
         () => modalData.value === undefined || modalData.value.startsWith('/') || modalData.value.startsWith('-----BEGIN'),
         [modalData.value]
     )
-
-    const pemToString = useCallback((pem: string) => `${CA_BASE64_PREFIX}${btoa(pem)}`, [])
 
     const handleSaveModalData = useCallback(() => {
         switch (modalData.variant) {
