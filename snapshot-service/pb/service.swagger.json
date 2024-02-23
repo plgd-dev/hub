@@ -581,11 +581,12 @@
                 "description": {
                   "type": "string"
                 },
-                "expression": {
-                  "$ref": "#/definitions/pbRuleExpression"
+                "yqEngine": {
+                  "$ref": "#/definitions/pbYQEngine"
                 },
                 "enabled": {
-                  "type": "boolean"
+                  "type": "boolean",
+                  "title": "RuleExpression expression = 4;"
                 },
                 "owner": {
                   "type": "string"
@@ -775,6 +776,18 @@
         }
       }
     },
+    "YQEngineInput": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "resourceId": {
+          "$ref": "#/definitions/pbResourceId"
+        },
+        "value": {}
+      }
+    },
     "googlerpcStatus": {
       "type": "object",
       "properties": {
@@ -940,111 +953,22 @@
         }
       }
     },
+    "pbGenerateContent": {
+      "type": "object",
+      "properties": {
+        "yqEngine": {
+          "$ref": "#/definitions/pbYQEngine"
+        },
+        "contentType": {
+          "type": "string"
+        }
+      }
+    },
     "pbInvokeRuleActionLinkResponse": {
       "type": "object"
     },
     "pbInvokeRuleResponse": {
       "type": "object"
-    },
-    "pbLogicalExpression": {
-      "type": "object",
-      "properties": {
-        "leftExpression": {
-          "$ref": "#/definitions/pbRuleExpression"
-        },
-        "operator": {
-          "$ref": "#/definitions/pbLogicalOperator"
-        },
-        "rightExpression": {
-          "$ref": "#/definitions/pbRuleExpression"
-        }
-      }
-    },
-    "pbLogicalOperator": {
-      "type": "string",
-      "enum": [
-        "AND",
-        "OR"
-      ],
-      "default": "AND"
-    },
-    "pbNegationExpression": {
-      "type": "object",
-      "properties": {
-        "innerExpression": {
-          "$ref": "#/definitions/pbRuleExpression"
-        }
-      }
-    },
-    "pbOriginId": {
-      "type": "object",
-      "properties": {
-        "href": {
-          "type": "string",
-          "title": "path to resource in the device (e.g. /oic/d )"
-        },
-        "types": {
-          "$ref": "#/definitions/pbRepeatedString",
-          "title": "resource must contains all types (e.g. [oic.r.switch.binary])"
-        }
-      }
-    },
-    "pbParenthesesExpression": {
-      "type": "object",
-      "properties": {
-        "innerExpression": {
-          "$ref": "#/definitions/pbRuleExpression"
-        }
-      }
-    },
-    "pbRelationalExpression": {
-      "type": "object",
-      "properties": {
-        "leftOperand": {
-          "$ref": "#/definitions/pbRelationalOperand"
-        },
-        "compare": {
-          "$ref": "#/definitions/pbRelationalOperator"
-        },
-        "string": {
-          "$ref": "#/definitions/pbStringOperator"
-        },
-        "rightOperand": {
-          "$ref": "#/definitions/pbRelationalOperand"
-        }
-      }
-    },
-    "pbRelationalOperand": {
-      "type": "object",
-      "properties": {
-        "scalar": {},
-        "resourceProperty": {
-          "$ref": "#/definitions/pbResourceProperty"
-        }
-      }
-    },
-    "pbRelationalOperator": {
-      "type": "string",
-      "enum": [
-        "EQUAL",
-        "NOT_EQUAL",
-        "LESS_THAN",
-        "LESS_THAN_OR_EQUAL",
-        "GREATER_THAN",
-        "GREATER_THAN_OR_EQUAL"
-      ],
-      "default": "EQUAL"
-    },
-    "pbRepeatedString": {
-      "type": "object",
-      "properties": {
-        "list": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
     },
     "pbResourceId": {
       "type": "object",
@@ -1057,21 +981,6 @@
         }
       }
     },
-    "pbResourceProperty": {
-      "type": "object",
-      "properties": {
-        "originId": {
-          "$ref": "#/definitions/pbOriginId"
-        },
-        "resourceId": {
-          "$ref": "#/definitions/pbResourceId"
-        },
-        "propertyPath": {
-          "type": "string",
-          "title": "jq-like path"
-        }
-      }
-    },
     "pbResourceSnapshot": {
       "type": "object",
       "properties": {
@@ -1081,8 +990,11 @@
         "resourceFilter": {
           "$ref": "#/definitions/ResourceSnapshotApplyToResources"
         },
-        "content": {
+        "defined": {
           "$ref": "#/definitions/pbContent"
+        },
+        "generated": {
+          "$ref": "#/definitions/pbGenerateContent"
         },
         "resourceInterface": {
           "type": "string",
@@ -1134,11 +1046,12 @@
         "description": {
           "type": "string"
         },
-        "expression": {
-          "$ref": "#/definitions/pbRuleExpression"
+        "yqEngine": {
+          "$ref": "#/definitions/pbYQEngine"
         },
         "enabled": {
-          "type": "boolean"
+          "type": "boolean",
+          "title": "RuleExpression expression = 4;"
         },
         "owner": {
           "type": "string"
@@ -1218,23 +1131,6 @@
         }
       }
     },
-    "pbRuleExpression": {
-      "type": "object",
-      "properties": {
-        "relationalExpression": {
-          "$ref": "#/definitions/pbRelationalExpression"
-        },
-        "logicalExpression": {
-          "$ref": "#/definitions/pbLogicalExpression"
-        },
-        "parenthesesExpression": {
-          "$ref": "#/definitions/pbParenthesesExpression"
-        },
-        "negationExpression": {
-          "$ref": "#/definitions/pbNegationExpression"
-        }
-      }
-    },
     "pbScene": {
       "type": "object",
       "properties": {
@@ -1253,16 +1149,6 @@
         }
       }
     },
-    "pbStringOperator": {
-      "type": "string",
-      "enum": [
-        "CONTAINS",
-        "DOES_NOT_CONTAIN",
-        "STARTS_WITH",
-        "ENDS_WITH"
-      ],
-      "default": "CONTAINS"
-    },
     "pbUpdateRuleActionLinkResponse": {
       "type": "object"
     },
@@ -1271,6 +1157,22 @@
     },
     "pbUpdateSceneResponse": {
       "type": "object"
+    },
+    "pbYQEngine": {
+      "type": "object",
+      "properties": {
+        "inputs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/YQEngineInput"
+          },
+          "title": "content of resources will encoded on yq via $name"
+        },
+        "yqExpression": {
+          "type": "string"
+        }
+      }
     },
     "protobufAny": {
       "type": "object",

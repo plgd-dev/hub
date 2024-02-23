@@ -26,6 +26,7 @@
     - [StringOperator](#snapshotservice-pb-StringOperator)
   
 - [snapshot-service/pb/scene.proto](#snapshot-service_pb_scene-proto)
+    - [GenerateContent](#snapshotservice-pb-GenerateContent)
     - [ResourceSnapshot](#snapshotservice-pb-ResourceSnapshot)
     - [ResourceSnapshot.ApplyToDevices](#snapshotservice-pb-ResourceSnapshot-ApplyToDevices)
     - [ResourceSnapshot.ApplyToResources](#snapshotservice-pb-ResourceSnapshot-ApplyToResources)
@@ -57,6 +58,10 @@
     - [UpdateSceneResponse](#snapshotservice-pb-UpdateSceneResponse)
   
     - [RuleEngine](#snapshotservice-pb-RuleEngine)
+  
+- [snapshot-service/pb/yqEngine.proto](#snapshot-service_pb_yqEngine-proto)
+    - [YQEngine](#snapshotservice-pb-YQEngine)
+    - [YQEngine.Input](#snapshotservice-pb-YQEngine-Input)
   
 - [Scalar Value Types](#scalar-value-types)
 
@@ -302,8 +307,8 @@
 | id | [string](#string) |  |  |
 | name | [string](#string) |  |  |
 | description | [string](#string) |  |  |
-| expression | [RuleExpression](#snapshotservice-pb-RuleExpression) |  |  |
-| enabled | [bool](#bool) |  |  |
+| yq_engine | [YQEngine](#snapshotservice-pb-YQEngine) |  |  |
+| enabled | [bool](#bool) |  | RuleExpression expression = 4; |
 | owner | [string](#string) |  |  |
 
 
@@ -319,6 +324,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| bool | [bool](#bool) |  |  |
 | relational_expression | [RelationalExpression](#snapshotservice-pb-RelationalExpression) |  |  |
 | logical_expression | [LogicalExpression](#snapshotservice-pb-LogicalExpression) |  |  |
 | parentheses_expression | [ParenthesesExpression](#snapshotservice-pb-ParenthesesExpression) |  |  |
@@ -387,6 +393,22 @@
 
 
 
+<a name="snapshotservice-pb-GenerateContent"></a>
+
+### GenerateContent
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| yq_engine | [YQEngine](#snapshotservice-pb-YQEngine) |  |  |
+| content_type | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="snapshotservice-pb-ResourceSnapshot"></a>
 
 ### ResourceSnapshot
@@ -397,7 +419,8 @@
 | ----- | ---- | ----- | ----------- |
 | device_filter | [ResourceSnapshot.ApplyToDevices](#snapshotservice-pb-ResourceSnapshot-ApplyToDevices) |  |  |
 | resource_filter | [ResourceSnapshot.ApplyToResources](#snapshotservice-pb-ResourceSnapshot-ApplyToResources) |  |  |
-| content | [resourceaggregate.pb.Content](#resourceaggregate-pb-Content) |  |  |
+| defined | [resourceaggregate.pb.Content](#resourceaggregate-pb-Content) |  |  |
+| generated | [GenerateContent](#snapshotservice-pb-GenerateContent) |  |  |
 | resource_interface | [string](#string) |  | optional update interface |
 | time_to_live | [int64](#int64) |  | optional update command time to live |
 
@@ -832,6 +855,55 @@
 | InvokeRuleActionLink | [InvokeRuleActionLinkRequest](#snapshotservice-pb-InvokeRuleActionLinkRequest) | [InvokeRuleActionLinkResponse](#snapshotservice-pb-InvokeRuleActionLinkResponse) |  |
 | GetAppliedRuleActionLinks | [GetAppliedRuleActionLinksRequest](#snapshotservice-pb-GetAppliedRuleActionLinksRequest) | [AppliedRuleActionLink](#snapshotservice-pb-AppliedRuleActionLink) |  |
 | DeleteAppliedRuleActionLink | [DeleteAppliedRuleActionLinkRequest](#snapshotservice-pb-DeleteAppliedRuleActionLinkRequest) | [DeleteAppliedRuleActionLinkResponse](#snapshotservice-pb-DeleteAppliedRuleActionLinkResponse) |  |
+
+ 
+
+
+
+<a name="snapshot-service_pb_yqEngine-proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## snapshot-service/pb/yqEngine.proto
+
+
+
+<a name="snapshotservice-pb-YQEngine"></a>
+
+### YQEngine
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| inputs | [YQEngine.Input](#snapshotservice-pb-YQEngine-Input) | repeated | content of resources will encoded on yq via $name |
+| yq_expression | [string](#string) |  |  |
+
+
+
+
+
+
+<a name="snapshotservice-pb-YQEngine-Input"></a>
+
+### YQEngine.Input
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  |  |
+| resource_id | [resourceaggregate.pb.ResourceId](#resourceaggregate-pb-ResourceId) |  |  |
+| value | [google.protobuf.Value](#google-protobuf-Value) |  |  |
+
+
+
+
+
+ 
+
+ 
+
+ 
 
  
 

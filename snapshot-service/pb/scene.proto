@@ -5,9 +5,15 @@ package snapshotservice.pb;
 option go_package = "github.com/plgd-dev/hub/v2/snapshot-service/pb;pb";
 
 import "resource-aggregate/pb/resources.proto";
+import "snapshot-service/pb/yqEngine.proto";
 
 
-message ResourceSnapshot {
+message UpdateResourceContent {
+    message GenerateContent {
+        YQEngine yq_engine = 1;
+        string content_type = 2;
+    }
+    
     message ApplyToDevices {
         bool origin = 1; // device that is originally started the scene
         repeated string device_ids = 2; // identifies devices
@@ -20,7 +26,10 @@ message ResourceSnapshot {
     ApplyToDevices device_filter = 1;
     ApplyToResources resource_filter = 2;
 
-    resourceaggregate.pb.Content content = 5;
+    oneof content {
+        resourceaggregate.pb.Content defined = 3;
+        GenerateContent generated = 4;
+    }
     string resource_interface = 6; // optional update interface
     int64 time_to_live = 7; // optional update command time to live
 }
@@ -28,7 +37,7 @@ message ResourceSnapshot {
 message Scene {
     string id = 1;
     string name = 2;
-    repeated ResourceSnapshot resources = 3;
+    repeated UpdateResourceContent resources = 3;
 }
 
 

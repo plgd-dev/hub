@@ -269,6 +269,10 @@
             <ul>
               
                 <li>
+                  <a href="#snapshotservice.pb.GenerateContent"><span class="badge">M</span>GenerateContent</a>
+                </li>
+              
+                <li>
                   <a href="#snapshotservice.pb.ResourceSnapshot"><span class="badge">M</span>ResourceSnapshot</a>
                 </li>
               
@@ -393,6 +397,25 @@
                 <li>
                   <a href="#snapshotservice.pb.RuleEngine"><span class="badge">S</span>RuleEngine</a>
                 </li>
+              
+            </ul>
+          </li>
+        
+          
+          <li>
+            <a href="#snapshot-service%2fpb%2fyqEngine.proto">snapshot-service/pb/yqEngine.proto</a>
+            <ul>
+              
+                <li>
+                  <a href="#snapshotservice.pb.YQEngine"><span class="badge">M</span>YQEngine</a>
+                </li>
+              
+                <li>
+                  <a href="#snapshotservice.pb.YQEngine.Input"><span class="badge">M</span>YQEngine.Input</a>
+                </li>
+              
+              
+              
               
             </ul>
           </li>
@@ -925,8 +948,8 @@
                 </tr>
               
                 <tr>
-                  <td>expression</td>
-                  <td><a href="#snapshotservice.pb.RuleExpression">RuleExpression</a></td>
+                  <td>yq_engine</td>
+                  <td><a href="#snapshotservice.pb.YQEngine">YQEngine</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -935,7 +958,7 @@
                   <td>enabled</td>
                   <td><a href="#bool">bool</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>RuleExpression expression = 4; </p></td>
                 </tr>
               
                 <tr>
@@ -961,6 +984,13 @@
               <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
             </thead>
             <tbody>
+              
+                <tr>
+                  <td>bool</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
               
                 <tr>
                   <td>relational_expression</td>
@@ -1116,6 +1146,37 @@
       <p></p>
 
       
+        <h3 id="snapshotservice.pb.GenerateContent">GenerateContent</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>yq_engine</td>
+                  <td><a href="#snapshotservice.pb.YQEngine">YQEngine</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>content_type</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
         <h3 id="snapshotservice.pb.ResourceSnapshot">ResourceSnapshot</h3>
         <p></p>
 
@@ -1141,8 +1202,15 @@
                 </tr>
               
                 <tr>
-                  <td>content</td>
+                  <td>defined</td>
                   <td><a href="#resourceaggregate.pb.Content">resourceaggregate.pb.Content</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>generated</td>
+                  <td><a href="#snapshotservice.pb.GenerateContent">GenerateContent</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -2141,6 +2209,89 @@
           </table>
           
         
+    
+      
+      <div class="file-heading">
+        <h2 id="snapshot-service/pb/yqEngine.proto">snapshot-service/pb/yqEngine.proto</h2><a href="#title">Top</a>
+      </div>
+      <p></p>
+
+      
+        <h3 id="snapshotservice.pb.YQEngine">YQEngine</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>inputs</td>
+                  <td><a href="#snapshotservice.pb.YQEngine.Input">YQEngine.Input</a></td>
+                  <td>repeated</td>
+                  <td><p>content of resources will encoded on yq via $name </p></td>
+                </tr>
+              
+                <tr>
+                  <td>yq_expression</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="snapshotservice.pb.YQEngine.Input">YQEngine.Input</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>name</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>resource_id</td>
+                  <td><a href="#resourceaggregate.pb.ResourceId">resourceaggregate.pb.ResourceId</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>value</td>
+                  <td><a href="#google.protobuf.Value">google.protobuf.Value</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+
+      
+
+      
+
+      
     
 
     <h2 id="scalar-value-types">Scalar Value Types</h2>

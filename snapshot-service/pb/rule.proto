@@ -4,88 +4,88 @@ package snapshotservice.pb;
 
 option go_package = "github.com/plgd-dev/hub/v2/snapshot-service/pb;pb";
 
-import "resource-aggregate/pb/resources.proto";
-// import "resource-aggregate/pb/events.proto";
-import "google/protobuf/struct.proto";
+import "snapshot-service/pb/yqEngine.proto";
 
 message Rule {
   string id = 1;
   string name = 2;
   string description = 3;
-  RuleExpression expression = 4;
+  YQEngine yq_engine = 4;
+  //RuleExpression expression = 4;
   bool enabled = 5;
   string owner = 6;
 }
 
-message RuleExpression {
-  oneof expression {
-    RelationalExpression relational_expression = 1;
-    LogicalExpression logical_expression = 2;
-    ParenthesesExpression parentheses_expression = 3;
-    NegationExpression negation_expression = 4;
-  }
-}
+// message RuleExpression {
+//   oneof expression {
+//     bool bool = 1;
+//     RelationalExpression relational_expression = 2;
+//     LogicalExpression logical_expression = 3;
+//     ParenthesesExpression parentheses_expression = 4;
+//     NegationExpression negation_expression = 5;
+//   }
+// }
 
-message RelationalOperand {
-  oneof operand {
-    google.protobuf.Value scalar = 1;
-    ResourceProperty resource_property = 2;
-  }
-}
+// message RelationalOperand {
+//   oneof operand {
+//     google.protobuf.Value scalar = 1;
+//     ResourceProperty resource_property = 2;
+//   }
+// }
 
-message RelationalExpression {
-  RelationalOperand left_operand = 1;
-  oneof operator {
-    RelationalOperator compare = 2;
-    StringOperator string = 3;
-  }
-  RelationalOperand right_operand = 16;
-}
+// message RelationalExpression {
+//   RelationalOperand left_operand = 1;
+//   oneof operator {
+//     RelationalOperator compare = 2;
+//     StringOperator string = 3;
+//   }
+//   RelationalOperand right_operand = 16;
+// }
 
-message LogicalExpression {
-  RuleExpression left_expression = 1;
-  LogicalOperator operator = 2;
-  RuleExpression right_expression = 3;
-}
+// message LogicalExpression {
+//   RuleExpression left_expression = 1;
+//   LogicalOperator operator = 2;
+//   RuleExpression right_expression = 3;
+// }
 
-message ParenthesesExpression { RuleExpression inner_expression = 1; }
+// message ParenthesesExpression { RuleExpression inner_expression = 1; }
 
-message NegationExpression { RuleExpression inner_expression = 1; }
+// message NegationExpression { RuleExpression inner_expression = 1; }
 
-message RepeatedString { repeated string list = 1; }
+// message RepeatedString { repeated string list = 1; }
 
-message OriginId {
-  oneof resource { // used to match the origin resource
-    string href = 1; // path to resource in the device (e.g. /oic/d )
-    RepeatedString types = 2; // resource must contains all types (e.g. [oic.r.switch.binary])
-  }
-}
+// message OriginId {
+//   oneof resource { // used to match the origin resource
+//     string href = 1; // path to resource in the device (e.g. /oic/d )
+//     RepeatedString types = 2; // resource must contains all types (e.g. [oic.r.switch.binary])
+//   }
+// }
 
-message ResourceProperty {
-  oneof resource_source {
-    OriginId origin_id = 1;
-    resourceaggregate.pb.ResourceId resource_id = 2;
-  }
-  string property_path = 3; // jq-like path
-}
+// message ResourceProperty {
+//   oneof resource_source {
+//     OriginId origin_id = 1;
+//     resourceaggregate.pb.ResourceId resource_id = 2;
+//   }
+//   string property_path = 3; // jq-like path
+// }
 
-enum RelationalOperator {
-  EQUAL = 0;
-  NOT_EQUAL = 1;
-  LESS_THAN = 2;
-  LESS_THAN_OR_EQUAL = 3;
-  GREATER_THAN = 4;
-  GREATER_THAN_OR_EQUAL = 5;
-}
+// enum RelationalOperator {
+//   EQUAL = 0;
+//   NOT_EQUAL = 1;
+//   LESS_THAN = 2;
+//   LESS_THAN_OR_EQUAL = 3;
+//   GREATER_THAN = 4;
+//   GREATER_THAN_OR_EQUAL = 5;
+// }
 
-enum StringOperator {
-  CONTAINS = 0;
-  DOES_NOT_CONTAIN = 1;
-  STARTS_WITH = 2;
-  ENDS_WITH = 3;
-}
+// enum StringOperator {
+//   CONTAINS = 0;
+//   DOES_NOT_CONTAIN = 1;
+//   STARTS_WITH = 2;
+//   ENDS_WITH = 3;
+// }
 
-enum LogicalOperator {
-  AND = 0;
-  OR = 1;
-}
+// enum LogicalOperator {
+//   AND = 0;
+//   OR = 1;
+// }

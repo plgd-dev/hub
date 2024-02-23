@@ -1,5 +1,7 @@
 @startuml
 
+title "Rule Execution Flow"
+
 actor "Client/ResourceChanged event" as Client
 participant "Rule Engine" as RuleEngine
 participant "Rule Engine (Evaluation)" as RuleEvaluationService
@@ -54,4 +56,36 @@ deactivate RuleEvaluationService
 
 RuleEngine --> Client: InvokeRuleResponse
 deactivate RuleEngine
+@enduml
+
+@startuml
+
+title "Create Configuration Workflow""
+actor Client
+participant "Rule Engine" as RuleEngine
+database "Rules Store" as RulesStore
+database "RuleActionLink Store" as RuleActionLinkStore
+database "Scene Store" as SceneStore
+
+Client -> RuleEngine: CreateSceneRequest
+activate RuleEngine
+RuleEngine -> SceneStore: Scene
+SceneStore --> RuleEngine: id
+RuleEngine --> Client: CreateSceneResponse
+deactivate RuleEngine
+
+Client -> RuleEngine: CreateRuleRequest
+activate RuleEngine
+RuleEngine -> RulesStore: Rule
+RulesStore --> RuleEngine: id
+RuleEngine --> Client: CreateRuleResponse
+deactivate RuleEngine
+
+Client -> RuleEngine: CreateRuleActionLinkRequest
+activate RuleEngine
+RuleEngine -> RuleActionLinkStore: RuleActionLink
+RuleActionLinkStore --> RuleEngine: id
+RuleEngine --> Client: CreateRuleActionLinkResponse
+deactivate RuleEngine
+
 @enduml
