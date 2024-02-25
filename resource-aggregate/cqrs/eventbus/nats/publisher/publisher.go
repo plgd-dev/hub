@@ -80,14 +80,22 @@ func New(conn *nats.Conn, jetstream bool, opts ...Option) (*Publisher, error) {
 		o.apply(&cfg)
 	}
 
-	publish := conn.Publish
+	publish := func(subj string, data []byte) error {
+		msg := nats.NewMsg(subj)
+		msg.Data = data
+		msg.Header.Add("Authorization", "bearer some-token")
+		return conn.PublishMsg(msg)
+	}
 	if jetstream {
 		js, err := conn.JetStream()
 		if err != nil {
 			return nil, fmt.Errorf("cannot get jetstream context: %w", err)
 		}
 		publish = func(subj string, data []byte) error {
-			_, err := js.Publish(subj, data)
+			msg := nats.NewMsg(subj)
+			msg.Data = data
+			msg.Header.Add("Authorization", "bearer some-token")
+			_, err := js.PublishMsg(msg)
 			return err
 		}
 	}
