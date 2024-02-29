@@ -1393,6 +1393,13 @@
         "serviceId": {
           "type": "string",
           "description": "The service.ID, which identify the device being served, must be set when the status is ONLINE. However, during an OFFLINE event, they will be sed to empty values."
+        },
+        "localEndpoints": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The last local endpoints of the device, and it is set when the status is ONLINE."
         }
       }
     },

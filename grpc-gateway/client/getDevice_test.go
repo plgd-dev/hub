@@ -117,6 +117,7 @@ func TestClient_GetDevice(t *testing.T) {
 			got.Device.ProtocolIndependentId = ""
 			got.Device.Metadata.Connection.Id = ""
 			got.Device.Metadata.Connection.ConnectedAt = 0
+			got.Device.Metadata.Connection.LocalEndpoints = nil
 			got.Device.Metadata.Connection.ServiceId = ""
 			got.Device.Metadata.TwinSynchronization.SyncingAt = 0
 			got.Device.Metadata.TwinSynchronization.InSyncAt = 0

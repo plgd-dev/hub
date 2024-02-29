@@ -443,6 +443,7 @@ message Connection {
     }
     Protocol protocol = 5; // application protocol. It need to be set when the status is ONLINE.
     string service_id = 6; // The service.ID, which identify the device being served, must be set when the status is ONLINE. However, during an OFFLINE event, they will be sed to empty values.
+    repeated string local_endpoints = 7; // The last local endpoints of the device, and it is set when the status is ONLINE.
 }
 //*******************************************************************************************************************************************************
 // Update Device Metadata - Twin Synchronization State

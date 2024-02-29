@@ -15,6 +15,7 @@ import (
 	"github.com/plgd-dev/hub/v2/coap-gateway/resource"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/net/coap"
 	pkgStrings "github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	pbRD "github.com/plgd-dev/hub/v2/resource-directory/pb"
@@ -165,7 +166,7 @@ func WithMaxETagsCountInRequest(v uint32) MaxETagsCountInRequestOpt {
 }
 
 func prepareSetupDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn, rdClient GrpcGatewayClient, raClient ResourceAggregateClient, cfg DeviceObserverConfig) (DeviceObserverConfig, []*commands.Resource, error) {
-	links, sequence, err := GetResourceLinks(ctx, coapConn, resources.ResourceURI)
+	links, sequence, err := coap.GetResourceLinksWithLinkInterface(ctx, coapConn, resources.ResourceURI)
 	switch {
 	case err == nil:
 		if cfg.ObservationType == ObservationType_Detect {

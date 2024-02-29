@@ -16,13 +16,16 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+var localEndpoints = []string{"coap://localhost:5683"}
+
 var testEventDeviceMetadataSnapshotTaken events.DeviceMetadataSnapshotTaken = events.DeviceMetadataSnapshotTaken{
 	DeviceId: dev1,
 	DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
 		DeviceId: dev1,
 		Connection: &commands.Connection{
-			Status: commands.Connection_ONLINE,
-			Id:     "con1",
+			Status:         commands.Connection_ONLINE,
+			Id:             "con1",
+			LocalEndpoints: localEndpoints,
 		},
 		TwinEnabled: true,
 		AuditContext: &commands.AuditContext{
@@ -170,9 +173,10 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 						CorrelationId: correlationID,
 						Update: &commands.UpdateDeviceMetadataRequest_Connection{
 							Connection: &commands.Connection{
-								Status:      commands.Connection_ONLINE,
-								ConnectedAt: connectedAt,
-								Protocol:    commands.Connection_COAPS,
+								Status:         commands.Connection_ONLINE,
+								ConnectedAt:    connectedAt,
+								Protocol:       commands.Connection_COAPS,
+								LocalEndpoints: localEndpoints,
 							},
 						},
 					},
@@ -181,9 +185,10 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 						pb.ToEvent(&events.DeviceMetadataUpdated{
 							DeviceId: deviceID,
 							Connection: &commands.Connection{
-								Status:      commands.Connection_ONLINE,
-								ConnectedAt: connectedAt,
-								Protocol:    commands.Connection_COAPS,
+								Status:         commands.Connection_ONLINE,
+								ConnectedAt:    connectedAt,
+								Protocol:       commands.Connection_COAPS,
+								LocalEndpoints: localEndpoints,
 							},
 							TwinEnabled:          true,
 							TwinSynchronization:  &commands.TwinSynchronization{},
@@ -230,9 +235,10 @@ func TestDeviceMetadataSnapshotTakenHandleCommand(t *testing.T) {
 						pb.ToEvent(&events.DeviceMetadataUpdated{
 							DeviceId: deviceID,
 							Connection: &commands.Connection{
-								Status:      commands.Connection_OFFLINE,
-								ConnectedAt: connectedAt,
-								Protocol:    commands.Connection_COAPS,
+								Status:         commands.Connection_OFFLINE,
+								ConnectedAt:    connectedAt,
+								Protocol:       commands.Connection_COAPS,
+								LocalEndpoints: localEndpoints,
 							},
 							TwinEnabled:          true,
 							TwinSynchronization:  &commands.TwinSynchronization{},

@@ -961,6 +961,14 @@ components:
               type: string
               format: int64
               description: "Unix timestamp in nanoseconds."
+            serviceId:
+              type: string
+              description: "The service.ID, which identify the device being served, must be set when the status is ONLINE. However, during an OFFLINE event, they will be sed to empty values."
+            localEndpoints:
+              type: array
+              description: "The last local endpoints of the device, and it is set when the status is ONLINE."
+              items:
+                type: string
         twinSynchronization:
           $ref: "#/components/schemas/TwinSynchronization"
         twinEnabled:
@@ -1636,14 +1644,14 @@ components:
           title: "Visibility"
         deviceProvisioningService:
           type: string
-          title": "Address to device provisioning service HTTP API in format https://host:port"
+          title: "Address to device provisioning service HTTP API in format https://host:port"
     UIVisibility:
       type: object
       description: |
         true - show, false - hide
       properties:
         mainSidebar:
-          $ref: "#/definitions/UIVisibilityMainSidebar"
+          $ref: "#/components/schemas/UIVisibilityMainSidebar"
           title: "Main sidebar visibility"
   parameters:
     deviceId:
