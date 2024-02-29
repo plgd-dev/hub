@@ -15,6 +15,8 @@ const (
 	ResourceDiscovery = Base + "/res"
 	ResourceRoute     = ApiV1 + "/devices"
 
-	InterfaceQueryKey       = "if"
-	InterfaceQueryKeyPrefix = InterfaceQueryKey + "="
+	InterfaceQueryKey          = "if"
+	InterfaceQueryKeyPrefix    = InterfaceQueryKey + "="
+	ResourceTypeQueryKey       = "rt"
+	ResourceTypeQueryKeyPrefix = ResourceTypeQueryKey + "="
 )

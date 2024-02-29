@@ -29,6 +29,7 @@ var (
 	MessageKey          = "message"
 	SubjectsKey         = "subjects"
 	CertManagerKey      = "certManager"
+	LocalEndpointsKey   = "localEndpoints"
 )
 
 func DurationToMilliseconds(duration time.Duration) float32 {

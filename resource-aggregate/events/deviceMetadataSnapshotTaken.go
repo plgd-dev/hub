@@ -356,6 +356,11 @@ func (d *DeviceMetadataSnapshotTaken) updateDeviceConnection(ctx context.Context
 		req.GetConnection().ConnectedAt = lastConnectedAt
 	}
 
+	// keep local endpoints from the previous event
+	if len(req.GetConnection().GetLocalEndpoints()) == 0 {
+		req.GetConnection().LocalEndpoints = d.GetDeviceMetadataUpdated().GetConnection().GetLocalEndpoints()
+	}
+
 	getTwinSynchronization := d.getTwinSynchronizationForDisconnectedDevice
 	if req.GetConnection().IsOnline() {
 		getTwinSynchronization = d.getTwinSynchronizationForConnectedDevice

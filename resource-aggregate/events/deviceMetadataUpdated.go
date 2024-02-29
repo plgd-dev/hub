@@ -69,11 +69,24 @@ func (d *DeviceMetadataUpdated) CheckInitialized() bool {
 		d.GetEventMetadata() != nil
 }
 
+func equal[T comparable](a, b []T) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
 // Equal checks if two DeviceMetadataUpdated events are equal.
 func (d *DeviceMetadataUpdated) Equal(upd *DeviceMetadataUpdated) bool {
 	return d.GetConnection().GetStatus() == upd.GetConnection().GetStatus() &&
 		d.GetConnection().GetId() == upd.GetConnection().GetId() &&
 		d.GetConnection().GetProtocol() == upd.GetConnection().GetProtocol() &&
+		equal(d.GetConnection().GetLocalEndpoints(), upd.GetConnection().GetLocalEndpoints()) &&
 		d.GetCanceled() == upd.GetCanceled() &&
 		d.GetTwinEnabled() == upd.GetTwinEnabled() &&
 		d.GetAuditContext().GetUserId() == upd.GetAuditContext().GetUserId() &&
