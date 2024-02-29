@@ -166,6 +166,7 @@ func TestRequestHandlerGetDevices(t *testing.T) {
 					dev.ProtocolIndependentId = ""
 					dev.Metadata.Connection.Id = ""
 					dev.Metadata.Connection.ConnectedAt = 0
+					dev.Metadata.Connection.LocalEndpoints = nil
 					dev.Metadata.Connection.ServiceId = ""
 					dev.Metadata.TwinSynchronization.SyncingAt = 0
 					dev.Metadata.TwinSynchronization.InSyncAt = 0

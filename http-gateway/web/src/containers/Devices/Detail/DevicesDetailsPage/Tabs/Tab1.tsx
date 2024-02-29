@@ -21,8 +21,19 @@ import DateFormat from '@/containers/PendingCommands/DateFormat'
 import testId from '@/testId'
 
 const Tab1: FC<Props> = (props) => {
-    const { isTwinEnabled, setTwinSynchronization, twinSyncLoading, deviceId, types, deviceName, model, pendingCommandsData, firmware, softwareUpdateData } =
-        props
+    const {
+        isTwinEnabled,
+        setTwinSynchronization,
+        twinSyncLoading,
+        deviceId,
+        types,
+        deviceName,
+        model,
+        pendingCommandsData,
+        firmware,
+        softwareUpdateData,
+        endpoints,
+    } = props
     const { formatMessage: _ } = useIntl()
 
     const resourceRegistrationObservationWSKey = getResourceRegistrationNotificationKey(deviceId)
@@ -156,6 +167,22 @@ const Tab1: FC<Props> = (props) => {
                             ),
                         },
                         { attribute: _(t.status), value: pendingCommandsData ? `${pendingCommandsData.length} pending commands` : '-' },
+                        {
+                            attribute: _(t.endpoints),
+                            value: endpoints ? (
+                                <TagGroup
+                                    i18n={{
+                                        more: _(app.more),
+                                        types: _(t.endpoints),
+                                    }}
+                                    justifyContent={justifyContent.END}
+                                >
+                                    {endpoints?.map?.((endpoint: string) => <Tag key={endpoint}>{endpoint}</Tag>)}
+                                </TagGroup>
+                            ) : (
+                                <div>-</div>
+                            ),
+                        },
                     ]}
                 />
             </div>

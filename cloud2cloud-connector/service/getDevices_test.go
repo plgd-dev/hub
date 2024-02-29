@@ -99,6 +99,7 @@ func testRequestHandlerGetDevices(t *testing.T, events store.Events) {
 				if dev.GetMetadata().GetConnection() != nil {
 					dev.GetMetadata().GetConnection().Id = ""
 					dev.GetMetadata().GetConnection().ConnectedAt = 0
+					dev.GetMetadata().GetConnection().LocalEndpoints = nil
 				}
 				if dev.GetMetadata().GetTwinSynchronization() != nil {
 					dev.GetMetadata().GetTwinSynchronization().CommandMetadata = nil

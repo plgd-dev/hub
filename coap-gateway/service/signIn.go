@@ -153,6 +153,7 @@ func (c *session) updateBySignInData(ctx context.Context, upd updateType, device
 	}
 
 	if upd == updateTypeNew {
+		c.resolveLocalEndpoints()
 		resp, err := c.server.devicesStatusUpdater.UpdateOnlineStatus(ctx, c)
 		if err != nil {
 			return nil, fmt.Errorf("cannot update cloud device status: %w", err)

@@ -565,4 +565,8 @@ export const messages = defineMessages({
         id: 'devices.dps',
         defaultMessage: 'DPS',
     },
+    endpoints: {
+        id: 'devices.endpoints',
+        defaultMessage: 'Endpoints',
+    },
 })

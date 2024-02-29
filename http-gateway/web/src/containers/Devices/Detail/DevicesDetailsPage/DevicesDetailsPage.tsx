@@ -236,6 +236,7 @@ const DevicesDetailsPage: FC<Props> = (props) => {
                                     softwareUpdateData={softwareUpdateData?.result?.data?.content}
                                     twinSyncLoading={twinSyncLoading}
                                     types={data?.types}
+                                    endpoints={data?.metadata?.connection?.localEndpoints}
                                 />
                             ),
                         },

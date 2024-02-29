@@ -6,6 +6,7 @@ import (
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	commands "github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
+	"golang.org/x/exp/slices"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -74,6 +75,7 @@ func (d *DeviceMetadataUpdated) Equal(upd *DeviceMetadataUpdated) bool {
 	return d.GetConnection().GetStatus() == upd.GetConnection().GetStatus() &&
 		d.GetConnection().GetId() == upd.GetConnection().GetId() &&
 		d.GetConnection().GetProtocol() == upd.GetConnection().GetProtocol() &&
+		slices.Equal(d.GetConnection().GetLocalEndpoints(), upd.GetConnection().GetLocalEndpoints()) &&
 		d.GetCanceled() == upd.GetCanceled() &&
 		d.GetTwinEnabled() == upd.GetTwinEnabled() &&
 		d.GetAuditContext().GetUserId() == upd.GetAuditContext().GetUserId() &&

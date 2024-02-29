@@ -82,7 +82,7 @@ func TestParallelRequest(t *testing.T) {
 	href := "/test/resource/1"
 
 	newAggregate := func(deviceID, href string) *aggregate.Aggregate {
-		a, err := aggregate.NewAggregate(deviceID, commands.NewResourceID(deviceID, href).ToUUID().String(), aggregate.NewDefaultRetryFunc(64), store, func(context.Context) (aggregate.AggregateModel, error) {
+		a, err := aggregate.NewAggregate(deviceID, commands.NewResourceID(deviceID, href).ToUUID().String(), aggregate.NewDefaultRetryFunc(128), store, func(context.Context) (aggregate.AggregateModel, error) {
 			ev := events.NewResourceStateSnapshotTakenForCommand("test", "test", "hubID")
 			ev.ResourceId = commands.NewResourceID(deviceID, href)
 			return ev, nil
