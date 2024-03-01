@@ -5,13 +5,13 @@ run:
   skip-dirs-use-default: false
 
 linters-settings:
-  gocyclo:
-    min-complexity: 15
-  govet:
-    # check-shadowing: true
-    check-shadowing: false
   exhaustive:
     default-signifies-exhaustive: true
+  gocyclo:
+    min-complexity: 15
+  gomoddirectives:
+    replace-allow-list:
+      - github.com/pion/dtls/v2
   gomodguard:
     blocked:
       modules:
@@ -21,6 +21,9 @@ linters-settings:
   gosec:
     excludes:
       - G402
+  govet:
+    # check-shadowing: true
+    check-shadowing: false
   stylecheck:
     go: "1.20"
     checks: ["all", "-ST1003"]

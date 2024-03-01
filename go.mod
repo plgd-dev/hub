@@ -126,5 +126,6 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 )
 
-// note: github.com/pion/dtls/v2/pkg/net package is not yet available in release branches
-exclude github.com/pion/dtls/v2 v2.2.9
+// note: github.com/pion/dtls/v2/pkg/net package is not yet available in release branches,
+// so we force to the use of the pinned master branch
+replace github.com/pion/dtls/v2 => github.com/pion/dtls/v2 v2.2.8-0.20240201071732-2597464081c8
