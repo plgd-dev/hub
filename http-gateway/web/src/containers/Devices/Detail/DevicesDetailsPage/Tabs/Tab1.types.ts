@@ -20,4 +20,5 @@ export type Props = {
         purl: string // url with query parameters to update server
         signed: string // "vendor"
     }
+    endpoints?: string[]
 }
