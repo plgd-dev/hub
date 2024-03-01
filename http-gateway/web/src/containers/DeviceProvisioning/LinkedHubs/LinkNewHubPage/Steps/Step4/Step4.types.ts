@@ -2,6 +2,7 @@ import { AuthorizationDataType } from '@/containers/DeviceProvisioning/LinkedHub
 
 export type Props = {
     defaultFormData: any
+    onSubmit?: () => void
 }
 
 export type Inputs = {

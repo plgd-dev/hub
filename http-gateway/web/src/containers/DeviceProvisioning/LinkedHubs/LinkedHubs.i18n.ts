@@ -351,7 +351,11 @@ export const messages = defineMessages({
     },
     uploadCertDescription: {
         id: 'linkedHubs.uploadCertDescription',
-        defaultMessage: 'Supported formats:  PEM or CER (max 1 MB)',
+        defaultMessage: 'Supported formats: PEM, CRT or CER (max 1 MB)',
+    },
+    uploadCertKeyDescription: {
+        id: 'linkedHubs.uploadCertDescription',
+        defaultMessage: 'Supported formats: PEM or KEY (max 1 MB)',
     },
     uploadCertTitle: {
         id: 'linkedHubs.uploadCertTitle',

@@ -23,6 +23,7 @@ const Step2: FC<Props> = (props) => {
         formState: { errors },
         register,
     } = useForm<Inputs>({ defaultFormData, updateData, setFormError, errorKey: 'step2' })
+
     return (
         <form>
             <h1 css={commonStyles.headline}>{_(t.hubDetails)}</h1>

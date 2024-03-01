@@ -40,6 +40,8 @@ export const DEFAULT_FORM_DATA = {
     authorization: {
         provider: {
             http: {
+                idleConnTimeout: '30000000000',
+                timeout: '10000000000',
                 tls: {
                     caPool: [],
                     key: '',

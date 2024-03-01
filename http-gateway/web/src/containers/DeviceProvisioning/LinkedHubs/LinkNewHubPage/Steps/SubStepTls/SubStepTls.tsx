@@ -10,6 +10,7 @@ import CaPoolModal from '@shared-ui/components/Organisms/CaPoolModal'
 import CaList from '@shared-ui/components/Organisms/CaList/CaList'
 import { useCaData } from '@shared-ui/common/hooks/useCaData'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
+import Loadable from '@shared-ui/components/Atomic/Loadable'
 
 import * as commonStyles from '@/containers/DeviceProvisioning/LinkedHubs/LinkNewHubPage/LinkNewHubPage.styles'
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
@@ -28,21 +29,29 @@ const SubStepTls: FC<Props> = (props) => {
     const key = watch(`${prefix}tls.key`)
     const cert = watch(`${prefix}tls.cert`)
 
-    function nameLengthValidator(file: any) {
+    function nameLengthValidator(file: any, privateKey = false) {
         const format = file.name.split('.').pop()
 
-        if (!['pem', 'cer'].includes(format)) {
+        if ((privateKey && !['pem', 'key'].includes(format)) || (!privateKey && !['pem', 'crt', 'cer'].includes(format))) {
             return {
                 code: 'invalid-format',
                 message: `Bad file format`,
             }
         }
-
         return null
     }
 
     const { parsedData: caPoolData } = useCaData({
         data: caPool,
+        onError: (e) =>
+            Notification.error(
+                { title: _(t.certificationParsingError), message: e },
+                { notificationId: notificationId.HUB_DPS_LINKED_HUBS_ADD_PAGE_CERT_PARSE_ERROR }
+            ),
+    })
+
+    const { parsedData: certData } = useCaData({
+        data: cert !== '' ? [cert] : [],
         onError: (e) =>
             Notification.error(
                 { title: _(t.certificationParsingError), message: e },
@@ -75,6 +84,15 @@ const SubStepTls: FC<Props> = (props) => {
         [caPoolData]
     )
 
+    const handleViewCert = useCallback(
+        (id: number) => {
+            const certItem = certData.find((item: { id: number; name: string; data: {}[] }) => item.id === id)
+            setCaModalData({ title: _(t.caPoolDetail), subTitle: certItem.name, data: certItem.data || certItem.name, dataChain: certItem.dataChain })
+        },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [certData]
+    )
+
     return (
         <div>
             <Spacer type='pt-12'>
@@ -99,7 +117,7 @@ const SubStepTls: FC<Props> = (props) => {
                 smallPadding
                 customFileRenders={[{ format: 'pem', icon: 'icon-file-pem' }]}
                 description={_(t.uploadCertDescription)}
-                maxFiles={5}
+                maxFiles={10}
                 onFilesDrop={(files) => {
                     setTimeout(() => {
                         setValue(`${prefix}tls.caPool`, [...caPool, ...files.map((f) => pemToString(f))], {
@@ -110,7 +128,7 @@ const SubStepTls: FC<Props> = (props) => {
                 }}
                 renderThumbs={false}
                 title={_(t.uploadCertTitle)}
-                validator={nameLengthValidator}
+                validator={(file) => nameLengthValidator(file)}
             />
 
             {caPoolData.length > 0 && (
@@ -136,7 +154,7 @@ const SubStepTls: FC<Props> = (props) => {
                 <Dropzone
                     smallPadding
                     customFileRenders={[{ format: 'pem', icon: 'icon-file-pem' }]}
-                    description={_(t.uploadCertDescription)}
+                    description={_(t.uploadCertKeyDescription)}
                     maxFiles={1}
                     onFilesDrop={(files) => {
                         setTimeout(() => {
@@ -148,7 +166,7 @@ const SubStepTls: FC<Props> = (props) => {
                     }}
                     renderThumbs={false}
                     title={_(t.uploadCertTitle)}
-                    validator={nameLengthValidator}
+                    validator={(file) => nameLengthValidator(file, true)}
                 />
             ) : (
                 <Spacer type='pt-2'>
@@ -184,21 +202,24 @@ const SubStepTls: FC<Props> = (props) => {
                     }}
                     renderThumbs={false}
                     title={_(t.uploadCertTitle)}
-                    validator={nameLengthValidator}
+                    validator={(file) => nameLengthValidator(file)}
                 />
             ) : (
                 <Spacer type='pt-2'>
-                    <CaList
-                        actions={{
-                            onDelete: () => setValue(`${prefix}tls.cert`, '', { shouldDirty: true, shouldTouch: true }),
-                        }}
-                        data={[{ id: 0, name: 'name', data: [], dataChain: '' }]}
-                        i18n={{
-                            download: _(g.download),
-                            delete: _(g.delete),
-                            view: _(g.view),
-                        }}
-                    />
+                    <Loadable condition={certData.length > 0}>
+                        <CaList
+                            actions={{
+                                onDelete: () => setValue(`${prefix}tls.cert`, '', { shouldDirty: true, shouldTouch: true }),
+                                onView: handleViewCert,
+                            }}
+                            data={certData}
+                            i18n={{
+                                download: _(g.download),
+                                delete: _(g.delete),
+                                view: _(g.view),
+                            }}
+                        />
+                    </Loadable>
                 </Spacer>
             )}
 

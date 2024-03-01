@@ -237,4 +237,12 @@ export const messages = defineMessages({
         id: 'global.metric',
         defaultMessage: 'Metric',
     },
+    valid: {
+        id: 'global.valid',
+        defaultMessage: 'Valid',
+    },
+    expired: {
+        id: 'global.expired',
+        defaultMessage: 'Expired',
+    },
 })

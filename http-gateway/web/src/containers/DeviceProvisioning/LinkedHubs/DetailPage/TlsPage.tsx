@@ -14,7 +14,7 @@ import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import { parse, pemToDER } from '@shared-ui/common/utils/cert-decoder.mjs'
 import TileToggle from '@shared-ui/components/Atomic/TileToggle'
 import Spacer from '@shared-ui/components/Atomic/Spacer'
-import { findCertName, formatCertName } from '@shared-ui/components/Organisms/CaPool/utils'
+import { formatCertName, parseCertificate } from '@shared-ui/common/services/certificates'
 
 import * as styles from '@/containers/DeviceProvisioning/LinkedHubs/DetailPage/Tabs/Tab.styles'
 import { messages as g } from '@/containers/Global.i18n'
@@ -64,11 +64,7 @@ const TlsPage: FC<any> = (props) => {
                         const data = await parse(pemToDER(certsData.replace(/(-----(BEGIN|END) CERTIFICATE-----|[\n\r])/g, ''))).then((c) => c)
                         return { id: key, name: formatCertName(data), data: data, dataChain: p }
                     } else {
-                        const groups = [...certsData.matchAll(/(-----[BEGIN \S]+?-----[\S\s]+?-----[END \S]+?-----)/g)]
-                        const certs = groups.map((g) => parse(pemToDER(g[0].replace(/(-----(BEGIN|END) CERTIFICATE-----|[\n\r])/g, ''))).then((c) => c))
-                        const data = await Promise.all(certs)
-
-                        return { id: key, name: findCertName(data), data, dataChain: p }
+                        return await parseCertificate(certsData, key)
                     }
                 } catch (e: any) {
                     let error = e

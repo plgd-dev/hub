@@ -3,23 +3,55 @@ import { useIntl } from 'react-intl'
 import { useNavigate } from 'react-router-dom'
 
 import TableActionButton from '@shared-ui/components/Organisms/TableActionButton'
-import { DeleteModal, IconArrowDetail, IconTrash } from '@shared-ui/components/Atomic'
+import { DeleteModal, IconArrowDetail, IconTrash, StatusTag } from '@shared-ui/components/Atomic'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
+import { parseCertificate } from '@shared-ui/common/services/certificates'
 
 import PageLayout from '@/containers/Common/PageLayout'
 import TableList from '@/containers/Common/TableList/TableList'
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '../Certificates.i18n'
 import notificationId from '@/notificationId'
-import ListHeader from '../ListHeader'
 import { useCertificatesList } from '@/containers/Certificates/hooks'
 import DateFormat from '@/containers/PendingCommands/DateFormat'
+import { deleteCertificatesApi } from '@/containers/Certificates/rest'
 
 const CertificatesListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
 
     const { data, error, loading, refresh } = useCertificatesList()
+
+    const [displayData, setDisplayData] = useState<any>(undefined)
+
+    useEffect(() => {
+        const parseCerts = async (certs: any) => {
+            const parsed = certs?.map(async (certsData: { credential: { certificatePem: string } }, key: number) => {
+                try {
+                    return await parseCertificate(certsData?.credential.certificatePem, key, certsData)
+                } catch (e: any) {
+                    let error = e
+                    if (!(error instanceof Error)) {
+                        error = new Error(e)
+                    }
+
+                    Notification.error(
+                        { title: _(t.certificationParsingError), message: error.message },
+                        { notificationId: notificationId.HUB_DPS_CERTIFICATES_LIST_CERT_PARSE_ERROR }
+                    )
+                }
+            })
+
+            return await Promise.all(parsed)
+        }
+
+        if (data) {
+            parseCerts(data).then((d) => {
+                setDisplayData(d)
+            })
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [data])
 
     const navigate = useNavigate()
 
@@ -42,8 +74,12 @@ const CertificatesListPage: FC<any> = () => {
     const handleDelete = async () => {
         try {
             setDeleting(true)
+            await deleteCertificatesApi(selected)
 
-            console.log('DELELTE')
+            Notification.success(
+                { title: _(t.certificatesDeleted), message: _(t.certificatesDeletedMessage) },
+                { notificationId: notificationId.HUB_DEVICES_LIST_PAGE_DELETE_DEVICES }
+            )
 
             handleCloseDeleteModal()
             refresh()
@@ -67,7 +103,7 @@ const CertificatesListPage: FC<any> = () => {
         () => [
             {
                 Header: _(g.name),
-                accessor: 'commonName',
+                accessor: 'name',
                 Cell: ({ value, row }: { value: string | number; row: any }) => (
                     <a
                         data-test-id={`dps-certificates-${row.id}`}
@@ -82,24 +118,33 @@ const CertificatesListPage: FC<any> = () => {
                 ),
             },
             {
-                Header: _(g.created),
-                accessor: 'creationDate',
-                Cell: ({ value }: { value: string | number }) => <DateFormat value={value} />,
-            },
-            {
-                Header: _(g.expires),
-                accessor: 'credential.validUntilDate',
-                Cell: ({ value }: { value: string | number }) => (value ? <DateFormat value={value} /> : '-'),
-            },
-            {
-                Header: _(t.subject),
-                accessor: 'subject',
+                Header: _(t.serialNumber),
+                accessor: 'serialNumber',
                 Cell: ({ value }: { value: string | number }) => <span className='no-wrap-text'>{value}</span>,
             },
             {
-                Header: _(t.thumbprint),
-                accessor: 'thumbprint',
+                Header: _(t.type),
+                accessor: 'type',
                 Cell: ({ value }: { value: string | number }) => <span className='no-wrap-text'>{value}</span>,
+            },
+            {
+                Header: _(t.status),
+                accessor: 'status',
+                Cell: ({ row }: { row: any }) => {
+                    const now = new Date()
+                    const isValid = row.original.notBeforeUTC <= now && now <= row.original.notAfterUTC
+                    return <StatusTag variant={isValid ? 'success' : 'error'}>{isValid ? _(g.valid) : _(g.expired)}</StatusTag>
+                },
+            },
+            {
+                Header: _(t.notBefore),
+                accessor: 'notBeforeUTC',
+                Cell: ({ value }: { value: string | number }) => (value ? <DateFormat rawValue value={value} /> : '-'),
+            },
+            {
+                Header: _(t.notAfter),
+                accessor: 'notAfterUTC',
+                Cell: ({ value }: { value: string | number }) => (value ? <DateFormat rawValue value={value} /> : '-'),
             },
             {
                 Header: _(g.action),
@@ -135,18 +180,18 @@ const CertificatesListPage: FC<any> = () => {
 
     const selectedCount = useMemo(() => selected.length, [selected])
     const selectedName = useMemo(
-        () => (selectedCount === 1 && data ? data?.find?.((d: any) => d.id === selected[0])?.name : null),
-        [selectedCount, selected, data]
+        () => (selectedCount === 1 && displayData ? displayData?.find?.((d: any) => d.id === selected[0])?.name : null),
+        [selectedCount, selected, displayData]
     )
 
     return (
-        <PageLayout breadcrumbs={breadcrumbs} header={<ListHeader />} loading={loading || deleting} title={_(t.certificates)}>
+        <PageLayout breadcrumbs={breadcrumbs} loading={loading || deleting || !displayData} title={_(t.certificates)}>
             <TableList
                 columns={columns}
-                data={data}
+                data={displayData}
                 defaultSortBy={[
                     {
-                        id: 'commonName',
+                        id: 'name',
                         desc: false,
                     },
                 ]}

@@ -11,8 +11,8 @@ import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '../LinkedHubs.i18n'
 import { DEFAULT_FORM_DATA } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
-import { createLinkedHub } from '@/containers/DeviceProvisioning/rest'
 import notificationId from '@/notificationId'
+import { createLinkedHub } from '@/containers/DeviceProvisioning/rest'
 
 const Step1 = lazy(() => import('./Steps/Step1'))
 const Step2 = lazy(() => import('./Steps/Step2'))
@@ -37,9 +37,9 @@ const LinkNewHubPage: FC<any> = () => {
                 link: '/hub-detail',
             },
             {
-                name: _(t.certificateAuthorityConfiguration),
+                name: _(t.certificateAuthority),
                 description: 'Short description...',
-                link: '/certificate-authority-Configuration',
+                link: '/certificate-authority',
             },
             {
                 name: _(t.authorization),
@@ -62,11 +62,18 @@ const LinkNewHubPage: FC<any> = () => {
         [navigate, steps]
     )
 
+    console.log(formData)
+
     const onSubmit = async () => {
         try {
+            delete formData.id
+
+            console.log('CREATE')
+            console.log(formData)
+
             await createLinkedHub(formData)
 
-            navigate(`/device-provisioning/linked-hubs`, { replace: true })
+            // navigate(`/device-provisioning/linked-hubs`, { replace: true })
         } catch (error: any) {
             if (!(error instanceof Error)) {
                 error = new Error(error)
@@ -107,7 +114,7 @@ const LinkNewHubPage: FC<any> = () => {
                     <Step1 defaultFormData={formData} />
                     <Step2 defaultFormData={formData} />
                     <Step3 defaultFormData={formData} />
-                    <Step4 defaultFormData={formData} />
+                    <Step4 defaultFormData={formData} onSubmit={onSubmit} />
                 </ContentSwitch>
             </FormContext.Provider>
         </FullPageWizard>

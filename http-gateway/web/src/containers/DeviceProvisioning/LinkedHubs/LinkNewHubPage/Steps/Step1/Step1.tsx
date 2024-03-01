@@ -18,6 +18,7 @@ import { messages as g } from '@/containers/Global.i18n'
 import { Props, Inputs } from './Step1.types'
 import { getAppWellKnownConfiguration } from '@/containers/App/AppRest'
 import { DEFAULT_FORM_DATA } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
+import ButtonBox from '@shared-ui/components/Atomic/ButtonBox/ButtonBox'
 
 const Step1: FC<Props> = (props) => {
     const { defaultFormData } = props
@@ -90,20 +91,10 @@ const Step1: FC<Props> = (props) => {
                     </FormGroup>
                 </Column>
             </Row>
-            <div css={styles.loadingButtonWrapper}>
-                <Button
-                    css={styles.continueBtn}
-                    disabled={name === '' || endpoint === ''}
-                    htmlType='submit'
-                    loading={loading}
-                    loadingText={_(t.continue)}
-                    onClick={handleFormSubmit}
-                    size='big'
-                    variant='primary'
-                >
-                    {_(t.continue)}
-                </Button>
-            </div>
+
+            <ButtonBox disabled={name === '' || endpoint === ''} htmlType='submit' loading={loading} loadingText={_(t.continue)} onClick={handleFormSubmit}>
+                {_(t.continue)}
+            </ButtonBox>
         </form>
     )
 }

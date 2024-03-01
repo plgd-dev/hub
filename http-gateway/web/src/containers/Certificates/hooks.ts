@@ -17,3 +17,21 @@ export const useCertificatesList = (): StreamApiPropsType => {
         telemetrySpan: 'get-certificates',
     })
 }
+
+export const useCertificatesDetail = (id: string): StreamApiPropsType => {
+    const { telemetryWebTracer } = useContext(AppContext)
+
+    const { data, ...rest } = useStreamApi(`${getConfig().httpGatewayAddress}${certificatesEndpoints.CERTIFICATES}?idFilter=${id}`, {
+        telemetryWebTracer,
+        telemetrySpan: `get-certificate-${id}`,
+    })
+
+    if (data && Array.isArray(data)) {
+        return {
+            data: data[0],
+            ...rest,
+        }
+    }
+
+    return { data, ...rest }
+}

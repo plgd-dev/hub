@@ -23,6 +23,7 @@ import testId from '@/testId'
 import { messages as dpsT } from '@/containers/DeviceProvisioning/DeviceProvisioning.i18n'
 import { getTabRoute } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
 import { updateLinkedHubData } from '@/containers/DeviceProvisioning/rest'
+import { buildCATranslations } from '@shared-ui/components/Organisms/CaPoolModal/utils'
 
 const Tab1 = lazy(() => import('./Tabs/Tab1/Tab1'))
 const Tab2 = lazy(() => import('./Tabs/Tab2/Tab2'))
@@ -38,8 +39,6 @@ const LinkedHubsDetailPage: FC<Props> = (props) => {
     const navigate = useNavigate()
 
     const { data, loading, error, refresh } = useHubDetail(hubId!, !!hubId)
-
-    console.log(data)
 
     const [activeTabItem, setActiveTabItem] = useState(defaultActiveTab ?? 0)
     const [pageLoading, setPageLoading] = useState(false)
@@ -90,48 +89,7 @@ const LinkedHubsDetailPage: FC<Props> = (props) => {
             ...getFormContextDefault(_(g.default)),
             updateData: (newFormData: HubDataType) => setFormData(newFormData),
             setFormError,
-            i18n: {
-                algorithm: _(t.algorithm),
-                authorityInfoAIA: _(t.authorityInfoAIA),
-                authorityKeyID: _(t.authorityKeyID),
-                basicConstraints: _(t.basicConstraints),
-                certificateAuthority: _(t.certificateAuthority),
-                certificatePolicies: _(t.certificatePolicies),
-                commonName: _(t.commonName),
-                country: _(t.country),
-                dNSName: _(t.dNSName),
-                download: _(t.download),
-                embeddedSCTs: _(t.embeddedSCTs),
-                exponent: _(t.exponent),
-                extendedKeyUsages: _(t.extendedKeyUsages),
-                fingerprints: _(t.fingerprints),
-                issuerName: _(t.issuerName),
-                keySize: _(t.keySize),
-                keyUsages: _(t.keyUsages),
-                location: _(t.location),
-                logID: _(t.logID),
-                menuTitle: _(t.certificates),
-                method: _(t.method),
-                miscellaneous: _(t.miscellaneous),
-                modules: _(t.modules),
-                no: _(g.no),
-                notAfter: _(t.notAfter),
-                notBefore: _(t.notBefore),
-                organization: _(t.organization),
-                policy: _(t.policy),
-                publicKeyInfo: _(t.publicKeyInfo),
-                purposes: _(t.purposes),
-                serialNumber: _(t.serialNumber),
-                signatureAlgorithm: _(t.signatureAlgorithm),
-                subjectAltNames: _(t.subjectAltNames),
-                subjectKeyID: _(t.subjectKeyID),
-                subjectName: _(t.subjectName),
-                timestamp: _(t.timestamp),
-                validity: _(t.validity),
-                value: _(t.value),
-                version: _(g.version),
-                yes: _(g.yes),
-            },
+            i18n: buildCATranslations(_, t, g),
         }),
         // eslint-disable-next-line react-hooks/exhaustive-deps
         []

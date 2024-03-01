@@ -1,4 +1,4 @@
-import React, { FC, useContext, useEffect, useState } from 'react'
+import React, { FC, forwardRef, useContext, useEffect, useState } from 'react'
 import { useIntl } from 'react-intl'
 import isFunction from 'lodash/isFunction'
 import ReactDOM from 'react-dom'
@@ -12,7 +12,7 @@ import { Props } from './PageLayout.types'
 import { messages as g } from '@/containers/Global.i18n'
 import { PendingCommandsExpandableList } from '@/containers/PendingCommands'
 
-const PageLayout: FC<Props> = (props) => {
+const PageLayout = forwardRef<HTMLDivElement, Props>((props, ref) => {
     const { formatMessage: _ } = useIntl()
     const { children, breadcrumbs, deviceId, pendingCommands, innerPortalTarget, size, ...rest } = props
     const { footerExpanded, setFooterExpanded, collapsed } = useContext(AppContext)
@@ -49,13 +49,14 @@ const PageLayout: FC<Props> = (props) => {
                     size={size}
                 />
             }
+            ref={ref}
         >
             {isDomReady && ReactDOM.createPortal(<Breadcrumbs items={breadcrumbs} />, document.querySelector('#breadcrumbsPortalTarget') as Element)}
             {pendingCommands && <PendingCommandsExpandableList deviceId={deviceId} />}
             {children}
         </PageLayoutShared>
     )
-}
+})
 
 PageLayout.displayName = 'PageLayout'
 

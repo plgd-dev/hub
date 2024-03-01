@@ -10,7 +10,6 @@ import FormInput from '@shared-ui/components/Atomic/FormInput'
 import TimeoutControl from '@shared-ui/components/Atomic/TimeoutControl'
 import Spacer from '@shared-ui/components/Atomic/Spacer'
 import TileToggle from '@plgd/shared-ui/src/components/Atomic/TileToggle'
-import Button from '@shared-ui/components/Atomic/Button'
 
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
@@ -35,7 +34,7 @@ const Step3: FC<Props> = (props) => {
 
     return (
         <form>
-            <h1 css={commonStyles.headline}>{_(t.certificateAuthorityConfiguration)}</h1>
+            <h1 css={commonStyles.headline}>{_(t.certificateAuthority)}</h1>
             <p css={[commonStyles.description, commonStyles.descriptionLarge]}>
                 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna
             </p>

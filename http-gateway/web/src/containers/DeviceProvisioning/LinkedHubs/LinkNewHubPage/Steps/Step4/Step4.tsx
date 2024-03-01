@@ -9,6 +9,7 @@ import FormGroup from '@shared-ui/components/Atomic/FormGroup'
 import { FormContext } from '@shared-ui/common/context/FormContext'
 import TimeoutControl from '@shared-ui/components/Atomic/TimeoutControl'
 import Spacer from '@shared-ui/components/Atomic/Spacer'
+import Loadable from '@shared-ui/components/Atomic/Loadable'
 
 import * as commonStyles from '@/containers/DeviceProvisioning/LinkedHubs/LinkNewHubPage/LinkNewHubPage.styles'
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
@@ -18,9 +19,9 @@ import SubStepTls from '../SubStepTls'
 import SubStepButtons from '../SubStepButtons'
 
 const Step4: FC<Props> = (props) => {
-    const { defaultFormData } = props
+    const { defaultFormData, onSubmit } = props
     const { formatMessage: _ } = useIntl()
-    const { updateData, setFormError, setStep, onSubmit } = useContext(FormContext)
+    const { updateData, setFormError, setStep } = useContext(FormContext)
 
     const {
         formState: { errors },
@@ -28,7 +29,7 @@ const Step4: FC<Props> = (props) => {
         control,
         watch,
         setValue,
-    } = useForm<Inputs>({ defaultFormData, updateData, setFormError, errorKey: 'step3' })
+    } = useForm<Inputs>({ defaultFormData, updateData, setFormError, errorKey: 'step4' })
 
     return (
         <form>
@@ -107,7 +108,9 @@ const Step4: FC<Props> = (props) => {
                         id='authorization.provider.scopes'
                     >
                         <FormLabel text={_(t.scopes)} />
-                        <FormInput onChange={onChange} value={value ? value.join(' ') : value} />
+                        <Loadable condition={value !== undefined}>
+                            <FormInput onChange={(e) => onChange(e.target.value.split(' '))} value={Array.isArray(value) ? value.join(' ') : value} />
+                        </Loadable>
                     </FormGroup>
                 )}
             />
