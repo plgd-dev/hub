@@ -245,4 +245,8 @@ export const messages = defineMessages({
         id: 'global.expired',
         defaultMessage: 'Expired',
     },
+    hubId: {
+        id: 'global.hubId',
+        defaultMessage: 'Hub ID',
+    },
 })

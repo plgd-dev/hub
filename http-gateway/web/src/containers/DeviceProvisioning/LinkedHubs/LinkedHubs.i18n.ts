@@ -419,4 +419,8 @@ export const messages = defineMessages({
         id: 'linkedHubs.scopes',
         defaultMessage: 'Scopes',
     },
+    addCoapGateway: {
+        id: 'linkedHubs.addCoapGateway',
+        defaultMessage: 'Add CoapGateway',
+    },
 })

@@ -58,7 +58,10 @@ const AppLayout: FC<Props> = (props) => {
 
     const theme: ThemeType = useTheme()
 
-    const [version] = useAppVersion({ requestedDatetime: appStore.version.requestedDatetime })
+    const [version] = useAppVersion({
+        requestedDatetime: appStore.version.requestedDatetime,
+        githubVersionUrl: 'https://api.github.com/repos/plgd-dev/hub/releases/latest',
+    })
 
     useEffect(() => {
         if (version && !isEqual(appStore.version, version)) {

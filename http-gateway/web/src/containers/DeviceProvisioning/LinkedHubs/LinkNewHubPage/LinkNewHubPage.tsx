@@ -1,12 +1,14 @@
 import React, { FC, lazy, useCallback, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
 import { useNavigate, useParams } from 'react-router-dom'
+import cloneDeep from 'lodash/cloneDeep'
 
 import ContentSwitch from '@shared-ui/components/Atomic/ContentSwitch'
 import { FormContext, getFormContextDefault } from '@shared-ui/common/context/FormContext'
 import FullPageWizard from '@shared-ui/components/Templates/FullPageWizard'
 import usePersistentState from '@shared-ui/common/hooks/usePersistentState'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
+import Loadable from '@shared-ui/components/Atomic/Loadable'
 
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '../LinkedHubs.i18n'
@@ -51,7 +53,7 @@ const LinkNewHubPage: FC<any> = () => {
     )
 
     const [activeItem, setActiveItem] = useState(step ? steps.findIndex((s) => s.link.includes(step)) : 0)
-    const [formData, setFormData] = usePersistentState<any>('dps-create-linked-hub-form', DEFAULT_FORM_DATA)
+    const [formData, setFormData, rehydrated] = usePersistentState<any>('dps-create-linked-hub-form', DEFAULT_FORM_DATA)
 
     const onStepChange = useCallback(
         (item: number) => {
@@ -62,18 +64,19 @@ const LinkNewHubPage: FC<any> = () => {
         [navigate, steps]
     )
 
-    console.log(formData)
-
     const onSubmit = async () => {
         try {
             delete formData.id
+            const copy = cloneDeep(formData)
 
-            console.log('CREATE')
-            console.log(formData)
+            copy.coapGateways = copy.coapGateway.map((i: { value: string }) => i.value)
+            delete copy.coapGateway
 
-            await createLinkedHub(formData)
+            await createLinkedHub(copy)
 
-            // navigate(`/device-provisioning/linked-hubs`, { replace: true })
+            setFormData(DEFAULT_FORM_DATA)
+
+            navigate(`/device-provisioning/linked-hubs`, { replace: true })
         } catch (error: any) {
             if (!(error instanceof Error)) {
                 error = new Error(error)
@@ -109,14 +112,16 @@ const LinkNewHubPage: FC<any> = () => {
             steps={steps}
             title={_(t.linkNewHub)}
         >
-            <FormContext.Provider value={context}>
-                <ContentSwitch activeItem={activeItem} style={{ width: '100%' }}>
-                    <Step1 defaultFormData={formData} />
-                    <Step2 defaultFormData={formData} />
-                    <Step3 defaultFormData={formData} />
-                    <Step4 defaultFormData={formData} onSubmit={onSubmit} />
-                </ContentSwitch>
-            </FormContext.Provider>
+            <Loadable condition={rehydrated}>
+                <FormContext.Provider value={context}>
+                    <ContentSwitch activeItem={activeItem} style={{ width: '100%' }}>
+                        <Step1 defaultFormData={formData} />
+                        <Step2 defaultFormData={formData} />
+                        <Step3 defaultFormData={formData} />
+                        <Step4 defaultFormData={formData} onSubmit={onSubmit} />
+                    </ContentSwitch>
+                </FormContext.Provider>
+            </Loadable>
         </FullPageWizard>
     )
 }

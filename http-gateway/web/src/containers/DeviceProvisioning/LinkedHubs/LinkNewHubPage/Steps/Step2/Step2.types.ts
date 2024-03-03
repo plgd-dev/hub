@@ -3,6 +3,7 @@ export type Props = {
 }
 
 export type Inputs = {
+    hubId: string
     name: string
-    coapGateway: string
+    coapGateway: [{ id?: string; value: string }]
 }

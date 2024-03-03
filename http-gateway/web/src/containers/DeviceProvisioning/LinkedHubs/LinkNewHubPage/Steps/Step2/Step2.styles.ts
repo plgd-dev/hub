@@ -28,3 +28,9 @@ export const verticalSeparator = (theme: ThemeType) => css`
     width: 1px;
     background: ${getTheme(theme, 'PageLayout.headline.border.color')};
 `
+
+export const removeIcon = (theme: ThemeType) => css`
+    margin-left: 12px;
+    color: ${get(theme, `Global.iconColor`)};
+    transition: all 0.3s;
+`

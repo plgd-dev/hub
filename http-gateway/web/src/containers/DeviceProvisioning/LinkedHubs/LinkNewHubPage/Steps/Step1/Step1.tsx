@@ -7,18 +7,16 @@ import FormGroup from '@shared-ui/components/Atomic/FormGroup'
 import FormLabel from '@shared-ui/components/Atomic/FormLabel'
 import FormInput from '@shared-ui/components/Atomic/FormInput'
 import { useForm } from '@shared-ui/common/hooks'
-import Button from '@shared-ui/components/Atomic/Button'
 import { FormContext } from '@shared-ui/common/context/FormContext'
 import { openTelemetry } from '@shared-ui/common/services/opentelemetry'
+import ButtonBox from '@shared-ui/components/Atomic/ButtonBox'
 
 import { messages as t } from '../../../LinkedHubs.i18n'
-import * as styles from './Step1.styles'
 import * as commonStyles from '../../LinkNewHubPage.styles'
 import { messages as g } from '@/containers/Global.i18n'
 import { Props, Inputs } from './Step1.types'
 import { getAppWellKnownConfiguration } from '@/containers/App/AppRest'
 import { DEFAULT_FORM_DATA } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
-import ButtonBox from '@shared-ui/components/Atomic/ButtonBox/ButtonBox'
 
 const Step1: FC<Props> = (props) => {
     const { defaultFormData } = props
@@ -55,8 +53,8 @@ const Step1: FC<Props> = (props) => {
                     ...DEFAULT_FORM_DATA,
                     name: values.name,
                     endpoint: values.endpoint,
-                    id: wellKnown.id,
-                    coapGateway: wellKnown.coapGateway,
+                    hubId: wellKnown.id,
+                    coapGateway: [{ value: wellKnown.coapGateway }],
                 })
 
                 setStep?.(1)

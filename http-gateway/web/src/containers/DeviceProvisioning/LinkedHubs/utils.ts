@@ -40,6 +40,9 @@ export const DEFAULT_FORM_DATA = {
     authorization: {
         provider: {
             http: {
+                maxIdleConns: 16,
+                maxConnsPerHost: 32,
+                maxIdleConnsPerHost: 16,
                 idleConnTimeout: '30000000000',
                 timeout: '10000000000',
                 tls: {
@@ -49,6 +52,7 @@ export const DEFAULT_FORM_DATA = {
                     useSystemCaPool: true,
                 },
             },
+            scopes: [],
         },
     },
 }

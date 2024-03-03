@@ -3,7 +3,7 @@ import { useIntl } from 'react-intl'
 import { useNavigate } from 'react-router-dom'
 
 import Button from '@shared-ui/components/Atomic/Button'
-import { DeleteModal, IconEdit, IconTrash } from '@shared-ui/components/Atomic'
+import { DeleteModal, IconTrash } from '@shared-ui/components/Atomic'
 import EditNameModal from '@shared-ui/components/Organisms/EditNameModal'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 

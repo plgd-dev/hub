@@ -103,6 +103,9 @@ const Step3: FC<Props> = (props) => {
                             }}
                         />
                     )}
+                    rules={{
+                        required: true,
+                    }}
                 />
             </Spacer>
 

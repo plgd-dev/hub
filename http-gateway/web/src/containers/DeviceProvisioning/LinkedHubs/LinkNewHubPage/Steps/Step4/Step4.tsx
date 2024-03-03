@@ -108,9 +108,9 @@ const Step4: FC<Props> = (props) => {
                         id='authorization.provider.scopes'
                     >
                         <FormLabel text={_(t.scopes)} />
-                        <Loadable condition={value !== undefined}>
-                            <FormInput onChange={(e) => onChange(e.target.value.split(' '))} value={Array.isArray(value) ? value.join(' ') : value} />
-                        </Loadable>
+                        {/* <Loadable condition={value !== undefined}>*/}
+                        <FormInput onChange={(e) => onChange(e.target.value.split(' '))} value={Array.isArray(value) ? value.join(' ') : value} />
+                        {/* </Loadable>*/}
                     </FormGroup>
                 )}
             />
