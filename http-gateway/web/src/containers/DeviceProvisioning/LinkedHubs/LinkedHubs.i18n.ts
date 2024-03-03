@@ -17,6 +17,10 @@ export const messages = defineMessages({
         id: 'linkedHubs.deviceGatewayAddress',
         defaultMessage: 'Device Gateway Address',
     },
+    deviceGatewayAddresses: {
+        id: 'linkedHubs.deviceGatewayAddresses',
+        defaultMessage: 'Device Gateway Addresses',
+    },
     deleteRecordMessageSubTitle: {
         id: 'linkedHubs.deleteRecordMessageSubTitle',
         defaultMessage: 'This action cannot be undone.',

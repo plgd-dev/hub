@@ -73,6 +73,10 @@ export const messages = defineMessages({
         id: 'provisioningRecords.coapGateway',
         defaultMessage: 'Coap Gateway',
     },
+    coapGateways: {
+        id: 'provisioningRecords.coapGateways',
+        defaultMessage: 'Coap Gateways',
+    },
     provider: {
         id: 'provisioningRecords.provider',
         defaultMessage: 'Provider',
@@ -100,5 +104,9 @@ export const messages = defineMessages({
     deleteProvisioningRecordMessage: {
         id: 'provisioningRecords.deleteProvisioningRecordMessage',
         defaultMessage: 'Are you sure you want to delete this provisioning record?',
+    },
+    endpoints: {
+        id: 'provisioningRecords.endpoints',
+        defaultMessage: 'Endpoints',
     },
 })

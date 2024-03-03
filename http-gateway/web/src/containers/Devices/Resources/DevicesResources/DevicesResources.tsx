@@ -163,7 +163,7 @@ const getTreeColumns = ({ _, onUpdate, onCreate, onDelete, isUnregistered, loadi
                 <TagGroup
                     i18n={{
                         more: _(app.more),
-                        types: _(app.types),
+                        modalHeadline: _(app.types),
                     }}
                 >
                     {value?.map?.((type: string) => (

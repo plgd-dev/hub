@@ -249,4 +249,8 @@ export const messages = defineMessages({
         id: 'global.hubId',
         defaultMessage: 'Hub ID',
     },
+    more: {
+        id: 'global.more',
+        defaultMessage: 'More',
+    },
 })

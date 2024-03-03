@@ -7,6 +7,11 @@ import Row from '@shared-ui/components/Atomic/Grid/Row'
 import Column from '@shared-ui/components/Atomic/Grid/Column'
 import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
 import TileExpand from '@shared-ui/components/Atomic/TileExpand/TileExpand'
+import PageLayout from '@/containers/Common/PageLayout'
+import TagGroup, { justifyContent } from '@shared-ui/components/Atomic/TagGroup'
+import Tag from '@shared-ui/components/Atomic/Tag'
+import { messages as app } from '@shared-ui/app/clientApp/App/App.i18n'
+import { tagVariants } from '@shared-ui/components/Atomic/Tag/constants'
 
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as dpsT } from '../../DeviceProvisioning.i18n'
@@ -17,7 +22,7 @@ import * as styles from './ProvisioningRecordsDetailPage.styles'
 import { getStatusFromCode } from '../../utils'
 import { TileExpandEnhancedType } from '../ListPage/ProvisioningRecordsListPage.types'
 import DetailHeader from '../DetailHeader/DetailHeader'
-import PageLayout from '@/containers/Common/PageLayout'
+import { Information } from '@shared-ui/components/Atomic/TileExpand/TileExpand.types'
 
 const TileExpandEnhanced: FC<TileExpandEnhancedType> = (props) => {
     const { formatMessage: _ } = useIntl()
@@ -67,6 +72,9 @@ const ProvisioningRecordsListPage: FC<any> = () => {
         return <div>{error}</div>
     }
 
+    console.log(data)
+    console.log(data?.cloud?.coapGateways)
+
     return (
         <PageLayout
             breadcrumbs={breadcrumbs}
@@ -90,6 +98,22 @@ const ProvisioningRecordsListPage: FC<any> = () => {
                                     { attribute: _(t.enrollmentGroupId), value: data.enrollmentGroupId },
                                     { attribute: _(t.firstAttestation), value: data.creationDate ? <DateFormat value={data.creationDate} /> : '-' },
                                     { attribute: _(t.latestAttestation), value: data.attestation?.date ? <DateFormat value={data.attestation.date} /> : '-' },
+                                    {
+                                        attribute: _(t.endpoints),
+                                        value: data.localEndpoints ? (
+                                            <TagGroup
+                                                i18n={{
+                                                    more: _(g.more),
+                                                    modalHeadline: _(t.endpoints),
+                                                }}
+                                                justifyContent={justifyContent.END}
+                                            >
+                                                {data.localEndpoints?.map?.((endpoint: string) => <Tag key={endpoint}>{endpoint}</Tag>)}
+                                            </TagGroup>
+                                        ) : (
+                                            '-'
+                                        ),
+                                    },
                                 ]}
                             />
                         )}
@@ -117,18 +141,40 @@ const ProvisioningRecordsListPage: FC<any> = () => {
                                     groupTitle: _(g.information),
                                     rows: [
                                         {
-                                            attribute: _(t.coapGateway),
-                                            value: data.cloud.coapGateway,
+                                            attribute: _(t.coapGateways),
+                                            value: data.cloud.coapGateways ? (
+                                                <TagGroup
+                                                    i18n={{
+                                                        more: _(app.more),
+                                                        modalHeadline: _(t.coapGateways),
+                                                    }}
+                                                    justifyContent={justifyContent.END}
+                                                >
+                                                    {data.cloud.coapGateways?.map?.((coapGateway: { uri: string; id: string }, key: number) => (
+                                                        <Tag
+                                                            key={coapGateway.id}
+                                                            variant={key === data.cloud.selectedCoapGateway ? tagVariants.BLUE : tagVariants.WHITE}
+                                                        >
+                                                            {coapGateway.uri}
+                                                        </Tag>
+                                                    ))}
+                                                </TagGroup>
+                                            ) : (
+                                                '-'
+                                            ),
+                                            copyValue: data.cloud.coapGateways?.map?.((coapGateway: { uri: string; id: string }) => coapGateway.uri).join(' '),
                                         },
                                         {
                                             attribute: _(t.provider),
                                             value: data.cloud.providerName,
                                         },
-                                        {
-                                            attribute: _(g.id),
-                                            value: data.cloud.id,
-                                        },
-                                    ],
+                                        data.cloud.id
+                                            ? {
+                                                  attribute: _(g.id),
+                                                  value: data.cloud.id || '-',
+                                              }
+                                            : undefined,
+                                    ].filter((i) => !!i) as Information[],
                                 }}
                                 title={_(t.cloud)}
                             />

@@ -6,6 +6,7 @@ import { DeleteModal, IconArrowDetail, IconTrash } from '@shared-ui/components/A
 import TableActionButton from '@shared-ui/components/Organisms/TableActionButton'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
+import StatusTag from '@shared-ui/components/Atomic/StatusTag'
 
 import { messages as g } from '../../../Global.i18n'
 import { messages as dpsT } from '../../DeviceProvisioning.i18n'
@@ -16,7 +17,6 @@ import DateFormat from '@/containers/PendingCommands/DateFormat'
 import notificationId from '@/notificationId'
 import PageLayout from '@/containers/Common/PageLayout'
 import TableList from '@/containers/Common/TableList/TableList'
-import StatusTag from '@shared-ui/components/Atomic/StatusTag'
 
 const ProvisioningRecordsListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()

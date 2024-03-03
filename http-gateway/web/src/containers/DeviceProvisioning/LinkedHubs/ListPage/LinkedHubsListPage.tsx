@@ -7,6 +7,9 @@ import TableActionButton from '@shared-ui//components/Organisms/TableActionButto
 import { DeleteModal, IconArrowDetail, IconPlus, IconTrash } from '@shared-ui/components/Atomic'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
 import Button from '@shared-ui/components/Atomic/Button'
+import { messages as app } from '@shared-ui/app/clientApp/App/App.i18n'
+import Tag from '@shared-ui/components/Atomic/Tag'
+import TagGroup from '@shared-ui/components/Atomic/TagGroup'
 
 import { messages as dpsT } from '../../DeviceProvisioning.i18n'
 import { messages as t } from '../LinkedHubs.i18n'
@@ -44,6 +47,8 @@ const LinkedHubsListPage: FC<any> = () => {
         setUnselectRowsToken((prev) => prev + 1)
     }, [])
 
+    console.log(data)
+
     const columns = useMemo(
         () => [
             {
@@ -67,9 +72,20 @@ const LinkedHubsListPage: FC<any> = () => {
                 Cell: ({ value }: { value: string | number }) => <span className='no-wrap-text'>{value}</span>,
             },
             {
-                Header: _(t.deviceGatewayAddress),
-                accessor: 'coapGateway',
-                Cell: ({ value }: { value: string | number }) => <span className='no-wrap-text'>{value}</span>,
+                Header: _(t.deviceGatewayAddresses),
+                accessor: 'coapGateways',
+                Cell: ({ value }: { value: string[] }) => (
+                    <TagGroup
+                        i18n={{
+                            more: _(app.more),
+                            modalHeadline: _(t.deviceGatewayAddresses),
+                        }}
+                    >
+                        {value.map((t) => (
+                            <Tag key={t}>{t}</Tag>
+                        ))}
+                    </TagGroup>
+                ),
             },
             {
                 Header: _(g.action),

@@ -105,7 +105,7 @@ const Tab1: FC<Props> = (props) => {
                                 <TagGroup
                                     i18n={{
                                         more: _(app.more),
-                                        types: _(app.types),
+                                        modalHeadline: _(app.types),
                                     }}
                                     justifyContent={justifyContent.END}
                                 >
