@@ -91,7 +91,7 @@ func (s *Store) DeleteSigningRecords(ctx context.Context, owner string, query *s
 		IdFilter:       query.GetIdFilter(),
 		DeviceIdFilter: query.GetDeviceIdFilter(),
 	}
-	res, err := s.Collection(signingRecordsCol).DeleteOne(ctx, toSigningRecordsQueryFilter(owner, &q))
+	res, err := s.Collection(signingRecordsCol).DeleteMany(ctx, toSigningRecordsQueryFilter(owner, &q))
 	if err != nil {
 		return -1, multierror.Append(ErrCannotRemoveSigningRecord, err)
 	}
