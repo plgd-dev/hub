@@ -96,10 +96,6 @@ func (c *session) getLogger() log.Logger {
 	if deviceID != "" {
 		logger = logger.With(log.DeviceIDKey, deviceID)
 	}
-	localEndpoints := c.getLocalEndpoints()
-	if len(localEndpoints) > 0 {
-		logger = logger.With(log.LocalEndpointsKey, localEndpoints)
-	}
 	select {
 	case <-c.coapConn.Done():
 		logger = logger.With("closedConnection", true)
