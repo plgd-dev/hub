@@ -9,7 +9,6 @@ import (
 	"math"
 	"net"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/pion/dtls/v2"
@@ -107,7 +106,6 @@ type session struct {
 	exchangeCache         *ExchangeCache
 	refreshCache          *RefreshCache
 	tlsDeviceID           string
-	localEndpoints        atomic.Pointer[[]string]
 	private               struct { // guarded by mutex
 		mutex                   sync.Mutex
 		authCtx                 *authorizationContext
@@ -519,30 +517,14 @@ func (c *session) batchNotifyContentChanged(ctx context.Context, deviceID string
 	return err
 }
 
-func (c *session) resolveLocalEndpoints() {
-	v := []string{}
-	if !c.localEndpoints.CompareAndSwap(nil, &v) {
-		return
-	}
-
+func (c *session) getLocalEndpoints() []string {
 	localEndpoints, err := coap.GetEndpointsFromDeviceResource(c.Context(), c)
 	if err != nil {
 		c.getLogger().Warnf("cannot get local endpoints: %v", err)
-		c.localEndpoints.Store(nil)
-		return
-	}
-	c.localEndpoints.Store(&localEndpoints)
-}
-
-func (c *session) getLocalEndpoints() []string {
-	v := c.localEndpoints.Load()
-	if v == nil {
 		return nil
 	}
-	if len(*v) == 0 {
-		return nil
-	}
-	return *v
+	c.getLogger().With(log.LocalEndpointsKey, localEndpoints).Debugf("local endpoints retrieval successful.")
+	return localEndpoints
 }
 
 func (c *session) notifyContentChanged(deviceID, href string, batch bool, notification *pool.Message) error {
