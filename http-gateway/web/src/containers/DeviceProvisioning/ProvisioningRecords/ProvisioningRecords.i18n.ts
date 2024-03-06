@@ -69,13 +69,9 @@ export const messages = defineMessages({
         id: 'provisioningRecords.cloud',
         defaultMessage: 'Cloud',
     },
-    coapGateway: {
-        id: 'provisioningRecords.coapGateway',
-        defaultMessage: 'Coap Gateway',
-    },
-    coapGateways: {
-        id: 'provisioningRecords.coapGateways',
-        defaultMessage: 'Coap Gateways',
+    deviceGateways: {
+        id: 'provisioningRecords.deviceGateways',
+        defaultMessage: 'Device Gateways',
     },
     provider: {
         id: 'provisioningRecords.provider',

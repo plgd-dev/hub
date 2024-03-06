@@ -29,12 +29,16 @@ const Step2: FC<Props> = (props) => {
         formState: { errors },
         register,
         control,
+        updateField,
+        watch,
     } = useForm<Inputs>({ defaultFormData, updateData, setFormError, errorKey: 'step2' })
 
     const { fields, append, remove } = useFieldArray({
         control,
-        name: 'coapGateway',
+        name: 'gateways',
     })
+
+    const gateways = watch('gateways')
 
     return (
         <form>
@@ -50,6 +54,7 @@ const Step2: FC<Props> = (props) => {
                         required: true,
                         validate: (val) => val !== '',
                     })}
+                    onBlur={(e) => updateField('hubId', e.target.value)}
                 />
             </FormGroup>
 
@@ -60,22 +65,24 @@ const Step2: FC<Props> = (props) => {
                         required: true,
                         validate: (val) => val !== '',
                     })}
+                    onBlur={(e) => updateField('name', e.target.value)}
                 />
             </FormGroup>
 
             {fields?.map((field, index) => (
                 <FormGroup
-                    error={errors.coapGateway?.[index] ? _(t.coapGateway, { field: _(t.coapGateway) }) : undefined}
-                    id={`coapGateway.${index}`}
+                    error={errors.gateways?.[index] ? _(t.deviceGateway, { field: _(t.deviceGateway) }) : undefined}
+                    id={`gateways.${index}`}
                     key={field.id}
                 >
-                    <FormLabel text={_(t.coapGateway)} />
+                    <FormLabel text={_(t.deviceGateway)} />
                     <Controller
                         control={control}
-                        name={`coapGateway.${index}` as any}
+                        name={`gateways.${index}` as any}
                         render={({ field: { onChange, value } }) => (
                             <div css={styles.flex}>
                                 <FormInput
+                                    onBlur={(e) => updateField(`gateways.${index}`, e.target.value)}
                                     onChange={(v) => {
                                         onChange({ value: v.target.value })
                                     }}
@@ -88,28 +95,38 @@ const Step2: FC<Props> = (props) => {
                                         e.preventDefault()
                                         e.stopPropagation()
                                         remove(index)
+
+                                        updateField(
+                                            'gateways',
+                                            gateways.filter((_, key) => key !== index)
+                                        )
                                     }}
                                 >
                                     <IconClose {...convertSize(20)} />
                                 </a>
                             </div>
                         )}
+                        rules={{
+                            required: true,
+                            validate: (val) => val !== '',
+                        }}
                     />
                 </FormGroup>
             ))}
 
             <Button
-                disabled={defaultFormData.coapGateway[defaultFormData.coapGateway.length - 1]?.value === ''}
+                disabled={defaultFormData.gateways[defaultFormData.gateways.length - 1]?.value === ''}
                 icon={<IconPlus />}
                 onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
+
                     append({ value: '' })
                 }}
                 size='small'
                 variant='filter'
             >
-                {_(t.addCoapGateway)}
+                {_(t.addDeviceGateway)}
             </Button>
 
             <SubStepButtons onClickBack={() => setStep?.(0)} onClickNext={() => setStep?.(2)} />

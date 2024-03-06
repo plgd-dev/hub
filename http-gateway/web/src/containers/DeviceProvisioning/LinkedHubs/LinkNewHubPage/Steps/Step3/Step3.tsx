@@ -15,8 +15,8 @@ import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
 import * as commonStyles from '../../LinkNewHubPage.styles'
 import { Props, Inputs } from './Step3.types'
-import SubStepTls from '@/containers/DeviceProvisioning/LinkedHubs/LinkNewHubPage/Steps/SubStepTls'
-import SubStepButtons from '@/containers/DeviceProvisioning/LinkedHubs/LinkNewHubPage/Steps/SubStepButtons/SubStepButtons'
+import SubStepTls from '../SubStepTls'
+import SubStepButtons from '../SubStepButtons'
 
 const Step3: FC<Props> = (props) => {
     const { defaultFormData } = props
@@ -28,6 +28,7 @@ const Step3: FC<Props> = (props) => {
         formState: { errors },
         register,
         control,
+        updateField,
         watch,
         setValue,
     } = useForm<Inputs>({ defaultFormData, updateData, setFormError, errorKey: 'step3' })
@@ -53,6 +54,7 @@ const Step3: FC<Props> = (props) => {
                         required: true,
                         validate: (val) => val !== '',
                     })}
+                    onBlur={(e) => updateField('certificateAuthority.grpc.address', e.target.value)}
                 />
             </FormGroup>
 
@@ -73,6 +75,7 @@ const Step3: FC<Props> = (props) => {
                             unit: _(g.metric),
                             placeholder: _(g.placeholder),
                         }}
+                        onBlur={(v) => updateField('certificateAuthority.grpc.keepAlive.time', v)}
                         onChange={(v) => onChange(v.toString())}
                         rightStyle={{
                             width: 150,
@@ -97,6 +100,7 @@ const Step3: FC<Props> = (props) => {
                                 unit: _(g.metric),
                                 placeholder: _(g.placeholder),
                             }}
+                            onBlur={(v) => updateField('certificateAuthority.grpc.keepAlive.timeout', v)}
                             onChange={(v) => onChange(v.toString())}
                             rightStyle={{
                                 width: 150,
@@ -114,12 +118,29 @@ const Step3: FC<Props> = (props) => {
                     control={control}
                     name='certificateAuthority.grpc.keepAlive.permitWithoutStream'
                     render={({ field: { onChange, value } }) => (
-                        <TileToggle checked={(value as boolean) ?? false} name={_(t.permitWithoutStream)} onChange={onChange} />
+                        <TileToggle
+                            checked={(value as boolean) ?? false}
+                            name={_(t.permitWithoutStream)}
+                            onChange={(e) => {
+                                updateField('certificateAuthority.grpc.keepAlive.permitWithoutStream', e.target.value === 'on')
+                                onChange(e)
+                            }}
+                        />
                     )}
                 />
             </Spacer>
 
-            <SubStepTls control={control} prefix='certificateAuthority.grpc.' setValue={setValue} watch={watch} />
+            <SubStepTls
+                control={control}
+                prefix='certificateAuthority.grpc.'
+                setValue={(field: string, value: any) => {
+                    // @ts-ignore
+                    setValue(field, value)
+                    updateField(field, value)
+                }}
+                updateField={updateField}
+                watch={watch}
+            />
 
             <SubStepButtons onClickBack={() => setStep?.(1)} onClickNext={() => setStep?.(3)} />
         </form>

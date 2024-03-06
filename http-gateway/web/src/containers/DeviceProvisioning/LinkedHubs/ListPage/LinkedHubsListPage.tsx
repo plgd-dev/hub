@@ -47,8 +47,6 @@ const LinkedHubsListPage: FC<any> = () => {
         setUnselectRowsToken((prev) => prev + 1)
     }, [])
 
-    console.log(data)
-
     const columns = useMemo(
         () => [
             {
@@ -72,20 +70,23 @@ const LinkedHubsListPage: FC<any> = () => {
                 Cell: ({ value }: { value: string | number }) => <span className='no-wrap-text'>{value}</span>,
             },
             {
-                Header: _(t.deviceGatewayAddresses),
-                accessor: 'coapGateways',
-                Cell: ({ value }: { value: string[] }) => (
-                    <TagGroup
-                        i18n={{
-                            more: _(app.more),
-                            modalHeadline: _(t.deviceGatewayAddresses),
-                        }}
-                    >
-                        {value.map((t) => (
-                            <Tag key={t}>{t}</Tag>
-                        ))}
-                    </TagGroup>
-                ),
+                Header: _(t.deviceGateways),
+                accessor: 'gateways',
+                Cell: ({ value }: { value: string[] }) =>
+                    value ? (
+                        <TagGroup
+                            i18n={{
+                                more: _(app.more),
+                                modalHeadline: _(t.deviceGateways),
+                            }}
+                        >
+                            {value.map((t) => (
+                                <Tag key={t}>{t}</Tag>
+                            ))}
+                        </TagGroup>
+                    ) : (
+                        '-'
+                    ),
             },
             {
                 Header: _(g.action),

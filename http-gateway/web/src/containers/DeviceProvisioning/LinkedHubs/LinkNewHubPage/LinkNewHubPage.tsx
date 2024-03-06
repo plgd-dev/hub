@@ -49,11 +49,14 @@ const LinkNewHubPage: FC<any> = () => {
                 link: '/authorization',
             },
         ],
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         []
     )
 
     const [activeItem, setActiveItem] = useState(step ? steps.findIndex((s) => s.link.includes(step)) : 0)
     const [formData, setFormData, rehydrated] = usePersistentState<any>('dps-create-linked-hub-form', DEFAULT_FORM_DATA)
+
+    console.log(formData)
 
     const onStepChange = useCallback(
         (item: number) => {
@@ -68,9 +71,7 @@ const LinkNewHubPage: FC<any> = () => {
         try {
             delete formData.id
             const copy = cloneDeep(formData)
-
-            copy.coapGateways = copy.coapGateway.map((i: { value: string }) => i.value)
-            delete copy.coapGateway
+            copy.gateways = copy.gateways.map((i: { value: string }) => i.value)
 
             await createLinkedHub(copy)
 
@@ -78,11 +79,12 @@ const LinkNewHubPage: FC<any> = () => {
 
             navigate(`/device-provisioning/linked-hubs`, { replace: true })
         } catch (error: any) {
+            let e = error
             if (!(error instanceof Error)) {
-                error = new Error(error)
+                e = new Error(error)
             }
 
-            Notification.error({ title: _(t.linkedHubsError), message: error.message }, { notificationId: notificationId.HUB_DPS_LINKED_HUBS_ADD_ERROR })
+            Notification.error({ title: _(t.linkedHubsError), message: e.message }, { notificationId: notificationId.HUB_DPS_LINKED_HUBS_ADD_ERROR })
         }
     }
 

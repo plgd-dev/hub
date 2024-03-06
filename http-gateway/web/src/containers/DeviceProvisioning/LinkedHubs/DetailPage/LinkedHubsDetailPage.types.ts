@@ -40,7 +40,7 @@ export type HubDataType = {
         grpc: GRPCData
     }
     authorization: AuthorizationDataType
-    coapGateway: string
+    gateways: { value: string; id?: string }[]
     name: string
 }
 

@@ -13,13 +13,9 @@ export const messages = defineMessages({
         id: 'linkedHubs.linkedHubsError',
         defaultMessage: 'Linked Hubs Error',
     },
-    deviceGatewayAddress: {
-        id: 'linkedHubs.deviceGatewayAddress',
-        defaultMessage: 'Device Gateway Address',
-    },
-    deviceGatewayAddresses: {
-        id: 'linkedHubs.deviceGatewayAddresses',
-        defaultMessage: 'Device Gateway Addresses',
+    deviceGateways: {
+        id: 'linkedHubs.deviceGateways',
+        defaultMessage: 'Device Gateways',
     },
     deleteRecordMessageSubTitle: {
         id: 'linkedHubs.deleteRecordMessageSubTitle',
@@ -49,9 +45,9 @@ export const messages = defineMessages({
         id: 'linkedHubs.details',
         defaultMessage: 'Details',
     },
-    coapGateway: {
-        id: 'linkedHubs.coapGateway',
-        defaultMessage: 'CoapGateway',
+    deviceGateway: {
+        id: 'linkedHubs.deviceGateway',
+        defaultMessage: 'Device Gateway',
     },
     general: {
         id: 'linkedHubs.general',
@@ -423,8 +419,8 @@ export const messages = defineMessages({
         id: 'linkedHubs.scopes',
         defaultMessage: 'Scopes',
     },
-    addCoapGateway: {
-        id: 'linkedHubs.addCoapGateway',
-        defaultMessage: 'Add CoapGateway',
+    addDeviceGateway: {
+        id: 'linkedHubs.addDeviceGateway',
+        defaultMessage: 'Add Device Gateway',
     },
 })

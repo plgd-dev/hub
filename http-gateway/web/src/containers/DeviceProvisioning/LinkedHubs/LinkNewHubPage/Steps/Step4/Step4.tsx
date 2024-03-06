@@ -9,7 +9,6 @@ import FormGroup from '@shared-ui/components/Atomic/FormGroup'
 import { FormContext } from '@shared-ui/common/context/FormContext'
 import TimeoutControl from '@shared-ui/components/Atomic/TimeoutControl'
 import Spacer from '@shared-ui/components/Atomic/Spacer'
-import Loadable from '@shared-ui/components/Atomic/Loadable'
 
 import * as commonStyles from '@/containers/DeviceProvisioning/LinkedHubs/LinkNewHubPage/LinkNewHubPage.styles'
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
@@ -27,6 +26,7 @@ const Step4: FC<Props> = (props) => {
         formState: { errors },
         register,
         control,
+        updateField,
         watch,
         setValue,
     } = useForm<Inputs>({ defaultFormData, updateData, setFormError, errorKey: 'step4' })
@@ -48,6 +48,7 @@ const Step4: FC<Props> = (props) => {
                         required: true,
                         validate: (val) => val !== '',
                     })}
+                    onBlur={(e) => updateField('authorization.ownerClaim', e.target.value)}
                 />
             </FormGroup>
 
@@ -61,6 +62,7 @@ const Step4: FC<Props> = (props) => {
                         required: true,
                         validate: (val) => val !== '',
                     })}
+                    onBlur={(e) => updateField('authorization.provider.name', e.target.value)}
                 />
             </FormGroup>
             <FormGroup
@@ -73,6 +75,7 @@ const Step4: FC<Props> = (props) => {
                         required: true,
                         validate: (val) => val !== '',
                     })}
+                    onBlur={(e) => updateField('authorization.provider.clientId', e.target.value)}
                 />
             </FormGroup>
             <FormGroup
@@ -85,6 +88,7 @@ const Step4: FC<Props> = (props) => {
                         required: true,
                         validate: (val) => val !== '',
                     })}
+                    onBlur={(e) => updateField('authorization.provider.clientSecret', e.target.value)}
                 />
             </FormGroup>
             <FormGroup
@@ -97,6 +101,7 @@ const Step4: FC<Props> = (props) => {
                         required: true,
                         validate: (val) => val !== '',
                     })}
+                    onBlur={(e) => updateField('authorization.provider.authority', e.target.value)}
                 />
             </FormGroup>
             <Controller
@@ -108,14 +113,26 @@ const Step4: FC<Props> = (props) => {
                         id='authorization.provider.scopes'
                     >
                         <FormLabel text={_(t.scopes)} />
-                        {/* <Loadable condition={value !== undefined}>*/}
-                        <FormInput onChange={(e) => onChange(e.target.value.split(' '))} value={Array.isArray(value) ? value.join(' ') : value} />
-                        {/* </Loadable>*/}
+                        <FormInput
+                            onBlur={(e) => updateField('authorization.provider.scopes', e.target.value.split(' '))}
+                            onChange={(e) => onChange(e.target.value.split(' '))}
+                            value={Array.isArray(value) ? value.join(' ') : value}
+                        />
                     </FormGroup>
                 )}
             />
 
-            <SubStepTls control={control} prefix='authorization.provider.http.' setValue={setValue} watch={watch} />
+            <SubStepTls
+                control={control}
+                prefix='authorization.provider.http.'
+                setValue={(field: string, value: any) => {
+                    // @ts-ignore
+                    setValue(field, value)
+                    updateField(field, value)
+                }}
+                updateField={updateField}
+                watch={watch}
+            />
 
             <Spacer type='pt-12'>
                 <h2 css={commonStyles.subHeadline}>{_(t.hTTP)}</h2>

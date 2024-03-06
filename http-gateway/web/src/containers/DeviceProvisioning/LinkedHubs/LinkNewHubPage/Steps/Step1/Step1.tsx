@@ -36,38 +36,41 @@ const Step1: FC<Props> = (props) => {
     const name = watch('name')
     const endpoint = watch('endpoint')
 
-    const handleFormSubmit = useCallback((e: FormEvent) => {
-        e.preventDefault()
-        setLoading(true)
+    const handleFormSubmit = useCallback(
+        (e: FormEvent) => {
+            e.preventDefault()
+            setLoading(true)
 
-        const values = getValues()
+            const values = getValues()
 
-        const fetchWellKnownConfig = async () => {
-            try {
-                const { data: wellKnown } = await openTelemetry.withTelemetry(
-                    () => getAppWellKnownConfiguration(values.endpoint),
-                    'get-endpoint-hub-configuration'
-                )
+            const fetchWellKnownConfig = async () => {
+                try {
+                    const { data: wellKnown } = await openTelemetry.withTelemetry(
+                        () => getAppWellKnownConfiguration(values.endpoint),
+                        'get-endpoint-hub-configuration'
+                    )
 
-                updateData({
-                    ...DEFAULT_FORM_DATA,
-                    name: values.name,
-                    endpoint: values.endpoint,
-                    hubId: wellKnown.id,
-                    coapGateway: [{ value: wellKnown.coapGateway }],
-                })
+                    updateData({
+                        ...DEFAULT_FORM_DATA,
+                        name: values.name,
+                        endpoint: values.endpoint,
+                        hubId: wellKnown.id,
+                        gateways: [{ value: wellKnown.coapGateway }],
+                    })
 
-                setStep?.(1)
+                    setStep?.(1)
 
-                setLoading(false)
-            } catch (e) {
-                console.error(e)
-                setLoading(false)
+                    setLoading(false)
+                } catch (e) {
+                    console.error(e)
+                    setLoading(false)
+                }
             }
-        }
 
-        fetchWellKnownConfig().then()
-    }, [])
+            fetchWellKnownConfig().then()
+        },
+        [getValues, setStep, updateData]
+    )
 
     return (
         <form>

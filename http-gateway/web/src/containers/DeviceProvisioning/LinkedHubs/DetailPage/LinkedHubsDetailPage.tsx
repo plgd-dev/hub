@@ -11,6 +11,8 @@ import Button from '@shared-ui/components/Atomic/Button'
 import Tabs from '@shared-ui/components/Atomic/Tabs'
 import { FormContext, getFormContextDefault } from '@shared-ui/common/context/FormContext'
 import { useIsMounted } from '@shared-ui/common/hooks'
+import { updateLinkedHubData } from '@/containers/DeviceProvisioning/rest'
+import { buildCATranslations } from '@shared-ui/components/Organisms/CaPoolModal/utils'
 
 import { messages as t } from '../LinkedHubs.i18n'
 import { HubDataType, Props } from './LinkedHubsDetailPage.types'
@@ -22,8 +24,7 @@ import DetailHeader from '@/containers/DeviceProvisioning/LinkedHubs/DetailHeade
 import testId from '@/testId'
 import { messages as dpsT } from '@/containers/DeviceProvisioning/DeviceProvisioning.i18n'
 import { getTabRoute } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
-import { updateLinkedHubData } from '@/containers/DeviceProvisioning/rest'
-import { buildCATranslations } from '@shared-ui/components/Organisms/CaPoolModal/utils'
+import cloneDeep from 'lodash/cloneDeep'
 
 const Tab1 = lazy(() => import('./Tabs/Tab1/Tab1'))
 const Tab2 = lazy(() => import('./Tabs/Tab2/Tab2'))
@@ -39,25 +40,43 @@ const LinkedHubsDetailPage: FC<Props> = (props) => {
     const navigate = useNavigate()
 
     const { data, loading, error, refresh } = useHubDetail(hubId!, !!hubId)
+    // transform gateways string[] => {value: string}[]
+    const [defaultData, setDefaultData] = useState<any>(undefined)
+
+    useEffect(() => {
+        if (data) {
+            setDefaultData({
+                ...data,
+                gateways: data?.gateways ? data.gateways.map((gateway: string) => ({ value: gateway })) : [],
+            })
+        }
+    }, [data])
 
     const [activeTabItem, setActiveTabItem] = useState(defaultActiveTab ?? 0)
     const [pageLoading, setPageLoading] = useState(false)
-    const [formData, setFormData] = useState(data)
-    const [formError, setFormError] = useState({
-        tab1: false,
-        tab2Content1: false,
-        tab2Content2: false,
-        tab3Content1: false,
-        tab3Content2: false,
-        tab3Content3: false,
-        tab3Content4: false,
-    })
+    const [formData, setFormData] = useState<any>(defaultData)
+    const defaultFormState = useMemo(
+        () => ({
+            tab1: false,
+            tab2Content1: false,
+            tab2Content2: false,
+            tab3Content1: false,
+            tab3Content2: false,
+            tab3Content3: false,
+            tab3Content4: false,
+        }),
+        []
+    )
+    const [formDirty, setFormDirty] = useState(defaultFormState)
+    const [formError, setFormError] = useState(defaultFormState)
+    const [resetIndex, setResetIndex] = useState(0)
 
     useEffect(() => {
-        setFormData(data)
-    }, [data])
+        setFormData(defaultData)
+    }, [defaultData])
 
-    const isDirty = useMemo(() => !isEqual(data, formData), [data, formData])
+    const isDirtyData = useMemo(() => !isEqual(defaultData, formData), [defaultData, formData])
+    const isDirty = useMemo(() => Object.values(formDirty).some((i) => i), [formDirty])
 
     const breadcrumbs = useMemo(
         () => [
@@ -89,6 +108,7 @@ const LinkedHubsDetailPage: FC<Props> = (props) => {
             ...getFormContextDefault(_(g.default)),
             updateData: (newFormData: HubDataType) => setFormData(newFormData),
             setFormError,
+            setFormDirty,
             i18n: buildCATranslations(_, t, g),
         }),
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -99,25 +119,29 @@ const LinkedHubsDetailPage: FC<Props> = (props) => {
         setPageLoading(true)
 
         try {
-            await updateLinkedHubData(hubId!, formData)
+            const copy = cloneDeep(formData)
+            copy.gateways = copy.gateways.map((i: { value: string }) => i.value)
+
+            await updateLinkedHubData(hubId!, copy)
             refresh()
 
             setPageLoading(false)
         } catch (error: any) {
+            let e = error
             if (!(error instanceof Error)) {
-                error = new Error(error)
+                e = new Error(error)
             }
-            Notification.error(
-                { title: _(t.linkedHubsError), message: error.message },
-                { notificationId: notificationId.HUB_DPS_LINKED_HUBS_DETAIL_PAGE_ERROR }
-            )
+            Notification.error({ title: _(t.linkedHubsError), message: e.message }, { notificationId: notificationId.HUB_DPS_LINKED_HUBS_DETAIL_PAGE_ERROR })
             setPageLoading(false)
         }
     }
 
     const handleReset = useCallback(() => {
-        setFormData(data)
-    }, [data])
+        setFormData(defaultData)
+        setFormDirty(defaultFormState)
+        setFormError(defaultFormState)
+        setResetIndex((prev) => prev + 1)
+    }, [defaultData, defaultFormState])
 
     return (
         <PageLayout
@@ -128,36 +152,38 @@ const LinkedHubsDetailPage: FC<Props> = (props) => {
             xPadding={false}
         >
             <FormContext.Provider value={context}>
-                <Tabs
-                    fullHeight
-                    innerPadding
-                    isAsync
-                    activeItem={activeTabItem}
-                    onItemChange={handleTabChange}
-                    style={{
-                        height: '100%',
-                    }}
-                    tabs={[
-                        {
-                            name: _(t.details),
-                            id: 0,
-                            dataTestId: testId.dps.linkedHubs.detail.tabDetails,
-                            content: <Tab1 defaultFormData={formData} />,
-                        },
-                        {
-                            name: _(t.certificateAuthority),
-                            id: 1,
-                            dataTestId: testId.dps.linkedHubs.detail.tabCertificateAuthority,
-                            content: <Tab2 defaultFormData={formData} loading={loading} />,
-                        },
-                        {
-                            name: _(t.authorization),
-                            id: 2,
-                            dataTestId: testId.dps.linkedHubs.detail.tabAuthorization,
-                            content: <Tab3 defaultFormData={formData} loading={loading} />,
-                        },
-                    ]}
-                />
+                {defaultData && (
+                    <Tabs
+                        fullHeight
+                        innerPadding
+                        isAsync
+                        activeItem={activeTabItem}
+                        onItemChange={handleTabChange}
+                        style={{
+                            height: '100%',
+                        }}
+                        tabs={[
+                            {
+                                name: _(t.details),
+                                id: 0,
+                                dataTestId: testId.dps.linkedHubs.detail.tabDetails,
+                                content: <Tab1 defaultFormData={formData} resetIndex={resetIndex} />,
+                            },
+                            {
+                                name: _(t.certificateAuthority),
+                                id: 1,
+                                dataTestId: testId.dps.linkedHubs.detail.tabCertificateAuthority,
+                                content: <Tab2 defaultFormData={formData} loading={loading} />,
+                            },
+                            {
+                                name: _(t.authorization),
+                                id: 2,
+                                dataTestId: testId.dps.linkedHubs.detail.tabAuthorization,
+                                content: <Tab3 defaultFormData={formData} loading={loading} />,
+                            },
+                        ]}
+                    />
+                )}
             </FormContext.Provider>
             {isMounted &&
                 document.querySelector('#modal-root') &&
@@ -188,7 +214,7 @@ const LinkedHubsDetailPage: FC<Props> = (props) => {
                             </Button>
                         }
                         leftPanelCollapsed={collapsed}
-                        show={isDirty}
+                        show={isDirty || isDirtyData}
                     />,
                     document.querySelector('#modal-root') as Element
                 )}

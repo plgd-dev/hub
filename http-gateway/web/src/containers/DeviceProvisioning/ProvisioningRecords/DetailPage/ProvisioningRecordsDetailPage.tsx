@@ -73,7 +73,6 @@ const ProvisioningRecordsListPage: FC<any> = () => {
     }
 
     console.log(data)
-    console.log(data?.cloud?.coapGateways)
 
     return (
         <PageLayout
@@ -141,28 +140,28 @@ const ProvisioningRecordsListPage: FC<any> = () => {
                                     groupTitle: _(g.information),
                                     rows: [
                                         {
-                                            attribute: _(t.coapGateways),
-                                            value: data.cloud.coapGateways ? (
+                                            attribute: _(t.deviceGateways),
+                                            value: data.cloud.gateways ? (
                                                 <TagGroup
                                                     i18n={{
                                                         more: _(app.more),
-                                                        modalHeadline: _(t.coapGateways),
+                                                        modalHeadline: _(t.deviceGateways),
                                                     }}
                                                     justifyContent={justifyContent.END}
                                                 >
-                                                    {data.cloud.coapGateways?.map?.((coapGateway: { uri: string; id: string }, key: number) => (
+                                                    {data.cloud.gateways?.map?.((gateway: { uri: string; id: string }, key: number) => (
                                                         <Tag
-                                                            key={coapGateway.id}
-                                                            variant={key === data.cloud.selectedCoapGateway ? tagVariants.BLUE : tagVariants.WHITE}
+                                                            key={gateway.id}
+                                                            variant={key === data.cloud.selectedGateway ? tagVariants.BLUE : tagVariants.WHITE}
                                                         >
-                                                            {coapGateway.uri}
+                                                            {gateway.uri}
                                                         </Tag>
                                                     ))}
                                                 </TagGroup>
                                             ) : (
                                                 '-'
                                             ),
-                                            copyValue: data.cloud.coapGateways?.map?.((coapGateway: { uri: string; id: string }) => coapGateway.uri).join(' '),
+                                            copyValue: data.cloud.gateways?.map?.((gateway: { uri: string; id: string }) => gateway.uri).join(' '),
                                         },
                                         {
                                             attribute: _(t.provider),

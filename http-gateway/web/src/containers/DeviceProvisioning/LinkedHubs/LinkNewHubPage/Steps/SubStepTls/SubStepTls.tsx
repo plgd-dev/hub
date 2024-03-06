@@ -20,7 +20,7 @@ import notificationId from '@/notificationId'
 import { Props } from './SubStepTls.types'
 
 const SubStepTls: FC<Props> = (props) => {
-    const { control, setValue, watch, prefix } = props
+    const { control, setValue, updateField, watch, prefix } = props
 
     const { formatMessage: _ } = useIntl()
     const i18n = useCaI18n()
@@ -108,7 +108,14 @@ const SubStepTls: FC<Props> = (props) => {
                     control={control}
                     name='certificateAuthority.grpc.tls.useSystemCaPool'
                     render={({ field: { onChange, value } }) => (
-                        <TileToggle checked={(value as boolean) ?? false} name={_(t.useSystemCAPool)} onChange={onChange} />
+                        <TileToggle
+                            checked={(value as boolean) ?? false}
+                            name={_(t.useSystemCAPool)}
+                            onChange={(e) => {
+                                updateField('certificateAuthority.grpc.keepAlive.permitWithoutStream', e.target.value === 'on')
+                                onChange(e)
+                            }}
+                        />
                     )}
                 />
             </Spacer>
