@@ -162,7 +162,12 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                         id: '102',
                         title: <MenuTranslate id='provisioningRecords' />,
                         link: '/provisioning-records',
-                        paths: ['/device-provisioning/provisioning-records', '/device-provisioning/provisioning-records/:recordId'],
+                        paths: [
+                            '/device-provisioning/provisioning-records',
+                            '/device-provisioning/provisioning-records/:recordId',
+                            '/device-provisioning/provisioning-records/:recordId/credentials',
+                            '/device-provisioning/provisioning-records/:recordId/acls',
+                        ],
                     },
                     {
                         id: '103',
@@ -444,10 +449,28 @@ export const Routes = () => {
             <Route
                 element={
                     <Suspense fallback={<Loader />}>
-                        <ProvisioningRecordsDetailPage />
+                        <ProvisioningRecordsDetailPage defaultActiveTab={0} />
                     </Suspense>
                 }
                 path='/device-provisioning/provisioning-records/:recordId'
+            />
+
+            <Route
+                element={
+                    <Suspense fallback={<Loader />}>
+                        <ProvisioningRecordsDetailPage defaultActiveTab={1} />
+                    </Suspense>
+                }
+                path='/device-provisioning/provisioning-records/:recordId/credentials'
+            />
+
+            <Route
+                element={
+                    <Suspense fallback={<Loader />}>
+                        <ProvisioningRecordsDetailPage defaultActiveTab={2} />
+                    </Suspense>
+                }
+                path='/device-provisioning/provisioning-records/:recordId/acls'
             />
 
             <Route

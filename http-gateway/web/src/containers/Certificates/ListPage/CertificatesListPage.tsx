@@ -130,11 +130,7 @@ const CertificatesListPage: FC<any> = () => {
             {
                 Header: _(t.status),
                 accessor: 'status',
-                Cell: ({ row }: { row: any }) => {
-                    const now = new Date()
-                    const isValid = row.original.notBeforeUTC <= now && now <= row.original.notAfterUTC
-                    return <StatusTag variant={isValid ? 'success' : 'error'}>{isValid ? _(g.valid) : _(g.expired)}</StatusTag>
-                },
+                Cell: ({ value }: { value: boolean }) => <StatusTag variant={value ? 'success' : 'error'}>{value ? _(g.valid) : _(g.expired)}</StatusTag>,
             },
             {
                 Header: _(t.notBefore),

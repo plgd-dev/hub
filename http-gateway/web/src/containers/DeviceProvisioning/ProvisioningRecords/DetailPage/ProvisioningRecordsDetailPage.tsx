@@ -1,60 +1,33 @@
-import React, { FC, useMemo } from 'react'
+import React, { FC, lazy, useCallback, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 
 import StatusTag from '@shared-ui/components/Atomic/StatusTag'
-import Row from '@shared-ui/components/Atomic/Grid/Row'
-import Column from '@shared-ui/components/Atomic/Grid/Column'
-import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
-import TileExpand from '@shared-ui/components/Atomic/TileExpand/TileExpand'
-import PageLayout from '@/containers/Common/PageLayout'
-import TagGroup, { justifyContent } from '@shared-ui/components/Atomic/TagGroup'
-import Tag from '@shared-ui/components/Atomic/Tag'
-import { messages as app } from '@shared-ui/app/clientApp/App/App.i18n'
-import { tagVariants } from '@shared-ui/components/Atomic/Tag/constants'
+import Tabs from '@shared-ui/components/Atomic/Tabs/Tabs'
 
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as dpsT } from '../../DeviceProvisioning.i18n'
 import { messages as t } from '../ProvisioningRecords.i18n'
 import { useProvisioningRecordsDetail } from '../../hooks'
-import DateFormat from '@/containers/PendingCommands/DateFormat'
-import * as styles from './ProvisioningRecordsDetailPage.styles'
-import { getStatusFromCode } from '../../utils'
-import { TileExpandEnhancedType } from '../ListPage/ProvisioningRecordsListPage.types'
 import DetailHeader from '../DetailHeader/DetailHeader'
-import { Information } from '@shared-ui/components/Atomic/TileExpand/TileExpand.types'
+import PageLayout from '@/containers/Common/PageLayout'
+import testId from '@/testId'
+import { getStatusFromCode } from '@/containers/DeviceProvisioning/utils'
 
-const TileExpandEnhanced: FC<TileExpandEnhancedType> = (props) => {
-    const { formatMessage: _ } = useIntl()
-    const { data, information, title } = props
-    return (
-        <TileExpand
-            css={styles.listItem}
-            error={
-                data.status.coapCode === 0 && data.status.errorMessage
-                    ? {
-                          groupTitle: _(g.information),
-                          message: data.status.errorMessage,
-                          title: _(t.cannotProvision, { variant: title }),
-                      }
-                    : undefined
-            }
-            i18n={{
-                copy: _(g.copy),
-            }}
-            information={information}
-            statusTag={<StatusTag variant={getStatusFromCode(data.status.coapCode)}>{getStatusFromCode(data.status.coapCode)}</StatusTag>}
-            time={data.status.date ? <DateFormat value={data.status.date} /> : '-'}
-            title={title}
-        />
-    )
-}
+const Tab1 = lazy(() => import('./Tabs/Tab1'))
+const Tab2 = lazy(() => import('./Tabs/Tab2'))
+const Tab3 = lazy(() => import('./Tabs/Tab3'))
 
-const ProvisioningRecordsListPage: FC<any> = () => {
+const ProvisioningRecordsListPage: FC<any> = (props) => {
+    const { defaultActiveTab } = props
+
     const { formatMessage: _ } = useIntl()
     const { recordId } = useParams()
+    const navigate = useNavigate()
 
     const { data, loading, error, refresh } = useProvisioningRecordsDetail(recordId)
+
+    const [activeTabItem, setActiveTabItem] = useState(defaultActiveTab ?? 0)
 
     const isOnline = true
 
@@ -68,11 +41,32 @@ const ProvisioningRecordsListPage: FC<any> = () => {
         [data?.enrollmentGroupData]
     )
 
+    const getTabRoute = (i: number) => {
+        switch (i) {
+            case 1: {
+                return '/credentials'
+            }
+            case 2: {
+                return '/acls'
+            }
+            default:
+            case 0: {
+                return ''
+            }
+        }
+    }
+
+    const handleTabChange = useCallback((i: number) => {
+        setActiveTabItem(i)
+
+        navigate(`/device-provisioning/provisioning-records/${recordId}${getTabRoute(i)}`, { replace: true })
+
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
     if (error) {
         return <div>{error}</div>
     }
-
-    console.log(data)
 
     return (
         <PageLayout
@@ -85,127 +79,37 @@ const ProvisioningRecordsListPage: FC<any> = () => {
             title={data?.enrollmentGroupData?.name || '-'}
         >
             {!!data && (
-                <Row>
-                    <Column xl={6}>
-                        {data && (
-                            <SimpleStripTable
-                                leftColSize={4}
-                                rightColSize={8}
-                                rows={[
-                                    { attribute: _(g.id), value: data.id },
-                                    { attribute: _(t.deviceID), value: data.deviceId },
-                                    { attribute: _(t.enrollmentGroupId), value: data.enrollmentGroupId },
-                                    { attribute: _(t.firstAttestation), value: data.creationDate ? <DateFormat value={data.creationDate} /> : '-' },
-                                    { attribute: _(t.latestAttestation), value: data.attestation?.date ? <DateFormat value={data.attestation.date} /> : '-' },
-                                    {
-                                        attribute: _(t.endpoints),
-                                        value: data.localEndpoints ? (
-                                            <TagGroup
-                                                i18n={{
-                                                    more: _(g.more),
-                                                    modalHeadline: _(t.endpoints),
-                                                }}
-                                                justifyContent={justifyContent.END}
-                                            >
-                                                {data.localEndpoints?.map?.((endpoint: string) => <Tag key={endpoint}>{endpoint}</Tag>)}
-                                            </TagGroup>
-                                        ) : (
-                                            '-'
-                                        ),
-                                    },
-                                ]}
-                            />
-                        )}
-                    </Column>
-                    <Column xl={1} />
-                    <Column xl={5}>
-                        {data?.credential && <TileExpandEnhanced data={data.credential} title={_(t.credentials)} />}
-                        {data?.acl && (
-                            <TileExpand
-                                css={styles.listItem}
-                                i18n={{
-                                    copy: _(g.copy),
-                                }}
-                                statusTag={
-                                    <StatusTag variant={getStatusFromCode(data.acl.status.coapCode)}>{getStatusFromCode(data.acl.status.coapCode)}</StatusTag>
-                                }
-                                time={data.acl.status.date ? <DateFormat value={data.acl.status.date} /> : '-'}
-                                title={_(t.acls)}
-                            />
-                        )}
-                        {data?.cloud && (
-                            <TileExpandEnhanced
-                                data={data.cloud}
-                                information={{
-                                    groupTitle: _(g.information),
-                                    rows: [
-                                        {
-                                            attribute: _(t.deviceGateways),
-                                            value: data.cloud.gateways ? (
-                                                <TagGroup
-                                                    i18n={{
-                                                        more: _(app.more),
-                                                        modalHeadline: _(t.deviceGateways),
-                                                    }}
-                                                    justifyContent={justifyContent.END}
-                                                >
-                                                    {data.cloud.gateways?.map?.((gateway: { uri: string; id: string }, key: number) => (
-                                                        <Tag
-                                                            key={gateway.id}
-                                                            variant={key === data.cloud.selectedGateway ? tagVariants.BLUE : tagVariants.WHITE}
-                                                        >
-                                                            {gateway.uri}
-                                                        </Tag>
-                                                    ))}
-                                                </TagGroup>
-                                            ) : (
-                                                '-'
-                                            ),
-                                            copyValue: data.cloud.gateways?.map?.((gateway: { uri: string; id: string }) => gateway.uri).join(' '),
-                                        },
-                                        {
-                                            attribute: _(t.provider),
-                                            value: data.cloud.providerName,
-                                        },
-                                        data.cloud.id
-                                            ? {
-                                                  attribute: _(g.id),
-                                                  value: data.cloud.id || '-',
-                                              }
-                                            : undefined,
-                                    ].filter((i) => !!i) as Information[],
-                                }}
-                                title={_(t.cloud)}
-                            />
-                        )}
-                        {data?.ownership && (
-                            <TileExpandEnhanced
-                                data={data.ownership}
-                                information={{
-                                    groupTitle: _(g.information),
-                                    rows: [
-                                        {
-                                            attribute: _(t.ownerId),
-                                            value: data.ownership.owner,
-                                        },
-                                    ],
-                                }}
-                                title={_(t.ownership)}
-                            />
-                        )}
-                        {data?.plgdTime && (
-                            <TileExpand
-                                css={styles.listItem}
-                                hasExpand={false}
-                                i18n={{
-                                    copy: _(g.copy),
-                                }}
-                                time={data.plgdTime.date ? <DateFormat value={data.plgdTime.date} /> : '-'}
-                                title={_(t.timeSynchronisation)}
-                            />
-                        )}
-                    </Column>
-                </Row>
+                <Tabs
+                    fullHeight
+                    isAsync
+                    activeItem={activeTabItem}
+                    onItemChange={handleTabChange}
+                    style={{
+                        height: '100%',
+                    }}
+                    tabs={[
+                        {
+                            name: _(t.details),
+                            id: 0,
+                            dataTestId: testId.dps.provisioningRecords.detail.tabDetails,
+                            content: <Tab1 data={data} />,
+                        },
+                        {
+                            name: _(t.credentials),
+                            id: 1,
+                            dataTestId: testId.dps.provisioningRecords.detail.tabCredentials,
+                            content: <Tab2 data={data} />,
+                            status: getStatusFromCode(data.credential.status.coapCode),
+                        },
+                        {
+                            name: _(t.acls),
+                            id: 2,
+                            dataTestId: testId.dps.provisioningRecords.detail.tabAcls,
+                            content: <Tab3 data={data} />,
+                            status: getStatusFromCode(data.acl.status.coapCode),
+                        },
+                    ]}
+                />
             )}
         </PageLayout>
     )

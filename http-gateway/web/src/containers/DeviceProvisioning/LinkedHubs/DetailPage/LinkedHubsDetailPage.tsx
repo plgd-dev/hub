@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useIntl } from 'react-intl'
 import isEqual from 'lodash/isEqual'
 import ReactDOM from 'react-dom'
+import cloneDeep from 'lodash/cloneDeep'
 
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import AppContext from '@shared-ui/app/share/AppContext'
@@ -24,7 +25,6 @@ import DetailHeader from '@/containers/DeviceProvisioning/LinkedHubs/DetailHeade
 import testId from '@/testId'
 import { messages as dpsT } from '@/containers/DeviceProvisioning/DeviceProvisioning.i18n'
 import { getTabRoute } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
-import cloneDeep from 'lodash/cloneDeep'
 
 const Tab1 = lazy(() => import('./Tabs/Tab1/Tab1'))
 const Tab2 = lazy(() => import('./Tabs/Tab2/Tab2'))

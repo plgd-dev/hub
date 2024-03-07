@@ -35,6 +35,9 @@ const testId = {
                 deleteButtonCancel: 'hub-dps-provisioning-records-detail-delete-button-cancel',
                 deleteButtonConfirm: 'hub-dps-provisioning-records-detail-delete-button-confirm',
                 editNameModal: 'hub-dps-provisioning-records-detail-edit-name-modal',
+                tabDetails: 'hub-dps-provisioning-records-detail-tab-details',
+                tabCredentials: 'hub-dps-provisioning-records-detail-tab-credentials',
+                tabAcls: 'hub-dps-provisioning-records-detail-tab-acls',
             },
         },
         enrollmentGroups: {

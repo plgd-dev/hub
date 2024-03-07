@@ -253,4 +253,8 @@ export const messages = defineMessages({
         id: 'global.more',
         defaultMessage: 'More',
     },
+    key: {
+        id: 'global.key',
+        defaultMessage: 'Key',
+    },
 })

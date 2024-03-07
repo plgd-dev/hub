@@ -105,4 +105,20 @@ export const messages = defineMessages({
         id: 'provisioningRecords.endpoints',
         defaultMessage: 'Endpoints',
     },
+    details: {
+        id: 'provisioningRecords.details',
+        defaultMessage: 'Details',
+    },
+    information: {
+        id: 'provisioningRecords.information',
+        defaultMessage: 'Information',
+    },
+    preSharedKey: {
+        id: 'provisioningRecords.preSharedKey',
+        defaultMessage: 'PreShared Key',
+    },
+    subjectID: {
+        id: 'provisioningRecords.subjectID',
+        defaultMessage: 'Subject ID',
+    },
 })

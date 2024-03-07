@@ -11,7 +11,6 @@ import Spacer from '@shared-ui/components/Atomic/Spacer'
 import Loadable from '@shared-ui/components/Atomic/Loadable'
 
 import PageLayout from '@/containers/Common/PageLayout'
-import { messages as dpsT } from '../../DeviceProvisioning/DeviceProvisioning.i18n'
 import { Props } from './CertificatesDetailPage.types'
 import DetailHeader from '../DetailHeader'
 import { useCertificatesDetail } from '@/containers/Certificates/hooks'
@@ -42,11 +41,7 @@ const CertificatesDetailPage: FC<Props> = (props) => {
     }, [error])
 
     const breadcrumbs = useMemo(
-        () => [
-            { label: _(dpsT.deviceProvisioning), link: '/device-provisioning' },
-            { label: _(dpsT.enrollmentGroups), link: '/device-provisioning/certificates' },
-            { label: certificateId! },
-        ],
+        () => [{ label: _(t.certificates), link: '/certificates' }, { label: certificateId! }],
         // eslint-disable-next-line react-hooks/exhaustive-deps
         []
     )

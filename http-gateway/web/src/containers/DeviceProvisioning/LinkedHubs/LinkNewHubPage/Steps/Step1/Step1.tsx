@@ -55,6 +55,12 @@ const Step1: FC<Props> = (props) => {
                         name: values.name,
                         endpoint: values.endpoint,
                         hubId: wellKnown.id,
+                        authorization: {
+                            ownerClaim: wellKnown.jwtOwnerClaim,
+                            provider: {
+                                authority: wellKnown.authority,
+                            },
+                        },
                         gateways: [{ value: wellKnown.coapGateway }],
                     })
 
