@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1
-FROM golang:1.20.13-alpine AS build
+FROM golang:1.20.14-alpine AS build
 ARG VERSION
 ARG COMMIT_DATE
 ARG SHORT_COMMIT
@@ -10,7 +10,8 @@ WORKDIR $GOPATH/src/github.com/plgd-dev/hub
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN ( cd /usr/local/go && patch -p1 < $GOPATH/src/github.com/plgd-dev/hub/tools/docker/patches/shrink_tls_conn.patch )
+WORKDIR /usr/local/go
+RUN ( patch -p1 < "$GOPATH/src/github.com/plgd-dev/hub/tools/docker/patches/shrink_tls_conn.patch" )
 ARG root_directory=$GOPATH/src/github.com/plgd-dev/hub
 
 #cert-tool
@@ -55,16 +56,18 @@ RUN unzip ./nats.zip -d ./nats
 RUN cp ./nats/*/nats /go/bin/nats
 
 FROM ubuntu:22.04 AS service
-RUN apt update
 # iproute2 -> ip utility in run.sh
 # netcat -> nc utility in run.sh
 # nginx -> nginx server in run.sh
 # openssl -> openssl utility in run.sh
-RUN apt-get install -y --no-install-recommends ca-certificates gnupg iproute2 netcat nginx openssl wget
+RUN apt update \
+    && apt-get install -y --no-install-recommends ca-certificates gnupg iproute2 netcat nginx openssl wget \
+    && apt-get clean
 RUN wget -qO - https://pgp.mongodb.com/server-6.0.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/mongodb-6.0.gpg
 RUN echo "deb [ arch=$(dpkg --print-architecture) ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-6.0.list
-RUN apt update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends mongodb-org mongodb-org-server
+RUN apt update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends mongodb-org mongodb-org-server \
+    && apt-get clean
 COPY --from=build /go/bin/cert-tool /usr/local/bin/cert-tool
 COPY --from=build /go/bin/coap-gateway.test /usr/local/bin/coap-gateway.test
 COPY --from=build /go/bin/grpc-gateway.test /usr/local/bin/grpc-gateway.test

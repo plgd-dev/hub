@@ -11,6 +11,7 @@ import (
 	coapgwService "github.com/plgd-dev/hub/v2/coap-gateway/service"
 	"github.com/plgd-dev/hub/v2/coap-gateway/service/observation"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/pkg/net/coap"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/pkg/sync/task/future"
 	"github.com/plgd-dev/hub/v2/test"
@@ -51,7 +52,7 @@ func TestIsResourceObservableWithInterface(t *testing.T) {
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	handlerFuture, setHandler := future.New()
-	makeHandler := func(service *coapgwTestService.Service, opts ...coapgwTestService.Option) coapgwTestService.ServiceHandler {
+	makeHandler := func(_ *coapgwTestService.Service, opts ...coapgwTestService.Option) coapgwTestService.ServiceHandler {
 		cfg := coapgwTestService.ServiceHandlerConfig{}
 		for _, o := range opts {
 			o.Apply(&cfg)
@@ -116,7 +117,7 @@ func TestIsResourceObservableWithInterface(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			links, _, err := observation.GetResourceLinks(ctx, handler.coapConn, tt.args.href)
+			links, _, err := coap.GetResourceLinksWithLinkInterface(ctx, handler.coapConn, tt.args.href)
 			if tt.wantErr {
 				require.Error(t, err)
 				return

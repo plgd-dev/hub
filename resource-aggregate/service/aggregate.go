@@ -22,25 +22,25 @@ type Aggregate struct {
 }
 
 func NewResourceStateFactoryModel(userID, owner, hubID string) func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
-	return func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
+	return func(context.Context) (cqrsAggregate.AggregateModel, error) {
 		return events.NewResourceStateSnapshotTakenForCommand(userID, owner, hubID), nil
 	}
 }
 
 func NewResourceLinksFactoryModel(userID, owner, hubID string) func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
-	return func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
+	return func(context.Context) (cqrsAggregate.AggregateModel, error) {
 		return events.NewResourceLinksSnapshotTakenForCommand(userID, owner, hubID), nil
 	}
 }
 
 func NewDeviceMetadataFactoryModel(userID, owner, hubID string) func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
-	return func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
+	return func(context.Context) (cqrsAggregate.AggregateModel, error) {
 		return events.NewDeviceMetadataSnapshotTakenForCommand(userID, owner, hubID), nil
 	}
 }
 
 func NewServicesMetadataFactoryModel(userID, owner, hubID string) func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
-	return func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
+	return func(context.Context) (cqrsAggregate.AggregateModel, error) {
 		return events.NewServiceMetadataSnapshotTakenForCommand(userID, owner, hubID), nil
 	}
 }
@@ -55,7 +55,7 @@ func NewAggregate(resourceID *commands.ResourceId, store eventstore.EventStore, 
 		retry,
 		store,
 		factoryModel,
-		func(template string, args ...interface{}) {
+		func(string, ...interface{}) {
 			// TODO: add debug log
 		})
 	if err != nil {
@@ -276,9 +276,9 @@ func (a *Aggregate) cleanUpToSnapshot(ctx context.Context, events []eventstore.E
 		err := a.eventstore.RemoveUpToVersion(ctx, []eventstore.VersionQuery{{GroupID: event.GroupID(), AggregateID: event.AggregateID(), Version: event.Version()}})
 		if err != nil && !errors.Is(err, eventstore.ErrNotSupported) {
 			if ru, ok := event.(interface{ GetResourceId() *commands.ResourceId }); ok {
-				log.Info("unable to remove events up to snapshot with version('%v') for resource('%v')", event.Version(), ru.GetResourceId())
+				log.Infof("unable to remove events up to snapshot with version('%v') for resource('%v')", event.Version(), ru.GetResourceId())
 			} else {
-				log.Info("unable to remove events up to snapshot(%v) with version('%v') of deviceId('%v')", event.EventType(), event.Version(), event.GroupID())
+				log.Infof("unable to remove events up to snapshot(%v) with version('%v') of deviceId('%v')", event.EventType(), event.Version(), event.GroupID())
 			}
 		}
 	}

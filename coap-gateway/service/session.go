@@ -25,6 +25,7 @@ import (
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	idEvents "github.com/plgd-dev/hub/v2/identity-store/events"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/net/coap"
 	coapService "github.com/plgd-dev/hub/v2/pkg/net/coap/service"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/pkg/opentelemetry/otelcoap"
@@ -514,6 +515,16 @@ func (c *session) batchNotifyContentChanged(ctx context.Context, deviceID string
 		Batch: batch,
 	})
 	return err
+}
+
+func (c *session) getLocalEndpoints() []string {
+	localEndpoints, err := coap.GetEndpointsFromDeviceResource(c.Context(), c)
+	if err != nil {
+		c.getLogger().Warnf("cannot get local endpoints: %v", err)
+		return nil
+	}
+	c.getLogger().With(log.LocalEndpointsKey, localEndpoints).Debugf("local endpoints retrieval successful.")
+	return localEndpoints
 }
 
 func (c *session) notifyContentChanged(deviceID, href string, batch bool, notification *pool.Message) error {

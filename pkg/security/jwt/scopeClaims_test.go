@@ -61,7 +61,7 @@ func TestScopeClaimsInvalidScope(t *testing.T) {
 
 func checkScopedClaims(t *testing.T, tokenClaims jwt.Claims, expError error) {
 	token := config.CreateJwtToken(t, tokenClaims)
-	_, err := jwt.ParseWithClaims(token, &pkgJwt.ScopeClaims{}, func(t *jwt.Token) (interface{}, error) {
+	_, err := jwt.ParseWithClaims(token, &pkgJwt.ScopeClaims{}, func(*jwt.Token) (interface{}, error) {
 		return jwt.VerificationKeySet{
 			Keys: []jwt.VerificationKey{
 				[]uint8(config.JWTSecret),

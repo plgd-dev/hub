@@ -26,6 +26,7 @@ export type DeviceDataType = {
         }
         connection?: {
             status?: string
+            localEndpoints?: string[]
         }
         twinEnabled?: boolean
     }

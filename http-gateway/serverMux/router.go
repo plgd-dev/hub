@@ -14,7 +14,7 @@ import (
 func NewRouter(queryCaseInsensitive map[string]string, authInterceptor kitHttp.Interceptor, opts ...kitHttp.LogOpt) *router.Router {
 	r := router.NewRouter()
 	r.Use(kitHttp.CreateLoggingMiddleware(opts...))
-	r.Use(kitHttp.CreateAuthMiddleware(authInterceptor, func(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
+	r.Use(kitHttp.CreateAuthMiddleware(authInterceptor, func(_ context.Context, w http.ResponseWriter, r *http.Request, err error) {
 		WriteError(w, grpc.ForwardErrorf(codes.Unauthenticated, "cannot access to %v: %w", r.RequestURI, err))
 	}))
 	r.Use(kitHttp.CreateMakeQueryCaseInsensitiveMiddleware(queryCaseInsensitive, opts...))

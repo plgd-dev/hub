@@ -592,6 +592,11 @@ func WaitForDevice(t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, 
 				val.DeviceMetadataUpdated.GetConnection().ConnectedAt = 0
 				require.NotEmpty(t, val.DeviceMetadataUpdated.GetConnection().GetServiceId())
 				val.DeviceMetadataUpdated.GetConnection().ServiceId = ""
+				if TestDeviceType != device.Bridged && !config.COAP_GATEWAY_UDP_ENABLED {
+					// TODO: fix bug in iotivity-lite, for DTLS it is not fill endpoints
+					require.NotEmpty(t, val.DeviceMetadataUpdated.GetConnection().GetLocalEndpoints())
+				}
+				val.DeviceMetadataUpdated.GetConnection().LocalEndpoints = nil
 			}
 			if val.DeviceMetadataUpdated.GetTwinSynchronization() != nil {
 				val.DeviceMetadataUpdated.GetTwinSynchronization().CommandMetadata = nil

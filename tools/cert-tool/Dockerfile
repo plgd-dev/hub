@@ -1,4 +1,4 @@
-FROM golang:1.20.13-alpine AS build
+FROM golang:1.20.14-alpine AS build
 ARG DIRECTORY
 ARG NAME
 ARG VERSION
@@ -11,9 +11,13 @@ WORKDIR $GOPATH/src/github.com/plgd-dev/hub
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
-RUN ( cd /usr/local/go && patch -p1 < $GOPATH/src/github.com/plgd-dev/hub/tools/docker/patches/shrink_tls_conn.patch )
+WORKDIR /usr/local/go
+RUN ( patch -p1 < "$GOPATH/src/github.com/plgd-dev/hub/tools/docker/patches/shrink_tls_conn.patch" )
 WORKDIR $GOPATH/src/github.com/plgd-dev/hub/tools/cert-tool
-RUN CGO_ENABLED=0 go build -ldflags "-X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" -o /go/bin/cert-tool ./
+RUN CGO_ENABLED=0 go build \
+    -ldflags "-X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" \
+    -o /go/bin/cert-tool \
+    ./
 
 FROM alpine:3.19 AS security-provider
 RUN addgroup -S nonroot \

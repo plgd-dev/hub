@@ -103,11 +103,28 @@ func TestStoreUpdateSigningRecord(t *testing.T) {
 	}
 }
 
-func TestStoreDeleteSigningRecord(t *testing.T) {
-	const id1 = "9d017fad-2961-4fcc-94a9-1e1291a88ffc"
-	deviceID1 := hubTest.GenerateDeviceIDbyIdx(1)
-	const id2 = "9d017fad-2961-4fcc-94a9-1e1291a88ffd"
-	deviceID2 := hubTest.GenerateDeviceIDbyIdx(2)
+func TestStoreDeleteSigningRecords(t *testing.T) {
+	records := []struct {
+		id       string
+		deviceID string
+	}{
+		{
+			id:       "9d017fad-2961-4fcc-94a9-1e1291a88ffc",
+			deviceID: hubTest.GenerateDeviceIDbyIdx(1),
+		},
+		{
+			id:       "9d017fad-2961-4fcc-94a9-1e1291a88ffd",
+			deviceID: hubTest.GenerateDeviceIDbyIdx(2),
+		},
+		{
+			id:       "9d017fad-2961-4fcc-94a9-1e1291a88ffe",
+			deviceID: hubTest.GenerateDeviceIDbyIdx(3),
+		},
+		{
+			id:       "9d017fad-2961-4fcc-94a9-1e1291a88fff",
+			deviceID: hubTest.GenerateDeviceIDbyIdx(4),
+		},
+	}
 	const owner = "owner"
 	type args struct {
 		owner string
@@ -134,7 +151,7 @@ func TestStoreDeleteSigningRecord(t *testing.T) {
 			args: args{
 				owner: "owner1",
 				query: &store.DeleteSigningRecordsQuery{
-					IdFilter: []string{id1},
+					IdFilter: []string{records[0].id},
 				},
 			},
 			want: 0,
@@ -144,7 +161,7 @@ func TestStoreDeleteSigningRecord(t *testing.T) {
 			args: args{
 				owner: owner,
 				query: &store.DeleteSigningRecordsQuery{
-					DeviceIdFilter: []string{deviceID1},
+					DeviceIdFilter: []string{records[0].deviceID},
 				},
 			},
 			want: 1,
@@ -154,10 +171,20 @@ func TestStoreDeleteSigningRecord(t *testing.T) {
 			args: args{
 				owner: owner,
 				query: &store.DeleteSigningRecordsQuery{
-					IdFilter: []string{id2},
+					IdFilter: []string{records[1].id},
 				},
 			},
 			want: 1,
+		},
+		{
+			name: "multiple ids",
+			args: args{
+				owner: owner,
+				query: &store.DeleteSigningRecordsQuery{
+					IdFilter: []string{records[2].id, records[3].id},
+				},
+			},
+			want: 2,
 		},
 		{
 			name: "valid - empty",
@@ -173,34 +200,22 @@ func TestStoreDeleteSigningRecord(t *testing.T) {
 	defer cleanUpStore()
 
 	ctx := context.Background()
-	err := s.CreateSigningRecord(ctx, &store.SigningRecord{
-		Id:           id1,
-		Owner:        owner,
-		CommonName:   "commonName",
-		PublicKey:    "publicKey",
-		DeviceId:     deviceID1,
-		CreationDate: constDate().UnixNano(),
-		Credential: &pb.CredentialStatus{
-			CertificatePem: "certificate",
-			Date:           constDate().UnixNano(),
-			ValidUntilDate: constDate().UnixNano(),
-		},
-	})
-	require.NoError(t, err)
-	err = s.CreateSigningRecord(ctx, &store.SigningRecord{
-		Id:           id2,
-		Owner:        owner,
-		CommonName:   "commonName",
-		PublicKey:    "publicKey",
-		DeviceId:     deviceID2,
-		CreationDate: constDate().UnixNano(),
-		Credential: &pb.CredentialStatus{
-			CertificatePem: "certificate",
-			Date:           constDate().UnixNano(),
-			ValidUntilDate: constDate().UnixNano(),
-		},
-	})
-	require.NoError(t, err)
+	for _, r := range records {
+		err := s.CreateSigningRecord(ctx, &store.SigningRecord{
+			Id:           r.id,
+			Owner:        owner,
+			CommonName:   "commonName",
+			PublicKey:    "publicKey",
+			DeviceId:     r.deviceID,
+			CreationDate: constDate().UnixNano(),
+			Credential: &pb.CredentialStatus{
+				CertificatePem: "certificate",
+				Date:           constDate().UnixNano(),
+				ValidUntilDate: constDate().UnixNano(),
+			},
+		})
+		require.NoError(t, err)
+	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

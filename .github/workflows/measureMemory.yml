@@ -288,7 +288,7 @@ jobs:
       - name: Resolve database
         id: db
         run: |
-          if [ "${{ github.event_name != 'workflow_dispatch' || inputs.cql }}" == "true" ]; then
+          if [ "${{ github.event_name == 'workflow_dispatch' && inputs.cql }}" == "true" ]; then
             echo "name=cqldb" >> $GITHUB_OUTPUT
           else
             echo "name=mongodb" >> $GITHUB_OUTPUT

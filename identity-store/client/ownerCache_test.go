@@ -59,7 +59,7 @@ func TestOwnerCacheSubscribe(t *testing.T) {
 			CertFile: cfg.APIs.GRPC.TLS.CertFile,
 			KeyFile:  cfg.APIs.GRPC.TLS.KeyFile,
 		},
-	}, fileWatcher, log.Get(), noop.NewTracerProvider(), grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(func(ctx context.Context) (*oauth2.Token, error) {
+	}, fileWatcher, log.Get(), noop.NewTracerProvider(), grpc.WithPerRPCCredentials(kitNetGrpc.NewOAuthAccess(func(context.Context) (*oauth2.Token, error) {
 		return &oauth2.Token{
 			AccessToken:  token,
 			TokenType:    "Bearer",

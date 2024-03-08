@@ -80,10 +80,11 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 			CorrelationId: uuid.NewString(),
 			Update: &commands.UpdateDeviceMetadataRequest_Connection{
 				Connection: &commands.Connection{
-					Status:      commands.Connection_ONLINE,
-					ConnectedAt: time.Now().UnixNano(),
-					Protocol:    protocol,
-					ServiceId:   "a0000000-0000-0000-0000-000000000099",
+					Status:         commands.Connection_ONLINE,
+					ConnectedAt:    time.Now().UnixNano(),
+					Protocol:       protocol,
+					ServiceId:      "a0000000-0000-0000-0000-000000000099",
+					LocalEndpoints: []string{"coaps+tcp://localhost:5684"},
 				},
 			},
 			TimeToLive: time.Now().Add(time.Hour).UnixNano(),

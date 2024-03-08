@@ -251,7 +251,7 @@ func MakeDefaultOptions(auth pkgGrpc.AuthInterceptors, logger log.Logger, tracer
 		},
 	}
 	unaryInterceptors := []grpc.UnaryServerInterceptor{
-		func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+		func(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 			setGrpcRequest(ctx, req)
 			return handler(ctx, req)
 		},
@@ -298,7 +298,7 @@ func WithWhiteListedMethods(method ...string) Option {
 }
 
 func NewAuth(validator pkgGrpc.Validator, opts ...Option) pkgGrpc.AuthInterceptors {
-	interceptor := pkgGrpc.ValidateJWTWithValidator(validator, func(ctx context.Context, method string) jwt.ClaimsValidator {
+	interceptor := pkgGrpc.ValidateJWTWithValidator(validator, func(context.Context, string) jwt.ClaimsValidator {
 		return pkgJwt.NewScopeClaims()
 	})
 	var cfg config

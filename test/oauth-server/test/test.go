@@ -197,7 +197,7 @@ func HTTPDo(t require.TestingT, req *http.Request, followRedirect bool) *http.Re
 		Transport: trans,
 	}
 	if !followRedirect {
-		c.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		c.CheckRedirect = func(*http.Request, []*http.Request) error {
 			return http.ErrUseLastResponse
 		}
 	}

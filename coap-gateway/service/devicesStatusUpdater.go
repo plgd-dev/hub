@@ -40,10 +40,11 @@ func (u *devicesStatusUpdater) updateOnlineStatus(ctx context.Context, client *s
 		DeviceId: authCtx.GetDeviceID(),
 		Update: &commands.UpdateDeviceMetadataRequest_Connection{
 			Connection: &commands.Connection{
-				Status:      commands.Connection_ONLINE,
-				ConnectedAt: pkgTime.UnixNano(connectedAt),
-				Protocol:    client.GetApplicationProtocol(),
-				ServiceId:   u.serviceInstanceID.String(),
+				Status:         commands.Connection_ONLINE,
+				ConnectedAt:    pkgTime.UnixNano(connectedAt),
+				Protocol:       client.GetApplicationProtocol(),
+				ServiceId:      u.serviceInstanceID.String(),
+				LocalEndpoints: client.getLocalEndpoints(),
 			},
 		},
 		CommandMetadata: &commands.CommandMetadata{

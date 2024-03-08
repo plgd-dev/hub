@@ -130,9 +130,9 @@ func New(ctx context.Context, cfg Config, tls *tls.Config, logger log.Logger, _ 
 		logger:  logger,
 	}
 
-	s.onClear = func(c context.Context) error {
+	s.onClear = func(clearCtx context.Context) error {
 		// default clear function drops the whole database
-		return s.DropKeyspace(ctx)
+		return s.DropKeyspace(clearCtx)
 	}
 	return s, nil
 }

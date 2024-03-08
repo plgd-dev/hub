@@ -19,9 +19,7 @@ func NewStore(ctx context.Context, cfg pkgMongo.Config, tls *tls.Config, tracerP
 		return nil, err
 	}
 	s := Store{m}
-	s.SetOnClear(func(c context.Context) error {
-		return s.clearDatabases(ctx)
-	})
+	s.SetOnClear(s.clearDatabases)
 	return &s, nil
 }
 

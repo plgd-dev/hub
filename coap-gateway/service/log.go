@@ -15,7 +15,7 @@ import (
 
 const logNotificationKey = "notification"
 
-var toNil = func(args ...interface{}) {
+var toNil = func(...interface{}) {
 	// Do nothing because we don't want to log anything
 }
 
