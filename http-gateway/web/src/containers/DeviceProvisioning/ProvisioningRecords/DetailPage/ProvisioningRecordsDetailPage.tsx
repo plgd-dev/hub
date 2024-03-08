@@ -99,14 +99,14 @@ const ProvisioningRecordsListPage: FC<any> = (props) => {
                             id: 1,
                             dataTestId: testId.dps.provisioningRecords.detail.tabCredentials,
                             content: <Tab2 data={data} />,
-                            status: getStatusFromCode(data.credential.status.coapCode),
+                            status: data ? getStatusFromCode(data.credential.status.coapCode) : undefined,
                         },
                         {
                             name: _(t.acls),
                             id: 2,
                             dataTestId: testId.dps.provisioningRecords.detail.tabAcls,
                             content: <Tab3 data={data} />,
-                            status: getStatusFromCode(data.acl.status.coapCode),
+                            status: data ? getStatusFromCode(data.acl.status.coapCode) : undefined,
                         },
                     ]}
                 />

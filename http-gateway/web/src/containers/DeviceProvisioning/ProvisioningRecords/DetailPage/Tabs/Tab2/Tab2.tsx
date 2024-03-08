@@ -1,22 +1,22 @@
-import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
+import React, { FC, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
 
 import Headline from '@shared-ui/components/Atomic/Headline'
 import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
 import StatusTag from '@shared-ui/components/Atomic/StatusTag'
 import Spacer from '@shared-ui/components/Atomic/Spacer'
+import Table from '@shared-ui/components/Atomic/TableNew'
+import { IconArrowDetail } from '@shared-ui/components/Atomic'
+import { parseCertificate } from '@shared-ui/common/services/certificates'
+import Notification from '@shared-ui/components/Atomic/Notification/Toast'
+import TableActionButton from '@shared-ui/components/Organisms/TableActionButton'
 
 import { messages as t } from '../../../ProvisioningRecords.i18n'
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as certT } from '@/containers/Certificates/Certificates.i18n'
 import DateFormat from '@/containers/PendingCommands/DateFormat'
 import { getStatusFromCode } from '@/containers/DeviceProvisioning/utils'
-import TableActionButton from '@plgd/shared-ui/src/components/Organisms/TableActionButton'
-import { IconArrowDetail, IconTrash } from '@shared-ui/components/Atomic'
-import { parseCertificate } from '@shared-ui/common/services/certificates'
-import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import notificationId from '@/notificationId'
-import Table from '@shared-ui/components/Atomic/TableNew'
 
 type CertDataType = {
     usage: string
@@ -32,8 +32,6 @@ const Tab2: FC<any> = (props) => {
     const { formatMessage: _ } = useIntl()
 
     const [certData, setCertData] = useState<any>(undefined)
-
-    // console.log(data.credential)
 
     useEffect(() => {
         const parseCerts = async (certs: any) => {
@@ -68,8 +66,6 @@ const Tab2: FC<any> = (props) => {
             })
         }
     }, [data.credential.credentials])
-
-    console.log(certData)
 
     const columns = useMemo(
         () => [
@@ -143,7 +139,7 @@ const Tab2: FC<any> = (props) => {
 
     return (
         <div>
-            <Spacer type='mb-3 mt-8'>
+            <Spacer type='mb-3'>
                 <Headline type='h6'>{_(t.information)}</Headline>
             </Spacer>
 

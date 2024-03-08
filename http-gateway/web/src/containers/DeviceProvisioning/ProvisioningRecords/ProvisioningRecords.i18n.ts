@@ -121,4 +121,12 @@ export const messages = defineMessages({
         id: 'provisioningRecords.subjectID',
         defaultMessage: 'Subject ID',
     },
+    permissions: {
+        id: 'provisioningRecords.permissions',
+        defaultMessage: 'Permissions',
+    },
+    resources: {
+        id: 'provisioningRecords.resources',
+        defaultMessage: 'Resources',
+    },
 })
