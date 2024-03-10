@@ -173,7 +173,7 @@ const Tab1: FC<Props> = (props) => {
                                 <TagGroup
                                     i18n={{
                                         more: _(app.more),
-                                        types: _(t.endpoints),
+                                        modalHeadline: _(t.endpoints),
                                     }}
                                     justifyContent={justifyContent.END}
                                 >
