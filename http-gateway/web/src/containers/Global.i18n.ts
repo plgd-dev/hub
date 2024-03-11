@@ -257,4 +257,12 @@ export const messages = defineMessages({
         id: 'global.key',
         defaultMessage: 'Key',
     },
+    anonymous: {
+        id: 'global.anonymous',
+        defaultMessage: 'Anonymous',
+    },
+    device: {
+        id: 'global.device',
+        defaultMessage: 'Device',
+    },
 })

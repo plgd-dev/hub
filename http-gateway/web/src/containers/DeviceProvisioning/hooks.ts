@@ -68,9 +68,15 @@ export const useProvisioningRecordsDetail = (provisioningRecordId?: string): Str
         }
     )
 
+    const idFilter = enrollmentGroupsData && enrollmentGroupsData[0] ? enrollmentGroupsData[0].hubIds.map((id: string) => `idFilter=${id}`).join('&') : ''
+    const { data: hubsData }: StreamApiPropsType = useStreamApi(`${getConfig().httpGatewayAddress}${dpsApiEndpoints.HUBS}?${idFilter}`, {
+        telemetryWebTracer,
+        telemetrySpan: `get-hubs-${idFilter}`,
+    })
+
     if (data && enrollmentGroupsData) {
         return {
-            data: { ...data[0], enrollmentGroupData: enrollmentGroupsData[0] },
+            data: { ...data[0], enrollmentGroupData: { ...enrollmentGroupsData[0], hubsData } },
             refresh: () => {
                 refresh()
                 refreshEnrollmentGroup()

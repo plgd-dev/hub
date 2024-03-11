@@ -129,4 +129,32 @@ export const messages = defineMessages({
         id: 'provisioningRecords.resources',
         defaultMessage: 'Resources',
     },
+    subject: {
+        id: 'provisioningRecords.subject',
+        defaultMessage: 'Subject',
+    },
+    subjectType: {
+        id: 'provisioningRecords.subjectType',
+        defaultMessage: 'Subject Type',
+    },
+    accessControlList: {
+        id: 'provisioningRecords.accessControlList',
+        defaultMessage: 'Access Control List',
+    },
+    connection: {
+        id: 'provisioningRecords.connection',
+        defaultMessage: 'Connection',
+    },
+    role: {
+        id: 'provisioningRecords.role',
+        defaultMessage: 'Role',
+    },
+    securedConnection: {
+        id: 'provisioningRecords.securedConnection',
+        defaultMessage: 'Secured connection',
+    },
+    yourId: {
+        id: 'provisioningRecords.yourId',
+        defaultMessage: 'Your ID',
+    },
 })

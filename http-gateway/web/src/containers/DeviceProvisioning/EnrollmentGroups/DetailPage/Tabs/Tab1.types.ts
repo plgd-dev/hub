@@ -1,5 +1,5 @@
 export type Props = {
-    data: {
+    defaultFormData: {
         attestationMechanism: string
         hubId: string
         id: string

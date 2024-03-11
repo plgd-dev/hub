@@ -10,6 +10,8 @@ import { IconArrowDetail } from '@shared-ui/components/Atomic'
 import { parseCertificate } from '@shared-ui/common/services/certificates'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import TableActionButton from '@shared-ui/components/Organisms/TableActionButton'
+import { security } from '@shared-ui/common/services'
+import { WellKnownConfigType } from '@shared-ui/common/hooks'
 
 import { messages as t } from '../../../ProvisioningRecords.i18n'
 import { messages as g } from '@/containers/Global.i18n'
@@ -17,6 +19,7 @@ import { messages as certT } from '@/containers/Certificates/Certificates.i18n'
 import DateFormat from '@/containers/PendingCommands/DateFormat'
 import { getStatusFromCode } from '@/containers/DeviceProvisioning/utils'
 import notificationId from '@/notificationId'
+import SubjectColumn from '../../SubjectColumn'
 
 type CertDataType = {
     usage: string
@@ -32,6 +35,10 @@ const Tab2: FC<any> = (props) => {
     const { formatMessage: _ } = useIntl()
 
     const [certData, setCertData] = useState<any>(undefined)
+
+    const wellKnownConfig = security.getWellKnowConfig() as WellKnownConfigType & {
+        defaultCommandTimeToLive: number
+    }
 
     useEffect(() => {
         const parseCerts = async (certs: any) => {
@@ -86,10 +93,17 @@ const Tab2: FC<any> = (props) => {
                 ),
             },
             {
-                Header: _(certT.serialNumber),
-                accessor: 'serialNumber',
-                Cell: ({ value }: { value: string | number }) => <span className='no-wrap-text'>{value}</span>,
+                Header: _(t.subject),
+                accessor: 'origin.subject',
+                Cell: ({ value }: { value: string }) => (
+                    <SubjectColumn hubId={wellKnownConfig.id} hubsData={data.enrollmentGroupData.hubsData} owner={data.ownership.owner} value={value} />
+                ),
             },
+            // {
+            //     Header: _(certT.serialNumber),
+            //     accessor: 'serialNumber',
+            //     Cell: ({ value }: { value: string | number }) => <span className='no-wrap-text'>{value}</span>,
+            // },
             {
                 Header: _(certT.type),
                 accessor: 'type',

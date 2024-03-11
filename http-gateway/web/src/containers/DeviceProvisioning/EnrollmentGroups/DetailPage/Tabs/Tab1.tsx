@@ -1,43 +1,38 @@
 import React, { FC, useContext, useMemo } from 'react'
 import { useIntl } from 'react-intl'
-import { SubmitHandler, useForm } from 'react-hook-form'
-import ReactDOM from 'react-dom'
 
 import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
 import Headline from '@shared-ui/components/Atomic/Headline'
 import Spacer from '@shared-ui/components/Atomic/Spacer'
 import FormInput from '@shared-ui/components/Atomic/FormInput'
 import FormGroup from '@shared-ui/components/Atomic/FormGroup'
-import { selectAligns } from '@shared-ui/components/Atomic'
 import { Row } from '@shared-ui/components/Atomic/SimpleStripTable/SimpleStripTable.types'
-import { useIsMounted } from '@shared-ui/common/hooks'
-import AppContext from '@shared-ui/app/share/AppContext'
-import BottomPanel from '@shared-ui/components/Layout/BottomPanel/BottomPanel'
-import Button from '@shared-ui/components/Atomic/Button'
+import { FormContext } from '@shared-ui/common/context/FormContext'
+import { useForm } from '@shared-ui/common/hooks'
 
 import { Props, Inputs } from './Tab1.types'
 import { messages as g } from '../../../../Global.i18n'
 import { messages as t } from '../../EnrollmentGroups.i18n'
+import Switch from '@plgd/shared-ui/src/components/Atomic/Switch'
+import FormSelect from '@shared-ui/components/Atomic/FormSelect'
+import Tooltip, { tooltipVariants } from '@plgd/shared-ui/src/components/Atomic/Tooltip'
 
 const Tab1: FC<Props> = (props) => {
     const { formatMessage: _ } = useIntl()
-    const { data, hubData } = props
+    const { defaultFormData, hubData } = props
 
-    const isMounted = useIsMounted()
-    const { collapsed } = useContext(AppContext)
+    const { updateData, setFormError, commonInputProps, commonFormGroupProps } = useContext(FormContext)
 
     const {
-        handleSubmit,
-        formState: { errors, isDirty, dirtyFields },
-        reset,
+        formState: { errors },
         register,
-        getValues,
+        watch,
+        control,
     } = useForm<Inputs>({
-        mode: 'all',
-        reValidateMode: 'onSubmit',
-        values: {
-            name: data?.name ?? '',
-        },
+        defaultFormData,
+        updateData,
+        setFormError,
+        errorKey: 'tab1',
     })
 
     const topRows = useMemo(() => {
@@ -45,8 +40,8 @@ const Tab1: FC<Props> = (props) => {
             {
                 attribute: _(g.name),
                 value: (
-                    <FormGroup errorTooltip fullSize error={errors.name ? _(t.nameError) : undefined} id='name' marginBottom={false}>
-                        <FormInput inlineStyle align={selectAligns.RIGHT} placeholder={_(g.name)} {...register('name', { validate: (val) => val !== '' })} />
+                    <FormGroup {...commonFormGroupProps} error={errors.name ? _(g.requiredField, { field: _(g.name) }) : undefined} id='name'>
+                        <FormInput {...commonInputProps} placeholder={_(g.name)} {...register('name', { required: true, validate: (val) => val !== '' })} />
                     </FormGroup>
                 ),
             },
@@ -56,56 +51,76 @@ const Tab1: FC<Props> = (props) => {
             rows.push({ attribute: _(g.linkedHub), value: hubData?.name })
         }
 
-        rows.push({ attribute: _(g.ownerID), value: data?.owner })
+        rows.push({ attribute: _(g.ownerID), value: defaultFormData?.owner })
 
         return rows
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [data?.name, data?.owner, hubData?.name])
+    }, [])
 
-    const bottomRows = useMemo(
-        () => [
-            { attribute: _(g.certificate), value: 'TODO' },
-            { attribute: _(t.matchingCertificate), value: 'TODO' },
-            { attribute: _(t.enableExpiredCertificates), value: 'TODO' },
-        ],
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        []
-    )
+    const bottomRows = [
+        {
+            attribute: _(g.certificate),
+            value: (
+                <FormGroup {...commonFormGroupProps} error={errors.name ? _(g.requiredField, { field: _(g.name) }) : undefined} id='matchingCertificate'>
+                    <div>
+                        <FormSelect
+                            inlineStyle
+                            align='right'
+                            error={!!errors.name}
+                            options={[
+                                { value: '1', label: 'Opt1' },
+                                { value: '2', label: 'Opt2' },
+                            ]}
+                        />
+                    </div>
+                </FormGroup>
+            ),
+        },
+        {
+            attribute: _(t.matchingCertificate),
+            value: (
+                <FormGroup {...commonFormGroupProps} error={errors.name ? _(g.requiredField, { field: _(g.name) }) : undefined} id='matchingCertificate'>
+                    <div>
+                        <FormSelect
+                            inlineStyle
+                            align='right'
+                            error={!!errors.name}
+                            options={[
+                                { value: '1', label: 'Opt1' },
+                                { value: '2', label: 'Opt2' },
+                            ]}
+                        />
+                    </div>
+                </FormGroup>
+            ),
+        },
+        {
+            attribute: _(t.enableExpiredCertificates),
+            value: (
+                <Spacer type='pr-4'>
+                    <Switch size='small' />
+                </Spacer>
+            ),
+        },
+    ]
 
-    const onSubmit: SubmitHandler<Inputs> = (data) => {
-        console.log('submit!')
-    }
+    console.log('---')
+    console.log(defaultFormData)
+    console.log(hubData)
 
     return (
         <div>
-            <form onSubmit={handleSubmit(onSubmit)}>
+            <form>
                 <SimpleStripTable rows={topRows} />
                 <Spacer type='mt-8 mb-4'>
                     <Headline type='h6'>{_(t.deviceAuthentication)}</Headline>
                 </Spacer>
                 <SimpleStripTable rows={bottomRows} />
             </form>
-            {isMounted &&
-                document.querySelector('#modal-root') &&
-                ReactDOM.createPortal(
-                    <BottomPanel
-                        actionPrimary={
-                            <Button disabled={Object.keys(errors).length > 0} onClick={() => onSubmit(getValues())} variant='primary'>
-                                {_(g.saveChanges)}
-                            </Button>
-                        }
-                        actionSecondary={
-                            <Button onClick={() => reset()} variant='secondary'>
-                                {_(g.reset)}
-                            </Button>
-                        }
-                        attribute={_(g.changesMade)}
-                        leftPanelCollapsed={collapsed}
-                        show={isDirty}
-                        value={`${Object.keys(dirtyFields).length} ${Object.keys(dirtyFields).length > 1 ? _(t.fields) : _(t.field)}`}
-                    />,
-                    document.querySelector('#modal-root') as Element
-                )}
+
+            <br />
+            <br />
+            <br />
         </div>
     )
 }

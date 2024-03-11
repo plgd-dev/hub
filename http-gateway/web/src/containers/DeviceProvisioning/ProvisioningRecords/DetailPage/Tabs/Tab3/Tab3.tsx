@@ -1,4 +1,4 @@
-import React, { FC, useMemo } from 'react'
+import React, { FC, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
 
 import Spacer from '@shared-ui/components/Atomic/Spacer'
@@ -7,17 +7,66 @@ import Table from '@shared-ui/components/Atomic/TableNew'
 import TagGroup from '@shared-ui/components/Atomic/TagGroup'
 import Tag from '@shared-ui/components/Atomic/Tag'
 import { tagVariants } from '@shared-ui/components/Atomic/Tag/constants'
+import { security } from '@shared-ui/common/services'
+import { WellKnownConfigType } from '@shared-ui/common/hooks'
 
 import { messages as t } from '../../../ProvisioningRecords.i18n'
 import { messages as g } from '@/containers/Global.i18n'
+import { Props } from './Tab3.types'
+import SubjectColumn from '../../SubjectColumn'
 
-const Tab3: FC<any> = (props) => {
+const Tab3: FC<Props> = (props) => {
     const { data } = props
 
     const { formatMessage: _ } = useIntl()
+    const [displayData, setDisplayData] = useState<any>(undefined)
+
+    const wellKnownConfig = security.getWellKnowConfig() as WellKnownConfigType & {
+        defaultCommandTimeToLive: number
+    }
+
+    useEffect(() => {
+        const getSubject = (item: any) => {
+            if (item.hasOwnProperty('deviceSubject')) {
+                return {
+                    subject: item.deviceSubject.deviceId,
+                    subjectType: _(g.device),
+                }
+            } else if (item.hasOwnProperty('connectionSubject')) {
+                return {
+                    subject: _(g.anonymous),
+                    subjectType: _(t.connection),
+                }
+            } else if (item.hasOwnProperty('roleSubject')) {
+                return {
+                    subject: _(t.securedConnection),
+                    subjectType: _(t.role),
+                }
+            }
+
+            return {}
+        }
+
+        if (data.acl.accessControlList) {
+            setDisplayData(data.acl.accessControlList.map((i: any) => ({ ...i, ...getSubject(i) })))
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [data])
 
     const columns = useMemo(
         () => [
+            {
+                Header: _(t.subject),
+                accessor: 'subject',
+                Cell: ({ value }: { value: string }) => (
+                    <SubjectColumn hubId={wellKnownConfig.id} hubsData={data.enrollmentGroupData.hubsData} owner={data.ownership.owner} value={value} />
+                ),
+            },
+            {
+                Header: _(t.subjectType),
+                accessor: 'subjectType',
+                Cell: ({ value }: { value: string }) => <span className='no-wrap-text'>{value}</span>,
+            },
             {
                 Header: _(t.permissions),
                 accessor: 'permissions',
@@ -48,11 +97,12 @@ const Tab3: FC<any> = (props) => {
                     >
                         {value?.map?.((resource: { href: string }) => (
                             <Tag className='tree-custom-tag' key={`${resource.href}-${row.id}`} variant={tagVariants.DEFAULT}>
-                                {resource.href}
+                                {resource?.href}
                             </Tag>
                         ))}
                     </TagGroup>
                 ),
+                style: { width: '250px' },
             },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -61,14 +111,14 @@ const Tab3: FC<any> = (props) => {
 
     return (
         <div>
-            {data.acl.accessControlList && (
+            {displayData && (
                 <>
-                    <Spacer type='mt-8 mb-3'>
-                        <Headline type='h6'>accessControlList</Headline>
+                    <Spacer type='mt-3 mb-3'>
+                        <Headline type='h6'>{_(t.accessControlList)}</Headline>
                     </Spacer>
                     <Table
                         columns={columns}
-                        data={data.acl.accessControlList}
+                        data={displayData}
                         defaultPageSize={100}
                         defaultSortBy={[
                             {

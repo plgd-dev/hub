@@ -56,8 +56,6 @@ const LinkNewHubPage: FC<any> = () => {
     const [activeItem, setActiveItem] = useState(step ? steps.findIndex((s) => s.link.includes(step)) : 0)
     const [formData, setFormData, rehydrated] = usePersistentState<any>('dps-create-linked-hub-form', DEFAULT_FORM_DATA)
 
-    console.log(formData)
-
     const onStepChange = useCallback(
         (item: number) => {
             setActiveItem(item)

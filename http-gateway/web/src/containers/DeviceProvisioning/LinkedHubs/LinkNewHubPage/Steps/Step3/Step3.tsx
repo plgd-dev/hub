@@ -9,7 +9,7 @@ import FormLabel from '@shared-ui/components/Atomic/FormLabel'
 import FormInput from '@shared-ui/components/Atomic/FormInput'
 import TimeoutControl from '@shared-ui/components/Atomic/TimeoutControl'
 import Spacer from '@shared-ui/components/Atomic/Spacer'
-import TileToggle from '@plgd/shared-ui/src/components/Atomic/TileToggle'
+import TileToggle from '@shared-ui/components/Atomic/TileToggle'
 
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'

@@ -20,13 +20,13 @@ import FormInput, { inputAligns } from '@shared-ui/components/Atomic/FormInput'
 import { isValidHex, ThemeType } from '@shared-ui/components/Atomic/_theme'
 import { EditorRefType } from '@shared-ui/components/Atomic/Editor/Editor.types'
 import Switch from '@shared-ui/components/Atomic/Switch'
+import { getNumberFromPx } from '@shared-ui/components/Atomic/_utils/commonStyles'
 
 import { Props, Inputs } from './Tab2.types'
 import { messages as t } from '../../ConfigurationPage.i18n'
 import { messages as g } from '@/containers/Global.i18n'
 import { setPreviewTheme } from '@/containers/App/slice'
 import AppColorsPicker from './AppColorsPicker'
-import { getNumberFromPx } from '@shared-ui/components/Atomic/_utils/commonStyles'
 
 const Tab2: FC<Props> = (props) => {
     const { isTabActive, resetForm } = props
