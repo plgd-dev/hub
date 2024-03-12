@@ -16,14 +16,15 @@ import { messages as t } from '../EnrollmentGroups.i18n'
 import { deleteEnrollmentGroupsApi } from '@/containers/DeviceProvisioning/rest'
 import notificationId from '@/notificationId'
 import ListHeader from '../ListHeader'
+import Tag from '@plgd/shared-ui/src/components/Atomic/Tag'
+import { tagVariants } from '@shared-ui/components/Atomic/Tag/constants'
+import TagGroup from '@plgd/shared-ui/src/components/Atomic/TagGroup'
 
 const EnrollmentGroupsListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
 
     const { data, loading, error, refresh } = useEnrollmentGroupDataList()
     const navigate = useNavigate()
-
-    console.log(data)
 
     const [selected, setSelected] = useState<string[]>([])
     const [unselectRowsToken, setUnselectRowsToken] = useState(1)
@@ -87,8 +88,21 @@ const EnrollmentGroupsListPage: FC<any> = () => {
             },
             {
                 Header: _(dpsT.linkedHub),
-                accessor: 'hubId',
-                Cell: ({ value }: { value: string | number }) => <span className='no-wrap-text'>{value}</span>,
+                accessor: 'hubsData',
+                Cell: ({ value, row }: { value: { name: string }[]; row: any }) => (
+                    <TagGroup
+                        i18n={{
+                            more: _(g.more),
+                            modalHeadline: _(dpsT.linkedHubs),
+                        }}
+                    >
+                        {value?.map?.((hub: { name: string }) => (
+                            <Tag className='tree-custom-tag' key={`${hub.name}-${row.id}`}>
+                                {hub.name}
+                            </Tag>
+                        ))}
+                    </TagGroup>
+                ),
             },
             {
                 Header: _(dpsT.ownerId),

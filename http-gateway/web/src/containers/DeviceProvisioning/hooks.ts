@@ -91,10 +91,26 @@ export const useProvisioningRecordsDetail = (provisioningRecordId?: string): Str
 export const useEnrollmentGroupDataList = (): StreamApiPropsType => {
     const { telemetryWebTracer } = useContext(AppContext)
 
-    return useStreamApi(`${getConfig().httpGatewayAddress}${dpsApiEndpoints.ENROLLMENT_GROUPS}`, {
+    const { data: enrollmentGroupsData, ...rest } = useStreamApi(`${getConfig().httpGatewayAddress}${dpsApiEndpoints.ENROLLMENT_GROUPS}`, {
         telemetryWebTracer,
         telemetrySpan: 'get-enrollment-groups-data',
     })
+
+    const { data: hubsData }: StreamApiPropsType = useStreamApi(`${getConfig().httpGatewayAddress}${dpsApiEndpoints.HUBS}`, {
+        telemetryWebTracer,
+        telemetrySpan: `get-hubs`,
+    })
+
+    let data: any = enrollmentGroupsData
+
+    if (enrollmentGroupsData && hubsData) {
+        data = data.map((group: any) => ({
+            ...group,
+            hubsData: hubsData.filter((hubData: any) => group.hubIds.includes(hubData.id)),
+        }))
+    }
+
+    return { data, ...rest }
 }
 
 export const useEnrollmentGroupDetail = (enrollmentGroupId?: string): StreamApiPropsType => {
