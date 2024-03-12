@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useMemo, useState } from 'react'
+import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
 
 import Headline from '@shared-ui/components/Atomic/Headline'
@@ -21,6 +21,8 @@ import DateFormat from '@/containers/PendingCommands/DateFormat'
 import { getStatusFromCode } from '@/containers/DeviceProvisioning/utils'
 import notificationId from '@/notificationId'
 import SubjectColumn from '../../SubjectColumn'
+import CaPoolModal from '@shared-ui/components/Organisms/CaPoolModal'
+import { useCaI18n } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
 
 type CertDataType = {
     usage: string
@@ -36,10 +38,26 @@ const Tab2: FC<any> = (props) => {
     const { formatMessage: _ } = useIntl()
 
     const [certData, setCertData] = useState<any>(undefined)
+    const [caModalData, setCaModalData] = useState<{ title: string; subTitle: string; data?: {}[] | string; dataChain: any }>({
+        title: _(t.certificateDetail),
+        subTitle: '',
+        data: undefined,
+        dataChain: undefined,
+    })
+
+    const i18n = useCaI18n()
 
     const wellKnownConfig = security.getWellKnowConfig() as WellKnownConfigType & {
         defaultCommandTimeToLive: number
     }
+
+    const handleViewCert = useCallback(
+        (id: number) => {
+            const certItem = certData.find((item: { id: number; name: string; data: {}[] }) => item.id === id)
+            setCaModalData({ title: _(t.certificateDetail), subTitle: certItem.name, data: certItem.data || certItem.name, dataChain: certItem.dataChain })
+        },
+        [certData]
+    )
 
     useEffect(() => {
         const parseCerts = async (certs: any) => {
@@ -109,7 +127,7 @@ const Tab2: FC<any> = (props) => {
             {
                 Header: _(g.name),
                 accessor: 'name',
-                Cell: ({ value, row }: { value: string | number; row: any }) => <span className='no-wrap-text'>{value}</span>,
+                Cell: ({ value }: { value: string | number }) => <span className='no-wrap-text'>{value}</span>,
             },
             {
                 Header: _(t.subject),
@@ -156,7 +174,7 @@ const Tab2: FC<any> = (props) => {
                         <TableActionButton
                             items={[
                                 {
-                                    onClick: () => console.log(`/certificates/${id}`),
+                                    onClick: () => handleViewCert(id),
                                     label: _(g.view),
                                     icon: <IconArrowDetail />,
                                 },
@@ -168,7 +186,7 @@ const Tab2: FC<any> = (props) => {
             },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        []
+        [certData]
     )
 
     return (
@@ -238,6 +256,16 @@ const Tab2: FC<any> = (props) => {
                     />
                 </>
             )}
+
+            <CaPoolModal
+                data={caModalData?.data}
+                dataChain={caModalData?.dataChain}
+                i18n={i18n}
+                onClose={() => setCaModalData({ title: '', subTitle: '', data: undefined, dataChain: undefined })}
+                show={caModalData?.data !== undefined}
+                subTitle={caModalData.subTitle}
+                title={caModalData.title}
+            />
         </div>
     )
 }

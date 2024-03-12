@@ -157,4 +157,8 @@ export const messages = defineMessages({
         id: 'provisioningRecords.yourId',
         defaultMessage: 'Your ID',
     },
+    certificateDetail: {
+        id: 'provisioningRecords.certificateDetail',
+        defaultMessage: 'Certificate Detail',
+    },
 })
