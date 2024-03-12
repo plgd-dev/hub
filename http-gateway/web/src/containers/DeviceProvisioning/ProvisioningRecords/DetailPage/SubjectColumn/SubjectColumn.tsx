@@ -10,13 +10,14 @@ import { messages as t } from '../../ProvisioningRecords.i18n'
 import { Props } from './SubjectColumn.types'
 
 const SubjectColumn: FC<Props> = (props) => {
-    const { value, owner, hubsData, hubId } = props
+    const { value, deviceId, owner, hubsData, hubId } = props
 
     const { formatMessage: _ } = useIntl()
 
     const isHub = useMemo(() => hubId && value === hubId, [value, hubId])
     const isYour = useMemo(() => hubsData && isYourId(value, hubsData), [value, hubsData])
     const isOwner = useMemo(() => owner && isOwnerId(value, owner), [value, owner])
+    const isDevice = useMemo(() => deviceId && deviceId === value, [value, deviceId])
 
     const baseTag = useCallback(
         (text: string) => (
@@ -35,6 +36,7 @@ const SubjectColumn: FC<Props> = (props) => {
             {isHub && baseTag(_(g.hubId))}
             {isYour && baseTag(_(t.yourId))}
             {isOwner && baseTag(_(t.ownerId))}
+            {isDevice && baseTag(_(t.deviceID))}
         </span>
     )
 }

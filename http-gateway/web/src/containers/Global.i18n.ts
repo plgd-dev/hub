@@ -265,4 +265,8 @@ export const messages = defineMessages({
         id: 'global.device',
         defaultMessage: 'Device',
     },
+    copyToClipboard: {
+        id: 'global.copyToClipboard',
+        defaultMessage: 'Copy to clipboard',
+    },
 })

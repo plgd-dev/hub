@@ -118,11 +118,6 @@ const CertificatesListPage: FC<any> = () => {
                 ),
             },
             {
-                Header: _(t.serialNumber),
-                accessor: 'serialNumber',
-                Cell: ({ value }: { value: string | number }) => <span className='no-wrap-text'>{value}</span>,
-            },
-            {
                 Header: _(t.type),
                 accessor: 'type',
                 Cell: ({ value }: { value: string | number }) => <span className='no-wrap-text'>{value}</span>,

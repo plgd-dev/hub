@@ -20,6 +20,12 @@ import DateFormat from '@/containers/PendingCommands/DateFormat'
 import { getStatusFromCode } from '@/containers/DeviceProvisioning/utils'
 import notificationId from '@/notificationId'
 import SubjectColumn from '../../SubjectColumn'
+import CopyBox from '@shared-ui/components/Atomic/CopyBox'
+import Tooltip from '@plgd/shared-ui/src/components/Atomic/Tooltip'
+import * as styles from '@shared-ui/components/Atomic/SimpleStripTable/SimpleStripTable.styles'
+import IconCopy from '@shared-ui/components/Atomic/Icon/components/IconCopy'
+import { copyToClipboard } from '@shared-ui/common/utils'
+import CopyIcon from '@shared-ui/components/Atomic/CopyIcon'
 
 type CertDataType = {
     usage: string
@@ -74,36 +80,55 @@ const Tab2: FC<any> = (props) => {
         }
     }, [data.credential.credentials])
 
+    const pskColumns = useMemo(
+        () => [
+            {
+                Header: _(t.subjectID),
+                accessor: 'subjectId',
+                Cell: ({ value }: { value: string | number }) => (
+                    <span className='no-wrap-text' style={{ display: 'inline-flex', alignItems: 'center' }}>
+                        {value}
+                        <CopyIcon i18n={{ content: _(g.copyToClipboard) }} value={value} />
+                    </span>
+                ),
+            },
+            {
+                Header: _(g.key),
+                accessor: 'key',
+                disableSortBy: true,
+                Cell: ({ value }: any) => (
+                    <span className='no-wrap-text'>
+                        **** *****
+                        <CopyIcon i18n={{ content: _(g.copyToClipboard) }} value={value} />
+                    </span>
+                ),
+                className: 'actions',
+            },
+        ],
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        []
+    )
+
     const columns = useMemo(
         () => [
             {
                 Header: _(g.name),
                 accessor: 'name',
-                Cell: ({ value, row }: { value: string | number; row: any }) => (
-                    <a
-                        data-test-id={`dps-certificates-${row.id}`}
-                        href={`/certificates/${row.original.id}`}
-                        onClick={(e) => {
-                            e.preventDefault()
-                            // navigate(`/certificates/${row.original.id}`)
-                        }}
-                    >
-                        <span className='no-wrap-text'>{value}</span>
-                    </a>
-                ),
+                Cell: ({ value, row }: { value: string | number; row: any }) => <span className='no-wrap-text'>{value}</span>,
             },
             {
                 Header: _(t.subject),
                 accessor: 'origin.subject',
                 Cell: ({ value }: { value: string }) => (
-                    <SubjectColumn hubId={wellKnownConfig.id} hubsData={data.enrollmentGroupData.hubsData} owner={data.ownership.owner} value={value} />
+                    <SubjectColumn
+                        deviceId={data.deviceId}
+                        hubId={wellKnownConfig.id}
+                        hubsData={data.enrollmentGroupData.hubsData}
+                        owner={data.ownership.owner}
+                        value={value}
+                    />
                 ),
             },
-            // {
-            //     Header: _(certT.serialNumber),
-            //     accessor: 'serialNumber',
-            //     Cell: ({ value }: { value: string | number }) => <span className='no-wrap-text'>{value}</span>,
-            // },
             {
                 Header: _(certT.type),
                 accessor: 'type',
@@ -176,19 +201,20 @@ const Tab2: FC<any> = (props) => {
                     <Spacer type='mt-8 mb-3'>
                         <Headline type='h6'>{_(t.preSharedKey)}</Headline>
                     </Spacer>
-                    <SimpleStripTable
-                        rows={[
+                    <Table
+                        columns={pskColumns}
+                        data={[data.credential.preSharedKey]}
+                        defaultPageSize={100}
+                        defaultSortBy={[
                             {
-                                attribute: _(t.subjectID),
-                                value: data.credential.preSharedKey.subjectId,
-                                copyValue: true,
-                            },
-                            {
-                                attribute: _(g.key),
-                                value: '**** *****',
-                                copyValue: data.credential.preSharedKey.key,
+                                id: 'key',
+                                desc: false,
                             },
                         ]}
+                        i18n={{
+                            search: _(g.search),
+                        }}
+                        primaryAttribute='key'
                     />
                 </>
             )}

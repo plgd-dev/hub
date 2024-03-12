@@ -59,7 +59,13 @@ const Tab3: FC<Props> = (props) => {
                 Header: _(t.subject),
                 accessor: 'subject',
                 Cell: ({ value }: { value: string }) => (
-                    <SubjectColumn hubId={wellKnownConfig.id} hubsData={data.enrollmentGroupData.hubsData} owner={data.ownership.owner} value={value} />
+                    <SubjectColumn
+                        deviceId={data.deviceId}
+                        hubId={wellKnownConfig.id}
+                        hubsData={data.enrollmentGroupData.hubsData}
+                        owner={data.ownership.owner}
+                        value={value}
+                    />
                 ),
             },
             {
@@ -88,18 +94,26 @@ const Tab3: FC<Props> = (props) => {
             {
                 Header: _(t.resources),
                 accessor: 'resources',
-                Cell: ({ value, row }: { value: { href: string }[]; row: { id: string } }) => (
+                Cell: ({ value, row }: { value: { href: string; wildcard: string; interfaces: string[] }[]; row: { id: string } }) => (
                     <TagGroup
                         i18n={{
                             more: _(g.more),
                             modalHeadline: _(t.resources),
                         }}
                     >
-                        {value?.map?.((resource: { href: string }) => (
-                            <Tag className='tree-custom-tag' key={`${resource.href}-${row.id}`} variant={tagVariants.DEFAULT}>
-                                {resource?.href}
-                            </Tag>
-                        ))}
+                        {value?.map?.((resource: { href: string; wildcard: string; interfaces: string[] }) =>
+                            resource.wildcard === 'NONE' ? (
+                                <Tag key={`${resource.href}-${row.id}`} variant={tagVariants.DEFAULT}>
+                                    {resource?.href}
+                                </Tag>
+                            ) : (
+                                resource.interfaces.map((i) => (
+                                    <Tag key={`${resource.href}-${row.id}-${i}`} variant={tagVariants.DEFAULT}>
+                                        {i}
+                                    </Tag>
+                                ))
+                            )
+                        )}
                     </TagGroup>
                 ),
                 style: { width: '250px' },
@@ -108,6 +122,8 @@ const Tab3: FC<Props> = (props) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
         []
     )
+
+    console.log(displayData)
 
     return (
         <div>

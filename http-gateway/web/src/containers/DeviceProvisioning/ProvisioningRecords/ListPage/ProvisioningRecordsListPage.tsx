@@ -55,17 +55,27 @@ const ProvisioningRecordsListPage: FC<any> = () => {
             {
                 Header: _(t.attestationID),
                 accessor: 'attestation.x509.commonName',
-                Cell: ({ value }: { value: string | number }) => <span className='no-wrap-text'>{value || '-'}</span>,
+                Cell: ({ value, row }: { row: any; value: string | number }) => (
+                    <a
+                        href={`/device-provisioning/provisioning-records/${row.original.id}`}
+                        onClick={(e) => {
+                            e.preventDefault()
+                            navigate(`/device-provisioning/provisioning-records/${row.original.id}`)
+                        }}
+                    >
+                        <span className='no-wrap-text'>{value}</span>
+                    </a>
+                ),
             },
             {
                 Header: _(t.enrollmentGroup),
                 accessor: 'enrollmentGroupData.name',
                 Cell: ({ value, row }: { value: string | number; row: any }) => (
                     <a
-                        href={`/device-provisioning/provisioning-records/${row.original.id}`}
+                        href={`/device-provisioning/enrollment-groups/${row.original.enrollmentGroupId}`}
                         onClick={(e) => {
                             e.preventDefault()
-                            navigate(`/device-provisioning/provisioning-records/${row.original.id}`)
+                            navigate(`/device-provisioning/enrollment-groups/${row.original.enrollmentGroupId}`)
                         }}
                     >
                         <span className='no-wrap-text'>{value}</span>
