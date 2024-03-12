@@ -12,6 +12,7 @@ import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import TableActionButton from '@shared-ui/components/Organisms/TableActionButton'
 import { security } from '@shared-ui/common/services'
 import { WellKnownConfigType } from '@shared-ui/common/hooks'
+import CopyIcon from '@shared-ui/components/Atomic/CopyIcon'
 
 import { messages as t } from '../../../ProvisioningRecords.i18n'
 import { messages as g } from '@/containers/Global.i18n'
@@ -20,12 +21,6 @@ import DateFormat from '@/containers/PendingCommands/DateFormat'
 import { getStatusFromCode } from '@/containers/DeviceProvisioning/utils'
 import notificationId from '@/notificationId'
 import SubjectColumn from '../../SubjectColumn'
-import CopyBox from '@shared-ui/components/Atomic/CopyBox'
-import Tooltip from '@plgd/shared-ui/src/components/Atomic/Tooltip'
-import * as styles from '@shared-ui/components/Atomic/SimpleStripTable/SimpleStripTable.styles'
-import IconCopy from '@shared-ui/components/Atomic/Icon/components/IconCopy'
-import { copyToClipboard } from '@shared-ui/common/utils'
-import CopyIcon from '@shared-ui/components/Atomic/CopyIcon'
 
 type CertDataType = {
     usage: string
