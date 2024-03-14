@@ -7,6 +7,7 @@ import TableActionButton from '@shared-ui/components/Organisms/TableActionButton
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
 import StatusTag from '@shared-ui/components/Atomic/StatusTag'
+import Loadable from '@shared-ui/components/Atomic/Loadable'
 
 import { messages as g } from '../../../Global.i18n'
 import { messages as dpsT } from '../../DeviceProvisioning.i18n'
@@ -17,6 +18,9 @@ import DateFormat from '@/containers/PendingCommands/DateFormat'
 import notificationId from '@/notificationId'
 import PageLayout from '@/containers/Common/PageLayout'
 import TableList from '@/containers/Common/TableList/TableList'
+import { getStatusFromData, parseCerts } from '@/containers/DeviceProvisioning/utils'
+import { messages as certT } from '@/containers/Certificates/Certificates.i18n'
+import { TagTypeType } from '@shared-ui/components/Atomic/StatusTag/StatusTag.types'
 
 const ProvisioningRecordsListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
@@ -25,6 +29,7 @@ const ProvisioningRecordsListPage: FC<any> = () => {
 
     const navigate = useNavigate()
 
+    const [displayData, setDisplayData] = useState<any>(undefined)
     const [selected, setSelected] = useState<string[]>([])
     const [unselectRowsToken, setUnselectRowsToken] = useState(1)
     const [deleting, setDeleting] = useState(false)
@@ -40,6 +45,27 @@ const ProvisioningRecordsListPage: FC<any> = () => {
             )
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [error])
+
+    useEffect(() => {
+        const parseAll = async () => {
+            const parsed = data.map(async (record: any) => {
+                const parsedData = await parseCerts(record.credential.credentials, {
+                    errorTitle: _(certT.certificationParsingError),
+                    errorId: notificationId.HUB_DPS_PROVISIONING_RECORDS_LIST_CERT_PARSE_ERROR,
+                })
+                const merged = { ...record, parsedData: parsedData.filter((i) => !!i), status: '' }
+                const status = getStatusFromData(merged)
+                // console.log(parsedData)
+                return { ...merged, status }
+            })
+
+            return await Promise.all(parsed)
+        }
+
+        if (data && !displayData) {
+            parseAll().then((d) => setDisplayData(d))
+        }
+    }, [data])
 
     const handleOpenDeleteModal = useCallback((_isAllSelected: boolean, selection: string[]) => {
         setSelected(selection)
@@ -90,7 +116,7 @@ const ProvisioningRecordsListPage: FC<any> = () => {
             {
                 Header: _(g.status),
                 accessor: 'status',
-                Cell: ({ value }: { value: string | number }) => <StatusTag variant='success'>TODO</StatusTag>,
+                Cell: ({ value }: { value: string }) => <StatusTag variant={value as TagTypeType}>{value}</StatusTag>,
             },
             {
                 Header: _(t.firstAttestation),
@@ -160,22 +186,24 @@ const ProvisioningRecordsListPage: FC<any> = () => {
 
     return (
         <PageLayout breadcrumbs={breadcrumbs} loading={loading || deleting} title={_(t.provisioningRecords)}>
-            <TableList
-                columns={columns}
-                data={data}
-                defaultSortBy={[
-                    {
-                        id: 'name',
-                        desc: false,
-                    },
-                ]}
-                i18n={{
-                    singleSelected: _(t.provisioningRecord),
-                    multiSelected: _(t.provisioningRecords),
-                }}
-                onDeleteClick={handleOpenDeleteModal}
-                unselectRowsToken={unselectRowsToken}
-            />
+            <Loadable condition={!!displayData}>
+                <TableList
+                    columns={columns}
+                    data={displayData}
+                    defaultSortBy={[
+                        {
+                            id: 'attestation.x509.commonName',
+                            desc: false,
+                        },
+                    ]}
+                    i18n={{
+                        singleSelected: _(t.provisioningRecord),
+                        multiSelected: _(t.provisioningRecords),
+                    }}
+                    onDeleteClick={handleOpenDeleteModal}
+                    unselectRowsToken={unselectRowsToken}
+                />
+            </Loadable>
 
             <DeleteModal
                 deleteInformation={

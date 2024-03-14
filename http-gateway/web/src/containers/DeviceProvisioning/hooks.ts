@@ -1,4 +1,4 @@
-import { useContext } from 'react'
+import { useContext, useEffect, useState } from 'react'
 
 import AppContext from '@shared-ui/app/share/AppContext'
 import { useStreamApi } from '@shared-ui/common/hooks'
@@ -116,7 +116,9 @@ export const useEnrollmentGroupDataList = (): StreamApiPropsType => {
 export const useEnrollmentGroupDetail = (enrollmentGroupId?: string): StreamApiPropsType => {
     const { telemetryWebTracer } = useContext(AppContext)
 
-    const { data, ...rest }: StreamApiPropsType = useStreamApi(
+    const [data, setData] = useState(null)
+
+    const { data: enrollmentGroupData, ...rest }: StreamApiPropsType = useStreamApi(
         `${getConfig().httpGatewayAddress}${dpsApiEndpoints.ENROLLMENT_GROUPS}?idFilter=${enrollmentGroupId}`,
         {
             telemetryWebTracer,
@@ -124,12 +126,17 @@ export const useEnrollmentGroupDetail = (enrollmentGroupId?: string): StreamApiP
         }
     )
 
-    if (data && Array.isArray(data)) {
-        return {
-            data: data[0],
-            ...rest,
+    const idFilter = enrollmentGroupData && enrollmentGroupData[0] ? enrollmentGroupData[0].hubIds.map((id: string) => `idFilter=${id}`).join('&') : ''
+    const { data: hubsData }: StreamApiPropsType = useStreamApi(`${getConfig().httpGatewayAddress}${dpsApiEndpoints.HUBS}?${idFilter}`, {
+        telemetryWebTracer,
+        telemetrySpan: `get-hubs-${idFilter}`,
+    })
+
+    useEffect(() => {
+        if (enrollmentGroupData && Array.isArray(enrollmentGroupData)) {
+            setData({ ...enrollmentGroupData[0], hubsData })
         }
-    }
+    }, [enrollmentGroupData, hubsData])
 
     return { data, ...rest }
 }

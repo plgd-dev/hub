@@ -2,39 +2,35 @@ import React, { FC, useCallback, useContext, useEffect, useMemo, useState } from
 import { useParams } from 'react-router-dom'
 import { useIntl } from 'react-intl'
 import ReactDOM from 'react-dom'
+import isEqual from 'lodash/isEqual'
 
-import Tabs from '@shared-ui/components/Atomic/Tabs'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import BottomPanel from '@shared-ui/components/Layout/BottomPanel/BottomPanel'
 import Button from '@shared-ui/components/Atomic/Button'
 import { useIsMounted } from '@shared-ui/common/hooks'
+import AppContext from '@shared-ui/app/share/AppContext'
+import { FormContext, getFormContextDefault } from '@shared-ui/common/context/FormContext'
 
 import PageLayout from '@/containers/Common/PageLayout'
 import { messages as dpsT } from '../../DeviceProvisioning.i18n'
 import { messages as t } from '../EnrollmentGroups.i18n'
-import testId from '@/testId'
 import { Props } from './EnrollmentGroupsDetailPage.types'
 import DetailHeader from '../DetailHeader'
-import Tab1 from './Tabs/Tab1'
-import { useEnrollmentGroupDetail, useHubDetail } from '@/containers/DeviceProvisioning/hooks'
+import { useEnrollmentGroupDetail, useLinkedHubsList } from '@/containers/DeviceProvisioning/hooks'
 import notificationId from '@/notificationId'
-import { FormContext, getFormContextDefault } from '@shared-ui/common/context/FormContext'
 import { messages as g } from '@/containers/Global.i18n'
-import AppContext from '@shared-ui/app/share/AppContext'
-import isEqual from 'lodash/isEqual'
-import Loadable from '@shared-ui/components/Atomic/Loadable'
+import DetailForm from '@/containers/DeviceProvisioning/EnrollmentGroups/DetailPage/DetailForm'
 
 const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
     const { formatMessage: _ } = useIntl()
-    const { defaultActiveTab } = props
     const { enrollmentId } = useParams()
     const { collapsed } = useContext(AppContext)
 
-    const [activeTabItem, setActiveTabItem] = useState(defaultActiveTab ?? 0)
     const [pageLoading, setPageLoading] = useState(false)
 
     const { data, loading, error } = useEnrollmentGroupDetail(enrollmentId!)
-    const { data: hubData, loading: hubLoading, error: hubError } = useHubDetail(data?.hubIds[0]!, !!data?.hubIds)
+
+    // const { data: hubData, loading: hubLoading, error: hubError } = useHubDetail(data?.hubIds[0]!, !!data?.hubIds)
     const isMounted = useIsMounted()
 
     const defaultFormState = useMemo(
@@ -47,8 +43,9 @@ const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
     const [formDirty, setFormDirty] = useState(defaultFormState)
     const [formError, setFormError] = useState(defaultFormState)
 
-    const [formData, setFormData] = useState<any>(data)
+    const [formData, setFormData] = useState<any>(undefined)
 
+    // const isDirtyData = false
     const isDirtyData = useMemo(() => !isEqual(data, formData), [data, formData])
     const isDirty = useMemo(() => Object.values(formDirty).some((i) => i), [formDirty])
 
@@ -59,7 +56,7 @@ const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
     }, [data])
 
     useEffect(() => {
-        const errorF = error || hubError
+        const errorF = error
 
         if (errorF) {
             Notification.error(
@@ -69,14 +66,6 @@ const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [error])
-
-    const handleTabChange = useCallback((i: number) => {
-        setActiveTabItem(i)
-
-        // navigate(`/devices/${id}${i === 1 ? '/resources' : ''}`, { replace: true })
-
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
 
     const breadcrumbs = useMemo(
         () => [
@@ -130,31 +119,11 @@ const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
         <PageLayout
             breadcrumbs={breadcrumbs}
             header={<DetailHeader id={enrollmentId!} refresh={() => {}} />}
-            loading={loading || hubLoading || pageLoading}
+            loading={loading || pageLoading}
             title={enrollmentId}
         >
             <FormContext.Provider value={context}>
-                <Loadable condition={!!data}>
-                    <Tabs
-                        fullHeight
-                        activeItem={activeTabItem}
-                        onItemChange={handleTabChange}
-                        tabs={[
-                            {
-                                name: _(t.enrollmentConfiguration),
-                                id: 0,
-                                dataTestId: testId.dps.enrollmentGroups.detail.tabEnrollmentConfiguration,
-                                content: <Tab1 defaultFormData={data} hubData={hubData} />,
-                            },
-                            {
-                                name: _(t.deviceCredentials),
-                                id: 1,
-                                dataTestId: testId.dps.enrollmentGroups.detail.tabDeviceCredentials,
-                                content: <div>Tab2</div>,
-                            },
-                        ]}
-                    />
-                </Loadable>
+                <DetailForm defaultFormData={formData} />
             </FormContext.Provider>
             {isMounted &&
                 document.querySelector('#modal-root') &&

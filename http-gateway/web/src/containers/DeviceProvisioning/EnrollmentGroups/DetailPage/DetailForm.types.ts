@@ -5,7 +5,7 @@ export type Props = {
         id: string
         name: string
         owner: string
-        hubData: {
+        hubsData: {
             authorization: any
             certificateAuthority: any
             coapGateway: string
@@ -17,4 +17,5 @@ export type Props = {
 
 export type Inputs = {
     name: string
+    hubIds: string[]
 }

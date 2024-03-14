@@ -1,26 +1,31 @@
 import React, { FC, useContext, useMemo } from 'react'
 import { useIntl } from 'react-intl'
+import { Controller } from 'react-hook-form'
 
 import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
 import Headline from '@shared-ui/components/Atomic/Headline'
 import Spacer from '@shared-ui/components/Atomic/Spacer'
 import FormInput from '@shared-ui/components/Atomic/FormInput'
 import FormGroup from '@shared-ui/components/Atomic/FormGroup'
-import { Row } from '@shared-ui/components/Atomic/SimpleStripTable/SimpleStripTable.types'
 import { FormContext } from '@shared-ui/common/context/FormContext'
 import { useForm } from '@shared-ui/common/hooks'
 import Switch from '@shared-ui/components/Atomic/Switch'
 import FormSelect from '@shared-ui/components/Atomic/FormSelect'
+import { OptionType } from '@shared-ui/components/Atomic/FormSelect/FormSelect.types'
 
-import { Props, Inputs } from './Tab1.types'
-import { messages as g } from '../../../../Global.i18n'
-import { messages as t } from '../../EnrollmentGroups.i18n'
+import { Props, Inputs } from './DetailForm.types'
+import { messages as g } from '../../../Global.i18n'
+import { messages as t } from '../EnrollmentGroups.i18n'
+import { useLinkedHubsList } from '@/containers/DeviceProvisioning/hooks'
 
 const Tab1: FC<Props> = (props) => {
     const { formatMessage: _ } = useIntl()
     const { defaultFormData } = props
 
+    console.log(defaultFormData)
+
     const { updateData, setFormError, commonInputProps, commonFormGroupProps } = useContext(FormContext)
+    const { data: hubsData } = useLinkedHubsList()
 
     const {
         formState: { errors },
@@ -34,8 +39,23 @@ const Tab1: FC<Props> = (props) => {
         errorKey: 'tab1',
     })
 
-    const topRows = useMemo(() => {
-        const rows: Row[] = [
+    const linkedHubs = useMemo(() => {
+        if (hubsData) {
+            return hubsData.map((linkedHub: { name: string; id: string }) => ({
+                value: linkedHub.id,
+                label: linkedHub.name,
+            }))
+        }
+
+        return []
+    }, [hubsData])
+
+    const hubIds = watch('hubIds')
+
+    console.log(hubIds)
+
+    const topRows = useMemo(
+        () => [
             {
                 attribute: _(g.name),
                 value: (
@@ -44,17 +64,38 @@ const Tab1: FC<Props> = (props) => {
                     </FormGroup>
                 ),
             },
-        ]
-
-        // if (hubData?.name) {
-        //     rows.push({ attribute: _(g.linkedHub), value: hubData?.name })
-        // }
-
-        rows.push({ attribute: _(g.ownerID), value: defaultFormData?.owner })
-
-        return rows
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+            {
+                attribute: _(t.linkedHubs),
+                value: (
+                    <FormGroup
+                        {...commonFormGroupProps}
+                        error={errors.hubIds ? _(g.requiredField, { field: _(t.linkedHubs) }) : undefined}
+                        id='matchingCertificate'
+                    >
+                        <div>
+                            <Controller
+                                control={control}
+                                name='hubIds'
+                                render={({ field: { onChange, value } }) => (
+                                    <FormSelect
+                                        inlineStyle
+                                        isMulti
+                                        align='right'
+                                        error={!!errors.name}
+                                        onChange={(options: OptionType[]) => onChange(options.map((option) => option.value))}
+                                        options={linkedHubs}
+                                        size='small'
+                                    />
+                                )}
+                            />
+                        </div>
+                    </FormGroup>
+                ),
+            },
+            { attribute: _(g.ownerID), value: defaultFormData?.owner },
+        ],
+        [commonFormGroupProps, commonInputProps, defaultFormData?.owner, errors.name, register]
+    )
 
     const bottomRows = [
         {
@@ -106,16 +147,15 @@ const Tab1: FC<Props> = (props) => {
     return (
         <div>
             <form>
-                <SimpleStripTable rows={topRows} />
+                <Spacer type='mb-4'>
+                    <Headline type='h6'>{_(t.enrollmentConfiguration)}</Headline>
+                </Spacer>
+                <SimpleStripTable leftColSize={6} rightColSize={6} rows={topRows} />
                 <Spacer type='mt-8 mb-4'>
                     <Headline type='h6'>{_(t.deviceAuthentication)}</Headline>
                 </Spacer>
                 <SimpleStripTable rows={bottomRows} />
             </form>
-
-            <br />
-            <br />
-            <br />
         </div>
     )
 }

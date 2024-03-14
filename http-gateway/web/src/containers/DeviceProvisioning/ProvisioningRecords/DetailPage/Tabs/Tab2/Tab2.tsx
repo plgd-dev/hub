@@ -7,30 +7,20 @@ import StatusTag from '@shared-ui/components/Atomic/StatusTag'
 import Spacer from '@shared-ui/components/Atomic/Spacer'
 import Table from '@shared-ui/components/Atomic/TableNew'
 import { IconArrowDetail } from '@shared-ui/components/Atomic'
-import { parseCertificate } from '@shared-ui/common/services/certificates'
-import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import TableActionButton from '@shared-ui/components/Organisms/TableActionButton'
 import { security } from '@shared-ui/common/services'
 import { WellKnownConfigType } from '@shared-ui/common/hooks'
 import CopyIcon from '@shared-ui/components/Atomic/CopyIcon'
+import CaPoolModal from '@shared-ui/components/Organisms/CaPoolModal'
 
 import { messages as t } from '../../../ProvisioningRecords.i18n'
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as certT } from '@/containers/Certificates/Certificates.i18n'
 import DateFormat from '@/containers/PendingCommands/DateFormat'
-import { getStatusFromCode } from '@/containers/DeviceProvisioning/utils'
+import { getStatusFromCode, parseCerts } from '@/containers/DeviceProvisioning/utils'
 import notificationId from '@/notificationId'
 import SubjectColumn from '../../SubjectColumn'
-import CaPoolModal from '@shared-ui/components/Organisms/CaPoolModal'
 import { useCaI18n } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
-
-type CertDataType = {
-    usage: string
-    publicData?: {
-        data: string
-        encoding: string
-    }
-}
 
 const Tab2: FC<any> = (props) => {
     const { data } = props
@@ -60,34 +50,11 @@ const Tab2: FC<any> = (props) => {
     )
 
     useEffect(() => {
-        const parseCerts = async (certs: any) => {
-            const parsed = certs?.map(async (certsData: CertDataType, key: number) => {
-                try {
-                    const { usage, publicData } = certsData
-
-                    if (usage !== 'NONE' && publicData) {
-                        return await parseCertificate(atob(publicData.data), key, certsData)
-                    } else {
-                        return null
-                    }
-                } catch (e: any) {
-                    let error = e
-                    if (!(error instanceof Error)) {
-                        error = new Error(e)
-                    }
-
-                    Notification.error(
-                        { title: _(certT.certificationParsingError), message: error.message },
-                        { notificationId: notificationId.HUB_DPS_PROVISIONING_RECORDS_DETAIL_TAB_CREDENTIALS_CERT_PARSE_ERROR }
-                    )
-                }
-            })
-
-            return await Promise.all(parsed)
-        }
-
         if (data.credential.credentials) {
-            parseCerts(data.credential.credentials).then((d) => {
+            parseCerts(data.credential.credentials, {
+                errorTitle: _(certT.certificationParsingError),
+                errorId: notificationId.HUB_DPS_PROVISIONING_RECORDS_DETAIL_TAB_CREDENTIALS_CERT_PARSE_ERROR,
+            }).then((d) => {
                 setCertData(d.filter((item: any) => !!item))
             })
         }
@@ -212,7 +179,7 @@ const Tab2: FC<any> = (props) => {
             {data.credential.preSharedKey && (
                 <>
                     <Spacer type='mt-8 mb-3'>
-                        <Headline type='h6'>{_(t.preSharedKey)}</Headline>
+                        <Headline type='h6'>{_(t.preSharedKeys)}</Headline>
                     </Spacer>
                     <Table
                         columns={pskColumns}

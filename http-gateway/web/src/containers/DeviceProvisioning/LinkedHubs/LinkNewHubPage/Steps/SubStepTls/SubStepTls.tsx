@@ -138,7 +138,7 @@ const SubStepTls: FC<Props> = (props) => {
                 validator={(file) => nameLengthValidator(file)}
             />
 
-            {caPoolData.length > 0 && (
+            {caPoolData && caPoolData.length > 0 && (
                 <Spacer type='pt-6'>
                     <CaList
                         actions={{

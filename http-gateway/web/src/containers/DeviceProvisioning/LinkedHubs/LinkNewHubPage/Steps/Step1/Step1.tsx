@@ -1,5 +1,6 @@
 import React, { FC, FormEvent, useCallback, useContext, useState } from 'react'
 import { useIntl } from 'react-intl'
+import merge from 'lodash/merge'
 
 import Row from '@shared-ui/components/Atomic/Grid/Row'
 import Column from '@shared-ui/components/Atomic/Grid/Column'
@@ -50,19 +51,25 @@ const Step1: FC<Props> = (props) => {
                         'get-endpoint-hub-configuration'
                     )
 
-                    updateData({
-                        ...DEFAULT_FORM_DATA,
-                        name: values.name,
-                        endpoint: values.endpoint,
-                        hubId: wellKnown.id,
-                        authorization: {
-                            ownerClaim: wellKnown.jwtOwnerClaim,
-                            provider: {
-                                authority: wellKnown.authority,
+                    updateData(
+                        merge(DEFAULT_FORM_DATA, {
+                            name: values.name,
+                            endpoint: values.endpoint,
+                            hubId: wellKnown.id,
+                            certificateAuthority: {
+                                grpc: {
+                                    address: wellKnown.certificateAuthority,
+                                },
                             },
-                        },
-                        gateways: [{ value: wellKnown.coapGateway }],
-                    })
+                            authorization: {
+                                ownerClaim: wellKnown.jwtOwnerClaim,
+                                provider: {
+                                    authority: wellKnown.authority,
+                                },
+                            },
+                            gateways: [{ value: wellKnown.coapGateway }],
+                        })
+                    )
 
                     setStep?.(1)
 
@@ -77,6 +84,9 @@ const Step1: FC<Props> = (props) => {
         },
         [getValues, setStep, updateData]
     )
+
+    console.log(name)
+    console.log(endpoint)
 
     return (
         <form>
@@ -99,7 +109,13 @@ const Step1: FC<Props> = (props) => {
                 </Column>
             </Row>
 
-            <ButtonBox disabled={name === '' || endpoint === ''} htmlType='submit' loading={loading} loadingText={_(t.continue)} onClick={handleFormSubmit}>
+            <ButtonBox
+                disabled={name === '' || endpoint === '' || !name || !endpoint}
+                htmlType='submit'
+                loading={loading}
+                loadingText={_(t.continue)}
+                onClick={handleFormSubmit}
+            >
                 {_(t.continue)}
             </ButtonBox>
         </form>

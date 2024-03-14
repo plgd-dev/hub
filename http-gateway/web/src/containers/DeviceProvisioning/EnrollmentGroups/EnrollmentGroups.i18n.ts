@@ -61,4 +61,8 @@ export const messages = defineMessages({
         id: 'enrollmentGroups.field',
         defaultMessage: 'field',
     },
+    linkedHubs: {
+        id: 'enrollmentGroups.linkedHubs',
+        defaultMessage: 'Linked Hubs',
+    },
 })
