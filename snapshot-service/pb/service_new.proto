@@ -32,20 +32,34 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 
 option go_package = "github.com/plgd-dev/hub/v2/snapshot-service/pb;pb";
 
-message Condition {
+message Id {
   string id = 1;
+  uint64 version = 2;
+}
+
+message IdFilter {
+  string id = 1;
+  oneof version {
+    uint64 value = 2;
+    bool all = 3;
+    bool max = 4;
+  }
+}
+
+message Condition {
+  Id id = 1;
   string name = 2;
   bool enabled = 3;
   repeated string device_id_filter = 5;
   repeated string resource_type_filter = 6;
   repeated string resource_href_filter = 7;
   string yq_expression = 8;
-  repeated string linked_configuration = 9;
+  repeated Id linked_configuration = 9;
 }
 
-message CreateConditionReponse { string id = 1; }
-message GetConditionsRequest { repeated string id_filter = 1; }
-message DeleteConditionsRequest { repeated string id_filter = 1; }
+message CreateConditionReponse { Id id = 1; }
+message GetConditionsRequest { repeated IdFilter id_filter = 1; }
+message DeleteConditionsRequest { repeated IdFilter id_filter = 1; }
 message DeleteConditionsResponse { int64 count = 1; }
 
 message RepeatedString { repeated string list = 1; }
@@ -53,28 +67,34 @@ message RepeatedString { repeated string list = 1; }
 message Configuration {
   message Resource {
     oneof filter {
-      href string = 1;
+      string href  = 1;
       RepeatedString resource_types = 2;
     }
-    resourceaggregate.pb.Content Content = 3;
+    resourceaggregate.pb.Content content = 3;
+    int64 delay  = 4;
     string resource_interface = 6; // optional update interface
     int64 time_to_live = 7; // optional update command time to live
   }
-  repeated string id = 1;
+  Id id = 1;
   string name = 2;
   repeated Resource resources = 3;
 }
 
-message AppliedConfiguration {
-  string id = 1;
-  string configuration_id = 2;
+message CreateConfigurationReponse { Id id = 1; }
+message GetConfigurationsRequest { repeated string id_filter = 1; }
+message DeleteConfigurationsRequest { repeated string id_filter = 1; }
+message DeleteConfigurationsResponse { int64 count = 1; }
+
+message AppliedResourceConfiguration {
+  resourceaggregate.pb.ResourceId resource_id = 1; 
+  Id configuration_id = 2;
   oneof executed_by {
     bool on_demaned = 3;
-    string condition_id = 4;
+    Id condition_id = 4;
   }
   int64 timestamp_start = 5; // when the rule association was applied
-  int64 timeout_at = 6; // when the rule association was removed
-  repeated resourceaggregate.pb.ResourceUpdated resources_updated = 16;
+  int64 valid_until = 6; // how long the command is valid
+  resourceaggregate.pb.ResourceUpdated resource_updated = 7;
 }
 
 service SnapshotService {
@@ -106,7 +126,7 @@ service SnapshotService {
     };
   }
 
-  rpc UpdateCondition(Condition) returns (UpdateSceneResponse) {
+  rpc UpdateCondition(Condition) returns (UpdateConditionResponse) {
     option (google.api.http) = {
       put: "/api/v1/conditions/{id}";
       body: "*";
@@ -154,7 +174,7 @@ service SnapshotService {
     };
   }
 
-  rpc UpdateConfiguration(Configuration) returns (UpdateSceneResponse) {
+  rpc UpdateConfiguration(Configuration) returns (UpdateConfigurationReponse) {
     option (google.api.http) = {
       put: "/api/v1/configurations/{id}";
       body: "*";
