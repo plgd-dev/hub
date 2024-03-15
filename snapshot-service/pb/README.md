@@ -3,261 +3,375 @@
 
 ## Table of Contents
 
-- [snapshot-service/pb/ruleActionLink.proto](#snapshot-service_pb_ruleActionLink-proto)
-    - [AppliedRuleActionLink](#snapshotservice-pb-AppliedRuleActionLink)
-    - [RuleActionLink](#snapshotservice-pb-RuleActionLink)
-    - [RuleActionParameters](#snapshotservice-pb-RuleActionParameters)
-    - [RuleActionParameters.Origin](#snapshotservice-pb-RuleActionParameters-Origin)
-  
-- [snapshot-service/pb/rule.proto](#snapshot-service_pb_rule-proto)
-    - [LogicalExpression](#snapshotservice-pb-LogicalExpression)
-    - [NegationExpression](#snapshotservice-pb-NegationExpression)
-    - [OriginId](#snapshotservice-pb-OriginId)
-    - [ParenthesesExpression](#snapshotservice-pb-ParenthesesExpression)
-    - [RelationalExpression](#snapshotservice-pb-RelationalExpression)
-    - [RelationalOperand](#snapshotservice-pb-RelationalOperand)
-    - [RepeatedString](#snapshotservice-pb-RepeatedString)
-    - [ResourceProperty](#snapshotservice-pb-ResourceProperty)
-    - [Rule](#snapshotservice-pb-Rule)
-    - [RuleExpression](#snapshotservice-pb-RuleExpression)
-  
-    - [LogicalOperator](#snapshotservice-pb-LogicalOperator)
-    - [RelationalOperator](#snapshotservice-pb-RelationalOperator)
-    - [StringOperator](#snapshotservice-pb-StringOperator)
-  
-- [snapshot-service/pb/scene.proto](#snapshot-service_pb_scene-proto)
-    - [GenerateContent](#snapshotservice-pb-GenerateContent)
-    - [ResourceSnapshot](#snapshotservice-pb-ResourceSnapshot)
-    - [ResourceSnapshot.ApplyToDevices](#snapshotservice-pb-ResourceSnapshot-ApplyToDevices)
-    - [ResourceSnapshot.ApplyToResources](#snapshotservice-pb-ResourceSnapshot-ApplyToResources)
-    - [Scene](#snapshotservice-pb-Scene)
-  
 - [snapshot-service/pb/service.proto](#snapshot-service_pb_service-proto)
-    - [CreateRuleActionLinkResponse](#snapshotservice-pb-CreateRuleActionLinkResponse)
-    - [CreateRuleResponse](#snapshotservice-pb-CreateRuleResponse)
-    - [CreateSceneRequest](#snapshotservice-pb-CreateSceneRequest)
-    - [CreateSceneResponse](#snapshotservice-pb-CreateSceneResponse)
-    - [DeleteAppliedRuleActionLinkRequest](#snapshotservice-pb-DeleteAppliedRuleActionLinkRequest)
-    - [DeleteAppliedRuleActionLinkResponse](#snapshotservice-pb-DeleteAppliedRuleActionLinkResponse)
-    - [DeleteRuleActionLinksRequest](#snapshotservice-pb-DeleteRuleActionLinksRequest)
-    - [DeleteRuleActionLinksResponse](#snapshotservice-pb-DeleteRuleActionLinksResponse)
-    - [DeleteRulesRequest](#snapshotservice-pb-DeleteRulesRequest)
-    - [DeleteRulesResponse](#snapshotservice-pb-DeleteRulesResponse)
-    - [DeleteScenesRequest](#snapshotservice-pb-DeleteScenesRequest)
-    - [DeleteScenesResponse](#snapshotservice-pb-DeleteScenesResponse)
-    - [GetAppliedRuleActionLinksRequest](#snapshotservice-pb-GetAppliedRuleActionLinksRequest)
-    - [GetRuleActionLinksRequest](#snapshotservice-pb-GetRuleActionLinksRequest)
-    - [GetRulesRequest](#snapshotservice-pb-GetRulesRequest)
-    - [GetScenesRequest](#snapshotservice-pb-GetScenesRequest)
-    - [InvokeRuleActionLinkRequest](#snapshotservice-pb-InvokeRuleActionLinkRequest)
-    - [InvokeRuleActionLinkResponse](#snapshotservice-pb-InvokeRuleActionLinkResponse)
-    - [InvokeRuleRequest](#snapshotservice-pb-InvokeRuleRequest)
-    - [InvokeRuleResponse](#snapshotservice-pb-InvokeRuleResponse)
-    - [UpdateRuleActionLinkResponse](#snapshotservice-pb-UpdateRuleActionLinkResponse)
-    - [UpdateRuleResponse](#snapshotservice-pb-UpdateRuleResponse)
-    - [UpdateSceneResponse](#snapshotservice-pb-UpdateSceneResponse)
+    - [AppliedConfiguration](#snapshotservice-pb-AppliedConfiguration)
+    - [AppliedConfiguration.Resource](#snapshotservice-pb-AppliedConfiguration-Resource)
+    - [Condition](#snapshotservice-pb-Condition)
+    - [Condition.InvokeConfiguration](#snapshotservice-pb-Condition-InvokeConfiguration)
+    - [Configuration](#snapshotservice-pb-Configuration)
+    - [Configuration.Resource](#snapshotservice-pb-Configuration-Resource)
+    - [CreateConditionReponse](#snapshotservice-pb-CreateConditionReponse)
+    - [CreateConfigurationReponse](#snapshotservice-pb-CreateConfigurationReponse)
+    - [DeleteAppliedConfigurationsRequest](#snapshotservice-pb-DeleteAppliedConfigurationsRequest)
+    - [DeleteAppliedConfigurationsResponse](#snapshotservice-pb-DeleteAppliedConfigurationsResponse)
+    - [DeleteConditionsRequest](#snapshotservice-pb-DeleteConditionsRequest)
+    - [DeleteConditionsResponse](#snapshotservice-pb-DeleteConditionsResponse)
+    - [DeleteConfigurationsRequest](#snapshotservice-pb-DeleteConfigurationsRequest)
+    - [DeleteConfigurationsResponse](#snapshotservice-pb-DeleteConfigurationsResponse)
+    - [GetAppliedConfigurationsRequest](#snapshotservice-pb-GetAppliedConfigurationsRequest)
+    - [GetConditionsRequest](#snapshotservice-pb-GetConditionsRequest)
+    - [GetConfigurationsRequest](#snapshotservice-pb-GetConfigurationsRequest)
+    - [Id](#snapshotservice-pb-Id)
+    - [IdFilter](#snapshotservice-pb-IdFilter)
+    - [InvokeConfigurationRequest](#snapshotservice-pb-InvokeConfigurationRequest)
+    - [RepeatedString](#snapshotservice-pb-RepeatedString)
+    - [UpdateConditionResponse](#snapshotservice-pb-UpdateConditionResponse)
+    - [UpdateConfigurationReponse](#snapshotservice-pb-UpdateConfigurationReponse)
   
-    - [RuleEngine](#snapshotservice-pb-RuleEngine)
+    - [AppliedConfiguration.Resource.Status](#snapshotservice-pb-AppliedConfiguration-Resource-Status)
   
-- [snapshot-service/pb/yqEngine.proto](#snapshot-service_pb_yqEngine-proto)
-    - [YQEngine](#snapshotservice-pb-YQEngine)
-    - [YQEngine.Input](#snapshotservice-pb-YQEngine-Input)
+    - [SnapshotService](#snapshotservice-pb-SnapshotService)
   
 - [Scalar Value Types](#scalar-value-types)
 
 
 
-<a name="snapshot-service_pb_ruleActionLink-proto"></a>
+<a name="snapshot-service_pb_service-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## snapshot-service/pb/ruleActionLink.proto
+## snapshot-service/pb/service.proto
 
 
 
-<a name="snapshotservice-pb-AppliedRuleActionLink"></a>
+<a name="snapshotservice-pb-AppliedConfiguration"></a>
 
-### AppliedRuleActionLink
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  | the id of the rule link |
-| origin_invoker | [resourceaggregate.pb.ResourceId](#resourceaggregate-pb-ResourceId) |  | for once_per_device or once_per_resource |
-| timestamp_start | [int64](#int64) |  | when the rule association was applied |
-| timestamp_end | [int64](#int64) |  | when the rule association was removed |
-| resources_updated | [resourceaggregate.pb.ResourceUpdated](#resourceaggregate-pb-ResourceUpdated) | repeated |  |
-
-
-
-
-
-
-<a name="snapshotservice-pb-RuleActionLink"></a>
-
-### RuleActionLink
+### AppliedConfiguration
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [string](#string) |  |  |
+| device_id | [string](#string) |  |  |
+| configuration_id | [Id](#snapshotservice-pb-Id) |  |  |
+| on_demaned | [bool](#bool) |  |  |
+| condition_id | [Id](#snapshotservice-pb-Id) |  |  |
+| resources | [AppliedConfiguration.Resource](#snapshotservice-pb-AppliedConfiguration-Resource) | repeated |  |
+
+
+
+
+
+
+<a name="snapshotservice-pb-AppliedConfiguration-Resource"></a>
+
+### AppliedConfiguration.Resource
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| resource_id | [resourceaggregate.pb.ResourceId](#resourceaggregate-pb-ResourceId) |  |  |
+| configuration_resources_idx | [uint32](#uint32) |  | index of resource in configuration resources array. For resource types it could be mutliple resources. |
+| status | [AppliedConfiguration.Resource.Status](#snapshotservice-pb-AppliedConfiguration-Resource-Status) |  |  |
+| timestamp_start | [int64](#int64) |  | when the rule association was applied |
+| valid_until | [int64](#int64) |  | how long the command is valid |
+| resource_updated | [resourceaggregate.pb.ResourceUpdated](#resourceaggregate-pb-ResourceUpdated) |  |  |
+
+
+
+
+
+
+<a name="snapshotservice-pb-Condition"></a>
+
+### Condition
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [Id](#snapshotservice-pb-Id) |  |  |
 | name | [string](#string) |  |  |
 | enabled | [bool](#bool) |  |  |
-| rule_id | [string](#string) |  |  |
-| owner | [string](#string) |  |  |
-| once_per_device | [bool](#bool) |  | the rule association is applied once per device |
-| once_per_resource | [bool](#bool) |  | the rule will be invoked once per resource |
-| interval_per_device | [int64](#int64) |  | in nanoseconds |
-| interval_per_resource | [int64](#int64) |  | in nanoseconds |
-| always | [bool](#bool) |  |  |
-| scenes | [RuleActionParameters](#snapshotservice-pb-RuleActionParameters) | repeated | scenes to invoke |
-| rules | [RuleActionParameters](#snapshotservice-pb-RuleActionParameters) | repeated | rules to invoke |
+| device_id_filter | [string](#string) | repeated |  |
+| resource_type_filter | [string](#string) | repeated |  |
+| resource_href_filter | [string](#string) | repeated |  |
+| yq_expression | [string](#string) |  |  |
+| invoke_configuration | [Condition.InvokeConfiguration](#snapshotservice-pb-Condition-InvokeConfiguration) |  |  |
 
 
 
 
 
 
-<a name="snapshotservice-pb-RuleActionParameters"></a>
+<a name="snapshotservice-pb-Condition-InvokeConfiguration"></a>
 
-### RuleActionParameters
+### Condition.InvokeConfiguration
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  | latest version of cfg |
+| keep_updating_on_failure | [bool](#bool) |  |  |
+| api_access_token | [string](#string) |  | token used to update resources in the configuration |
+
+
+
+
+
+
+<a name="snapshotservice-pb-Configuration"></a>
+
+### Configuration
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [Id](#snapshotservice-pb-Id) |  |  |
+| name | [string](#string) |  |  |
+| resources | [Configuration.Resource](#snapshotservice-pb-Configuration-Resource) | repeated |  |
+
+
+
+
+
+
+<a name="snapshotservice-pb-Configuration-Resource"></a>
+
+### Configuration.Resource
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| href | [string](#string) |  |  |
+| resource_types | [RepeatedString](#snapshotservice-pb-RepeatedString) |  | all types must match resource |
+| content | [resourceaggregate.pb.Content](#resourceaggregate-pb-Content) |  |  |
+| resource_interface | [string](#string) |  | optional update interface |
+| time_to_live | [int64](#int64) |  | optional update command time to live |
+
+
+
+
+
+
+<a name="snapshotservice-pb-CreateConditionReponse"></a>
+
+### CreateConditionReponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [Id](#snapshotservice-pb-Id) |  |  |
+
+
+
+
+
+
+<a name="snapshotservice-pb-CreateConfigurationReponse"></a>
+
+### CreateConfigurationReponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [Id](#snapshotservice-pb-Id) |  |  |
+
+
+
+
+
+
+<a name="snapshotservice-pb-DeleteAppliedConfigurationsRequest"></a>
+
+### DeleteAppliedConfigurationsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id_filter | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="snapshotservice-pb-DeleteAppliedConfigurationsResponse"></a>
+
+### DeleteAppliedConfigurationsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| count | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="snapshotservice-pb-DeleteConditionsRequest"></a>
+
+### DeleteConditionsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id_filter | [IdFilter](#snapshotservice-pb-IdFilter) | repeated |  |
+
+
+
+
+
+
+<a name="snapshotservice-pb-DeleteConditionsResponse"></a>
+
+### DeleteConditionsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| count | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="snapshotservice-pb-DeleteConfigurationsRequest"></a>
+
+### DeleteConfigurationsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id_filter | [IdFilter](#snapshotservice-pb-IdFilter) | repeated |  |
+
+
+
+
+
+
+<a name="snapshotservice-pb-DeleteConfigurationsResponse"></a>
+
+### DeleteConfigurationsResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| count | [int64](#int64) |  |  |
+
+
+
+
+
+
+<a name="snapshotservice-pb-GetAppliedConfigurationsRequest"></a>
+
+### GetAppliedConfigurationsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id_filter | [string](#string) | repeated |  |
+| configuration_id_filter | [IdFilter](#snapshotservice-pb-IdFilter) | repeated |  |
+| device_id_filter | [string](#string) | repeated |  |
+| condition_id_filter | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="snapshotservice-pb-GetConditionsRequest"></a>
+
+### GetConditionsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id_filter | [IdFilter](#snapshotservice-pb-IdFilter) | repeated |  |
+
+
+
+
+
+
+<a name="snapshotservice-pb-GetConfigurationsRequest"></a>
+
+### GetConfigurationsRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id_filter | [IdFilter](#snapshotservice-pb-IdFilter) | repeated |  |
+
+
+
+
+
+
+<a name="snapshotservice-pb-Id"></a>
+
+### Id
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id | [string](#string) |  |  |
-| origin | [RuleActionParameters.Origin](#snapshotservice-pb-RuleActionParameters-Origin) |  | use the origin resource |
-| resource_id | [resourceaggregate.pb.ResourceId](#resourceaggregate-pb-ResourceId) |  | use the given resource |
+| version | [uint64](#uint64) |  |  |
 
 
 
 
 
 
-<a name="snapshotservice-pb-RuleActionParameters-Origin"></a>
+<a name="snapshotservice-pb-IdFilter"></a>
 
-### RuleActionParameters.Origin
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| new_href | [string](#string) |  | replace the origin href with the given href |
-
-
-
-
-
- 
-
- 
-
- 
-
- 
-
-
-
-<a name="snapshot-service_pb_rule-proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## snapshot-service/pb/rule.proto
-
-
-
-<a name="snapshotservice-pb-LogicalExpression"></a>
-
-### LogicalExpression
+### IdFilter
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| left_expression | [RuleExpression](#snapshotservice-pb-RuleExpression) |  |  |
-| operator | [LogicalOperator](#snapshotservice-pb-LogicalOperator) |  |  |
-| right_expression | [RuleExpression](#snapshotservice-pb-RuleExpression) |  |  |
+| id | [string](#string) |  |  |
+| value | [uint64](#uint64) |  |  |
+| all | [bool](#bool) |  |  |
+| max | [bool](#bool) |  |  |
 
 
 
 
 
 
-<a name="snapshotservice-pb-NegationExpression"></a>
+<a name="snapshotservice-pb-InvokeConfigurationRequest"></a>
 
-### NegationExpression
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| inner_expression | [RuleExpression](#snapshotservice-pb-RuleExpression) |  |  |
-
-
-
-
-
-
-<a name="snapshotservice-pb-OriginId"></a>
-
-### OriginId
+### InvokeConfigurationRequest
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| href | [string](#string) |  | path to resource in the device (e.g. /oic/d ) |
-| types | [RepeatedString](#snapshotservice-pb-RepeatedString) |  | resource must contains all types (e.g. [oic.r.switch.binary]) |
-
-
-
-
-
-
-<a name="snapshotservice-pb-ParenthesesExpression"></a>
-
-### ParenthesesExpression
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| inner_expression | [RuleExpression](#snapshotservice-pb-RuleExpression) |  |  |
-
-
-
-
-
-
-<a name="snapshotservice-pb-RelationalExpression"></a>
-
-### RelationalExpression
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| left_operand | [RelationalOperand](#snapshotservice-pb-RelationalOperand) |  |  |
-| compare | [RelationalOperator](#snapshotservice-pb-RelationalOperator) |  |  |
-| string | [StringOperator](#snapshotservice-pb-StringOperator) |  |  |
-| right_operand | [RelationalOperand](#snapshotservice-pb-RelationalOperand) |  |  |
-
-
-
-
-
-
-<a name="snapshotservice-pb-RelationalOperand"></a>
-
-### RelationalOperand
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| scalar | [google.protobuf.Value](#google-protobuf-Value) |  |  |
-| resource_property | [ResourceProperty](#snapshotservice-pb-ResourceProperty) |  |  |
+| id | [string](#string) |  |  |
+| device_id_filter | [string](#string) | repeated | at least one must be set |
+| force | [bool](#bool) |  |  |
+| keep_updating_on_failure | [bool](#bool) |  |  |
 
 
 
@@ -279,56 +393,30 @@
 
 
 
-<a name="snapshotservice-pb-ResourceProperty"></a>
+<a name="snapshotservice-pb-UpdateConditionResponse"></a>
 
-### ResourceProperty
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| origin_id | [OriginId](#snapshotservice-pb-OriginId) |  |  |
-| resource_id | [resourceaggregate.pb.ResourceId](#resourceaggregate-pb-ResourceId) |  |  |
-| property_path | [string](#string) |  | jq-like path |
-
-
-
-
-
-
-<a name="snapshotservice-pb-Rule"></a>
-
-### Rule
+### UpdateConditionResponse
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
-| name | [string](#string) |  |  |
-| description | [string](#string) |  |  |
-| yq_engine | [YQEngine](#snapshotservice-pb-YQEngine) |  |  |
-| enabled | [bool](#bool) |  | RuleExpression expression = 4; |
-| owner | [string](#string) |  |  |
+| id | [Id](#snapshotservice-pb-Id) |  | for new version |
 
 
 
 
 
 
-<a name="snapshotservice-pb-RuleExpression"></a>
+<a name="snapshotservice-pb-UpdateConfigurationReponse"></a>
 
-### RuleExpression
+### UpdateConfigurationReponse
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| bool | [bool](#bool) |  |  |
-| relational_expression | [RelationalExpression](#snapshotservice-pb-RelationalExpression) |  |  |
-| logical_expression | [LogicalExpression](#snapshotservice-pb-LogicalExpression) |  |  |
-| parentheses_expression | [ParenthesesExpression](#snapshotservice-pb-ParenthesesExpression) |  |  |
-| negation_expression | [NegationExpression](#snapshotservice-pb-NegationExpression) |  |  |
+| id | [Id](#snapshotservice-pb-Id) |  | for new version |
 
 
 
@@ -337,573 +425,44 @@
  
 
 
-<a name="snapshotservice-pb-LogicalOperator"></a>
+<a name="snapshotservice-pb-AppliedConfiguration-Resource-Status"></a>
 
-### LogicalOperator
+### AppliedConfiguration.Resource.Status
 
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| AND | 0 |  |
-| OR | 1 |  |
-
-
-
-<a name="snapshotservice-pb-RelationalOperator"></a>
-
-### RelationalOperator
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| EQUAL | 0 |  |
-| NOT_EQUAL | 1 |  |
-| LESS_THAN | 2 |  |
-| LESS_THAN_OR_EQUAL | 3 |  |
-| GREATER_THAN | 4 |  |
-| GREATER_THAN_OR_EQUAL | 5 |  |
-
-
-
-<a name="snapshotservice-pb-StringOperator"></a>
-
-### StringOperator
-
-
-| Name | Number | Description |
-| ---- | ------ | ----------- |
-| CONTAINS | 0 |  |
-| DOES_NOT_CONTAIN | 1 |  |
-| STARTS_WITH | 2 |  |
-| ENDS_WITH | 3 |  |
+| QUEUED | 0 |  |
+| INPROGRESS | 1 |  |
+| WAITING_FOR_REOURCE | 2 |  |
+| DONE | 3 |  |
+| TIMEOUT | 4 |  |
+| FAIL | 5 |  |
 
 
  
 
  
 
- 
 
+<a name="snapshotservice-pb-SnapshotService"></a>
 
-
-<a name="snapshot-service_pb_scene-proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## snapshot-service/pb/scene.proto
-
-
-
-<a name="snapshotservice-pb-GenerateContent"></a>
-
-### GenerateContent
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| yq_engine | [YQEngine](#snapshotservice-pb-YQEngine) |  |  |
-| content_type | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="snapshotservice-pb-ResourceSnapshot"></a>
-
-### ResourceSnapshot
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| device_filter | [ResourceSnapshot.ApplyToDevices](#snapshotservice-pb-ResourceSnapshot-ApplyToDevices) |  |  |
-| resource_filter | [ResourceSnapshot.ApplyToResources](#snapshotservice-pb-ResourceSnapshot-ApplyToResources) |  |  |
-| defined | [resourceaggregate.pb.Content](#resourceaggregate-pb-Content) |  |  |
-| generated | [GenerateContent](#snapshotservice-pb-GenerateContent) |  |  |
-| resource_interface | [string](#string) |  | optional update interface |
-| time_to_live | [int64](#int64) |  | optional update command time to live |
-
-
-
-
-
-
-<a name="snapshotservice-pb-ResourceSnapshot-ApplyToDevices"></a>
-
-### ResourceSnapshot.ApplyToDevices
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| origin | [bool](#bool) |  | device that is originally started the scene |
-| device_ids | [string](#string) | repeated | identifies devices |
-| device_types | [string](#string) | repeated | device type just for filtering device when device_ids and current device is not set |
-
-
-
-
-
-
-<a name="snapshotservice-pb-ResourceSnapshot-ApplyToResources"></a>
-
-### ResourceSnapshot.ApplyToResources
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| hrefs | [string](#string) | repeated | identifies resources at the device. |
-| types | [string](#string) | repeated | and operator among types -&gt; type defines a list of properties in content |
-
-
-
-
-
-
-<a name="snapshotservice-pb-Scene"></a>
-
-### Scene
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
-| name | [string](#string) |  |  |
-| resources | [ResourceSnapshot](#snapshotservice-pb-ResourceSnapshot) | repeated |  |
-
-
-
-
-
- 
-
- 
-
- 
-
- 
-
-
-
-<a name="snapshot-service_pb_service-proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## snapshot-service/pb/service.proto
-
-
-
-<a name="snapshotservice-pb-CreateRuleActionLinkResponse"></a>
-
-### CreateRuleActionLinkResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="snapshotservice-pb-CreateRuleResponse"></a>
-
-### CreateRuleResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="snapshotservice-pb-CreateSceneRequest"></a>
-
-### CreateSceneRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| name | [string](#string) |  |  |
-| resources | [ResourceSnapshot](#snapshotservice-pb-ResourceSnapshot) | repeated |  |
-| device_id_filter | [string](#string) | repeated |  |
-| resource_id | [resourceaggregate.pb.ResourceId](#resourceaggregate-pb-ResourceId) | repeated |  |
-| type_filter | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="snapshotservice-pb-CreateSceneResponse"></a>
-
-### CreateSceneResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="snapshotservice-pb-DeleteAppliedRuleActionLinkRequest"></a>
-
-### DeleteAppliedRuleActionLinkRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id_filter | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="snapshotservice-pb-DeleteAppliedRuleActionLinkResponse"></a>
-
-### DeleteAppliedRuleActionLinkResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| count | [int64](#int64) |  |  |
-
-
-
-
-
-
-<a name="snapshotservice-pb-DeleteRuleActionLinksRequest"></a>
-
-### DeleteRuleActionLinksRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id_filter | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="snapshotservice-pb-DeleteRuleActionLinksResponse"></a>
-
-### DeleteRuleActionLinksResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| count | [int64](#int64) |  |  |
-
-
-
-
-
-
-<a name="snapshotservice-pb-DeleteRulesRequest"></a>
-
-### DeleteRulesRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id_filter | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="snapshotservice-pb-DeleteRulesResponse"></a>
-
-### DeleteRulesResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| count | [int64](#int64) |  |  |
-
-
-
-
-
-
-<a name="snapshotservice-pb-DeleteScenesRequest"></a>
-
-### DeleteScenesRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id_filter | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="snapshotservice-pb-DeleteScenesResponse"></a>
-
-### DeleteScenesResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| count | [int64](#int64) |  |  |
-
-
-
-
-
-
-<a name="snapshotservice-pb-GetAppliedRuleActionLinksRequest"></a>
-
-### GetAppliedRuleActionLinksRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id_filter | [string](#string) | repeated |  |
-| rule_id_filter | [string](#string) | repeated |  |
-| device_id_filter | [string](#string) | repeated |  |
-| resource_id_filter | [resourceaggregate.pb.ResourceId](#resourceaggregate-pb-ResourceId) | repeated |  |
-
-
-
-
-
-
-<a name="snapshotservice-pb-GetRuleActionLinksRequest"></a>
-
-### GetRuleActionLinksRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id_filter | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="snapshotservice-pb-GetRulesRequest"></a>
-
-### GetRulesRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id_filter | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="snapshotservice-pb-GetScenesRequest"></a>
-
-### GetScenesRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id_filter | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="snapshotservice-pb-InvokeRuleActionLinkRequest"></a>
-
-### InvokeRuleActionLinkRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
-| resource_id | [resourceaggregate.pb.ResourceId](#resourceaggregate-pb-ResourceId) |  | for once_per_device or once_per_resource |
-| force | [bool](#bool) |  | override the frequency |
-
-
-
-
-
-
-<a name="snapshotservice-pb-InvokeRuleActionLinkResponse"></a>
-
-### InvokeRuleActionLinkResponse
-
-
-
-
-
-
-
-<a name="snapshotservice-pb-InvokeRuleRequest"></a>
-
-### InvokeRuleRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
-| resource_id | [resourceaggregate.pb.ResourceId](#resourceaggregate-pb-ResourceId) |  | origin resource that starts the execution |
-| content | [resourceaggregate.pb.Content](#resourceaggregate-pb-Content) |  | use content instead of load it for resource_id |
-
-
-
-
-
-
-<a name="snapshotservice-pb-InvokeRuleResponse"></a>
-
-### InvokeRuleResponse
-
-
-
-
-
-
-
-<a name="snapshotservice-pb-UpdateRuleActionLinkResponse"></a>
-
-### UpdateRuleActionLinkResponse
-
-
-
-
-
-
-
-<a name="snapshotservice-pb-UpdateRuleResponse"></a>
-
-### UpdateRuleResponse
-
-
-
-
-
-
-
-<a name="snapshotservice-pb-UpdateSceneResponse"></a>
-
-### UpdateSceneResponse
-
-
-
-
-
-
- 
-
- 
-
- 
-
-
-<a name="snapshotservice-pb-RuleEngine"></a>
-
-### RuleEngine
+### SnapshotService
 
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| CreateScene | [Scene](#snapshotservice-pb-Scene) | [CreateSceneResponse](#snapshotservice-pb-CreateSceneResponse) |  |
-| GetScenes | [GetScenesRequest](#snapshotservice-pb-GetScenesRequest) | [Scene](#snapshotservice-pb-Scene) stream |  |
-| DeleteScenes | [DeleteScenesRequest](#snapshotservice-pb-DeleteScenesRequest) | [DeleteScenesResponse](#snapshotservice-pb-DeleteScenesResponse) |  |
-| UpdateScene | [Scene](#snapshotservice-pb-Scene) | [UpdateSceneResponse](#snapshotservice-pb-UpdateSceneResponse) |  |
-| CreateRule | [Rule](#snapshotservice-pb-Rule) | [CreateRuleResponse](#snapshotservice-pb-CreateRuleResponse) |  |
-| GetRules | [GetRulesRequest](#snapshotservice-pb-GetRulesRequest) | [Rule](#snapshotservice-pb-Rule) stream |  |
-| DeleteRules | [DeleteRulesRequest](#snapshotservice-pb-DeleteRulesRequest) | [DeleteRulesResponse](#snapshotservice-pb-DeleteRulesResponse) |  |
-| UpdateRule | [Rule](#snapshotservice-pb-Rule) | [UpdateRuleResponse](#snapshotservice-pb-UpdateRuleResponse) |  |
-| InvokeRule | [InvokeRuleRequest](#snapshotservice-pb-InvokeRuleRequest) | [InvokeRuleResponse](#snapshotservice-pb-InvokeRuleResponse) |  |
-| CreateRuleActionLink | [RuleActionLink](#snapshotservice-pb-RuleActionLink) | [CreateRuleActionLinkResponse](#snapshotservice-pb-CreateRuleActionLinkResponse) |  |
-| GetRuleActionLinks | [GetRuleActionLinksRequest](#snapshotservice-pb-GetRuleActionLinksRequest) | [RuleActionLink](#snapshotservice-pb-RuleActionLink) stream |  |
-| DeleteRuleActionLinks | [DeleteRuleActionLinksRequest](#snapshotservice-pb-DeleteRuleActionLinksRequest) | [DeleteRuleActionLinksResponse](#snapshotservice-pb-DeleteRuleActionLinksResponse) |  |
-| UpdateRuleActionLink | [RuleActionLink](#snapshotservice-pb-RuleActionLink) | [UpdateRuleActionLinkResponse](#snapshotservice-pb-UpdateRuleActionLinkResponse) |  |
-| InvokeRuleActionLink | [InvokeRuleActionLinkRequest](#snapshotservice-pb-InvokeRuleActionLinkRequest) | [InvokeRuleActionLinkResponse](#snapshotservice-pb-InvokeRuleActionLinkResponse) |  |
-| GetAppliedRuleActionLinks | [GetAppliedRuleActionLinksRequest](#snapshotservice-pb-GetAppliedRuleActionLinksRequest) | [AppliedRuleActionLink](#snapshotservice-pb-AppliedRuleActionLink) |  |
-| DeleteAppliedRuleActionLink | [DeleteAppliedRuleActionLinkRequest](#snapshotservice-pb-DeleteAppliedRuleActionLinkRequest) | [DeleteAppliedRuleActionLinkResponse](#snapshotservice-pb-DeleteAppliedRuleActionLinkResponse) |  |
-
- 
-
-
-
-<a name="snapshot-service_pb_yqEngine-proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## snapshot-service/pb/yqEngine.proto
-
-
-
-<a name="snapshotservice-pb-YQEngine"></a>
-
-### YQEngine
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| inputs | [YQEngine.Input](#snapshotservice-pb-YQEngine-Input) | repeated | content of resources will encoded on yq via $name |
-| yq_expression | [string](#string) |  |  |
-
-
-
-
-
-
-<a name="snapshotservice-pb-YQEngine-Input"></a>
-
-### YQEngine.Input
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| name | [string](#string) |  |  |
-| resource_id | [resourceaggregate.pb.ResourceId](#resourceaggregate-pb-ResourceId) |  |  |
-| value | [google.protobuf.Value](#google-protobuf-Value) |  |  |
-
-
-
-
-
- 
-
- 
-
- 
+| CreateCondition | [Condition](#snapshotservice-pb-Condition) | [CreateConditionReponse](#snapshotservice-pb-CreateConditionReponse) |  |
+| GetConditions | [GetConditionsRequest](#snapshotservice-pb-GetConditionsRequest) | [Condition](#snapshotservice-pb-Condition) stream |  |
+| DeleteConditions | [DeleteConditionsRequest](#snapshotservice-pb-DeleteConditionsRequest) | [DeleteConditionsResponse](#snapshotservice-pb-DeleteConditionsResponse) |  |
+| UpdateCondition | [Condition](#snapshotservice-pb-Condition) | [UpdateConditionResponse](#snapshotservice-pb-UpdateConditionResponse) |  |
+| CreateConfiguration | [Configuration](#snapshotservice-pb-Configuration) | [CreateConfigurationReponse](#snapshotservice-pb-CreateConfigurationReponse) |  |
+| GetConfigurations | [GetConfigurationsRequest](#snapshotservice-pb-GetConfigurationsRequest) | [Configuration](#snapshotservice-pb-Configuration) stream |  |
+| DeleteConfigurations | [DeleteConfigurationsRequest](#snapshotservice-pb-DeleteConfigurationsRequest) | [DeleteConfigurationsResponse](#snapshotservice-pb-DeleteConfigurationsResponse) |  |
+| UpdateConfiguration | [Configuration](#snapshotservice-pb-Configuration) | [UpdateConfigurationReponse](#snapshotservice-pb-UpdateConfigurationReponse) |  |
+| InvokeConfiguration | [InvokeConfigurationRequest](#snapshotservice-pb-InvokeConfigurationRequest) | [AppliedConfiguration](#snapshotservice-pb-AppliedConfiguration) stream | streaming process of update configuration to invoker |
+| GetAppliedConfigurations | [GetAppliedConfigurationsRequest](#snapshotservice-pb-GetAppliedConfigurationsRequest) | [AppliedConfiguration](#snapshotservice-pb-AppliedConfiguration) stream |  |
+| DeleteAppliedConfigurations | [DeleteAppliedConfigurationsRequest](#snapshotservice-pb-DeleteAppliedConfigurationsRequest) | [DeleteAppliedConfigurationsResponse](#snapshotservice-pb-DeleteAppliedConfigurationsResponse) |  |
 
  
 

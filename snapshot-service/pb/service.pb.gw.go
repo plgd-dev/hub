@@ -31,8 +31,8 @@ var _ = runtime.String
 var _ = utilities.NewDoubleArray
 var _ = metadata.Join
 
-func request_RuleEngine_CreateScene_0(ctx context.Context, marshaler runtime.Marshaler, client RuleEngineClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq Scene
+func request_SnapshotService_CreateCondition_0(ctx context.Context, marshaler runtime.Marshaler, client SnapshotServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq Condition
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -43,13 +43,13 @@ func request_RuleEngine_CreateScene_0(ctx context.Context, marshaler runtime.Mar
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := client.CreateScene(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.CreateCondition(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_RuleEngine_CreateScene_0(ctx context.Context, marshaler runtime.Marshaler, server RuleEngineServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq Scene
+func local_request_SnapshotService_CreateCondition_0(ctx context.Context, marshaler runtime.Marshaler, server SnapshotServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq Condition
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -60,27 +60,27 @@ func local_request_RuleEngine_CreateScene_0(ctx context.Context, marshaler runti
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := server.CreateScene(ctx, &protoReq)
+	msg, err := server.CreateCondition(ctx, &protoReq)
 	return msg, metadata, err
 
 }
 
 var (
-	filter_RuleEngine_GetScenes_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+	filter_SnapshotService_GetConditions_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 )
 
-func request_RuleEngine_GetScenes_0(ctx context.Context, marshaler runtime.Marshaler, client RuleEngineClient, req *http.Request, pathParams map[string]string) (RuleEngine_GetScenesClient, runtime.ServerMetadata, error) {
-	var protoReq GetScenesRequest
+func request_SnapshotService_GetConditions_0(ctx context.Context, marshaler runtime.Marshaler, client SnapshotServiceClient, req *http.Request, pathParams map[string]string) (SnapshotService_GetConditionsClient, runtime.ServerMetadata, error) {
+	var protoReq GetConditionsRequest
 	var metadata runtime.ServerMetadata
 
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_RuleEngine_GetScenes_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_SnapshotService_GetConditions_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	stream, err := client.GetScenes(ctx, &protoReq)
+	stream, err := client.GetConditions(ctx, &protoReq)
 	if err != nil {
 		return nil, metadata, err
 	}
@@ -94,43 +94,43 @@ func request_RuleEngine_GetScenes_0(ctx context.Context, marshaler runtime.Marsh
 }
 
 var (
-	filter_RuleEngine_DeleteScenes_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+	filter_SnapshotService_DeleteConditions_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 )
 
-func request_RuleEngine_DeleteScenes_0(ctx context.Context, marshaler runtime.Marshaler, client RuleEngineClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq DeleteScenesRequest
+func request_SnapshotService_DeleteConditions_0(ctx context.Context, marshaler runtime.Marshaler, client SnapshotServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq DeleteConditionsRequest
 	var metadata runtime.ServerMetadata
 
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_RuleEngine_DeleteScenes_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_SnapshotService_DeleteConditions_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := client.DeleteScenes(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.DeleteConditions(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_RuleEngine_DeleteScenes_0(ctx context.Context, marshaler runtime.Marshaler, server RuleEngineServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq DeleteScenesRequest
+func local_request_SnapshotService_DeleteConditions_0(ctx context.Context, marshaler runtime.Marshaler, server SnapshotServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq DeleteConditionsRequest
 	var metadata runtime.ServerMetadata
 
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_RuleEngine_DeleteScenes_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_SnapshotService_DeleteConditions_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := server.DeleteScenes(ctx, &protoReq)
+	msg, err := server.DeleteConditions(ctx, &protoReq)
 	return msg, metadata, err
 
 }
 
-func request_RuleEngine_UpdateScene_0(ctx context.Context, marshaler runtime.Marshaler, client RuleEngineClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq Scene
+func request_SnapshotService_UpdateCondition_0(ctx context.Context, marshaler runtime.Marshaler, client SnapshotServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq Condition
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -148,23 +148,33 @@ func request_RuleEngine_UpdateScene_0(ctx context.Context, marshaler runtime.Mar
 		_   = err
 	)
 
-	val, ok = pathParams["id"]
+	val, ok = pathParams["id.id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id.id")
 	}
 
-	protoReq.Id, err = runtime.String(val)
+	err = runtime.PopulateFieldFromPath(&protoReq, "id.id", val)
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id.id", err)
 	}
 
-	msg, err := client.UpdateScene(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	val, ok = pathParams["id.version"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id.version")
+	}
+
+	err = runtime.PopulateFieldFromPath(&protoReq, "id.version", val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id.version", err)
+	}
+
+	msg, err := client.UpdateCondition(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_RuleEngine_UpdateScene_0(ctx context.Context, marshaler runtime.Marshaler, server RuleEngineServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq Scene
+func local_request_SnapshotService_UpdateCondition_0(ctx context.Context, marshaler runtime.Marshaler, server SnapshotServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq Condition
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -182,23 +192,33 @@ func local_request_RuleEngine_UpdateScene_0(ctx context.Context, marshaler runti
 		_   = err
 	)
 
-	val, ok = pathParams["id"]
+	val, ok = pathParams["id.id"]
 	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id.id")
 	}
 
-	protoReq.Id, err = runtime.String(val)
+	err = runtime.PopulateFieldFromPath(&protoReq, "id.id", val)
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id.id", err)
 	}
 
-	msg, err := server.UpdateScene(ctx, &protoReq)
+	val, ok = pathParams["id.version"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id.version")
+	}
+
+	err = runtime.PopulateFieldFromPath(&protoReq, "id.version", val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id.version", err)
+	}
+
+	msg, err := server.UpdateCondition(ctx, &protoReq)
 	return msg, metadata, err
 
 }
 
-func request_RuleEngine_CreateRule_0(ctx context.Context, marshaler runtime.Marshaler, client RuleEngineClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq Rule
+func request_SnapshotService_CreateConfiguration_0(ctx context.Context, marshaler runtime.Marshaler, client SnapshotServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq Configuration
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -209,13 +229,13 @@ func request_RuleEngine_CreateRule_0(ctx context.Context, marshaler runtime.Mars
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := client.CreateRule(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.CreateConfiguration(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_RuleEngine_CreateRule_0(ctx context.Context, marshaler runtime.Marshaler, server RuleEngineServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq Rule
+func local_request_SnapshotService_CreateConfiguration_0(ctx context.Context, marshaler runtime.Marshaler, server SnapshotServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq Configuration
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -226,27 +246,27 @@ func local_request_RuleEngine_CreateRule_0(ctx context.Context, marshaler runtim
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := server.CreateRule(ctx, &protoReq)
+	msg, err := server.CreateConfiguration(ctx, &protoReq)
 	return msg, metadata, err
 
 }
 
 var (
-	filter_RuleEngine_GetRules_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+	filter_SnapshotService_GetConfigurations_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 )
 
-func request_RuleEngine_GetRules_0(ctx context.Context, marshaler runtime.Marshaler, client RuleEngineClient, req *http.Request, pathParams map[string]string) (RuleEngine_GetRulesClient, runtime.ServerMetadata, error) {
-	var protoReq GetRulesRequest
+func request_SnapshotService_GetConfigurations_0(ctx context.Context, marshaler runtime.Marshaler, client SnapshotServiceClient, req *http.Request, pathParams map[string]string) (SnapshotService_GetConfigurationsClient, runtime.ServerMetadata, error) {
+	var protoReq GetConfigurationsRequest
 	var metadata runtime.ServerMetadata
 
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_RuleEngine_GetRules_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_SnapshotService_GetConfigurations_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	stream, err := client.GetRules(ctx, &protoReq)
+	stream, err := client.GetConfigurations(ctx, &protoReq)
 	if err != nil {
 		return nil, metadata, err
 	}
@@ -260,43 +280,131 @@ func request_RuleEngine_GetRules_0(ctx context.Context, marshaler runtime.Marsha
 }
 
 var (
-	filter_RuleEngine_DeleteRules_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+	filter_SnapshotService_DeleteConfigurations_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 )
 
-func request_RuleEngine_DeleteRules_0(ctx context.Context, marshaler runtime.Marshaler, client RuleEngineClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq DeleteRulesRequest
+func request_SnapshotService_DeleteConfigurations_0(ctx context.Context, marshaler runtime.Marshaler, client SnapshotServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq DeleteConfigurationsRequest
 	var metadata runtime.ServerMetadata
 
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_RuleEngine_DeleteRules_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_SnapshotService_DeleteConfigurations_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := client.DeleteRules(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.DeleteConfigurations(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_RuleEngine_DeleteRules_0(ctx context.Context, marshaler runtime.Marshaler, server RuleEngineServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq DeleteRulesRequest
+func local_request_SnapshotService_DeleteConfigurations_0(ctx context.Context, marshaler runtime.Marshaler, server SnapshotServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq DeleteConfigurationsRequest
 	var metadata runtime.ServerMetadata
 
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_RuleEngine_DeleteRules_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_SnapshotService_DeleteConfigurations_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := server.DeleteRules(ctx, &protoReq)
+	msg, err := server.DeleteConfigurations(ctx, &protoReq)
 	return msg, metadata, err
 
 }
 
-func request_RuleEngine_UpdateRule_0(ctx context.Context, marshaler runtime.Marshaler, client RuleEngineClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq Rule
+func request_SnapshotService_UpdateConfiguration_0(ctx context.Context, marshaler runtime.Marshaler, client SnapshotServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq Configuration
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["id.id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id.id")
+	}
+
+	err = runtime.PopulateFieldFromPath(&protoReq, "id.id", val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id.id", err)
+	}
+
+	val, ok = pathParams["id.version"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id.version")
+	}
+
+	err = runtime.PopulateFieldFromPath(&protoReq, "id.version", val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id.version", err)
+	}
+
+	msg, err := client.UpdateConfiguration(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_SnapshotService_UpdateConfiguration_0(ctx context.Context, marshaler runtime.Marshaler, server SnapshotServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq Configuration
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["id.id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id.id")
+	}
+
+	err = runtime.PopulateFieldFromPath(&protoReq, "id.id", val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id.id", err)
+	}
+
+	val, ok = pathParams["id.version"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id.version")
+	}
+
+	err = runtime.PopulateFieldFromPath(&protoReq, "id.version", val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id.version", err)
+	}
+
+	msg, err := server.UpdateConfiguration(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
+func request_SnapshotService_InvokeConfiguration_0(ctx context.Context, marshaler runtime.Marshaler, client SnapshotServiceClient, req *http.Request, pathParams map[string]string) (SnapshotService_InvokeConfigurationClient, runtime.ServerMetadata, error) {
+	var protoReq InvokeConfigurationRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -324,163 +432,7 @@ func request_RuleEngine_UpdateRule_0(ctx context.Context, marshaler runtime.Mars
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
 	}
 
-	msg, err := client.UpdateRule(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
-	return msg, metadata, err
-
-}
-
-func local_request_RuleEngine_UpdateRule_0(ctx context.Context, marshaler runtime.Marshaler, server RuleEngineServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq Rule
-	var metadata runtime.ServerMetadata
-
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["id"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
-	}
-
-	protoReq.Id, err = runtime.String(val)
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
-	}
-
-	msg, err := server.UpdateRule(ctx, &protoReq)
-	return msg, metadata, err
-
-}
-
-func request_RuleEngine_InvokeRule_0(ctx context.Context, marshaler runtime.Marshaler, client RuleEngineClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq InvokeRuleRequest
-	var metadata runtime.ServerMetadata
-
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["id"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
-	}
-
-	protoReq.Id, err = runtime.String(val)
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
-	}
-
-	msg, err := client.InvokeRule(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
-	return msg, metadata, err
-
-}
-
-func local_request_RuleEngine_InvokeRule_0(ctx context.Context, marshaler runtime.Marshaler, server RuleEngineServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq InvokeRuleRequest
-	var metadata runtime.ServerMetadata
-
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["id"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
-	}
-
-	protoReq.Id, err = runtime.String(val)
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
-	}
-
-	msg, err := server.InvokeRule(ctx, &protoReq)
-	return msg, metadata, err
-
-}
-
-func request_RuleEngine_CreateRuleActionLink_0(ctx context.Context, marshaler runtime.Marshaler, client RuleEngineClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RuleActionLink
-	var metadata runtime.ServerMetadata
-
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	msg, err := client.CreateRuleActionLink(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
-	return msg, metadata, err
-
-}
-
-func local_request_RuleEngine_CreateRuleActionLink_0(ctx context.Context, marshaler runtime.Marshaler, server RuleEngineServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RuleActionLink
-	var metadata runtime.ServerMetadata
-
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	msg, err := server.CreateRuleActionLink(ctx, &protoReq)
-	return msg, metadata, err
-
-}
-
-var (
-	filter_RuleEngine_GetRuleActionLinks_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
-
-func request_RuleEngine_GetRuleActionLinks_0(ctx context.Context, marshaler runtime.Marshaler, client RuleEngineClient, req *http.Request, pathParams map[string]string) (RuleEngine_GetRuleActionLinksClient, runtime.ServerMetadata, error) {
-	var protoReq GetRuleActionLinksRequest
-	var metadata runtime.ServerMetadata
-
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_RuleEngine_GetRuleActionLinks_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	stream, err := client.GetRuleActionLinks(ctx, &protoReq)
+	stream, err := client.InvokeConfiguration(ctx, &protoReq)
 	if err != nil {
 		return nil, metadata, err
 	}
@@ -494,256 +446,76 @@ func request_RuleEngine_GetRuleActionLinks_0(ctx context.Context, marshaler runt
 }
 
 var (
-	filter_RuleEngine_DeleteRuleActionLinks_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+	filter_SnapshotService_GetAppliedConfigurations_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 )
 
-func request_RuleEngine_DeleteRuleActionLinks_0(ctx context.Context, marshaler runtime.Marshaler, client RuleEngineClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq DeleteRuleActionLinksRequest
+func request_SnapshotService_GetAppliedConfigurations_0(ctx context.Context, marshaler runtime.Marshaler, client SnapshotServiceClient, req *http.Request, pathParams map[string]string) (SnapshotService_GetAppliedConfigurationsClient, runtime.ServerMetadata, error) {
+	var protoReq GetAppliedConfigurationsRequest
 	var metadata runtime.ServerMetadata
 
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_RuleEngine_DeleteRuleActionLinks_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_SnapshotService_GetAppliedConfigurations_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := client.DeleteRuleActionLinks(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
-	return msg, metadata, err
-
-}
-
-func local_request_RuleEngine_DeleteRuleActionLinks_0(ctx context.Context, marshaler runtime.Marshaler, server RuleEngineServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq DeleteRuleActionLinksRequest
-	var metadata runtime.ServerMetadata
-
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_RuleEngine_DeleteRuleActionLinks_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	msg, err := server.DeleteRuleActionLinks(ctx, &protoReq)
-	return msg, metadata, err
-
-}
-
-func request_RuleEngine_UpdateRuleActionLink_0(ctx context.Context, marshaler runtime.Marshaler, client RuleEngineClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RuleActionLink
-	var metadata runtime.ServerMetadata
-
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["id"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
-	}
-
-	protoReq.Id, err = runtime.String(val)
+	stream, err := client.GetAppliedConfigurations(ctx, &protoReq)
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
+		return nil, metadata, err
 	}
-
-	msg, err := client.UpdateRuleActionLink(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
-	return msg, metadata, err
-
-}
-
-func local_request_RuleEngine_UpdateRuleActionLink_0(ctx context.Context, marshaler runtime.Marshaler, server RuleEngineServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq RuleActionLink
-	var metadata runtime.ServerMetadata
-
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["id"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
-	}
-
-	protoReq.Id, err = runtime.String(val)
+	header, err := stream.Header()
 	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
+		return nil, metadata, err
 	}
-
-	msg, err := server.UpdateRuleActionLink(ctx, &protoReq)
-	return msg, metadata, err
-
-}
-
-func request_RuleEngine_InvokeRuleActionLink_0(ctx context.Context, marshaler runtime.Marshaler, client RuleEngineClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq InvokeRuleActionLinkRequest
-	var metadata runtime.ServerMetadata
-
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["id"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
-	}
-
-	protoReq.Id, err = runtime.String(val)
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
-	}
-
-	msg, err := client.InvokeRuleActionLink(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
-	return msg, metadata, err
-
-}
-
-func local_request_RuleEngine_InvokeRuleActionLink_0(ctx context.Context, marshaler runtime.Marshaler, server RuleEngineServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq InvokeRuleActionLinkRequest
-	var metadata runtime.ServerMetadata
-
-	newReader, berr := utilities.IOReaderFactory(req.Body)
-	if berr != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
-	}
-	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	var (
-		val string
-		ok  bool
-		err error
-		_   = err
-	)
-
-	val, ok = pathParams["id"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
-	}
-
-	protoReq.Id, err = runtime.String(val)
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
-	}
-
-	msg, err := server.InvokeRuleActionLink(ctx, &protoReq)
-	return msg, metadata, err
+	metadata.HeaderMD = header
+	return stream, metadata, nil
 
 }
 
 var (
-	filter_RuleEngine_GetAppliedRuleActionLinks_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+	filter_SnapshotService_DeleteAppliedConfigurations_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 )
 
-func request_RuleEngine_GetAppliedRuleActionLinks_0(ctx context.Context, marshaler runtime.Marshaler, client RuleEngineClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetAppliedRuleActionLinksRequest
+func request_SnapshotService_DeleteAppliedConfigurations_0(ctx context.Context, marshaler runtime.Marshaler, client SnapshotServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq DeleteAppliedConfigurationsRequest
 	var metadata runtime.ServerMetadata
 
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_RuleEngine_GetAppliedRuleActionLinks_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_SnapshotService_DeleteAppliedConfigurations_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := client.GetAppliedRuleActionLinks(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.DeleteAppliedConfigurations(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_RuleEngine_GetAppliedRuleActionLinks_0(ctx context.Context, marshaler runtime.Marshaler, server RuleEngineServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetAppliedRuleActionLinksRequest
+func local_request_SnapshotService_DeleteAppliedConfigurations_0(ctx context.Context, marshaler runtime.Marshaler, server SnapshotServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq DeleteAppliedConfigurationsRequest
 	var metadata runtime.ServerMetadata
 
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_RuleEngine_GetAppliedRuleActionLinks_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_SnapshotService_DeleteAppliedConfigurations_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := server.GetAppliedRuleActionLinks(ctx, &protoReq)
+	msg, err := server.DeleteAppliedConfigurations(ctx, &protoReq)
 	return msg, metadata, err
 
 }
 
-var (
-	filter_RuleEngine_DeleteAppliedRuleActionLink_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
-
-func request_RuleEngine_DeleteAppliedRuleActionLink_0(ctx context.Context, marshaler runtime.Marshaler, client RuleEngineClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq DeleteAppliedRuleActionLinkRequest
-	var metadata runtime.ServerMetadata
-
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_RuleEngine_DeleteAppliedRuleActionLink_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	msg, err := client.DeleteAppliedRuleActionLink(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
-	return msg, metadata, err
-
-}
-
-func local_request_RuleEngine_DeleteAppliedRuleActionLink_0(ctx context.Context, marshaler runtime.Marshaler, server RuleEngineServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq DeleteAppliedRuleActionLinkRequest
-	var metadata runtime.ServerMetadata
-
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_RuleEngine_DeleteAppliedRuleActionLink_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	msg, err := server.DeleteAppliedRuleActionLink(ctx, &protoReq)
-	return msg, metadata, err
-
-}
-
-// RegisterRuleEngineHandlerServer registers the http handlers for service RuleEngine to "mux".
-// UnaryRPC     :call RuleEngineServer directly.
+// RegisterSnapshotServiceHandlerServer registers the http handlers for service SnapshotService to "mux".
+// UnaryRPC     :call SnapshotServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
-// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterRuleEngineHandlerFromEndpoint instead.
-func RegisterRuleEngineHandlerServer(ctx context.Context, mux *runtime.ServeMux, server RuleEngineServer) error {
+// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterSnapshotServiceHandlerFromEndpoint instead.
+func RegisterSnapshotServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server SnapshotServiceServer) error {
 
-	mux.Handle("POST", pattern_RuleEngine_CreateScene_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_SnapshotService_CreateCondition_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -751,12 +523,12 @@ func RegisterRuleEngineHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snapshotservice.pb.RuleEngine/CreateScene", runtime.WithHTTPPathPattern("/api/v1/scenes"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snapshotservice.pb.SnapshotService/CreateCondition", runtime.WithHTTPPathPattern("/api/v1/conditions"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_RuleEngine_CreateScene_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_SnapshotService_CreateCondition_0(annotatedContext, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
@@ -764,18 +536,18 @@ func RegisterRuleEngineHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 			return
 		}
 
-		forward_RuleEngine_CreateScene_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_SnapshotService_CreateCondition_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_RuleEngine_GetScenes_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_SnapshotService_GetConditions_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
 		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 		return
 	})
 
-	mux.Handle("DELETE", pattern_RuleEngine_DeleteScenes_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("DELETE", pattern_SnapshotService_DeleteConditions_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -783,12 +555,12 @@ func RegisterRuleEngineHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snapshotservice.pb.RuleEngine/DeleteScenes", runtime.WithHTTPPathPattern("/api/v1/Scenes"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snapshotservice.pb.SnapshotService/DeleteConditions", runtime.WithHTTPPathPattern("/api/v1/conditions"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_RuleEngine_DeleteScenes_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_SnapshotService_DeleteConditions_0(annotatedContext, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
@@ -796,11 +568,11 @@ func RegisterRuleEngineHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 			return
 		}
 
-		forward_RuleEngine_DeleteScenes_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_SnapshotService_DeleteConditions_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("PUT", pattern_RuleEngine_UpdateScene_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("PUT", pattern_SnapshotService_UpdateCondition_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -808,12 +580,12 @@ func RegisterRuleEngineHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snapshotservice.pb.RuleEngine/UpdateScene", runtime.WithHTTPPathPattern("/api/v1/scenes/{id}"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snapshotservice.pb.SnapshotService/UpdateCondition", runtime.WithHTTPPathPattern("/api/v1/conditions/{id.id}/{id.version}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_RuleEngine_UpdateScene_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_SnapshotService_UpdateCondition_0(annotatedContext, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
@@ -821,11 +593,11 @@ func RegisterRuleEngineHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 			return
 		}
 
-		forward_RuleEngine_UpdateScene_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_SnapshotService_UpdateCondition_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_RuleEngine_CreateRule_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_SnapshotService_CreateConfiguration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -833,12 +605,12 @@ func RegisterRuleEngineHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snapshotservice.pb.RuleEngine/CreateRule", runtime.WithHTTPPathPattern("/api/v1/rules"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snapshotservice.pb.SnapshotService/CreateConfiguration", runtime.WithHTTPPathPattern("/api/v1/configurations"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_RuleEngine_CreateRule_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_SnapshotService_CreateConfiguration_0(annotatedContext, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
@@ -846,18 +618,18 @@ func RegisterRuleEngineHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 			return
 		}
 
-		forward_RuleEngine_CreateRule_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_SnapshotService_CreateConfiguration_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_RuleEngine_GetRules_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_SnapshotService_GetConfigurations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
 		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 		return
 	})
 
-	mux.Handle("DELETE", pattern_RuleEngine_DeleteRules_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("DELETE", pattern_SnapshotService_DeleteConfigurations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -865,12 +637,12 @@ func RegisterRuleEngineHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snapshotservice.pb.RuleEngine/DeleteRules", runtime.WithHTTPPathPattern("/api/v1/Rules"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snapshotservice.pb.SnapshotService/DeleteConfigurations", runtime.WithHTTPPathPattern("/api/v1/configurations"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_RuleEngine_DeleteRules_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_SnapshotService_DeleteConfigurations_0(annotatedContext, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
@@ -878,11 +650,11 @@ func RegisterRuleEngineHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 			return
 		}
 
-		forward_RuleEngine_DeleteRules_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_SnapshotService_DeleteConfigurations_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("PUT", pattern_RuleEngine_UpdateRule_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("PUT", pattern_SnapshotService_UpdateConfiguration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -890,12 +662,12 @@ func RegisterRuleEngineHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snapshotservice.pb.RuleEngine/UpdateRule", runtime.WithHTTPPathPattern("/api/v1/rules/{id}"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snapshotservice.pb.SnapshotService/UpdateConfiguration", runtime.WithHTTPPathPattern("/api/v1/configurations/{id.id}/{id.version}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_RuleEngine_UpdateRule_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_SnapshotService_UpdateConfiguration_0(annotatedContext, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
@@ -903,93 +675,25 @@ func RegisterRuleEngineHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 			return
 		}
 
-		forward_RuleEngine_UpdateRule_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_SnapshotService_UpdateConfiguration_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_RuleEngine_InvokeRule_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		var stream runtime.ServerTransportStream
-		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snapshotservice.pb.RuleEngine/InvokeRule", runtime.WithHTTPPathPattern("/api/v1/rules/{id}"))
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := local_request_RuleEngine_InvokeRule_0(annotatedContext, inboundMarshaler, server, req, pathParams)
-		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
-		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_RuleEngine_InvokeRule_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
-	mux.Handle("POST", pattern_RuleEngine_CreateRuleActionLink_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		var stream runtime.ServerTransportStream
-		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snapshotservice.pb.RuleEngine/CreateRuleActionLink", runtime.WithHTTPPathPattern("/api/v1/rules-action-links"))
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := local_request_RuleEngine_CreateRuleActionLink_0(annotatedContext, inboundMarshaler, server, req, pathParams)
-		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
-		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_RuleEngine_CreateRuleActionLink_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
-	mux.Handle("GET", pattern_RuleEngine_GetRuleActionLinks_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_SnapshotService_InvokeConfiguration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
 		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 		return
 	})
 
-	mux.Handle("DELETE", pattern_RuleEngine_DeleteRuleActionLinks_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		var stream runtime.ServerTransportStream
-		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snapshotservice.pb.RuleEngine/DeleteRuleActionLinks", runtime.WithHTTPPathPattern("/api/v1/rules-action-links"))
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := local_request_RuleEngine_DeleteRuleActionLinks_0(annotatedContext, inboundMarshaler, server, req, pathParams)
-		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
-		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_RuleEngine_DeleteRuleActionLinks_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
+	mux.Handle("GET", pattern_SnapshotService_GetAppliedConfigurations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
+		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+		return
 	})
 
-	mux.Handle("PUT", pattern_RuleEngine_UpdateRuleActionLink_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("DELETE", pattern_SnapshotService_DeleteAppliedConfigurations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -997,12 +701,12 @@ func RegisterRuleEngineHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snapshotservice.pb.RuleEngine/UpdateRuleActionLink", runtime.WithHTTPPathPattern("/api/v1/rules-action-links/{id}"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snapshotservice.pb.SnapshotService/DeleteAppliedConfigurations", runtime.WithHTTPPathPattern("/api/v1/configurations/applied"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_RuleEngine_UpdateRuleActionLink_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_SnapshotService_DeleteAppliedConfigurations_0(annotatedContext, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
@@ -1010,91 +714,16 @@ func RegisterRuleEngineHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 			return
 		}
 
-		forward_RuleEngine_UpdateRuleActionLink_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
-	mux.Handle("POST", pattern_RuleEngine_InvokeRuleActionLink_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		var stream runtime.ServerTransportStream
-		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snapshotservice.pb.RuleEngine/InvokeRuleActionLink", runtime.WithHTTPPathPattern("/api/v1/rules-action-links/{id}"))
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := local_request_RuleEngine_InvokeRuleActionLink_0(annotatedContext, inboundMarshaler, server, req, pathParams)
-		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
-		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_RuleEngine_InvokeRuleActionLink_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
-	mux.Handle("GET", pattern_RuleEngine_GetAppliedRuleActionLinks_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		var stream runtime.ServerTransportStream
-		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snapshotservice.pb.RuleEngine/GetAppliedRuleActionLinks", runtime.WithHTTPPathPattern("/api/v1/applied-rules-action-links"))
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := local_request_RuleEngine_GetAppliedRuleActionLinks_0(annotatedContext, inboundMarshaler, server, req, pathParams)
-		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
-		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_RuleEngine_GetAppliedRuleActionLinks_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
-	mux.Handle("DELETE", pattern_RuleEngine_DeleteAppliedRuleActionLink_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		var stream runtime.ServerTransportStream
-		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snapshotservice.pb.RuleEngine/DeleteAppliedRuleActionLink", runtime.WithHTTPPathPattern("/api/v1/applied-rules-action-links"))
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := local_request_RuleEngine_DeleteAppliedRuleActionLink_0(annotatedContext, inboundMarshaler, server, req, pathParams)
-		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
-		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_RuleEngine_DeleteAppliedRuleActionLink_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_SnapshotService_DeleteAppliedConfigurations_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	return nil
 }
 
-// RegisterRuleEngineHandlerFromEndpoint is same as RegisterRuleEngineHandler but
+// RegisterSnapshotServiceHandlerFromEndpoint is same as RegisterSnapshotServiceHandler but
 // automatically dials to "endpoint" and closes the connection when "ctx" gets done.
-func RegisterRuleEngineHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
+func RegisterSnapshotServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
 	conn, err := grpc.DialContext(ctx, endpoint, opts...)
 	if err != nil {
 		return err
@@ -1114,371 +743,261 @@ func RegisterRuleEngineHandlerFromEndpoint(ctx context.Context, mux *runtime.Ser
 		}()
 	}()
 
-	return RegisterRuleEngineHandler(ctx, mux, conn)
+	return RegisterSnapshotServiceHandler(ctx, mux, conn)
 }
 
-// RegisterRuleEngineHandler registers the http handlers for service RuleEngine to "mux".
+// RegisterSnapshotServiceHandler registers the http handlers for service SnapshotService to "mux".
 // The handlers forward requests to the grpc endpoint over "conn".
-func RegisterRuleEngineHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	return RegisterRuleEngineHandlerClient(ctx, mux, NewRuleEngineClient(conn))
+func RegisterSnapshotServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+	return RegisterSnapshotServiceHandlerClient(ctx, mux, NewSnapshotServiceClient(conn))
 }
 
-// RegisterRuleEngineHandlerClient registers the http handlers for service RuleEngine
-// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "RuleEngineClient".
-// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "RuleEngineClient"
+// RegisterSnapshotServiceHandlerClient registers the http handlers for service SnapshotService
+// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "SnapshotServiceClient".
+// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "SnapshotServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "RuleEngineClient" to call the correct interceptors.
-func RegisterRuleEngineHandlerClient(ctx context.Context, mux *runtime.ServeMux, client RuleEngineClient) error {
+// "SnapshotServiceClient" to call the correct interceptors.
+func RegisterSnapshotServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client SnapshotServiceClient) error {
 
-	mux.Handle("POST", pattern_RuleEngine_CreateScene_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_SnapshotService_CreateCondition_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snapshotservice.pb.RuleEngine/CreateScene", runtime.WithHTTPPathPattern("/api/v1/scenes"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snapshotservice.pb.SnapshotService/CreateCondition", runtime.WithHTTPPathPattern("/api/v1/conditions"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_RuleEngine_CreateScene_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_SnapshotService_CreateCondition_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_RuleEngine_CreateScene_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_SnapshotService_CreateCondition_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_RuleEngine_GetScenes_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_SnapshotService_GetConditions_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snapshotservice.pb.RuleEngine/GetScenes", runtime.WithHTTPPathPattern("/api/v1/scenes"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snapshotservice.pb.SnapshotService/GetConditions", runtime.WithHTTPPathPattern("/api/v1/conditions"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_RuleEngine_GetScenes_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_SnapshotService_GetConditions_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_RuleEngine_GetScenes_0(annotatedContext, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
+		forward_SnapshotService_GetConditions_0(annotatedContext, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("DELETE", pattern_RuleEngine_DeleteScenes_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("DELETE", pattern_SnapshotService_DeleteConditions_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snapshotservice.pb.RuleEngine/DeleteScenes", runtime.WithHTTPPathPattern("/api/v1/Scenes"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snapshotservice.pb.SnapshotService/DeleteConditions", runtime.WithHTTPPathPattern("/api/v1/conditions"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_RuleEngine_DeleteScenes_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_SnapshotService_DeleteConditions_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_RuleEngine_DeleteScenes_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_SnapshotService_DeleteConditions_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("PUT", pattern_RuleEngine_UpdateScene_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("PUT", pattern_SnapshotService_UpdateCondition_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snapshotservice.pb.RuleEngine/UpdateScene", runtime.WithHTTPPathPattern("/api/v1/scenes/{id}"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snapshotservice.pb.SnapshotService/UpdateCondition", runtime.WithHTTPPathPattern("/api/v1/conditions/{id.id}/{id.version}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_RuleEngine_UpdateScene_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_SnapshotService_UpdateCondition_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_RuleEngine_UpdateScene_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_SnapshotService_UpdateCondition_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_RuleEngine_CreateRule_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_SnapshotService_CreateConfiguration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snapshotservice.pb.RuleEngine/CreateRule", runtime.WithHTTPPathPattern("/api/v1/rules"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snapshotservice.pb.SnapshotService/CreateConfiguration", runtime.WithHTTPPathPattern("/api/v1/configurations"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_RuleEngine_CreateRule_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_SnapshotService_CreateConfiguration_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_RuleEngine_CreateRule_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_SnapshotService_CreateConfiguration_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_RuleEngine_GetRules_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_SnapshotService_GetConfigurations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snapshotservice.pb.RuleEngine/GetRules", runtime.WithHTTPPathPattern("/api/v1/rules"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snapshotservice.pb.SnapshotService/GetConfigurations", runtime.WithHTTPPathPattern("/api/v1/configurations"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_RuleEngine_GetRules_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_SnapshotService_GetConfigurations_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_RuleEngine_GetRules_0(annotatedContext, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
+		forward_SnapshotService_GetConfigurations_0(annotatedContext, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("DELETE", pattern_RuleEngine_DeleteRules_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("DELETE", pattern_SnapshotService_DeleteConfigurations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snapshotservice.pb.RuleEngine/DeleteRules", runtime.WithHTTPPathPattern("/api/v1/Rules"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snapshotservice.pb.SnapshotService/DeleteConfigurations", runtime.WithHTTPPathPattern("/api/v1/configurations"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_RuleEngine_DeleteRules_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_SnapshotService_DeleteConfigurations_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_RuleEngine_DeleteRules_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_SnapshotService_DeleteConfigurations_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("PUT", pattern_RuleEngine_UpdateRule_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("PUT", pattern_SnapshotService_UpdateConfiguration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snapshotservice.pb.RuleEngine/UpdateRule", runtime.WithHTTPPathPattern("/api/v1/rules/{id}"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snapshotservice.pb.SnapshotService/UpdateConfiguration", runtime.WithHTTPPathPattern("/api/v1/configurations/{id.id}/{id.version}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_RuleEngine_UpdateRule_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_SnapshotService_UpdateConfiguration_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_RuleEngine_UpdateRule_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_SnapshotService_UpdateConfiguration_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_RuleEngine_InvokeRule_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_SnapshotService_InvokeConfiguration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snapshotservice.pb.RuleEngine/InvokeRule", runtime.WithHTTPPathPattern("/api/v1/rules/{id}"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snapshotservice.pb.SnapshotService/InvokeConfiguration", runtime.WithHTTPPathPattern("/api/v1/configurations/{id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_RuleEngine_InvokeRule_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_SnapshotService_InvokeConfiguration_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_RuleEngine_InvokeRule_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_SnapshotService_InvokeConfiguration_0(annotatedContext, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_RuleEngine_CreateRuleActionLink_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_SnapshotService_GetAppliedConfigurations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snapshotservice.pb.RuleEngine/CreateRuleActionLink", runtime.WithHTTPPathPattern("/api/v1/rules-action-links"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snapshotservice.pb.SnapshotService/GetAppliedConfigurations", runtime.WithHTTPPathPattern("/api/v1/configurations/applied"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_RuleEngine_CreateRuleActionLink_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_SnapshotService_GetAppliedConfigurations_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_RuleEngine_CreateRuleActionLink_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_SnapshotService_GetAppliedConfigurations_0(annotatedContext, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_RuleEngine_GetRuleActionLinks_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("DELETE", pattern_SnapshotService_DeleteAppliedConfigurations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snapshotservice.pb.RuleEngine/GetRuleActionLinks", runtime.WithHTTPPathPattern("/api/v1/rules-action-links"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snapshotservice.pb.SnapshotService/DeleteAppliedConfigurations", runtime.WithHTTPPathPattern("/api/v1/configurations/applied"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_RuleEngine_GetRuleActionLinks_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_SnapshotService_DeleteAppliedConfigurations_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_RuleEngine_GetRuleActionLinks_0(annotatedContext, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
-
-	})
-
-	mux.Handle("DELETE", pattern_RuleEngine_DeleteRuleActionLinks_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snapshotservice.pb.RuleEngine/DeleteRuleActionLinks", runtime.WithHTTPPathPattern("/api/v1/rules-action-links"))
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := request_RuleEngine_DeleteRuleActionLinks_0(annotatedContext, inboundMarshaler, client, req, pathParams)
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
-		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_RuleEngine_DeleteRuleActionLinks_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
-	mux.Handle("PUT", pattern_RuleEngine_UpdateRuleActionLink_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snapshotservice.pb.RuleEngine/UpdateRuleActionLink", runtime.WithHTTPPathPattern("/api/v1/rules-action-links/{id}"))
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := request_RuleEngine_UpdateRuleActionLink_0(annotatedContext, inboundMarshaler, client, req, pathParams)
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
-		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_RuleEngine_UpdateRuleActionLink_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
-	mux.Handle("POST", pattern_RuleEngine_InvokeRuleActionLink_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snapshotservice.pb.RuleEngine/InvokeRuleActionLink", runtime.WithHTTPPathPattern("/api/v1/rules-action-links/{id}"))
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := request_RuleEngine_InvokeRuleActionLink_0(annotatedContext, inboundMarshaler, client, req, pathParams)
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
-		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_RuleEngine_InvokeRuleActionLink_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
-	mux.Handle("GET", pattern_RuleEngine_GetAppliedRuleActionLinks_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snapshotservice.pb.RuleEngine/GetAppliedRuleActionLinks", runtime.WithHTTPPathPattern("/api/v1/applied-rules-action-links"))
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := request_RuleEngine_GetAppliedRuleActionLinks_0(annotatedContext, inboundMarshaler, client, req, pathParams)
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
-		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_RuleEngine_GetAppliedRuleActionLinks_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
-	})
-
-	mux.Handle("DELETE", pattern_RuleEngine_DeleteAppliedRuleActionLink_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snapshotservice.pb.RuleEngine/DeleteAppliedRuleActionLink", runtime.WithHTTPPathPattern("/api/v1/applied-rules-action-links"))
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := request_RuleEngine_DeleteAppliedRuleActionLink_0(annotatedContext, inboundMarshaler, client, req, pathParams)
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
-		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_RuleEngine_DeleteAppliedRuleActionLink_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_SnapshotService_DeleteAppliedConfigurations_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1486,69 +1005,49 @@ func RegisterRuleEngineHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 }
 
 var (
-	pattern_RuleEngine_CreateScene_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "scenes"}, ""))
+	pattern_SnapshotService_CreateCondition_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "conditions"}, ""))
 
-	pattern_RuleEngine_GetScenes_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "scenes"}, ""))
+	pattern_SnapshotService_GetConditions_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "conditions"}, ""))
 
-	pattern_RuleEngine_DeleteScenes_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "Scenes"}, ""))
+	pattern_SnapshotService_DeleteConditions_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "conditions"}, ""))
 
-	pattern_RuleEngine_UpdateScene_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"api", "v1", "scenes", "id"}, ""))
+	pattern_SnapshotService_UpdateCondition_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4}, []string{"api", "v1", "conditions", "id.id", "id.version"}, ""))
 
-	pattern_RuleEngine_CreateRule_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "rules"}, ""))
+	pattern_SnapshotService_CreateConfiguration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "configurations"}, ""))
 
-	pattern_RuleEngine_GetRules_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "rules"}, ""))
+	pattern_SnapshotService_GetConfigurations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "configurations"}, ""))
 
-	pattern_RuleEngine_DeleteRules_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "Rules"}, ""))
+	pattern_SnapshotService_DeleteConfigurations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "configurations"}, ""))
 
-	pattern_RuleEngine_UpdateRule_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"api", "v1", "rules", "id"}, ""))
+	pattern_SnapshotService_UpdateConfiguration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4}, []string{"api", "v1", "configurations", "id.id", "id.version"}, ""))
 
-	pattern_RuleEngine_InvokeRule_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"api", "v1", "rules", "id"}, ""))
+	pattern_SnapshotService_InvokeConfiguration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"api", "v1", "configurations", "id"}, ""))
 
-	pattern_RuleEngine_CreateRuleActionLink_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "rules-action-links"}, ""))
+	pattern_SnapshotService_GetAppliedConfigurations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "configurations", "applied"}, ""))
 
-	pattern_RuleEngine_GetRuleActionLinks_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "rules-action-links"}, ""))
-
-	pattern_RuleEngine_DeleteRuleActionLinks_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "rules-action-links"}, ""))
-
-	pattern_RuleEngine_UpdateRuleActionLink_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"api", "v1", "rules-action-links", "id"}, ""))
-
-	pattern_RuleEngine_InvokeRuleActionLink_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"api", "v1", "rules-action-links", "id"}, ""))
-
-	pattern_RuleEngine_GetAppliedRuleActionLinks_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "applied-rules-action-links"}, ""))
-
-	pattern_RuleEngine_DeleteAppliedRuleActionLink_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "applied-rules-action-links"}, ""))
+	pattern_SnapshotService_DeleteAppliedConfigurations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "configurations", "applied"}, ""))
 )
 
 var (
-	forward_RuleEngine_CreateScene_0 = runtime.ForwardResponseMessage
+	forward_SnapshotService_CreateCondition_0 = runtime.ForwardResponseMessage
 
-	forward_RuleEngine_GetScenes_0 = runtime.ForwardResponseStream
+	forward_SnapshotService_GetConditions_0 = runtime.ForwardResponseStream
 
-	forward_RuleEngine_DeleteScenes_0 = runtime.ForwardResponseMessage
+	forward_SnapshotService_DeleteConditions_0 = runtime.ForwardResponseMessage
 
-	forward_RuleEngine_UpdateScene_0 = runtime.ForwardResponseMessage
+	forward_SnapshotService_UpdateCondition_0 = runtime.ForwardResponseMessage
 
-	forward_RuleEngine_CreateRule_0 = runtime.ForwardResponseMessage
+	forward_SnapshotService_CreateConfiguration_0 = runtime.ForwardResponseMessage
 
-	forward_RuleEngine_GetRules_0 = runtime.ForwardResponseStream
+	forward_SnapshotService_GetConfigurations_0 = runtime.ForwardResponseStream
 
-	forward_RuleEngine_DeleteRules_0 = runtime.ForwardResponseMessage
+	forward_SnapshotService_DeleteConfigurations_0 = runtime.ForwardResponseMessage
 
-	forward_RuleEngine_UpdateRule_0 = runtime.ForwardResponseMessage
+	forward_SnapshotService_UpdateConfiguration_0 = runtime.ForwardResponseMessage
 
-	forward_RuleEngine_InvokeRule_0 = runtime.ForwardResponseMessage
+	forward_SnapshotService_InvokeConfiguration_0 = runtime.ForwardResponseStream
 
-	forward_RuleEngine_CreateRuleActionLink_0 = runtime.ForwardResponseMessage
+	forward_SnapshotService_GetAppliedConfigurations_0 = runtime.ForwardResponseStream
 
-	forward_RuleEngine_GetRuleActionLinks_0 = runtime.ForwardResponseStream
-
-	forward_RuleEngine_DeleteRuleActionLinks_0 = runtime.ForwardResponseMessage
-
-	forward_RuleEngine_UpdateRuleActionLink_0 = runtime.ForwardResponseMessage
-
-	forward_RuleEngine_InvokeRuleActionLink_0 = runtime.ForwardResponseMessage
-
-	forward_RuleEngine_GetAppliedRuleActionLinks_0 = runtime.ForwardResponseMessage
-
-	forward_RuleEngine_DeleteAppliedRuleActionLink_0 = runtime.ForwardResponseMessage
+	forward_SnapshotService_DeleteAppliedConfigurations_0 = runtime.ForwardResponseMessage
 )

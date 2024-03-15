@@ -16,7 +16,7 @@
   },
   "tags": [
     {
-      "name": "RuleEngine"
+      "name": "SnapshotService"
     }
   ],
   "schemes": [
@@ -31,82 +31,265 @@
     "application/protojson"
   ],
   "paths": {
-    "/api/v1/Rules": {
-      "delete": {
-        "operationId": "RuleEngine_DeleteRules",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/pbDeleteRulesResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "idFilter",
-            "in": "query",
-            "required": false,
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "collectionFormat": "multi"
-          }
-        ],
-        "tags": [
-          "Rules"
-        ]
-      }
-    },
-    "/api/v1/Scenes": {
-      "delete": {
-        "operationId": "RuleEngine_DeleteScenes",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/pbDeleteScenesResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "idFilter",
-            "in": "query",
-            "required": false,
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "collectionFormat": "multi"
-          }
-        ],
-        "tags": [
-          "Scenes"
-        ]
-      }
-    },
-    "/api/v1/applied-rules-action-links": {
+    "/api/v1/conditions": {
       "get": {
-        "operationId": "RuleEngine_GetAppliedRuleActionLinks",
+        "operationId": "SnapshotService_GetConditions",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/pbCondition"
+                },
+                "error": {
+                  "$ref": "#/definitions/googlerpcStatus"
+                }
+              },
+              "title": "Stream result of pbCondition"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Conditions"
+        ]
+      },
+      "delete": {
+        "operationId": "SnapshotService_DeleteConditions",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/pbAppliedRuleActionLink"
+              "$ref": "#/definitions/pbDeleteConditionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Conditions"
+        ]
+      },
+      "post": {
+        "operationId": "SnapshotService_CreateCondition",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbCreateConditionReponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbCondition"
+            }
+          }
+        ],
+        "tags": [
+          "Conditions"
+        ]
+      }
+    },
+    "/api/v1/conditions/{id.id}/{id.version}": {
+      "put": {
+        "operationId": "SnapshotService_UpdateCondition",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbUpdateConditionResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id.id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "id.version",
+            "in": "path",
+            "required": true,
+            "type": "string",
+            "format": "uint64"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "object"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "enabled": {
+                  "type": "boolean"
+                },
+                "deviceIdFilter": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "resourceTypeFilter": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "resourceHrefFilter": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "yqExpression": {
+                  "type": "string"
+                },
+                "invokeConfiguration": {
+                  "$ref": "#/definitions/ConditionInvokeConfiguration"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "Conditions"
+        ]
+      }
+    },
+    "/api/v1/configurations": {
+      "get": {
+        "operationId": "SnapshotService_GetConfigurations",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/pbConfiguration"
+                },
+                "error": {
+                  "$ref": "#/definitions/googlerpcStatus"
+                }
+              },
+              "title": "Stream result of pbConfiguration"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Configurations"
+        ]
+      },
+      "delete": {
+        "operationId": "SnapshotService_DeleteConfigurations",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbDeleteConfigurationsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Configurations"
+        ]
+      },
+      "post": {
+        "operationId": "SnapshotService_CreateConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbCreateConfigurationReponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbConfiguration"
+            }
+          }
+        ],
+        "tags": [
+          "Configurations"
+        ]
+      }
+    },
+    "/api/v1/configurations/applied": {
+      "get": {
+        "operationId": "SnapshotService_GetAppliedConfigurations",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/pbAppliedConfiguration"
+                },
+                "error": {
+                  "$ref": "#/definitions/googlerpcStatus"
+                }
+              },
+              "title": "Stream result of pbAppliedConfiguration"
             }
           },
           "default": {
@@ -119,16 +302,6 @@
         "parameters": [
           {
             "name": "idFilter",
-            "in": "query",
-            "required": false,
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "collectionFormat": "multi"
-          },
-          {
-            "name": "ruleIdFilter",
             "in": "query",
             "required": false,
             "type": "array",
@@ -146,19 +319,29 @@
               "type": "string"
             },
             "collectionFormat": "multi"
+          },
+          {
+            "name": "conditionIdFilter",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
           }
         ],
         "tags": [
-          "Rules"
+          "Configurations"
         ]
       },
       "delete": {
-        "operationId": "RuleEngine_DeleteAppliedRuleActionLink",
+        "operationId": "SnapshotService_DeleteAppliedConfigurations",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/pbDeleteAppliedRuleActionLinkResponse"
+              "$ref": "#/definitions/pbDeleteAppliedConfigurationsResponse"
             }
           },
           "default": {
@@ -181,242 +364,18 @@
           }
         ],
         "tags": [
-          "Rules"
+          "Configurations"
         ]
       }
     },
-    "/api/v1/rules": {
-      "get": {
-        "operationId": "RuleEngine_GetRules",
-        "responses": {
-          "200": {
-            "description": "A successful response.(streaming responses)",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "result": {
-                  "$ref": "#/definitions/pbRule"
-                },
-                "error": {
-                  "$ref": "#/definitions/googlerpcStatus"
-                }
-              },
-              "title": "Stream result of pbRule"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "idFilter",
-            "in": "query",
-            "required": false,
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "collectionFormat": "multi"
-          }
-        ],
-        "tags": [
-          "Rules"
-        ]
-      },
-      "post": {
-        "operationId": "RuleEngine_CreateRule",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/pbCreateRuleResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/pbRule"
-            }
-          }
-        ],
-        "tags": [
-          "Rules"
-        ]
-      }
-    },
-    "/api/v1/rules-action-links": {
-      "get": {
-        "operationId": "RuleEngine_GetRuleActionLinks",
-        "responses": {
-          "200": {
-            "description": "A successful response.(streaming responses)",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "result": {
-                  "$ref": "#/definitions/pbRuleActionLink"
-                },
-                "error": {
-                  "$ref": "#/definitions/googlerpcStatus"
-                }
-              },
-              "title": "Stream result of pbRuleActionLink"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "idFilter",
-            "in": "query",
-            "required": false,
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "collectionFormat": "multi"
-          }
-        ],
-        "tags": [
-          "Rules"
-        ]
-      },
-      "delete": {
-        "operationId": "RuleEngine_DeleteRuleActionLinks",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/pbDeleteRuleActionLinksResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "idFilter",
-            "in": "query",
-            "required": false,
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "collectionFormat": "multi"
-          }
-        ],
-        "tags": [
-          "Rules"
-        ]
-      },
-      "post": {
-        "operationId": "RuleEngine_CreateRuleActionLink",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/pbCreateRuleActionLinkResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/pbRuleActionLink"
-            }
-          }
-        ],
-        "tags": [
-          "Rules"
-        ]
-      }
-    },
-    "/api/v1/rules-action-links/{id}": {
-      "post": {
-        "operationId": "RuleEngine_InvokeRuleActionLink",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/pbInvokeRuleActionLinkResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "properties": {
-                "resourceId": {
-                  "$ref": "#/definitions/pbResourceId",
-                  "title": "for once_per_device or once_per_resource"
-                },
-                "force": {
-                  "type": "boolean",
-                  "title": "override the frequency"
-                }
-              }
-            }
-          }
-        ],
-        "tags": [
-          "Rules"
-        ]
-      },
+    "/api/v1/configurations/{id.id}/{id.version}": {
       "put": {
-        "operationId": "RuleEngine_UpdateRuleActionLink",
+        "operationId": "SnapshotService_UpdateConfiguration",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/pbUpdateRuleActionLinkResponse"
+              "$ref": "#/definitions/pbUpdateConfigurationReponse"
             }
           },
           "default": {
@@ -428,99 +387,17 @@
         },
         "parameters": [
           {
-            "name": "id",
+            "name": "id.id",
             "in": "path",
             "required": true,
             "type": "string"
           },
           {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "properties": {
-                "name": {
-                  "type": "string"
-                },
-                "enabled": {
-                  "type": "boolean"
-                },
-                "ruleId": {
-                  "type": "string"
-                },
-                "owner": {
-                  "type": "string"
-                },
-                "oncePerDevice": {
-                  "type": "boolean",
-                  "title": "the rule association is applied once per device"
-                },
-                "oncePerResource": {
-                  "type": "boolean",
-                  "title": "the rule will be invoked once per resource"
-                },
-                "intervalPerDevice": {
-                  "type": "string",
-                  "format": "int64",
-                  "title": "in nanoseconds"
-                },
-                "intervalPerResource": {
-                  "type": "string",
-                  "format": "int64",
-                  "title": "in nanoseconds"
-                },
-                "always": {
-                  "type": "boolean"
-                },
-                "scenes": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "$ref": "#/definitions/pbRuleActionParameters"
-                  },
-                  "title": "scenes to invoke"
-                },
-                "rules": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "$ref": "#/definitions/pbRuleActionParameters"
-                  },
-                  "title": "rules to invoke"
-                }
-              }
-            }
-          }
-        ],
-        "tags": [
-          "Rules"
-        ]
-      }
-    },
-    "/api/v1/rules/{id}": {
-      "post": {
-        "operationId": "RuleEngine_InvokeRule",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/pbInvokeRuleResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "id",
+            "name": "id.version",
             "in": "path",
             "required": true,
-            "type": "string"
+            "type": "string",
+            "format": "uint64"
           },
           {
             "name": "body",
@@ -529,181 +406,9 @@
             "schema": {
               "type": "object",
               "properties": {
-                "resourceId": {
-                  "$ref": "#/definitions/pbResourceId",
-                  "title": "origin resource that starts the execution"
+                "id": {
+                  "type": "object"
                 },
-                "content": {
-                  "$ref": "#/definitions/pbContent",
-                  "title": "use content instead of load it for resource_id"
-                }
-              }
-            }
-          }
-        ],
-        "tags": [
-          "Rules"
-        ]
-      },
-      "put": {
-        "operationId": "RuleEngine_UpdateRule",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/pbUpdateRuleResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "properties": {
-                "name": {
-                  "type": "string"
-                },
-                "description": {
-                  "type": "string"
-                },
-                "yqEngine": {
-                  "$ref": "#/definitions/pbYQEngine"
-                },
-                "enabled": {
-                  "type": "boolean",
-                  "title": "RuleExpression expression = 4;"
-                },
-                "owner": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        ],
-        "tags": [
-          "Rules"
-        ]
-      }
-    },
-    "/api/v1/scenes": {
-      "get": {
-        "operationId": "RuleEngine_GetScenes",
-        "responses": {
-          "200": {
-            "description": "A successful response.(streaming responses)",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "result": {
-                  "$ref": "#/definitions/pbScene"
-                },
-                "error": {
-                  "$ref": "#/definitions/googlerpcStatus"
-                }
-              },
-              "title": "Stream result of pbScene"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "idFilter",
-            "in": "query",
-            "required": false,
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "collectionFormat": "multi"
-          }
-        ],
-        "tags": [
-          "Scenes"
-        ]
-      },
-      "post": {
-        "operationId": "RuleEngine_CreateScene",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/pbCreateSceneResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/pbScene"
-            }
-          }
-        ],
-        "tags": [
-          "Scenes"
-        ]
-      }
-    },
-    "/api/v1/scenes/{id}": {
-      "put": {
-        "operationId": "RuleEngine_UpdateScene",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/pbUpdateSceneResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "properties": {
                 "name": {
                   "type": "string"
                 },
@@ -711,7 +416,7 @@
                   "type": "array",
                   "items": {
                     "type": "object",
-                    "$ref": "#/definitions/pbResourceSnapshot"
+                    "$ref": "#/definitions/pbConfigurationResource"
                   }
                 }
               }
@@ -719,73 +424,101 @@
           }
         ],
         "tags": [
-          "Scenes"
+          "Configurations"
+        ]
+      }
+    },
+    "/api/v1/configurations/{id}": {
+      "post": {
+        "summary": "streaming process of update configuration to invoker",
+        "operationId": "SnapshotService_InvokeConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/pbAppliedConfiguration"
+                },
+                "error": {
+                  "$ref": "#/definitions/googlerpcStatus"
+                }
+              },
+              "title": "Stream result of pbAppliedConfiguration"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "deviceIdFilter": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "title": "at least one must be set"
+                },
+                "force": {
+                  "type": "boolean"
+                },
+                "keepUpdatingOnFailure": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "Configurations"
         ]
       }
     }
   },
   "definitions": {
-    "ResourceSnapshotApplyToDevices": {
-      "type": "object",
-      "properties": {
-        "origin": {
-          "type": "boolean",
-          "title": "device that is originally started the scene"
-        },
-        "deviceIds": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "title": "identifies devices"
-        },
-        "deviceTypes": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "title": "device type just for filtering device when device_ids and current device is not set"
-        }
-      }
+    "AppliedConfigurationResourceStatus": {
+      "type": "string",
+      "enum": [
+        "QUEUED",
+        "INPROGRESS",
+        "WAITING_FOR_REOURCE",
+        "DONE",
+        "TIMEOUT",
+        "FAIL"
+      ],
+      "default": "QUEUED"
     },
-    "ResourceSnapshotApplyToResources": {
+    "ConditionInvokeConfiguration": {
       "type": "object",
       "properties": {
-        "hrefs": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "identifies resources at the device."
-        },
-        "types": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "title": "and operator among types -\u003e type defines a list of properties in content"
-        }
-      }
-    },
-    "RuleActionParametersOrigin": {
-      "type": "object",
-      "properties": {
-        "newHref": {
+        "id": {
           "type": "string",
-          "title": "replace the origin href with the given href"
+          "title": "latest version of cfg"
+        },
+        "keepUpdatingOnFailure": {
+          "type": "boolean"
+        },
+        "apiAccessToken": {
+          "type": "string",
+          "title": "token used to update resources in the configuration"
         }
-      }
-    },
-    "YQEngineInput": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "resourceId": {
-          "$ref": "#/definitions/pbResourceId"
-        },
-        "value": {}
       }
     },
     "googlerpcStatus": {
@@ -807,33 +540,59 @@
         }
       }
     },
-    "pbAppliedRuleActionLink": {
+    "pbAppliedConfiguration": {
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "the id of the rule link"
+          "type": "string"
         },
-        "originInvoker": {
-          "$ref": "#/definitions/pbResourceId",
-          "title": "for once_per_device or once_per_resource"
+        "deviceId": {
+          "type": "string"
+        },
+        "configurationId": {
+          "$ref": "#/definitions/pbId"
+        },
+        "onDemaned": {
+          "type": "boolean"
+        },
+        "conditionId": {
+          "$ref": "#/definitions/pbId"
+        },
+        "resources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/pbAppliedConfigurationResource"
+          }
+        }
+      }
+    },
+    "pbAppliedConfigurationResource": {
+      "type": "object",
+      "properties": {
+        "resourceId": {
+          "$ref": "#/definitions/pbResourceId"
+        },
+        "configurationResourcesIdx": {
+          "type": "integer",
+          "format": "int64",
+          "description": "index of resource in configuration resources array. For resource types it could be mutliple resources."
+        },
+        "status": {
+          "$ref": "#/definitions/AppliedConfigurationResourceStatus"
         },
         "timestampStart": {
           "type": "string",
           "format": "int64",
           "title": "when the rule association was applied"
         },
-        "timestampEnd": {
+        "validUntil": {
           "type": "string",
           "format": "int64",
-          "title": "when the rule association was removed"
+          "title": "how long the command is valid"
         },
-        "resourcesUpdated": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/pbResourceUpdated"
-          }
+        "resourceUpdated": {
+          "$ref": "#/definitions/pbResourceUpdated"
         }
       }
     },
@@ -848,6 +607,86 @@
         },
         "owner": {
           "type": "string"
+        }
+      }
+    },
+    "pbCondition": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/pbId"
+        },
+        "name": {
+          "type": "string"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "deviceIdFilter": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "resourceTypeFilter": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "resourceHrefFilter": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "yqExpression": {
+          "type": "string"
+        },
+        "invokeConfiguration": {
+          "$ref": "#/definitions/ConditionInvokeConfiguration"
+        }
+      }
+    },
+    "pbConfiguration": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/definitions/pbId"
+        },
+        "name": {
+          "type": "string"
+        },
+        "resources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/pbConfigurationResource"
+          }
+        }
+      }
+    },
+    "pbConfigurationResource": {
+      "type": "object",
+      "properties": {
+        "href": {
+          "type": "string"
+        },
+        "resourceTypes": {
+          "$ref": "#/definitions/pbRepeatedString",
+          "title": "all types must match resource"
+        },
+        "content": {
+          "$ref": "#/definitions/pbContent"
+        },
+        "resourceInterface": {
+          "type": "string",
+          "title": "optional update interface"
+        },
+        "timeToLive": {
+          "type": "string",
+          "format": "int64",
+          "title": "optional update command time to live"
         }
       }
     },
@@ -868,31 +707,23 @@
         }
       }
     },
-    "pbCreateRuleActionLinkResponse": {
+    "pbCreateConditionReponse": {
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "$ref": "#/definitions/pbId"
         }
       }
     },
-    "pbCreateRuleResponse": {
+    "pbCreateConfigurationReponse": {
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "$ref": "#/definitions/pbId"
         }
       }
     },
-    "pbCreateSceneResponse": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        }
-      }
-    },
-    "pbDeleteAppliedRuleActionLinkResponse": {
+    "pbDeleteAppliedConfigurationsResponse": {
       "type": "object",
       "properties": {
         "count": {
@@ -901,7 +732,7 @@
         }
       }
     },
-    "pbDeleteRuleActionLinksResponse": {
+    "pbDeleteConditionsResponse": {
       "type": "object",
       "properties": {
         "count": {
@@ -910,16 +741,7 @@
         }
       }
     },
-    "pbDeleteRulesResponse": {
-      "type": "object",
-      "properties": {
-        "count": {
-          "type": "string",
-          "format": "int64"
-        }
-      }
-    },
-    "pbDeleteScenesResponse": {
+    "pbDeleteConfigurationsResponse": {
       "type": "object",
       "properties": {
         "count": {
@@ -953,22 +775,46 @@
         }
       }
     },
-    "pbGenerateContent": {
+    "pbId": {
       "type": "object",
       "properties": {
-        "yqEngine": {
-          "$ref": "#/definitions/pbYQEngine"
-        },
-        "contentType": {
+        "id": {
           "type": "string"
+        },
+        "version": {
+          "type": "string",
+          "format": "uint64"
         }
       }
     },
-    "pbInvokeRuleActionLinkResponse": {
-      "type": "object"
+    "pbIdFilter": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "all": {
+          "type": "boolean"
+        },
+        "max": {
+          "type": "boolean"
+        }
+      }
     },
-    "pbInvokeRuleResponse": {
-      "type": "object"
+    "pbRepeatedString": {
+      "type": "object",
+      "properties": {
+        "list": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
     },
     "pbResourceId": {
       "type": "object",
@@ -978,32 +824,6 @@
         },
         "href": {
           "type": "string"
-        }
-      }
-    },
-    "pbResourceSnapshot": {
-      "type": "object",
-      "properties": {
-        "deviceFilter": {
-          "$ref": "#/definitions/ResourceSnapshotApplyToDevices"
-        },
-        "resourceFilter": {
-          "$ref": "#/definitions/ResourceSnapshotApplyToResources"
-        },
-        "defined": {
-          "$ref": "#/definitions/pbContent"
-        },
-        "generated": {
-          "$ref": "#/definitions/pbGenerateContent"
-        },
-        "resourceInterface": {
-          "type": "string",
-          "title": "optional update interface"
-        },
-        "timeToLive": {
-          "type": "string",
-          "format": "int64",
-          "title": "optional update command time to live"
         }
       }
     },
@@ -1034,143 +854,21 @@
         }
       }
     },
-    "pbRule": {
+    "pbUpdateConditionResponse": {
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "description": {
-          "type": "string"
-        },
-        "yqEngine": {
-          "$ref": "#/definitions/pbYQEngine"
-        },
-        "enabled": {
-          "type": "boolean",
-          "title": "RuleExpression expression = 4;"
-        },
-        "owner": {
-          "type": "string"
+          "$ref": "#/definitions/pbId",
+          "title": "for new version"
         }
       }
     },
-    "pbRuleActionLink": {
+    "pbUpdateConfigurationReponse": {
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "enabled": {
-          "type": "boolean"
-        },
-        "ruleId": {
-          "type": "string"
-        },
-        "owner": {
-          "type": "string"
-        },
-        "oncePerDevice": {
-          "type": "boolean",
-          "title": "the rule association is applied once per device"
-        },
-        "oncePerResource": {
-          "type": "boolean",
-          "title": "the rule will be invoked once per resource"
-        },
-        "intervalPerDevice": {
-          "type": "string",
-          "format": "int64",
-          "title": "in nanoseconds"
-        },
-        "intervalPerResource": {
-          "type": "string",
-          "format": "int64",
-          "title": "in nanoseconds"
-        },
-        "always": {
-          "type": "boolean"
-        },
-        "scenes": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/pbRuleActionParameters"
-          },
-          "title": "scenes to invoke"
-        },
-        "rules": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/pbRuleActionParameters"
-          },
-          "title": "rules to invoke"
-        }
-      }
-    },
-    "pbRuleActionParameters": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "origin": {
-          "$ref": "#/definitions/RuleActionParametersOrigin",
-          "title": "use the origin resource"
-        },
-        "resourceId": {
-          "$ref": "#/definitions/pbResourceId",
-          "title": "use the given resource"
-        }
-      }
-    },
-    "pbScene": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "resources": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/pbResourceSnapshot"
-          }
-        }
-      }
-    },
-    "pbUpdateRuleActionLinkResponse": {
-      "type": "object"
-    },
-    "pbUpdateRuleResponse": {
-      "type": "object"
-    },
-    "pbUpdateSceneResponse": {
-      "type": "object"
-    },
-    "pbYQEngine": {
-      "type": "object",
-      "properties": {
-        "inputs": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "$ref": "#/definitions/YQEngineInput"
-          },
-          "title": "content of resources will encoded on yq via $name"
-        },
-        "yqExpression": {
-          "type": "string"
+          "$ref": "#/definitions/pbId",
+          "title": "for new version"
         }
       }
     },
@@ -1182,14 +880,6 @@
         }
       },
       "additionalProperties": {}
-    },
-    "protobufNullValue": {
-      "type": "string",
-      "enum": [
-        "NULL_VALUE"
-      ],
-      "default": "NULL_VALUE",
-      "description": "`NullValue` is a singleton enumeration to represent the null value for the\n`Value` type union.\n\nThe JSON representation for `NullValue` is JSON `null`.\n\n - NULL_VALUE: Null value."
     },
     "resourceaggregatepbStatus": {
       "type": "string",

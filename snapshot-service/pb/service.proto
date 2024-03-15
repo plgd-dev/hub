@@ -3,9 +3,7 @@ syntax = "proto3";
 package snapshotservice.pb;
 
 import "resource-aggregate/pb/resources.proto";
-import "snapshot-service/pb/scene.proto";
-import "snapshot-service/pb/rule.proto";
-import "snapshot-service/pb/ruleActionLink.proto";
+import "resource-aggregate/pb/events.proto";
 
 import "google/api/annotations.proto";
 import "protoc-gen-openapiv2/options/annotations.proto";
@@ -32,221 +30,233 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 
 option go_package = "github.com/plgd-dev/hub/v2/snapshot-service/pb;pb";
 
-message CreateSceneRequest {
-  string name = 1;
-  repeated ResourceSnapshot resources = 2;
-  repeated string device_id_filter = 3;
-  repeated resourceaggregate.pb.ResourceId resource_id = 4;
-  repeated string type_filter = 5;
+message Id {
+  string id = 1;
+  uint64 version = 2;
 }
 
-message CreateSceneResponse { string id = 1; }
+message IdFilter {
+  string id = 1;
+  oneof version {
+    uint64 value = 2;
+    bool all = 3;
+    bool max = 4;
+  }
+}
 
-message UpdateSceneResponse {}
+message Condition {
+  Id id = 1;
+  string name = 2;
+  bool enabled = 3;
+  repeated string device_id_filter = 5;
+  repeated string resource_type_filter = 6;
+  repeated string resource_href_filter = 7;
+  string yq_expression = 8;
+  
+  message InvokeConfiguration {
+    string id = 1; // latest version of cfg
+    bool keep_updating_on_failure = 2;
+    string api_access_token = 3; // token used to update resources in the configuration
+    // or do we want to use token from device to update self resources ?
+  }
+  InvokeConfiguration invoke_configuration = 9;
+}
 
-message GetScenesRequest { repeated string id_filter = 1; }
+message CreateConditionReponse { Id id = 1; }
+message UpdateConditionResponse {
+  Id id = 1; // for new version 
+} 
+message GetConditionsRequest { repeated IdFilter id_filter = 1; }
+message DeleteConditionsRequest { repeated IdFilter id_filter = 1; }
+message DeleteConditionsResponse { int64 count = 1; }
 
-message DeleteScenesRequest { repeated string id_filter = 1; }
 
-message DeleteScenesResponse { int64 count = 1; }
+message RepeatedString { repeated string list = 1; }
 
-message CreateRuleResponse { string id = 1; }
+message Configuration {
+  message Resource {
+    oneof filter {
+      string href  = 1;
+      RepeatedString resource_types = 2; // all types must match resource
+    }
+    resourceaggregate.pb.Content content = 3;
+    string resource_interface = 6; // optional update interface
+    int64 time_to_live = 7; // optional update command time to live
+  }
+  Id id = 1;
+  string name = 2;
+  repeated Resource resources = 3;
+}
 
-message UpdateRuleResponse {}
+message CreateConfigurationReponse { Id id = 1; }
+message UpdateConfigurationReponse  {
+  Id id = 1; // for new version 
+} 
+message GetConfigurationsRequest { repeated IdFilter id_filter = 1; }
+message DeleteConfigurationsRequest { repeated IdFilter id_filter = 1; }
+message DeleteConfigurationsResponse { int64 count = 1; }
 
-message GetRulesRequest { repeated string id_filter = 1; }
+message AppliedConfiguration {
+  message Resource {
+    resourceaggregate.pb.ResourceId resource_id = 1;
+    uint32 configuration_resources_idx = 2; // index of resource in configuration resources array. For resource types it could be mutliple resources.
+    enum Status {
+      QUEUED = 0;
+      INPROGRESS = 1;
+      WAITING_FOR_REOURCE = 2;
+      DONE = 3;
+      TIMEOUT = 4;
+      FAIL = 5;
+    };
+    Status status = 3;
+    int64 timestamp_start = 4; // when the rule association was applied
+    int64 valid_until = 5; // how long the command is valid
+    resourceaggregate.pb.ResourceUpdated resource_updated = 6;
+  }
+  string id = 1;
+  string device_id = 2;
+  Id configuration_id = 3;
+  oneof executed_by {
+    bool on_demaned = 4;
+    Id condition_id = 5;
+  }
+  repeated Resource resources = 6;
+}
 
-message DeleteRulesRequest { repeated string id_filter = 1; }
+message InvokeConfigurationRequest {
+  string id = 1;
+  repeated string device_id_filter = 2; // at least one must be set
+  bool force = 3;
+  bool keep_updating_on_failure = 4;
+}
 
-message DeleteRulesResponse { int64 count = 1; }
-
-message CreateRuleActionLinkResponse { string id = 1; }
-
-message UpdateRuleActionLinkResponse {}
-
-message GetRuleActionLinksRequest { repeated string id_filter = 1; }
-
-message DeleteRuleActionLinksRequest { repeated string id_filter = 1; }
-
-message DeleteRuleActionLinksResponse { int64 count = 1; }
-
-message GetAppliedRuleActionLinksRequest {
+message GetAppliedConfigurationsRequest {
   repeated string id_filter = 1;
-  repeated string rule_id_filter = 2;
+  repeated IdFilter configuration_id_filter = 2;
   repeated string device_id_filter = 3;
-  repeated resourceaggregate.pb.ResourceId resource_id_filter = 4;
+  repeated string condition_id_filter = 4;
 }
 
-message DeleteAppliedRuleActionLinkRequest { repeated string id_filter = 1; }
+message DeleteAppliedConfigurationsRequest { repeated string id_filter = 1; }
+message DeleteAppliedConfigurationsResponse { int64 count = 1; }
 
-message DeleteAppliedRuleActionLinkResponse { int64 count = 1; }
-
-message InvokeRuleRequest {
-  string id = 1;
-  resourceaggregate.pb.ResourceId resource_id = 2; // origin resource that starts the execution
-  resourceaggregate.pb.Content content = 3; // use content instead of load it for resource_id
-}
-
-message InvokeRuleResponse {}
-
-message InvokeRuleActionLinkRequest {
-  string id = 1;
-  resourceaggregate.pb.ResourceId resource_id = 2; // for once_per_device or once_per_resource
-  bool force = 3; // override the frequency
-}
-
-message InvokeRuleActionLinkResponse {}
-
-service RuleEngine {
-  rpc CreateScene(Scene) returns (CreateSceneResponse) {
+service SnapshotService {
+  rpc CreateCondition(Condition) returns (CreateConditionReponse) {
     option (google.api.http) = {
-      post: "/api/v1/scenes";
+      post: "/api/v1/conditions";
       body: "*";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "Scenes" ];
+      tags: [ "Conditions" ];
     };
   }
 
-  rpc GetScenes(GetScenesRequest) returns (stream Scene) {
+  rpc GetConditions(GetConditionsRequest) returns (stream Condition) {
     option (google.api.http) = {
-      get: "/api/v1/scenes";
+      get: "/api/v1/conditions";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "Scenes" ];
+      tags: [ "Conditions" ];
     };
   }
 
-  rpc DeleteScenes(DeleteScenesRequest) returns (DeleteScenesResponse) {
+  rpc DeleteConditions(DeleteConditionsRequest) returns (DeleteConditionsResponse) {
     option (google.api.http) = {
-      delete: "/api/v1/Scenes";
+      delete: "/api/v1/conditions";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "Scenes" ];
+      tags: [ "Conditions" ];
     };
   }
 
-  rpc UpdateScene(Scene) returns (UpdateSceneResponse) {
+  rpc UpdateCondition(Condition) returns (UpdateConditionResponse) {
     option (google.api.http) = {
-      put: "/api/v1/scenes/{id}";
+      put: "/api/v1/conditions/{id.id}/{id.version}";
       body: "*";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "Scenes" ];
+      tags: [ "Conditions" ];
     };
   }
 
-  rpc CreateRule(Rule) returns (CreateRuleResponse) {
+  rpc CreateConfiguration(Configuration) returns (CreateConfigurationReponse) {
     option (google.api.http) = {
-      post: "/api/v1/rules";
+      post: "/api/v1/configurations";
       body: "*";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "Rules" ];
+      tags: [ "Configurations" ];
     };
   }
 
-  rpc GetRules(GetRulesRequest) returns (stream Rule) {
+  rpc GetConfigurations(GetConfigurationsRequest) returns (stream Configuration) {
     option (google.api.http) = {
-      get: "/api/v1/rules";
+      get: "/api/v1/configurations";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "Rules" ];
+      tags: [ "Configurations" ];
     };
   }
 
-  rpc DeleteRules(DeleteRulesRequest) returns (DeleteRulesResponse) {
+  rpc DeleteConfigurations(DeleteConfigurationsRequest) returns (DeleteConfigurationsResponse) {
     option (google.api.http) = {
-      delete: "/api/v1/Rules";
+      delete: "/api/v1/configurations";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "Rules" ];
+      tags: [ "Configurations" ];
     };
   }
 
-  rpc UpdateRule(Rule) returns (UpdateRuleResponse) {
+  rpc UpdateConfiguration(Configuration) returns (UpdateConfigurationReponse) {
     option (google.api.http) = {
-      put: "/api/v1/rules/{id}";
+      put: "/api/v1/configurations/{id.id}/{id.version}";
       body: "*";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "Rules" ];
+      tags: [ "Configurations" ];
     };
   }
 
-  rpc InvokeRule(InvokeRuleRequest) returns (InvokeRuleResponse) {
+  // streaming process of update configuration to invoker
+  rpc InvokeConfiguration(InvokeConfigurationRequest) returns (stream AppliedConfiguration) {
     option (google.api.http) = {
-      post: "/api/v1/rules/{id}";
+      post: "/api/v1/configurations/{id}";
       body: "*";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "Rules" ];
+      tags: [ "Configurations" ];
+    };
+  }
+ 
+
+  rpc GetAppliedConfigurations(GetAppliedConfigurationsRequest) returns (stream AppliedConfiguration) {
+    option (google.api.http) = {
+      get: "/api/v1/configurations/applied";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Configurations" ];
     };
   }
 
-  rpc CreateRuleActionLink(RuleActionLink) returns (CreateRuleActionLinkResponse) {
+  rpc DeleteAppliedConfigurations(DeleteAppliedConfigurationsRequest) returns (DeleteAppliedConfigurationsResponse) {
     option (google.api.http) = {
-      post: "/api/v1/rules-action-links";
-      body: "*";
+      delete: "/api/v1/configurations/applied";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "Rules" ];
-    };
-  }
-
-  rpc GetRuleActionLinks(GetRuleActionLinksRequest) returns (stream RuleActionLink) {
-    option (google.api.http) = {
-      get: "/api/v1/rules-action-links";
-    };
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "Rules" ];
-    };
-  }
-
-  rpc DeleteRuleActionLinks(DeleteRuleActionLinksRequest) returns (DeleteRuleActionLinksResponse) {
-    option (google.api.http) = {
-      delete: "/api/v1/rules-action-links";
-    };
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "Rules" ];
-    };
-  }
-
-  rpc UpdateRuleActionLink(RuleActionLink) returns (UpdateRuleActionLinkResponse) {
-    option (google.api.http) = {
-      put: "/api/v1/rules-action-links/{id}";
-      body: "*";
-    };
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "Rules" ];
-    };
-  }
-
-  rpc InvokeRuleActionLink(InvokeRuleActionLinkRequest) returns (InvokeRuleActionLinkResponse) {
-    option (google.api.http) = {
-      post: "/api/v1/rules-action-links/{id}";
-      body: "*";
-    };
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "Rules" ];
-    };
-  }
-
-  rpc GetAppliedRuleActionLinks(GetAppliedRuleActionLinksRequest) returns (AppliedRuleActionLink) {
-    option (google.api.http) = {
-      get: "/api/v1/applied-rules-action-links";
-    };
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "Rules" ];
-    };
-  }
-
-  rpc DeleteAppliedRuleActionLink(DeleteAppliedRuleActionLinkRequest) returns (DeleteAppliedRuleActionLinkResponse) {
-    option (google.api.http) = {
-      delete: "/api/v1/applied-rules-action-links";
-    };
-    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
-      tags: [ "Rules" ];
+      tags: [ "Configurations" ];
     };
   }
 }
+
+// Trigger resource changed event from NATs.
+// 1. Check if condition is satisfied.
+// 2. Invoke configuration with ID.
+// 3. If the configuration has already been applied to the device, skip applying the configuration.
+// 4. Create applied configuration with ConfigurationId and for each resource with resourceId, QUEUED status, valid until the theoretical maximum timeout.
+// 5. Iterate over resources and
+// 6.   Set start time, valid until, and status to IN PROGRESS.
+// 7.   Register NATs for resource changed event.
+// 8.   If the resource has not been published yet (href, resource types not exist), set status to WAITING RESOURCE and wait for resource changed event until timeout.
+// 9.   If getting resource content fails or not found, set status to WAITING RESOURCE and wait for resource changed event until timeout.
+// 10.  If timeout occurs, set status to TIMEOUT.
+// 11.  Otherwise, set status to IN PROGRESS and update resource with new content. If the update fails, set status to FAIL; otherwise, set status to DONE.
