@@ -106,6 +106,7 @@ message AppliedResourceConfiguration {
     WAITING_FOR_REOURCE = 3;
     DONE = 4;
     TIMEOUT = 5;
+    FAIL = 6;
   };
   Status status = 8;
 }
@@ -114,6 +115,7 @@ message InvokeConfigurationRequest {
   string id = 1;
   repeated string device_id_filter = 2; // at least one must be set
   bool force = 3;
+  bool continue_updates_even_fail = 4;
 }
 
 service SnapshotService {
@@ -233,15 +235,15 @@ service SnapshotService {
   }
 }
 
-
-// Trigger resource changed event fron NATs
-//  1. condition satisfied
-//  2. invoke configuration with ID
-//  3. filter out resources where configuration has been applied by existing records in DB (resourceId, configurationId)
-//  4. create applied configuration for each resource with resourceId, configurationId, queued, valid until to teoritcal maximu timeout
-//  5. iterate over resources and
-//  6.   set start time, validuntil, status INPROGRESS
-//  6.   register nats for resource changed event
-//  7.   get resource contest -> if not exist wait set status to WAITING RESOURCE and wait resource changed until timeout
-//  9.   if timeout set status to TIMEOUT
-//  10.  else update resource with new content and set status to DONE
+// Trigger resource changed event from NATs.
+// 1. Check if condition is satisfied.
+// 2. Invoke configuration with ID.
+// 3. If the configuration has already been applied to any device resource, skip applying the configuration.
+// 4. Create applied configuration for each resource with resourceId, configurationId, QUEUED status, valid until the theoretical maximum timeout.
+// 5. Iterate over resources and
+// 6.   Set start time, valid until, and status to IN PROGRESS.
+// 7.   Register NATs for resource changed event.
+// 8.   If the resource has not been published yet (href, resource types not exist), set status to WAITING RESOURCE and wait for resource changed event until timeout.
+// 9.   If getting resource content fails or not found, set status to WAITING RESOURCE and wait for resource changed event until timeout.
+// 10.  If timeout occurs, set status to TIMEOUT.
+// 11.  Otherwise, set status to IN PROGRESS and update resource with new content. If the update fails, set status to FAIL; otherwise, set status to DONE.
