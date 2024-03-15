@@ -1,0 +1,195 @@
+syntax = "proto3";
+
+package snapshotservice.pb;
+
+import "resource-aggregate/pb/resources.proto";
+import "snapshot-service/pb/scene.proto";
+import "snapshot-service/pb/rule.proto";
+import "snapshot-service/pb/ruleActionLink.proto";
+
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "PLGD Rule Engine API";
+    version: "1.0";
+    description: "API for configuring rule engine in PLGD";
+    contact: {
+      name: "plgd.dev";
+      url: "https://github.com/plgd-dev/hub";
+      email: "info@plgd.dev";
+    };
+    license: {
+      name: "Apache License 2.0";
+      url: "https://github.com/plgd-dev/hub/blob/v2/LICENSE";
+    };
+  };
+  schemes: [HTTPS];
+  consumes: ["application/json", "application/protojson"];
+  produces: ["application/json", "application/protojson"];
+};
+
+option go_package = "github.com/plgd-dev/hub/v2/snapshot-service/pb;pb";
+
+message Condition {
+  string id = 1;
+  string name = 2;
+  bool enabled = 3;
+  repeated string device_id_filter = 5;
+  repeated string resource_type_filter = 6;
+  repeated string resource_href_filter = 7;
+  string yq_expression = 8;
+  repeated string linked_configuration = 9;
+}
+
+message CreateConditionReponse { string id = 1; }
+message GetConditionsRequest { repeated string id_filter = 1; }
+message DeleteConditionsRequest { repeated string id_filter = 1; }
+message DeleteConditionsResponse { int64 count = 1; }
+
+message RepeatedString { repeated string list = 1; }
+
+message Configuration {
+  message Resource {
+    oneof filter {
+      href string = 1;
+      RepeatedString resource_types = 2;
+    }
+    resourceaggregate.pb.Content Content = 3;
+    string resource_interface = 6; // optional update interface
+    int64 time_to_live = 7; // optional update command time to live
+  }
+  repeated string id = 1;
+  string name = 2;
+  repeated Resource resources = 3;
+}
+
+message AppliedConfiguration {
+  string id = 1;
+  string configuration_id = 2;
+  oneof executed_by {
+    bool on_demaned = 3;
+    string condition_id = 4;
+  }
+  int64 timestamp_start = 5; // when the rule association was applied
+  int64 timeout_at = 6; // when the rule association was removed
+  repeated resourceaggregate.pb.ResourceUpdated resources_updated = 16;
+}
+
+service SnapshotService {
+  rpc CreateCondition(Condition) returns (CreateConditionReponse) {
+    option (google.api.http) = {
+      post: "/api/v1/conditions";
+      body: "*";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Conditions" ];
+    };
+  }
+
+  rpc GetConditions(GetConditionsRequest) returns (stream Condition) {
+    option (google.api.http) = {
+      get: "/api/v1/conditions";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Conditions" ];
+    };
+  }
+
+  rpc DeleteConditions(DeleteConditionsRequest) returns (DeleteConditionsResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/conditions";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Conditions" ];
+    };
+  }
+
+  rpc UpdateCondition(Condition) returns (UpdateSceneResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/conditions/{id}";
+      body: "*";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Conditions" ];
+    };
+  }
+
+  rpc InvokeCondition(InvokeConditionRequest) returns (InvokeConditionResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/conditions/{id}";
+      body: "*";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Conditions" ];
+    };
+  }
+
+  rpc CreateConfiguration(Configuration) returns (CreateConfigurationReponse) {
+    option (google.api.http) = {
+      post: "/api/v1/configurations";
+      body: "*";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Configurations" ];
+    };
+  }
+
+  rpc GetConfigurations(GetConfigurationsRequest) returns (stream Configuration) {
+    option (google.api.http) = {
+      get: "/api/v1/configurations";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Configurations" ];
+    };
+  }
+
+  rpc DeleteConfigurations(DeleteConfigurationsRequest) returns (DeleteConfigurationsResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/configurations";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Configurations" ];
+    };
+  }
+
+  rpc UpdateConfiguration(Configuration) returns (UpdateSceneResponse) {
+    option (google.api.http) = {
+      put: "/api/v1/configurations/{id}";
+      body: "*";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Configurations" ];
+    };
+  }
+
+  rpc InvokeConfiguration(InvokeConfigurationRequest) returns (InvokeConfigurationResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/configurations/{id}";
+      body: "*";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Rules" ];
+    };
+  }
+ 
+
+  rpc GetAppliedConfigurations(GetAppliedConfigurationsRequest) returns (AppliedConfiguration) {
+    option (google.api.http) = {
+      get: "/api/v1/configurations/applied";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Rules" ];
+    };
+  }
+
+  rpc DeleteAppliedConfigurations(DeleteAppliedRuleActionLinkRequest) returns (DeleteAppliedRuleActionLinkResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/configurations/applied";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Rules" ];
+    };
+  }
+}
