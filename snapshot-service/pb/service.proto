@@ -171,7 +171,7 @@ service SnapshotService {
 
   rpc UpdateCondition(Condition) returns (UpdateConditionResponse) {
     option (google.api.http) = {
-      put: "/api/v1/conditions/{id.id}/{id.version}";
+      put: "/api/v1/conditions/{id.id}";
       body: "*";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
@@ -209,7 +209,7 @@ service SnapshotService {
 
   rpc UpdateConfiguration(Configuration) returns (UpdateConfigurationReponse) {
     option (google.api.http) = {
-      put: "/api/v1/configurations/{id.id}/{id.version}";
+      put: "/api/v1/configurations/{id.id}";
       body: "*";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {

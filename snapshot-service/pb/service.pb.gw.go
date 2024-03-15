@@ -158,16 +158,6 @@ func request_SnapshotService_UpdateCondition_0(ctx context.Context, marshaler ru
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id.id", err)
 	}
 
-	val, ok = pathParams["id.version"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id.version")
-	}
-
-	err = runtime.PopulateFieldFromPath(&protoReq, "id.version", val)
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id.version", err)
-	}
-
 	msg, err := client.UpdateCondition(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
@@ -200,16 +190,6 @@ func local_request_SnapshotService_UpdateCondition_0(ctx context.Context, marsha
 	err = runtime.PopulateFieldFromPath(&protoReq, "id.id", val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id.id", err)
-	}
-
-	val, ok = pathParams["id.version"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id.version")
-	}
-
-	err = runtime.PopulateFieldFromPath(&protoReq, "id.version", val)
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id.version", err)
 	}
 
 	msg, err := server.UpdateCondition(ctx, &protoReq)
@@ -344,16 +324,6 @@ func request_SnapshotService_UpdateConfiguration_0(ctx context.Context, marshale
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id.id", err)
 	}
 
-	val, ok = pathParams["id.version"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id.version")
-	}
-
-	err = runtime.PopulateFieldFromPath(&protoReq, "id.version", val)
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id.version", err)
-	}
-
 	msg, err := client.UpdateConfiguration(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
@@ -386,16 +356,6 @@ func local_request_SnapshotService_UpdateConfiguration_0(ctx context.Context, ma
 	err = runtime.PopulateFieldFromPath(&protoReq, "id.id", val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id.id", err)
-	}
-
-	val, ok = pathParams["id.version"]
-	if !ok {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id.version")
-	}
-
-	err = runtime.PopulateFieldFromPath(&protoReq, "id.version", val)
-	if err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id.version", err)
 	}
 
 	msg, err := server.UpdateConfiguration(ctx, &protoReq)
@@ -580,7 +540,7 @@ func RegisterSnapshotServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snapshotservice.pb.SnapshotService/UpdateCondition", runtime.WithHTTPPathPattern("/api/v1/conditions/{id.id}/{id.version}"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snapshotservice.pb.SnapshotService/UpdateCondition", runtime.WithHTTPPathPattern("/api/v1/conditions/{id.id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -662,7 +622,7 @@ func RegisterSnapshotServiceHandlerServer(ctx context.Context, mux *runtime.Serv
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snapshotservice.pb.SnapshotService/UpdateConfiguration", runtime.WithHTTPPathPattern("/api/v1/configurations/{id.id}/{id.version}"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snapshotservice.pb.SnapshotService/UpdateConfiguration", runtime.WithHTTPPathPattern("/api/v1/configurations/{id.id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -831,7 +791,7 @@ func RegisterSnapshotServiceHandlerClient(ctx context.Context, mux *runtime.Serv
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snapshotservice.pb.SnapshotService/UpdateCondition", runtime.WithHTTPPathPattern("/api/v1/conditions/{id.id}/{id.version}"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snapshotservice.pb.SnapshotService/UpdateCondition", runtime.WithHTTPPathPattern("/api/v1/conditions/{id.id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -919,7 +879,7 @@ func RegisterSnapshotServiceHandlerClient(ctx context.Context, mux *runtime.Serv
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snapshotservice.pb.SnapshotService/UpdateConfiguration", runtime.WithHTTPPathPattern("/api/v1/configurations/{id.id}/{id.version}"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snapshotservice.pb.SnapshotService/UpdateConfiguration", runtime.WithHTTPPathPattern("/api/v1/configurations/{id.id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1011,7 +971,7 @@ var (
 
 	pattern_SnapshotService_DeleteConditions_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "conditions"}, ""))
 
-	pattern_SnapshotService_UpdateCondition_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4}, []string{"api", "v1", "conditions", "id.id", "id.version"}, ""))
+	pattern_SnapshotService_UpdateCondition_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"api", "v1", "conditions", "id.id"}, ""))
 
 	pattern_SnapshotService_CreateConfiguration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "configurations"}, ""))
 
@@ -1019,7 +979,7 @@ var (
 
 	pattern_SnapshotService_DeleteConfigurations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "configurations"}, ""))
 
-	pattern_SnapshotService_UpdateConfiguration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3, 1, 0, 4, 1, 5, 4}, []string{"api", "v1", "configurations", "id.id", "id.version"}, ""))
+	pattern_SnapshotService_UpdateConfiguration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"api", "v1", "configurations", "id.id"}, ""))
 
 	pattern_SnapshotService_InvokeConfiguration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"api", "v1", "configurations", "id"}, ""))
 

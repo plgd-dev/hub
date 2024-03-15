@@ -112,7 +112,7 @@
         ]
       }
     },
-    "/api/v1/conditions/{id.id}/{id.version}": {
+    "/api/v1/conditions/{id.id}": {
       "put": {
         "operationId": "SnapshotService_UpdateCondition",
         "responses": {
@@ -137,13 +137,6 @@
             "type": "string"
           },
           {
-            "name": "id.version",
-            "in": "path",
-            "required": true,
-            "type": "string",
-            "format": "uint64"
-          },
-          {
             "name": "body",
             "in": "body",
             "required": true,
@@ -151,7 +144,13 @@
               "type": "object",
               "properties": {
                 "id": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "version": {
+                      "type": "string",
+                      "format": "uint64"
+                    }
+                  }
                 },
                 "name": {
                   "type": "string"
@@ -368,7 +367,7 @@
         ]
       }
     },
-    "/api/v1/configurations/{id.id}/{id.version}": {
+    "/api/v1/configurations/{id.id}": {
       "put": {
         "operationId": "SnapshotService_UpdateConfiguration",
         "responses": {
@@ -393,13 +392,6 @@
             "type": "string"
           },
           {
-            "name": "id.version",
-            "in": "path",
-            "required": true,
-            "type": "string",
-            "format": "uint64"
-          },
-          {
             "name": "body",
             "in": "body",
             "required": true,
@@ -407,7 +399,13 @@
               "type": "object",
               "properties": {
                 "id": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "version": {
+                      "type": "string",
+                      "format": "uint64"
+                    }
+                  }
                 },
                 "name": {
                   "type": "string"
