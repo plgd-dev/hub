@@ -71,13 +71,16 @@ message DeleteConditionsRequest { repeated IdFilter id_filter = 1; }
 message DeleteConditionsResponse { int64 count = 1; }
 
 
-message RepeatedString { repeated string list = 1; }
+message ResourceTypes {
+  repeated string types = 1; // all types must match resource
+  uint32 min = 2; // minimal number of resources that will be updated
+}
 
 message Configuration {
   message Resource {
     oneof filter {
       string href  = 1;
-      RepeatedString resource_types = 2; // all types must match resource
+      ResourceTypes resource_types = 2; 
     }
     resourceaggregate.pb.Content content = 3;
     string resource_interface = 6; // optional update interface

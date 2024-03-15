@@ -259,7 +259,7 @@
                 </li>
               
                 <li>
-                  <a href="#snapshotservice.pb.RepeatedString"><span class="badge">M</span>RepeatedString</a>
+                  <a href="#snapshotservice.pb.ResourceTypes"><span class="badge">M</span>ResourceTypes</a>
                 </li>
               
                 <li>
@@ -582,9 +582,9 @@
               
                 <tr>
                   <td>resource_types</td>
-                  <td><a href="#snapshotservice.pb.RepeatedString">RepeatedString</a></td>
+                  <td><a href="#snapshotservice.pb.ResourceTypes">ResourceTypes</a></td>
                   <td></td>
-                  <td><p>all types must match resource </p></td>
+                  <td><p> </p></td>
                 </tr>
               
                 <tr>
@@ -1021,7 +1021,7 @@
 
         
       
-        <h3 id="snapshotservice.pb.RepeatedString">RepeatedString</h3>
+        <h3 id="snapshotservice.pb.ResourceTypes">ResourceTypes</h3>
         <p></p>
 
         
@@ -1032,10 +1032,17 @@
             <tbody>
               
                 <tr>
-                  <td>list</td>
+                  <td>types</td>
                   <td><a href="#string">string</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>all types must match resource </p></td>
+                </tr>
+              
+                <tr>
+                  <td>min</td>
+                  <td><a href="#uint32">uint32</a></td>
+                  <td></td>
+                  <td><p>minimal number of resources that will be updated </p></td>
                 </tr>
               
             </tbody>

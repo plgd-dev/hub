@@ -24,7 +24,7 @@
     - [Id](#snapshotservice-pb-Id)
     - [IdFilter](#snapshotservice-pb-IdFilter)
     - [InvokeConfigurationRequest](#snapshotservice-pb-InvokeConfigurationRequest)
-    - [RepeatedString](#snapshotservice-pb-RepeatedString)
+    - [ResourceTypes](#snapshotservice-pb-ResourceTypes)
     - [UpdateConditionResponse](#snapshotservice-pb-UpdateConditionResponse)
     - [UpdateConfigurationReponse](#snapshotservice-pb-UpdateConfigurationReponse)
   
@@ -148,7 +148,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | href | [string](#string) |  |  |
-| resource_types | [RepeatedString](#snapshotservice-pb-RepeatedString) |  | all types must match resource |
+| resource_types | [ResourceTypes](#snapshotservice-pb-ResourceTypes) |  |  |
 | content | [resourceaggregate.pb.Content](#resourceaggregate-pb-Content) |  |  |
 | resource_interface | [string](#string) |  | optional update interface |
 | time_to_live | [int64](#int64) |  | optional update command time to live |
@@ -378,15 +378,16 @@
 
 
 
-<a name="snapshotservice-pb-RepeatedString"></a>
+<a name="snapshotservice-pb-ResourceTypes"></a>
 
-### RepeatedString
+### ResourceTypes
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| list | [string](#string) | repeated |  |
+| types | [string](#string) | repeated | all types must match resource |
+| min | [uint32](#uint32) |  | minimal number of resources that will be updated |
 
 
 

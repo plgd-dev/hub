@@ -671,8 +671,7 @@
           "type": "string"
         },
         "resourceTypes": {
-          "$ref": "#/definitions/pbRepeatedString",
-          "title": "all types must match resource"
+          "$ref": "#/definitions/pbResourceTypes"
         },
         "content": {
           "$ref": "#/definitions/pbContent"
@@ -803,17 +802,6 @@
         }
       }
     },
-    "pbRepeatedString": {
-      "type": "object",
-      "properties": {
-        "list": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
-    },
     "pbResourceId": {
       "type": "object",
       "properties": {
@@ -822,6 +810,23 @@
         },
         "href": {
           "type": "string"
+        }
+      }
+    },
+    "pbResourceTypes": {
+      "type": "object",
+      "properties": {
+        "types": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "all types must match resource"
+        },
+        "min": {
+          "type": "integer",
+          "format": "int64",
+          "title": "minimal number of resources that will be updated"
         }
       }
     },
