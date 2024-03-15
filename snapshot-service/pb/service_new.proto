@@ -54,7 +54,7 @@ message Condition {
   repeated string resource_type_filter = 6;
   repeated string resource_href_filter = 7;
   string yq_expression = 8;
-  repeated Id linked_configuration = 9;
+  Id configuration_id = 9;
 }
 
 message CreateConditionReponse { Id id = 1; }
