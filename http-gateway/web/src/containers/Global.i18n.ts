@@ -269,4 +269,8 @@ export const messages = defineMessages({
         id: 'global.copyToClipboard',
         defaultMessage: 'Copy to clipboard',
     },
+    uploadedCaPools: {
+        id: 'global.uploadedCaPools',
+        defaultMessage: 'Uploaded CA Pools',
+    },
 })

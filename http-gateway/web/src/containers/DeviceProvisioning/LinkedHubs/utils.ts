@@ -1,7 +1,5 @@
 import { useIntl } from 'react-intl'
 
-import { CA_BASE64_PREFIX } from '@shared-ui/components/Organisms/CaPool'
-
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
 import { messages as g } from '@/containers/Global.i18n'
 
@@ -19,8 +17,6 @@ export const getTabRoute = (i: number) => {
         }
     }
 }
-
-export const pemToString = (pem: string) => `${CA_BASE64_PREFIX}${btoa(pem)}`
 
 export const DEFAULT_FORM_DATA = {
     certificateAuthority: {

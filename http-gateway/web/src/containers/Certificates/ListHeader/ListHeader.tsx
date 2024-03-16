@@ -15,7 +15,7 @@ import { parseCertificate } from '@shared-ui/common/services/certificates'
 import { Props } from './ListHeader.types'
 import { messages as t } from '../Certificates.i18n'
 import { messages as g } from '../../Global.i18n'
-import { pemToString } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
+import { pemToString } from '@/containers/DeviceProvisioning/utils'
 
 const ListHeader: FC<Props> = () => {
     const { formatMessage: _ } = useIntl()

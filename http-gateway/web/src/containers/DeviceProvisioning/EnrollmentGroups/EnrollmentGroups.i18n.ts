@@ -65,4 +65,28 @@ export const messages = defineMessages({
         id: 'enrollmentGroups.linkedHubs',
         defaultMessage: 'Linked Hubs',
     },
+    uploadCertDescription: {
+        id: 'enrollmentGroups.uploadCertDescription',
+        defaultMessage: 'Supported formats: PEM, CRT or CER (max 1 MB)',
+    },
+    uploadCertTitle: {
+        id: 'enrollmentGroups.uploadCertTitle',
+        defaultMessage: 'Drag & Drop or Choose file to upload Certificate',
+    },
+    certificationParsingError: {
+        id: 'enrollmentGroups.certificationParsingError',
+        defaultMessage: 'Certification Parsing Error',
+    },
+    certificateDetail: {
+        id: 'enrollmentGroups.certificateDetail',
+        defaultMessage: 'Certificate Detail',
+    },
+    preSharedKeySettings: {
+        id: 'enrollmentGroups.preSharedKeySettings',
+        defaultMessage: 'Pre-Shared key settings',
+    },
+    preSharedKey: {
+        id: 'enrollmentGroups.preSharedKey',
+        defaultMessage: 'Pre-Shared key',
+    },
 })

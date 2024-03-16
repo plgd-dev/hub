@@ -20,7 +20,7 @@ import * as styles from '@/containers/DeviceProvisioning/LinkedHubs/DetailPage/T
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
 import notificationId from '@/notificationId'
-import { pemToString } from '../utils'
+import { pemToString } from '../../utils'
 
 const modalVariants = {
     ADD_CA_POOL: 'addCaPool',
@@ -203,6 +203,7 @@ const TlsPage: FC<any> = (props) => {
 
     const commonI18n = useMemo(
         () => ({
+            title: _(g.uploadedCaPools),
             download: _(g.download),
             edit: _(g.edit),
             delete: _(g.delete),

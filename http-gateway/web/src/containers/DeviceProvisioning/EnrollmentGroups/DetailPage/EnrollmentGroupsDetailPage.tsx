@@ -10,16 +10,17 @@ import Button from '@shared-ui/components/Atomic/Button'
 import { useIsMounted } from '@shared-ui/common/hooks'
 import AppContext from '@shared-ui/app/share/AppContext'
 import { FormContext, getFormContextDefault } from '@shared-ui/common/context/FormContext'
+import Loadable from '@shared-ui/components/Atomic/Loadable'
 
 import PageLayout from '@/containers/Common/PageLayout'
 import { messages as dpsT } from '../../DeviceProvisioning.i18n'
 import { messages as t } from '../EnrollmentGroups.i18n'
 import { Props } from './EnrollmentGroupsDetailPage.types'
 import DetailHeader from '../DetailHeader'
-import { useEnrollmentGroupDetail, useLinkedHubsList } from '@/containers/DeviceProvisioning/hooks'
+import { useEnrollmentGroupDetail } from '@/containers/DeviceProvisioning/hooks'
 import notificationId from '@/notificationId'
 import { messages as g } from '@/containers/Global.i18n'
-import DetailForm from '@/containers/DeviceProvisioning/EnrollmentGroups/DetailPage/DetailForm'
+import DetailForm from './DetailForm'
 
 const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
     const { formatMessage: _ } = useIntl()
@@ -42,18 +43,31 @@ const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
     )
     const [formDirty, setFormDirty] = useState(defaultFormState)
     const [formError, setFormError] = useState(defaultFormState)
+    const [resetIndex, setResetIndex] = useState(0)
 
-    const [formData, setFormData] = useState<any>(undefined)
+    const [formData, setFormData] = useState<any>(null)
 
-    // const isDirtyData = false
-    const isDirtyData = useMemo(() => !isEqual(data, formData), [data, formData])
+    const isDirtyData = useMemo(() => !!data && !!formData && !isEqual(data, formData), [data, formData])
     const isDirty = useMemo(() => Object.values(formDirty).some((i) => i), [formDirty])
+
+    // console.log({
+    //     isDirtyData,
+    //     isDirty,
+    // })
+    //
+    // console.log({ data })
+    // console.log(' ')
 
     useEffect(() => {
         if (data) {
             setFormData(data)
         }
     }, [data])
+
+    // useEffect(() => {
+    //     console.log('formData change!')
+    //     console.log(formData)
+    // }, [formData])
 
     useEffect(() => {
         const errorF = error
@@ -80,7 +94,11 @@ const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
     const context = useMemo(
         () => ({
             ...getFormContextDefault(_(g.default)),
-            updateData: (newFormData: any) => setFormData(newFormData),
+            updateData: (newFormData: any) => {
+                console.log('updateFormData', newFormData)
+                setFormData(newFormData)
+            },
+            setFormDirty,
             setFormError: () => {},
         }),
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -113,6 +131,7 @@ const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
         setFormData(data)
         setFormDirty(defaultFormState)
         setFormError(defaultFormState)
+        setResetIndex((prev) => prev + 1)
     }, [data, defaultFormState])
 
     return (
@@ -123,7 +142,9 @@ const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
             title={enrollmentId}
         >
             <FormContext.Provider value={context}>
-                <DetailForm defaultFormData={formData} />
+                <Loadable condition={!!formData}>
+                    <DetailForm defaultFormData={formData} resetIndex={resetIndex} />
+                </Loadable>
             </FormContext.Provider>
             {isMounted &&
                 document.querySelector('#modal-root') &&
@@ -145,7 +166,6 @@ const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
                                 {_(g.reset)}
                             </Button>
                         }
-                        attribute={_(g.changesMade)}
                         leftPanelCollapsed={collapsed}
                         show={isDirty || isDirtyData}
                     />,

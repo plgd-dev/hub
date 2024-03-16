@@ -14,10 +14,11 @@ import Loadable from '@shared-ui/components/Atomic/Loadable'
 
 import * as commonStyles from '@/containers/DeviceProvisioning/LinkedHubs/LinkNewHubPage/LinkNewHubPage.styles'
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
-import { pemToString, useCaI18n } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
+import { useCaI18n } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
 import { messages as g } from '@/containers/Global.i18n'
 import notificationId from '@/notificationId'
 import { Props } from './SubStepTls.types'
+import { nameLengthValidator, pemToString } from '@/containers/DeviceProvisioning/utils'
 
 const SubStepTls: FC<Props> = (props) => {
     const { control, setValue, updateField, watch, prefix } = props
@@ -28,18 +29,6 @@ const SubStepTls: FC<Props> = (props) => {
     const caPool = watch(`${prefix}tls.caPool`)
     const key = watch(`${prefix}tls.key`)
     const cert = watch(`${prefix}tls.cert`)
-
-    function nameLengthValidator(file: any, privateKey = false) {
-        const format = file.name.split('.').pop()
-
-        if ((privateKey && !['pem', 'key'].includes(format)) || (!privateKey && !['pem', 'crt', 'cer'].includes(format))) {
-            return {
-                code: 'invalid-format',
-                message: `Bad file format`,
-            }
-        }
-        return null
-    }
 
     const { parsedData: caPoolData } = useCaData({
         data: caPool,
@@ -147,6 +136,7 @@ const SubStepTls: FC<Props> = (props) => {
                         }}
                         data={caPoolData}
                         i18n={{
+                            title: _(g.uploadedCaPools),
                             download: _(g.download),
                             delete: _(g.delete),
                             view: _(g.view),
@@ -183,6 +173,7 @@ const SubStepTls: FC<Props> = (props) => {
                         }}
                         data={[{ id: 0, name: key, data: [], dataChain: '' }]}
                         i18n={{
+                            title: _(g.uploadedCaPools),
                             download: _(g.download),
                             delete: _(g.delete),
                             view: _(g.view),
@@ -221,6 +212,7 @@ const SubStepTls: FC<Props> = (props) => {
                             }}
                             data={certData}
                             i18n={{
+                                title: _(g.uploadedCaPools),
                                 download: _(g.download),
                                 delete: _(g.delete),
                                 view: _(g.view),
