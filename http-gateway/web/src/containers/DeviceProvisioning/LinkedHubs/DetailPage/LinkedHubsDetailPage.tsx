@@ -14,6 +14,7 @@ import { FormContext, getFormContextDefault } from '@shared-ui/common/context/Fo
 import { useIsMounted } from '@shared-ui/common/hooks'
 import { updateLinkedHubData } from '@/containers/DeviceProvisioning/rest'
 import { buildCATranslations } from '@shared-ui/components/Organisms/CaPoolModal/utils'
+import { useBeforeUnload } from '@shared-ui/common/hooks/useBeforeUnload'
 
 import { messages as t } from '../LinkedHubs.i18n'
 import { HubDataType, Props } from './LinkedHubsDetailPage.types'
@@ -25,6 +26,8 @@ import DetailHeader from '@/containers/DeviceProvisioning/LinkedHubs/DetailHeade
 import testId from '@/testId'
 import { messages as dpsT } from '@/containers/DeviceProvisioning/DeviceProvisioning.i18n'
 import { getTabRoute } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
+import { useRecoilState } from 'recoil'
+import { dirtyFormState } from '@/store/recoil.store'
 
 const Tab1 = lazy(() => import('./Tabs/Tab1/Tab1'))
 const Tab2 = lazy(() => import('./Tabs/Tab2/Tab2'))
@@ -70,6 +73,7 @@ const LinkedHubsDetailPage: FC<Props> = (props) => {
     const [formDirty, setFormDirty] = useState(defaultFormState)
     const [formError, setFormError] = useState(defaultFormState)
     const [resetIndex, setResetIndex] = useState(0)
+    const [dirtyState, setDirtyState] = useRecoilState(dirtyFormState)
 
     useEffect(() => {
         setFormData(defaultData)
@@ -78,14 +82,26 @@ const LinkedHubsDetailPage: FC<Props> = (props) => {
     const isDirtyData = useMemo(() => !isEqual(defaultData, formData), [defaultData, formData])
     const isDirty = useMemo(() => Object.values(formDirty).some((i) => i), [formDirty])
 
+    useEffect(() => {
+        const dirty = isDirty || isDirtyData
+        if (dirtyState !== dirty) {
+            setDirtyState(dirty)
+        }
+    }, [dirtyState, isDirty, isDirtyData, setDirtyState])
+
+    useBeforeUnload({
+        when: isDirty || isDirtyData,
+        message: _(g.promptDefaultMessage),
+    })
+
     const breadcrumbs = useMemo(
         () => [
             { label: _(dpsT.deviceProvisioning), link: '/device-provisioning' },
             { label: _(t.linkedHubs), link: '/device-provisioning/linked-hubs' },
-            { label: hubId! },
+            { label: data?.name || '' },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        []
+        [data]
     )
 
     useEffect(() => {

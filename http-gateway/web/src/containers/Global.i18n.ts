@@ -273,4 +273,24 @@ export const messages = defineMessages({
         id: 'global.uploadedCaPools',
         defaultMessage: 'Uploaded CA Pools',
     },
+    promptTitle: {
+        id: 'global.promptTitle',
+        defaultMessage: 'Leave without saving the changes',
+    },
+    promptText: {
+        id: 'global.promptText',
+        defaultMessage: 'In case of non-confirmation, any changes you have made will be reset to the original settings.',
+    },
+    promptLeave: {
+        id: 'global.promptLeave',
+        defaultMessage: 'Leave without Saving',
+    },
+    promptContinue: {
+        id: 'global.promptContinue',
+        defaultMessage: 'Continue editing',
+    },
+    promptDefaultMessage: {
+        id: 'global.promptDefaultMessage',
+        defaultMessage: 'Are you sure you want to leave?',
+    },
 })

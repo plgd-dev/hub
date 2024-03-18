@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { useIntl } from 'react-intl'
 import ReactDOM from 'react-dom'
 import isEqual from 'lodash/isEqual'
+import { useRecoilState } from 'recoil'
 
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import BottomPanel from '@shared-ui/components/Layout/BottomPanel/BottomPanel'
@@ -11,6 +12,7 @@ import { useIsMounted } from '@shared-ui/common/hooks'
 import AppContext from '@shared-ui/app/share/AppContext'
 import { FormContext, getFormContextDefault } from '@shared-ui/common/context/FormContext'
 import Loadable from '@shared-ui/components/Atomic/Loadable'
+import { useBeforeUnload } from '@shared-ui/common/hooks/useBeforeUnload'
 
 import PageLayout from '@/containers/Common/PageLayout'
 import { messages as dpsT } from '../../DeviceProvisioning.i18n'
@@ -21,6 +23,9 @@ import { useEnrollmentGroupDetail } from '@/containers/DeviceProvisioning/hooks'
 import notificationId from '@/notificationId'
 import { messages as g } from '@/containers/Global.i18n'
 import DetailForm from './DetailForm'
+import { dirtyFormState } from '@/store/recoil.store'
+import cloneDeep from 'lodash/cloneDeep'
+import { updateEntrollmentGroup } from '@/containers/DeviceProvisioning/rest'
 
 const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
     const { formatMessage: _ } = useIntl()
@@ -29,15 +34,13 @@ const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
 
     const [pageLoading, setPageLoading] = useState(false)
 
-    const { data, loading, error } = useEnrollmentGroupDetail(enrollmentId!)
+    const { data, loading, refresh, error } = useEnrollmentGroupDetail(enrollmentId!)
 
-    // const { data: hubData, loading: hubLoading, error: hubError } = useHubDetail(data?.hubIds[0]!, !!data?.hubIds)
     const isMounted = useIsMounted()
 
     const defaultFormState = useMemo(
         () => ({
             tab1: false,
-            tab2: false,
         }),
         []
     )
@@ -49,25 +52,25 @@ const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
 
     const isDirtyData = useMemo(() => !!data && !!formData && !isEqual(data, formData), [data, formData])
     const isDirty = useMemo(() => Object.values(formDirty).some((i) => i), [formDirty])
+    const [dirtyState, setDirtyState] = useRecoilState(dirtyFormState)
 
-    // console.log({
-    //     isDirtyData,
-    //     isDirty,
-    // })
-    //
-    // console.log({ data })
-    // console.log(' ')
+    useEffect(() => {
+        const dirty = isDirty || isDirtyData
+        if (dirtyState !== dirty) {
+            setDirtyState(dirty)
+        }
+    }, [dirtyState, isDirty, isDirtyData, setDirtyState])
+
+    useBeforeUnload({
+        when: isDirty || isDirtyData,
+        message: _(g.promptDefaultMessage),
+    })
 
     useEffect(() => {
         if (data) {
             setFormData(data)
         }
     }, [data])
-
-    // useEffect(() => {
-    //     console.log('formData change!')
-    //     console.log(formData)
-    // }, [formData])
 
     useEffect(() => {
         const errorF = error
@@ -85,10 +88,10 @@ const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
         () => [
             { label: _(dpsT.deviceProvisioning), link: '/device-provisioning' },
             { label: _(dpsT.enrollmentGroups), link: '/device-provisioning/enrollment-groups' },
-            { label: enrollmentId! },
+            { label: data?.name || '' },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        []
+        [data?.name]
     )
 
     const context = useMemo(
@@ -109,9 +112,14 @@ const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
         setPageLoading(true)
 
         try {
-            console.log('formData')
-            console.log(formData)
-            // refresh()
+            const dataForSave = cloneDeep(formData)
+            delete dataForSave['hubsData']
+            delete dataForSave['id']
+
+            await updateEntrollmentGroup(enrollmentId!, dataForSave)
+
+            setFormDirty(defaultFormState)
+            refresh()
 
             setPageLoading(false)
         } catch (error: any) {
@@ -139,7 +147,7 @@ const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
             breadcrumbs={breadcrumbs}
             header={<DetailHeader id={enrollmentId!} refresh={() => {}} />}
             loading={loading || pageLoading}
-            title={enrollmentId}
+            title={data?.name || ''}
         >
             <FormContext.Provider value={context}>
                 <Loadable condition={!!formData}>
@@ -151,13 +159,7 @@ const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
                 ReactDOM.createPortal(
                     <BottomPanel
                         actionPrimary={
-                            <Button
-                                disabled={formError.tab1 || formError.tab2}
-                                loading={loading}
-                                loadingText={_(g.loading)}
-                                onClick={onSubmit}
-                                variant='primary'
-                            >
+                            <Button disabled={formError.tab1} loading={loading} loadingText={_(g.loading)} onClick={onSubmit} variant='primary'>
                                 {_(g.saveChanges)}
                             </Button>
                         }

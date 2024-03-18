@@ -25,7 +25,6 @@ import FullPageLoader from '@shared-ui/components/Atomic/FullPageLoader'
 import { messages as t } from './containers/App/App.i18n'
 import { messages as g } from './containers/Global.i18n'
 import testId from '@/testId'
-import EnrollmentGroupsDetailPage from '@/containers/DeviceProvisioning/EnrollmentGroups/DetailPage/EnrollmentGroupsDetailPage'
 
 // Devices
 const DevicesListPage = lazy(() => import('./containers/Devices/List/DevicesListPage'))
@@ -40,6 +39,8 @@ const RemoteClientDevicesDetailPage = lazy(() => import('./containers/RemoteClie
 const ProvisioningRecordsListPage = lazy(() => import('./containers/DeviceProvisioning/ProvisioningRecords/ListPage/ProvisioningRecordsListPage'))
 const ProvisioningRecordsDetailPage = lazy(() => import('@/containers/DeviceProvisioning/ProvisioningRecords/DetailPage/ProvisioningRecordsDetailPage'))
 const EnrollmentGroupsListPage = lazy(() => import('./containers/DeviceProvisioning/EnrollmentGroups/ListPage'))
+const EnrollmentGroupsDetailPage = lazy(() => import('./containers/DeviceProvisioning/EnrollmentGroups/DetailPage'))
+
 const LinkedHubsListPage = lazy(() => import('./containers/DeviceProvisioning/LinkedHubs'))
 const LinkedHubsDetailPage = lazy(() => import('./containers/DeviceProvisioning/LinkedHubs/DetailPage'))
 const LinkNewHubPage = lazy(() => import('./containers/DeviceProvisioning/LinkedHubs/LinkNewHubPage'))

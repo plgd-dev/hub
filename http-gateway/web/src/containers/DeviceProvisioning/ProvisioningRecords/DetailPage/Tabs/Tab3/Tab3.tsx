@@ -123,8 +123,6 @@ const Tab3: FC<Props> = (props) => {
         []
     )
 
-    console.log(displayData)
-
     return (
         <div>
             {displayData && (

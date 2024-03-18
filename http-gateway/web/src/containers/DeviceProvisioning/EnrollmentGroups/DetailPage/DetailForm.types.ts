@@ -1,7 +1,6 @@
 export type Props = {
     defaultFormData: {
         id: string
-        owner: string
         hubsData: {
             authorization: any
             certificateAuthority: any
@@ -21,6 +20,7 @@ export type Inputs = {
             leadCertificateName: string
         }
     }
+    owner: string
     name: string
     hubIds: string[]
     preSharedKey: string
