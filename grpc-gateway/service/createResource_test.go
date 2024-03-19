@@ -173,7 +173,7 @@ func TestRequestHandlerCreateResource(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
-			resp := pbTest.MakeResourceCreated(t, deviceID, tt.args.href, "", tt.wantData)
+			resp := pbTest.MakeResourceCreated(t, deviceID, tt.args.href, test.TestResourceSwitchesResourceTypes, "", tt.wantData)
 			pbTest.CmpResourceCreated(t, resp, got.GetData())
 		})
 	}

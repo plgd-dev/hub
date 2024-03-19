@@ -281,7 +281,7 @@ func TestRequestHandlerSubscribeForCreateEvents(t *testing.T) {
 		SubscriptionId: ev.GetSubscriptionId(),
 		CorrelationId:  "testToken",
 		Type: &pb.Event_ResourceCreatePending{
-			ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, test.TestResourceSwitchesHref, "",
+			ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, test.TestResourceSwitchesHref, test.TestResourceSwitchesResourceTypes, "",
 				switchData),
 		},
 	}, ev, "")
@@ -302,7 +302,7 @@ func TestRequestHandlerSubscribeForCreateEvents(t *testing.T) {
 		SubscriptionId: ev.GetSubscriptionId(),
 		CorrelationId:  "testToken",
 		Type: &pb.Event_ResourceCreated{
-			ResourceCreated: pbTest.MakeResourceCreated(t, deviceID, test.TestResourceSwitchesHref, "", switchData),
+			ResourceCreated: pbTest.MakeResourceCreated(t, deviceID, test.TestResourceSwitchesHref, test.TestResourceSwitchesResourceTypes, "", switchData),
 		},
 	}, ev, "")
 }
@@ -367,7 +367,7 @@ func TestRequestHandlerSubscribeForHrefEvents(t *testing.T) {
 				SubscriptionId: ev.GetSubscriptionId(),
 				CorrelationId:  "testToken",
 				Type: &pb.Event_ResourceCreatePending{
-					ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, test.TestResourceSwitchesHref, "",
+					ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, test.TestResourceSwitchesHref, test.TestResourceSwitchesResourceTypes, "",
 						switchData),
 				},
 			}, ev, "")
@@ -398,7 +398,7 @@ func TestRequestHandlerSubscribeForHrefEvents(t *testing.T) {
 				SubscriptionId: ev.GetSubscriptionId(),
 				CorrelationId:  "testToken",
 				Type: &pb.Event_ResourceCreated{
-					ResourceCreated: pbTest.MakeResourceCreated(t, deviceID, test.TestResourceSwitchesHref, "", switchData),
+					ResourceCreated: pbTest.MakeResourceCreated(t, deviceID, test.TestResourceSwitchesHref, test.TestResourceSwitchesResourceTypes, "", switchData),
 				},
 			}, ev, "")
 			break
@@ -438,7 +438,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 			want: []*pb.PendingCommand{
 				{
 					Command: &pb.PendingCommand_ResourceUpdatePending{
-						ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"), "",
+						ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"), test.TestResourceLightInstanceResourceTypes, "",
 							map[string]interface{}{
 								"power": 1,
 							}),
@@ -479,13 +479,14 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 								DeviceId: deviceID,
 								Href:     platform.ResourceURI,
 							},
-							AuditContext: commands.NewAuditContext(service.DeviceUserID, "", service.DeviceUserID),
+							AuditContext:  commands.NewAuditContext(service.DeviceUserID, "", service.DeviceUserID),
+							ResourceTypes: []string{platform.ResourceType},
 						},
 					},
 				},
 				{
 					Command: &pb.PendingCommand_ResourceCreatePending{
-						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI, "",
+						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI, test.TestResourceDeviceResourceTypes, "",
 							map[string]interface{}{
 								"power": 1,
 							}),
@@ -498,13 +499,14 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 								DeviceId: deviceID,
 								Href:     device.ResourceURI,
 							},
-							AuditContext: commands.NewAuditContext(service.DeviceUserID, "", service.DeviceUserID),
+							AuditContext:  commands.NewAuditContext(service.DeviceUserID, "", service.DeviceUserID),
+							ResourceTypes: test.TestResourceDeviceResourceTypes,
 						},
 					},
 				},
 				{
 					Command: &pb.PendingCommand_ResourceUpdatePending{
-						ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"), "",
+						ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"), test.TestResourceLightInstanceResourceTypes, "",
 							map[string]interface{}{
 								"power": 1,
 							}),
@@ -529,7 +531,8 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 								DeviceId: deviceID,
 								Href:     platform.ResourceURI,
 							},
-							AuditContext: commands.NewAuditContext(service.DeviceUserID, "", service.DeviceUserID),
+							AuditContext:  commands.NewAuditContext(service.DeviceUserID, "", service.DeviceUserID),
+							ResourceTypes: []string{platform.ResourceType},
 						},
 					},
 				},
@@ -547,7 +550,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 			want: []*pb.PendingCommand{
 				{
 					Command: &pb.PendingCommand_ResourceCreatePending{
-						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI, "",
+						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI, test.TestResourceDeviceResourceTypes, "",
 							map[string]interface{}{
 								"power": 1,
 							}),
@@ -573,7 +576,8 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 								DeviceId: deviceID,
 								Href:     device.ResourceURI,
 							},
-							AuditContext: commands.NewAuditContext(service.DeviceUserID, "", service.DeviceUserID),
+							AuditContext:  commands.NewAuditContext(service.DeviceUserID, "", service.DeviceUserID),
+							ResourceTypes: test.TestResourceDeviceResourceTypes,
 						},
 					},
 				},
@@ -591,7 +595,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 			want: []*pb.PendingCommand{
 				{
 					Command: &pb.PendingCommand_ResourceUpdatePending{
-						ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"), "",
+						ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"), test.TestResourceLightInstanceResourceTypes, "",
 							map[string]interface{}{
 								"power": 1,
 							}),

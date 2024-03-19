@@ -7,6 +7,7 @@ import (
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	commands "github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
+	"golang.org/x/exp/slices"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -58,6 +59,10 @@ func (rc *ResourceChanged) ServiceID() (string, bool) {
 	return "", false
 }
 
+func (rc *ResourceChanged) Types() []string {
+	return rc.GetResourceTypes()
+}
+
 func (rc *ResourceChanged) CopyData(event *ResourceChanged) {
 	rc.ResourceId = event.GetResourceId()
 	rc.Content = event.GetContent()
@@ -66,6 +71,7 @@ func (rc *ResourceChanged) CopyData(event *ResourceChanged) {
 	rc.Status = event.GetStatus()
 	rc.OpenTelemetryCarrier = event.GetOpenTelemetryCarrier()
 	rc.Etag = event.GetEtag()
+	rc.ResourceTypes = event.GetResourceTypes()
 }
 
 func (rc *ResourceChanged) CheckInitialized() bool {
@@ -88,6 +94,9 @@ func (rc *ResourceChanged) Equal(changed *ResourceChanged) bool {
 	}
 
 	if rc.GetAuditContext().GetUserId() != changed.GetAuditContext().GetUserId() {
+		return false
+	}
+	if len(changed.GetResourceTypes()) > 0 && !slices.Equal(rc.GetResourceTypes(), changed.GetResourceTypes()) {
 		return false
 	}
 

@@ -106,8 +106,9 @@ func TestRequestHandlerGetEventsStateSnapshot(t *testing.T) {
 		case *events.ResourceStateSnapshotTaken:
 			pbTest.CmpResourceStateSnapshotTaken(t, &events.ResourceStateSnapshotTaken{
 				ResourceId:           commands.NewResourceID(deviceID, lightHref),
-				LatestResourceChange: pbTest.MakeResourceChanged(t, deviceID, lightHref, "", makeLightData(0)),
+				LatestResourceChange: pbTest.MakeResourceChanged(t, deviceID, lightHref, test.TestResourceLightInstanceResourceTypes, "", makeLightData(0)),
 				AuditContext:         commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
+				ResourceTypes:        test.TestResourceLightInstanceResourceTypes,
 			}, event)
 		default:
 			assert.Fail(t, "unexpected event", "event: %v", ev)

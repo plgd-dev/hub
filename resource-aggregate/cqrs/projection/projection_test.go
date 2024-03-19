@@ -160,7 +160,7 @@ func prepareResourceStateEventstore() *mockEvents.MockEventStore {
 	eventstore.Append(d2res2.GetDeviceId(), d2r2.ToUUID().String(), mockEvents.MakeResourceStateSnapshotTaken(d2r2, &events.ResourceChanged{Content: &commands.Content{}, EventMetadata: resourceChangedEventMetadata}, makeEventMeta("a", 0), mockEvents.MakeAuditContext("userId", "0")))
 	eventstore.Append(d2res2.GetDeviceId(), d2r2.ToUUID().String(), mockEvents.MakeResourceUpdatePending(d2r2, &commands.Content{}, makeEventMeta("a", 1), mockEvents.MakeAuditContext("userId", "1"), time.Time{}))
 	eventstore.Append(d2res2.GetDeviceId(), d2r2.ToUUID().String(), mockEvents.MakeResourceUpdated(d2r2, commands.Status_OK, &commands.Content{}, makeEventMeta("a", 2), mockEvents.MakeAuditContext("userId", "1")))
-	eventstore.Append(d2res2.GetDeviceId(), d2r2.ToUUID().String(), mockEvents.MakeResourceChangedEvent(d2r2, &commands.Content{}, makeEventMeta("a", 3), mockEvents.MakeAuditContext("userId", "2")))
+	eventstore.Append(d2res2.GetDeviceId(), d2r2.ToUUID().String(), mockEvents.MakeResourceChangedEvent(d2r2, &commands.Content{}, makeEventMeta("a", 3), mockEvents.MakeAuditContext("userId", "2"), []string{"type1", "type2"}))
 
 	return eventstore
 }
@@ -699,6 +699,7 @@ func TestResourceStateProjection_Models(t *testing.T) {
 							Timestamp:    12345,
 							ConnectionId: "a",
 						},
+						ResourceTypes: []string{"type1", "type2"},
 					},
 					EventMetadata: &events.EventMetadata{
 						Version:      3,
@@ -710,6 +711,7 @@ func TestResourceStateProjection_Models(t *testing.T) {
 						CorrelationId: "2",
 					},
 					ResourceUpdatePendings: []*events.ResourceUpdatePending{},
+					ResourceTypes:          []string{"type1", "type2"},
 				},
 			},
 		},

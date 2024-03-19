@@ -1491,6 +1491,7 @@ https://github.com/openconnectivityfoundation/core/blob/master/schemas/oic.links
 | audit_context | [AuditContext](#resourceaggregate-pb-AuditContext) |  |  |
 | event_metadata | [EventMetadata](#resourceaggregate-pb-EventMetadata) |  |  |
 | etag | [bytes](#bytes) |  | etag of the resource used by twin synchronization |
+| resource_types | [string](#string) | repeated |  |
 | open_telemetry_carrier | [ResourceChanged.OpenTelemetryCarrierEntry](#resourceaggregate-pb-ResourceChanged-OpenTelemetryCarrierEntry) | repeated | Open telemetry data propagated to asynchronous events |
 
 
@@ -1527,6 +1528,7 @@ https://github.com/openconnectivityfoundation/core/blob/master/schemas/oic.links
 | audit_context | [AuditContext](#resourceaggregate-pb-AuditContext) |  |  |
 | event_metadata | [EventMetadata](#resourceaggregate-pb-EventMetadata) |  |  |
 | valid_until | [int64](#int64) |  | unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever. |
+| resource_types | [string](#string) | repeated |  |
 | open_telemetry_carrier | [ResourceCreatePending.OpenTelemetryCarrierEntry](#resourceaggregate-pb-ResourceCreatePending-OpenTelemetryCarrierEntry) | repeated | Open telemetry data propagated to asynchronous events |
 
 
@@ -1563,6 +1565,7 @@ https://github.com/openconnectivityfoundation/core/blob/master/schemas/oic.links
 | content | [Content](#resourceaggregate-pb-Content) |  |  |
 | audit_context | [AuditContext](#resourceaggregate-pb-AuditContext) |  |  |
 | event_metadata | [EventMetadata](#resourceaggregate-pb-EventMetadata) |  |  |
+| resource_types | [string](#string) | repeated |  |
 | open_telemetry_carrier | [ResourceCreated.OpenTelemetryCarrierEntry](#resourceaggregate-pb-ResourceCreated-OpenTelemetryCarrierEntry) | repeated | Open telemetry data propagated to asynchronous events |
 
 
@@ -1599,6 +1602,7 @@ https://github.com/openconnectivityfoundation/core/blob/master/schemas/oic.links
 | event_metadata | [EventMetadata](#resourceaggregate-pb-EventMetadata) |  |  |
 | valid_until | [int64](#int64) |  | unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever. |
 | resource_interface | [string](#string) |  |  |
+| resource_types | [string](#string) | repeated |  |
 | open_telemetry_carrier | [ResourceDeletePending.OpenTelemetryCarrierEntry](#resourceaggregate-pb-ResourceDeletePending-OpenTelemetryCarrierEntry) | repeated | Open telemetry data propagated to asynchronous events |
 
 
@@ -1635,6 +1639,7 @@ https://github.com/openconnectivityfoundation/core/blob/master/schemas/oic.links
 | content | [Content](#resourceaggregate-pb-Content) |  |  |
 | audit_context | [AuditContext](#resourceaggregate-pb-AuditContext) |  |  |
 | event_metadata | [EventMetadata](#resourceaggregate-pb-EventMetadata) |  |  |
+| resource_types | [string](#string) | repeated |  |
 | open_telemetry_carrier | [ResourceDeleted.OpenTelemetryCarrierEntry](#resourceaggregate-pb-ResourceDeleted-OpenTelemetryCarrierEntry) | repeated | Open telemetry data propagated to asynchronous events |
 
 
@@ -1776,6 +1781,7 @@ https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger
 | event_metadata | [EventMetadata](#resourceaggregate-pb-EventMetadata) |  |  |
 | valid_until | [int64](#int64) |  | unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever. |
 | etag | [bytes](#bytes) | repeated |  |
+| resource_types | [string](#string) | repeated |  |
 | open_telemetry_carrier | [ResourceRetrievePending.OpenTelemetryCarrierEntry](#resourceaggregate-pb-ResourceRetrievePending-OpenTelemetryCarrierEntry) | repeated | Open telemetry data propagated to asynchronous events |
 
 
@@ -1813,6 +1819,7 @@ https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger
 | audit_context | [AuditContext](#resourceaggregate-pb-AuditContext) |  |  |
 | event_metadata | [EventMetadata](#resourceaggregate-pb-EventMetadata) |  |  |
 | etag | [bytes](#bytes) |  |  |
+| resource_types | [string](#string) | repeated |  |
 | open_telemetry_carrier | [ResourceRetrieved.OpenTelemetryCarrierEntry](#resourceaggregate-pb-ResourceRetrieved-OpenTelemetryCarrierEntry) | repeated | Open telemetry data propagated to asynchronous events |
 
 
@@ -1852,6 +1859,7 @@ https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger
 | resource_delete_pendings | [ResourceDeletePending](#resourceaggregate-pb-ResourceDeletePending) | repeated | expired events will be removed by creating a new snapshot. |
 | audit_context | [AuditContext](#resourceaggregate-pb-AuditContext) |  |  |
 | event_metadata | [EventMetadata](#resourceaggregate-pb-EventMetadata) |  |  |
+| resource_types | [string](#string) | repeated |  |
 
 
 
@@ -1872,6 +1880,7 @@ https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger
 | audit_context | [AuditContext](#resourceaggregate-pb-AuditContext) |  |  |
 | event_metadata | [EventMetadata](#resourceaggregate-pb-EventMetadata) |  |  |
 | valid_until | [int64](#int64) |  | unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever. |
+| resource_types | [string](#string) | repeated |  |
 | open_telemetry_carrier | [ResourceUpdatePending.OpenTelemetryCarrierEntry](#resourceaggregate-pb-ResourceUpdatePending-OpenTelemetryCarrierEntry) | repeated | Open telemetry data propagated to asynchronous events |
 
 
@@ -1908,6 +1917,7 @@ https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger
 | content | [Content](#resourceaggregate-pb-Content) |  |  |
 | audit_context | [AuditContext](#resourceaggregate-pb-AuditContext) |  |  |
 | event_metadata | [EventMetadata](#resourceaggregate-pb-EventMetadata) |  |  |
+| resource_types | [string](#string) | repeated |  |
 | open_telemetry_carrier | [ResourceUpdated.OpenTelemetryCarrierEntry](#resourceaggregate-pb-ResourceUpdated-OpenTelemetryCarrierEntry) | repeated | Open telemetry data propagated to asynchronous events |
 
 

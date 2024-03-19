@@ -25,6 +25,7 @@ func (e *Published) IsSnapshot() bool           { return false }
 func (e *Published) Timestamp() time.Time       { return time.Unix(0, e.GetEventTimestamp()) }
 func (e *Published) ETag() *eventstore.ETagData { return nil }
 func (e *Published) ServiceID() (string, bool)  { return "", false }
+func (e *Published) Types() []string            { return nil }
 
 func (e *Unpublished) Version() uint64          { return e.GetEventVersion() }
 func (e *Unpublished) EventType() string        { return "unpublished" }
@@ -38,6 +39,7 @@ func (e *Unpublished) IsSnapshot() bool           { return false }
 func (e *Unpublished) Timestamp() time.Time       { return time.Unix(0, e.GetEventTimestamp()) }
 func (e *Unpublished) ETag() *eventstore.ETagData { return nil }
 func (e *Unpublished) ServiceID() (string, bool)  { return "", false }
+func (e *Unpublished) Types() []string            { return nil }
 
 func (e *Snapshot) Version() uint64          { return e.GetEventVersion() }
 func (e *Snapshot) EventType() string        { return "snapshot" }
@@ -52,6 +54,7 @@ func (e *Snapshot) IsSnapshot() bool           { return true }
 func (e *Snapshot) Timestamp() time.Time       { return time.Unix(0, e.GetEventTimestamp()) }
 func (e *Snapshot) ETag() *eventstore.ETagData { return nil }
 func (e *Snapshot) ServiceID() (string, bool)  { return "", false }
+func (e *Snapshot) Types() []string            { return nil }
 
 func (e *Snapshot) handleEvent(eu eventstore.EventUnmarshaler) error {
 	if eu.EventType() == "" {

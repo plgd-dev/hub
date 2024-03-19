@@ -200,12 +200,13 @@ func MakeResourceCreated(resourceID *commands.ResourceId, status commands.Status
 	)
 }
 
-func MakeResourceChangedEvent(resourceID *commands.ResourceId, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
+func MakeResourceChangedEvent(resourceID *commands.ResourceId, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext, resourceTypes []string) eventstore.EventUnmarshaler {
 	e := events.ResourceChanged{
 		ResourceId:    resourceID,
 		AuditContext:  auditContext,
 		Content:       content,
 		EventMetadata: eventMetadata,
+		ResourceTypes: resourceTypes,
 	}
 	return eventstore.NewLoadedEvent(
 		e.GetEventMetadata().GetVersion(),
@@ -422,15 +423,16 @@ func MakeDeviceMetadata(deviceID string, deviceMetadataUpdated *events.DeviceMet
 }
 
 type MockEvent struct {
-	VersionI     uint64 `bson:"version"`
-	EventTypeI   string `bson:"eventtype"`
-	IsSnapshotI  bool   `bson:"issnapshot"`
-	AggregateIDI string `bson:"aggregateid"`
-	GroupIDI     string `bson:"groupid"`
-	DataI        []byte `bson:"data"`
-	TimestampI   int64  `bson:"timestamp"`
-	ETagI        []byte `bson:"etag"`
-	ServiceIDI   string `bson:"serviceid"`
+	VersionI     uint64   `bson:"version"`
+	EventTypeI   string   `bson:"eventtype"`
+	IsSnapshotI  bool     `bson:"issnapshot"`
+	AggregateIDI string   `bson:"aggregateid"`
+	GroupIDI     string   `bson:"groupid"`
+	DataI        []byte   `bson:"data"`
+	TimestampI   int64    `bson:"timestamp"`
+	ETagI        []byte   `bson:"etag"`
+	ServiceIDI   string   `bson:"serviceid"`
+	TypesI       []string `bson:"resourcetypes"`
 }
 
 func (e MockEvent) Version() uint64 {
@@ -469,6 +471,10 @@ func (e MockEvent) Timestamp() time.Time {
 
 func (e MockEvent) ServiceID() (string, bool) {
 	return e.ServiceIDI, true
+}
+
+func (e MockEvent) Types() []string {
+	return e.TypesI
 }
 
 type MockEventHandler struct {

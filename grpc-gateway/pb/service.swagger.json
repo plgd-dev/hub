@@ -1772,6 +1772,12 @@
           "format": "byte",
           "title": "etag of the resource used by twin synchronization"
         },
+        "resourceTypes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "openTelemetryCarrier": {
           "type": "object",
           "additionalProperties": {
@@ -1801,6 +1807,12 @@
           "format": "int64",
           "description": "unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever."
         },
+        "resourceTypes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "openTelemetryCarrier": {
           "type": "object",
           "additionalProperties": {
@@ -1827,6 +1839,12 @@
         },
         "eventMetadata": {
           "$ref": "#/definitions/resourceaggregatepbEventMetadata"
+        },
+        "resourceTypes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "openTelemetryCarrier": {
           "type": "object",
@@ -1857,6 +1875,12 @@
         "resourceInterface": {
           "type": "string"
         },
+        "resourceTypes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "openTelemetryCarrier": {
           "type": "object",
           "additionalProperties": {
@@ -1883,6 +1907,12 @@
         },
         "eventMetadata": {
           "$ref": "#/definitions/resourceaggregatepbEventMetadata"
+        },
+        "resourceTypes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "openTelemetryCarrier": {
           "type": "object",
@@ -2025,6 +2055,12 @@
             "format": "byte"
           }
         },
+        "resourceTypes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "openTelemetryCarrier": {
           "type": "object",
           "additionalProperties": {
@@ -2055,6 +2091,12 @@
         "etag": {
           "type": "string",
           "format": "byte"
+        },
+        "resourceTypes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "openTelemetryCarrier": {
           "type": "object",
@@ -2111,6 +2153,12 @@
         },
         "eventMetadata": {
           "$ref": "#/definitions/resourceaggregatepbEventMetadata"
+        },
+        "resourceTypes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
@@ -2136,6 +2184,12 @@
           "type": "string",
           "format": "int64",
           "description": "unix timestamp in nanoseconds (https://golang.org/pkg/time/#Time.UnixNano) when pending event is considered as expired. 0 means forever."
+        },
+        "resourceTypes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "openTelemetryCarrier": {
           "type": "object",
@@ -2163,6 +2217,12 @@
         },
         "eventMetadata": {
           "$ref": "#/definitions/resourceaggregatepbEventMetadata"
+        },
+        "resourceTypes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "openTelemetryCarrier": {
           "type": "object",

@@ -128,7 +128,7 @@ func TestRequestHandlerGetResources(t *testing.T) {
 			want: []*pb.Resource{
 				{
 					Types: []string{types.CORE_LIGHT},
-					Data: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceLightInstanceHref("1"), "",
+					Data: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceLightInstanceHref("1"), test.TestResourceLightInstanceResourceTypes, "",
 						map[string]interface{}{
 							"state": false,
 							"power": uint64(0),
@@ -147,7 +147,7 @@ func TestRequestHandlerGetResources(t *testing.T) {
 			want: []*pb.Resource{
 				{
 					Types: []string{types.BINARY_SWITCH},
-					Data: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), "",
+					Data: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), test.TestResourceSwitchesInstanceResourceTypes, "",
 						map[string]interface{}{
 							"value": false,
 						},
@@ -178,7 +178,8 @@ func TestRequestHandlerGetResources(t *testing.T) {
 						Content: &commands.Content{
 							CoapContentFormat: -1,
 						},
-						AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
+						AuditContext:  commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
+						ResourceTypes: test.TestResourceLightInstanceResourceTypes,
 					},
 				},
 			},
@@ -206,7 +207,8 @@ func TestRequestHandlerGetResources(t *testing.T) {
 						Content: &commands.Content{
 							CoapContentFormat: -1,
 						},
-						AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
+						AuditContext:  commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
+						ResourceTypes: test.TestResourceLightInstanceResourceTypes,
 					},
 				},
 			},

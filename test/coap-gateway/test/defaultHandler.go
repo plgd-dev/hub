@@ -100,15 +100,15 @@ func (h *DefaultObserverHandler) RefreshToken(req coapgwService.CoapRefreshToken
 	}, nil
 }
 
-func (h *DefaultObserverHandler) OnObserveResource(_ context.Context, deviceID, resourceHref string, notification *pool.Message) error {
-	log.Debugf("OnObserveResource: %v%v", deviceID, resourceHref)
+func (h *DefaultObserverHandler) OnObserveResource(_ context.Context, deviceID, resourceHref string, resourceTypes []string, notification *pool.Message) error {
+	log.Debugf("OnObserveResource: %v%v %v", deviceID, resourceHref, resourceTypes)
 	msg := message.ToJson(notification, true, true)
 	log.Get().With("notification", msg).Debug("RECEIVED-OBSERVE")
 	return nil
 }
 
-func (h *DefaultObserverHandler) OnGetResourceContent(_ context.Context, deviceID, resourceHref string, notification *pool.Message) error {
-	log.Debugf("OnGetResourceContent: %v%v", deviceID, resourceHref)
+func (h *DefaultObserverHandler) OnGetResourceContent(_ context.Context, deviceID, resourceHref string, resourceTypes []string, notification *pool.Message) error {
+	log.Debugf("OnGetResourceContent: %v%v %v", deviceID, resourceHref, resourceTypes)
 	msg := message.ToJson(notification, true, false)
 	log.Get().With("notification", msg).Debug("RECEIVED-GET")
 	return nil

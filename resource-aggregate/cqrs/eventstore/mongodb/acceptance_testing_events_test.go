@@ -422,15 +422,16 @@ func MakeDeviceMetadata(deviceID string, deviceMetadataUpdated *events.DeviceMet
 }
 
 type MockEvent struct {
-	VersionI     uint64 `bson:"version"`
-	EventTypeI   string `bson:"eventtype"`
-	IsSnapshotI  bool   `bson:"issnapshot"`
-	AggregateIDI string `bson:"aggregateid"`
-	GroupIDI     string `bson:"groupid"`
-	DataI        []byte `bson:"data"`
-	TimestampI   int64  `bson:"timestamp"`
-	ETagI        []byte `bson:"etag"`
-	ServiceIDI   string `bson:"serviceid"`
+	VersionI       uint64   `bson:"version"`
+	EventTypeI     string   `bson:"eventtype"`
+	IsSnapshotI    bool     `bson:"issnapshot"`
+	AggregateIDI   string   `bson:"aggregateid"`
+	GroupIDI       string   `bson:"groupid"`
+	DataI          []byte   `bson:"data"`
+	TimestampI     int64    `bson:"timestamp"`
+	ETagI          []byte   `bson:"etag"`
+	ServiceIDI     string   `bson:"serviceid"`
+	ResourceTypesI []string `bson:"resourcetypes"`
 }
 
 func (e MockEvent) Version() uint64 {
@@ -469,6 +470,10 @@ func (e MockEvent) Timestamp() time.Time {
 
 func (e MockEvent) ServiceID() (string, bool) {
 	return e.ServiceIDI, true
+}
+
+func (e MockEvent) Types() []string {
+	return e.ResourceTypesI
 }
 
 type MockEventHandler struct {

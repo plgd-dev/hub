@@ -27,7 +27,7 @@ func TestJsonMarshalerMarshal(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
-				v: pb.MakeResourceChanged(t, "deviceID", "/href", "correlationID", map[interface{}]interface{}{
+				v: pb.MakeResourceChanged(t, "deviceID", "/href", []string{"type"}, "correlationID", map[interface{}]interface{}{
 					"key": "value",
 				}),
 			},
@@ -44,7 +44,8 @@ func TestJsonMarshalerMarshal(t *testing.T) {
 					"deviceId": "deviceID",
 					"href":     "/href",
 				},
-				"status": "OK",
+				"status":        "OK",
+				"resourceTypes": []interface{}{"type"},
 			},
 		},
 	}

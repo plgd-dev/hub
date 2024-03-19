@@ -58,7 +58,7 @@ func createSwitchResource(ctx context.Context, t *testing.T, c pb.GrpcGatewayCli
 	})
 	require.NoError(t, err)
 	switchData := pbTest.MakeCreateSwitchResourceResponseData(switchID)
-	want := pbTest.MakeResourceCreated(t, deviceID, test.TestResourceSwitchesHref, "", switchData)
+	want := pbTest.MakeResourceCreated(t, deviceID, test.TestResourceSwitchesHref, test.TestResourceSwitchesResourceTypes, "", switchData)
 	pbTest.CmpResourceCreated(t, want, got.GetData())
 }
 
@@ -67,7 +67,7 @@ func deleteSwitchResource(ctx context.Context, t *testing.T, c pb.GrpcGatewayCli
 		ResourceId: commands.NewResourceID(deviceID, test.TestResourceSwitchesInstanceHref(switchID)),
 	})
 	require.NoError(t, err)
-	want := pbTest.MakeResourceDeleted(deviceID, test.TestResourceSwitchesInstanceHref(switchID), "")
+	want := pbTest.MakeResourceDeleted(deviceID, test.TestResourceSwitchesInstanceHref(switchID), test.TestResourceSwitchesInstanceResourceTypes, "")
 	pbTest.CmpResourceDeleted(t, want, got.GetData())
 }
 
@@ -76,7 +76,7 @@ func createSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 		SubscriptionId: subID,
 		CorrelationId:  correlationID,
 		Type: &pb.Event_ResourceCreatePending{
-			ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, test.TestResourceSwitchesHref, "",
+			ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, test.TestResourceSwitchesHref, test.TestResourceSwitchesResourceTypes, "",
 				test.MakeSwitchResourceDefaultData()),
 		},
 	}
@@ -85,7 +85,7 @@ func createSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 		SubscriptionId: subID,
 		CorrelationId:  correlationID,
 		Type: &pb.Event_ResourceChanged{
-			ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesHref, "",
+			ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesHref, test.TestResourceSwitchesResourceTypes, "",
 				[]map[string]interface{}{
 					{
 						"href": test.TestResourceSwitchesInstanceHref(switchID),
@@ -105,7 +105,7 @@ func createSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 		SubscriptionId: subID,
 		CorrelationId:  correlationID,
 		Type: &pb.Event_ResourceCreated{
-			ResourceCreated: pbTest.MakeResourceCreated(t, deviceID, test.TestResourceSwitchesHref, "",
+			ResourceCreated: pbTest.MakeResourceCreated(t, deviceID, test.TestResourceSwitchesHref, test.TestResourceSwitchesResourceTypes, "",
 				test.MakeSwitchResourceData(map[string]interface{}{
 					"href": test.TestResourceSwitchesInstanceHref(switchID),
 					"rep": map[string]interface{}{
@@ -144,7 +144,7 @@ func createSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 		SubscriptionId: subID,
 		CorrelationId:  correlationID,
 		Type: &pb.Event_ResourceChanged{
-			ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), "",
+			ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), test.TestResourceSwitchesInstanceResourceTypes, "",
 				map[string]interface{}{
 					"value": false,
 				}),
@@ -209,8 +209,9 @@ func deleteSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 		CorrelationId:  correlationID,
 		Type: &pb.Event_ResourceDeletePending{
 			ResourceDeletePending: &events.ResourceDeletePending{
-				ResourceId:   commands.NewResourceID(deviceID, test.TestResourceSwitchesInstanceHref(switchID)),
-				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
+				ResourceId:    commands.NewResourceID(deviceID, test.TestResourceSwitchesInstanceHref(switchID)),
+				AuditContext:  commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
+				ResourceTypes: test.TestResourceSwitchesInstanceResourceTypes,
 			},
 		},
 	}
@@ -219,7 +220,7 @@ func deleteSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 		SubscriptionId: subID,
 		CorrelationId:  correlationID,
 		Type: &pb.Event_ResourceDeleted{
-			ResourceDeleted: pbTest.MakeResourceDeleted(deviceID, test.TestResourceSwitchesInstanceHref(switchID), ""),
+			ResourceDeleted: pbTest.MakeResourceDeleted(deviceID, test.TestResourceSwitchesInstanceHref(switchID), test.TestResourceSwitchesInstanceResourceTypes, ""),
 		},
 	}
 
@@ -239,11 +240,11 @@ func deleteSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 		SubscriptionId: subID,
 		CorrelationId:  correlationID,
 		Type: &pb.Event_ResourceChanged{
-			ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesHref, "", []interface{}{}),
+			ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesHref, test.TestResourceSwitchesResourceTypes, "", []interface{}{}),
 		},
 	}
 
-	res := pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), "", nil)
+	res := pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), test.TestResourceSwitchesInstanceResourceTypes, "", nil)
 	res.Status = commands.Status_NOT_FOUND
 	res.Content.CoapContentFormat = -1
 	res.Content.ContentType = ""

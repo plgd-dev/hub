@@ -79,7 +79,7 @@ func (u *updateChecker) checkUpdateLightResource(ctx context.Context, t *testing
 			expectedEvent := &pb.Event{
 				SubscriptionId: u.subUpdatedID,
 				Type: &pb.Event_ResourceUpdatePending{
-					ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, u.deviceID, test.TestResourceLightInstanceHref("1"), updCorrelationID,
+					ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, u.deviceID, test.TestResourceLightInstanceHref("1"), test.TestResourceLightInstanceResourceTypes, updCorrelationID,
 						map[string]interface{}{
 							"power": power,
 						}),
@@ -91,7 +91,7 @@ func (u *updateChecker) checkUpdateLightResource(ctx context.Context, t *testing
 			expectedEvent := &pb.Event{
 				SubscriptionId: u.subUpdatedID,
 				Type: &pb.Event_ResourceUpdated{
-					ResourceUpdated: pbTest.MakeResourceUpdated(t, u.deviceID, test.TestResourceLightInstanceHref("1"), updCorrelationID, nil),
+					ResourceUpdated: pbTest.MakeResourceUpdated(t, u.deviceID, test.TestResourceLightInstanceHref("1"), test.TestResourceLightInstanceResourceTypes, updCorrelationID, nil),
 				},
 				CorrelationId: "updatePending + resourceUpdated",
 			}
@@ -100,7 +100,7 @@ func (u *updateChecker) checkUpdateLightResource(ctx context.Context, t *testing
 			expectedEvent := &pb.Event{
 				SubscriptionId: u.baseSubID,
 				Type: &pb.Event_ResourceChanged{
-					ResourceChanged: pbTest.MakeResourceChanged(t, u.deviceID, test.TestResourceLightInstanceHref("1"),
+					ResourceChanged: pbTest.MakeResourceChanged(t, u.deviceID, test.TestResourceLightInstanceHref("1"), test.TestResourceLightInstanceResourceTypes,
 						ev.GetResourceChanged().GetAuditContext().GetCorrelationId(),
 						map[string]interface{}{
 							"state": false,
@@ -331,8 +331,9 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 		SubscriptionId: subReceivedID,
 		Type: &pb.Event_ResourceRetrievePending{
 			ResourceRetrievePending: &events.ResourceRetrievePending{
-				ResourceId:   commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
-				AuditContext: ev.GetResourceRetrievePending().GetAuditContext(),
+				ResourceId:    commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
+				AuditContext:  ev.GetResourceRetrievePending().GetAuditContext(),
+				ResourceTypes: test.TestResourceLightInstanceResourceTypes,
 			},
 		},
 		CorrelationId: "receivePending + resourceReceived",
@@ -345,7 +346,7 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 	expectedEvent = &pb.Event{
 		SubscriptionId: subReceivedID,
 		Type: &pb.Event_ResourceRetrieved{
-			ResourceRetrieved: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceLightInstanceHref("1"), recvCorrelationID,
+			ResourceRetrieved: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceLightInstanceHref("1"), test.TestResourceLightInstanceResourceTypes, recvCorrelationID,
 				map[string]interface{}{
 					"name":  "Light",
 					"power": 0x0,

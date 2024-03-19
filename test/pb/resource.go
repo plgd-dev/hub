@@ -54,7 +54,7 @@ func MakeCreateSwitchResourceResponseData(id string) map[string]interface{} {
 	}
 }
 
-func MakeResourceCreated(t *testing.T, deviceID, href, correlationID string, data map[string]interface{}) *events.ResourceCreated {
+func MakeResourceCreated(t *testing.T, deviceID, href string, resourceTypes []string, correlationID string, data map[string]interface{}) *events.ResourceCreated {
 	return &events.ResourceCreated{
 		ResourceId: commands.NewResourceID(deviceID, href),
 		Status:     commands.Status_CREATED,
@@ -68,7 +68,8 @@ func MakeResourceCreated(t *testing.T, deviceID, href, correlationID string, dat
 				return test.EncodeToCbor(t, data)
 			}(),
 		},
-		AuditContext: commands.NewAuditContext(service.DeviceUserID, correlationID, service.DeviceUserID),
+		AuditContext:  commands.NewAuditContext(service.DeviceUserID, correlationID, service.DeviceUserID),
+		ResourceTypes: resourceTypes,
 	}
 }
 
@@ -180,26 +181,28 @@ func makeCborContent(t *testing.T, data interface{}) *commands.Content {
 	}
 }
 
-func MakeResourceChanged(t *testing.T, deviceID, href, correlationID string, data interface{}) *events.ResourceChanged {
+func MakeResourceChanged(t *testing.T, deviceID, href string, resourceTypes []string, correlationID string, data interface{}) *events.ResourceChanged {
 	return &events.ResourceChanged{
 		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
 			Href:     href,
 		},
-		Status:       commands.Status_OK,
-		Content:      makeCborContent(t, data),
-		AuditContext: commands.NewAuditContext(service.DeviceUserID, correlationID, service.DeviceUserID),
+		Status:        commands.Status_OK,
+		Content:       makeCborContent(t, data),
+		AuditContext:  commands.NewAuditContext(service.DeviceUserID, correlationID, service.DeviceUserID),
+		ResourceTypes: resourceTypes,
 	}
 }
 
-func MakeResourceDeleted(deviceID, href, correlationID string) *events.ResourceDeleted {
+func MakeResourceDeleted(deviceID, href string, resourceTypes []string, correlationID string) *events.ResourceDeleted {
 	return &events.ResourceDeleted{
 		ResourceId: commands.NewResourceID(deviceID, href),
 		Status:     commands.Status_OK,
 		Content: &commands.Content{
 			CoapContentFormat: int32(-1),
 		},
-		AuditContext: commands.NewAuditContext(service.DeviceUserID, correlationID, service.DeviceUserID),
+		AuditContext:  commands.NewAuditContext(service.DeviceUserID, correlationID, service.DeviceUserID),
+		ResourceTypes: resourceTypes,
 	}
 }
 
@@ -262,15 +265,16 @@ func CmpResourceDeleted(t *testing.T, expected, got *events.ResourceDeleted) {
 	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
 }
 
-func MakeResourceRetrieved(t *testing.T, deviceID, href, correlationID string, data interface{}) *events.ResourceRetrieved {
+func MakeResourceRetrieved(t *testing.T, deviceID, href string, resourceTypes []string, correlationID string, data interface{}) *events.ResourceRetrieved {
 	return &events.ResourceRetrieved{
 		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
 			Href:     href,
 		},
-		Status:       commands.Status_OK,
-		Content:      makeCborContent(t, data),
-		AuditContext: commands.NewAuditContext(service.DeviceUserID, correlationID, service.DeviceUserID),
+		Status:        commands.Status_OK,
+		Content:       makeCborContent(t, data),
+		AuditContext:  commands.NewAuditContext(service.DeviceUserID, correlationID, service.DeviceUserID),
+		ResourceTypes: resourceTypes,
 	}
 }
 
@@ -294,7 +298,7 @@ func CmpResourceRetrieved(t *testing.T, expected, got *events.ResourceRetrieved)
 	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
 }
 
-func MakeResourceUpdated(t *testing.T, deviceID, href, correlationID string, data interface{}) *events.ResourceUpdated {
+func MakeResourceUpdated(t *testing.T, deviceID, href string, resourceTypes []string, correlationID string, data interface{}) *events.ResourceUpdated {
 	return &events.ResourceUpdated{
 		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
@@ -309,7 +313,8 @@ func MakeResourceUpdated(t *testing.T, deviceID, href, correlationID string, dat
 			}
 			return makeCborContent(t, data)
 		}(),
-		AuditContext: commands.NewAuditContext(service.DeviceUserID, correlationID, service.DeviceUserID),
+		AuditContext:  commands.NewAuditContext(service.DeviceUserID, correlationID, service.DeviceUserID),
+		ResourceTypes: resourceTypes,
 	}
 }
 

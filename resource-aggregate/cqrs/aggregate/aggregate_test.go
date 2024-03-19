@@ -75,7 +75,7 @@ func TestAggregate(t *testing.T) {
 	}
 
 	newAggregate := func(deviceID, href string) *aggregate.Aggregate {
-		a, err := aggregate.NewAggregate(deviceID, commands.NewResourceID(deviceID, href).ToUUID().String(), aggregate.NewDefaultRetryFunc(1), store, func(context.Context) (aggregate.AggregateModel, error) {
+		a, err := aggregate.NewAggregate(deviceID, commands.NewResourceID(deviceID, href).ToUUID().String(), aggregate.NewDefaultRetryFunc(1), store, func(context.Context, string, string) (aggregate.AggregateModel, error) {
 			return &raTest.Snapshot{DeviceId: deviceID, Href: href, IsPublished: true}, nil
 		}, nil)
 		require.NoError(t, err)
@@ -134,10 +134,8 @@ func TestAggregate(t *testing.T) {
 	require.NoError(t, err)
 
 	concurrencyExcepTestA := newAggregate(commandPub1.GetDeviceId(), commandPub1.GetHref())
-	model, err := concurrencyExcepTestA.FactoryModel(ctx)
-	require.NoError(t, err)
 
-	amodel, err := aggregate.NewAggregateModel(ctx, a.GroupID(), a.AggregateID(), store, a.LogDebugfFunc, model)
+	amodel, err := aggregate.NewAggregateModel(ctx, a.GroupID(), a.AggregateID(), store, a.LogDebugfFunc, concurrencyExcepTestA.FactoryModel)
 	require.NoError(t, err)
 
 	ev, concurrencyException, err := a.HandleCommandWithAggregateModelWrapper(ctx, &commandPub1, amodel)

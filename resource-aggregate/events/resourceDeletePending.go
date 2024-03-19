@@ -50,6 +50,10 @@ func (e *ResourceDeletePending) ServiceID() (string, bool) {
 	return "", false
 }
 
+func (e *ResourceDeletePending) Types() []string {
+	return e.GetResourceTypes()
+}
+
 func (e *ResourceDeletePending) CopyData(event *ResourceDeletePending) {
 	e.ResourceId = event.GetResourceId()
 	e.AuditContext = event.GetAuditContext()
@@ -57,6 +61,7 @@ func (e *ResourceDeletePending) CopyData(event *ResourceDeletePending) {
 	e.ValidUntil = event.GetValidUntil()
 	e.ResourceInterface = event.GetResourceInterface()
 	e.OpenTelemetryCarrier = event.GetOpenTelemetryCarrier()
+	e.ResourceTypes = event.GetResourceTypes()
 }
 
 func (e *ResourceDeletePending) CheckInitialized() bool {

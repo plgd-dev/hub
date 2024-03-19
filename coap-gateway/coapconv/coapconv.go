@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/plgd-dev/device/v2/pkg/codec/cbor"
+	"github.com/plgd-dev/device/v2/pkg/codec/json"
 	"github.com/plgd-dev/device/v2/schema/interfaces"
 	"github.com/plgd-dev/device/v2/schema/resources"
 	"github.com/plgd-dev/go-coap/v3/message"
@@ -18,7 +20,6 @@ import (
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
-	"github.com/plgd-dev/kit/v2/codec/cbor"
 )
 
 func StatusToCoapCode(status commands.Status, operation Operation) codes.Code {
@@ -310,14 +311,20 @@ func NewConfirmResourceDeleteRequest(resourceID *commands.ResourceId, correlatio
 	}
 }
 
-func NewNotifyResourceChangedRequest(resourceID *commands.ResourceId, connectionID string, req *pool.Message) *commands.NotifyResourceChangedRequest {
+func NewNotifyResourceChangedRequest(resourceID *commands.ResourceId, resourceTypes []string, connectionID string, req *pool.Message) *commands.NotifyResourceChangedRequest {
 	content := NewContent(req.Options(), req.Body())
 	metadata := NewCommandMetadata(req.Sequence(), connectionID)
+
+	rtFromBody := tryToGetResourceTypesFromContent(content.GetCoapContentFormat(), content.GetData())
+	if len(rtFromBody) > 0 {
+		resourceTypes = rtFromBody
+	}
 
 	return &commands.NotifyResourceChangedRequest{
 		ResourceId:      resourceID,
 		Content:         content,
 		CommandMetadata: metadata,
+		ResourceTypes:   resourceTypes,
 		Status:          CoapCodeToStatus(req.Code(), Update),
 		Etag:            getETagFromMessage(req),
 	}
@@ -342,6 +349,30 @@ func filterOutEmptyResource(resource resources.BatchRepresentation) (isEmpty boo
 		}
 	}
 	return isEmpty, false
+}
+
+type ct struct {
+	ResourceTypes []string `json:"rt"`
+}
+
+func tryToGetResourceTypesFromContent(contentFormat int32, content []byte) []string {
+	if len(content) == 0 {
+		return nil
+	}
+	decode := func([]byte, interface{}) error {
+		return errors.New("unsupported")
+	}
+	switch contentFormat {
+	case int32(message.AppOcfCbor), int32(message.AppCBOR):
+		decode = cbor.Decode
+	case int32(message.AppJSON):
+		decode = json.Decode
+	}
+	var c ct
+	if err := decode(content, &c); err == nil {
+		return c.ResourceTypes
+	}
+	return nil
 }
 
 func NewNotifyResourceChangedRequestsFromBatchResourceDiscovery(deviceID, connectionID string, req *pool.Message) ([]*commands.NotifyResourceChangedRequest, error) {
@@ -378,6 +409,10 @@ func NewNotifyResourceChangedRequestsFromBatchResourceDiscovery(deviceID, connec
 			data = nil
 			code = commands.Status_NOT_FOUND
 		}
+		resourceTypes := r.ResourceTypes
+		if len(resourceTypes) == 0 {
+			resourceTypes = tryToGetResourceTypesFromContent(contentFormat, r.Content)
+		}
 		resourceChangedReq := &commands.NotifyResourceChangedRequest{
 			ResourceId: commands.NewResourceID(deviceID, r.Href()),
 			Content: &commands.Content{
@@ -388,6 +423,7 @@ func NewNotifyResourceChangedRequestsFromBatchResourceDiscovery(deviceID, connec
 			CommandMetadata: metadata,
 			Status:          code,
 			Etag:            r.ETag,
+			ResourceTypes:   resourceTypes,
 		}
 		if len(etag) > 0 && bytes.Equal(etag, r.ETag) {
 			latestETagResource = resourceChangedReq

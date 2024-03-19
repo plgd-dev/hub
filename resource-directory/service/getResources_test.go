@@ -46,7 +46,7 @@ func TestRequestHandlerGetResources(t *testing.T) {
 			want: []*pb.Resource{
 				{
 					Types: []string{types.CORE_LIGHT},
-					Data: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceLightInstanceHref("1"), "",
+					Data: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceLightInstanceHref("1"), test.TestResourceLightInstanceResourceTypes, "",
 						map[string]interface{}{
 							"state": false,
 							"power": uint64(0),

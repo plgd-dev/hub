@@ -20,21 +20,23 @@ type Observation = interface {
 
 // Thread-safe wrapper with additional data for *tcp.Observation.
 type observedResource struct {
-	href         string
-	resInterface string
-	synced       atomic.Bool
-	isObservable bool
-	private      struct { // guarded by mutex
+	href          string
+	resInterface  string
+	synced        atomic.Bool
+	isObservable  bool
+	resourceTypes []string
+	private       struct { // guarded by mutex
 		mutex       sync.Mutex
 		observation Observation
 	}
 }
 
-func newObservedResource(href, resInterface string, isObservable bool) *observedResource {
+func newObservedResource(href, resInterface string, isObservable bool, resourceTypes []string) *observedResource {
 	return &observedResource{
-		href:         href,
-		resInterface: resInterface,
-		isObservable: isObservable,
+		href:          href,
+		resInterface:  resInterface,
+		isObservable:  isObservable,
+		resourceTypes: resourceTypes,
 	}
 }
 
