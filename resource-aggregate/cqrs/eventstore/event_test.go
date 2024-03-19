@@ -14,6 +14,7 @@ type mockEvent struct {
 	etagData    *ETagData
 	isSnapshot  bool
 	serviceID   string
+	types       []string
 }
 
 func (e *mockEvent) AggregateID() string {
@@ -49,6 +50,10 @@ func (e *mockEvent) ETag() *ETagData {
 
 func (e *mockEvent) IsSnapshot() bool {
 	return e.isSnapshot
+}
+
+func (e *mockEvent) Types() []string {
+	return e.types
 }
 
 func TestValidateEventsBeforeSave(t *testing.T) {

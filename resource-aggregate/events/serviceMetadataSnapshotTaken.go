@@ -62,6 +62,10 @@ func (d *ServiceMetadataSnapshotTaken) ServiceID() (string, bool) {
 	return "", false
 }
 
+func (d *ServiceMetadataSnapshotTaken) Types() []string {
+	return nil
+}
+
 func (d *ServiceMetadataSnapshotTaken) CopyData(event *ServiceMetadataSnapshotTaken) {
 	d.ServiceMetadataUpdated = event.GetServiceMetadataUpdated()
 	d.EventMetadata = event.GetEventMetadata()

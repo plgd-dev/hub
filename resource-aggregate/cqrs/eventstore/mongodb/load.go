@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
@@ -331,6 +332,69 @@ func (s *EventStore) loadFromSnapshot(ctx context.Context, groupID string, queri
 	return s.loadEventsQuery(ctx, eventHandler, nil, filter, opts)
 }
 
+func uniqueQuery(queries []eventstore.SnapshotQuery, query eventstore.SnapshotQuery) []eventstore.SnapshotQuery {
+	if query.AggregateID == "" {
+		if len(query.Types) == 0 {
+			// get all events without filter
+			return []eventstore.SnapshotQuery{query}
+		}
+		for idx, q := range queries {
+			if slices.Equal(q.Types, query.Types) {
+				// get all events with the certain type, replace the queries with the more or equal general one
+				queries[idx] = query
+				for i := idx + 1; i < len(queries); i++ {
+					if slices.Equal(queries[i].Types, query.Types) {
+						queries = append(queries[:i], queries[i+1:]...)
+						i--
+					}
+				}
+				return queries
+			}
+		}
+		return append(queries, query)
+	}
+	for idx, q := range queries {
+		if q.AggregateID == "" && (len(q.Types) == 0 || slices.Equal(q.Types, query.Types)) {
+			// in query list there is a general query, no need to add more specific one
+			return queries
+		}
+		if q.AggregateID == query.AggregateID {
+			if len(query.Types) == 0 {
+				queries[idx] = query
+				for i := idx + 1; i < len(queries); i++ {
+					if queries[i].AggregateID == query.AggregateID {
+						queries = append(queries[:i], queries[i+1:]...)
+						i--
+					}
+				}
+				return queries
+			}
+			if len(q.Types) == 0 || slices.Equal(q.Types, query.Types) {
+				// in query list there is a more specific query, no need to add more general one
+				return queries
+			}
+
+		}
+	}
+	return append(queries, query)
+}
+
+func normalizeSnapshotQuery(queries []eventstore.SnapshotQuery) map[string][]eventstore.SnapshotQuery {
+	normalizedQuery := make(map[string][]eventstore.SnapshotQuery, len(queries))
+	// split queries by groupID
+	for _, query := range queries {
+		if query.GroupID == "" {
+			continue
+		}
+		v, ok := normalizedQuery[query.GroupID]
+		if !ok {
+			v = make([]eventstore.SnapshotQuery, 0, 4)
+		}
+		normalizedQuery[query.GroupID] = uniqueQuery(v, query)
+	}
+	return normalizedQuery
+}
+
 // LoadFromSnapshot loads events from the last snapshot eventstore.
 func (s *EventStore) LoadFromSnapshot(ctx context.Context, queries []eventstore.SnapshotQuery, eventHandler eventstore.Handler) error {
 	s.LogDebugfFunc("mongodb.Evenstore.LoadFromSnapshot start")
@@ -342,24 +406,7 @@ func (s *EventStore) LoadFromSnapshot(ctx context.Context, queries []eventstore.
 		return fmt.Errorf("not supported")
 	}
 
-	normalizeQuery := make(map[string][]eventstore.SnapshotQuery)
-	for _, query := range queries {
-		if query.GroupID == "" {
-			continue
-		}
-		if query.AggregateID == "" {
-			normalizeQuery[query.GroupID] = make([]eventstore.SnapshotQuery, 0, 1)
-			continue
-		}
-		v, ok := normalizeQuery[query.GroupID]
-		if !ok {
-			v = make([]eventstore.SnapshotQuery, 0, 4)
-		} else if len(v) == 0 {
-			continue
-		}
-		v = append(v, query)
-		normalizeQuery[query.GroupID] = v
-	}
+	normalizeQuery := normalizeSnapshotQuery(queries)
 
 	var errors *multierror.Error
 	for groupID, queries := range normalizeQuery {

@@ -51,6 +51,10 @@ func (e *ResourceLinksUnpublished) ServiceID() (string, bool) {
 	return "", false
 }
 
+func (e *ResourceLinksUnpublished) Types() []string {
+	return nil
+}
+
 func (e *ResourceLinksUnpublished) CopyData(event *ResourceLinksUnpublished) {
 	e.Hrefs = event.GetHrefs()
 	e.DeviceId = event.GetDeviceId()

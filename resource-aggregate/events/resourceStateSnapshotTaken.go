@@ -3,6 +3,7 @@ package events
 import (
 	"context"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/plgd-dev/go-coap/v3/message"
@@ -66,6 +67,10 @@ func (e *ResourceStateSnapshotTaken) ServiceID() (string, bool) {
 	return "", false
 }
 
+func (e *ResourceStateSnapshotTaken) Types() []string {
+	return e.GetResourceTypes()
+}
+
 func (e *ResourceStateSnapshotTaken) CopyData(event *ResourceStateSnapshotTaken) {
 	e.ResourceId = event.GetResourceId()
 	e.LatestResourceChange = event.GetLatestResourceChange()
@@ -75,6 +80,7 @@ func (e *ResourceStateSnapshotTaken) CopyData(event *ResourceStateSnapshotTaken)
 	e.ResourceDeletePendings = event.GetResourceDeletePendings()
 	e.AuditContext = event.GetAuditContext()
 	e.EventMetadata = event.GetEventMetadata()
+	e.ResourceTypes = event.GetResourceTypes()
 }
 
 func (e *ResourceStateSnapshotTaken) CheckInitialized() bool {
@@ -276,11 +282,15 @@ func (e *ResourceStateSnapshotTaken) ValidateSequence(eventMetadata *EventMetada
 
 func (e *ResourceStateSnapshotTaken) handleEventResourceChanged(changed *ResourceChanged) bool {
 	if e.GetLatestResourceChange() == nil ||
+		(len(changed.GetResourceTypes()) > 0 && !slices.Equal(e.GetResourceTypes(), changed.GetResourceTypes())) ||
 		(e.ValidateSequence(changed.GetEventMetadata()) && !e.GetLatestResourceChange().Equal(changed)) {
 		e.ResourceId = changed.GetResourceId()
 		e.EventMetadata = changed.GetEventMetadata()
 		e.LatestResourceChange = changed
 		e.AuditContext = changed.GetAuditContext()
+		if len(changed.GetResourceTypes()) > 0 {
+			e.ResourceTypes = changed.GetResourceTypes()
+		}
 		return true
 	}
 	return false
@@ -648,6 +658,7 @@ func (e *ResourceStateSnapshotTakenForCommand) handleNotifyResourceChangedReques
 		Status:               req.GetStatus(),
 		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 		Etag:                 req.GetEtag(),
+		ResourceTypes:        req.GetResourceTypes(),
 	}
 
 	if e.handleEventResourceChanged(&rc) {

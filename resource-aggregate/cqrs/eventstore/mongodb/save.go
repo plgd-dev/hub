@@ -39,7 +39,7 @@ func IsDup(err error) bool {
 }
 
 func (s *EventStore) saveEvent(ctx context.Context, col *mongo.Collection, events []eventstore.Event) (status eventstore.SaveStatus, err error) {
-	etag, e, err := makeDBEventsAndGetETag(events, s.dataMarshaler)
+	etag, types, e, err := makeDBEventsAndGetETag(events, s.dataMarshaler)
 	if err != nil {
 		return eventstore.Fail, err
 	}
@@ -57,6 +57,9 @@ func (s *EventStore) saveEvent(ctx context.Context, col *mongo.Collection, event
 		updateSet[latestETagKey] = makeDBETag(etag)
 	}
 	tryToSetServiceID(updateSet, events)
+	if len(types) > 0 {
+		updateSet[typesKey] = types
+	}
 
 	// find document of aggregate with previous version
 	// latestVersion shall be lower by 1 as new event otherwise other event was stored (occ).

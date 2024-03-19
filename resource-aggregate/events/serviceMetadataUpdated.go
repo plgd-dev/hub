@@ -50,6 +50,9 @@ func (d *ServiceMetadataUpdated) ETag() *eventstore.ETagData {
 func (d *ServiceMetadataUpdated) ServiceID() (string, bool) {
 	return "", false
 }
+func (d *ServiceMetadataUpdated) Types() []string {
+	return nil
+}
 
 func (d *ServiceMetadataUpdated) CopyData(event *ServiceMetadataUpdated) {
 	d.EventMetadata = event.GetEventMetadata()

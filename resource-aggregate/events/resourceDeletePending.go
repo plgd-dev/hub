@@ -50,6 +50,10 @@ func (e *ResourceDeletePending) ServiceID() (string, bool) {
 	return "", false
 }
 
+func (e *ResourceDeletePending) Types() []string {
+	return nil
+}
+
 func (e *ResourceDeletePending) CopyData(event *ResourceDeletePending) {
 	e.ResourceId = event.GetResourceId()
 	e.AuditContext = event.GetAuditContext()

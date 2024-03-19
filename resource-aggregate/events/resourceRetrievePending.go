@@ -50,6 +50,10 @@ func (e *ResourceRetrievePending) ServiceID() (string, bool) {
 	return "", false
 }
 
+func (e *ResourceRetrievePending) Types() []string {
+	return nil
+}
+
 func (e *ResourceRetrievePending) CopyData(event *ResourceRetrievePending) {
 	e.ResourceId = event.GetResourceId()
 	e.ResourceInterface = event.GetResourceInterface()

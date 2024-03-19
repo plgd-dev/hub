@@ -54,6 +54,7 @@ message ResourceChanged {
     AuditContext audit_context = 4;
     EventMetadata event_metadata = 5;
     bytes etag = 6; // etag of the resource used by twin synchronization
+    repeated string resource_types = 7;
 
     // Open telemetry data propagated to asynchronous events
     map<string,string> open_telemetry_carrier = 100;
@@ -159,6 +160,7 @@ message ResourceStateSnapshotTaken {
     repeated ResourceDeletePending resource_delete_pendings = 6; // expired events will be removed by creating a new snapshot.
     AuditContext audit_context = 7;
     EventMetadata event_metadata = 8;
+    repeated string resource_types = 9;
 
     // Open telemetry data propagated to asynchronous events
    // map<string,string> open_telemetry_carrier = 100;

@@ -51,6 +51,10 @@ func (e *ResourceUpdated) ServiceID() (string, bool) {
 	return "", false
 }
 
+func (e *ResourceUpdated) Types() []string {
+	return nil
+}
+
 func (e *ResourceUpdated) CopyData(event *ResourceUpdated) {
 	e.ResourceId = event.GetResourceId()
 	e.Status = event.GetStatus()

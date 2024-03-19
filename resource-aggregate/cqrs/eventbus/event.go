@@ -17,6 +17,7 @@ type Event = interface {
 	Timestamp() time.Time
 	ETag() *eventstore.ETagData
 	ServiceID() (string, bool)
+	Types() []string
 }
 
 // EventUnmarshaler provides event.

@@ -95,6 +95,7 @@ message NotifyResourceChangedRequest {
     CommandMetadata command_metadata = 3;
     Status status = 4;
     bytes etag = 5;
+    repeated string resource_types = 6;
 }
 
 message NotifyResourceChangedResponse {
