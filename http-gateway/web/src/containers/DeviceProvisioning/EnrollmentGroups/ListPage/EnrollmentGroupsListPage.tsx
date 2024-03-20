@@ -6,6 +6,8 @@ import TableActionButton from '@shared-ui/components/Organisms/TableActionButton
 import { DeleteModal, IconArrowDetail, IconTrash } from '@shared-ui/components/Atomic'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
+import Tag from '@shared-ui/components/Atomic/Tag'
+import TagGroup from '@shared-ui/components/Atomic/TagGroup'
 
 import PageLayout from '@/containers/Common/PageLayout'
 import TableList from '@/containers/Common/TableList/TableList'
@@ -16,9 +18,6 @@ import { messages as t } from '../EnrollmentGroups.i18n'
 import { deleteEnrollmentGroupsApi } from '@/containers/DeviceProvisioning/rest'
 import notificationId from '@/notificationId'
 import ListHeader from '../ListHeader'
-import Tag from '@plgd/shared-ui/src/components/Atomic/Tag'
-import { tagVariants } from '@shared-ui/components/Atomic/Tag/constants'
-import TagGroup from '@plgd/shared-ui/src/components/Atomic/TagGroup'
 
 const EnrollmentGroupsListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()

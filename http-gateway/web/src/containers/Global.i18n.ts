@@ -293,4 +293,8 @@ export const messages = defineMessages({
         id: 'global.promptDefaultMessage',
         defaultMessage: 'Are you sure you want to leave?',
     },
+    create: {
+        id: 'global.create',
+        defaultMessage: 'Create',
+    },
 })

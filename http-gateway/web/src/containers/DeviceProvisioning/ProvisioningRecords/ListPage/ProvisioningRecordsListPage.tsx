@@ -55,7 +55,6 @@ const ProvisioningRecordsListPage: FC<any> = () => {
                 })
                 const merged = { ...record, parsedData: parsedData.filter((i) => !!i), status: '' }
                 const status = getStatusFromData(merged)
-                // console.log(parsedData)
                 return { ...merged, status }
             })
 

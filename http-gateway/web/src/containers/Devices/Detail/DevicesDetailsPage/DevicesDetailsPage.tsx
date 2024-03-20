@@ -238,6 +238,7 @@ const DevicesDetailsPage: FC<Props> = (props) => {
                                 <Tab1
                                     deviceId={id}
                                     deviceName={deviceName}
+                                    endpoints={data?.metadata?.connection?.localEndpoints}
                                     firmware={data?.data?.content?.sv}
                                     isActiveTab={activeTabItem === 0}
                                     isTwinEnabled={isTwinEnabled}
@@ -247,7 +248,6 @@ const DevicesDetailsPage: FC<Props> = (props) => {
                                     softwareUpdateData={softwareUpdateData?.result?.data?.content}
                                     twinSyncLoading={twinSyncLoading}
                                     types={data?.types}
-                                    endpoints={data?.metadata?.connection?.localEndpoints}
                                 />
                             ),
                         },

@@ -4,6 +4,7 @@ import { useIntl } from 'react-intl'
 import ReactDOM from 'react-dom'
 import isEqual from 'lodash/isEqual'
 import { useRecoilState } from 'recoil'
+import cloneDeep from 'lodash/cloneDeep'
 
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import BottomPanel from '@shared-ui/components/Layout/BottomPanel/BottomPanel'
@@ -24,8 +25,8 @@ import notificationId from '@/notificationId'
 import { messages as g } from '@/containers/Global.i18n'
 import DetailForm from './DetailForm'
 import { dirtyFormState } from '@/store/recoil.store'
-import cloneDeep from 'lodash/cloneDeep'
-import { updateEntrollmentGroup } from '@/containers/DeviceProvisioning/rest'
+import { updateEnrollmentGroup } from '@/containers/DeviceProvisioning/rest'
+import { pemToString } from '@/containers/DeviceProvisioning/utils'
 
 const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
     const { formatMessage: _ } = useIntl()
@@ -98,7 +99,6 @@ const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
         () => ({
             ...getFormContextDefault(_(g.default)),
             updateData: (newFormData: any) => {
-                console.log('updateFormData', newFormData)
                 setFormData(newFormData)
             },
             setFormDirty,
@@ -116,7 +116,11 @@ const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
             delete dataForSave['hubsData']
             delete dataForSave['id']
 
-            await updateEntrollmentGroup(enrollmentId!, dataForSave)
+            if (dataForSave.preSharedKey && dataForSave.preSharedKey !== '') {
+                dataForSave.preSharedKey = pemToString(dataForSave.preSharedKey)
+            }
+
+            await updateEnrollmentGroup(enrollmentId!, dataForSave)
 
             setFormDirty(defaultFormState)
             refresh()

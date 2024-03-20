@@ -66,7 +66,7 @@ const AppLayout: FC<Props> = (props) => {
         githubVersionUrl: 'https://api.github.com/repos/plgd-dev/hub/releases/latest',
     })
 
-    const [dirtyState] = useRecoilState(dirtyFormState)
+    const [dirtyState, setDirtyState] = useRecoilState(dirtyFormState)
     const [block, setBlock] = useRecoilState(promptBlockState)
 
     useEffect(() => {
@@ -250,6 +250,7 @@ const AppLayout: FC<Props> = (props) => {
                                     block.link && navigate(block.link)
                                 }
 
+                                setDirtyState(false)
                                 setBlock(undefined)
                             }
                         },

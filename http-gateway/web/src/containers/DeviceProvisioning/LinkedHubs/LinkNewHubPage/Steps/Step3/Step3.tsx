@@ -10,13 +10,13 @@ import FormInput from '@shared-ui/components/Atomic/FormInput'
 import TimeoutControl from '@shared-ui/components/Atomic/TimeoutControl'
 import Spacer from '@shared-ui/components/Atomic/Spacer'
 import TileToggle from '@shared-ui/components/Atomic/TileToggle'
+import * as commonStyles from '@shared-ui/components/Templates/FullPageWizard/FullPageWizardCommon.styles'
+import StepButtons from '@shared-ui/components/Templates/FullPageWizard/StepButtons'
 
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
-import * as commonStyles from '../../LinkNewHubPage.styles'
 import { Props, Inputs } from './Step3.types'
 import SubStepTls from '../SubStepTls'
-import SubStepButtons from '../SubStepButtons'
 
 const Step3: FC<Props> = (props) => {
     const { defaultFormData } = props
@@ -142,7 +142,14 @@ const Step3: FC<Props> = (props) => {
                 watch={watch}
             />
 
-            <SubStepButtons onClickBack={() => setStep?.(1)} onClickNext={() => setStep?.(3)} />
+            <StepButtons
+                i18n={{
+                    back: _(g.back),
+                    continue: _(g.continue),
+                }}
+                onClickBack={() => setStep?.(1)}
+                onClickNext={() => setStep?.(3)}
+            />
         </form>
     )
 }

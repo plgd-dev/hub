@@ -9,13 +9,13 @@ import FormGroup from '@shared-ui/components/Atomic/FormGroup'
 import { FormContext } from '@shared-ui/common/context/FormContext'
 import TimeoutControl from '@shared-ui/components/Atomic/TimeoutControl'
 import Spacer from '@shared-ui/components/Atomic/Spacer'
+import * as commonStyles from '@shared-ui/components/Templates/FullPageWizard/FullPageWizardCommon.styles'
+import StepButtons from '@shared-ui/components/Templates/FullPageWizard/StepButtons'
 
-import * as commonStyles from '@/containers/DeviceProvisioning/LinkedHubs/LinkNewHubPage/LinkNewHubPage.styles'
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
 import { messages as g } from '@/containers/Global.i18n'
 import { Inputs, Props } from './Step4.types'
 import SubStepTls from '../SubStepTls'
-import SubStepButtons from '../SubStepButtons'
 
 const Step4: FC<Props> = (props) => {
     const { defaultFormData, onSubmit } = props
@@ -229,7 +229,14 @@ const Step4: FC<Props> = (props) => {
                 />
             </Spacer>
 
-            <SubStepButtons onClickBack={() => setStep?.(2)} onClickNext={() => onSubmit?.()} />
+            <StepButtons
+                i18n={{
+                    back: _(g.back),
+                    continue: _(g.create),
+                }}
+                onClickBack={() => setStep?.(2)}
+                onClickNext={() => onSubmit?.()}
+            />
         </form>
     )
 }

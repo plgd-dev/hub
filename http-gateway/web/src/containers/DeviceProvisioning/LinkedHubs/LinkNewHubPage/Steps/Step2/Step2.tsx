@@ -11,13 +11,13 @@ import IconPlus from '@shared-ui/components/Atomic/Icon/components/IconPlus'
 import Button from '@shared-ui/components/Atomic/Button'
 import IconClose from '@shared-ui/components/Atomic/Icon/components/IconClose'
 import { convertSize } from '@shared-ui/components/Atomic'
+import * as commonStyles from '@shared-ui/components/Templates/FullPageWizard/FullPageWizardCommon.styles'
+import StepButtons from '@shared-ui/components/Templates/FullPageWizard/StepButtons'
 
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
 import { Inputs, Props } from './Step2.types'
 import * as styles from './Step2.styles'
-import * as commonStyles from '../../LinkNewHubPage.styles'
-import SubStepButtons from '../SubStepButtons'
 
 const Step2: FC<Props> = (props) => {
     const { defaultFormData } = props
@@ -129,7 +129,14 @@ const Step2: FC<Props> = (props) => {
                 {_(t.addDeviceGateway)}
             </Button>
 
-            <SubStepButtons onClickBack={() => setStep?.(0)} onClickNext={() => setStep?.(2)} />
+            <StepButtons
+                i18n={{
+                    back: _(g.back),
+                    continue: _(g.continue),
+                }}
+                onClickBack={() => setStep?.(1)}
+                onClickNext={() => setStep?.(2)}
+            />
         </form>
     )
 }

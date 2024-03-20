@@ -11,9 +11,9 @@ import { useForm } from '@shared-ui/common/hooks'
 import { FormContext } from '@shared-ui/common/context/FormContext'
 import { openTelemetry } from '@shared-ui/common/services/opentelemetry'
 import ButtonBox from '@shared-ui/components/Atomic/ButtonBox'
+import * as commonStyles from '@shared-ui/components/Templates/FullPageWizard/FullPageWizardCommon.styles'
 
 import { messages as t } from '../../../LinkedHubs.i18n'
-import * as commonStyles from '../../LinkNewHubPage.styles'
 import { messages as g } from '@/containers/Global.i18n'
 import { Props, Inputs } from './Step1.types'
 import { getAppWellKnownConfiguration } from '@/containers/App/AppRest'
@@ -84,9 +84,6 @@ const Step1: FC<Props> = (props) => {
         },
         [getValues, setStep, updateData]
     )
-
-    console.log(name)
-    console.log(endpoint)
 
     return (
         <form>

@@ -58,8 +58,6 @@ const Tab3: FC<Props> = (props) => {
     const handleItemClick = useCallback(
         (item: ItemType) => {
             setActiveItem(item.id)
-            console.log(item)
-
             navigate(`/device-provisioning/linked-hubs/${hubId}${getTabRoute(2)}${item.link}`, { replace: true })
         },
         [hubId, navigate]

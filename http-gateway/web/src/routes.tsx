@@ -40,6 +40,7 @@ const ProvisioningRecordsListPage = lazy(() => import('./containers/DeviceProvis
 const ProvisioningRecordsDetailPage = lazy(() => import('@/containers/DeviceProvisioning/ProvisioningRecords/DetailPage/ProvisioningRecordsDetailPage'))
 const EnrollmentGroupsListPage = lazy(() => import('./containers/DeviceProvisioning/EnrollmentGroups/ListPage'))
 const EnrollmentGroupsDetailPage = lazy(() => import('./containers/DeviceProvisioning/EnrollmentGroups/DetailPage'))
+const NewEnrollmentGroupsPage = lazy(() => import('./containers/DeviceProvisioning/EnrollmentGroups/NewEnrollmentGroupsPage'))
 
 const LinkedHubsListPage = lazy(() => import('./containers/DeviceProvisioning/LinkedHubs'))
 const LinkedHubsDetailPage = lazy(() => import('./containers/DeviceProvisioning/LinkedHubs/DetailPage'))
@@ -260,7 +261,12 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
     },
 ]
 
-export const noLayoutPages = ['/device-provisioning/linked-hubs/link-new-hub', '/device-provisioning/linked-hubs/link-new-hub/:step']
+export const noLayoutPages = [
+    '/device-provisioning/linked-hubs/link-new-hub',
+    '/device-provisioning/linked-hubs/link-new-hub/:step',
+    '/device-provisioning/enrollment-groups/new-enrollment-group',
+    '/device-provisioning/enrollment-groups/new-enrollment-group/:step',
+]
 
 export const mather = (pathname: string, pattern: string) => matchPath(pattern, pathname)
 
@@ -286,6 +292,22 @@ export const NoLayoutRoutes = () => (
                 </Suspense>
             }
             path='/device-provisioning/linked-hubs/link-new-hub/:step'
+        />
+        <Route
+            element={
+                <Suspense fallback={<Loader />}>
+                    <NewEnrollmentGroupsPage />
+                </Suspense>
+            }
+            path='/device-provisioning/enrollment-groups/new-enrollment-group'
+        />
+        <Route
+            element={
+                <Suspense fallback={<Loader />}>
+                    <NewEnrollmentGroupsPage />
+                </Suspense>
+            }
+            path='/device-provisioning/enrollment-groups/new-enrollment-group/:step'
         />
     </RoutesGroup>
 )
