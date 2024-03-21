@@ -16,6 +16,7 @@ import (
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgStrings "github.com/plgd-dev/hub/v2/pkg/strings"
 )
 
 // RequestHandler for handling incoming request
@@ -38,22 +39,30 @@ func matchPrefixAndSplitURIPath(requestURI, prefix string) []string {
 	return strings.Split(p, "/")
 }
 
+func unescapeString(s string) string {
+	newS, err := pkgStrings.Unescape(s, pkgStrings.UnescapingModeAllCharacters, false)
+	if err != nil {
+		return s
+	}
+	return newS
+}
+
 func resourcePendingCommandsMatcher(r *http.Request, rm *mux.RouteMatch) bool {
 	paths := matchPrefixAndSplitURIPath(r.RequestURI, uri.Devices)
 	if len(paths) > 3 && paths[1] == uri.ResourcesPathKey && strings.Contains(paths[len(paths)-1], uri.PendingCommandsPathKey) {
 		if rm.Vars == nil {
 			rm.Vars = make(map[string]string)
 		}
-		rm.Vars[uri.DeviceIDKey] = paths[0]
-		rm.Vars[uri.ResourceHrefKey] = strings.Split("/"+strings.Join(paths[2:len(paths)-1], "/"), "?")[0]
+		rm.Vars[uri.DeviceIDKey] = unescapeString(paths[0])
+		rm.Vars[uri.ResourceHrefKey] = unescapeString(strings.Split("/"+strings.Join(paths[2:len(paths)-1], "/"), "?")[0])
 		return true
 	}
 	if len(paths) > 4 && paths[1] == uri.ResourcesPathKey && strings.Contains(paths[len(paths)-2], uri.PendingCommandsPathKey) {
 		if rm.Vars == nil {
 			rm.Vars = make(map[string]string)
 		}
-		rm.Vars[uri.DeviceIDKey] = paths[0]
-		rm.Vars[uri.ResourceHrefKey] = "/" + strings.Join(paths[2:len(paths)-2], "/")
+		rm.Vars[uri.DeviceIDKey] = unescapeString(paths[0])
+		rm.Vars[uri.ResourceHrefKey] = unescapeString("/" + strings.Join(paths[2:len(paths)-2], "/"))
 		rm.Vars[uri.CorrelationIDKey] = strings.Split(paths[len(paths)-1], "?")[0]
 		return true
 	}
@@ -68,8 +77,8 @@ func resourceMatcher(r *http.Request, rm *mux.RouteMatch) bool {
 		if rm.Vars == nil {
 			rm.Vars = make(map[string]string)
 		}
-		rm.Vars[uri.DeviceIDKey] = paths[0]
-		rm.Vars[uri.ResourceHrefKey] = strings.Split("/"+strings.Join(paths[2:], "/"), "?")[0]
+		rm.Vars[uri.DeviceIDKey] = unescapeString(paths[0])
+		rm.Vars[uri.ResourceHrefKey] = unescapeString(strings.Split("/"+strings.Join(paths[2:], "/"), "?")[0])
 		return true
 	}
 	return false
@@ -81,8 +90,8 @@ func resourceLinksMatcher(r *http.Request, rm *mux.RouteMatch) bool {
 		if rm.Vars == nil {
 			rm.Vars = make(map[string]string)
 		}
-		rm.Vars[uri.DeviceIDKey] = paths[0]
-		rm.Vars[uri.ResourceHrefKey] = strings.Split("/"+strings.Join(paths[2:], "/"), "?")[0]
+		rm.Vars[uri.DeviceIDKey] = unescapeString(paths[0])
+		rm.Vars[uri.ResourceHrefKey] = unescapeString(strings.Split("/"+strings.Join(paths[2:], "/"), "?")[0])
 		return true
 	}
 	return false
@@ -98,8 +107,8 @@ func resourceEventsMatcher(r *http.Request, rm *mux.RouteMatch) bool {
 		if rm.Vars == nil {
 			rm.Vars = make(map[string]string)
 		}
-		rm.Vars[uri.DeviceIDKey] = paths[0]
-		rm.Vars[uri.ResourceHrefKey] = "/" + strings.Join(paths[2:len(paths)-1], "/")
+		rm.Vars[uri.DeviceIDKey] = unescapeString(paths[0])
+		rm.Vars[uri.ResourceHrefKey] = unescapeString("/" + strings.Join(paths[2:len(paths)-1], "/"))
 		return true
 	}
 	return false
