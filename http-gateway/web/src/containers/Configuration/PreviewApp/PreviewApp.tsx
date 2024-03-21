@@ -98,8 +98,6 @@ const PreviewApp = forwardRef<PreviewAppRefType, any>((props, ref) => {
         }
     }, [colorPalette, appStore.configuration])
 
-    console.log(logoData)
-
     useEffect(() => {
         if (appStore.configuration.previewTheme) {
             const { logo, colorPalette } = appStore.configuration.previewTheme

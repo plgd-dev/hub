@@ -20,7 +20,7 @@ import * as styles from '@/containers/DeviceProvisioning/LinkedHubs/DetailPage/T
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
 import notificationId from '@/notificationId'
-import { pemToString } from '../../utils'
+import { stringToPem } from '../../utils'
 
 const modalVariants = {
     ADD_CA_POOL: 'addCaPool',
@@ -131,21 +131,21 @@ const TlsPage: FC<any> = (props) => {
     const handleSaveModalData = useCallback(() => {
         switch (modalData.variant) {
             case modalVariants.ADD_CA_POOL: {
-                setValue(`${prefix}tls.caPool`, [...caPool, pemToString(modalData.value)], {
+                setValue(`${prefix}tls.caPool`, [...caPool, stringToPem(modalData.value)], {
                     shouldDirty: true,
                     shouldTouch: true,
                 })
                 break
             }
             case modalVariants.EDIT_PRIVATE_KEY: {
-                setValue(`${prefix}tls.key`, pemToString(modalData.value), {
+                setValue(`${prefix}tls.key`, stringToPem(modalData.value), {
                     shouldDirty: true,
                     shouldTouch: true,
                 })
                 break
             }
             case modalVariants.EDIT_CERT: {
-                setValue(`${prefix}tls.cert`, pemToString(modalData.value), {
+                setValue(`${prefix}tls.cert`, stringToPem(modalData.value), {
                     shouldDirty: true,
                     shouldTouch: true,
                 })
@@ -154,7 +154,7 @@ const TlsPage: FC<any> = (props) => {
         }
 
         setModalData(defaultModalData)
-    }, [caPool, defaultModalData, modalData.value, modalData.variant, pemToString, prefix, setValue])
+    }, [caPool, defaultModalData, modalData.value, modalData.variant, prefix, setValue])
 
     const handleDeleteCaItem = useCallback(
         (id: string) => {

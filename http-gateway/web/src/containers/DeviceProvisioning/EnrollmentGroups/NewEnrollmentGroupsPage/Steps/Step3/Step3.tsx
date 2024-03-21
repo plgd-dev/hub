@@ -22,6 +22,7 @@ const Step3: FC<any> = (props) => {
         register,
         updateField,
         setValue,
+        watch,
     } = useForm<Inputs>({
         defaultFormData,
         updateData,
@@ -37,7 +38,7 @@ const Step3: FC<any> = (props) => {
                 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna
             </p>
 
-            <DetailFromChunk3 errors={errors} register={register} setValue={setValue} updateField={updateField} />
+            <DetailFromChunk3 errors={errors} register={register} setValue={setValue} updateField={updateField} watch={watch} />
 
             <StepButtons
                 i18n={{

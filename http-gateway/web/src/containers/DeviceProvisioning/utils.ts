@@ -75,4 +75,6 @@ export function nameLengthValidator(file: any, privateKey = false) {
     return null
 }
 
-export const pemToString = (pem: string) => `${CA_BASE64_PREFIX}${btoa(pem)}`
+export const stringToPem = (str: string) => `${CA_BASE64_PREFIX}${btoa(str)}`
+
+export const pemToString = (pem: string) => atob(pem.replace(CA_BASE64_PREFIX, ''))

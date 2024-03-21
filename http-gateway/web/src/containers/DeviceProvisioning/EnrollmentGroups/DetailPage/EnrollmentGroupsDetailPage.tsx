@@ -26,7 +26,7 @@ import { messages as g } from '@/containers/Global.i18n'
 import DetailForm from './DetailForm'
 import { dirtyFormState } from '@/store/recoil.store'
 import { updateEnrollmentGroup } from '@/containers/DeviceProvisioning/rest'
-import { pemToString } from '@/containers/DeviceProvisioning/utils'
+import { stringToPem } from '@/containers/DeviceProvisioning/utils'
 
 const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
     const { formatMessage: _ } = useIntl()
@@ -117,7 +117,7 @@ const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
             delete dataForSave['id']
 
             if (dataForSave.preSharedKey && dataForSave.preSharedKey !== '') {
-                dataForSave.preSharedKey = pemToString(dataForSave.preSharedKey)
+                dataForSave.preSharedKey = stringToPem(dataForSave.preSharedKey)
             }
 
             await updateEnrollmentGroup(enrollmentId!, dataForSave)

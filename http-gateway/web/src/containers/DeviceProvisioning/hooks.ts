@@ -6,6 +6,7 @@ import { security } from '@shared-ui/common/services'
 
 import { SecurityConfig, StreamApiPropsType } from '@/containers/App/App.types'
 import { dpsApiEndpoints } from './constants'
+import { pemToString } from '@/containers/DeviceProvisioning/utils'
 
 const getConfig = () => security.getGeneralConfig() as SecurityConfig
 
@@ -182,7 +183,7 @@ export const useEnrollmentGroupDetail = (enrollmentGroupId?: string): StreamApiP
 
     useEffect(() => {
         if (!enrollmentGroupLoading && !hubsLoading && enrollmentGroupData && Array.isArray(enrollmentGroupData) && hubsData) {
-            setData({ ...enrollmentGroupData[0], hubsData })
+            setData({ ...enrollmentGroupData[0], preSharedKey: pemToString(enrollmentGroupData[0].preSharedKey), hubsData })
         }
     }, [enrollmentGroupData, enrollmentGroupLoading, hubsData, hubsLoading])
 

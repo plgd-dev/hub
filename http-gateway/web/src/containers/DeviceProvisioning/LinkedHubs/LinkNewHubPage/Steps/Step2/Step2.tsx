@@ -115,7 +115,7 @@ const Step2: FC<Props> = (props) => {
             ))}
 
             <Button
-                disabled={defaultFormData.gateways[defaultFormData.gateways.length - 1]?.value === ''}
+                disabled={defaultFormData.gateways && defaultFormData.gateways[defaultFormData.gateways.length - 1]?.value === ''}
                 icon={<IconPlus />}
                 onClick={(e) => {
                     e.preventDefault()

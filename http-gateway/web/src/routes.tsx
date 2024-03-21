@@ -156,23 +156,6 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                 children: [
                     {
                         id: '101',
-                        title: <MenuTranslate id='enrollmentGroups' />,
-                        link: '/enrollment-groups',
-                        paths: ['/device-provisioning/enrollment-groups', '/device-provisioning/enrollment-groups/:enrollmentId'],
-                    },
-                    {
-                        id: '102',
-                        title: <MenuTranslate id='provisioningRecords' />,
-                        link: '/provisioning-records',
-                        paths: [
-                            '/device-provisioning/provisioning-records',
-                            '/device-provisioning/provisioning-records/:recordId',
-                            '/device-provisioning/provisioning-records/:recordId/credentials',
-                            '/device-provisioning/provisioning-records/:recordId/acls',
-                        ],
-                    },
-                    {
-                        id: '103',
                         title: <MenuTranslate id='menuLinkedHubs' />,
                         link: '/linked-hubs',
                         paths: [
@@ -182,6 +165,23 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                             '/device-provisioning/linked-hubs/:hubId/certificate-authority/:section',
                             '/device-provisioning/linked-hubs/:hubId/authorization',
                             '/device-provisioning/linked-hubs/:hubId/authorization/:section',
+                        ],
+                    },
+                    {
+                        id: '102',
+                        title: <MenuTranslate id='enrollmentGroups' />,
+                        link: '/enrollment-groups',
+                        paths: ['/device-provisioning/enrollment-groups', '/device-provisioning/enrollment-groups/:enrollmentId'],
+                    },
+                    {
+                        id: '103',
+                        title: <MenuTranslate id='provisioningRecords' />,
+                        link: '/provisioning-records',
+                        paths: [
+                            '/device-provisioning/provisioning-records',
+                            '/device-provisioning/provisioning-records/:recordId',
+                            '/device-provisioning/provisioning-records/:recordId/credentials',
+                            '/device-provisioning/provisioning-records/:recordId/acls',
                         ],
                     },
                 ],

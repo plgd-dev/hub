@@ -18,7 +18,7 @@ import { useCaI18n } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
 import { messages as g } from '@/containers/Global.i18n'
 import notificationId from '@/notificationId'
 import { Props } from './SubStepTls.types'
-import { nameLengthValidator, pemToString } from '@/containers/DeviceProvisioning/utils'
+import { nameLengthValidator, stringToPem } from '@/containers/DeviceProvisioning/utils'
 
 const SubStepTls: FC<Props> = (props) => {
     const { control, setValue, updateField, watch, prefix } = props
@@ -116,7 +116,7 @@ const SubStepTls: FC<Props> = (props) => {
                 maxFiles={10}
                 onFilesDrop={(files) => {
                     setTimeout(() => {
-                        setValue(`${prefix}tls.caPool`, [...caPool, ...files.map((f) => pemToString(f))], {
+                        setValue(`${prefix}tls.caPool`, [...caPool, ...files.map((f) => stringToPem(f))], {
                             shouldDirty: true,
                             shouldTouch: true,
                         })
@@ -155,7 +155,7 @@ const SubStepTls: FC<Props> = (props) => {
                     maxFiles={1}
                     onFilesDrop={(files) => {
                         setTimeout(() => {
-                            setValue(`${prefix}tls.key`, pemToString(files[0]), {
+                            setValue(`${prefix}tls.key`, stringToPem(files[0]), {
                                 shouldDirty: true,
                                 shouldTouch: true,
                             })
@@ -192,7 +192,7 @@ const SubStepTls: FC<Props> = (props) => {
                     maxFiles={1}
                     onFilesDrop={(files) => {
                         setTimeout(() => {
-                            setValue(`${prefix}tls.cert`, pemToString(files[0]), {
+                            setValue(`${prefix}tls.cert`, stringToPem(files[0]), {
                                 shouldDirty: true,
                                 shouldTouch: true,
                             })

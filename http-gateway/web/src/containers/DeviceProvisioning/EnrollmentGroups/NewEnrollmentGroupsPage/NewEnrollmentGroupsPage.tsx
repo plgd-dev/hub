@@ -13,7 +13,7 @@ import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '../EnrollmentGroups.i18n'
 import { DEFAULT_FORM_DATA } from '@/containers/DeviceProvisioning/EnrollmentGroups/NewEnrollmentGroupsPage/constants'
 import { createEnrollmentGroup } from '@/containers/DeviceProvisioning/rest'
-import { pemToString } from '@/containers/DeviceProvisioning/utils'
+import { stringToPem } from '@/containers/DeviceProvisioning/utils'
 
 const Step1 = lazy(() => import('./Steps/Step1'))
 const Step2 = lazy(() => import('./Steps/Step2'))
@@ -62,7 +62,7 @@ const NewEnrollmentGroupsPage: FC<any> = () => {
         const dataForSave = cloneDeep(formData)
 
         if (dataForSave.preSharedKey && dataForSave.preSharedKey !== '') {
-            dataForSave.preSharedKey = pemToString(dataForSave.preSharedKey)
+            dataForSave.preSharedKey = stringToPem(dataForSave.preSharedKey)
         }
 
         await createEnrollmentGroup(dataForSave)

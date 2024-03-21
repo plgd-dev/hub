@@ -1,6 +1,6 @@
-import React, { FC, useCallback, useContext, useMemo, useState } from 'react'
+import React, { FC, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { Control, Controller, FieldErrors, UseFormRegister, UseFormSetValue } from 'react-hook-form'
+import { Control, Controller, FieldErrors, UseFormRegister, UseFormSetValue, UseFormWatch } from 'react-hook-form'
 
 import Dropzone from '@shared-ui/components/Atomic/Dropzone'
 import Spacer from '@shared-ui/components/Atomic/Spacer'
@@ -21,7 +21,7 @@ import FormInput from '@shared-ui/components/Atomic/FormInput'
 import ShowAnimate from '@shared-ui/components/Atomic/ShowAnimate'
 
 import { messages as t } from '@/containers/DeviceProvisioning/EnrollmentGroups/EnrollmentGroups.i18n'
-import { nameLengthValidator, pemToString } from '@/containers/DeviceProvisioning/utils'
+import { nameLengthValidator, stringToPem } from '@/containers/DeviceProvisioning/utils'
 import { messages as g } from '@/containers/Global.i18n'
 import { useCaI18n } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
 import { Inputs } from './EnrollmentGroups.types'
@@ -142,11 +142,11 @@ export const DetailFromChunk2: FC<Chunk2Props> = (props) => {
                     maxFiles={1}
                     onFilesDrop={(files) => {
                         setTimeout(() => {
-                            setValue('attestationMechanism.x509.certificateChain', pemToString(files[0]), {
+                            setValue('attestationMechanism.x509.certificateChain', stringToPem(files[0]), {
                                 shouldDirty: true,
                                 shouldTouch: true,
                             })
-                            updateField(`attestationMechanism.x509.certificateChain`, pemToString(files[0]))
+                            updateField(`attestationMechanism.x509.certificateChain`, stringToPem(files[0]))
                         }, 100)
                     }}
                     renderThumbs={false}
@@ -200,15 +200,23 @@ type Chunk3Props = {
     register: UseFormRegister<Inputs>
     updateField: (field: any, fieldValue: any) => void
     setValue: UseFormSetValue<Inputs>
+    watch: UseFormWatch<Inputs>
 }
 
 export const DetailFromChunk3: FC<Chunk3Props> = (props) => {
-    const { register, setValue, updateField, errors } = props
+    const { register, setValue, updateField, errors, watch } = props
 
     const { formatMessage: _ } = useIntl()
     const { commonFormGroupProps, commonInputProps } = useContext(FormContext)
 
     const [preSharedKeySettings, setPreSharedKeySettings] = useState(false)
+
+    const preSharedKey = watch('preSharedKey')
+
+    useEffect(() => {
+        setPreSharedKeySettings(!!preSharedKey)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     const bottomRows = useMemo(
         () => [

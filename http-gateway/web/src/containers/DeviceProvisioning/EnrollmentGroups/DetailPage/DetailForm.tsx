@@ -125,32 +125,32 @@ const Tab1: FC<Props> = (props) => {
     const certificateChain = watch('attestationMechanism.x509.certificateChain')
 
     return (
-        <div>
-            <form>
-                <Spacer type='mb-4'>
-                    <Headline type='h6'>{_(t.enrollmentConfiguration)}</Headline>
-                </Spacer>
-                <SimpleStripTable leftColSize={6} rightColSize={6} rows={topRows} />
-                <Spacer type='mt-8 mb-4'>
-                    <Headline type='h6'>{_(t.deviceAuthentication)}</Headline>
-                </Spacer>
+        <form>
+            <Spacer type='mb-4'>
+                <Headline type='h6'>{_(t.enrollmentConfiguration)}</Headline>
+            </Spacer>
 
-                <DetailFromChunk2
-                    certificateChain={certificateChain}
-                    control={control}
-                    errorNotificationId={notificationId.HUB_DPS_LINKED_HUBS_ADD_PAGE_CERT_PARSE_ERROR}
-                    errors={errors}
-                    setValue={setValue}
-                    updateField={updateField}
-                />
+            <SimpleStripTable leftColSize={6} rightColSize={6} rows={topRows} />
 
-                <Spacer type='mt-8 mb-4'>
-                    <Headline type='h6'>{_(t.deviceCredentials)}</Headline>
-                </Spacer>
+            <Spacer type='mt-8 mb-4'>
+                <Headline type='h6'>{_(t.deviceAuthentication)}</Headline>
+            </Spacer>
 
-                <DetailFromChunk3 errors={errors} register={register} setValue={setValue} updateField={updateField} />
-            </form>
-        </div>
+            <DetailFromChunk2
+                certificateChain={certificateChain}
+                control={control}
+                errorNotificationId={notificationId.HUB_DPS_LINKED_HUBS_ADD_PAGE_CERT_PARSE_ERROR}
+                errors={errors}
+                setValue={setValue}
+                updateField={updateField}
+            />
+
+            <Spacer type='mt-8 mb-4'>
+                <Headline type='h6'>{_(t.deviceCredentials)}</Headline>
+            </Spacer>
+
+            <DetailFromChunk3 errors={errors} register={register} setValue={setValue} updateField={updateField} watch={watch} />
+        </form>
     )
 }
 
