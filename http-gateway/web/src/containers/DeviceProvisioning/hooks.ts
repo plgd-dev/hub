@@ -181,9 +181,25 @@ export const useEnrollmentGroupDetail = (enrollmentGroupId?: string): StreamApiP
         telemetrySpan: `get-hubs-${idFilter}`,
     })
 
+    const formatPSK = (psk?: string) => {
+        if (!psk) {
+            return ''
+        }
+
+        if (!psk.startsWith('/')) {
+            pemToString(psk)
+        }
+
+        return psk
+    }
+
     useEffect(() => {
         if (!enrollmentGroupLoading && !hubsLoading && enrollmentGroupData && Array.isArray(enrollmentGroupData) && hubsData) {
-            setData({ ...enrollmentGroupData[0], preSharedKey: pemToString(enrollmentGroupData[0].preSharedKey), hubsData })
+            setData({
+                ...enrollmentGroupData[0],
+                preSharedKey: formatPSK(enrollmentGroupData[0].preSharedKey),
+                hubsData,
+            })
         }
     }, [enrollmentGroupData, enrollmentGroupLoading, hubsData, hubsLoading])
 

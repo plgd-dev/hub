@@ -34,9 +34,7 @@ const Step3: FC<any> = (props) => {
     return (
         <form>
             <h1 css={commonStyles.headline}>{_(t.deviceCredentials)}</h1>
-            <p css={[commonStyles.description, commonStyles.descriptionLarge]}>
-                The credentials enable the configuration of a pre-shared key for the device owner, facilitating device management within a local area network through the plgd/client application.
-            </p>
+            <p css={[commonStyles.description, commonStyles.descriptionLarge]}>{_(t.addEnrollmentGroupDeviceCredentialsDescription)}</p>
 
             <DetailFromChunk3 errors={errors} register={register} setValue={setValue} updateField={updateField} watch={watch} />
 

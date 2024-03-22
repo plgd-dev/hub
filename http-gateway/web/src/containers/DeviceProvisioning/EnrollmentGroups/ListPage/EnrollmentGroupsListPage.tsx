@@ -1,6 +1,6 @@
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { useNavigate } from 'react-router-dom'
+import { generatePath, useNavigate } from 'react-router-dom'
 
 import TableActionButton from '@shared-ui/components/Organisms/TableActionButton'
 import { DeleteModal, IconArrowDetail, IconTrash } from '@shared-ui/components/Atomic'
@@ -18,6 +18,7 @@ import { messages as t } from '../EnrollmentGroups.i18n'
 import { deleteEnrollmentGroupsApi } from '@/containers/DeviceProvisioning/rest'
 import notificationId from '@/notificationId'
 import ListHeader from '../ListHeader'
+import { pages } from '@/routes'
 
 const EnrollmentGroupsListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
@@ -78,7 +79,7 @@ const EnrollmentGroupsListPage: FC<any> = () => {
                         href={`/device-provisioning/enrollment-groups/${row.original.id}`}
                         onClick={(e) => {
                             e.preventDefault()
-                            navigate(`/device-provisioning/enrollment-groups/${row.original.id}`)
+                            navigate(generatePath(pages.DPS.ENROLLMENT_GROUPS.DETAIL, { enrollmentId: row.original.id }))
                         }}
                     >
                         <span className='no-wrap-text'>{value}</span>
@@ -125,7 +126,7 @@ const EnrollmentGroupsListPage: FC<any> = () => {
                                     icon: <IconTrash />,
                                 },
                                 {
-                                    onClick: () => navigate(`/device-provisioning/enrollment-groups/${id}`),
+                                    onClick: () => navigate(generatePath(pages.DPS.ENROLLMENT_GROUPS.DETAIL, { enrollmentId: id })),
                                     label: _(g.view),
                                     icon: <IconArrowDetail />,
                                 },

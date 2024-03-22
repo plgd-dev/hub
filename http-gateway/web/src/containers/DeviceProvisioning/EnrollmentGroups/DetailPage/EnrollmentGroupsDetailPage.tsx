@@ -27,6 +27,7 @@ import DetailForm from './DetailForm'
 import { dirtyFormState } from '@/store/recoil.store'
 import { updateEnrollmentGroup } from '@/containers/DeviceProvisioning/rest'
 import { stringToPem } from '@/containers/DeviceProvisioning/utils'
+import { pages } from '@/routes'
 
 const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
     const { formatMessage: _ } = useIntl()
@@ -87,8 +88,8 @@ const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
 
     const breadcrumbs = useMemo(
         () => [
-            { label: _(dpsT.deviceProvisioning), link: '/device-provisioning' },
-            { label: _(dpsT.enrollmentGroups), link: '/device-provisioning/enrollment-groups' },
+            { label: _(dpsT.deviceProvisioning), link: pages.DPS.LINK },
+            { label: _(dpsT.enrollmentGroups), link: pages.DPS.ENROLLMENT_GROUPS.LINK },
             { label: data?.name || '' },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -116,7 +117,7 @@ const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
             delete dataForSave['hubsData']
             delete dataForSave['id']
 
-            if (dataForSave.preSharedKey && dataForSave.preSharedKey !== '') {
+            if (dataForSave.preSharedKey && dataForSave.preSharedKey !== '' && !dataForSave.preSharedKey.startsWith('/')) {
                 dataForSave.preSharedKey = stringToPem(dataForSave.preSharedKey)
             }
 

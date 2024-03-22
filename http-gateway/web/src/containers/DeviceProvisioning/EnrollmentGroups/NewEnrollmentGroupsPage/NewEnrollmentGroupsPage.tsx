@@ -1,6 +1,6 @@
 import React, { FC, lazy, useCallback, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { useNavigate, useParams } from 'react-router-dom'
+import { generatePath, useNavigate, useParams } from 'react-router-dom'
 import cloneDeep from 'lodash/cloneDeep'
 
 import FullPageWizard from '@shared-ui/components/Templates/FullPageWizard'
@@ -14,6 +14,7 @@ import { messages as t } from '../EnrollmentGroups.i18n'
 import { DEFAULT_FORM_DATA } from '@/containers/DeviceProvisioning/EnrollmentGroups/NewEnrollmentGroupsPage/constants'
 import { createEnrollmentGroup } from '@/containers/DeviceProvisioning/rest'
 import { stringToPem } from '@/containers/DeviceProvisioning/utils'
+import { pages } from '@/routes'
 
 const Step1 = lazy(() => import('./Steps/Step1'))
 const Step2 = lazy(() => import('./Steps/Step2'))
@@ -53,7 +54,7 @@ const NewEnrollmentGroupsPage: FC<any> = () => {
         (item: number) => {
             setActiveItem(item)
 
-            navigate(`/device-provisioning/enrollment-groups/new-enrollment-group${steps[item].link}`, { replace: true })
+            navigate(generatePath(pages.DPS.ENROLLMENT_GROUPS.NEW, { step: steps[item].link }), { replace: true })
         },
         [navigate, steps]
     )
@@ -69,7 +70,7 @@ const NewEnrollmentGroupsPage: FC<any> = () => {
 
         setFormData(DEFAULT_FORM_DATA)
 
-        navigate(`/device-provisioning/enrollment-groups`, { replace: true })
+        navigate(generatePath(pages.DPS.ENROLLMENT_GROUPS.LINK), { replace: true })
     }
 
     const context = useMemo(
@@ -92,7 +93,7 @@ const NewEnrollmentGroupsPage: FC<any> = () => {
             }}
             onClose={() => {
                 setFormData(DEFAULT_FORM_DATA)
-                navigate(`/device-provisioning/enrollment-groups`, { replace: true })
+                navigate(generatePath(pages.DPS.ENROLLMENT_GROUPS.LINK), { replace: true })
             }}
             onStepChange={onStepChange}
             steps={steps}

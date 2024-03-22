@@ -87,6 +87,7 @@
     "eslint-plugin-prettier": "^5.0.1",
     "eslint-plugin-react": "^7.33.2",
     "eslint-plugin-react-hooks": "^4.6.0",
+    "husky": "^9.0.11",
     "npm-run-all": "^4.1.5",
     "prettier": "3.1.0",
     "sass": "^1.69.5",
@@ -110,7 +111,8 @@
     ":lint:eslint": "eslint --ext .js,.jsx,.ts,.tsx -c .eslintrc.js --max-warnings 0 --format=pretty ./src",
     ":lint:prettier": "prettier ./src --check",
     ":clean:node:modules": "rimraf ./node_modules packages/**/node_modules",
-    ":generate:theme": "node ./packages/shared-ui/scripts/build.theme.js"
+    ":generate:theme": "node ./packages/shared-ui/scripts/build.theme.js",
+    "prepare": "husky install"
   },
   "scriptComments": {
     "generate-pot": "Examines all src js files and extracts the translate keys into a .pot file, to be used in a translation tool outside of this app.",

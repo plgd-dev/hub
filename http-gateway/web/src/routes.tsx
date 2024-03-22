@@ -74,6 +74,21 @@ export const defaultMenu = {
     chatRoom: true,
 }
 
+export const pages = {
+    DPS: {
+        LINK: '/device-provisioning',
+        ENROLLMENT_GROUPS: {
+            LINK: '/device-provisioning/enrollment-groups',
+            NEW: '/device-provisioning/enrollment-groups/new-enrollment-group/*',
+            DETAIL: '/device-provisioning/enrollment-groups/:enrollmentId',
+        },
+        LINKED_HUBS: {
+            LINK: '/device-provisioning/linked-hubs',
+            DETAIL: '/device-provisioning/linked-hubs/:hubId',
+        },
+    },
+}
+
 export const getMenu = (menuConfig: any): MenuGroup[] => [
     {
         title: <MenuTranslate id='menuMainMenu' />,

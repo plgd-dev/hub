@@ -43,9 +43,7 @@ const Step2: FC<Props> = (props) => {
     return (
         <form>
             <h1 css={commonStyles.headline}>{_(t.hubDetails)}</h1>
-            <p css={[commonStyles.description, commonStyles.descriptionLarge]}>
-                By configuring the Hub ID, the device will verify if the ID matches the certificate of the CoAP gateway. CoAP gateways serve as entry points for devices to connect to the hub infrastructure.
-            </p>
+            <p css={[commonStyles.description, commonStyles.descriptionLarge]}>{_(t.addLinkedHubDetailsDescription)}</p>
 
             <FormGroup error={errors.hubId ? _(g.requiredField, { field: _(g.hubId) }) : undefined} id='hubID'>
                 <FormLabel text={_(g.hubId)} />

@@ -34,12 +34,12 @@ const Step4: FC<Props> = (props) => {
     return (
         <form>
             <h1 css={commonStyles.headline}>{_(t.authorization)}</h1>
-            <p css={[commonStyles.description, commonStyles.descriptionLarge]}>
-                The Authorization service oversees authentication and authorization procedures, deciding whether to permit or deny access to protected resources based on user identity and permissions. The DPS must acquire the owner's JWT token from the Authorization service to sign device certificates. Additionally, the CoAP gateway authenticates access via JWT tokens, necessitating the DPS to obtain tokens for devices.
-            </p>
+            <p css={[commonStyles.description, commonStyles.descriptionLarge]}></p>
 
             <h2 css={commonStyles.subHeadline}>{_(t.general)}</h2>
-            <p css={commonStyles.description}>The JWT owner claim refers to a specific piece of information contained within a JWT token that identifies the owner the token.</p>
+            <p css={commonStyles.description}>
+                The JWT owner claim refers to a specific piece of information contained within a JWT token that identifies the owner the token.
+            </p>
 
             <FormGroup error={errors.authorization?.ownerClaim ? _(g.requiredField, { field: _(t.ownerClaim) }) : undefined} id='authorization.ownerClaim'>
                 <FormLabel text={_(t.ownerClaim)} />
@@ -53,7 +53,10 @@ const Step4: FC<Props> = (props) => {
             </FormGroup>
 
             <h2 css={commonStyles.subHeadline}>{_(t.oAuthClient)}</h2>
-            <p css={commonStyles.description}>OAuth client credentials allow the DPS to authenticate itself directly with the authorization server using its own credentials to obtain an access JWT token.</p>
+            <p css={commonStyles.description}>
+                OAuth client credentials allow the DPS to authenticate itself directly with the authorization server using its own credentials to obtain an
+                access JWT token.
+            </p>
 
             <FormGroup error={errors.authorization?.provider?.name ? _(g.requiredField, { field: _(t.name) }) : undefined} id='authorization.provider.name'>
                 <FormLabel text={_(t.name)} />

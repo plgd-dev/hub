@@ -15,6 +15,7 @@ import { messages as t } from '../LinkedHubs.i18n'
 import { DEFAULT_FORM_DATA } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
 import notificationId from '@/notificationId'
 import { createLinkedHub } from '@/containers/DeviceProvisioning/rest'
+import { pages } from '@/routes'
 
 const Step1 = lazy(() => import('./Steps/Step1'))
 const Step2 = lazy(() => import('./Steps/Step2'))
@@ -106,7 +107,7 @@ const LinkNewHubPage: FC<any> = () => {
             }}
             onClose={() => {
                 setFormData(DEFAULT_FORM_DATA)
-                navigate('/device-provisioning/linked-hubs')
+                navigate(pages.DPS.LINKED_HUBS.LINK, { replace: true })
             }}
             onStepChange={onStepChange}
             steps={steps}

@@ -423,4 +423,24 @@ export const messages = defineMessages({
         id: 'linkedHubs.addDeviceGateway',
         defaultMessage: 'Add Device Gateway',
     },
+    addLinkedHubDescription: {
+        id: 'linkedHubs.addLinkedHubDescription',
+        defaultMessage:
+            'The new linked hub offers a configuration interface for enrollment groups, enabling the onboarding of devices to the hub. Upon completing the setup, populate the "Endpoint" field with values retrieved from the hub.',
+    },
+    addLinkedHubDetailsDescription: {
+        id: 'linkedHubs.addLinkedHubDetailsDescription',
+        defaultMessage:
+            ' By configuring the Hub ID, the device will verify if the ID matches the certificate of the CoAP gateway. CoAP gateways serve as entry points for devices to connect to the hub infrastructure.',
+    },
+    addLinkedHubCertificateAuthorityDescription: {
+        id: 'linkedHubs.addLinkedHubCertificateAuthorityDescription',
+        defaultMessage:
+            "As a client, the DPS service forwards the device's certificate signing requests, using the owner's JWT token, to enable communication with the  CoAP gateway. Proper TLS configuration is essential for this process to ensure secure communication.",
+    },
+    addLinkedHubAuthorizationDescription: {
+        id: 'linkedHubs.addLinkedHubAuthorizationDescription',
+        defaultMessage:
+            "The Authorization service oversees authentication and authorization procedures, deciding whether to permit or deny access to protected resources based on user identity and permissions. The DPS must acquire the owner's JWT token from the Authorization service to sign device certificates. Additionally, the CoAP gateway authenticates access via JWT tokens, necessitating the DPS to obtain tokens for devices.",
+    },
 })

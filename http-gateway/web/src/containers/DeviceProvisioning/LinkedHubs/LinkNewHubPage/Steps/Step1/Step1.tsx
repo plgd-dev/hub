@@ -88,9 +88,7 @@ const Step1: FC<Props> = (props) => {
     return (
         <form>
             <h1 css={commonStyles.headline}>{_(t.linkNewHub)}</h1>
-            <p css={[commonStyles.description, commonStyles.descriptionLarge]}>
-                The new linked hub offers a configuration interface for enrollment groups, enabling the onboarding of devices to the hub. Upon completing the setup, populate the "Endpoint" field with values retrieved from the hub.
-            </p>
+            <p css={[commonStyles.description, commonStyles.descriptionLarge]}>{_(t.addLinkedHubDescription)}</p>
             <Row>
                 <Column size={6}>
                     <FormGroup error={errors.name ? _(g.requiredField, { field: _(g.name) }) : undefined} id='name'>
