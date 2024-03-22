@@ -41,9 +41,9 @@ export const messages = defineMessages({
         id: 'enrollmentGroups.deviceAuthentication',
         defaultMessage: 'Device authentication',
     },
-    matchingCertificate: {
-        id: 'enrollmentGroups.matchingCertificate',
-        defaultMessage: 'Matching Certificate',
+    leadCertificate: {
+        id: 'enrollmentGroups.leadCertificate',
+        defaultMessage: 'Lead Certificate',
     },
     enableExpiredCertificates: {
         id: 'enrollmentGroups.enableExpiredCertificates',

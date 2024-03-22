@@ -79,11 +79,11 @@ export const DetailFromChunk2: FC<Chunk2Props> = (props) => {
     const middleRows = [
         certificateChain && !certificateChain.startsWith('/') && certData && certData[0] && certData[0].data?.length > 1
             ? {
-                  attribute: _(t.matchingCertificate),
+                  attribute: _(t.leadCertificate),
                   value: (
                       <FormGroup
                           {...commonFormGroupProps}
-                          error={errors?.attestationMechanism?.x509?.leadCertificateName ? _(g.requiredField, { field: _(t.matchingCertificate) }) : undefined}
+                          error={errors?.attestationMechanism?.x509?.leadCertificateName ? _(g.requiredField, { field: _(t.leadCertificate) }) : undefined}
                           id='matchingCertificate'
                       >
                           <div>
@@ -96,7 +96,7 @@ export const DetailFromChunk2: FC<Chunk2Props> = (props) => {
                                           align='right'
                                           error={!!errors.name}
                                           onChange={(options: OptionType) => {
-                                              const v = options.label
+                                              const v = options.value
                                               onChange(v)
                                               updateField('attestationMechanism.x509.leadCertificateName', v)
                                           }}

@@ -46,10 +46,6 @@ const Tab1: FC<Props> = (props) => {
             },
         ]
 
-        // if (hubData?.name) {
-        //     rows.push({ attribute: _(g.linkedHub), value: hubData?.name })
-        // }
-
         rows.push({ attribute: _(g.ownerID), value: defaultFormData?.owner })
 
         return rows
@@ -76,7 +72,7 @@ const Tab1: FC<Props> = (props) => {
             ),
         },
         {
-            attribute: _(t.matchingCertificate),
+            attribute: _(t.leadCertificate),
             value: (
                 <FormGroup {...commonFormGroupProps} error={errors.name ? _(g.requiredField, { field: _(g.name) }) : undefined} id='matchingCertificate'>
                     <div>
