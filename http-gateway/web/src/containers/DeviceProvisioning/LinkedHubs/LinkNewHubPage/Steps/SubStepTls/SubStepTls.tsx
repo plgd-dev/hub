@@ -88,7 +88,7 @@ const SubStepTls: FC<Props> = (props) => {
                 <h2 css={commonStyles.subHeadline}>TLS</h2>
             </Spacer>
 
-            <p css={commonStyles.description}>Short description...</p>
+            <p css={commonStyles.description}>TLS ensures the privacy and integrity of data exchanged between client and server.</p>
 
             <h3 css={commonStyles.groupHeadline}>{_(t.caPool)}</h3>
 
