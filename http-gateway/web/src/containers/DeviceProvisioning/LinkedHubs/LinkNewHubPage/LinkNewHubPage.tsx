@@ -30,22 +30,22 @@ const LinkNewHubPage: FC<any> = () => {
         () => [
             {
                 name: _(t.linkHub),
-                description: 'Short description...',
+                description: 'Pre-configure Hub',
                 link: '',
             },
             {
                 name: _(t.hubDetails),
-                description: 'Short description...',
+                description: 'Basic setup',
                 link: '/hub-detail',
             },
             {
                 name: _(t.certificateAuthority),
-                description: 'Short description...',
+                description: 'Signing certificate',
                 link: '/certificate-authority',
             },
             {
                 name: _(t.authorization),
-                description: 'Short description...',
+                description: 'JWT Token Acquisition',
                 link: '/authorization',
             },
         ],

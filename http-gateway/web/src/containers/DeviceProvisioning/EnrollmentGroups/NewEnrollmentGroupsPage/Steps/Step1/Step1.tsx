@@ -50,7 +50,7 @@ const Step1: FC<any> = (props) => {
         <form>
             <h1 css={commonStyles.headline}>{_(t.enrollmentConfiguration)}</h1>
             <p css={[commonStyles.description, commonStyles.descriptionLarge]}>
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna
+                The new enrollment group establishes parameters such as owner identification, attestation details, and configuration settings for provisioned devices.
             </p>
 
             <FormGroup error={errors.name ? _(g.requiredField, { field: _(g.name) }) : undefined} id='name'>

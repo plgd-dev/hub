@@ -37,11 +37,12 @@ const Step3: FC<Props> = (props) => {
         <form>
             <h1 css={commonStyles.headline}>{_(t.certificateAuthority)}</h1>
             <p css={[commonStyles.description, commonStyles.descriptionLarge]}>
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna
+                As a client, the DPS service forwards the device's certificate signing requests, using the owner's JWT token, to enable communication with the CoAP gateway. Proper TLS configuration is essential for this process to ensure secure communication.
             </p>
 
             <h2 css={commonStyles.subHeadline}>{_(t.generalKeepAlive)}</h2>
-            <p css={commonStyles.description}>Short description...</p>
+            <p css={commonStyles.description}>
+Keepalive maintains a connection between the client and server by periodically sending messages to verify the connection's status.</p>
 
             <h3 css={commonStyles.groupHeadline}>{_(t.general)}</h3>
             <FormGroup

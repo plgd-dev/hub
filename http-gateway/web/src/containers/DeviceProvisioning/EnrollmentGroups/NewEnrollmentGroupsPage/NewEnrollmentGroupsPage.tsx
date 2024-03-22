@@ -28,17 +28,17 @@ const NewEnrollmentGroupsPage: FC<any> = () => {
         () => [
             {
                 name: _(t.enrollmentConfiguration),
-                description: 'Short description...',
+                description: 'Basic setup',
                 link: '',
             },
             {
                 name: _(t.deviceAuthentication),
-                description: 'Short description...',
+                description: 'Certificate Chain Identification',
                 link: '/device-authentication',
             },
             {
                 name: _(t.deviceCredentials),
-                description: 'Short description...',
+                description: 'Pre-shared Key Configuration',
                 link: '/device-credentials',
             },
         ],

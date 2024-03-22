@@ -89,7 +89,7 @@ const Step1: FC<Props> = (props) => {
         <form>
             <h1 css={commonStyles.headline}>{_(t.linkNewHub)}</h1>
             <p css={[commonStyles.description, commonStyles.descriptionLarge]}>
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna
+                The new linked hub offers a configuration interface for enrollment groups, enabling the onboarding of devices to the hub. Upon completing the setup, populate the "Endpoint" field with values retrieved from the hub.
             </p>
             <Row>
                 <Column size={6}>

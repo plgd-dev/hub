@@ -219,7 +219,7 @@ const TlsPage: FC<any> = (props) => {
     return (
         <form>
             <Headline type='h5'>{_(g.tls)}</Headline>
-            <p>Short description...</p>
+            <p>TLS ensures the privacy and integrity of data exchanged between client and server.</p>
             <hr css={styles.separator} />
             <Loadable condition={caPool !== undefined && !caPoolLoading}>
                 <CaPool

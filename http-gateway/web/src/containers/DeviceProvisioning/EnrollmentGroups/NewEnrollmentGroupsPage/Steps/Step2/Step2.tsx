@@ -37,7 +37,7 @@ const Step2: FC<any> = (props) => {
         <form>
             <h1 css={commonStyles.headline}>{_(t.deviceAuthentication)}</h1>
             <p css={[commonStyles.description, commonStyles.descriptionLarge]}>
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna
+                By configuring the attestation certificate chain, the Device Provisioning Service identifies the enrollment group to which a device belongs by setting the lead certificate.
             </p>
 
             <DetailFromChunk2
