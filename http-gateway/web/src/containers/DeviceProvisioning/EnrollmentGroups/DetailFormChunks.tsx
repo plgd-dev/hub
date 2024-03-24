@@ -223,14 +223,17 @@ export const DetailFromChunk3: FC<Chunk3Props> = (props) => {
             {
                 attribute: _(t.preSharedKey),
                 value: (
-                    <FormGroup
-                        {...commonFormGroupProps}
-                        error={errors.preSharedKey ? _(g.requiredField, { field: _(t.preSharedKey) }) : undefined}
-                        id='preSharedKey'
-                    >
+                    <FormGroup {...commonFormGroupProps} error={errors.preSharedKey ? errors.preSharedKey.message : undefined} id='preSharedKey'>
                         <FormInput
                             {...commonInputProps}
-                            {...register('preSharedKey', { required: true, validate: (val: string) => preSharedKeySettings && val !== '' })}
+                            {...register('preSharedKey', {
+                                required: _(g.requiredField, { field: _(t.preSharedKey) }),
+                                minLength: {
+                                    value: 16,
+                                    message: _(g.minLenght, { field: _(t.preSharedKey), length: 16 }),
+                                },
+                                validate: (val: string) => preSharedKeySettings && val !== '',
+                            })}
                             onBlur={(e) => updateField('preSharedKey', e.target.value)}
                         />
                     </FormGroup>

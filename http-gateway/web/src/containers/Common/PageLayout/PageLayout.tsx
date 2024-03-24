@@ -8,15 +8,17 @@ import { default as PageLayoutShared } from '@shared-ui/components/Atomic/PageLa
 import Footer from '@shared-ui/components/Layout/Footer'
 import AppContext from '@shared-ui/app/share/AppContext'
 import Breadcrumbs from '@shared-ui/components/Layout/Header/Breadcrumbs'
+import NotFoundPage from '@shared-ui/components/Templates/NotFoundPage'
 
 import { Props } from './PageLayout.types'
 import { messages as g } from '@/containers/Global.i18n'
 import { PendingCommandsExpandableList } from '@/containers/PendingCommands'
 import { dirtyFormState, promptBlockState } from '@/store/recoil.store'
+import { messages as t } from '@/containers/App/App.i18n'
 
 const PageLayout = forwardRef<HTMLDivElement, Props>((props, ref) => {
     const { formatMessage: _ } = useIntl()
-    const { children, breadcrumbs, deviceId, pendingCommands, innerPortalTarget, size, ...rest } = props
+    const { children, breadcrumbs, deviceId, notFound, pendingCommands, innerPortalTarget, size, ...rest } = props
     const { footerExpanded, setFooterExpanded, collapsed } = useContext(AppContext)
 
     const [isDomReady, setIsDomReady] = useState(false)
@@ -54,7 +56,9 @@ const PageLayout = forwardRef<HTMLDivElement, Props>((props, ref) => {
                     size={size}
                 />
             }
+            header={notFound ? undefined : rest.header}
             ref={ref}
+            title={notFound ? undefined : rest.title}
         >
             {isDomReady &&
                 ReactDOM.createPortal(
@@ -71,7 +75,7 @@ const PageLayout = forwardRef<HTMLDivElement, Props>((props, ref) => {
                     document.querySelector('#breadcrumbsPortalTarget') as Element
                 )}
             {pendingCommands && <PendingCommandsExpandableList deviceId={deviceId} />}
-            {children}
+            {notFound ? <NotFoundPage message={_(t.notFoundPageDefaultMessage)} title={_(t.pageTitle)} /> : children}
         </PageLayoutShared>
     )
 })

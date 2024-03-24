@@ -1,6 +1,6 @@
 import React, { FC, lazy, useCallback, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { useNavigate, useParams } from 'react-router-dom'
+import { generatePath, useNavigate, useParams } from 'react-router-dom'
 
 import StatusTag from '@shared-ui/components/Atomic/StatusTag'
 import Tabs from '@shared-ui/components/Atomic/Tabs/Tabs'
@@ -13,54 +13,40 @@ import DetailHeader from '../DetailHeader/DetailHeader'
 import PageLayout from '@/containers/Common/PageLayout'
 import testId from '@/testId'
 import { getStatusFromCode } from '@/containers/DeviceProvisioning/utils'
+import { pages } from '@/routes'
 
 const Tab1 = lazy(() => import('./Tabs/Tab1'))
 const Tab2 = lazy(() => import('./Tabs/Tab2'))
 const Tab3 = lazy(() => import('./Tabs/Tab3'))
 
-const ProvisioningRecordsListPage: FC<any> = (props) => {
-    const { defaultActiveTab } = props
+const tabRoutes = ['', 'credentials', 'acls']
 
+const ProvisioningRecordsListPage = () => {
     const { formatMessage: _ } = useIntl()
-    const { recordId } = useParams()
+    const { recordId, tab: tabRoute } = useParams()
     const navigate = useNavigate()
+    const tab = tabRoute || ''
 
     const { data, loading, error, refresh } = useProvisioningRecordsDetail(recordId)
 
-    const [activeTabItem, setActiveTabItem] = useState(defaultActiveTab ?? 0)
+    const [activeTabItem, setActiveTabItem] = useState(tab ? tabRoutes.indexOf(tab) : 0)
 
     const isOnline = true
 
     const breadcrumbs = useMemo(
         () => [
             { label: _(dpsT.deviceProvisioning), link: '/device-provisioning' },
-            { label: _(t.provisioningRecords), link: '/device-provisioning/provisioning-records' },
+            { label: _(t.provisioningRecords), link: pages.DPS.PROVISIONING_RECORDS.LINK },
             { label: data?.enrollmentGroupData?.name! },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [data?.enrollmentGroupData]
     )
 
-    const getTabRoute = (i: number) => {
-        switch (i) {
-            case 1: {
-                return '/credentials'
-            }
-            case 2: {
-                return '/acls'
-            }
-            default:
-            case 0: {
-                return ''
-            }
-        }
-    }
-
     const handleTabChange = useCallback((i: number) => {
         setActiveTabItem(i)
 
-        navigate(`/device-provisioning/provisioning-records/${recordId}${getTabRoute(i)}`, { replace: true })
-
+        navigate(generatePath(pages.DPS.PROVISIONING_RECORDS.DETAIL, { recordId, tab: tabRoutes[i] }), { replace: true })
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 

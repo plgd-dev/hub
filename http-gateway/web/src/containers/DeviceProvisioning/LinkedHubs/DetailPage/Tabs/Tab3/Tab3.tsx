@@ -1,6 +1,6 @@
 import React, { FC, lazy, useCallback, useMemo, useRef, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { useNavigate, useParams } from 'react-router-dom'
+import { generatePath, useNavigate, useParams } from 'react-router-dom'
 
 import Row from '@shared-ui/components/Atomic/Grid/Row'
 import Column from '@shared-ui/components/Atomic/Grid/Column'
@@ -14,8 +14,9 @@ import IconGlobe from '@shared-ui/components/Atomic/Icon/components/IconGlobe'
 
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
 import { messages as g } from '@/containers/Global.i18n'
-import { getTabRoute } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
+import { tabRoutes } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
 import { Props } from './Tab3.types'
+import { pages } from '@/routes'
 
 const TabContent1 = lazy(() => import('./Contents/TabContent1'))
 const TabContent2 = lazy(() => import('./Contents/TabContent2'))
@@ -35,10 +36,10 @@ const Tab3: FC<Props> = (props) => {
     const menu = useMemo(
         () => [
             { id: '0', link: '', icon: <IconInfo />, title: _(t.general) },
-            { id: '1', link: '/oauth-client', icon: <IconLock />, title: _(t.oAuthClient) },
+            { id: '1', link: 'oauth-client', icon: <IconLock />, title: _(t.oAuthClient) },
             {
                 id: '2',
-                link: '/tls',
+                link: 'tls',
                 title: _(g.tls),
                 icon: <IconShield />,
                 children: [
@@ -47,18 +48,18 @@ const Tab3: FC<Props> = (props) => {
                     { id: '22', title: _(t.certificate), contentRef: contentRef3 },
                 ],
             },
-            { id: '3', link: '/http', icon: <IconGlobe />, title: _(t.hTTP) },
+            { id: '3', link: 'http', icon: <IconGlobe />, title: _(t.hTTP) },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
         []
     )
 
-    const [activeItem, setActiveItem] = useState(menu.find((item) => item.link === `/${section}`)?.id || '0')
+    const [activeItem, setActiveItem] = useState(menu.find((item) => item.link === `${section}`)?.id || '0')
 
     const handleItemClick = useCallback(
         (item: ItemType) => {
             setActiveItem(item.id)
-            navigate(`/device-provisioning/linked-hubs/${hubId}${getTabRoute(2)}${item.link}`, { replace: true })
+            navigate(generatePath(pages.DPS.LINKED_HUBS.DETAIL, { hubId: hubId, tab: tabRoutes[2], section: item.link }), { replace: true })
         },
         [hubId, navigate]
     )

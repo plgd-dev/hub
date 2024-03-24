@@ -1,6 +1,6 @@
 import React, { FC, useCallback, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { useNavigate } from 'react-router-dom'
+import { generatePath, useNavigate } from 'react-router-dom'
 
 import Button from '@shared-ui/components/Atomic/Button'
 import { DeleteModal, IconTrash } from '@shared-ui/components/Atomic'
@@ -14,6 +14,7 @@ import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '../Certificates.i18n'
 import { deleteCertificatesApi } from '@/containers/Certificates/rest'
 import notificationId from '@/notificationId'
+import { pages } from '@/routes'
 
 const DetailHeader: FC<Props> = (props) => {
     const { id, loading, refresh } = props
@@ -41,7 +42,7 @@ const DetailHeader: FC<Props> = (props) => {
                 setDeleting(false)
                 setDeleteModal(false)
 
-                navigate('/certificates')
+                navigate(generatePath(pages.CERTIFICATES.LINK), { replace: true })
             }
         } catch (e: any) {
             setDeleting(false)

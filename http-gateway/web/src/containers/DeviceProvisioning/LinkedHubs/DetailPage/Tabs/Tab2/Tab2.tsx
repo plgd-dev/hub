@@ -1,6 +1,6 @@
 import React, { FC, lazy, useCallback, useMemo, useRef, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { useNavigate, useParams } from 'react-router-dom'
+import { generatePath, useNavigate, useParams } from 'react-router-dom'
 
 import Column from '@shared-ui/components/Atomic/Grid/Column'
 import Row from '@shared-ui/components/Atomic/Grid/Row'
@@ -13,7 +13,8 @@ import IconShield from '@shared-ui/components/Atomic/Icon/components/IconShield'
 import { messages as g } from '../../../../../Global.i18n'
 import { messages as t } from '../../../LinkedHubs.i18n'
 import { Props } from './Tab2.types'
-import { getTabRoute } from '../../../utils'
+import { tabRoutes } from '../../../utils'
+import { pages } from '@/routes'
 
 const TabContent1 = lazy(() => import('./Contents/TabContent1'))
 const TabContent2 = lazy(() => import('./Contents/TabContent2'))
@@ -35,7 +36,7 @@ const Tab2: FC<Props> = (props) => {
             {
                 id: '1',
                 icon: <IconShield />,
-                link: '/tls',
+                link: 'tls',
                 title: _(g.tls),
                 children: [
                     { id: '10', title: _(t.caPool), contentRef: contentRef1 },
@@ -48,13 +49,13 @@ const Tab2: FC<Props> = (props) => {
         []
     )
 
-    const [activeItem, setActiveItem] = useState(menu.find((item) => item.link === `/${section}`)?.id || '0')
+    const [activeItem, setActiveItem] = useState(menu.find((item) => item.link === `${section}`)?.id || '0')
 
     const handleItemClick = useCallback(
         (item: ItemType) => {
             setActiveItem(item.id)
 
-            navigate(`/device-provisioning/linked-hubs/${hubId}${getTabRoute(1)}${item.link}`, { replace: true })
+            navigate(generatePath(pages.DPS.LINKED_HUBS.DETAIL, { hubId: hubId, tab: tabRoutes[1], section: item.link }), { replace: true })
         },
         [hubId, navigate]
     )

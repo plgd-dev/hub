@@ -61,7 +61,7 @@ const LinkNewHubPage: FC<any> = () => {
         (item: number) => {
             setActiveItem(item)
 
-            navigate(`/device-provisioning/linked-hubs/link-new-hub${steps[item].link}`, { replace: true })
+            navigate(`${pages.DPS.LINKED_HUBS.ADD}${steps[item].link}`, { replace: true })
         },
         [navigate, steps]
     )
@@ -76,7 +76,7 @@ const LinkNewHubPage: FC<any> = () => {
 
             setFormData(DEFAULT_FORM_DATA)
 
-            navigate(`/device-provisioning/linked-hubs`, { replace: true })
+            navigate(pages.DPS.LINKED_HUBS.LINK, { replace: true })
         } catch (error: any) {
             let e = error
             if (!(error instanceof Error)) {

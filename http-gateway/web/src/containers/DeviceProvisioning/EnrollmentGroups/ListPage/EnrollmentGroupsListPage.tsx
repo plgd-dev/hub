@@ -76,7 +76,7 @@ const EnrollmentGroupsListPage: FC<any> = () => {
                 Cell: ({ value, row }: { value: string | number; row: any }) => (
                     <a
                         data-test-id={`enrollment-group-${row.id}`}
-                        href={`/device-provisioning/enrollment-groups/${row.original.id}`}
+                        href={generatePath(pages.DPS.ENROLLMENT_GROUPS.DETAIL, { enrollmentId: row.original.id })}
                         onClick={(e) => {
                             e.preventDefault()
                             navigate(generatePath(pages.DPS.ENROLLMENT_GROUPS.DETAIL, { enrollmentId: row.original.id }))
@@ -103,6 +103,7 @@ const EnrollmentGroupsListPage: FC<any> = () => {
                         ))}
                     </TagGroup>
                 ),
+                style: { width: '150px' },
             },
             {
                 Header: _(dpsT.ownerId),

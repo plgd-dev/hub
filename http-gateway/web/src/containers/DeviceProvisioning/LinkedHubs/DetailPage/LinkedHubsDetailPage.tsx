@@ -1,5 +1,5 @@
 import React, { FC, lazy, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { generatePath, useNavigate, useParams } from 'react-router-dom'
 import { useIntl } from 'react-intl'
 import isEqual from 'lodash/isEqual'
 import ReactDOM from 'react-dom'
@@ -25,22 +25,22 @@ import PageLayout from '@/containers/Common/PageLayout'
 import DetailHeader from '@/containers/DeviceProvisioning/LinkedHubs/DetailHeader'
 import testId from '@/testId'
 import { messages as dpsT } from '@/containers/DeviceProvisioning/DeviceProvisioning.i18n'
-import { getTabRoute } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
+import { tabRoutes } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
 import { useRecoilState } from 'recoil'
 import { dirtyFormState } from '@/store/recoil.store'
+import { pages } from '@/routes'
 
 const Tab1 = lazy(() => import('./Tabs/Tab1/Tab1'))
 const Tab2 = lazy(() => import('./Tabs/Tab2/Tab2'))
 const Tab3 = lazy(() => import('./Tabs/Tab3/Tab3'))
 
-const LinkedHubsDetailPage: FC<Props> = (props) => {
-    const { defaultActiveTab } = props
-
+const LinkedHubsDetailPage: FC<Props> = () => {
     const { formatMessage: _ } = useIntl()
-    const { hubId } = useParams()
+    const { hubId, tab: tabRoute } = useParams()
     const isMounted = useIsMounted()
     const { collapsed } = useContext(AppContext)
     const navigate = useNavigate()
+    const tab = tabRoute || ''
 
     const { data, loading, error, refresh } = useHubDetail(hubId!, !!hubId)
     // transform gateways string[] => {value: string}[]
@@ -55,7 +55,7 @@ const LinkedHubsDetailPage: FC<Props> = (props) => {
         }
     }, [data])
 
-    const [activeTabItem, setActiveTabItem] = useState(defaultActiveTab ?? 0)
+    const [activeTabItem, setActiveTabItem] = useState(tab ? tabRoutes.indexOf(tab) : 0)
     const [pageLoading, setPageLoading] = useState(false)
     const [formData, setFormData] = useState<any>(defaultData)
     const defaultFormState = useMemo(
@@ -74,6 +74,7 @@ const LinkedHubsDetailPage: FC<Props> = (props) => {
     const [formError, setFormError] = useState(defaultFormState)
     const [resetIndex, setResetIndex] = useState(0)
     const [dirtyState, setDirtyState] = useRecoilState(dirtyFormState)
+    const [notFound, setNotFound] = useState(false)
 
     useEffect(() => {
         setFormData(defaultData)
@@ -111,11 +112,16 @@ const LinkedHubsDetailPage: FC<Props> = (props) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [error])
 
+    useEffect(() => {
+        if (tabRoutes.indexOf(tab) === -1) {
+            setNotFound(true)
+        }
+    }, [tab])
+
     const handleTabChange = useCallback((i: number) => {
         setActiveTabItem(i)
 
-        navigate(`/device-provisioning/linked-hubs/${hubId}${getTabRoute(i)}`, { replace: true })
-
+        navigate(generatePath(pages.DPS.LINKED_HUBS.DETAIL, { hubId: hubId, tab: tabRoutes[i], section: '' }), { replace: true })
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
@@ -164,6 +170,7 @@ const LinkedHubsDetailPage: FC<Props> = (props) => {
             breadcrumbs={breadcrumbs}
             header={<DetailHeader id={hubId!} refresh={() => {}} />}
             loading={loading || pageLoading}
+            notFound={notFound}
             title={data?.name}
             xPadding={false}
         >

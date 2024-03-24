@@ -79,7 +79,7 @@ export const useProvisioningRecordsDetail = (provisioningRecordId?: string): Str
         requestActive: !!provisioningRecordId,
     })
 
-    const enrollmentGroupId = provisionRecordData ? provisionRecordData[0].enrollmentGroupId : ''
+    const enrollmentGroupId = provisionRecordData ? provisionRecordData[0]?.enrollmentGroupId : ''
 
     const {
         data: enrollmentGroupsData,
@@ -125,19 +125,24 @@ export const useEnrollmentGroupDataList = (): StreamApiPropsType => {
     const {
         data: enrollmentGroupsData,
         refresh: refreshEnrollmentGroup,
+        loading: enrollmentGroupsLoading,
         ...rest
     }: StreamApiPropsType = useStreamApi(`${getConfig().httpGatewayAddress}${dpsApiEndpoints.ENROLLMENT_GROUPS}`, {
         telemetryWebTracer,
         telemetrySpan: 'get-enrollment-groups-data',
     })
 
-    const { data: hubsData, refresh: refreshHubs }: StreamApiPropsType = useStreamApi(`${getConfig().httpGatewayAddress}${dpsApiEndpoints.HUBS}`, {
+    const {
+        data: hubsData,
+        refresh: refreshHubs,
+        loading: hubsLoading,
+    }: StreamApiPropsType = useStreamApi(`${getConfig().httpGatewayAddress}${dpsApiEndpoints.HUBS}`, {
         telemetryWebTracer,
         telemetrySpan: `get-hubs`,
     })
 
     useEffect(() => {
-        if (enrollmentGroupsData && Array.isArray(enrollmentGroupsData)) {
+        if (enrollmentGroupsData && Array.isArray(enrollmentGroupsData) && !enrollmentGroupsLoading && !hubsLoading) {
             setData(
                 enrollmentGroupsData.map((group: any) => ({
                     ...group,
@@ -145,14 +150,14 @@ export const useEnrollmentGroupDataList = (): StreamApiPropsType => {
                 }))
             )
         }
-    }, [enrollmentGroupsData, hubsData])
+    }, [enrollmentGroupsData, enrollmentGroupsLoading, hubsData, hubsLoading])
 
     const refresh = useCallback(() => {
         refreshEnrollmentGroup()
         refreshHubs()
     }, [refreshEnrollmentGroup, refreshHubs])
 
-    return { data, refresh, ...rest }
+    return { data, refresh, loading: enrollmentGroupsLoading || hubsLoading, ...rest }
 }
 
 export const useEnrollmentGroupDetail = (enrollmentGroupId?: string): StreamApiPropsType => {

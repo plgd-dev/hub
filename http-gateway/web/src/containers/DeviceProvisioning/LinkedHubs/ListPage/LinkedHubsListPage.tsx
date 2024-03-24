@@ -1,6 +1,6 @@
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { useNavigate } from 'react-router-dom'
+import { generatePath, useNavigate } from 'react-router-dom'
 
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import TableActionButton from '@shared-ui//components/Organisms/TableActionButton'
@@ -19,6 +19,7 @@ import { messages as g } from '@/containers/Global.i18n'
 import notificationId from '@/notificationId'
 import TableList from '@/containers/Common/TableList/TableList'
 import { deleteLinkedHubsApi } from '@/containers/DeviceProvisioning/rest'
+import { pages } from '@/routes'
 
 const LinkedHubsListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
@@ -54,10 +55,10 @@ const LinkedHubsListPage: FC<any> = () => {
                 accessor: 'name',
                 Cell: ({ value, row }: { value: string | number; row: any }) => (
                     <a
-                        href={`/device-provisioning/linked-hubs/${row.original.id}`}
+                        href={generatePath(pages.DPS.LINKED_HUBS.DETAIL, { hubId: row.original.id, tab: '', section: '' })}
                         onClick={(e) => {
                             e.preventDefault()
-                            navigate(`/device-provisioning/linked-hubs/${row.original.id}`)
+                            navigate(generatePath(pages.DPS.LINKED_HUBS.DETAIL, { hubId: row.original.id, tab: '', section: '' }))
                         }}
                     >
                         <span className='no-wrap-text'>{value}</span>
@@ -105,7 +106,7 @@ const LinkedHubsListPage: FC<any> = () => {
                                     icon: <IconTrash />,
                                 },
                                 {
-                                    onClick: () => navigate(`/device-provisioning/linked-hubs/${id}`),
+                                    onClick: () => navigate(generatePath(pages.DPS.LINKED_HUBS.DETAIL, { hubId: id, tab: '', section: '' })),
                                     label: _(g.view),
                                     icon: <IconArrowDetail />,
                                 },
@@ -149,7 +150,7 @@ const LinkedHubsListPage: FC<any> = () => {
         <PageLayout
             breadcrumbs={breadcrumbs}
             header={
-                <Button icon={<IconPlus />} onClick={() => navigate(`/device-provisioning/linked-hubs/link-new-hub`)} variant='primary'>
+                <Button icon={<IconPlus />} onClick={() => navigate(generatePath(pages.DPS.LINKED_HUBS.ADD))} variant='primary'>
                     {_(t.linkedHub)}
                 </Button>
             }

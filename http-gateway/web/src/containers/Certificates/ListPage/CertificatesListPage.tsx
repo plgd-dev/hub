@@ -1,6 +1,6 @@
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { useNavigate } from 'react-router-dom'
+import { generatePath, useNavigate } from 'react-router-dom'
 
 import TableActionButton from '@shared-ui/components/Organisms/TableActionButton'
 import { DeleteModal, IconArrowDetail, IconTrash, StatusTag } from '@shared-ui/components/Atomic'
@@ -16,6 +16,7 @@ import notificationId from '@/notificationId'
 import { useCertificatesList } from '@/containers/Certificates/hooks'
 import DateFormat from '@/containers/PendingCommands/DateFormat'
 import { deleteCertificatesApi } from '@/containers/Certificates/rest'
+import { pages } from '@/routes'
 
 const CertificatesListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
@@ -107,10 +108,10 @@ const CertificatesListPage: FC<any> = () => {
                 Cell: ({ value, row }: { value: string | number; row: any }) => (
                     <a
                         data-test-id={`dps-certificates-${row.id}`}
-                        href={`/certificates/${row.original.id}`}
+                        href={generatePath(pages.CERTIFICATES.DETAIL, { certificateId: row.original.id })}
                         onClick={(e) => {
                             e.preventDefault()
-                            navigate(`/certificates/${row.original.id}`)
+                            navigate(generatePath(pages.CERTIFICATES.DETAIL, { certificateId: row.original.id }), { replace: true })
                         }}
                     >
                         <span className='no-wrap-text'>{value}</span>
@@ -154,7 +155,7 @@ const CertificatesListPage: FC<any> = () => {
                                     icon: <IconTrash />,
                                 },
                                 {
-                                    onClick: () => navigate(`/certificates/${id}`),
+                                    onClick: () => navigate(generatePath(pages.CERTIFICATES.DETAIL, { certificateId: id }), { replace: true }),
                                     label: _(g.view),
                                     icon: <IconArrowDetail />,
                                 },

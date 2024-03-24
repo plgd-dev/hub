@@ -1,6 +1,6 @@
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { useNavigate } from 'react-router-dom'
+import { generatePath, useNavigate } from 'react-router-dom'
 
 import { DeleteModal, IconArrowDetail, IconTrash } from '@shared-ui/components/Atomic'
 import TableActionButton from '@shared-ui/components/Organisms/TableActionButton'
@@ -8,6 +8,7 @@ import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
 import StatusTag from '@shared-ui/components/Atomic/StatusTag'
 import Loadable from '@shared-ui/components/Atomic/Loadable'
+import { TagTypeType } from '@shared-ui/components/Atomic/StatusTag/StatusTag.types'
 
 import { messages as g } from '../../../Global.i18n'
 import { messages as dpsT } from '../../DeviceProvisioning.i18n'
@@ -20,7 +21,7 @@ import PageLayout from '@/containers/Common/PageLayout'
 import TableList from '@/containers/Common/TableList/TableList'
 import { getStatusFromData, parseCerts } from '@/containers/DeviceProvisioning/utils'
 import { messages as certT } from '@/containers/Certificates/Certificates.i18n'
-import { TagTypeType } from '@shared-ui/components/Atomic/StatusTag/StatusTag.types'
+import { pages } from '@/routes'
 
 const ProvisioningRecordsListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
@@ -85,7 +86,7 @@ const ProvisioningRecordsListPage: FC<any> = () => {
                         href={`/device-provisioning/provisioning-records/${row.original.id}`}
                         onClick={(e) => {
                             e.preventDefault()
-                            navigate(`/device-provisioning/provisioning-records/${row.original.id}`)
+                            navigate(generatePath(pages.DPS.PROVISIONING_RECORDS.DETAIL, { recordId: row.original.id, tab: '' }))
                         }}
                     >
                         <span className='no-wrap-text'>{value}</span>
@@ -100,7 +101,7 @@ const ProvisioningRecordsListPage: FC<any> = () => {
                         href={`/device-provisioning/enrollment-groups/${row.original.enrollmentGroupId}`}
                         onClick={(e) => {
                             e.preventDefault()
-                            navigate(`/device-provisioning/enrollment-groups/${row.original.enrollmentGroupId}`)
+                            navigate(generatePath(pages.DPS.ENROLLMENT_GROUPS.DETAIL, { enrollmentId: row.original.id, tab: '' }))
                         }}
                     >
                         <span className='no-wrap-text'>{value}</span>
@@ -144,7 +145,7 @@ const ProvisioningRecordsListPage: FC<any> = () => {
                                     icon: <IconTrash />,
                                 },
                                 {
-                                    onClick: () => navigate(`/device-provisioning/provisioning-records/${id}`),
+                                    onClick: () => navigate(generatePath(pages.DPS.PROVISIONING_RECORDS.DETAIL, { recordId: row.original.id, tab: '' })),
                                     label: _(g.view),
                                     icon: <IconArrowDetail />,
                                 },

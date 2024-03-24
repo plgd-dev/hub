@@ -3,20 +3,7 @@ import { useIntl } from 'react-intl'
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
 import { messages as g } from '@/containers/Global.i18n'
 
-export const getTabRoute = (i: number) => {
-    switch (i) {
-        case 1: {
-            return '/certificate-authority'
-        }
-        case 2: {
-            return '/authorization'
-        }
-        default:
-        case 0: {
-            return ''
-        }
-    }
-}
+export const tabRoutes = ['', 'certificate-authority', 'authorization']
 
 export const DEFAULT_FORM_DATA = {
     certificateAuthority: {
