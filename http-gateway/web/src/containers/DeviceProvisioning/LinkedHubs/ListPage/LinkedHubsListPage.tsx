@@ -130,7 +130,7 @@ const LinkedHubsListPage: FC<any> = () => {
             handleCloseDeleteModal()
 
             Notification.success(
-                { title: _(t.linkedHubsDeletded), message: _(t.linkedHubsDeletedMessage) },
+                { title: _(t.linkedHubsDeleted), message: _(t.linkedHubsDeletedMessage) },
                 { notificationId: notificationId.HUB_DPS_LINKED_HUBS_DELETED }
             )
 
