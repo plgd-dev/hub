@@ -95,6 +95,12 @@ var groupIDETagLatestTimestampQueryIndex = bson.D{
 	{Key: latestETagKeyTimestampKey, Value: -1},
 }
 
+var groupIDTypesQueryIndex = bson.D{
+	{Key: groupIDKey, Value: 1},
+	{Key: typesKey, Value: 1},
+	{Key: isActiveKey, Value: 1},
+}
+
 type signOperator string
 
 const (
@@ -207,6 +213,7 @@ func newEventStoreWithClient(ctx context.Context, store *pkgMongo.Store, dbPrefi
 		aggregateIDLatestTimestampQueryIndex,
 		groupIDETagLatestTimestampQueryIndex,
 		serviceIDQueryIndex,
+		groupIDTypesQueryIndex,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("cannot save events: %w", err)

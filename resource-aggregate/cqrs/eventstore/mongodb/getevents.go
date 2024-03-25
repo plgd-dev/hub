@@ -107,7 +107,7 @@ func getEventsQueriesToMongoQuery(groupID string, queries []eventstore.GetEvents
 
 func (s *EventStore) getEvents(ctx context.Context, groupID string, queries []eventstore.GetEventsQuery, timestamp int64, eventHandler eventstore.Handler) error {
 	filter, opts := getEventsQueriesToMongoQuery(groupID, queries, timestamp)
-	return s.loadEventsQuery(ctx, eventHandler, nil, filter, opts)
+	return s.loadEventsQuery(ctx, eventHandler, nil, []mongoQuery{{filter: filter, options: opts}})
 }
 
 type ResourceIdFilter struct {

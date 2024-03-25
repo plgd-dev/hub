@@ -70,6 +70,7 @@ func TestUniqueQuery(t *testing.T) {
 				queries: []eventstore.SnapshotQuery{
 					{AggregateID: "1", Types: []string{"type1"}},
 					{AggregateID: "1", Types: []string{"type2"}},
+					{AggregateID: "2", Types: []string{"type2"}},
 				},
 				query: eventstore.SnapshotQuery{Types: []string{"type2"}},
 			},

@@ -200,22 +200,29 @@ func (r *queryResolver) check(aggregateID string, version int64) bool {
 }
 
 // Create mongodb find query to load events
-func (s *EventStore) loadEventsQuery(ctx context.Context, eh eventstore.Handler, queryResolver *queryResolver, filter interface{}, opts ...*options.FindOptions) error {
+func (s *EventStore) loadEventsQuery(ctx context.Context, eh eventstore.Handler, queryResolver *queryResolver, queries []mongoQuery) error {
 	col := s.client().Database(s.DBName()).Collection(getEventCollectionName())
-	iter, err := col.Find(ctx, filter, opts...)
-	if errors.Is(err, mongo.ErrNilDocument) {
-		return nil
+	var errs *multierror.Error
+	for _, q := range queries {
+		iter, err := col.Find(ctx, q.filter, q.options)
+		if errors.Is(err, mongo.ErrNilDocument) {
+			continue
+		}
+		if err != nil {
+			errs = multierror.Append(errs, err)
+			continue
+		}
+		i := newIterator(iter, queryResolver, s.dataUnmarshaler, s.LogDebugfFunc)
+		err = eh.Handle(ctx, i)
+		if err != nil {
+			errs = multierror.Append(errs, err)
+		}
+		err = iter.Close(ctx)
+		if err != nil {
+			errs = multierror.Append(errs, err)
+		}
 	}
-	if err != nil {
-		return err
-	}
-	i := newIterator(iter, queryResolver, s.dataUnmarshaler, s.LogDebugfFunc)
-	err = eh.Handle(ctx, i)
-	errClose := iter.Close(ctx)
-	if err == nil {
-		return errClose
-	}
-	return err
+	return errs.ErrorOrNil()
 }
 
 func (r *queryResolver) toMongoQuery(maxVersionKey string) (filter bson.M, hint bson.D) {
@@ -289,10 +296,15 @@ func (s *EventStore) loadMongoQuery(ctx context.Context, eh eventstore.Handler, 
 	filter, hint := queryResolver.toMongoQuery(maxVersionKey)
 	opts := options.Find()
 	opts.SetHint(hint)
-	return s.loadEventsQuery(ctx, eh, queryResolver, filter, opts)
+	return s.loadEventsQuery(ctx, eh, queryResolver, []mongoQuery{{filter: filter, options: opts}})
 }
 
-func snapshotQueriesToMongoQuery(groupID string, queries []eventstore.SnapshotQuery) (interface{}, *options.FindOptions) {
+type mongoQuery struct {
+	filter  interface{}
+	options *options.FindOptions
+}
+
+func snapshotQueriesToMongoQuery(groupID string, queries []eventstore.SnapshotQuery) []mongoQuery {
 	opts := options.Find()
 	opts.SetAllowDiskUse(true)
 	opts.SetProjection(bson.M{
@@ -310,26 +322,67 @@ func snapshotQueriesToMongoQuery(groupID string, queries []eventstore.SnapshotQu
 	})
 	if len(queries) == 0 {
 		opts.SetHint(groupIDQueryIndex)
-		return bson.D{
-			{Key: groupIDKey, Value: groupID}, {Key: isActiveKey, Value: true},
-		}, opts
-	}
-
-	opts.SetHint(groupIDaggregateIDQueryIndex)
-	orQueries := make([]bson.D, 0, 32)
-	for _, q := range queries {
-		if q.AggregateID != "" {
-			orQueries = append(orQueries, bson.D{{Key: groupIDKey, Value: groupID}, {Key: aggregateIDKey, Value: q.AggregateID}, {Key: isActiveKey, Value: true}})
+		return []mongoQuery{
+			{
+				filter: bson.D{
+					{Key: groupIDKey, Value: groupID}, {Key: isActiveKey, Value: true},
+				},
+				options: opts,
+			},
 		}
 	}
-	return bson.M{
-		"$or": orQueries,
-	}, opts
+
+	optsTypes := options.Find()
+	// create a copy of the options
+	*optsTypes = *opts
+	resourceQueries := make([]bson.D, 0, 32)
+	typeQueries := make([]bson.D, 0, 32)
+	for _, q := range queries {
+		if q.AggregateID == "" && len(q.Types) == 0 {
+			opts.SetHint(groupIDQueryIndex)
+			return []mongoQuery{
+				{
+					filter: bson.D{
+						{Key: groupIDKey, Value: groupID}, {Key: isActiveKey, Value: true},
+					},
+					options: opts,
+				},
+			}
+		}
+		if q.AggregateID == "" && len(q.Types) > 0 {
+			optsTypes.SetHint(groupIDTypesQueryIndex)
+			typeQueries = append(typeQueries, bson.D{{Key: groupIDKey, Value: groupID}, {Key: typesKey, Value: bson.M{"$all": q.Types}}, {Key: isActiveKey, Value: true}})
+			continue
+		}
+
+		if q.AggregateID != "" {
+			opts.SetHint(groupIDaggregateIDQueryIndex)
+			resourceQueries = append(resourceQueries, bson.D{{Key: groupIDKey, Value: groupID}, {Key: aggregateIDKey, Value: q.AggregateID}, {Key: isActiveKey, Value: true}})
+		}
+	}
+
+	r := make([]mongoQuery, 0, 2)
+	if len(resourceQueries) > 0 {
+		r = append(r, mongoQuery{
+			filter:  bson.M{"$or": resourceQueries},
+			options: opts,
+		})
+	}
+	if len(typeQueries) > 0 {
+		r = append(r, mongoQuery{
+			filter:  bson.M{"$or": typeQueries},
+			options: optsTypes,
+		})
+	}
+	return r
 }
 
 func (s *EventStore) loadFromSnapshot(ctx context.Context, groupID string, queries []eventstore.SnapshotQuery, eventHandler eventstore.Handler) error {
-	filter, opts := snapshotQueriesToMongoQuery(groupID, queries)
-	return s.loadEventsQuery(ctx, eventHandler, nil, filter, opts)
+	mongoQueries := snapshotQueriesToMongoQuery(groupID, queries)
+	if len(mongoQueries) > 1 {
+		return fmt.Errorf("too many types of queries")
+	}
+	return s.loadEventsQuery(ctx, eventHandler, nil, mongoQueries)
 }
 
 func uniqueQuery(queries []eventstore.SnapshotQuery, query eventstore.SnapshotQuery) []eventstore.SnapshotQuery {
@@ -373,7 +426,6 @@ func uniqueQuery(queries []eventstore.SnapshotQuery, query eventstore.SnapshotQu
 				// in query list there is a more specific query, no need to add more general one
 				return queries
 			}
-
 		}
 	}
 	return append(queries, query)
