@@ -91,7 +91,7 @@ const LinkedHubsDetailPage: FC<Props> = () => {
     }, [dirtyState, isDirty, isDirtyData, setDirtyState])
 
     useBeforeUnload({
-        when: isDirty || isDirtyData,
+        when: (isDirty || isDirtyData) && process.env.REACT_APP_DIRTY_FORM_CHECKER !== 'false',
         message: _(g.promptDefaultMessage),
     })
 
@@ -171,6 +171,8 @@ const LinkedHubsDetailPage: FC<Props> = () => {
         setResetIndex((prev) => prev + 1)
     }, [defaultData, defaultFormState])
 
+    console.log(formData)
+
     return (
         <PageLayout
             breadcrumbs={breadcrumbs}
@@ -181,7 +183,7 @@ const LinkedHubsDetailPage: FC<Props> = () => {
             xPadding={false}
         >
             <FormContext.Provider value={context}>
-                {defaultData && (
+                {formData && (
                     <Tabs
                         fullHeight
                         innerPadding

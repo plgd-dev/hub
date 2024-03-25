@@ -467,4 +467,8 @@ export const messages = defineMessages({
         id: 'linkedHubs.linkedHubUpdatedMessage',
         defaultMessage: 'The selected linked hub has been updated.',
     },
+    deviceGatewayEmptyError: {
+        id: 'linkedHubs.deviceGatewayEmptyError',
+        defaultMessage: 'At least one device gateway is required.',
+    },
 })

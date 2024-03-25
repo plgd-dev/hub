@@ -46,6 +46,7 @@ const Tab2: FC<any> = (props) => {
             const certItem = certData.find((item: { id: number; name: string; data: {}[] }) => item.id === id)
             setCaModalData({ title: _(t.certificateDetail), subTitle: certItem.name, data: certItem.data || certItem.name, dataChain: certItem.dataChain })
         },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [certData]
     )
 
@@ -58,6 +59,7 @@ const Tab2: FC<any> = (props) => {
                 setCertData(d.filter((item: any) => !!item))
             })
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [data.credential.credentials])
 
     const pskColumns = useMemo(

@@ -34,3 +34,8 @@ export const removeIcon = (theme: ThemeType) => css`
     color: ${get(theme, `Global.iconColor`)};
     transition: all 0.3s;
 `
+
+export const addButton = css`
+    display: flex;
+    justify-content: flex-end;
+`

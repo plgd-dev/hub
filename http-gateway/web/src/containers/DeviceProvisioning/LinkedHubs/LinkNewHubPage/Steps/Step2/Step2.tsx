@@ -13,6 +13,8 @@ import IconClose from '@shared-ui/components/Atomic/Icon/components/IconClose'
 import { convertSize } from '@shared-ui/components/Atomic'
 import * as commonStyles from '@shared-ui/components/Templates/FullPageWizard/FullPageWizardCommon.styles'
 import StepButtons from '@shared-ui/components/Templates/FullPageWizard/StepButtons'
+import Show from '@shared-ui/components/Atomic/Show'
+import ValidationMessage from '@shared-ui/components/Atomic/ValidationMessage'
 
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
@@ -36,6 +38,7 @@ const Step2: FC<Props> = (props) => {
     const { fields, append, remove } = useFieldArray({
         control,
         name: 'gateways',
+        shouldUnregister: true,
     })
 
     const gateways = watch('gateways')
@@ -67,67 +70,80 @@ const Step2: FC<Props> = (props) => {
                 />
             </FormGroup>
 
-            {fields?.map((field, index) => (
-                <FormGroup
-                    error={errors.gateways?.[index] ? _(t.deviceGateway, { field: _(t.deviceGateway) }) : undefined}
-                    id={`gateways.${index}`}
-                    key={field.id}
+            <Show>
+                <Show.When isTrue={fields.length > 0}>
+                    {fields?.map((field, index) => (
+                        <FormGroup
+                            error={errors.gateways?.[index] ? _(t.deviceGateway, { field: _(t.deviceGateway) }) : undefined}
+                            id={`gateways.${index}`}
+                            key={field.id}
+                        >
+                            <FormLabel text={_(t.deviceGateway)} />
+                            <Controller
+                                control={control}
+                                name={`gateways.${index}` as any}
+                                render={({ field: { onChange, value } }) => (
+                                    <div css={styles.flex}>
+                                        <FormInput
+                                            onBlur={(e) => updateField(`gateways.${index}`, { value: e.target.value, id: field.id }, true)}
+                                            onChange={(v) => {
+                                                onChange({ value: v.target.value, id: field.id })
+                                            }}
+                                            value={value.value}
+                                        />
+                                        <a
+                                            css={styles.removeIcon}
+                                            href='#'
+                                            onClick={(e) => {
+                                                e.preventDefault()
+                                                e.stopPropagation()
+                                                remove(index)
+
+                                                updateField(
+                                                    'gateways',
+                                                    gateways.filter((_, key) => key !== index)
+                                                )
+                                            }}
+                                        >
+                                            <IconClose {...convertSize(20)} />
+                                        </a>
+                                    </div>
+                                )}
+                                rules={{
+                                    required: true,
+                                    validate: (val) => val !== '',
+                                }}
+                            />
+                        </FormGroup>
+                    ))}
+                </Show.When>
+                <Show.Else>
+                    <FormGroup id='gateways' marginBottom={false}>
+                        <FormLabel text={_(t.deviceGateway)} />
+                        <ValidationMessage>{_(t.deviceGatewayEmptyError)}</ValidationMessage>
+                    </FormGroup>
+                </Show.Else>
+            </Show>
+
+            <div css={styles.addButton}>
+                <Button
+                    disabled={defaultFormData.gateways && defaultFormData.gateways[defaultFormData.gateways.length - 1]?.value === ''}
+                    icon={<IconPlus />}
+                    onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+
+                        append({ value: '' })
+                    }}
+                    size='small'
+                    variant='filter'
                 >
-                    <FormLabel text={_(t.deviceGateway)} />
-                    <Controller
-                        control={control}
-                        name={`gateways.${index}` as any}
-                        render={({ field: { onChange, value } }) => (
-                            <div css={styles.flex}>
-                                <FormInput
-                                    onBlur={(e) => updateField(`gateways.${index}`, e.target.value)}
-                                    onChange={(v) => {
-                                        onChange({ value: v.target.value })
-                                    }}
-                                    value={value.value}
-                                />
-                                <a
-                                    css={styles.removeIcon}
-                                    href='#'
-                                    onClick={(e) => {
-                                        e.preventDefault()
-                                        e.stopPropagation()
-                                        remove(index)
-
-                                        updateField(
-                                            'gateways',
-                                            gateways.filter((_, key) => key !== index)
-                                        )
-                                    }}
-                                >
-                                    <IconClose {...convertSize(20)} />
-                                </a>
-                            </div>
-                        )}
-                        rules={{
-                            required: true,
-                            validate: (val) => val !== '',
-                        }}
-                    />
-                </FormGroup>
-            ))}
-
-            <Button
-                disabled={defaultFormData.gateways && defaultFormData.gateways[defaultFormData.gateways.length - 1]?.value === ''}
-                icon={<IconPlus />}
-                onClick={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
-
-                    append({ value: '' })
-                }}
-                size='small'
-                variant='filter'
-            >
-                {_(t.addDeviceGateway)}
-            </Button>
+                    {_(t.addDeviceGateway)}
+                </Button>
+            </div>
 
             <StepButtons
+                disableNext={fields.length === 0 || gateways.some((f) => f.value === '')}
                 i18n={{
                     back: _(g.back),
                     continue: _(g.continue),

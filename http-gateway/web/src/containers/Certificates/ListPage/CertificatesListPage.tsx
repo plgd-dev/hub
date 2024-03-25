@@ -108,10 +108,10 @@ const CertificatesListPage: FC<any> = () => {
                 Cell: ({ value, row }: { value: string | number; row: any }) => (
                     <a
                         data-test-id={`dps-certificates-${row.id}`}
-                        href={generatePath(pages.CERTIFICATES.DETAIL, { certificateId: row.original.id })}
+                        href={generatePath(pages.CERTIFICATES.DETAIL, { certificateId: row.original.origin.id })}
                         onClick={(e) => {
                             e.preventDefault()
-                            navigate(generatePath(pages.CERTIFICATES.DETAIL, { certificateId: row.original.id }), { replace: true })
+                            navigate(generatePath(pages.CERTIFICATES.DETAIL, { certificateId: row.original.origin.id }), { replace: true })
                         }}
                     >
                         <span className='no-wrap-text'>{value}</span>

@@ -23,15 +23,27 @@ const CertificatesDetailPage: FC<Props> = (props) => {
     const { formatMessage: _ } = useIntl()
     const { certificateId } = useParams()
 
-    const { data, error } = useCertificatesDetail(certificateId!)
+    const { data, error, loading } = useCertificatesDetail(certificateId!)
     const [parsedCert, setParsedCert] = useState<any>(undefined)
+    const [pageLoading, setPageLoading] = useState<any>(undefined)
 
     const { ref, height } = useResizeDetector({
         refreshRate: 500,
     })
 
     useEffect(() => {
-        data && parseCertificate(data.credential.certificatePem, 0).then((r) => setParsedCert(r))
+        if (data) {
+            setPageLoading(true)
+            parseCertificate(data.credential.certificatePem, 0)
+                .then((r) => {
+                    setPageLoading(false)
+                    setParsedCert(r)
+                })
+                .catch((e) => {
+                    Notification.error({ title: _(t.certificatesError), message: e }, { notificationId: notificationId.HUB_DPS_CERTIFICATES_DETAIL_PAGE_ERROR })
+                })
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [data])
 
     useEffect(() => {
@@ -50,7 +62,8 @@ const CertificatesDetailPage: FC<Props> = (props) => {
         <PageLayout
             breadcrumbs={breadcrumbs}
             header={<DetailHeader id={certificateId!} refresh={() => {}} />}
-            loading={false}
+            loading={loading || pageLoading}
+            notFound={!data && !loading}
             title={data?.commonName}
             xPadding={false}
         >

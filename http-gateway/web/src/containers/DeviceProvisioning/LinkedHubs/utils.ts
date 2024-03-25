@@ -38,6 +38,7 @@ export const DEFAULT_FORM_DATA = {
             scopes: [],
         },
     },
+    gateways: [],
 }
 
 export function useCaI18n() {

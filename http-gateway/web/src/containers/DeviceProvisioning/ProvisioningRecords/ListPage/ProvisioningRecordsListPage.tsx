@@ -70,6 +70,7 @@ const ProvisioningRecordsListPage: FC<any> = () => {
                 setPageLoading(false)
             })
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [data])
 
     const handleOpenDeleteModal = useCallback((_isAllSelected: boolean, selection: string[]) => {

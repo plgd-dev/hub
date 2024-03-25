@@ -24,6 +24,7 @@ const PageLayout = forwardRef<HTMLDivElement, Props>((props, ref) => {
     const [isDomReady, setIsDomReady] = useState(false)
 
     const [dirtyState] = useRecoilState(dirtyFormState)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [_block, setBlock] = useRecoilState(promptBlockState)
 
     useEffect(() => {

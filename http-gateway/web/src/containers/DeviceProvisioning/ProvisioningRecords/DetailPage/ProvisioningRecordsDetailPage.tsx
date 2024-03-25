@@ -1,4 +1,4 @@
-import React, { FC, lazy, useCallback, useMemo, useState } from 'react'
+import React, { lazy, useCallback, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
 import { generatePath, useNavigate, useParams } from 'react-router-dom'
 
