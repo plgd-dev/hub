@@ -128,6 +128,15 @@ const LinkedHubsListPage: FC<any> = () => {
             await deleteLinkedHubsApi(selected)
 
             handleCloseDeleteModal()
+
+            Notification.success(
+                { title: _(t.linkedHubsDeletded), message: _(t.linkedHubsDeletedMessage) },
+                { notificationId: notificationId.HUB_DPS_LINKED_HUBS_DELETED }
+            )
+
+            setSelected([])
+            setUnselectRowsToken((prevValue) => prevValue + 1)
+
             refresh()
             setDeleting(false)
         } catch (e) {

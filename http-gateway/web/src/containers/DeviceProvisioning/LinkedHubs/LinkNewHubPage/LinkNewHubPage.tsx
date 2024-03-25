@@ -74,6 +74,11 @@ const LinkNewHubPage: FC<any> = () => {
 
             await createLinkedHub(copy)
 
+            Notification.success(
+                { title: _(t.linkedHubsCreated), message: _(t.linkedHubsCreatedMessage) },
+                { notificationId: notificationId.HUB_DPS_LINKED_HUBS_CREATED }
+            )
+
             setFormData(DEFAULT_FORM_DATA)
 
             navigate(pages.DPS.LINKED_HUBS.LINK, { replace: true })

@@ -145,6 +145,12 @@ const LinkedHubsDetailPage: FC<Props> = () => {
             copy.gateways = copy.gateways.map((i: { value: string }) => i.value)
 
             await updateLinkedHubData(hubId!, copy)
+
+            Notification.success(
+                { title: _(t.linkedHubUpdated), message: _(t.linkedHubUpdatedMessage) },
+                { notificationId: notificationId.HUB_DPS_LINKED_HUBS_UPDATED }
+            )
+
             refresh()
 
             setPageLoading(false)

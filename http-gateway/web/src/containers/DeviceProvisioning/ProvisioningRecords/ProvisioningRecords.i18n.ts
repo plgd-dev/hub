@@ -161,4 +161,12 @@ export const messages = defineMessages({
         id: 'provisioningRecords.certificateDetail',
         defaultMessage: 'Certificate Detail',
     },
+    provisioningRecordDeleted: {
+        id: 'provisioningRecords.provisioningRecordDeleted',
+        defaultMessage: 'Provisioning record deleted',
+    },
+    provisioningRecordDeletedMessage: {
+        id: 'provisioningRecords.provisioningRecordDeletedMessage',
+        defaultMessage: 'The selected provisioning record has been deleted.',
+    },
 })

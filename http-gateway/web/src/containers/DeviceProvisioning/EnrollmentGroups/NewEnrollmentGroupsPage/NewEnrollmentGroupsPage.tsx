@@ -15,6 +15,8 @@ import { DEFAULT_FORM_DATA } from '@/containers/DeviceProvisioning/EnrollmentGro
 import { createEnrollmentGroup } from '@/containers/DeviceProvisioning/rest'
 import { stringToPem } from '@/containers/DeviceProvisioning/utils'
 import { pages } from '@/routes'
+import Notification from '@shared-ui/components/Atomic/Notification/Toast'
+import notificationId from '@/notificationId'
 
 const Step1 = lazy(() => import('./Steps/Step1'))
 const Step2 = lazy(() => import('./Steps/Step2'))
@@ -69,6 +71,11 @@ const NewEnrollmentGroupsPage: FC<any> = () => {
         await createEnrollmentGroup(dataForSave)
 
         setFormData(DEFAULT_FORM_DATA)
+
+        Notification.success(
+            { title: _(t.enrollmentGroupCreated), message: _(t.enrollmentGroupCreatedMessage) },
+            { notificationId: notificationId.HUB_DPS_ENROLLMENT_GROUP_LIST_PAGE_CREATED }
+        )
 
         navigate(generatePath(pages.DPS.ENROLLMENT_GROUPS.LINK), { replace: true })
     }

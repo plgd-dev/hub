@@ -104,4 +104,28 @@ export const messages = defineMessages({
         defaultMessage:
             'The credentials enable the configuration of a pre-shared key for the device owner, facilitating device management within a local area network through the plgd/client application.',
     },
+    enrollmentGroupsDeleted: {
+        id: 'enrollmentGroups.provisioningRecordDeleted',
+        defaultMessage: 'Enrollment groups deleted',
+    },
+    enrollmentGroupsDeletedMessage: {
+        id: 'enrollmentGroups.provisioningRecordDeletedMessage',
+        defaultMessage: 'The selected enrollment groups has been deleted.',
+    },
+    enrollmentGroupUpdated: {
+        id: 'enrollmentGroups.enrollmentGroupUpdated',
+        defaultMessage: 'Enrollment group updated',
+    },
+    enrollmentGroupUpdatedMessage: {
+        id: 'enrollmentGroups.enrollmentGroupUpdatedMessage',
+        defaultMessage: 'The selected enrollment group has been updated.',
+    },
+    enrollmentGroupCreated: {
+        id: 'enrollmentGroups.enrollmentGroupCreated',
+        defaultMessage: 'Enrollment group created',
+    },
+    enrollmentGroupCreatedMessage: {
+        id: 'enrollmentGroups.enrollmentGroupCreatedMessage',
+        defaultMessage: 'The enrollment group has been created.',
+    },
 })

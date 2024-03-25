@@ -34,6 +34,7 @@ const ProvisioningRecordsListPage: FC<any> = () => {
     const [selected, setSelected] = useState<string[]>([])
     const [unselectRowsToken, setUnselectRowsToken] = useState(1)
     const [deleting, setDeleting] = useState(false)
+    const [pageLoading, setPageLoading] = useState(false)
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const breadcrumbs = useMemo(() => [{ label: _(dpsT.deviceProvisioning), link: '/device-provisioning' }, { label: _(t.provisioningRecords) }], [])
@@ -62,8 +63,12 @@ const ProvisioningRecordsListPage: FC<any> = () => {
             return await Promise.all(parsed)
         }
 
-        if (data && !displayData) {
-            parseAll().then((d) => setDisplayData(d))
+        if (data) {
+            setPageLoading(true)
+            parseAll().then((d) => {
+                setDisplayData(d)
+                setPageLoading(false)
+            })
         }
     }, [data])
 
@@ -164,9 +169,17 @@ const ProvisioningRecordsListPage: FC<any> = () => {
         try {
             setDeleting(true)
             await deleteProvisioningRecordsApi(selected)
-
             handleCloseDeleteModal()
+
+            Notification.success(
+                { title: _(t.provisioningRecordDeleted), message: _(t.provisioningRecordDeletedMessage) },
+                { notificationId: notificationId.HUB_DPS_PROVISIONING_RECORDS_LIST_DELETED }
+            )
+
+            setSelected([])
+            setUnselectRowsToken((prevValue) => prevValue + 1)
             refresh()
+
             setDeleting(false)
         } catch (e) {
             setDeleting(false)
@@ -185,7 +198,7 @@ const ProvisioningRecordsListPage: FC<any> = () => {
     )
 
     return (
-        <PageLayout breadcrumbs={breadcrumbs} loading={loading || deleting} title={_(t.provisioningRecords)}>
+        <PageLayout breadcrumbs={breadcrumbs} loading={loading || pageLoading || deleting} title={_(t.provisioningRecords)}>
             <Loadable condition={!!displayData}>
                 <TableList
                     columns={columns}

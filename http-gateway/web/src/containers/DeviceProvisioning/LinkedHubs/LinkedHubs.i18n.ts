@@ -443,4 +443,28 @@ export const messages = defineMessages({
         defaultMessage:
             "The Authorization service oversees authentication and authorization procedures, deciding whether to permit or deny access to protected resources based on user identity and permissions. The DPS must acquire the owner's JWT token from the Authorization service to sign device certificates. Additionally, the CoAP gateway authenticates access via JWT tokens, necessitating the DPS to obtain tokens for devices.",
     },
+    linkedHubsDeleted: {
+        id: 'linkedHubs.linkedHubDeleted',
+        defaultMessage: 'Linked hub deleted',
+    },
+    linkedHubsDeletedMessage: {
+        id: 'linkedHubs.linkedHubsDeletedMessage',
+        defaultMessage: 'The selected linked hubs has been deleted.',
+    },
+    linkedHubsCreated: {
+        id: 'linkedHubs.linkedHubsCreated',
+        defaultMessage: 'Linked hubs created',
+    },
+    linkedHubsCreatedMessage: {
+        id: 'linkedHubs.linkedHubsCreatedMessage',
+        defaultMessage: 'The selected linked hubs has been created.',
+    },
+    linkedHubUpdated: {
+        id: 'linkedHubs.linkedHubUpdated',
+        defaultMessage: 'Linked hub updated',
+    },
+    linkedHubUpdatedMessage: {
+        id: 'linkedHubs.linkedHubUpdatedMessage',
+        defaultMessage: 'The selected linked hub has been updated.',
+    },
 })

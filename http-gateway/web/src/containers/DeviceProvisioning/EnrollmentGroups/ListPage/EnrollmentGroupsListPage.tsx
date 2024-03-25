@@ -47,7 +47,16 @@ const EnrollmentGroupsListPage: FC<any> = () => {
             setDeleting(true)
             await deleteEnrollmentGroupsApi(selected)
             handleCloseDeleteModal()
+
+            Notification.success(
+                { title: _(t.enrollmentGroupsDeleted), message: _(t.enrollmentGroupsDeletedMessage) },
+                { notificationId: notificationId.HUB_DPS_ENROLLMENT_GROUP_LIST_PAGE_DELETE }
+            )
+
+            setSelected([])
+            setUnselectRowsToken((prevValue) => prevValue + 1)
             refresh()
+
             setDeleting(false)
         } catch (e: any) {
             setDeleting(false)

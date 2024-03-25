@@ -123,6 +123,11 @@ const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
 
             await updateEnrollmentGroup(enrollmentId!, dataForSave)
 
+            Notification.success(
+                { title: _(t.enrollmentGroupUpdated), message: _(t.enrollmentGroupUpdatedMessage) },
+                { notificationId: notificationId.HUB_DPS_ENROLLMENT_GROUP_LIST_PAGE_UPDATE }
+            )
+
             setFormDirty(defaultFormState)
             refresh()
 

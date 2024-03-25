@@ -56,9 +56,6 @@ const DetailHeader: FC<Props> = (props) => {
             try {
                 setEditing(true)
 
-                // UPDATE
-                console.log(name)
-
                 setEditing(false)
                 setEditNameModal(false)
                 refresh()
