@@ -56,6 +56,7 @@ export const parseCerts = async (certs: any, options: OptionsType) => {
                 error = new Error(e)
             }
 
+            console.error(error)
             Notification.error({ title: options.errorTitle, message: error.message }, { notificationId: options.errorId })
         }
     })

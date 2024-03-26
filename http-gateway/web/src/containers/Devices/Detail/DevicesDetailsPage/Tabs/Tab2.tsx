@@ -29,6 +29,7 @@ const Tab2: FC<Props> = (props) => {
     const { id: routerId, ...others } = useParams()
     const id = routerId || ''
     const hrefParam = others['*'] || ''
+
     const [resourceModalData, setResourceModalData] = useState<DevicesDetailsResourceModalData | undefined>(undefined)
     const [loadingResource, setLoadingResource] = useState(false)
     const [savingResource, setSavingResource] = useState(false)

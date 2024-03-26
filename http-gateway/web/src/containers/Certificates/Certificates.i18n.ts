@@ -89,4 +89,8 @@ export const messages = defineMessages({
         id: 'certificates.certificatesDeletedMessage',
         defaultMessage: 'The selected certificates were successfully deleted.',
     },
+    certificatesDeleteError: {
+        id: 'certificates.certificatesDeleteError',
+        defaultMessage: 'Certificates delete error',
+    },
 })

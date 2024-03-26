@@ -34,7 +34,7 @@ import PageLayout from '@/containers/Common/PageLayout'
 
 const Tab1 = lazy(() => import('./Tabs/Tab1'))
 const Tab2 = lazy(() => import('./Tabs/Tab2'))
-const Tab3 = lazy(() => import('./Tabs/Tab3'))
+const Tab3 = lazy(() => import('./Tabs/Tab3/Tab3'))
 const Tab4 = lazy(() => import('./Tabs/Tab4'))
 
 const DevicesDetailsPage: FC<Props> = (props) => {
@@ -52,7 +52,7 @@ const DevicesDetailsPage: FC<Props> = (props) => {
     const { data: softwareUpdateData, refresh: refreshSoftwareUpdate } = useDeviceSoftwareUpdateDetails(id)
     const { data: resourcesData, loading: loadingResources, error: resourcesError, refresh } = useDevicesResources(id)
     const { data: pendingCommandsData, refresh: refreshPendingCommands, loading: pendingCommandsLoading } = useDevicePendingCommands(id)
-    const { data: certificates, loading: certificatesLoading } = useDeviceCertificates(id)
+    const { data: certificates, loading: certificatesLoading, refresh: certificateRefresh } = useDeviceCertificates(id)
     const { data: provisioningRecords, loading: provisioningRecordsLoading } = useDeviceProvisioningRecords(id)
 
     const { ref, width, height } = useResizeDetector()
@@ -223,9 +223,11 @@ const DevicesDetailsPage: FC<Props> = (props) => {
                 headlineStatusTag={<StatusTag variant={isOnline ? 'success' : 'error'}>{isOnline ? _(t.online) : _(t.offline)}</StatusTag>}
                 loading={loading || twinSyncLoading || pendingCommandsLoading || certificatesLoading || provisioningRecordsLoading}
                 title={deviceName}
+                xPadding={false}
             >
                 <Tabs
                     fullHeight
+                    innerPadding
                     isAsync
                     activeItem={activeTabItem}
                     onItemChange={handleTabChange}
@@ -271,11 +273,19 @@ const DevicesDetailsPage: FC<Props> = (props) => {
                             ),
                         },
                         {
-                            content: <Tab3 certificates={certificates} />,
+                            content: (
+                                <Tab3
+                                    certificates={certificates}
+                                    handleTabChange={handleTabChange}
+                                    loading={certificatesLoading}
+                                    refresh={certificateRefresh}
+                                />
+                            ),
                             dataTestId: testId.devices.detail.tabCertificates,
                             disabled: certificates?.length === 0 || certificatesLoading,
                             id: 2,
                             name: _(t.certificates),
+                            innerPadding: false,
                         },
                         {
                             content: <Tab4 provisioningRecords={provisioningRecords} />,

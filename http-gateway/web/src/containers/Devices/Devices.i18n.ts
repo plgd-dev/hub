@@ -569,4 +569,24 @@ export const messages = defineMessages({
         id: 'devices.endpoints',
         defaultMessage: 'Endpoints',
     },
+    certificationParsingError: {
+        id: 'devices.certificationParsingError',
+        defaultMessage: 'Certification Parsing Error',
+    },
+    deleteCertificate: {
+        id: 'devices.deleteCertificate',
+        defaultMessage: 'Delete Certificate',
+    },
+    certificatesDeleteError: {
+        id: 'devices.certificatesDeleteError',
+        defaultMessage: 'Certificates delete error',
+    },
+    certificateDeleted: {
+        id: 'devices.certificateDeleted',
+        defaultMessage: 'Certificate deleted',
+    },
+    certificateDeletedMessage: {
+        id: 'devices.certificateDeletedMessage',
+        defaultMessage: 'The Certificate was successfully deleted.',
+    },
 })

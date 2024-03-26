@@ -81,6 +81,10 @@ export const defaultMenu = {
 }
 
 export const pages = {
+    DEVICES: {
+        LINK: '/devices',
+        DETAIL: '/devices/:id',
+    },
     DPS: {
         LINK: '/device-provisioning',
         LINKED_HUBS: {
