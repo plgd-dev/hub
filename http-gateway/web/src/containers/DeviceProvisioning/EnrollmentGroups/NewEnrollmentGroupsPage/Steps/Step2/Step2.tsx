@@ -11,6 +11,7 @@ import { messages as g } from '@/containers/Global.i18n'
 import { DetailFromChunk2 } from '@/containers/DeviceProvisioning/EnrollmentGroups/DetailFormChunks'
 import { Inputs } from '@/containers/DeviceProvisioning/EnrollmentGroups/EnrollmentGroups.types'
 import notificationId from '@/notificationId'
+import FullPageWizard from '@shared-ui/components/Templates/FullPageWizard'
 
 const Step2: FC<any> = (props) => {
     const { defaultFormData } = props
@@ -36,7 +37,7 @@ const Step2: FC<any> = (props) => {
     return (
         <form>
             <h1 css={commonStyles.headline}>{_(t.deviceAuthentication)}</h1>
-            <p css={[commonStyles.description, commonStyles.descriptionLarge]}>{_(t.addEnrollmentGroupDeviceAuthenticationDescription)}</p>
+            <FullPageWizard.Description>{_(t.addEnrollmentGroupDeviceAuthenticationDescription)}</FullPageWizard.Description>
 
             <DetailFromChunk2
                 certificateChain={certificateChain}

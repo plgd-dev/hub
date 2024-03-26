@@ -11,6 +11,7 @@ import { useForm } from '@shared-ui/common/hooks'
 import FormSelect from '@shared-ui/components/Atomic/FormSelect'
 import { OptionType } from '@shared-ui/components/Atomic/FormSelect/FormSelect.types'
 import StepButtons from '@shared-ui/components/Templates/FullPageWizard/StepButtons'
+import FullPageWizard from '@shared-ui/components/Templates/FullPageWizard'
 
 import { messages as t } from '../../../EnrollmentGroups.i18n'
 import { messages as g } from '@/containers/Global.i18n'
@@ -49,7 +50,7 @@ const Step1: FC<any> = (props) => {
     return (
         <form>
             <h1 css={commonStyles.headline}>{_(t.enrollmentConfiguration)}</h1>
-            <p css={[commonStyles.description, commonStyles.descriptionLarge]}>{_(t.addEnrollmentGroupDescription)}</p>
+            <FullPageWizard.Description large>{_(t.addEnrollmentGroupDescription)}</FullPageWizard.Description>
 
             <FormGroup error={errors.name ? _(g.requiredField, { field: _(g.name) }) : undefined} id='name'>
                 <FormInput

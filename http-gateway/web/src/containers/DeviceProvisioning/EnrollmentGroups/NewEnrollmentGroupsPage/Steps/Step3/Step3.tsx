@@ -5,6 +5,7 @@ import * as commonStyles from '@shared-ui/components/Templates/FullPageWizard/Fu
 import { useForm } from '@shared-ui/common/hooks'
 import { FormContext } from '@shared-ui/common/context/FormContext'
 import StepButtons from '@shared-ui/components/Templates/FullPageWizard/StepButtons'
+import FullPageWizard from '@shared-ui/components/Templates/FullPageWizard'
 
 import { messages as t } from '@/containers/DeviceProvisioning/EnrollmentGroups/EnrollmentGroups.i18n'
 import { DetailFromChunk3 } from '@/containers/DeviceProvisioning/EnrollmentGroups/DetailFormChunks'
@@ -34,7 +35,7 @@ const Step3: FC<any> = (props) => {
     return (
         <form>
             <h1 css={commonStyles.headline}>{_(t.deviceCredentials)}</h1>
-            <p css={[commonStyles.description, commonStyles.descriptionLarge]}>{_(t.addEnrollmentGroupDeviceCredentialsDescription)}</p>
+            <FullPageWizard.Description large>{_(t.addEnrollmentGroupDeviceCredentialsDescription)}</FullPageWizard.Description>
 
             <DetailFromChunk3 errors={errors} register={register} setValue={setValue} updateField={updateField} watch={watch} />
 
