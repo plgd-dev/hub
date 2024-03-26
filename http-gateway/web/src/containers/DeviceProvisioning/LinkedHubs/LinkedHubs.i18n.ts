@@ -438,10 +438,27 @@ export const messages = defineMessages({
         defaultMessage:
             "As a client, the DPS service forwards the device's certificate signing requests, using the owner's JWT token, to enable communication with the  CoAP gateway. Proper TLS configuration is essential for this process to ensure secure communication.",
     },
+    addLinkedHubCertificateAuthorityKeepAliveDescription: {
+        id: 'linkedHubs.addLinkedHubCertificateAuthorityKeepAliveDescription',
+        defaultMessage: "Keepalive maintains a connection between the client and server by periodically sending messages to verify the connection's status.",
+    },
     addLinkedHubAuthorizationDescription: {
         id: 'linkedHubs.addLinkedHubAuthorizationDescription',
         defaultMessage:
             "The Authorization service oversees authentication and authorization procedures, deciding whether to permit or deny access to protected resources based on user identity and permissions. The DPS must acquire the owner's JWT token from the Authorization service to sign device certificates. Additionally, the CoAP gateway authenticates access via JWT tokens, necessitating the DPS to obtain tokens for devices.",
+    },
+    addLinkedHubAuthorizationGeneralDescription: {
+        id: 'linkedHubs.addLinkedHubAuthorizationGeneralDescription',
+        defaultMessage: 'The JWT owner claim refers to a specific piece of information contained within a JWT token that identifies the owner the token.',
+    },
+    addLinkedHubAuthorizationoAuthClientDescription: {
+        id: 'linkedHubs.addLinkedHubAuthorizationoAuthClientDescription',
+        defaultMessage:
+            'OAuth client credentials allow the DPS to authenticate itself directly with the authorization server using its own credentials to obtain an access JWT token.',
+    },
+    addLinkedHubAuthorizationHttpDescription: {
+        id: 'linkedHubs.addLinkedHubAuthorizationHttpDescription',
+        defaultMessage: 'An HTTP client facilitates access to servers for retrieving web resources or data.',
     },
     linkedHubsDeleted: {
         id: 'linkedHubs.linkedHubDeleted',

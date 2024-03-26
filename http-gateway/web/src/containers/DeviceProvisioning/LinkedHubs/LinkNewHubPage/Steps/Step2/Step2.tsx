@@ -20,6 +20,7 @@ import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
 import { Inputs, Props } from './Step2.types'
 import * as styles from './Step2.styles'
+import FullPageWizard from '@shared-ui/components/Templates/FullPageWizard'
 
 const Step2: FC<Props> = (props) => {
     const { defaultFormData } = props
@@ -46,7 +47,7 @@ const Step2: FC<Props> = (props) => {
     return (
         <form>
             <h1 css={commonStyles.headline}>{_(t.hubDetails)}</h1>
-            <p css={[commonStyles.description, commonStyles.descriptionLarge]}>{_(t.addLinkedHubDetailsDescription)}</p>
+            <FullPageWizard.Description large>{_(t.addLinkedHubDetailsDescription)}</FullPageWizard.Description>
 
             <FormGroup error={errors.hubId ? _(g.requiredField, { field: _(g.hubId) }) : undefined} id='hubID'>
                 <FormLabel text={_(g.hubId)} />

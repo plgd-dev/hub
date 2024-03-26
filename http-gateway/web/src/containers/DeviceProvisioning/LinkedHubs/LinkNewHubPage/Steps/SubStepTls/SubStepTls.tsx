@@ -19,6 +19,7 @@ import { messages as g } from '@/containers/Global.i18n'
 import notificationId from '@/notificationId'
 import { Props } from './SubStepTls.types'
 import { nameLengthValidator, stringToPem } from '@/containers/DeviceProvisioning/utils'
+import FullPageWizard from '@shared-ui/components/Templates/FullPageWizard'
 
 const SubStepTls: FC<Props> = (props) => {
     const { control, setValue, updateField, watch, prefix } = props
@@ -88,7 +89,7 @@ const SubStepTls: FC<Props> = (props) => {
                 <h2 css={commonStyles.subHeadline}>TLS</h2>
             </Spacer>
 
-            <p css={commonStyles.description}>TLS ensures the privacy and integrity of data exchanged between client and server.</p>
+            <FullPageWizard.Description>TLS ensures the privacy and integrity of data exchanged between client and server.</FullPageWizard.Description>
 
             <h3 css={commonStyles.groupHeadline}>{_(t.caPool)}</h3>
 
@@ -98,6 +99,7 @@ const SubStepTls: FC<Props> = (props) => {
                     name='certificateAuthority.grpc.tls.useSystemCaPool'
                     render={({ field: { onChange, value } }) => (
                         <TileToggle
+                            darkBg
                             checked={(value as boolean) ?? false}
                             name={_(t.useSystemCAPool)}
                             onChange={(e) => {

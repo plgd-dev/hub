@@ -12,6 +12,7 @@ import Spacer from '@shared-ui/components/Atomic/Spacer'
 import TileToggle from '@shared-ui/components/Atomic/TileToggle'
 import * as commonStyles from '@shared-ui/components/Templates/FullPageWizard/FullPageWizardCommon.styles'
 import StepButtons from '@shared-ui/components/Templates/FullPageWizard/StepButtons'
+import FullPageWizard from '@shared-ui/components/Templates/FullPageWizard'
 
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
@@ -36,12 +37,10 @@ const Step3: FC<Props> = (props) => {
     return (
         <form>
             <h1 css={commonStyles.headline}>{_(t.certificateAuthority)}</h1>
-            <p css={[commonStyles.description, commonStyles.descriptionLarge]}>{_(t.addLinkedHubCertificateAuthorityDescription)}</p>
+            <FullPageWizard.Description large>{_(t.addLinkedHubCertificateAuthorityDescription)}</FullPageWizard.Description>
 
-            <h2 css={commonStyles.subHeadline}>{_(t.generalKeepAlive)}</h2>
-            <p css={commonStyles.description}>
-                Keepalive maintains a connection between the client and server by periodically sending messages to verify the connection's status.
-            </p>
+            <FullPageWizard.SubHeadline>{_(t.generalKeepAlive)}</FullPageWizard.SubHeadline>
+            <FullPageWizard.Description>{_(t.addLinkedHubCertificateAuthorityKeepAliveDescription)}</FullPageWizard.Description>
 
             <h3 css={commonStyles.groupHeadline}>{_(t.general)}</h3>
             <FormGroup
@@ -119,6 +118,7 @@ const Step3: FC<Props> = (props) => {
                     name='certificateAuthority.grpc.keepAlive.permitWithoutStream'
                     render={({ field: { onChange, value } }) => (
                         <TileToggle
+                            darkBg
                             checked={(value as boolean) ?? false}
                             name={_(t.permitWithoutStream)}
                             onChange={(e) => {

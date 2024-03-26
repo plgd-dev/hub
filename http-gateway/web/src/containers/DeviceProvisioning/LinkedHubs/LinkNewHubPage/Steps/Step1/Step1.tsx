@@ -18,6 +18,7 @@ import { messages as g } from '@/containers/Global.i18n'
 import { Props, Inputs } from './Step1.types'
 import { getAppWellKnownConfiguration } from '@/containers/App/AppRest'
 import { DEFAULT_FORM_DATA } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
+import FullPageWizard from '@shared-ui/components/Templates/FullPageWizard'
 
 const Step1: FC<Props> = (props) => {
     const { defaultFormData } = props
@@ -88,7 +89,7 @@ const Step1: FC<Props> = (props) => {
     return (
         <form>
             <h1 css={commonStyles.headline}>{_(t.linkNewHub)}</h1>
-            <p css={[commonStyles.description, commonStyles.descriptionLarge]}>{_(t.addLinkedHubDescription)}</p>
+            <FullPageWizard.Description large>{_(t.addLinkedHubDescription)}</FullPageWizard.Description>
             <Row>
                 <Column size={6}>
                     <FormGroup error={errors.name ? _(g.requiredField, { field: _(g.name) }) : undefined} id='name'>

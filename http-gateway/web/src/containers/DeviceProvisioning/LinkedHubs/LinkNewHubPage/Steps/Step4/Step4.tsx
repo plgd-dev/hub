@@ -16,6 +16,7 @@ import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/Linked
 import { messages as g } from '@/containers/Global.i18n'
 import { Inputs, Props } from './Step4.types'
 import SubStepTls from '../SubStepTls'
+import FullPageWizard from '@shared-ui/components/Templates/FullPageWizard'
 
 const Step4: FC<Props> = (props) => {
     const { defaultFormData, onSubmit } = props
@@ -34,12 +35,9 @@ const Step4: FC<Props> = (props) => {
     return (
         <form>
             <h1 css={commonStyles.headline}>{_(t.authorization)}</h1>
-            <p css={[commonStyles.description, commonStyles.descriptionLarge]}></p>
 
-            <h2 css={commonStyles.subHeadline}>{_(t.general)}</h2>
-            <p css={commonStyles.description}>
-                The JWT owner claim refers to a specific piece of information contained within a JWT token that identifies the owner the token.
-            </p>
+            <FullPageWizard.SubHeadline noBorder>{_(t.general)}</FullPageWizard.SubHeadline>
+            <FullPageWizard.Description>{_(t.addLinkedHubAuthorizationGeneralDescription)}</FullPageWizard.Description>
 
             <FormGroup error={errors.authorization?.ownerClaim ? _(g.requiredField, { field: _(t.ownerClaim) }) : undefined} id='authorization.ownerClaim'>
                 <FormLabel text={_(t.ownerClaim)} />
@@ -53,10 +51,7 @@ const Step4: FC<Props> = (props) => {
             </FormGroup>
 
             <h2 css={commonStyles.subHeadline}>{_(t.oAuthClient)}</h2>
-            <p css={commonStyles.description}>
-                OAuth client credentials allow the DPS to authenticate itself directly with the authorization server using its own credentials to obtain an
-                access JWT token.
-            </p>
+            <FullPageWizard.Description>{_(t.addLinkedHubAuthorizationoAuthClientDescription)}</FullPageWizard.Description>
 
             <FormGroup error={errors.authorization?.provider?.name ? _(g.requiredField, { field: _(t.name) }) : undefined} id='authorization.provider.name'>
                 <FormLabel text={_(t.name)} />
@@ -138,8 +133,8 @@ const Step4: FC<Props> = (props) => {
             />
 
             <Spacer type='pt-12'>
-                <h2 css={commonStyles.subHeadline}>{_(t.hTTP)}</h2>
-                <p css={commonStyles.description}>An HTTP client facilitates access to servers for retrieving web resources or data.</p>
+                <FullPageWizard.SubHeadline>{_(t.hTTP)}</FullPageWizard.SubHeadline>
+                <FullPageWizard.Description>{_(t.addLinkedHubAuthorizationHttpDescription)}</FullPageWizard.Description>
             </Spacer>
 
             <FormGroup
