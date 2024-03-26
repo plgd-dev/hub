@@ -319,7 +319,7 @@ export const Routes = () => {
         <RoutesGroup>
             {/* ***** DEVICES ***** */}
             <Route path='/devices'>
-                <Route element={withSuspense(<DevicesDetailsPage defaultActiveTab={1} />)} path=':id/resources/:resource' />
+                <Route element={withSuspense(<DevicesDetailsPage defaultActiveTab={1} />)} path=':id/resources/*' />
                 <Route element={withSuspense(<DevicesDetailsPage defaultActiveTab={1} />)} path=':id/resources' />
                 <Route element={withSuspense(<DevicesDetailsPage defaultActiveTab={2} />)} path=':id/certificates' />
                 <Route element={withSuspense(<DevicesDetailsPage defaultActiveTab={3} />)} path=':id/dps' />
