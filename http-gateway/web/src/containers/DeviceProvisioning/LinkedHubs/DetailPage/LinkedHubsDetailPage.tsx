@@ -125,7 +125,7 @@ const LinkedHubsDetailPage: FC<Props> = () => {
     const handleTabChange = useCallback((i: number) => {
         setActiveTabItem(i)
 
-        navigate(generatePath(pages.DPS.LINKED_HUBS.DETAIL, { hubId: hubId, tab: tabRoutes[i], section: '' }), { replace: true })
+        navigate(generatePath(pages.DPS.LINKED_HUBS.DETAIL, { hubId: hubId, tab: tabRoutes[i], section: '' }))
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
@@ -173,8 +173,6 @@ const LinkedHubsDetailPage: FC<Props> = () => {
         setFormError(defaultFormState)
         setResetIndex((prev) => prev + 1)
     }, [defaultData, defaultFormState])
-
-    console.log(formData)
 
     return (
         <PageLayout

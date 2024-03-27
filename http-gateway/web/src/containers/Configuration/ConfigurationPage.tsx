@@ -1,6 +1,6 @@
 import React, { FC, useCallback, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { useNavigate } from 'react-router-dom'
+import { generatePath, useNavigate } from 'react-router-dom'
 
 import Footer from '@shared-ui/components/Layout/Footer'
 import PageLayout from '@shared-ui/components/Atomic/PageLayout'
@@ -10,6 +10,7 @@ import { Props } from './ConfigurationPage.types'
 import { messages as t } from './ConfigurationPage.i18n'
 import Tab1 from './Tabs/Tab1'
 import Tab2 from './Tabs/Tab2'
+import { pages } from '@/routes'
 
 const ConfigurationPage: FC<Props> = (props) => {
     const { formatMessage: _ } = useIntl()
@@ -24,7 +25,7 @@ const ConfigurationPage: FC<Props> = (props) => {
         setActiveTabItem(i)
         setResetIndex((prev) => prev + 1)
 
-        navigate(`/configuration/${i === 0 ? '' : 'theme-generator'}`, { replace: true })
+        navigate(generatePath(i === 0 ? pages.CONFIGURATION.LINK : pages.CONFIGURATION.THEME_GENERATOR))
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 

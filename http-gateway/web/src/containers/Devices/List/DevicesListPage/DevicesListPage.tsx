@@ -1,6 +1,6 @@
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { useNavigate } from 'react-router-dom'
+import { generatePath, useNavigate } from 'react-router-dom'
 
 import { getApiErrorMessage } from '@shared-ui/common/utils'
 import { useIsMounted } from '@shared-ui/common/hooks'
@@ -25,6 +25,7 @@ import { messages as g } from '@/containers/Global.i18n'
 import notificationId from '@/notificationId'
 import PageLayout from '@/containers/Common/PageLayout'
 import TableList from '@/containers/Common/TableList/TableList'
+import { pages } from '@/routes'
 
 const { UNREGISTERED } = devicesStatuses
 
@@ -115,10 +116,10 @@ const DevicesListPage: FC<any> = () => {
                     return (
                         <a
                             data-test-id={`device-row-${row.id}`}
-                            href={`/devices/${row.original?.id}`}
+                            href={generatePath(pages.DEVICES.DETAIL.LINK, { id: row.original?.id, tab: '' })}
                             onClick={(e) => {
                                 e.preventDefault()
-                                navigate(`/devices/${row.original?.id}`)
+                                navigate(generatePath(pages.DEVICES.DETAIL.LINK, { id: row.original?.id, tab: '' }))
                             }}
                         >
                             <span className='no-wrap-text'>{deviceName}</span>
@@ -178,7 +179,7 @@ const DevicesListPage: FC<any> = () => {
                                     icon: <IconTrash />,
                                 },
                                 {
-                                    onClick: () => navigate(`/devices/${id}`),
+                                    onClick: () => navigate(generatePath(pages.DEVICES.DETAIL.LINK, { id, tab: '' })),
                                     label: _(t.view),
                                     icon: <IconArrowDetail />,
                                 },

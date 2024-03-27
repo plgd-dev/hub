@@ -42,7 +42,7 @@ const DetailHeader: FC<Props> = (props) => {
                 setDeleting(false)
                 setDeleteModal(false)
 
-                navigate(generatePath(pages.CERTIFICATES.LINK), { replace: true })
+                navigate(generatePath(pages.CERTIFICATES.LINK))
             }
         } catch (e: any) {
             setDeleting(false)

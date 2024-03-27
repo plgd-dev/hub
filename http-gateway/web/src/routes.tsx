@@ -81,9 +81,16 @@ export const defaultMenu = {
 }
 
 export const pages = {
+    CONFIGURATION: {
+        LINK: '/configuration',
+        THEME_GENERATOR: '/configuration/theme-generator',
+    },
     DEVICES: {
         LINK: '/devices',
-        DETAIL: '/devices/:id',
+        DETAIL: {
+            LINK: '/devices/:id/:tab',
+            TABS: ['', 'resources', 'certificates', 'dps'],
+        },
     },
     DPS: {
         LINK: '/device-provisioning',
@@ -126,7 +133,7 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                 id: '1',
                 title: <MenuTranslate id='menuDevices' />,
                 link: '/devices',
-                paths: ['/devices', '/devices/:id', '/devices/:id/resources', '/devices/:id/resources/:href', '/devices/:id/certificates', '/devices/:id/dps'],
+                paths: ['/devices', '/devices/:id', '/devices/:id/resources', '/devices/:id/resources/*', '/devices/:id/certificates', '/devices/:id/dps'],
                 exact: true,
                 dataTestId: testId.menu.devices,
                 visibility: menuConfig.devices,
@@ -196,6 +203,7 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                             pages.DPS.LINKED_HUBS.LINK,
                             '/device-provisioning/linked-hubs/:hubId',
                             '/device-provisioning/linked-hubs/:hubId/:tab',
+                            pages.DPS.LINKED_HUBS.DETAIL,
                             pages.DPS.LINKED_HUBS.ADD,
                         ],
                     },

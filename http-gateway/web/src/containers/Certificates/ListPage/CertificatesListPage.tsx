@@ -74,7 +74,7 @@ const CertificatesListPage: FC<any> = () => {
                     parsingError: notificationId.HUB_DPS_CERTIFICATES_LIST_CERT_PARSE_ERROR,
                 }}
                 onDelete={deleteCertificatesApi}
-                onView={(id) => navigate(generatePath(pages.CERTIFICATES.DETAIL, { certificateId: id }), { replace: true })}
+                onView={(id) => navigate(generatePath(pages.CERTIFICATES.DETAIL, { certificateId: id }))}
                 refresh={refresh}
                 setDeleting={setDeleting}
             />

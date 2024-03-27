@@ -62,7 +62,7 @@ const LinkNewHubPage: FC<any> = () => {
         (item: number) => {
             setActiveItem(item)
 
-            navigate(`${pages.DPS.LINKED_HUBS.ADD}${steps[item].link}`, { replace: true })
+            navigate(`${pages.DPS.LINKED_HUBS.ADD}${steps[item].link}`)
         },
         [navigate, steps]
     )
@@ -82,7 +82,7 @@ const LinkNewHubPage: FC<any> = () => {
 
             setFormData(DEFAULT_FORM_DATA)
 
-            navigate(pages.DPS.LINKED_HUBS.LINK, { replace: true })
+            navigate(pages.DPS.LINKED_HUBS.LINK)
         } catch (error: any) {
             Notification.error(
                 { title: _(t.linkedHubsError), message: getApiErrorMessage(error) },
@@ -111,7 +111,7 @@ const LinkNewHubPage: FC<any> = () => {
             }}
             onClose={() => {
                 setFormData(DEFAULT_FORM_DATA)
-                navigate(pages.DPS.LINKED_HUBS.LINK, { replace: true })
+                navigate(pages.DPS.LINKED_HUBS.LINK)
             }}
             onStepChange={onStepChange}
             steps={steps}

@@ -1,6 +1,6 @@
 import React, { FC, lazy, useCallback, useEffect, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { useNavigate, useParams } from 'react-router-dom'
+import { generatePath, useNavigate, useParams } from 'react-router-dom'
 import { useResizeDetector } from 'react-resize-detector'
 
 import NotFoundPage from '@shared-ui/components/Templates/NotFoundPage'
@@ -31,6 +31,7 @@ import { Props } from './DevicesDetailsPage.types'
 import notificationId from '@/notificationId'
 import testId from '@/testId'
 import PageLayout from '@/containers/Common/PageLayout'
+import { pages } from '@/routes'
 
 const Tab1 = lazy(() => import('./Tabs/Tab1'))
 const Tab2 = lazy(() => import('./Tabs/Tab2'))
@@ -84,30 +85,17 @@ const DevicesDetailsPage: FC<Props> = (props) => {
         setShowEditNameModal(true)
     }, [])
 
-    const getNavigationByTab = useCallback((i: number) => {
-        switch (i) {
-            case 0:
-                return ''
-            case 1:
-                return '/resources'
-            case 2:
-                return '/certificates'
-            case 4:
-                return '/dps'
-        }
-    }, [])
-
     const handleTabChange = useCallback(
         (i: number) => {
             setActiveTabItem(i)
 
-            navigate(`/devices/${id}${getNavigationByTab(i)}`, { replace: true })
+            navigate(generatePath(pages.DEVICES.DETAIL.LINK, { id, tab: pages.DEVICES.DETAIL.TABS[i] }), { replace: true })
 
             refreshPendingCommands()
             refreshSoftwareUpdate()
         },
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [getNavigationByTab, id]
+        [id]
     )
 
     if (deviceError) {

@@ -46,7 +46,7 @@ const ProvisioningRecordsListPage = () => {
     const handleTabChange = useCallback((i: number) => {
         setActiveTabItem(i)
 
-        navigate(generatePath(pages.DPS.PROVISIONING_RECORDS.DETAIL, { recordId, tab: tabRoutes[i] }), { replace: true })
+        navigate(generatePath(pages.DPS.PROVISIONING_RECORDS.DETAIL, { recordId, tab: tabRoutes[i] }))
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 

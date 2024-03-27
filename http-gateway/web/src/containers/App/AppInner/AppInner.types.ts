@@ -4,6 +4,5 @@ export type Props = {
     collapsed: boolean
     openTelemetry: any
     setCollapsed: (c: boolean) => void
-    setStoredPathname: (pathname: string) => void
     wellKnownConfig: WellKnownConfigType
 }

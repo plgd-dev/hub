@@ -59,7 +59,7 @@ const Tab3: FC<Props> = (props) => {
     const handleItemClick = useCallback(
         (item: ItemType) => {
             setActiveItem(item.id)
-            navigate(generatePath(pages.DPS.LINKED_HUBS.DETAIL, { hubId: hubId, tab: tabRoutes[2], section: item.link }), { replace: true })
+            navigate(generatePath(pages.DPS.LINKED_HUBS.DETAIL, { hubId: hubId, tab: tabRoutes[2], section: item.link }))
         },
         [hubId, navigate]
     )

@@ -1,5 +1,5 @@
 import React, { FC, useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { generatePath, useNavigate, useParams } from 'react-router-dom'
 import { useIntl } from 'react-intl'
 import omit from 'lodash/omit'
 
@@ -23,6 +23,7 @@ import { isNotificationActive, toggleActiveNotification } from '@/containers/Dev
 import { deviceResourceUpdateListener } from '@/containers/Devices/websockets'
 import { createResourceNotificationId } from '@/containers/PendingCommands/utils'
 import notificationId from '@/notificationId'
+import { pages } from '@/routes'
 
 const Tab2: FC<Props> = (props) => {
     const { deviceStatus, deviceName, isOnline, isActiveTab, isUnregistered, loading, resourcesData, loadingResources, pageSize, refreshResources } = props
@@ -143,7 +144,7 @@ const Tab2: FC<Props> = (props) => {
                     resourceData,
                 })
                 setResourceModal(true)
-                navigate(`/devices/${id}/resources${href}`, { replace: true })
+                navigate(`${generatePath(pages.DEVICES.DETAIL.LINK, { id, tab: pages.DEVICES.DETAIL.TABS[1] })}${href}`)
             }
         } catch (error) {
             if (error && isMounted.current) {
@@ -157,7 +158,7 @@ const Tab2: FC<Props> = (props) => {
                         notificationId: notificationId.HUB_DEVICES_DETAILS_PAGE_TAB2_OPEN_UPDATE_MODAL,
                     }
                 )
-                navigate(`/devices/${id}/resources`, { replace: true })
+                navigate(generatePath(pages.DEVICES.DETAIL.LINK, { id, tab: pages.DEVICES.DETAIL.TABS[1] }))
             }
         }
     }
@@ -252,7 +253,7 @@ const Tab2: FC<Props> = (props) => {
     const handleCloseUpdateModal = () => {
         setResourceModalData(undefined)
 
-        navigate(`/devices/${id}/resources`, { replace: true })
+        navigate(generatePath(pages.DEVICES.DETAIL.LINK, { id, tab: pages.DEVICES.DETAIL.TABS[1] }))
     }
 
     const closeDeleteModal = () => {

@@ -40,7 +40,7 @@ import { CONFIGURATION_PAGE_FRAME } from '@/constants'
 import { dirtyFormState, promptBlockState } from '@/store/recoil.store'
 
 const AppLayout: FC<Props> = (props) => {
-    const { buildInformation, collapsed, mockApp, userData, signOutRedirect, setCollapsed, setStoredPathname } = props
+    const { buildInformation, collapsed, mockApp, userData, signOutRedirect, setCollapsed } = props
     const { formatMessage: _ } = useIntl()
     const location = useLocation()
     const dispatch = useDispatch()
@@ -76,8 +76,8 @@ const AppLayout: FC<Props> = (props) => {
     }, [appStore.version, dispatch, version])
 
     useEffect(() => {
-        isFunction(setStoredPathname) && setStoredPathname(location.pathname)
-    }, [location.pathname, setStoredPathname])
+        window.localStorage.setItem('storedPathname', location.pathname.toString())
+    }, [location.pathname])
 
     const handleItemClick = (item: MenuItem | SubMenuItem, e: SyntheticEvent) => {
         e.preventDefault()

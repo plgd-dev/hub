@@ -9,7 +9,6 @@ export type Props = {
     collapsed: boolean
     mockApp?: boolean
     setCollapsed: (c: boolean) => void
-    setStoredPathname?: (pathname: string) => void
     signOutRedirect?: (data: any) => {}
     userData?: {
         profile?: {

@@ -56,7 +56,7 @@ const NewEnrollmentGroupsPage: FC<any> = () => {
         (item: number) => {
             setActiveItem(item)
 
-            navigate(generatePath(pages.DPS.ENROLLMENT_GROUPS.NEW, { step: steps[item].link }), { replace: true })
+            navigate(generatePath(pages.DPS.ENROLLMENT_GROUPS.NEW, { step: steps[item].link }))
         },
         [navigate, steps]
     )
@@ -77,7 +77,7 @@ const NewEnrollmentGroupsPage: FC<any> = () => {
             { notificationId: notificationId.HUB_DPS_ENROLLMENT_GROUP_LIST_PAGE_CREATED }
         )
 
-        navigate(generatePath(pages.DPS.ENROLLMENT_GROUPS.LINK), { replace: true })
+        navigate(generatePath(pages.DPS.ENROLLMENT_GROUPS.LINK))
     }
 
     const context = useMemo(
@@ -100,7 +100,7 @@ const NewEnrollmentGroupsPage: FC<any> = () => {
             }}
             onClose={() => {
                 setFormData(DEFAULT_FORM_DATA)
-                navigate(generatePath(pages.DPS.ENROLLMENT_GROUPS.LINK), { replace: true })
+                navigate(generatePath(pages.DPS.ENROLLMENT_GROUPS.LINK))
             }}
             onStepChange={onStepChange}
             steps={steps}
