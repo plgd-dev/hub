@@ -28,6 +28,7 @@ import { dirtyFormState } from '@/store/recoil.store'
 import { updateEnrollmentGroup } from '@/containers/DeviceProvisioning/rest'
 import { stringToPem } from '@/containers/DeviceProvisioning/utils'
 import { pages } from '@/routes'
+import { getApiErrorMessage } from '@shared-ui/common/utils'
 
 const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
     const { formatMessage: _ } = useIntl()
@@ -75,11 +76,9 @@ const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
     }, [data])
 
     useEffect(() => {
-        const errorF = error
-
-        if (errorF) {
+        if (error) {
             Notification.error(
-                { title: _(t.enrollmentGroupsError), message: errorF },
+                { title: _(t.enrollmentGroupsError), message: getApiErrorMessage(error) },
                 { notificationId: notificationId.HUB_DPS_ENROLLMENT_GROUP_DETAIL_PAGE_ERROR }
             )
         }

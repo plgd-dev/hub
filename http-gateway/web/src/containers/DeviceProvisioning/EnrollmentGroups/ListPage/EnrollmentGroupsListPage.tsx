@@ -71,7 +71,7 @@ const EnrollmentGroupsListPage: FC<any> = () => {
     useEffect(() => {
         error &&
             Notification.error(
-                { title: _(t.enrollmentGroupsError), message: error },
+                { title: _(t.enrollmentGroupsError), message: getApiErrorMessage(error) },
                 { notificationId: notificationId.HUB_DPS_ENROLLMENT_GROUP_LIST_PAGE_ERROR }
             )
         // eslint-disable-next-line react-hooks/exhaustive-deps

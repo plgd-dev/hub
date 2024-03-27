@@ -488,4 +488,12 @@ export const messages = defineMessages({
         id: 'linkedHubs.deviceGatewayEmptyError',
         defaultMessage: 'At least one device gateway is required.',
     },
+    deviceProviderName: {
+        id: 'linkedHubs.deviceProviderName',
+        defaultMessage: 'Device provider name',
+    },
+    deviceProviderNameTooltip: {
+        id: 'linkedHubs.deviceProviderNameTooltip',
+        defaultMessage: 'The value from coap-gateway configuration',
+    },
 })

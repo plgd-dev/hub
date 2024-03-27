@@ -53,8 +53,11 @@ const Step4: FC<Props> = (props) => {
             <h2 css={commonStyles.subHeadline}>{_(t.oAuthClient)}</h2>
             <FullPageWizard.Description>{_(t.addLinkedHubAuthorizationoAuthClientDescription)}</FullPageWizard.Description>
 
-            <FormGroup error={errors.authorization?.provider?.name ? _(g.requiredField, { field: _(t.name) }) : undefined} id='authorization.provider.name'>
-                <FormLabel text={_(t.name)} />
+            <FormGroup
+                error={errors.authorization?.provider?.name ? _(g.requiredField, { field: _(t.deviceProviderName) }) : undefined}
+                id='authorization.provider.name'
+            >
+                <FormLabel text={_(t.deviceProviderName)} tooltipText={_(t.deviceProviderNameTooltip)} />
                 <FormInput
                     {...register('authorization.provider.name', {
                         required: true,

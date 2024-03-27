@@ -20,7 +20,7 @@ import { globalStyle } from './AppInner.global.styles'
 import AppLayout from '@/containers/App/AppLayout/AppLayout'
 
 const AppInner = (props: Props) => {
-    const { wellKnownConfig, openTelemetry, collapsed, setCollapsed } = props
+    const { wellKnownConfig, openTelemetry, collapsed, setCollapsed, setStoredPathname } = props
     const { userData, userManager, signOutRedirect, isLoading } = useAuth()
 
     const [footerExpanded, setFooterExpanded] = useLocalStorage('footerPanelExpanded', false)
@@ -63,6 +63,7 @@ const AppInner = (props: Props) => {
                         buildInformation={wellKnownConfig?.buildInfo}
                         collapsed={collapsed}
                         setCollapsed={setCollapsed}
+                        setStoredPathname={setStoredPathname}
                         signOutRedirect={signOutRedirect}
                         userData={userData}
                     />

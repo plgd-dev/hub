@@ -35,7 +35,11 @@ const LinkedHubsListPage: FC<any> = () => {
     const breadcrumbs = useMemo(() => [{ label: _(dpsT.deviceProvisioning), link: '/device-provisioning' }, { label: _(t.linkedHubs) }], [])
 
     useEffect(() => {
-        error && Notification.error({ title: _(t.linkedHubsError), message: error }, { notificationId: notificationId.HUB_DPS_LINKED_HUBS_LIST_PAGE_ERROR })
+        error &&
+            Notification.error(
+                { title: _(t.linkedHubsError), message: getApiErrorMessage(error) },
+                { notificationId: notificationId.HUB_DPS_LINKED_HUBS_LIST_PAGE_ERROR }
+            )
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [error])
 

@@ -16,6 +16,7 @@ import { DEFAULT_FORM_DATA } from '@/containers/DeviceProvisioning/LinkedHubs/ut
 import notificationId from '@/notificationId'
 import { createLinkedHub } from '@/containers/DeviceProvisioning/rest'
 import { pages } from '@/routes'
+import { getApiErrorMessage } from '@shared-ui/common/utils'
 
 const Step1 = lazy(() => import('./Steps/Step1'))
 const Step2 = lazy(() => import('./Steps/Step2'))
@@ -83,12 +84,10 @@ const LinkNewHubPage: FC<any> = () => {
 
             navigate(pages.DPS.LINKED_HUBS.LINK, { replace: true })
         } catch (error: any) {
-            let e = error
-            if (!(error instanceof Error)) {
-                e = new Error(error)
-            }
-
-            Notification.error({ title: _(t.linkedHubsError), message: e.message }, { notificationId: notificationId.HUB_DPS_LINKED_HUBS_ADD_ERROR })
+            Notification.error(
+                { title: _(t.linkedHubsError), message: getApiErrorMessage(error) },
+                { notificationId: notificationId.HUB_DPS_LINKED_HUBS_ADD_ERROR }
+            )
         }
     }
 

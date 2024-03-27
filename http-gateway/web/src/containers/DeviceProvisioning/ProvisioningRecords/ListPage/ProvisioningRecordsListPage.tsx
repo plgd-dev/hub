@@ -42,7 +42,7 @@ const ProvisioningRecordsListPage: FC<any> = () => {
     useEffect(() => {
         error &&
             Notification.error(
-                { title: _(t.provisioningRecordsError), message: error },
+                { title: _(t.provisioningRecordsError), message: getApiErrorMessage(error) },
                 { notificationId: notificationId.HUB_DPS_PROVISIONING_RECORDS_LIST_PAGE_ERROR }
             )
         // eslint-disable-next-line react-hooks/exhaustive-deps

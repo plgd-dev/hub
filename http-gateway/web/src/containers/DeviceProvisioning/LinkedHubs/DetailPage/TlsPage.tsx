@@ -21,6 +21,7 @@ import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
 import notificationId from '@/notificationId'
 import { stringToPem } from '../../utils'
+import { getApiErrorMessage } from '@shared-ui/common/utils'
 
 const modalVariants = {
     ADD_CA_POOL: 'addCaPool',
@@ -67,13 +68,8 @@ const TlsPage: FC<any> = (props) => {
                         return await parseCertificate(certsData, key)
                     }
                 } catch (e: any) {
-                    let error = e
-                    if (!(error instanceof Error)) {
-                        error = new Error(e)
-                    }
-
                     Notification.error(
-                        { title: _(t.certificationParsingError), message: error.message },
+                        { title: _(t.certificationParsingError), message: getApiErrorMessage(e) },
                         { notificationId: notificationId.HUB_DPS_LINKED_HUBS_DETAIL_PAGE_CERT_PARSE_ERROR }
                     )
                 }

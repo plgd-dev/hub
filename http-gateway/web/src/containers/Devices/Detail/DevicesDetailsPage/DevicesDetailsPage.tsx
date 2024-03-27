@@ -52,7 +52,7 @@ const DevicesDetailsPage: FC<Props> = (props) => {
     const { data: softwareUpdateData, refresh: refreshSoftwareUpdate } = useDeviceSoftwareUpdateDetails(id)
     const { data: resourcesData, loading: loadingResources, error: resourcesError, refresh } = useDevicesResources(id)
     const { data: pendingCommandsData, refresh: refreshPendingCommands, loading: pendingCommandsLoading } = useDevicePendingCommands(id)
-    const { data: certificates, loading: certificatesLoading, refresh: certificateRefresh } = useDeviceCertificates(id)
+    const { data: certificates, loading: certificatesLoading, refresh: certificateRefresh, error: certificateError } = useDeviceCertificates(id)
     const { data: provisioningRecords, loading: provisioningRecordsLoading } = useDeviceProvisioningRecords(id)
 
     const { ref, width, height } = useResizeDetector()
@@ -116,6 +116,10 @@ const DevicesDetailsPage: FC<Props> = (props) => {
 
     if (resourcesError) {
         return <NotFoundPage message={_(t.deviceResourcesNotFoundMessage, { id })} title={_(t.deviceResourcesNotFound)} />
+    }
+
+    if (certificateError) {
+        return <NotFoundPage message={_(t.deviceCertificatesNotFound, { id })} title={_(t.deviceCertificatesNotFoundMessage)} />
     }
 
     const resources = resourcesData?.[0]?.resources || []

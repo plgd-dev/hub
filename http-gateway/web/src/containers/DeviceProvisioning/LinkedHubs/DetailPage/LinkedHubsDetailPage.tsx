@@ -29,6 +29,7 @@ import { tabRoutes } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
 import { useRecoilState } from 'recoil'
 import { dirtyFormState } from '@/store/recoil.store'
 import { pages } from '@/routes'
+import { getApiErrorMessage } from '@shared-ui/common/utils'
 
 const Tab1 = lazy(() => import('./Tabs/Tab1/Tab1'))
 const Tab2 = lazy(() => import('./Tabs/Tab2/Tab2'))
@@ -107,7 +108,10 @@ const LinkedHubsDetailPage: FC<Props> = () => {
 
     useEffect(() => {
         if (error) {
-            Notification.error({ title: _(t.linkedHubsError), message: error }, { notificationId: notificationId.HUB_DPS_LINKED_HUBS_DETAIL_PAGE_ERROR })
+            Notification.error(
+                { title: _(t.linkedHubsError), message: getApiErrorMessage(error) },
+                { notificationId: notificationId.HUB_DPS_LINKED_HUBS_DETAIL_PAGE_ERROR }
+            )
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [error])
@@ -155,11 +159,10 @@ const LinkedHubsDetailPage: FC<Props> = () => {
 
             setPageLoading(false)
         } catch (error: any) {
-            let e = error
-            if (!(error instanceof Error)) {
-                e = new Error(error)
-            }
-            Notification.error({ title: _(t.linkedHubsError), message: e.message }, { notificationId: notificationId.HUB_DPS_LINKED_HUBS_DETAIL_PAGE_ERROR })
+            Notification.error(
+                { title: _(t.linkedHubsError), message: getApiErrorMessage(error) },
+                { notificationId: notificationId.HUB_DPS_LINKED_HUBS_DETAIL_PAGE_ERROR }
+            )
             setPageLoading(false)
         }
     }

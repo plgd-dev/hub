@@ -33,6 +33,7 @@ const App = (props: { mockApp: boolean }) => {
     const appStore = useSelector((state: CombinedStoreType) => state.app)
 
     const [collapsed, setCollapsed] = useLocalStorage('leftPanelCollapsed', false)
+    const [storedPathname, setStoredPathname] = useLocalStorage('storedPathname', undefined)
 
     process.env.NODE_ENV !== 'development' && openTelemetry.init('hub')
 
@@ -107,7 +108,7 @@ const App = (props: { mockApp: boolean }) => {
     }
 
     const onSignIn = async () => {
-        window.location.href = window.location.href.split('?')[0]
+        window.location.href = storedPathname ?? window.location.href.split('?')[0]
     }
 
     const Wrapper = (child: any) => (
@@ -145,7 +146,13 @@ const App = (props: { mockApp: boolean }) => {
     return (
         <ThemeProvider theme={getThemeData(currentTheme)}>
             <ConditionalWrapper condition={!props.mockApp} wrapper={Wrapper}>
-                <AppInner collapsed={collapsed} openTelemetry={openTelemetry} setCollapsed={setCollapsed} wellKnownConfig={wellKnownConfig} />
+                <AppInner
+                    collapsed={collapsed}
+                    openTelemetry={openTelemetry}
+                    setCollapsed={setCollapsed}
+                    setStoredPathname={setStoredPathname}
+                    wellKnownConfig={wellKnownConfig}
+                />
             </ConditionalWrapper>
         </ThemeProvider>
     )
