@@ -193,11 +193,13 @@ func parseUnpublishQueryString(queries []string) (deviceID string, instanceIDs [
 		if err != nil {
 			return "", nil, fmt.Errorf("cannot parse unpublish query: %w", err)
 		}
-		if di := values.Get("di"); di != "" {
+		for _, di := range values["di"] {
+			if deviceID != "" {
+				return "", nil, fmt.Errorf("unable to parse unpublish query: duplicate in parameter di(%v), previously di(%v)", di, deviceID)
+			}
 			deviceID = di
 		}
-
-		if ins := values.Get("ins"); ins != "" {
+		for _, ins := range values["ins"] {
 			i, err := strconv.Atoi(ins)
 			if err != nil {
 				return "", nil, fmt.Errorf("cannot convert %v to number", ins)
