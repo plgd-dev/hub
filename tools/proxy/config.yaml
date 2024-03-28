@@ -1,0 +1,40 @@
+
+log:
+  level: debug
+  encoding: json
+  stacktrace:
+    enabled: false
+    level: warn
+  encoderConfig:
+    timeEncoder: rfc3339nano
+apis:
+  tcp:
+    tunnels:
+    - address: 0.0.0.0:7000
+      targets:
+      - address: 10.110.110.1:80
+        livenessProbe:
+          period: 10s
+          initialDelay: 5s
+          failureThreshold: 3
+        timeouts:
+          dial: 10s
+          read: 1m
+          write: 10s
+        bufferSize: 4096
+      - address: try.plgd.cloud:5684
+        livenessProbe:
+          period: 10s
+          initialDelay: 5s
+          failureThreshold: 3
+        timeouts:
+          dial: 10s
+          read: 1m
+          write: 10s
+        bufferSize: 4096
+clients:
+  storage:
+    fileDirectory:
+      path: ./
+
+
