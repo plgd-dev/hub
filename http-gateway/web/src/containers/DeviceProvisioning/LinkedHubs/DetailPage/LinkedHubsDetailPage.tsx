@@ -15,6 +15,7 @@ import { useIsMounted } from '@shared-ui/common/hooks'
 import { updateLinkedHubData } from '@/containers/DeviceProvisioning/rest'
 import { buildCATranslations } from '@shared-ui/components/Organisms/CaPoolModal/utils'
 import { useBeforeUnload } from '@shared-ui/common/hooks/useBeforeUnload'
+import { getApiErrorMessage } from '@shared-ui/common/utils'
 
 import { messages as t } from '../LinkedHubs.i18n'
 import { HubDataType, Props } from './LinkedHubsDetailPage.types'
@@ -29,7 +30,6 @@ import { tabRoutes } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
 import { useRecoilState } from 'recoil'
 import { dirtyFormState } from '@/store/recoil.store'
 import { pages } from '@/routes'
-import { getApiErrorMessage } from '@shared-ui/common/utils'
 
 const Tab1 = lazy(() => import('./Tabs/Tab1/Tab1'))
 const Tab2 = lazy(() => import('./Tabs/Tab2/Tab2'))

@@ -1,7 +1,6 @@
-import React, { FC, useContext, useEffect, useMemo } from 'react'
+import React, { FC, useContext, useEffect } from 'react'
 import { useIntl } from 'react-intl'
 import { Controller, useFieldArray } from 'react-hook-form'
-import { z } from 'zod'
 
 import FormGroup from '@shared-ui/components/Atomic/FormGroup'
 import FormLabel from '@shared-ui/components/Atomic/FormLabel'
@@ -22,6 +21,7 @@ import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
 import { Inputs, Props } from './Step2.types'
 import * as styles from './Step2.styles'
+import { useValidationsSchema } from '../../../validationSchema'
 
 const Step2: FC<Props> = (props) => {
     const { defaultFormData } = props
@@ -29,18 +29,7 @@ const Step2: FC<Props> = (props) => {
     const { formatMessage: _ } = useIntl()
     const { updateData, setFormError, setStep } = useContext(FormContext)
 
-    const schema = useMemo(
-        () =>
-            z.object({
-                hubId: z.string().uuid({ message: _(g.invalidUUID, { field: _(g.hubId) }) }),
-                name: z
-                    .string()
-                    .trim()
-                    .min(1, { message: _(g.requiredField, { field: _(g.name) }) }),
-            }),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        []
-    )
+    const schema = useValidationsSchema('group1')
 
     const {
         formState: { errors, isValid },

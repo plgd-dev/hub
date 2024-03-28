@@ -1,5 +1,6 @@
 import React, { FC, useContext } from 'react'
 import { useIntl } from 'react-intl'
+import get from 'lodash/get'
 
 import Headline from '@shared-ui/components/Atomic/Headline'
 import Loadable from '@shared-ui/components/Atomic/Loadable'
@@ -13,17 +14,19 @@ import { useForm } from '@shared-ui/common/hooks'
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
 import { messages as g } from '@/containers/Global.i18n'
 import { Props, Inputs } from './TabContent2.types'
+import { useValidationsSchema } from '@/containers/DeviceProvisioning/LinkedHubs/validationSchema'
 
 const TabContent2: FC<Props> = (props) => {
     const { defaultFormData, loading } = props
 
     const { formatMessage: _ } = useIntl()
     const { updateData, setFormError, commonFormGroupProps, commonInputProps } = useContext(FormContext)
+    const schema = useValidationsSchema('group3')
 
     const {
         formState: { errors },
         register,
-    } = useForm<Inputs>({ defaultFormData, updateData, setFormError, errorKey: 'tab3Content2' })
+    } = useForm<Inputs>({ defaultFormData, updateData, setFormError, errorKey: 'tab3Content2', schema })
 
     return (
         <form>
@@ -36,77 +39,53 @@ const TabContent2: FC<Props> = (props) => {
                         rows={[
                             {
                                 attribute: _(g.name),
+                                required: true,
                                 value: (
                                     <FormGroup
                                         {...commonFormGroupProps}
-                                        error={errors?.authorization?.provider?.name ? _(g.requiredField, { field: _(g.name) }) : undefined}
+                                        error={get(errors, 'authorization.provider.name.message')}
                                         id='authorization.provider.name'
                                     >
-                                        <FormInput
-                                            {...commonInputProps}
-                                            {...register('authorization.provider.name', {
-                                                required: true,
-                                                validate: (val) => val !== '',
-                                            })}
-                                            placeholder={_(g.name)}
-                                        />
+                                        <FormInput {...commonInputProps} {...register('authorization.provider.name')} placeholder={_(g.name)} />
                                     </FormGroup>
                                 ),
                             },
                             {
                                 attribute: _(t.clientId),
+                                required: true,
                                 value: (
                                     <FormGroup
                                         {...commonFormGroupProps}
-                                        error={errors?.authorization?.provider?.clientId ? _(g.requiredField, { field: _(t.clientId) }) : undefined}
+                                        error={get(errors, 'authorization.provider.clientId.message')}
                                         id='authorization.provider.clientId'
                                     >
-                                        <FormInput
-                                            {...commonInputProps}
-                                            {...register('authorization.provider.clientId', {
-                                                required: true,
-                                                validate: (val) => val !== '',
-                                            })}
-                                            placeholder={_(t.clientId)}
-                                        />
+                                        <FormInput {...commonInputProps} {...register('authorization.provider.clientId')} placeholder={_(t.clientId)} />
                                     </FormGroup>
                                 ),
                             },
                             {
                                 attribute: _(t.clientSecret),
+                                required: true,
                                 value: (
                                     <FormGroup
                                         {...commonFormGroupProps}
-                                        error={errors?.authorization?.provider?.clientSecret ? _(g.requiredField, { field: _(t.clientSecret) }) : undefined}
+                                        error={get(errors, 'authorization.provider.clientSecret.message')}
                                         id='authorization.provider.clientSecret'
                                     >
-                                        <FormInput
-                                            {...commonInputProps}
-                                            {...register('authorization.provider.clientSecret', {
-                                                required: true,
-                                                validate: (val) => val !== '',
-                                            })}
-                                            placeholder={_(t.clientSecret)}
-                                        />
+                                        <FormInput {...commonInputProps} {...register('authorization.provider.clientSecret')} placeholder={_(t.clientSecret)} />
                                     </FormGroup>
                                 ),
                             },
                             {
                                 attribute: _(t.authority),
+                                required: true,
                                 value: (
                                     <FormGroup
                                         {...commonFormGroupProps}
-                                        error={errors?.authorization?.provider?.authority ? _(g.requiredField, { field: _(t.authority) }) : undefined}
+                                        error={get(errors, 'authorization.provider.authority.message')}
                                         id='authorization.provider.authority'
                                     >
-                                        <FormInput
-                                            {...commonInputProps}
-                                            {...register('authorization.provider.authority', {
-                                                required: true,
-                                                validate: (val) => val !== '',
-                                            })}
-                                            placeholder={_(t.authority)}
-                                        />
+                                        <FormInput {...commonInputProps} {...register('authorization.provider.authority')} placeholder={_(t.authority)} />
                                     </FormGroup>
                                 ),
                             },

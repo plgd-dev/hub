@@ -1,7 +1,6 @@
-import React, { FC, useContext, useMemo } from 'react'
+import React, { FC, useContext } from 'react'
 import { useIntl } from 'react-intl'
 import { Controller } from 'react-hook-form'
-import { z } from 'zod'
 import get from 'lodash/get'
 
 import FormLabel from '@shared-ui/components/Atomic/FormLabel'
@@ -19,32 +18,14 @@ import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/Linked
 import { messages as g } from '@/containers/Global.i18n'
 import { Inputs, Props } from './Step4.types'
 import SubStepTls from '../SubStepTls'
+import { useValidationsSchema } from '@/containers/DeviceProvisioning/LinkedHubs/validationSchema'
 
 const Step4: FC<Props> = (props) => {
     const { defaultFormData, onSubmit } = props
     const { formatMessage: _ } = useIntl()
     const { updateData, setFormError, setStep } = useContext(FormContext)
 
-    const schema = useMemo(
-        () =>
-            z.object({
-                authorization: z.object({
-                    ownerClaim: z.string().min(1, { message: _(g.requiredField, { field: _(t.ownerClaim) }) }),
-                    provider: z.object({
-                        name: z.string().min(1, { message: _(g.requiredField, { field: _(t.deviceProviderName) }) }),
-                        clientId: z.string().min(1, { message: _(g.requiredField, { field: _(t.clientId) }) }),
-                        clientSecret: z.string().min(1, { message: _(g.requiredField, { field: _(t.clientSecret) }) }),
-                        authority: z.string().min(1, { message: _(g.requiredField, { field: _(t.authority) }) }),
-                        http: z.object({
-                            idleConnTimeout: z.number().min(1, { message: _(g.requiredField, { field: _(t.idleConnectionTimeout) }) }),
-                            timeout: z.number().min(1, { message: _(g.requiredField, { field: _(t.timeout) }) }),
-                        }),
-                    }),
-                }),
-            }),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        []
-    )
+    const schema = useValidationsSchema('group3')
 
     const {
         formState: { errors, isValid },

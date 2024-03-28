@@ -1,6 +1,7 @@
 import React, { FC, useContext } from 'react'
 import { useIntl } from 'react-intl'
 import { Controller } from 'react-hook-form'
+import get from 'lodash/get'
 
 import Headline from '@shared-ui/components/Atomic/Headline'
 import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
@@ -16,12 +17,14 @@ import { useForm } from '@shared-ui/common/hooks'
 import { messages as t } from '../../../../LinkedHubs.i18n'
 import { messages as g } from '@/containers/Global.i18n'
 import { Props, Inputs } from './TabContent1.types'
+import { useValidationsSchema } from '@/containers/DeviceProvisioning/LinkedHubs/validationSchema'
 
 const TabContent1: FC<Props> = (props) => {
     const { defaultFormData, loading } = props
 
     const { formatMessage: _ } = useIntl()
     const { updateData, setFormError, commonTimeoutControlProps, commonInputProps, commonFormGroupProps } = useContext(FormContext)
+    const schema = useValidationsSchema('group2')
 
     const {
         formState: { errors },
@@ -33,6 +36,7 @@ const TabContent1: FC<Props> = (props) => {
         updateData,
         setFormError,
         errorKey: 'tab2Content1',
+        schema,
     })
 
     const time = watch('certificateAuthority.grpc.keepAlive.time')
@@ -48,20 +52,14 @@ const TabContent1: FC<Props> = (props) => {
                         rows={[
                             {
                                 attribute: _(t.address),
+                                required: true,
                                 value: (
                                     <FormGroup
                                         {...commonFormGroupProps}
-                                        error={errors.certificateAuthority?.grpc?.address ? _(g.requiredField, { field: _(g.name) }) : undefined}
+                                        error={get(errors, 'certificateAuthority.grpc.address.message')}
                                         id='certificateAuthority.grpc.address'
                                     >
-                                        <FormInput
-                                            {...commonInputProps}
-                                            {...register('certificateAuthority.grpc.address', {
-                                                required: true,
-                                                validate: (val) => val !== '',
-                                            })}
-                                            placeholder={_(g.name)}
-                                        />
+                                        <FormInput {...commonInputProps} {...register('certificateAuthority.grpc.address')} placeholder={_(t.address)} />
                                     </FormGroup>
                                 ),
                             },
@@ -79,6 +77,7 @@ const TabContent1: FC<Props> = (props) => {
                             rows={[
                                 {
                                     attribute: _(t.time),
+                                    required: true,
                                     value: (
                                         <Loadable condition={time !== undefined}>
                                             <Controller
@@ -87,9 +86,11 @@ const TabContent1: FC<Props> = (props) => {
                                                 render={({ field: { onChange, value } }) => (
                                                     <TimeoutControl
                                                         {...commonTimeoutControlProps}
+                                                        required
                                                         defaultTtlValue={parseInt(value, 10)}
                                                         defaultValue={parseInt(value, 10)}
-                                                        onChange={(v) => onChange(v.toString())}
+                                                        error={errors.certificateAuthority?.grpc?.keepAlive?.time?.message}
+                                                        onChange={(v) => onChange(v)}
                                                     />
                                                 )}
                                             />
@@ -98,6 +99,7 @@ const TabContent1: FC<Props> = (props) => {
                                 },
                                 {
                                     attribute: _(t.timeout),
+                                    required: true,
                                     value: (
                                         <Loadable condition={timeoutN !== undefined}>
                                             <Controller
@@ -106,8 +108,10 @@ const TabContent1: FC<Props> = (props) => {
                                                 render={({ field: { onChange, value } }) => (
                                                     <TimeoutControl
                                                         {...commonTimeoutControlProps}
+                                                        required
                                                         defaultTtlValue={parseInt(value, 10)}
                                                         defaultValue={parseInt(value, 10)}
+                                                        error={errors.certificateAuthority?.grpc?.keepAlive?.timeout?.message}
                                                         onChange={(v) => onChange(v.toString())}
                                                     />
                                                 )}

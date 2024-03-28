@@ -1,7 +1,6 @@
-import React, { FC, useContext, useEffect, useMemo } from 'react'
+import React, { FC, useContext, useEffect } from 'react'
 import { useIntl } from 'react-intl'
 import { Controller } from 'react-hook-form'
-import { z } from 'zod'
 import get from 'lodash/get'
 
 import { useForm } from '@shared-ui/common/hooks'
@@ -21,6 +20,7 @@ import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/Linked
 import { Props, Inputs } from './Step3.types'
 import SubStepTls from '../SubStepTls'
 import { DEFAULT_FORM_DATA } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
+import { useValidationsSchema } from '@/containers/DeviceProvisioning/LinkedHubs/validationSchema'
 
 const Step3: FC<Props> = (props) => {
     const { defaultFormData } = props
@@ -28,25 +28,7 @@ const Step3: FC<Props> = (props) => {
     const { formatMessage: _ } = useIntl()
     const { updateData, setFormError, setStep } = useContext(FormContext)
 
-    const schema = useMemo(
-        () =>
-            z.object({
-                certificateAuthority: z.object({
-                    grpc: z.object({
-                        address: z
-                            .string()
-                            .trim()
-                            .min(1, { message: _(g.requiredField, { field: _(t.address) }) }),
-                        keepAlive: z.object({
-                            time: z.number().min(1, { message: _(g.requiredField, { field: _(t.keepAliveTime) }) }),
-                            timeout: z.number().min(1, { message: _(g.requiredField, { field: _(t.keepAliveTimeout) }) }),
-                        }),
-                    }),
-                }),
-            }),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        []
-    )
+    const schema = useValidationsSchema('group2')
 
     const {
         formState: { errors, isValid },

@@ -20,6 +20,8 @@ import { messages as g } from '../../../../../Global.i18n'
 import { messages as t } from '../../../LinkedHubs.i18n'
 import * as styles from '../Tab.styles'
 import isFunction from 'lodash/isFunction'
+import { useValidationsSchema } from '@/containers/DeviceProvisioning/LinkedHubs/validationSchema'
+import get from 'lodash/get'
 
 const Tab1: FC<Props> = (props) => {
     const { defaultFormData, resetIndex } = props
@@ -27,6 +29,7 @@ const Tab1: FC<Props> = (props) => {
     const { hubId } = useParams()
 
     const { updateData, setFormError, setFormDirty, commonFormGroupProps, commonInputProps } = useContext(FormContext)
+    const schema = useValidationsSchema('group1')
 
     const {
         formState: { errors },
@@ -35,7 +38,7 @@ const Tab1: FC<Props> = (props) => {
         control,
         reset,
         watch,
-    } = useForm<Inputs>({ defaultFormData, updateData, setFormError, setFormDirty, errorKey: 'tab1' })
+    } = useForm<Inputs>({ defaultFormData, updateData, setFormError, setFormDirty, errorKey: 'tab1', schema })
 
     const { fields, append, remove } = useFieldArray({
         control,
@@ -73,14 +76,15 @@ const Tab1: FC<Props> = (props) => {
                             value: <FormInput {...commonInputProps} disabled value={hubId} />,
                         },
                         {
+                            required: true,
                             attribute: _(g.name),
                             key: 'r-name',
                             value: (
-                                <FormGroup {...commonFormGroupProps} error={errors.name ? _(g.requiredField, { field: _(g.name) }) : undefined} id='name'>
+                                <FormGroup {...commonFormGroupProps} error={get(errors, 'name.message')} id='name'>
                                     <FormInput
                                         {...commonInputProps}
                                         placeholder={_(g.name)}
-                                        {...register('name', { required: true, validate: (val) => val !== '' })}
+                                        {...register('name')}
                                         key='name'
                                         onBlur={(e) => updateField('name', e.target.value)}
                                     />
@@ -89,6 +93,7 @@ const Tab1: FC<Props> = (props) => {
                         },
                         ...fields?.map((field, index) => ({
                             attribute: _(t.deviceGateway),
+                            required: true,
                             key: `r-${field.id}`,
                             value: (
                                 <FormGroup
