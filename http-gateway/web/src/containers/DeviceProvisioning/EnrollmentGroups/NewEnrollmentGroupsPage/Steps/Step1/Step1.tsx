@@ -94,6 +94,8 @@ const Step1: FC<any> = (props) => {
                 i18n={{
                     back: _(g.back),
                     continue: _(g.continue),
+                    formError: _(g.invalidFormState),
+                    requiredMessage: _(g.requiredMessage),
                 }}
                 onClickNext={() => setStep?.(1)}
             />

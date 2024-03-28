@@ -59,7 +59,7 @@ const Step1: FC<Props> = (props) => {
                             hubId: wellKnown.id,
                             certificateAuthority: {
                                 grpc: {
-                                    address: wellKnown.certificateAuthority,
+                                    address: wellKnown.certificateAuthority.replace('https://', '').replace('http://', ''),
                                 },
                             },
                             authorization: {

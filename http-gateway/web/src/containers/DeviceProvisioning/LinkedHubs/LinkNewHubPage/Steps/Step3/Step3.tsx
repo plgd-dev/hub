@@ -1,6 +1,8 @@
-import React, { FC, useContext } from 'react'
+import React, { FC, useContext, useEffect, useMemo } from 'react'
 import { useIntl } from 'react-intl'
 import { Controller } from 'react-hook-form'
+import { z } from 'zod'
+import get from 'lodash/get'
 
 import { useForm } from '@shared-ui/common/hooks'
 import { FormContext } from '@shared-ui/common/context/FormContext'
@@ -18,6 +20,7 @@ import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
 import { Props, Inputs } from './Step3.types'
 import SubStepTls from '../SubStepTls'
+import { DEFAULT_FORM_DATA } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
 
 const Step3: FC<Props> = (props) => {
     const { defaultFormData } = props
@@ -25,14 +28,48 @@ const Step3: FC<Props> = (props) => {
     const { formatMessage: _ } = useIntl()
     const { updateData, setFormError, setStep } = useContext(FormContext)
 
+    const schema = useMemo(
+        () =>
+            z.object({
+                certificateAuthority: z.object({
+                    grpc: z.object({
+                        address: z
+                            .string()
+                            .trim()
+                            .min(1, { message: _(g.requiredField, { field: _(t.address) }) }),
+                        keepAlive: z.object({
+                            time: z.number().min(1, { message: _(g.requiredField, { field: _(t.keepAliveTime) }) }),
+                            timeout: z.number().min(1, { message: _(g.requiredField, { field: _(t.keepAliveTimeout) }) }),
+                        }),
+                    }),
+                }),
+            }),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        []
+    )
+
     const {
-        formState: { errors },
+        formState: { errors, isValid },
         register,
         control,
         updateField,
         watch,
         setValue,
-    } = useForm<Inputs>({ defaultFormData, updateData, setFormError, errorKey: 'step3' })
+    } = useForm<Inputs>({ defaultFormData, updateData, setFormError, errorKey: 'step3', schema })
+
+    useEffect(() => {
+        const time = 'certificateAuthority.grpc.keepAlive.time'
+        const timeout = 'certificateAuthority.grpc.keepAlive.timeout'
+
+        if (!get(defaultFormData, time)) {
+            setValue(time, get(DEFAULT_FORM_DATA, time))
+            updateField(time, get(DEFAULT_FORM_DATA, time))
+        }
+        if (!get(defaultFormData, timeout)) {
+            setValue(timeout, get(DEFAULT_FORM_DATA, timeout))
+            updateField(timeout, get(DEFAULT_FORM_DATA, timeout))
+        }
+    }, [defaultFormData, setValue, updateField])
 
     return (
         <form>
@@ -44,15 +81,12 @@ const Step3: FC<Props> = (props) => {
 
             <h3 css={commonStyles.groupHeadline}>{_(t.general)}</h3>
             <FormGroup
-                error={errors.certificateAuthority?.grpc?.address ? _(g.requiredField, { field: _(t.address) }) : undefined}
+                error={errors.certificateAuthority?.grpc?.address ? errors.certificateAuthority?.grpc?.address.message : undefined}
                 id='certificateAuthority.grpc.address'
             >
-                <FormLabel text={_(t.address)} />
+                <FormLabel required text={_(t.address)} />
                 <FormInput
-                    {...register('certificateAuthority.grpc.address', {
-                        required: true,
-                        validate: (val) => val !== '',
-                    })}
+                    {...register('certificateAuthority.grpc.address')}
                     onBlur={(e) => updateField('certificateAuthority.grpc.address', e.target.value)}
                 />
             </FormGroup>
@@ -64,18 +98,20 @@ const Step3: FC<Props> = (props) => {
                 name='certificateAuthority.grpc.keepAlive.time'
                 render={({ field: { onChange, value } }) => (
                     <TimeoutControl
+                        required
                         watchUnitChange
                         align='left'
                         defaultTtlValue={parseInt(value, 10)}
                         defaultValue={parseInt(value, 10)}
+                        error={errors.certificateAuthority?.grpc?.keepAlive?.time?.message}
                         i18n={{
                             default: _(g.default),
                             duration: _(g.time),
                             unit: _(g.metric),
-                            placeholder: _(g.placeholder),
+                            placeholder: '',
                         }}
                         onBlur={(v) => updateField('certificateAuthority.grpc.keepAlive.time', v)}
-                        onChange={(v) => onChange(v.toString())}
+                        onChange={(v) => onChange(parseInt(v, 10))}
                         rightStyle={{
                             width: 150,
                         }}
@@ -89,26 +125,25 @@ const Step3: FC<Props> = (props) => {
                     name='certificateAuthority.grpc.keepAlive.timeout'
                     render={({ field: { onChange, value } }) => (
                         <TimeoutControl
+                            required
                             watchUnitChange
                             align='left'
                             defaultTtlValue={parseInt(value, 10)}
                             defaultValue={parseInt(value, 10)}
+                            error={errors.certificateAuthority?.grpc?.keepAlive?.timeout?.message}
                             i18n={{
                                 default: _(g.default),
                                 duration: _(g.timeout),
                                 unit: _(g.metric),
-                                placeholder: _(g.placeholder),
+                                placeholder: '',
                             }}
                             onBlur={(v) => updateField('certificateAuthority.grpc.keepAlive.timeout', v)}
-                            onChange={(v) => onChange(v.toString())}
+                            onChange={(v) => onChange(v)}
                             rightStyle={{
                                 width: 150,
                             }}
                         />
                     )}
-                    rules={{
-                        required: true,
-                    }}
                 />
             </Spacer>
 
@@ -143,9 +178,12 @@ const Step3: FC<Props> = (props) => {
             />
 
             <StepButtons
+                disableNext={!isValid}
                 i18n={{
                     back: _(g.back),
                     continue: _(g.continue),
+                    formError: _(g.invalidFormState),
+                    requiredMessage: _(g.requiredMessage),
                 }}
                 onClickBack={() => setStep?.(1)}
                 onClickNext={() => setStep?.(3)}

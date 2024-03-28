@@ -66,6 +66,9 @@ const BaseComponent = () => {
         )
     }
 
+    // save the current pathname to the local storage before sign-out
+    window.localStorage.setItem('storedPathname', window.location.pathname.toString())
+
     return (
         <ProviderWrapper>
             <App mockApp={isMockApp} />

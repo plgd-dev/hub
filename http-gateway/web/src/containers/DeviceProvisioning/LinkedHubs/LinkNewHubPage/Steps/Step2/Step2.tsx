@@ -1,6 +1,7 @@
-import React, { FC, useContext } from 'react'
+import React, { FC, useContext, useEffect, useMemo } from 'react'
 import { useIntl } from 'react-intl'
 import { Controller, useFieldArray } from 'react-hook-form'
+import { z } from 'zod'
 
 import FormGroup from '@shared-ui/components/Atomic/FormGroup'
 import FormLabel from '@shared-ui/components/Atomic/FormLabel'
@@ -15,12 +16,12 @@ import * as commonStyles from '@shared-ui/components/Templates/FullPageWizard/Fu
 import StepButtons from '@shared-ui/components/Templates/FullPageWizard/StepButtons'
 import Show from '@shared-ui/components/Atomic/Show'
 import ValidationMessage from '@shared-ui/components/Atomic/ValidationMessage'
+import FullPageWizard from '@shared-ui/components/Templates/FullPageWizard'
 
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
 import { Inputs, Props } from './Step2.types'
 import * as styles from './Step2.styles'
-import FullPageWizard from '@shared-ui/components/Templates/FullPageWizard'
 
 const Step2: FC<Props> = (props) => {
     const { defaultFormData } = props
@@ -28,13 +29,27 @@ const Step2: FC<Props> = (props) => {
     const { formatMessage: _ } = useIntl()
     const { updateData, setFormError, setStep } = useContext(FormContext)
 
+    const schema = useMemo(
+        () =>
+            z.object({
+                hubId: z.string().uuid({ message: _(g.invalidUUID, { field: _(g.hubId) }) }),
+                name: z
+                    .string()
+                    .trim()
+                    .min(1, { message: _(g.requiredField, { field: _(g.name) }) }),
+            }),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        []
+    )
+
     const {
-        formState: { errors },
+        formState: { errors, isValid },
         register,
         control,
         updateField,
         watch,
-    } = useForm<Inputs>({ defaultFormData, updateData, setFormError, errorKey: 'step2' })
+        trigger,
+    } = useForm<Inputs>({ defaultFormData, updateData, setFormError, errorKey: 'step2', schema })
 
     const { fields, append, remove } = useFieldArray({
         control,
@@ -44,31 +59,32 @@ const Step2: FC<Props> = (props) => {
 
     const gateways = watch('gateways')
 
+    useEffect(() => {
+        const validationResult = schema.safeParse(defaultFormData)
+
+        if (!validationResult.success) {
+            if (defaultFormData.hubId) {
+                trigger('hubId')
+            }
+            if (defaultFormData.name) {
+                trigger('name')
+            }
+        }
+    }, [defaultFormData, schema, trigger])
+
     return (
         <form>
             <h1 css={commonStyles.headline}>{_(t.hubDetails)}</h1>
             <FullPageWizard.Description large>{_(t.addLinkedHubDetailsDescription)}</FullPageWizard.Description>
 
-            <FormGroup error={errors.hubId ? _(g.requiredField, { field: _(g.hubId) }) : undefined} id='hubID'>
-                <FormLabel text={_(g.hubId)} />
-                <FormInput
-                    {...register('hubId', {
-                        required: true,
-                        validate: (val) => val !== '',
-                    })}
-                    onBlur={(e) => updateField('hubId', e.target.value)}
-                />
+            <FormGroup error={errors.hubId ? errors.hubId.message : undefined} id='hubID'>
+                <FormLabel required text={_(g.hubId)} />
+                <FormInput {...register('hubId')} onBlur={(e) => updateField('hubId', e.target.value)} />
             </FormGroup>
 
             <FormGroup error={errors.name ? _(g.requiredField, { field: _(g.name) }) : undefined} id='name'>
-                <FormLabel text={_(g.name)} />
-                <FormInput
-                    {...register('name', {
-                        required: true,
-                        validate: (val) => val !== '',
-                    })}
-                    onBlur={(e) => updateField('name', e.target.value)}
-                />
+                <FormLabel required text={_(g.name)} />
+                <FormInput {...register('name')} onBlur={(e) => updateField('name', e.target.value)} />
             </FormGroup>
 
             <Show>
@@ -79,7 +95,7 @@ const Step2: FC<Props> = (props) => {
                             id={`gateways.${index}`}
                             key={field.id}
                         >
-                            <FormLabel text={_(t.deviceGateway)} />
+                            <FormLabel required text={_(t.deviceGateway)} />
                             <Controller
                                 control={control}
                                 name={`gateways.${index}` as any}
@@ -144,12 +160,14 @@ const Step2: FC<Props> = (props) => {
             </div>
 
             <StepButtons
-                disableNext={fields.length === 0 || gateways.some((f) => f.value === '')}
+                disableNext={!isValid || fields.length === 0 || gateways.some((f) => f.value === '')}
                 i18n={{
                     back: _(g.back),
                     continue: _(g.continue),
+                    formError: _(g.invalidFormState),
+                    requiredMessage: _(g.requiredMessage),
                 }}
-                onClickBack={() => setStep?.(1)}
+                onClickBack={() => setStep?.(0)}
                 onClickNext={() => setStep?.(2)}
             />
         </form>

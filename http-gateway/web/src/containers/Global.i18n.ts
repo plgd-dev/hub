@@ -301,4 +301,16 @@ export const messages = defineMessages({
         id: 'global.create',
         defaultMessage: 'Create',
     },
+    invalidUUID: {
+        id: 'global.invalidUUID',
+        defaultMessage: 'Invalid field format {field}',
+    },
+    invalidFormState: {
+        id: 'global.invalidFormState',
+        defaultMessage: 'To continue, you must fill in the details above.',
+    },
+    requiredMessage: {
+        id: 'global.requiredMessage',
+        defaultMessage: 'Fill in and check the information above. All fields marked with (*) are required.',
+    },
 })
