@@ -109,6 +109,9 @@ jobs:
           - name: cert-tool
             directory: tools/cert-tool
             file: tools/cert-tool/Dockerfile
+          - name: proxy-l4
+            directory: tools/proxy
+            file: tools/proxy/Dockerfile
     uses: ./.github/workflows/build-publish-cfg.yaml
     with:
       name: ${{ matrix.name }}
