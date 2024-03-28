@@ -1,14 +1,22 @@
 package main
 
 import (
+	"os"
+	"os/signal"
 	"runtime"
+	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/plgd-dev/hub/v2/pkg/build"
 	"github.com/plgd-dev/hub/v2/pkg/config"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 )
+
+func isErrNetClosing(err error) bool {
+	return strings.Contains(err.Error(), "use of closed network connection")
+}
 
 func main() {
 	var cfg Config
@@ -20,6 +28,9 @@ func main() {
 	log.Set(logger)
 	logger.Debugf("version: %v, buildDate: %v, buildRevision %v", build.Version, build.BuildDate, build.CommitHash)
 	logger.Infof("config: %v", cfg.String())
+
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
 
 	state, err := NewState(cfg.Clients.Storage.Directory)
 	if err != nil {
@@ -54,16 +65,18 @@ func main() {
 		go func(tunnel *Tunnel) {
 			defer wg.Done()
 			err := tunnel.Serve()
-			if err != nil {
-				logger.Fatalf("tunnel serve failed: %v", err)
+			if err != nil && !isErrNetClosing(err) {
+				logger.Errorf("tunnel serve failed: %v", err)
 			}
 		}(tunnel)
 	}
-	wg.Wait()
+
+	<-signals
 	for _, tunnel := range tunnels {
 		err := tunnel.Close()
 		if err != nil {
 			logger.Errorf("tunnel close failed: %v", err)
 		}
 	}
+	wg.Wait()
 }

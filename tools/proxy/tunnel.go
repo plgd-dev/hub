@@ -40,13 +40,13 @@ func NewTunnel(cfg TunnelConfig, state *State, logger log.Logger) (*Tunnel, erro
 	return t, nil
 }
 
-func (t *Tunnel) selectNextTarget(selectedTarget TargetConfig) error {
+func (t *Tunnel) selectNextTarget(selectedTarget TargetConfig) (TunnelState, error) {
 	nextState := TunnelState{
 		SelectedTarget: t.cfg.Targets[0].Addr,
 	}
 	for i, target := range t.cfg.Targets {
 		if i == len(t.cfg.Targets)-1 {
-			return fmt.Errorf("cannot find next target: all next targets are already used")
+			return TunnelState{}, fmt.Errorf("cannot find next target: all next targets are already used")
 		}
 		if target.Addr == selectedTarget.Addr {
 			nextIndex := (i + 1) % len(t.cfg.Targets)
@@ -55,7 +55,7 @@ func (t *Tunnel) selectNextTarget(selectedTarget TargetConfig) error {
 		}
 	}
 	t.state.Set(t.cfg.Addr, nextState)
-	return t.state.Dump()
+	return nextState, nil
 }
 
 func (t *Tunnel) getSelectedTarget() TargetConfig {
@@ -110,12 +110,17 @@ func (t *Tunnel) numConnections() int {
 func (t *Tunnel) incrementFailures(target TargetConfig) error {
 	t.failures++
 	if t.failures >= target.Liveness.FailureThreshold {
-		if err := t.selectNextTarget(target); err != nil {
+		newTarget, err := t.selectNextTarget(target)
+		if err != nil {
 			return err
 		}
+		err = t.state.Dump()
 		t.dropConnections()
 		t.resetFailures()
-		t.logger.Infof("selected next target: %v", t.getSelectedTarget().Addr)
+		t.logger.Infof("selected next target: %v", newTarget.SelectedTarget)
+		if err != nil {
+			return fmt.Errorf("failed to dump state to file: %w", err)
+		}
 	}
 	return nil
 }
@@ -129,7 +134,12 @@ func (t *Tunnel) checkLiveness() {
 	for {
 		target := t.getSelectedTarget()
 		if originalTarget.Addr != target.Addr {
-			time.Sleep(target.Liveness.InitialDelay)
+			select {
+			case <-time.After(target.Liveness.InitialDelay):
+				// Proceed with liveness check
+			case <-t.done:
+				return
+			}
 			originalTarget = target
 		}
 		start := time.Now()
