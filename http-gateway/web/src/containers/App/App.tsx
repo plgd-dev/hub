@@ -107,7 +107,8 @@ const App = (props: { mockApp: boolean }) => {
     }
 
     const onSignIn = async () => {
-        window.location.href = window.location.href.split('?')[0]
+        const storedPathname = window.localStorage.getItem('storedPathname')
+        window.location.href = storedPathname ?? window.location.href.split('?')[0]
     }
 
     const Wrapper = (child: any) => (

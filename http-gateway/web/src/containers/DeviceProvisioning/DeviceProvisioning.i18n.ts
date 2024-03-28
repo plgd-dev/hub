@@ -17,6 +17,10 @@ export const messages = defineMessages({
         id: 'provisioningRecords.linkedHub',
         defaultMessage: 'Linked Hub',
     },
+    linkedHubs: {
+        id: 'provisioningRecords.linkedHubs',
+        defaultMessage: 'Linked Hubs',
+    },
     ownerId: {
         id: 'provisioningRecords.ownerId',
         defaultMessage: 'Owner Id',

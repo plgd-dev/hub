@@ -1,6 +1,6 @@
-import React, { FC, useContext, useEffect } from 'react'
+import React, { FC, useContext } from 'react'
 import { useIntl } from 'react-intl'
-import { Controller, useForm } from 'react-hook-form'
+import { Controller } from 'react-hook-form'
 
 import Headline from '@shared-ui/components/Atomic/Headline'
 import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
@@ -8,45 +8,36 @@ import Spacer from '@shared-ui/components/Atomic/Spacer'
 import Switch from '@shared-ui/components/Atomic/Switch'
 import TimeoutControl from '@shared-ui/components/Atomic/TimeoutControl'
 import Loadable from '@shared-ui/components/Atomic/Loadable/Loadable'
+import FormGroup from '@shared-ui/components/Atomic/FormGroup'
+import FormInput from '@shared-ui/components/Atomic/FormInput'
+import { FormContext } from '@shared-ui/common/context/FormContext'
+import { useForm } from '@shared-ui/common/hooks'
 
 import { messages as t } from '../../../../LinkedHubs.i18n'
 import { messages as g } from '@/containers/Global.i18n'
 import { Props, Inputs } from './TabContent1.types'
 
-import FormGroup from '@shared-ui/components/Atomic/FormGroup'
-import FormInput, { inputAligns } from '@shared-ui/components/Atomic/FormInput'
-import { FormContext } from '@shared-ui/common/context/FormContext'
-
 const TabContent1: FC<Props> = (props) => {
     const { defaultFormData, loading } = props
-    const { formatMessage: _ } = useIntl()
 
-    // const { onSubmit } = useContext(FormContext)
+    const { formatMessage: _ } = useIntl()
+    const { updateData, setFormError, commonTimeoutControlProps, commonInputProps, commonFormGroupProps } = useContext(FormContext)
 
     const {
-        formState: { errors, isDirty, touchedFields, dirtyFields, defaultValues },
+        formState: { errors },
         register,
-        handleSubmit,
         watch,
         control,
-    } = useForm<Inputs>({ mode: 'all', reValidateMode: 'onSubmit', values: defaultFormData })
+    } = useForm<Inputs>({
+        defaultFormData,
+        updateData,
+        setFormError,
+        errorKey: 'tab2Content1',
+    })
 
     const time = watch('certificateAuthority.grpc.keepAlive.time')
     const timeoutN = watch('certificateAuthority.grpc.keepAlive.timeout')
     const permitWithoutStream = watch('certificateAuthority.grpc.keepAlive.permitWithoutStream')
-
-    useEffect(() => {
-        if (isDirty) {
-            if (defaultFormData?.certificateAuthority.grpc.keepAlive.time !== defaultValues?.certificateAuthority?.grpc?.keepAlive?.time) {
-                console.log('DIFF')
-            }
-        }
-    }, [defaultFormData?.certificateAuthority.grpc, defaultValues?.certificateAuthority?.grpc?.keepAlive?.time, isDirty, time])
-
-    console.log({ isDirty })
-    console.log({ touchedFields })
-    console.log({ dirtyFields })
-    console.log(defaultValues)
 
     return (
         <form>
@@ -59,20 +50,17 @@ const TabContent1: FC<Props> = (props) => {
                                 attribute: _(t.address),
                                 value: (
                                     <FormGroup
-                                        errorTooltip
-                                        fullSize
+                                        {...commonFormGroupProps}
                                         error={errors.certificateAuthority?.grpc?.address ? _(g.requiredField, { field: _(g.name) }) : undefined}
                                         id='certificateAuthority.grpc.address'
-                                        marginBottom={false}
                                     >
                                         <FormInput
-                                            inlineStyle
-                                            align={inputAligns.RIGHT}
-                                            placeholder={_(g.name)}
+                                            {...commonInputProps}
                                             {...register('certificateAuthority.grpc.address', {
                                                 required: true,
                                                 validate: (val) => val !== '',
                                             })}
+                                            placeholder={_(g.name)}
                                         />
                                     </FormGroup>
                                 ),
@@ -86,8 +74,8 @@ const TabContent1: FC<Props> = (props) => {
                 <Spacer type='pt-4'>
                     <Loadable condition={!loading}>
                         <SimpleStripTable
-                            leftColSize={4}
-                            rightColSize={8}
+                            leftColSize={5}
+                            rightColSize={7}
                             rows={[
                                 {
                                     attribute: _(t.time),
@@ -98,18 +86,9 @@ const TabContent1: FC<Props> = (props) => {
                                                 name='certificateAuthority.grpc.keepAlive.time'
                                                 render={({ field: { onChange, value } }) => (
                                                     <TimeoutControl
-                                                        inlineStyle
-                                                        smallMode
-                                                        watchUnitChange
-                                                        align='right'
+                                                        {...commonTimeoutControlProps}
                                                         defaultTtlValue={parseInt(value, 10)}
                                                         defaultValue={parseInt(value, 10)}
-                                                        i18n={{
-                                                            default: '',
-                                                            duration: '',
-                                                            placeholder: '',
-                                                            unit: '',
-                                                        }}
                                                         onChange={(v) => onChange(v.toString())}
                                                     />
                                                 )}
@@ -126,18 +105,9 @@ const TabContent1: FC<Props> = (props) => {
                                                 name='certificateAuthority.grpc.keepAlive.timeout'
                                                 render={({ field: { onChange, value } }) => (
                                                     <TimeoutControl
-                                                        inlineStyle
-                                                        smallMode
-                                                        watchUnitChange
-                                                        align='right'
+                                                        {...commonTimeoutControlProps}
                                                         defaultTtlValue={parseInt(value, 10)}
                                                         defaultValue={parseInt(value, 10)}
-                                                        i18n={{
-                                                            default: '',
-                                                            duration: '',
-                                                            placeholder: '',
-                                                            unit: '',
-                                                        }}
                                                         onChange={(v) => onChange(v.toString())}
                                                     />
                                                 )}

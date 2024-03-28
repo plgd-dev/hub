@@ -1,19 +1,26 @@
 import React, { FC, useCallback, useState } from 'react'
 import { useIntl } from 'react-intl'
+import { generatePath, useNavigate } from 'react-router-dom'
 
 import Button from '@shared-ui/components/Atomic/Button'
-import { DeleteModal, IconEdit, IconTrash } from '@shared-ui/components/Atomic'
+import { DeleteModal, IconTrash } from '@shared-ui/components/Atomic'
 import EditNameModal from '@shared-ui/components/Organisms/EditNameModal'
+import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 
 import { Props } from './DetailHeader.types'
 import * as styles from './DetailHeader.styles'
 import testId from '@/testId'
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '../Certificates.i18n'
+import { deleteCertificatesApi } from '@/containers/Certificates/rest'
+import notificationId from '@/notificationId'
+import { pages } from '@/routes'
 
 const DetailHeader: FC<Props> = (props) => {
-    const { formatMessage: _ } = useIntl()
     const { id, loading, refresh } = props
+
+    const { formatMessage: _ } = useIntl()
+    const navigate = useNavigate()
 
     const [deleteModal, setDeleteModal] = useState(false)
     const [deleting, setDeleting] = useState(false)
@@ -25,11 +32,17 @@ const DetailHeader: FC<Props> = (props) => {
             if (id) {
                 setDeleting(true)
 
-                // DELETE
+                await deleteCertificatesApi([id])
+
+                Notification.success(
+                    { title: _(t.certificatesDeleted), message: _(t.certificatesDeletedMessage) },
+                    { notificationId: notificationId.HUB_DEVICES_LIST_PAGE_DELETE_DEVICES }
+                )
 
                 setDeleting(false)
                 setDeleteModal(false)
-                refresh()
+
+                navigate(generatePath(pages.CERTIFICATES.LINK))
             }
         } catch (e: any) {
             setDeleting(false)
@@ -42,9 +55,6 @@ const DetailHeader: FC<Props> = (props) => {
         async (name: string) => {
             try {
                 setEditing(true)
-
-                // UPDATE
-                console.log(name)
 
                 setEditing(false)
                 setEditNameModal(false)
@@ -70,16 +80,16 @@ const DetailHeader: FC<Props> = (props) => {
                 {_(g.delete)}
             </Button>
 
-            <Button
-                dataTestId={testId.dps.certificates.detail.editNameButton}
-                disabled={loading}
-                icon={<IconEdit />}
-                onClick={() => setEditNameModal(true)}
-                style={{ marginLeft: 8 }}
-                variant='tertiary'
-            >
-                {_(g.editName)}
-            </Button>
+            {/* <Button*/}
+            {/*    dataTestId={testId.dps.certificates.detail.editNameButton}*/}
+            {/*    disabled={loading}*/}
+            {/*    icon={<IconEdit />}*/}
+            {/*    onClick={() => setEditNameModal(true)}*/}
+            {/*    style={{ marginLeft: 8 }}*/}
+            {/*    variant='tertiary'*/}
+            {/* >*/}
+            {/*    {_(g.editName)}*/}
+            {/* </Button>*/}
 
             <DeleteModal
                 deleteInformation={[

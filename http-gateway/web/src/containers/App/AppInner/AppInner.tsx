@@ -3,6 +3,7 @@ import { BrowserRouter } from 'react-router-dom'
 import { useAuth } from 'oidc-react'
 import { Global } from '@emotion/react'
 import { Helmet } from 'react-helmet'
+import { RecoilRoot } from 'recoil'
 
 import { InitServices } from '@shared-ui/common/services/init-services'
 import { BrowserNotificationsContainer } from '@shared-ui/components/Atomic/Toast'
@@ -53,21 +54,23 @@ const AppInner = (props: Props) => {
     }
 
     return (
-        <AppContext.Provider value={contextValue}>
-            <InitServices deviceStatusListener={deviceStatusListener} />
-            <Helmet defaultTitle={appConfig.appName} titleTemplate={`%s | ${appConfig.appName}`} />
-            <BrowserRouter>
-                <AppLayout
-                    buildInformation={wellKnownConfig?.buildInfo}
-                    collapsed={collapsed}
-                    setCollapsed={setCollapsed}
-                    signOutRedirect={signOutRedirect}
-                    userData={userData}
-                />
-                <Global styles={globalStyle(toastNotifications)} />
-                <BrowserNotificationsContainer />
-            </BrowserRouter>
-        </AppContext.Provider>
+        <RecoilRoot>
+            <AppContext.Provider value={contextValue}>
+                <InitServices deviceStatusListener={deviceStatusListener} />
+                <Helmet defaultTitle={appConfig.appName} titleTemplate={`%s | ${appConfig.appName}`} />
+                <BrowserRouter>
+                    <AppLayout
+                        buildInformation={wellKnownConfig?.buildInfo}
+                        collapsed={collapsed}
+                        setCollapsed={setCollapsed}
+                        signOutRedirect={signOutRedirect}
+                        userData={userData}
+                    />
+                    <Global styles={globalStyle(toastNotifications)} />
+                    <BrowserNotificationsContainer />
+                </BrowserRouter>
+            </AppContext.Provider>
+        </RecoilRoot>
     )
 }
 

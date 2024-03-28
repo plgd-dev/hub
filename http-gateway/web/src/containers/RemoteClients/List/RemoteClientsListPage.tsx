@@ -344,7 +344,7 @@ const RemoteClientsListPage: FC<any> = () => {
                 minWidth={440}
                 onClose={handleCloseDeleteModal}
                 show={selectedCount > 0}
-                subTitle={selectedCount === 1 && selectedRemoteClient ? selectedRemoteClient?.clientName : null}
+                subTitle={selectedCount === 1 && selectedRemoteClient ? selectedRemoteClient?.clientName : undefined}
                 title={selectedCount === 1 ? _(t.deleteClientMessage) : _(t.deleteClientsMessage, { count: selectedCount })}
             />
         </PageLayout>

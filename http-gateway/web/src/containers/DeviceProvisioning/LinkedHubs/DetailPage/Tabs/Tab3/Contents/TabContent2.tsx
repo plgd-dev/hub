@@ -1,28 +1,32 @@
-import React, { FC } from 'react'
+import React, { FC, useContext } from 'react'
 import { useIntl } from 'react-intl'
-import { useFormContext } from 'react-hook-form'
 
 import Headline from '@shared-ui/components/Atomic/Headline'
 import Loadable from '@shared-ui/components/Atomic/Loadable'
 import Spacer from '@shared-ui/components/Atomic/Spacer'
 import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
 import FormGroup from '@shared-ui/components/Atomic/FormGroup'
-import FormInput, { inputAligns } from '@shared-ui/components/Atomic/FormInput'
+import FormInput from '@shared-ui/components/Atomic/FormInput'
+import { FormContext } from '@shared-ui/common/context/FormContext'
+import { useForm } from '@shared-ui/common/hooks'
 
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
 import { messages as g } from '@/containers/Global.i18n'
-import { Props } from './TabContent2.types'
+import { Props, Inputs } from './TabContent2.types'
 
 const TabContent2: FC<Props> = (props) => {
-    const { loading } = props
+    const { defaultFormData, loading } = props
+
     const { formatMessage: _ } = useIntl()
+    const { updateData, setFormError, commonFormGroupProps, commonInputProps } = useContext(FormContext)
+
     const {
         formState: { errors },
         register,
-    } = useFormContext()
+    } = useForm<Inputs>({ defaultFormData, updateData, setFormError, errorKey: 'tab3Content2' })
 
     return (
-        <div>
+        <form>
             <Headline type='h5'>{_(t.oAuthClient)}</Headline>
             <Spacer type='pt-4'>
                 <Loadable condition={!loading}>
@@ -34,20 +38,17 @@ const TabContent2: FC<Props> = (props) => {
                                 attribute: _(g.name),
                                 value: (
                                     <FormGroup
-                                        errorTooltip
-                                        fullSize
-                                        error={errors.name ? _(g.requiredField, { field: _(g.name) }) : undefined}
+                                        {...commonFormGroupProps}
+                                        error={errors?.authorization?.provider?.name ? _(g.requiredField, { field: _(g.name) }) : undefined}
                                         id='authorization.provider.name'
-                                        marginBottom={false}
                                     >
                                         <FormInput
-                                            inlineStyle
-                                            align={inputAligns.RIGHT}
-                                            placeholder={_(g.name)}
+                                            {...commonInputProps}
                                             {...register('authorization.provider.name', {
                                                 required: true,
                                                 validate: (val) => val !== '',
                                             })}
+                                            placeholder={_(g.name)}
                                         />
                                     </FormGroup>
                                 ),
@@ -56,20 +57,17 @@ const TabContent2: FC<Props> = (props) => {
                                 attribute: _(t.clientId),
                                 value: (
                                     <FormGroup
-                                        errorTooltip
-                                        fullSize
-                                        error={errors.name ? _(g.requiredField, { field: _(t.clientId) }) : undefined}
+                                        {...commonFormGroupProps}
+                                        error={errors?.authorization?.provider?.clientId ? _(g.requiredField, { field: _(t.clientId) }) : undefined}
                                         id='authorization.provider.clientId'
-                                        marginBottom={false}
                                     >
                                         <FormInput
-                                            inlineStyle
-                                            align={inputAligns.RIGHT}
-                                            placeholder={_(t.clientId)}
+                                            {...commonInputProps}
                                             {...register('authorization.provider.clientId', {
                                                 required: true,
                                                 validate: (val) => val !== '',
                                             })}
+                                            placeholder={_(t.clientId)}
                                         />
                                     </FormGroup>
                                 ),
@@ -78,20 +76,17 @@ const TabContent2: FC<Props> = (props) => {
                                 attribute: _(t.clientSecret),
                                 value: (
                                     <FormGroup
-                                        errorTooltip
-                                        fullSize
-                                        error={errors.name ? _(g.requiredField, { field: _(t.clientSecret) }) : undefined}
+                                        {...commonFormGroupProps}
+                                        error={errors?.authorization?.provider?.clientSecret ? _(g.requiredField, { field: _(t.clientSecret) }) : undefined}
                                         id='authorization.provider.clientSecret'
-                                        marginBottom={false}
                                     >
                                         <FormInput
-                                            inlineStyle
-                                            align={inputAligns.RIGHT}
-                                            placeholder={_(t.clientSecret)}
+                                            {...commonInputProps}
                                             {...register('authorization.provider.clientSecret', {
                                                 required: true,
                                                 validate: (val) => val !== '',
                                             })}
+                                            placeholder={_(t.clientSecret)}
                                         />
                                     </FormGroup>
                                 ),
@@ -100,20 +95,17 @@ const TabContent2: FC<Props> = (props) => {
                                 attribute: _(t.authority),
                                 value: (
                                     <FormGroup
-                                        errorTooltip
-                                        fullSize
-                                        error={errors.name ? _(g.requiredField, { field: _(t.authority) }) : undefined}
+                                        {...commonFormGroupProps}
+                                        error={errors?.authorization?.provider?.authority ? _(g.requiredField, { field: _(t.authority) }) : undefined}
                                         id='authorization.provider.authority'
-                                        marginBottom={false}
                                     >
                                         <FormInput
-                                            inlineStyle
-                                            align={inputAligns.RIGHT}
-                                            placeholder={_(t.authority)}
+                                            {...commonInputProps}
                                             {...register('authorization.provider.authority', {
                                                 required: true,
                                                 validate: (val) => val !== '',
                                             })}
+                                            placeholder={_(t.authority)}
                                         />
                                     </FormGroup>
                                 ),
@@ -122,7 +114,7 @@ const TabContent2: FC<Props> = (props) => {
                     />
                 </Loadable>
             </Spacer>
-        </div>
+        </form>
     )
 }
 

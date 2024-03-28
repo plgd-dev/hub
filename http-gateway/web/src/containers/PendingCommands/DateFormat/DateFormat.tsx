@@ -19,7 +19,7 @@ const DateFormat: FC<Props> = (props) => {
     const date = new Date(rawValue ? value : time(value).from('ns').to('ms').value)
 
     return (
-        <span>
+        <span style={{ whiteSpace: 'nowrap' }}>
             {prefixTest}
             {`${formatDate(date, dateFormat as Intl.DateTimeFormatOptions)}
             ${formatTime(date, timeFormatLong as Intl.DateTimeFormatOptions)}`}

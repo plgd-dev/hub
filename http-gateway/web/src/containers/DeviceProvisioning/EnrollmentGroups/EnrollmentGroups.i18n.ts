@@ -41,9 +41,9 @@ export const messages = defineMessages({
         id: 'enrollmentGroups.deviceAuthentication',
         defaultMessage: 'Device authentication',
     },
-    matchingCertificate: {
-        id: 'enrollmentGroups.matchingCertificate',
-        defaultMessage: 'Matching Certificate',
+    leadCertificate: {
+        id: 'enrollmentGroups.leadCertificate',
+        defaultMessage: 'Lead Certificate',
     },
     enableExpiredCertificates: {
         id: 'enrollmentGroups.enableExpiredCertificates',
@@ -60,5 +60,72 @@ export const messages = defineMessages({
     field: {
         id: 'enrollmentGroups.field',
         defaultMessage: 'field',
+    },
+    linkedHubs: {
+        id: 'enrollmentGroups.linkedHubs',
+        defaultMessage: 'Linked Hubs',
+    },
+    uploadCertDescription: {
+        id: 'enrollmentGroups.uploadCertDescription',
+        defaultMessage: 'Supported formats: PEM, CRT or CER (max 1 MB)',
+    },
+    uploadCertTitle: {
+        id: 'enrollmentGroups.uploadCertTitle',
+        defaultMessage: 'Drag & Drop or Choose file to upload Certificate',
+    },
+    certificationParsingError: {
+        id: 'enrollmentGroups.certificationParsingError',
+        defaultMessage: 'Certification Parsing Error',
+    },
+    certificateDetail: {
+        id: 'enrollmentGroups.certificateDetail',
+        defaultMessage: 'Certificate Detail',
+    },
+    preSharedKeySettings: {
+        id: 'enrollmentGroups.preSharedKeySettings',
+        defaultMessage: 'Pre-Shared key settings',
+    },
+    preSharedKey: {
+        id: 'enrollmentGroups.preSharedKey',
+        defaultMessage: 'Pre-Shared key',
+    },
+    addEnrollmentGroupDescription: {
+        id: 'enrollmentGroups.addEnrollmentGroupDescription',
+        defaultMessage:
+            'The new enrollment group establishes parameters such as owner identification, attestation details, and configuration settings for provisioned devices.',
+    },
+    addEnrollmentGroupDeviceAuthenticationDescription: {
+        id: 'enrollmentGroups.addEnrollmentGroupDeviceAuthenticationDescription',
+        defaultMessage:
+            'By configuring the attestation certificate chain, the Device Provisioning Service identifies the enrollment group to which a device belongs by setting the lead certificate.',
+    },
+    addEnrollmentGroupDeviceCredentialsDescription: {
+        id: 'enrollmentGroups.addEnrollmentGroupDeviceCredentialsDescription',
+        defaultMessage:
+            'The credentials enable the configuration of a pre-shared key for the device owner, facilitating device management within a local area network through the plgd/client application.',
+    },
+    enrollmentGroupsDeleted: {
+        id: 'enrollmentGroups.provisioningRecordDeleted',
+        defaultMessage: 'Enrollment groups deleted',
+    },
+    enrollmentGroupsDeletedMessage: {
+        id: 'enrollmentGroups.provisioningRecordDeletedMessage',
+        defaultMessage: 'The selected enrollment groups has been deleted.',
+    },
+    enrollmentGroupUpdated: {
+        id: 'enrollmentGroups.enrollmentGroupUpdated',
+        defaultMessage: 'Enrollment group updated',
+    },
+    enrollmentGroupUpdatedMessage: {
+        id: 'enrollmentGroups.enrollmentGroupUpdatedMessage',
+        defaultMessage: 'The selected enrollment group has been updated.',
+    },
+    enrollmentGroupCreated: {
+        id: 'enrollmentGroups.enrollmentGroupCreated',
+        defaultMessage: 'Enrollment group created',
+    },
+    enrollmentGroupCreatedMessage: {
+        id: 'enrollmentGroups.enrollmentGroupCreatedMessage',
+        defaultMessage: 'The enrollment group has been created.',
     },
 })

@@ -1,23 +1,31 @@
-import React, { FC, useContext, useEffect, useState } from 'react'
+import React, { forwardRef, useContext, useEffect, useState } from 'react'
 import { useIntl } from 'react-intl'
 import isFunction from 'lodash/isFunction'
 import ReactDOM from 'react-dom'
+import { useRecoilState } from 'recoil'
 
 import { default as PageLayoutShared } from '@shared-ui/components/Atomic/PageLayout/PageLayout'
 import Footer from '@shared-ui/components/Layout/Footer'
 import AppContext from '@shared-ui/app/share/AppContext'
 import Breadcrumbs from '@shared-ui/components/Layout/Header/Breadcrumbs'
+import NotFoundPage from '@shared-ui/components/Templates/NotFoundPage'
 
 import { Props } from './PageLayout.types'
 import { messages as g } from '@/containers/Global.i18n'
 import { PendingCommandsExpandableList } from '@/containers/PendingCommands'
+import { dirtyFormState, promptBlockState } from '@/store/recoil.store'
+import { messages as t } from '@/containers/App/App.i18n'
 
-const PageLayout: FC<Props> = (props) => {
+const PageLayout = forwardRef<HTMLDivElement, Props>((props, ref) => {
     const { formatMessage: _ } = useIntl()
-    const { children, breadcrumbs, deviceId, pendingCommands, innerPortalTarget, size, ...rest } = props
+    const { children, breadcrumbs, deviceId, notFound, pendingCommands, innerPortalTarget, size, ...rest } = props
     const { footerExpanded, setFooterExpanded, collapsed } = useContext(AppContext)
 
     const [isDomReady, setIsDomReady] = useState(false)
+
+    const [dirtyState] = useRecoilState(dirtyFormState)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [_block, setBlock] = useRecoilState(promptBlockState)
 
     useEffect(() => {
         setIsDomReady(true)
@@ -49,13 +57,29 @@ const PageLayout: FC<Props> = (props) => {
                     size={size}
                 />
             }
+            header={notFound ? undefined : rest.header}
+            ref={ref}
+            title={notFound ? undefined : rest.title}
         >
-            {isDomReady && ReactDOM.createPortal(<Breadcrumbs items={breadcrumbs} />, document.querySelector('#breadcrumbsPortalTarget') as Element)}
+            {isDomReady &&
+                ReactDOM.createPortal(
+                    <Breadcrumbs
+                        items={breadcrumbs}
+                        onItemClick={(item, e) => {
+                            if (dirtyState) {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                setBlock({ link: item.link || '' })
+                            }
+                        }}
+                    />,
+                    document.querySelector('#breadcrumbsPortalTarget') as Element
+                )}
             {pendingCommands && <PendingCommandsExpandableList deviceId={deviceId} />}
-            {children}
+            {notFound ? <NotFoundPage message={_(t.notFoundPageDefaultMessage)} title={_(t.pageTitle)} /> : children}
         </PageLayoutShared>
     )
-}
+})
 
 PageLayout.displayName = 'PageLayout'
 

@@ -17,11 +17,14 @@
     "declaration": true,
     "sourceMap": true,
     "importHelpers": true,
+    "downlevelIteration": true,
     "types": ["node", "react", "react-is/next", "@emotion/react/types/css-prop"],
     "paths": {
       "@/*": ["src/*"],
       "@shared-ui": ["./packages/shared-ui/src"],
-      "@shared-ui/*": ["./packages/shared-ui/src/*"]
+      "@shared-ui/*": ["./packages/shared-ui/src/*"],
+      "crypto": ["node_modules/crypto-browserify"],
+      "stream": ["node_modules/stream-browserify"]
     }
   },
   "include": ["src/**/*", "test/**/*", "./packages/shared-ui/src/**/*"],

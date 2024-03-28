@@ -58,7 +58,7 @@ const RemoteClientsList: FC<Props> = (props) => {
     }, [])
 
     const handleResetClient = useCallback((clientUrl: string) => {
-        reset(clientUrl).then(() => console.log('done!'))
+        reset(clientUrl).then()
     }, [])
 
     const columns = useMemo(

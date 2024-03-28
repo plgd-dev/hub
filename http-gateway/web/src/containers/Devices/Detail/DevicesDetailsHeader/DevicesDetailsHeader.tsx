@@ -1,7 +1,7 @@
 import React, { FC, memo, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
 import classNames from 'classnames'
-import { useNavigate } from 'react-router-dom'
+import { generatePath, useNavigate } from 'react-router-dom'
 
 import Button from '@shared-ui/components/Atomic/Button'
 import { WebSocketEventClient } from '@shared-ui/common/services'
@@ -16,6 +16,7 @@ import { deleteDevicesApi } from '../../rest'
 import { messages as t } from '../../Devices.i18n'
 import notificationId from '@/notificationId'
 import testId from '@/testId'
+import { pages } from '@/routes'
 
 const DevicesDetailsHeader: FC<Props> = memo((props) => {
     const { deviceId, deviceName, isUnregistered, isOnline, handleOpenEditDeviceNameModal, links } = props
@@ -67,7 +68,7 @@ const DevicesDetailsHeader: FC<Props> = memo((props) => {
                 WebSocketEventClient.unsubscribe(resourceRegistrationObservationWSKey)
 
                 // Redirect to the device page after a deletion
-                navigate(`/`)
+                navigate(generatePath(pages.DEVICES.LINK))
             }
         } catch (error) {
             if (isMounted.current) {

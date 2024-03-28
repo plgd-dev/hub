@@ -106,3 +106,42 @@ export const updateLinkedHubData = (linkedHubsId: string, body: Omit<HubDataType
         'update-linked-hub'
     )
 }
+
+export const createLinkedHub = (body: Omit<HubDataType, 'id'>) => {
+    const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
+    return withTelemetry(
+        () =>
+            fetchApi(`${httpGatewayAddress}${dpsApiEndpoints.HUBS}`, {
+                method: 'POST',
+                cancelRequestDeadlineTimeout,
+                body,
+            }),
+        'update-linked-hub'
+    )
+}
+
+export const updateEnrollmentGroup = (enrollmentGroupId: string, body: any) => {
+    const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
+    return withTelemetry(
+        () =>
+            fetchApi(`${httpGatewayAddress}${dpsApiEndpoints.ENROLLMENT_GROUPS}/${enrollmentGroupId}`, {
+                method: 'PUT',
+                cancelRequestDeadlineTimeout,
+                body,
+            }),
+        'update-enrollment-group'
+    )
+}
+
+export const createEnrollmentGroup = (body: any) => {
+    const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
+    return withTelemetry(
+        () =>
+            fetchApi(`${httpGatewayAddress}${dpsApiEndpoints.ENROLLMENT_GROUPS}`, {
+                method: 'POST',
+                cancelRequestDeadlineTimeout,
+                body,
+            }),
+        'update-enrollment-group'
+    )
+}

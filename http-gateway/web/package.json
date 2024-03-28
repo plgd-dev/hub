@@ -9,6 +9,7 @@
     "@babel/preset-typescript": "^7.23.3",
     "@emotion/eslint-plugin": "^11.11.0",
     "@emotion/react": "^11.11.1",
+    "@hookform/resolvers": "^3.3.4",
     "@opentelemetry/api": "^1.7.0",
     "@opentelemetry/context-zone": "^1.18.1",
     "@opentelemetry/core": "^1.18.1",
@@ -28,8 +29,10 @@
     "@types/url-parse": "^1.4.11",
     "@types/uuid": "^9.0.7",
     "babel-preset-react-app": "^10.0.1",
+    "buffer": "^6.0.3",
     "classnames": "^2.3.2",
     "cross-env": "^7.0.3",
+    "crypto-browserify": "^3.12.0",
     "date-fns": "^2.30.0",
     "framer-motion": "^10.16.4",
     "history": "^5.3.0",
@@ -37,6 +40,7 @@
     "lodash": "^4.17.21",
     "npm": "^10.2.5",
     "oidc-react": "^3.2.2",
+    "pkijs": "^3.0.15",
     "prop-types": "^15.8.1",
     "react": "^18.2.0",
     "react-app-alias-ex": "^2.1.0",
@@ -51,14 +55,17 @@
     "react-responsive": "^9.0.2",
     "react-router-dom": "^6.20.0",
     "react-scripts": "^5.0.1",
+    "recoil": "^0.7.7",
     "redux": "^4.2.1",
     "redux-batched-actions": "^0.5.0",
     "redux-persist": "^6.0.0",
     "redux-state-sync": "^3.1.4",
+    "stream-browserify": "^3.0.0",
     "typescript": "^4.9.4",
     "units-converter": "^1.0.3",
     "uuid": "^8.3.2",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@babel/cli": "^7.23.4",
@@ -82,6 +89,7 @@
     "eslint-plugin-prettier": "^5.0.1",
     "eslint-plugin-react": "^7.33.2",
     "eslint-plugin-react-hooks": "^4.6.0",
+    "husky": "^9.0.11",
     "npm-run-all": "^4.1.5",
     "prettier": "3.1.0",
     "sass": "^1.69.5",
@@ -105,7 +113,8 @@
     ":lint:eslint": "eslint --ext .js,.jsx,.ts,.tsx -c .eslintrc.js --max-warnings 0 --format=pretty ./src",
     ":lint:prettier": "prettier ./src --check",
     ":clean:node:modules": "rimraf ./node_modules packages/**/node_modules",
-    ":generate:theme": "node ./packages/shared-ui/scripts/build.theme.js"
+    ":generate:theme": "node ./packages/shared-ui/scripts/build.theme.js",
+    "prepare": "husky install"
   },
   "scriptComments": {
     "generate-pot": "Examines all src js files and extracts the translate keys into a .pot file, to be used in a translation tool outside of this app.",

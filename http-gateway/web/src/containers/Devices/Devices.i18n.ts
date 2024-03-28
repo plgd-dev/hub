@@ -57,6 +57,14 @@ export const messages = defineMessages({
         id: 'devices.deviceResourcesNotFoundMessage',
         defaultMessage: 'device resources for device with ID "{id}" does not exist.',
     },
+    deviceCertificatesNotFound: {
+        id: 'devices.deviceResourcesNotFound',
+        defaultMessage: 'device certificates not found',
+    },
+    deviceCertificatesNotFoundMessage: {
+        id: 'devices.deviceCertificatesNotFoundMessage',
+        defaultMessage: 'device certificates for device with ID "{id}" does not exist.',
+    },
     href: {
         id: 'devices.href',
         defaultMessage: 'Href',
@@ -568,5 +576,25 @@ export const messages = defineMessages({
     endpoints: {
         id: 'devices.endpoints',
         defaultMessage: 'Endpoints',
+    },
+    certificationParsingError: {
+        id: 'devices.certificationParsingError',
+        defaultMessage: 'Certification Parsing Error',
+    },
+    deleteCertificate: {
+        id: 'devices.deleteCertificate',
+        defaultMessage: 'Delete Certificate',
+    },
+    certificatesDeleteError: {
+        id: 'devices.certificatesDeleteError',
+        defaultMessage: 'Certificates delete error',
+    },
+    certificateDeleted: {
+        id: 'devices.certificateDeleted',
+        defaultMessage: 'Certificate deleted',
+    },
+    certificateDeletedMessage: {
+        id: 'devices.certificateDeletedMessage',
+        defaultMessage: 'The Certificate was successfully deleted.',
     },
 })

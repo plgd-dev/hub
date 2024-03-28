@@ -1,3 +1,3 @@
 export type Props = {
-    certificates?: any
+    data: any
 }

@@ -1,7 +1,7 @@
 import { devicesStatuses } from '@/containers/Devices/constants'
 import { DeviceResourcesCrudType } from '@/containers/Devices/Devices.types'
 
-export type DevicesResourcesDeviceStatusType = typeof devicesStatuses[keyof typeof devicesStatuses]
+export type DevicesResourcesDeviceStatusType = (typeof devicesStatuses)[keyof typeof devicesStatuses]
 
 export type Props = {
     data: {
