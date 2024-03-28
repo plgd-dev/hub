@@ -35,7 +35,7 @@ type TimeoutsConfig struct {
 
 func (c *TimeoutsConfig) Validate() error {
 	if c.Read <= 0 {
-		return fmt.Errorf("dial(%v) - invalid value", c.Dial)
+		return fmt.Errorf("read(%v) - invalid value", c.Read)
 	}
 	if c.Read <= 0 {
 		return fmt.Errorf("read(%v) - invalid value", c.Read)
