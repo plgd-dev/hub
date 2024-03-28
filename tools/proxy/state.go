@@ -60,7 +60,7 @@ func (s *State) load() error {
 	return yaml.NewDecoder(f).Decode(&s.data)
 }
 
-func (s *State) dumpToFile(path string) error {
+func (s *State) dumpToFile() error {
 	f, err := os.OpenFile(filepath.Clean(s.getFilePath()+".tmp"), os.O_CREATE|os.O_WRONLY, 0o600)
 	if err != nil {
 		return err
