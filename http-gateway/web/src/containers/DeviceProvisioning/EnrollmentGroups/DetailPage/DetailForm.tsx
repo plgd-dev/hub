@@ -1,4 +1,4 @@
-import React, { FC, useContext, useEffect, useMemo } from 'react'
+import React, { FC, useContext, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
 import { Controller } from 'react-hook-form'
 
@@ -19,6 +19,7 @@ import { useLinkedHubsList } from '@/containers/DeviceProvisioning/hooks'
 import { Inputs } from '../EnrollmentGroups.types'
 import { DetailFromChunk2, DetailFromChunk3 } from '@/containers/DeviceProvisioning/EnrollmentGroups/DetailFormChunks'
 import notificationId from '@/notificationId'
+import { useValidationsSchema } from '@/containers/DeviceProvisioning/EnrollmentGroups/validationSchema'
 
 const Tab1: FC<Props> = (props) => {
     const { formatMessage: _ } = useIntl()
@@ -26,6 +27,7 @@ const Tab1: FC<Props> = (props) => {
 
     const { updateData, setFormDirty, setFormError, commonInputProps, commonFormGroupProps } = useContext(FormContext)
     const { data: hubsData } = useLinkedHubsList()
+    const schema = useValidationsSchema('combine')
 
     const {
         formState: { errors },
@@ -41,6 +43,7 @@ const Tab1: FC<Props> = (props) => {
         setFormError,
         setFormDirty,
         errorKey: 'tab1',
+        schema,
     })
 
     const linkedHubs = useMemo(
@@ -59,6 +62,14 @@ const Tab1: FC<Props> = (props) => {
             reset()
         }
     }, [reset, resetIndex])
+
+    const [preSharedKeySettings, setPreSharedKeySettings] = useState(false)
+    const preSharedKey = watch('preSharedKey')
+
+    useEffect(() => {
+        setPreSharedKeySettings(!!preSharedKey)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     const topRows = useMemo(
         () => [
@@ -149,7 +160,15 @@ const Tab1: FC<Props> = (props) => {
                 <Headline type='h6'>{_(t.deviceCredentials)}</Headline>
             </Spacer>
 
-            <DetailFromChunk3 errors={errors} register={register} setValue={setValue} updateField={updateField} watch={watch} />
+            <DetailFromChunk3
+                isEditMode
+                errors={errors}
+                preSharedKeySettings={preSharedKeySettings}
+                register={register}
+                setPreSharedKeySettings={setPreSharedKeySettings}
+                setValue={setValue}
+                updateField={updateField}
+            />
         </form>
     )
 }

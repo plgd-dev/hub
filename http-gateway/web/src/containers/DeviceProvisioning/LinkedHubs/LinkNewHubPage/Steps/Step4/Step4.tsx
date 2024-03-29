@@ -206,7 +206,7 @@ const Step4: FC<Props> = (props) => {
                     formError: _(g.invalidFormState),
                     requiredMessage: _(g.requiredMessage),
                 }}
-                onClickBack={() => setStep?.(3)}
+                onClickBack={() => setStep?.(2)}
                 onClickNext={() => onSubmit?.()}
             />
         </form>

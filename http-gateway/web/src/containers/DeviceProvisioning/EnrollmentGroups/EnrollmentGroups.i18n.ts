@@ -128,4 +128,16 @@ export const messages = defineMessages({
         id: 'enrollmentGroups.enrollmentGroupCreatedMessage',
         defaultMessage: 'The enrollment group has been created.',
     },
+    tab1Description: {
+        id: 'enrollmentGroups.tab1Description',
+        defaultMessage: 'Basic setup',
+    },
+    tab2Description: {
+        id: 'enrollmentGroups.tab2Description',
+        defaultMessage: 'Certificate Chain Identification',
+    },
+    tab3Description: {
+        id: 'enrollmentGroups.tab3Description',
+        defaultMessage: 'Pre-shared Key Configuration',
+    },
 })

@@ -1,4 +1,4 @@
-import React, { FC, useContext } from 'react'
+import React, { FC, useContext, useEffect, useState } from 'react'
 import { useIntl } from 'react-intl'
 
 import * as commonStyles from '@shared-ui/components/Templates/FullPageWizard/FullPageWizardCommon.styles'
@@ -11,6 +11,7 @@ import { messages as t } from '@/containers/DeviceProvisioning/EnrollmentGroups/
 import { DetailFromChunk3 } from '@/containers/DeviceProvisioning/EnrollmentGroups/DetailFormChunks'
 import { Inputs } from '@/containers/DeviceProvisioning/EnrollmentGroups/EnrollmentGroups.types'
 import { messages as g } from '@/containers/Global.i18n'
+import { useValidationsSchema } from '@/containers/DeviceProvisioning/EnrollmentGroups/validationSchema'
 
 const Step3: FC<any> = (props) => {
     const { defaultFormData, onSubmit } = props
@@ -18,8 +19,10 @@ const Step3: FC<any> = (props) => {
     const { formatMessage: _ } = useIntl()
 
     const { updateData, setFormDirty, setFormError, setStep } = useContext(FormContext)
+    const schema = useValidationsSchema('group3')
+
     const {
-        formState: { errors },
+        formState: { errors, isValid },
         register,
         updateField,
         setValue,
@@ -30,23 +33,40 @@ const Step3: FC<any> = (props) => {
         setFormError,
         setFormDirty,
         errorKey: 'step3',
+        schema,
     })
+
+    const [preSharedKeySettings, setPreSharedKeySettings] = useState(false)
+    const preSharedKey = watch('preSharedKey')
+
+    useEffect(() => {
+        setPreSharedKeySettings(!!preSharedKey)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 
     return (
         <form>
             <h1 css={commonStyles.headline}>{_(t.deviceCredentials)}</h1>
             <FullPageWizard.Description large>{_(t.addEnrollmentGroupDeviceCredentialsDescription)}</FullPageWizard.Description>
 
-            <DetailFromChunk3 errors={errors} register={register} setValue={setValue} updateField={updateField} watch={watch} />
+            <DetailFromChunk3
+                errors={errors}
+                preSharedKeySettings={preSharedKeySettings}
+                register={register}
+                setPreSharedKeySettings={setPreSharedKeySettings}
+                setValue={setValue}
+                updateField={updateField}
+            />
 
             <StepButtons
+                disableNext={preSharedKeySettings && !isValid}
                 i18n={{
                     back: _(g.back),
                     continue: _(g.create),
                     formError: _(g.invalidFormState),
                     requiredMessage: _(g.requiredMessage),
                 }}
-                onClickBack={() => setStep?.(2)}
+                onClickBack={() => setStep?.(1)}
                 onClickNext={() => onSubmit?.()}
             />
         </form>

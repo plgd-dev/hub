@@ -8,6 +8,7 @@ import Loadable from '@shared-ui/components/Atomic/Loadable'
 import ContentSwitch from '@shared-ui/components/Atomic/ContentSwitch'
 import usePersistentState from '@shared-ui/common/hooks/usePersistentState'
 import { FormContext, getFormContextDefault } from '@shared-ui/common/context/FormContext'
+import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '../EnrollmentGroups.i18n'
@@ -15,7 +16,6 @@ import { DEFAULT_FORM_DATA } from '@/containers/DeviceProvisioning/EnrollmentGro
 import { createEnrollmentGroup } from '@/containers/DeviceProvisioning/rest'
 import { stringToPem } from '@/containers/DeviceProvisioning/utils'
 import { pages } from '@/routes'
-import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import notificationId from '@/notificationId'
 
 const Step1 = lazy(() => import('./Steps/Step1'))
@@ -31,18 +31,18 @@ const NewEnrollmentGroupsPage: FC<any> = () => {
         () => [
             {
                 name: _(t.enrollmentConfiguration),
-                description: 'Basic setup',
-                link: '',
+                description: _(t.tab1Description),
+                link: pages.DPS.ENROLLMENT_GROUPS.NEW.TABS[0],
             },
             {
                 name: _(t.deviceAuthentication),
-                description: 'Certificate Chain Identification',
-                link: '/device-authentication',
+                description: _(t.tab2Description),
+                link: pages.DPS.ENROLLMENT_GROUPS.NEW.TABS[1],
             },
             {
                 name: _(t.deviceCredentials),
-                description: 'Pre-shared Key Configuration',
-                link: '/device-credentials',
+                description: _(t.tab3Description),
+                link: pages.DPS.ENROLLMENT_GROUPS.NEW.TABS[2],
             },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -56,7 +56,7 @@ const NewEnrollmentGroupsPage: FC<any> = () => {
         (item: number) => {
             setActiveItem(item)
 
-            navigate(generatePath(pages.DPS.ENROLLMENT_GROUPS.NEW, { step: steps[item].link }))
+            navigate(generatePath(pages.DPS.ENROLLMENT_GROUPS.NEW.LINK, { step: steps[item].link }))
         },
         [navigate, steps]
     )

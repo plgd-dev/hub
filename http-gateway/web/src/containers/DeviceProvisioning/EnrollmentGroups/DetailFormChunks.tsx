@@ -1,6 +1,7 @@
-import React, { FC, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import React, { FC, useCallback, useContext, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { Control, Controller, FieldErrors, UseFormRegister, UseFormSetValue, UseFormWatch } from 'react-hook-form'
+import { Control, Controller, FieldErrors, UseFormRegister, UseFormSetValue } from 'react-hook-form'
+import get from 'lodash/get'
 
 import Dropzone from '@shared-ui/components/Atomic/Dropzone'
 import Spacer from '@shared-ui/components/Atomic/Spacer'
@@ -83,7 +84,7 @@ export const DetailFromChunk2: FC<Chunk2Props> = (props) => {
                   value: (
                       <FormGroup
                           {...commonFormGroupProps}
-                          error={errors?.attestationMechanism?.x509?.leadCertificateName ? _(g.requiredField, { field: _(t.leadCertificate) }) : undefined}
+                          error={get(errors, 'attestationMechanism.x509.leadCertificateName.message')}
                           id='matchingCertificate'
                       >
                           <div>
@@ -197,43 +198,30 @@ export const DetailFromChunk2: FC<Chunk2Props> = (props) => {
 
 type Chunk3Props = {
     errors: FieldErrors<Inputs>
+    isEditMode?: boolean
+    preSharedKeySettings: boolean
     register: UseFormRegister<Inputs>
-    updateField: (field: any, fieldValue: any) => void
+    setPreSharedKeySettings: (psk: boolean) => void
     setValue: UseFormSetValue<Inputs>
-    watch: UseFormWatch<Inputs>
+    updateField: (field: any, fieldValue: any) => void
 }
 
 export const DetailFromChunk3: FC<Chunk3Props> = (props) => {
-    const { register, setValue, updateField, errors, watch } = props
+    const { register, isEditMode, setValue, updateField, errors, preSharedKeySettings, setPreSharedKeySettings } = props
 
     const { formatMessage: _ } = useIntl()
     const { commonFormGroupProps, commonInputProps } = useContext(FormContext)
-
-    const [preSharedKeySettings, setPreSharedKeySettings] = useState(false)
-
-    const preSharedKey = watch('preSharedKey')
-
-    useEffect(() => {
-        setPreSharedKeySettings(!!preSharedKey)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
 
     const bottomRows = useMemo(
         () => [
             {
                 attribute: _(t.preSharedKey),
                 value: (
-                    <FormGroup {...commonFormGroupProps} error={errors.preSharedKey ? errors.preSharedKey.message : undefined} id='preSharedKey'>
+                    <FormGroup {...commonFormGroupProps} error={get(errors, 'preSharedKey.message')} id='preSharedKey'>
                         <FormInput
                             {...commonInputProps}
-                            {...register('preSharedKey', {
-                                required: _(g.requiredField, { field: _(t.preSharedKey) }),
-                                minLength: {
-                                    value: 16,
-                                    message: _(g.minLenght, { field: _(t.preSharedKey), length: 16 }),
-                                },
-                                validate: (val: string) => preSharedKeySettings && val !== '',
-                            })}
+                            inlineStyle={isEditMode}
+                            {...register('preSharedKey')}
                             onBlur={(e) => updateField('preSharedKey', e.target.value)}
                         />
                     </FormGroup>

@@ -14,6 +14,7 @@ import AppContext from '@shared-ui/app/share/AppContext'
 import { FormContext, getFormContextDefault } from '@shared-ui/common/context/FormContext'
 import Loadable from '@shared-ui/components/Atomic/Loadable'
 import { useBeforeUnload } from '@shared-ui/common/hooks/useBeforeUnload'
+import { getApiErrorMessage } from '@shared-ui/common/utils'
 
 import PageLayout from '@/containers/Common/PageLayout'
 import { messages as dpsT } from '../../DeviceProvisioning.i18n'
@@ -28,7 +29,6 @@ import { dirtyFormState } from '@/store/recoil.store'
 import { updateEnrollmentGroup } from '@/containers/DeviceProvisioning/rest'
 import { stringToPem } from '@/containers/DeviceProvisioning/utils'
 import { pages } from '@/routes'
-import { getApiErrorMessage } from '@shared-ui/common/utils'
 
 const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
     const { formatMessage: _ } = useIntl()

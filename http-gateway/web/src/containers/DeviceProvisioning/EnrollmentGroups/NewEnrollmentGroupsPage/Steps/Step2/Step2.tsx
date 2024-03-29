@@ -5,21 +5,24 @@ import * as commonStyles from '@shared-ui/components/Templates/FullPageWizard/Fu
 import { useForm } from '@shared-ui/common/hooks'
 import { FormContext } from '@shared-ui/common/context/FormContext'
 import StepButtons from '@shared-ui/components/Templates/FullPageWizard/StepButtons'
+import FullPageWizard from '@shared-ui/components/Templates/FullPageWizard'
 
 import { messages as t } from '../../../EnrollmentGroups.i18n'
 import { messages as g } from '@/containers/Global.i18n'
 import { DetailFromChunk2 } from '@/containers/DeviceProvisioning/EnrollmentGroups/DetailFormChunks'
 import { Inputs } from '@/containers/DeviceProvisioning/EnrollmentGroups/EnrollmentGroups.types'
 import notificationId from '@/notificationId'
-import FullPageWizard from '@shared-ui/components/Templates/FullPageWizard'
+import { useValidationsSchema } from '@/containers/DeviceProvisioning/EnrollmentGroups/validationSchema'
 
 const Step2: FC<any> = (props) => {
     const { defaultFormData } = props
 
     const { updateData, setFormDirty, setFormError, setStep } = useContext(FormContext)
     const { formatMessage: _ } = useIntl()
+    const schema = useValidationsSchema('group2')
+
     const {
-        formState: { errors },
+        formState: { errors, isValid },
         control,
         updateField,
         setValue,
@@ -30,6 +33,7 @@ const Step2: FC<any> = (props) => {
         setFormError,
         setFormDirty,
         errorKey: 'step2',
+        schema,
     })
 
     const certificateChain = watch('attestationMechanism.x509.certificateChain')
@@ -49,6 +53,7 @@ const Step2: FC<any> = (props) => {
             />
 
             <StepButtons
+                disableNext={!isValid}
                 i18n={{
                     back: _(g.back),
                     continue: _(g.continue),

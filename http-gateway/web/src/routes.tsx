@@ -105,7 +105,10 @@ export const pages = {
         },
         ENROLLMENT_GROUPS: {
             LINK: '/device-provisioning/enrollment-groups',
-            NEW: '/device-provisioning/enrollment-groups/new-enrollment-group/*',
+            NEW: {
+                LINK: '/device-provisioning/enrollment-groups/new-enrollment-group/:step',
+                TABS: ['', 'device-authentication', 'device-credentials'],
+            },
             DETAIL: '/device-provisioning/enrollment-groups/:enrollmentId',
         },
     },
