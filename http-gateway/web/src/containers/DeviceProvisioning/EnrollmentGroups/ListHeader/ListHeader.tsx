@@ -16,7 +16,7 @@ const ListHeader: FC<Props> = (props) => {
 
     return (
         <>
-            <Button icon={<IconPlus />} onClick={() => navigate(generatePath(pages.DPS.ENROLLMENT_GROUPS.NEW.LINK))} variant='primary'>
+            <Button icon={<IconPlus />} onClick={() => navigate(generatePath(pages.DPS.ENROLLMENT_GROUPS.NEW.LINK, { step: '' }))} variant='primary'>
                 {_(t.enrollmentGroup)}
             </Button>
         </>
