@@ -14,7 +14,6 @@ import IconGlobe from '@shared-ui/components/Atomic/Icon/components/IconGlobe'
 
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
 import { messages as g } from '@/containers/Global.i18n'
-import { tabRoutes } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
 import { Props } from './Tab3.types'
 import { pages } from '@/routes'
 
@@ -59,7 +58,7 @@ const Tab3: FC<Props> = (props) => {
     const handleItemClick = useCallback(
         (item: ItemType) => {
             setActiveItem(item.id)
-            navigate(generatePath(pages.DPS.LINKED_HUBS.DETAIL, { hubId: hubId, tab: tabRoutes[2], section: item.link }))
+            navigate(generatePath(pages.DPS.LINKED_HUBS.DETAIL.LINK, { hubId: hubId, tab: pages.DPS.LINKED_HUBS.DETAIL.TABS[2], section: item.link }))
         },
         [hubId, navigate]
     )

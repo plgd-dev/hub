@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useContext } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import debounce from 'lodash/debounce'
 
 import { useStreamApi, useEmitter } from '@shared-ui/common/hooks'
@@ -114,7 +114,7 @@ export const useDevicePendingCommands = (deviceId: string): StreamApiPropsType =
     const { telemetryWebTracer } = useContext(AppContext)
     return useStreamApi(`${getConfig().httpGatewayAddress}${devicesApiEndpoints.DEVICES}/${deviceId}/pending-commands`, {
         telemetryWebTracer,
-        telemetrySpan: 'get-device-pending-commands',
+        telemetrySpan: `get-device-pending-commands-${deviceId}`,
     })
 }
 
@@ -122,14 +122,30 @@ export const useDeviceCertificates = (deviceId: string): StreamApiPropsType => {
     const { telemetryWebTracer } = useContext(AppContext)
     return useStreamApi(`${getConfig().httpGatewayAddress}/api/v1/signing/records?deviceIdFilter=${deviceId}`, {
         telemetryWebTracer,
-        telemetrySpan: 'get-device-certificates',
+        telemetrySpan: `get-device-certificates-${deviceId}`,
     })
 }
 
-export const useDeviceProvisioningRecords = (deviceId: string): StreamApiPropsType => {
+export const useDeviceProvisioningRecord = (deviceId: string): StreamApiPropsType => {
     const { telemetryWebTracer } = useContext(AppContext)
-    return useStreamApi(`${getConfig().httpGatewayAddress}/api/v1/provisioning-records?deviceIdFilter=${deviceId}`, {
-        telemetryWebTracer,
-        telemetrySpan: 'get-device-provisioning-records',
-    })
+
+    const [data, setData] = useState(null)
+
+    const { data: provisioningRecordData, ...rest }: StreamApiPropsType = useStreamApi(
+        `${getConfig().httpGatewayAddress}/api/v1/provisioning-records?deviceIdFilter=${deviceId}`,
+        {
+            telemetryWebTracer,
+            telemetrySpan: `get-device-provisioning-record-${deviceId}`,
+        }
+    )
+
+    useEffect(() => {
+        if (provisioningRecordData && Array.isArray(provisioningRecordData)) {
+            setData({
+                ...provisioningRecordData[0],
+            })
+        }
+    }, [provisioningRecordData])
+
+    return { data, ...rest }
 }

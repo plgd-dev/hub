@@ -21,6 +21,10 @@ export const messages = defineMessages({
         id: 'provisioningRecords.deviceID',
         defaultMessage: 'Device ID',
     },
+    provisioningRecordId: {
+        id: 'provisioningRecords.provisioningRecordId',
+        defaultMessage: 'Provisioning RecordId ID',
+    },
     attestationID: {
         id: 'provisioningRecords.attestationID',
         defaultMessage: 'Attestation ID',

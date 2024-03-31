@@ -5,7 +5,7 @@ export type TileExpandEnhancedType = {
         status: {
             coapCode: number
             errorMessage?: string
-            date?: number
+            date?: string
         }
     }
 } & Pick<TileExpandEnhancedProps, 'information' | 'title'>

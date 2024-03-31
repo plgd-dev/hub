@@ -3,8 +3,6 @@ import { useIntl } from 'react-intl'
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
 import { messages as g } from '@/containers/Global.i18n'
 
-export const tabRoutes = ['', 'certificate-authority', 'authorization']
-
 export const DEFAULT_FORM_DATA = {
     certificateAuthority: {
         grpc: {

@@ -148,6 +148,7 @@ const Tab1: FC<Props> = (props) => {
             </Spacer>
 
             <DetailFromChunk2
+                isEditMode
                 certificateChain={certificateChain}
                 control={control}
                 errorNotificationId={notificationId.HUB_DPS_LINKED_HUBS_ADD_PAGE_CERT_PARSE_ERROR}

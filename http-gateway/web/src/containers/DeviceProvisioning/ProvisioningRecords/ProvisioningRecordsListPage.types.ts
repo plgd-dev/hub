@@ -49,8 +49,9 @@ export enum Wildcard {
 }
 
 export interface PlgdTime {
-    date: string
+    date?: string
     coapCode: number
+    errorMessage?: string
 }
 
 export interface Attestation {
@@ -64,6 +65,7 @@ export interface AttestationX509 {
 }
 
 export interface Cloud {
+    id?: string
     status: PlgdTime
     providerName: string
     gateways: Gateway[]

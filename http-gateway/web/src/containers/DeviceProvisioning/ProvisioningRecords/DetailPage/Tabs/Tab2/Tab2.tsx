@@ -105,7 +105,7 @@ const Tab2: FC<any> = (props) => {
                     <SubjectColumn
                         deviceId={data.deviceId}
                         hubId={wellKnownConfig.id}
-                        hubsData={data.enrollmentGroupData.hubsData}
+                        hubsData={data.enrollmentGroupData?.hubsData}
                         owner={data.ownership.owner}
                         value={value}
                     />
@@ -155,7 +155,7 @@ const Tab2: FC<any> = (props) => {
             },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [certData]
+        [certData, data.deviceId, data.enrollmentGroupData, data.ownership.owner, wellKnownConfig.id]
     )
 
     return (

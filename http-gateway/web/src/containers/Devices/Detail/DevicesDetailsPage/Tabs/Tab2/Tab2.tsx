@@ -144,7 +144,7 @@ const Tab2: FC<Props> = (props) => {
                     resourceData,
                 })
                 setResourceModal(true)
-                navigate(`${generatePath(pages.DEVICES.DETAIL.LINK, { id, tab: pages.DEVICES.DETAIL.TABS[1] })}${href}`)
+                navigate(`${generatePath(pages.DEVICES.DETAIL.LINK, { id, tab: pages.DEVICES.DETAIL.TABS[1], section: '' })}${href}`)
             }
         } catch (error) {
             if (error && isMounted.current) {
@@ -158,7 +158,7 @@ const Tab2: FC<Props> = (props) => {
                         notificationId: notificationId.HUB_DEVICES_DETAILS_PAGE_TAB2_OPEN_UPDATE_MODAL,
                     }
                 )
-                navigate(generatePath(pages.DEVICES.DETAIL.LINK, { id, tab: pages.DEVICES.DETAIL.TABS[1] }))
+                navigate(generatePath(pages.DEVICES.DETAIL.LINK, { id, tab: pages.DEVICES.DETAIL.TABS[1], section: '' }))
             }
         }
     }
@@ -253,7 +253,7 @@ const Tab2: FC<Props> = (props) => {
     const handleCloseUpdateModal = () => {
         setResourceModalData(undefined)
 
-        navigate(generatePath(pages.DEVICES.DETAIL.LINK, { id, tab: pages.DEVICES.DETAIL.TABS[1] }))
+        navigate(generatePath(pages.DEVICES.DETAIL.LINK, { id, tab: pages.DEVICES.DETAIL.TABS[1], section: '' }))
     }
 
     const closeDeleteModal = () => {

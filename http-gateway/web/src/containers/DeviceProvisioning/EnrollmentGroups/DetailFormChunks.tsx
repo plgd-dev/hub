@@ -26,18 +26,20 @@ import { nameLengthValidator, stringToPem } from '@/containers/DeviceProvisionin
 import { messages as g } from '@/containers/Global.i18n'
 import { useCaI18n } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
 import { Inputs } from './EnrollmentGroups.types'
+import FormLabel from '@shared-ui/components/Atomic/FormLabel'
 
 type Chunk2Props = {
     certificateChain?: string
     control: Control<Inputs, any>
-    setValue: UseFormSetValue<Inputs>
-    updateField: (field: any, fiedldValue: any) => void
-    errors: FieldErrors<Inputs>
     errorNotificationId?: string
+    errors: FieldErrors<Inputs>
+    isEditMode?: boolean
+    setValue: UseFormSetValue<Inputs>
+    updateField: (field: any, fieldValue: any) => void
 }
 
 export const DetailFromChunk2: FC<Chunk2Props> = (props) => {
-    const { certificateChain, control, setValue, updateField, errors, errorNotificationId } = props
+    const { certificateChain, control, isEditMode, setValue, updateField, errors, errorNotificationId } = props
 
     const { formatMessage: _ } = useIntl()
     const i18nCert = useCaI18n()
@@ -135,25 +137,28 @@ export const DetailFromChunk2: FC<Chunk2Props> = (props) => {
 
     return (
         <>
+            {!isEditMode && <FormLabel required text={_(g.certificate)} />}
             {!certificateChain || certificateChain === '' ? (
-                <Dropzone
-                    smallPadding
-                    customFileRenders={[{ format: 'pem', icon: 'icon-file-pem' }]}
-                    description={_(t.uploadCertDescription)}
-                    maxFiles={1}
-                    onFilesDrop={(files) => {
-                        setTimeout(() => {
-                            setValue('attestationMechanism.x509.certificateChain', stringToPem(files[0]), {
-                                shouldDirty: true,
-                                shouldTouch: true,
-                            })
-                            updateField(`attestationMechanism.x509.certificateChain`, stringToPem(files[0]))
-                        }, 100)
-                    }}
-                    renderThumbs={false}
-                    title={_(t.uploadCertTitle)}
-                    validator={(file) => nameLengthValidator(file)}
-                />
+                <>
+                    <Dropzone
+                        smallPadding
+                        customFileRenders={[{ format: 'pem', icon: 'icon-file-pem' }]}
+                        description={_(t.uploadCertDescription)}
+                        maxFiles={1}
+                        onFilesDrop={(files) => {
+                            setTimeout(() => {
+                                setValue('attestationMechanism.x509.certificateChain', stringToPem(files[0]), {
+                                    shouldDirty: true,
+                                    shouldTouch: true,
+                                })
+                                updateField(`attestationMechanism.x509.certificateChain`, stringToPem(files[0]))
+                            }, 100)
+                        }}
+                        renderThumbs={false}
+                        title={_(t.uploadCertTitle)}
+                        validator={(file) => nameLengthValidator(file)}
+                    />
+                </>
             ) : (
                 <Spacer type='pt-3'>
                     <Loadable condition={certData.length > 0}>

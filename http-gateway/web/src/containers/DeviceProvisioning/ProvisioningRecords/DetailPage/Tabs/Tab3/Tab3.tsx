@@ -62,7 +62,7 @@ const Tab3: FC<Props> = (props) => {
                     <SubjectColumn
                         deviceId={data.deviceId}
                         hubId={wellKnownConfig.id}
-                        hubsData={data.enrollmentGroupData.hubsData}
+                        hubsData={data.enrollmentGroupData?.hubsData}
                         owner={data.ownership.owner}
                         value={value}
                     />

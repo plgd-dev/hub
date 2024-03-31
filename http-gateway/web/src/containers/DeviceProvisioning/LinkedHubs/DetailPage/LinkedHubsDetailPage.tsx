@@ -26,7 +26,6 @@ import PageLayout from '@/containers/Common/PageLayout'
 import DetailHeader from '@/containers/DeviceProvisioning/LinkedHubs/DetailHeader'
 import testId from '@/testId'
 import { messages as dpsT } from '@/containers/DeviceProvisioning/DeviceProvisioning.i18n'
-import { tabRoutes } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
 import { useRecoilState } from 'recoil'
 import { dirtyFormState } from '@/store/recoil.store'
 import { pages } from '@/routes'
@@ -56,7 +55,7 @@ const LinkedHubsDetailPage: FC<Props> = () => {
         }
     }, [data])
 
-    const [activeTabItem, setActiveTabItem] = useState(tab ? tabRoutes.indexOf(tab) : 0)
+    const [activeTabItem, setActiveTabItem] = useState(tab ? pages.DPS.LINKED_HUBS.DETAIL.TABS.indexOf(tab) : 0)
     const [pageLoading, setPageLoading] = useState(false)
     const [formData, setFormData] = useState<any>(defaultData)
     const defaultFormState = useMemo(
@@ -117,7 +116,7 @@ const LinkedHubsDetailPage: FC<Props> = () => {
     }, [error])
 
     useEffect(() => {
-        if (tabRoutes.indexOf(tab) === -1) {
+        if (pages.DPS.LINKED_HUBS.DETAIL.TABS.indexOf(tab) === -1) {
             setNotFound(true)
         }
     }, [tab])
@@ -125,7 +124,7 @@ const LinkedHubsDetailPage: FC<Props> = () => {
     const handleTabChange = useCallback((i: number) => {
         setActiveTabItem(i)
 
-        navigate(generatePath(pages.DPS.LINKED_HUBS.DETAIL, { hubId: hubId, tab: tabRoutes[i], section: '' }))
+        navigate(generatePath(pages.DPS.LINKED_HUBS.DETAIL.LINK, { hubId: hubId, tab: pages.DPS.LINKED_HUBS.DETAIL.TABS[i], section: '' }))
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 

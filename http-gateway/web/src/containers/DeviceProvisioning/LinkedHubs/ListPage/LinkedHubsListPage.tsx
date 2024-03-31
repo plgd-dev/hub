@@ -59,10 +59,10 @@ const LinkedHubsListPage: FC<any> = () => {
                 accessor: 'name',
                 Cell: ({ value, row }: { value: string | number; row: any }) => (
                     <a
-                        href={generatePath(pages.DPS.LINKED_HUBS.DETAIL, { hubId: row.original.id, tab: '', section: '' })}
+                        href={generatePath(pages.DPS.LINKED_HUBS.DETAIL.LINK, { hubId: row.original.id, tab: '', section: '' })}
                         onClick={(e) => {
                             e.preventDefault()
-                            navigate(generatePath(pages.DPS.LINKED_HUBS.DETAIL, { hubId: row.original.id, tab: '', section: '' }))
+                            navigate(generatePath(pages.DPS.LINKED_HUBS.DETAIL.LINK, { hubId: row.original.id, tab: '', section: '' }))
                         }}
                     >
                         <span className='no-wrap-text'>{value}</span>
@@ -110,7 +110,7 @@ const LinkedHubsListPage: FC<any> = () => {
                                     icon: <IconTrash />,
                                 },
                                 {
-                                    onClick: () => navigate(generatePath(pages.DPS.LINKED_HUBS.DETAIL, { hubId: id, tab: '', section: '' })),
+                                    onClick: () => navigate(generatePath(pages.DPS.LINKED_HUBS.DETAIL.LINK, { hubId: id, tab: '', section: '' })),
                                     label: _(g.view),
                                     icon: <IconArrowDetail />,
                                 },

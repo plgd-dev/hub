@@ -13,7 +13,6 @@ import IconShield from '@shared-ui/components/Atomic/Icon/components/IconShield'
 import { messages as g } from '../../../../../Global.i18n'
 import { messages as t } from '../../../LinkedHubs.i18n'
 import { Props } from './Tab2.types'
-import { tabRoutes } from '../../../utils'
 import { pages } from '@/routes'
 
 const TabContent1 = lazy(() => import('./Contents/TabContent1'))
@@ -55,7 +54,7 @@ const Tab2: FC<Props> = (props) => {
         (item: ItemType) => {
             setActiveItem(item.id)
 
-            navigate(generatePath(pages.DPS.LINKED_HUBS.DETAIL, { hubId: hubId, tab: tabRoutes[1], section: item.link }))
+            navigate(generatePath(pages.DPS.LINKED_HUBS.DETAIL.LINK, { hubId: hubId, tab: pages.DPS.LINKED_HUBS.DETAIL.TABS[1], section: item.link }))
         },
         [hubId, navigate]
     )

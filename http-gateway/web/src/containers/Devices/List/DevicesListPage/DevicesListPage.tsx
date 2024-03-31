@@ -116,10 +116,10 @@ const DevicesListPage: FC<any> = () => {
                     return (
                         <a
                             data-test-id={`device-row-${row.id}`}
-                            href={generatePath(pages.DEVICES.DETAIL.LINK, { id: row.original?.id, tab: '' })}
+                            href={generatePath(pages.DEVICES.DETAIL.LINK, { id: row.original?.id, tab: '', section: '' })}
                             onClick={(e) => {
                                 e.preventDefault()
-                                navigate(generatePath(pages.DEVICES.DETAIL.LINK, { id: row.original?.id, tab: '' }))
+                                navigate(generatePath(pages.DEVICES.DETAIL.LINK, { id: row.original?.id, tab: '', section: '' }))
                             }}
                         >
                             <span className='no-wrap-text'>{deviceName}</span>
@@ -179,7 +179,7 @@ const DevicesListPage: FC<any> = () => {
                                     icon: <IconTrash />,
                                 },
                                 {
-                                    onClick: () => navigate(generatePath(pages.DEVICES.DETAIL.LINK, { id, tab: '' })),
+                                    onClick: () => navigate(generatePath(pages.DEVICES.DETAIL.LINK, { id, tab: '', section: '' })),
                                     label: _(t.view),
                                     icon: <IconArrowDetail />,
                                 },

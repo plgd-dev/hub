@@ -313,4 +313,8 @@ export const messages = defineMessages({
         id: 'global.requiredMessage',
         defaultMessage: 'Fill in and check the information above. All fields marked with (*) are required.',
     },
+    details: {
+        id: 'global.details',
+        defaultMessage: 'Details',
+    },
 })

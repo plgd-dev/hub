@@ -1,3 +1,6 @@
+import { DataType } from '@/containers/DeviceProvisioning/ProvisioningRecords/ProvisioningRecordsListPage.types'
+
 export type Props = {
-    data: any
+    data: DataType
+    isDeviceMode?: boolean
 }

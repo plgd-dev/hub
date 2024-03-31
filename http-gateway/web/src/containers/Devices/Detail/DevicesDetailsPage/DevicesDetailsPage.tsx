@@ -23,7 +23,7 @@ import {
     useDevicesResources,
     useDeviceSoftwareUpdateDetails,
     useDeviceCertificates,
-    useDeviceProvisioningRecords,
+    useDeviceProvisioningRecord,
 } from '../../hooks'
 import { messages as t } from '../../Devices.i18n'
 import './DevicesDetailsPage.scss'
@@ -32,11 +32,12 @@ import notificationId from '@/notificationId'
 import testId from '@/testId'
 import PageLayout from '@/containers/Common/PageLayout'
 import { pages } from '@/routes'
+import { BreadcrumbItem } from '@shared-ui/components/Layout/Header/Breadcrumbs/Breadcrumbs.types'
 
-const Tab1 = lazy(() => import('./Tabs/Tab1'))
-const Tab2 = lazy(() => import('./Tabs/Tab2'))
+const Tab1 = lazy(() => import('./Tabs/Tab1/Tab1'))
+const Tab2 = lazy(() => import('./Tabs/Tab2/Tab2'))
 const Tab3 = lazy(() => import('./Tabs/Tab3/Tab3'))
-const Tab4 = lazy(() => import('./Tabs/Tab4'))
+const Tab4 = lazy(() => import('./Tabs/Tab4/Tab4'))
 
 const DevicesDetailsPage: FC<Props> = (props) => {
     const { defaultActiveTab } = props
@@ -54,7 +55,7 @@ const DevicesDetailsPage: FC<Props> = (props) => {
     const { data: resourcesData, loading: loadingResources, error: resourcesError, refresh } = useDevicesResources(id)
     const { data: pendingCommandsData, refresh: refreshPendingCommands, loading: pendingCommandsLoading } = useDevicePendingCommands(id)
     const { data: certificates, loading: certificatesLoading, refresh: certificateRefresh, error: certificateError } = useDeviceCertificates(id)
-    const { data: provisioningRecords, loading: provisioningRecordsLoading } = useDeviceProvisioningRecords(id)
+    const { data: provisioningRecords, loading: provisioningRecordsLoading } = useDeviceProvisioningRecord(id)
 
     const { ref, width, height } = useResizeDetector()
 
@@ -89,7 +90,7 @@ const DevicesDetailsPage: FC<Props> = (props) => {
         (i: number) => {
             setActiveTabItem(i)
 
-            navigate(generatePath(pages.DEVICES.DETAIL.LINK, { id, tab: pages.DEVICES.DETAIL.TABS[i] }), { replace: true })
+            navigate(generatePath(pages.DEVICES.DETAIL.LINK, { id, tab: pages.DEVICES.DETAIL.TABS[i], section: '' }), { replace: true })
 
             refreshPendingCommands()
             refreshSoftwareUpdate()
@@ -115,15 +116,15 @@ const DevicesDetailsPage: FC<Props> = (props) => {
     const isOnline = isDeviceOnline(data)
     const isUnregistered = devicesStatuses.UNREGISTERED === deviceStatus
     const deviceName = data?.name || NO_DEVICE_NAME
-    const breadcrumbs = [
+    const breadcrumbs: BreadcrumbItem[] = [
         {
-            to: '/',
+            link: generatePath(pages.DEVICES.LINK),
             label: _(menuT.devices),
         },
     ]
 
     if (deviceName) {
-        breadcrumbs.push({ label: deviceName, to: '#' })
+        breadcrumbs.push({ label: deviceName })
     }
 
     // Handler for setting the twin synchronization on a device
@@ -199,7 +200,7 @@ const DevicesDetailsPage: FC<Props> = (props) => {
         >
             <PageLayout
                 pendingCommands
-                breadcrumbs={[{ label: _(menuT.devices), link: '/' }, { label: deviceName }]}
+                breadcrumbs={breadcrumbs}
                 dataTestId={testId.devices.detail.layout}
                 deviceId={id}
                 header={

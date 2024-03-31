@@ -597,4 +597,12 @@ export const messages = defineMessages({
         id: 'devices.certificateDeletedMessage',
         defaultMessage: 'The Certificate was successfully deleted.',
     },
+    credentials: {
+        id: 'devices.credentials',
+        defaultMessage: 'Credentials',
+    },
+    acls: {
+        id: 'devices.acls',
+        defaultMessage: 'ACLs',
+    },
 })

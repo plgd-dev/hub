@@ -88,15 +88,19 @@ export const pages = {
     DEVICES: {
         LINK: '/devices',
         DETAIL: {
-            LINK: '/devices/:id/:tab',
+            LINK: '/devices/:id/:tab/:section',
             TABS: ['', 'resources', 'certificates', 'dps'],
+            SECTIONS: ['', 'credentials', 'acls'],
         },
     },
     DPS: {
         LINK: '/device-provisioning',
         LINKED_HUBS: {
             LINK: '/device-provisioning/linked-hubs',
-            DETAIL: '/device-provisioning/linked-hubs/:hubId/:tab/:section',
+            DETAIL: {
+                LINK: '/device-provisioning/linked-hubs/:hubId/:tab/:section',
+                TABS: ['', 'certificate-authority', 'authorization'],
+            },
             ADD: '/device-provisioning/linked-hubs/link-new-hub',
         },
         PROVISIONING_RECORDS: {
@@ -136,7 +140,15 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                 id: '1',
                 title: <MenuTranslate id='menuDevices' />,
                 link: '/devices',
-                paths: ['/devices', '/devices/:id', '/devices/:id/resources', '/devices/:id/resources/*', '/devices/:id/certificates', '/devices/:id/dps'],
+                paths: [
+                    '/devices',
+                    '/devices/:id',
+                    '/devices/:id/resources',
+                    '/devices/:id/resources/*',
+                    '/devices/:id/certificates',
+                    '/devices/:id/dps',
+                    '/devices/:id/dps/:section',
+                ],
                 exact: true,
                 dataTestId: testId.menu.devices,
                 visibility: menuConfig.devices,
@@ -206,7 +218,7 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                             pages.DPS.LINKED_HUBS.LINK,
                             '/device-provisioning/linked-hubs/:hubId',
                             '/device-provisioning/linked-hubs/:hubId/:tab',
-                            pages.DPS.LINKED_HUBS.DETAIL,
+                            pages.DPS.LINKED_HUBS.DETAIL.LINK,
                             pages.DPS.LINKED_HUBS.ADD,
                         ],
                     },
@@ -338,6 +350,7 @@ export const Routes = () => {
                 <Route element={withSuspense(<DevicesDetailsPage defaultActiveTab={1} />)} path=':id/resources' />
                 <Route element={withSuspense(<DevicesDetailsPage defaultActiveTab={2} />)} path=':id/certificates' />
                 <Route element={withSuspense(<DevicesDetailsPage defaultActiveTab={3} />)} path=':id/dps' />
+                <Route element={withSuspense(<DevicesDetailsPage defaultActiveTab={3} />)} path=':id/dps/:section' />
                 <Route element={withSuspense(<DevicesDetailsPage defaultActiveTab={0} />)} path=':id' />
                 <Route element={withSuspense(<DevicesListPage />)} path='' />
             </Route>
