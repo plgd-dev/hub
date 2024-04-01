@@ -1,4 +1,4 @@
-import React, { FC, useContext, useEffect } from 'react'
+import React, { FC, useContext, useEffect, useMemo } from 'react'
 import { useIntl } from 'react-intl'
 import { Controller } from 'react-hook-form'
 import get from 'lodash/get'
@@ -20,13 +20,13 @@ import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/Linked
 import { Props, Inputs } from './Step3.types'
 import SubStepTls from '../SubStepTls'
 import { DEFAULT_FORM_DATA } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
-import { useValidationsSchema } from '@/containers/DeviceProvisioning/LinkedHubs/validationSchema'
+import { isTlsPageValid, useValidationsSchema } from '@/containers/DeviceProvisioning/LinkedHubs/validationSchema'
 
 const Step3: FC<Props> = (props) => {
     const { defaultFormData } = props
 
     const { formatMessage: _ } = useIntl()
-    const { updateData, setFormError, setStep } = useContext(FormContext)
+    const { setStep } = useContext(FormContext)
 
     const schema = useValidationsSchema('group2')
 
@@ -37,7 +37,7 @@ const Step3: FC<Props> = (props) => {
         updateField,
         watch,
         setValue,
-    } = useForm<Inputs>({ defaultFormData, updateData, setFormError, errorKey: 'step3', schema })
+    } = useForm<Inputs>({ defaultFormData, errorKey: 'step3', schema })
 
     useEffect(() => {
         const time = 'certificateAuthority.grpc.keepAlive.time'
@@ -52,6 +52,13 @@ const Step3: FC<Props> = (props) => {
             updateField(timeout, get(DEFAULT_FORM_DATA, timeout))
         }
     }, [defaultFormData, setValue, updateField])
+
+    const useSystemCaPool = watch('certificateAuthority.grpc.tls.useSystemCaPool')
+    const caPool = watch('certificateAuthority.grpc.tls.caPool')
+    const key = watch('certificateAuthority.grpc.tls.key')
+    const cert = watch('certificateAuthority.grpc.tls.cert')
+
+    const isFormValid = useMemo(() => isTlsPageValid(useSystemCaPool, isValid, caPool, key, cert), [useSystemCaPool, isValid, caPool, key, cert])
 
     return (
         <form>
@@ -93,7 +100,7 @@ const Step3: FC<Props> = (props) => {
                             placeholder: '',
                         }}
                         onBlur={(v) => updateField('certificateAuthority.grpc.keepAlive.time', v)}
-                        onChange={(v) => onChange(parseInt(v, 10))}
+                        onChange={(v) => onChange(v.toString())}
                         rightStyle={{
                             width: 150,
                         }}
@@ -120,7 +127,7 @@ const Step3: FC<Props> = (props) => {
                                 placeholder: '',
                             }}
                             onBlur={(v) => updateField('certificateAuthority.grpc.keepAlive.timeout', v)}
-                            onChange={(v) => onChange(v)}
+                            onChange={(v) => onChange(v.toString())}
                             rightStyle={{
                                 width: 150,
                             }}
@@ -160,7 +167,7 @@ const Step3: FC<Props> = (props) => {
             />
 
             <StepButtons
-                disableNext={!isValid}
+                disableNext={!isFormValid}
                 i18n={{
                     back: _(g.back),
                     continue: _(g.continue),

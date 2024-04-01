@@ -31,8 +31,8 @@ export const useValidationsSchema = (group: 'group1' | 'group2' | 'group3') => {
                             .trim()
                             .min(1, { message: _(g.requiredField, { field: _(t.address) }) }),
                         keepAlive: z.object({
-                            time: z.number().min(1, { message: _(g.requiredField, { field: _(t.keepAliveTime) }) }),
-                            timeout: z.number().min(1, { message: _(g.requiredField, { field: _(t.keepAliveTimeout) }) }),
+                            time: z.string().min(1, { message: _(g.requiredField, { field: _(t.keepAliveTime) }) }),
+                            timeout: z.string().min(1, { message: _(g.requiredField, { field: _(t.keepAliveTimeout) }) }),
                         }),
                     }),
                 }),
@@ -52,8 +52,8 @@ export const useValidationsSchema = (group: 'group1' | 'group2' | 'group3') => {
                         clientSecret: z.string().min(1, { message: _(g.requiredField, { field: _(t.clientSecret) }) }),
                         authority: z.string().min(1, { message: _(g.requiredField, { field: _(t.authority) }) }),
                         http: z.object({
-                            idleConnTimeout: z.number().min(1, { message: _(g.requiredField, { field: _(t.idleConnectionTimeout) }) }),
-                            timeout: z.number().min(1, { message: _(g.requiredField, { field: _(t.timeout) }) }),
+                            idleConnTimeout: z.string().min(1, { message: _(g.requiredField, { field: _(t.idleConnectionTimeout) }) }),
+                            timeout: z.string().min(1, { message: _(g.requiredField, { field: _(t.timeout) }) }),
                         }),
                     }),
                 }),
@@ -69,4 +69,17 @@ export const useValidationsSchema = (group: 'group1' | 'group2' | 'group3') => {
     }
 
     return groups[group]
+}
+
+export const isTlsPageValid = (useSystemCaPool: boolean, isValid: boolean, caPool: string[], key?: string, cert?: string) => {
+    if ((key && !cert) || (!key && cert)) {
+        return false
+    }
+
+    if (useSystemCaPool) {
+        return isValid
+    } else {
+        // without system ca pool, we need to have at least one CA
+        return caPool.length > 0 && isValid
+    }
 }

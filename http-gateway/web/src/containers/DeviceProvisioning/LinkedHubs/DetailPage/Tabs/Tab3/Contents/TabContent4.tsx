@@ -1,4 +1,4 @@
-import React, { FC, useContext } from 'react'
+import React, { FC } from 'react'
 import { useIntl } from 'react-intl'
 import { Controller } from 'react-hook-form'
 import get from 'lodash/get'
@@ -10,18 +10,17 @@ import Spacer from '@shared-ui/components/Atomic/Spacer'
 import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
 import FormGroup from '@shared-ui/components/Atomic/FormGroup'
 import TimeoutControl from '@shared-ui/components/Atomic/TimeoutControl'
-import { FormContext } from '@shared-ui/common/context/FormContext'
 import { useForm } from '@shared-ui/common/hooks'
 
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
 import { Props, Inputs } from './TabContent4.types'
 import { useValidationsSchema } from '@/containers/DeviceProvisioning/LinkedHubs/validationSchema'
+import { messages as g } from '@/containers/Global.i18n'
 
 const TabContent4: FC<Props> = (props) => {
     const { defaultFormData, loading } = props
 
     const { formatMessage: _ } = useIntl()
-    const { updateData, setFormError, commonFormGroupProps, commonInputProps, commonTimeoutControlProps } = useContext(FormContext)
     const schema = useValidationsSchema('group3')
 
     const {
@@ -29,7 +28,7 @@ const TabContent4: FC<Props> = (props) => {
         register,
         watch,
         control,
-    } = useForm<Inputs>({ defaultFormData, updateData, setFormError, errorKey: 'tab3Content4', schema })
+    } = useForm<Inputs>({ defaultFormData, errorKey: 'tab3Content4', schema })
 
     const timeoutN = watch('authorization.provider.http.timeout')
     const idleConnTimeout = watch('authorization.provider.http.idleConnTimeout')
@@ -47,12 +46,10 @@ const TabContent4: FC<Props> = (props) => {
                                 attribute: _(t.maxIdleConnections),
                                 value: (
                                     <FormGroup
-                                        {...commonFormGroupProps}
                                         error={get(errors, 'authorization.provider.http.maxIdleConns.message')}
                                         id='authorization.provider.http.maxIdleConns'
                                     >
                                         <FormInput
-                                            {...commonInputProps}
                                             {...register('authorization.provider.http.maxIdleConns', {
                                                 valueAsNumber: true,
                                             })}
@@ -66,12 +63,10 @@ const TabContent4: FC<Props> = (props) => {
                                 attribute: _(t.maxConnectionsPerHost),
                                 value: (
                                     <FormGroup
-                                        {...commonFormGroupProps}
                                         error={get(errors, 'authorization.provider.http.maxConnsPerHost.message')}
                                         id='authorization.provider.http.maxConnsPerHost'
                                     >
                                         <FormInput
-                                            {...commonInputProps}
                                             {...register('authorization.provider.http.maxConnsPerHost', {
                                                 required: true,
                                                 valueAsNumber: true,
@@ -85,12 +80,10 @@ const TabContent4: FC<Props> = (props) => {
                                 attribute: _(t.maxIdleConnectionsPerHost),
                                 value: (
                                     <FormGroup
-                                        {...commonFormGroupProps}
                                         error={get(errors, 'authorization.provider.http.maxIdleConnsPerHost.message')}
                                         id='authorization.provider.http.maxIdleConnsPerHost'
                                     >
                                         <FormInput
-                                            {...commonInputProps}
                                             {...register('authorization.provider.http.maxIdleConnsPerHost', {
                                                 valueAsNumber: true,
                                             })}
@@ -103,45 +96,49 @@ const TabContent4: FC<Props> = (props) => {
                             {
                                 attribute: _(t.idleConnectionTimeout),
                                 required: true,
-                                value: idleConnTimeout ? (
-                                    <Controller
-                                        control={control}
-                                        name='authorization.provider.http.idleConnTimeout'
-                                        render={({ field: { onChange, value } }) => (
-                                            <TimeoutControl
-                                                {...commonTimeoutControlProps}
-                                                required
-                                                defaultTtlValue={parseInt(value, 10)}
-                                                defaultValue={parseInt(value, 10)}
-                                                error={errors.authorization?.provider?.http?.timeout?.message}
-                                                onChange={(v) => onChange(v)}
-                                            />
-                                        )}
-                                    />
-                                ) : (
-                                    ''
+                                value: (
+                                    <Loadable condition={idleConnTimeout !== undefined}>
+                                        <Controller
+                                            control={control}
+                                            name='authorization.provider.http.idleConnTimeout'
+                                            render={({ field: { onChange, value } }) => (
+                                                <TimeoutControl
+                                                    required
+                                                    defaultTtlValue={parseInt(value, 10)}
+                                                    defaultValue={parseInt(value, 10)}
+                                                    error={errors.authorization?.provider?.http?.timeout?.message}
+                                                    onChange={(v) => onChange(v.toString())}
+                                                />
+                                            )}
+                                        />
+                                    </Loadable>
                                 ),
                             },
                             {
                                 attribute: _(t.timeout),
                                 required: true,
-                                value: timeoutN ? (
-                                    <Controller
-                                        control={control}
-                                        name='authorization.provider.http.timeout'
-                                        render={({ field: { onChange, value } }) => (
-                                            <TimeoutControl
-                                                {...commonTimeoutControlProps}
-                                                required
-                                                defaultTtlValue={parseInt(value, 10)}
-                                                defaultValue={parseInt(value, 10)}
-                                                error={errors.authorization?.provider?.http?.timeout?.message}
-                                                onChange={(v) => onChange(v)}
-                                            />
-                                        )}
-                                    />
-                                ) : (
-                                    ''
+                                value: (
+                                    <Loadable condition={timeoutN !== undefined}>
+                                        <Controller
+                                            control={control}
+                                            name='authorization.provider.http.timeout'
+                                            render={({ field: { onChange, value } }) => (
+                                                <TimeoutControl
+                                                    required
+                                                    defaultTtlValue={parseInt(value, 10)}
+                                                    defaultValue={parseInt(value, 10)}
+                                                    error={errors.authorization?.provider?.http?.timeout?.message}
+                                                    i18n={{
+                                                        default: _(g.default),
+                                                        duration: _(g.timeout),
+                                                        unit: _(g.metric),
+                                                        placeholder: _(g.timeout),
+                                                    }}
+                                                    onChange={(v) => onChange(v.toString())}
+                                                />
+                                            )}
+                                        />
+                                    </Loadable>
                                 ),
                             },
                         ]}

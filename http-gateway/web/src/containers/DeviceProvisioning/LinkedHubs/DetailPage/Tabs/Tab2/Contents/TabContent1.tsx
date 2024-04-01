@@ -1,4 +1,4 @@
-import React, { FC, useContext } from 'react'
+import React, { FC } from 'react'
 import { useIntl } from 'react-intl'
 import { Controller } from 'react-hook-form'
 import get from 'lodash/get'
@@ -11,7 +11,6 @@ import TimeoutControl from '@shared-ui/components/Atomic/TimeoutControl'
 import Loadable from '@shared-ui/components/Atomic/Loadable/Loadable'
 import FormGroup from '@shared-ui/components/Atomic/FormGroup'
 import FormInput from '@shared-ui/components/Atomic/FormInput'
-import { FormContext } from '@shared-ui/common/context/FormContext'
 import { useForm } from '@shared-ui/common/hooks'
 
 import { messages as t } from '../../../../LinkedHubs.i18n'
@@ -23,7 +22,6 @@ const TabContent1: FC<Props> = (props) => {
     const { defaultFormData, loading } = props
 
     const { formatMessage: _ } = useIntl()
-    const { updateData, setFormError, commonTimeoutControlProps, commonInputProps, commonFormGroupProps } = useContext(FormContext)
     const schema = useValidationsSchema('group2')
 
     const {
@@ -31,10 +29,9 @@ const TabContent1: FC<Props> = (props) => {
         register,
         watch,
         control,
+        updateField,
     } = useForm<Inputs>({
         defaultFormData,
-        updateData,
-        setFormError,
         errorKey: 'tab2Content1',
         schema,
     })
@@ -54,12 +51,12 @@ const TabContent1: FC<Props> = (props) => {
                                 attribute: _(t.address),
                                 required: true,
                                 value: (
-                                    <FormGroup
-                                        {...commonFormGroupProps}
-                                        error={get(errors, 'certificateAuthority.grpc.address.message')}
-                                        id='certificateAuthority.grpc.address'
-                                    >
-                                        <FormInput {...commonInputProps} {...register('certificateAuthority.grpc.address')} placeholder={_(t.address)} />
+                                    <FormGroup error={get(errors, 'certificateAuthority.grpc.address.message')} id='certificateAuthority.grpc.address'>
+                                        <FormInput
+                                            {...register('certificateAuthority.grpc.address')}
+                                            onBlur={(e) => updateField('certificateAuthority.grpc.address', e.target.value)}
+                                            placeholder={_(t.address)}
+                                        />
                                     </FormGroup>
                                 ),
                             },
@@ -85,12 +82,11 @@ const TabContent1: FC<Props> = (props) => {
                                                 name='certificateAuthority.grpc.keepAlive.time'
                                                 render={({ field: { onChange, value } }) => (
                                                     <TimeoutControl
-                                                        {...commonTimeoutControlProps}
                                                         required
                                                         defaultTtlValue={parseInt(value, 10)}
                                                         defaultValue={parseInt(value, 10)}
                                                         error={errors.certificateAuthority?.grpc?.keepAlive?.time?.message}
-                                                        onChange={(v) => onChange(v)}
+                                                        onChange={(v) => onChange(v.toString())}
                                                     />
                                                 )}
                                             />
@@ -107,7 +103,6 @@ const TabContent1: FC<Props> = (props) => {
                                                 name='certificateAuthority.grpc.keepAlive.timeout'
                                                 render={({ field: { onChange, value } }) => (
                                                     <TimeoutControl
-                                                        {...commonTimeoutControlProps}
                                                         required
                                                         defaultTtlValue={parseInt(value, 10)}
                                                         defaultValue={parseInt(value, 10)}

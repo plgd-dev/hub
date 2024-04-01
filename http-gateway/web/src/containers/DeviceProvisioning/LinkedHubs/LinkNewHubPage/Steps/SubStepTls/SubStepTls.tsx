@@ -89,21 +89,21 @@ const SubStepTls: FC<Props> = (props) => {
                 <h2 css={commonStyles.subHeadline}>TLS</h2>
             </Spacer>
 
-            <FullPageWizard.Description>TLS ensures the privacy and integrity of data exchanged between client and server.</FullPageWizard.Description>
+            <FullPageWizard.Description>{_(t.tlsDescription)}</FullPageWizard.Description>
 
             <h3 css={commonStyles.groupHeadline}>{_(t.caPool)}</h3>
 
             <Spacer type='mb-5'>
                 <Controller
                     control={control}
-                    name='certificateAuthority.grpc.tls.useSystemCaPool'
+                    name={`${prefix}tls.useSystemCaPool`}
                     render={({ field: { onChange, value } }) => (
                         <TileToggle
                             darkBg
                             checked={(value as boolean) ?? false}
                             name={_(t.useSystemCAPool)}
                             onChange={(e) => {
-                                updateField('certificateAuthority.grpc.keepAlive.permitWithoutStream', e.target.value === 'on')
+                                updateField(`${prefix}tls.useSystemCaPool`, e.target.value === 'on')
                                 onChange(e)
                             }}
                         />
@@ -147,7 +147,11 @@ const SubStepTls: FC<Props> = (props) => {
                 </Spacer>
             )}
 
-            <h3 css={commonStyles.groupHeadline}>{_(t.privateKey)}</h3>
+            <Spacer type='pt-12'>
+                <h2 css={commonStyles.subHeadline}>Certificate Key Pair</h2>
+            </Spacer>
+
+            <h3 css={commonStyles.groupHeadline}>{_(t.key)}</h3>
 
             {key === '' ? (
                 <Dropzone

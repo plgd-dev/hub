@@ -1,4 +1,4 @@
-import React, { FC, useContext } from 'react'
+import React, { FC } from 'react'
 import { useIntl } from 'react-intl'
 import get from 'lodash/get'
 
@@ -8,7 +8,6 @@ import Spacer from '@shared-ui/components/Atomic/Spacer'
 import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
 import FormGroup from '@shared-ui/components/Atomic/FormGroup'
 import FormInput from '@shared-ui/components/Atomic/FormInput'
-import { FormContext } from '@shared-ui/common/context/FormContext'
 import { useForm } from '@shared-ui/common/hooks'
 
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
@@ -20,13 +19,12 @@ const TabContent2: FC<Props> = (props) => {
     const { defaultFormData, loading } = props
 
     const { formatMessage: _ } = useIntl()
-    const { updateData, setFormError, commonFormGroupProps, commonInputProps } = useContext(FormContext)
     const schema = useValidationsSchema('group3')
 
     const {
         formState: { errors },
         register,
-    } = useForm<Inputs>({ defaultFormData, updateData, setFormError, errorKey: 'tab3Content2', schema })
+    } = useForm<Inputs>({ defaultFormData, errorKey: 'tab3Content2', schema })
 
     return (
         <form>
@@ -41,12 +39,8 @@ const TabContent2: FC<Props> = (props) => {
                                 attribute: _(g.name),
                                 required: true,
                                 value: (
-                                    <FormGroup
-                                        {...commonFormGroupProps}
-                                        error={get(errors, 'authorization.provider.name.message')}
-                                        id='authorization.provider.name'
-                                    >
-                                        <FormInput {...commonInputProps} {...register('authorization.provider.name')} placeholder={_(g.name)} />
+                                    <FormGroup error={get(errors, 'authorization.provider.name.message')} id='authorization.provider.name'>
+                                        <FormInput {...register('authorization.provider.name')} placeholder={_(g.name)} />
                                     </FormGroup>
                                 ),
                             },
@@ -54,12 +48,8 @@ const TabContent2: FC<Props> = (props) => {
                                 attribute: _(t.clientId),
                                 required: true,
                                 value: (
-                                    <FormGroup
-                                        {...commonFormGroupProps}
-                                        error={get(errors, 'authorization.provider.clientId.message')}
-                                        id='authorization.provider.clientId'
-                                    >
-                                        <FormInput {...commonInputProps} {...register('authorization.provider.clientId')} placeholder={_(t.clientId)} />
+                                    <FormGroup error={get(errors, 'authorization.provider.clientId.message')} id='authorization.provider.clientId'>
+                                        <FormInput {...register('authorization.provider.clientId')} placeholder={_(t.clientId)} />
                                     </FormGroup>
                                 ),
                             },
@@ -67,12 +57,8 @@ const TabContent2: FC<Props> = (props) => {
                                 attribute: _(t.clientSecret),
                                 required: true,
                                 value: (
-                                    <FormGroup
-                                        {...commonFormGroupProps}
-                                        error={get(errors, 'authorization.provider.clientSecret.message')}
-                                        id='authorization.provider.clientSecret'
-                                    >
-                                        <FormInput {...commonInputProps} {...register('authorization.provider.clientSecret')} placeholder={_(t.clientSecret)} />
+                                    <FormGroup error={get(errors, 'authorization.provider.clientSecret.message')} id='authorization.provider.clientSecret'>
+                                        <FormInput {...register('authorization.provider.clientSecret')} placeholder={_(t.clientSecret)} />
                                     </FormGroup>
                                 ),
                             },
@@ -80,12 +66,8 @@ const TabContent2: FC<Props> = (props) => {
                                 attribute: _(t.authority),
                                 required: true,
                                 value: (
-                                    <FormGroup
-                                        {...commonFormGroupProps}
-                                        error={get(errors, 'authorization.provider.authority.message')}
-                                        id='authorization.provider.authority'
-                                    >
-                                        <FormInput {...commonInputProps} {...register('authorization.provider.authority')} placeholder={_(t.authority)} />
+                                    <FormGroup error={get(errors, 'authorization.provider.authority.message')} id='authorization.provider.authority'>
+                                        <FormInput {...register('authorization.provider.authority')} placeholder={_(t.authority)} />
                                     </FormGroup>
                                 ),
                             },

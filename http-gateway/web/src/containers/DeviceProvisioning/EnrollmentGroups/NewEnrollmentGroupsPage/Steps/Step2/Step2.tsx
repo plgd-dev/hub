@@ -17,7 +17,7 @@ import { useValidationsSchema } from '@/containers/DeviceProvisioning/Enrollment
 const Step2: FC<any> = (props) => {
     const { defaultFormData } = props
 
-    const { updateData, setFormDirty, setFormError, setStep } = useContext(FormContext)
+    const { setStep } = useContext(FormContext)
     const { formatMessage: _ } = useIntl()
     const schema = useValidationsSchema('group2')
 
@@ -29,9 +29,6 @@ const Step2: FC<any> = (props) => {
         watch,
     } = useForm<Inputs>({
         defaultFormData,
-        updateData,
-        setFormError,
-        setFormDirty,
         errorKey: 'step2',
         schema,
     })

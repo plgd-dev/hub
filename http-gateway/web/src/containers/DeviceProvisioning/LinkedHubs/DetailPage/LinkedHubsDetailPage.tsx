@@ -4,6 +4,7 @@ import { useIntl } from 'react-intl'
 import isEqual from 'lodash/isEqual'
 import ReactDOM from 'react-dom'
 import cloneDeep from 'lodash/cloneDeep'
+import { useRecoilState } from 'recoil'
 
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import AppContext from '@shared-ui/app/share/AppContext'
@@ -26,7 +27,6 @@ import PageLayout from '@/containers/Common/PageLayout'
 import DetailHeader from '@/containers/DeviceProvisioning/LinkedHubs/DetailHeader'
 import testId from '@/testId'
 import { messages as dpsT } from '@/containers/DeviceProvisioning/DeviceProvisioning.i18n'
-import { useRecoilState } from 'recoil'
 import { dirtyFormState } from '@/store/recoil.store'
 import { pages } from '@/routes'
 
@@ -82,6 +82,7 @@ const LinkedHubsDetailPage: FC<Props> = () => {
 
     const isDirtyData = useMemo(() => !isEqual(defaultData, formData), [defaultData, formData])
     const isDirty = useMemo(() => Object.values(formDirty).some((i) => i), [formDirty])
+    const hasError = useMemo(() => Object.values(formError).some((i) => i), [formError])
 
     useEffect(() => {
         const dirty = isDirty || isDirtyData
@@ -97,8 +98,8 @@ const LinkedHubsDetailPage: FC<Props> = () => {
 
     const breadcrumbs = useMemo(
         () => [
-            { label: _(dpsT.deviceProvisioning), link: '/device-provisioning' },
-            { label: _(t.linkedHubs), link: '/device-provisioning/linked-hubs' },
+            { label: _(dpsT.deviceProvisioning), link: generatePath(pages.DPS.LINK) },
+            { label: _(t.linkedHubs), link: generatePath(pages.DPS.LINKED_HUBS.LINK) },
             { label: data?.name || '' },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -135,6 +136,7 @@ const LinkedHubsDetailPage: FC<Props> = () => {
             setFormError,
             setFormDirty,
             i18n: buildCATranslations(_, t, g),
+            compactFormComponentsView: true,
         }),
         // eslint-disable-next-line react-hooks/exhaustive-deps
         []
@@ -221,21 +223,7 @@ const LinkedHubsDetailPage: FC<Props> = () => {
                 ReactDOM.createPortal(
                     <BottomPanel
                         actionPrimary={
-                            <Button
-                                disabled={
-                                    formError.tab1 ||
-                                    formError.tab2Content1 ||
-                                    formError.tab2Content2 ||
-                                    formError.tab3Content1 ||
-                                    formError.tab3Content2 ||
-                                    formError.tab3Content3 ||
-                                    formError.tab3Content4
-                                }
-                                loading={loading}
-                                loadingText={_(g.loading)}
-                                onClick={onSubmit}
-                                variant='primary'
-                            >
+                            <Button disabled={hasError} loading={loading} loadingText={_(g.loading)} onClick={onSubmit} variant='primary'>
                                 {_(g.saveChanges)}
                             </Button>
                         }

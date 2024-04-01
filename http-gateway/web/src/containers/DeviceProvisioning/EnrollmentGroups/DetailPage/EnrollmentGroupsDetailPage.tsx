@@ -30,7 +30,7 @@ import { updateEnrollmentGroup } from '@/containers/DeviceProvisioning/rest'
 import { stringToPem } from '@/containers/DeviceProvisioning/utils'
 import { pages } from '@/routes'
 
-const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
+const EnrollmentGroupsDetailPage: FC<Props> = () => {
     const { formatMessage: _ } = useIntl()
     const { enrollmentId } = useParams()
     const { collapsed } = useContext(AppContext)
@@ -103,6 +103,7 @@ const EnrollmentGroupsDetailPage: FC<Props> = (props) => {
             },
             setFormDirty,
             setFormError: () => {},
+            compactFormComponentsView: true,
         }),
         // eslint-disable-next-line react-hooks/exhaustive-deps
         []

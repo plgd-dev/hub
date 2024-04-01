@@ -1,4 +1,4 @@
-import React, { FC, useCallback, useContext, useMemo, useState } from 'react'
+import React, { FC, useCallback, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
 import { Control, Controller, FieldErrors, UseFormRegister, UseFormSetValue } from 'react-hook-form'
 import get from 'lodash/get'
@@ -17,16 +17,15 @@ import { formatCertName } from '@shared-ui/common/services/certificates'
 import { useCaData } from '@shared-ui/common/hooks'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import FormGroup from '@shared-ui/components/Atomic/FormGroup'
-import { FormContext } from '@shared-ui/common/context/FormContext'
 import FormInput from '@shared-ui/components/Atomic/FormInput'
 import ShowAnimate from '@shared-ui/components/Atomic/ShowAnimate'
+import FormLabel from '@shared-ui/components/Atomic/FormLabel'
 
 import { messages as t } from '@/containers/DeviceProvisioning/EnrollmentGroups/EnrollmentGroups.i18n'
 import { nameLengthValidator, stringToPem } from '@/containers/DeviceProvisioning/utils'
 import { messages as g } from '@/containers/Global.i18n'
 import { useCaI18n } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
 import { Inputs } from './EnrollmentGroups.types'
-import FormLabel from '@shared-ui/components/Atomic/FormLabel'
 
 type Chunk2Props = {
     certificateChain?: string
@@ -43,7 +42,6 @@ export const DetailFromChunk2: FC<Chunk2Props> = (props) => {
 
     const { formatMessage: _ } = useIntl()
     const i18nCert = useCaI18n()
-    const { commonFormGroupProps } = useContext(FormContext)
 
     const [caModalData, setCaModalData] = useState<{ title: string; subTitle: string; data?: {}[] | string; dataChain: any }>({
         title: '',
@@ -84,11 +82,7 @@ export const DetailFromChunk2: FC<Chunk2Props> = (props) => {
             ? {
                   attribute: _(t.leadCertificate),
                   value: (
-                      <FormGroup
-                          {...commonFormGroupProps}
-                          error={get(errors, 'attestationMechanism.x509.leadCertificateName.message')}
-                          id='matchingCertificate'
-                      >
+                      <FormGroup error={get(errors, 'attestationMechanism.x509.leadCertificateName.message')} id='matchingCertificate'>
                           <div>
                               <Controller
                                   control={control}
@@ -215,26 +209,20 @@ export const DetailFromChunk3: FC<Chunk3Props> = (props) => {
     const { register, isEditMode, setValue, updateField, errors, preSharedKeySettings, setPreSharedKeySettings } = props
 
     const { formatMessage: _ } = useIntl()
-    const { commonFormGroupProps, commonInputProps } = useContext(FormContext)
 
     const bottomRows = useMemo(
         () => [
             {
                 attribute: _(t.preSharedKey),
                 value: (
-                    <FormGroup {...commonFormGroupProps} error={get(errors, 'preSharedKey.message')} id='preSharedKey'>
-                        <FormInput
-                            {...commonInputProps}
-                            inlineStyle={isEditMode}
-                            {...register('preSharedKey')}
-                            onBlur={(e) => updateField('preSharedKey', e.target.value)}
-                        />
+                    <FormGroup error={get(errors, 'preSharedKey.message')} id='preSharedKey'>
+                        <FormInput inlineStyle={isEditMode} {...register('preSharedKey')} onBlur={(e) => updateField('preSharedKey', e.target.value)} />
                     </FormGroup>
                 ),
             },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [commonFormGroupProps, commonInputProps, errors.preSharedKey, preSharedKeySettings, register, updateField]
+        [errors.preSharedKey, preSharedKeySettings, register, updateField]
     )
 
     return (

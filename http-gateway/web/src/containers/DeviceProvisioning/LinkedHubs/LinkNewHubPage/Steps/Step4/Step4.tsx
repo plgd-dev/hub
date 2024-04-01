@@ -1,4 +1,4 @@
-import React, { FC, useContext } from 'react'
+import React, { FC, useContext, useMemo } from 'react'
 import { useIntl } from 'react-intl'
 import { Controller } from 'react-hook-form'
 import get from 'lodash/get'
@@ -18,12 +18,12 @@ import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/Linked
 import { messages as g } from '@/containers/Global.i18n'
 import { Inputs, Props } from './Step4.types'
 import SubStepTls from '../SubStepTls'
-import { useValidationsSchema } from '@/containers/DeviceProvisioning/LinkedHubs/validationSchema'
+import { isTlsPageValid, useValidationsSchema } from '@/containers/DeviceProvisioning/LinkedHubs/validationSchema'
 
 const Step4: FC<Props> = (props) => {
     const { defaultFormData, onSubmit } = props
     const { formatMessage: _ } = useIntl()
-    const { updateData, setFormError, setStep } = useContext(FormContext)
+    const { setStep } = useContext(FormContext)
 
     const schema = useValidationsSchema('group3')
 
@@ -34,7 +34,14 @@ const Step4: FC<Props> = (props) => {
         updateField,
         watch,
         setValue,
-    } = useForm<Inputs>({ defaultFormData, updateData, setFormError, errorKey: 'step4', schema })
+    } = useForm<Inputs>({ defaultFormData, errorKey: 'step4', schema })
+
+    const useSystemCaPool = watch('authorization.provider.http.tls.useSystemCaPool')
+    const caPool = watch('authorization.provider.http.tls.caPool')
+    const key = watch('authorization.provider.http.tls.key')
+    const cert = watch('authorization.provider.http.tls.cert')
+
+    const isFormValid = useMemo(() => isTlsPageValid(useSystemCaPool, isValid, caPool, key, cert), [useSystemCaPool, isValid, caPool, key, cert])
 
     return (
         <form>
@@ -161,9 +168,9 @@ const Step4: FC<Props> = (props) => {
                             default: _(g.default),
                             duration: _(t.idleConnectionTimeout),
                             unit: _(g.metric),
-                            placeholder: _(g.placeholder),
+                            placeholder: _(t.idleConnectionTimeout),
                         }}
-                        onChange={(v) => onChange(v)}
+                        onChange={(v) => onChange(v.toString())}
                         rightStyle={{
                             width: 150,
                         }}
@@ -187,9 +194,9 @@ const Step4: FC<Props> = (props) => {
                                 default: _(g.default),
                                 duration: _(g.timeout),
                                 unit: _(g.metric),
-                                placeholder: _(g.placeholder),
+                                placeholder: _(g.timeout),
                             }}
-                            onChange={(v) => onChange(v)}
+                            onChange={(v) => onChange(v.toString())}
                             rightStyle={{
                                 width: 150,
                             }}
@@ -199,7 +206,7 @@ const Step4: FC<Props> = (props) => {
             </Spacer>
 
             <StepButtons
-                disableNext={!isValid}
+                disableNext={!isFormValid}
                 i18n={{
                     back: _(g.back),
                     continue: _(g.create),

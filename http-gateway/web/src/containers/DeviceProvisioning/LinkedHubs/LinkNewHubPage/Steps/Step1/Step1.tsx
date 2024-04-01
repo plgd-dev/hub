@@ -12,19 +12,19 @@ import { FormContext } from '@shared-ui/common/context/FormContext'
 import { openTelemetry } from '@shared-ui/common/services/opentelemetry'
 import ButtonBox from '@shared-ui/components/Atomic/ButtonBox'
 import * as commonStyles from '@shared-ui/components/Templates/FullPageWizard/FullPageWizardCommon.styles'
+import FullPageWizard from '@shared-ui/components/Templates/FullPageWizard'
 
 import { messages as t } from '../../../LinkedHubs.i18n'
 import { messages as g } from '@/containers/Global.i18n'
 import { Props, Inputs } from './Step1.types'
 import { getAppWellKnownConfiguration } from '@/containers/App/AppRest'
 import { DEFAULT_FORM_DATA } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
-import FullPageWizard from '@shared-ui/components/Templates/FullPageWizard'
 
 const Step1: FC<Props> = (props) => {
     const { defaultFormData } = props
 
     const { formatMessage: _ } = useIntl()
-    const { updateData, setFormError, setStep } = useContext(FormContext)
+    const { updateData, setStep } = useContext(FormContext)
 
     const [loading, setLoading] = useState(false)
 
@@ -33,7 +33,7 @@ const Step1: FC<Props> = (props) => {
         register,
         getValues,
         watch,
-    } = useForm<Inputs>({ defaultFormData, updateData, setFormError, errorKey: 'step1' })
+    } = useForm<Inputs>({ defaultFormData, errorKey: 'step1' })
 
     const name = watch('name')
     const endpoint = watch('endpoint')

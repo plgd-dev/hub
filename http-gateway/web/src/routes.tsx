@@ -101,7 +101,10 @@ export const pages = {
                 LINK: '/device-provisioning/linked-hubs/:hubId/:tab/:section',
                 TABS: ['', 'certificate-authority', 'authorization'],
             },
-            ADD: '/device-provisioning/linked-hubs/link-new-hub',
+            ADD: {
+                LINK: '/device-provisioning/linked-hubs/link-new-hub/:step',
+                TABS: ['', 'hub-detail', 'certificate-authority', 'authorization'],
+            },
         },
         PROVISIONING_RECORDS: {
             LINK: '/device-provisioning/provisioning-records',
@@ -219,7 +222,7 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                             '/device-provisioning/linked-hubs/:hubId',
                             '/device-provisioning/linked-hubs/:hubId/:tab',
                             pages.DPS.LINKED_HUBS.DETAIL.LINK,
-                            pages.DPS.LINKED_HUBS.ADD,
+                            pages.DPS.LINKED_HUBS.ADD.LINK,
                         ],
                     },
                     {

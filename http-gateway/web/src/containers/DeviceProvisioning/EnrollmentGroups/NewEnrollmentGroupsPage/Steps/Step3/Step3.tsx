@@ -18,7 +18,7 @@ const Step3: FC<any> = (props) => {
 
     const { formatMessage: _ } = useIntl()
 
-    const { updateData, setFormDirty, setFormError, setStep } = useContext(FormContext)
+    const { setStep } = useContext(FormContext)
     const schema = useValidationsSchema('group3')
 
     const {
@@ -29,9 +29,6 @@ const Step3: FC<any> = (props) => {
         watch,
     } = useForm<Inputs>({
         defaultFormData,
-        updateData,
-        setFormError,
-        setFormDirty,
         errorKey: 'step3',
         schema,
     })

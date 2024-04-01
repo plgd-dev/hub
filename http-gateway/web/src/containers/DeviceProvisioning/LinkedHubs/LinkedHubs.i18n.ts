@@ -33,9 +33,17 @@ export const messages = defineMessages({
         id: 'linkedHubs.certificateAuthority',
         defaultMessage: 'Certificate Authority',
     },
+    certificateAuthorityDescription: {
+        id: 'linkedHubs.certificateAuthorityDescription',
+        defaultMessage: 'Signing certificate',
+    },
     authorization: {
         id: 'linkedHubs.authorization',
         defaultMessage: 'Authorization',
+    },
+    authorizationDescription: {
+        id: 'linkedHubs.authorizationDescription',
+        defaultMessage: 'JWT Token Acquisition',
     },
     deleteLinkedHubsTitle: {
         id: 'linkedHubs.deleteLinkedHubsTitle',
@@ -84,6 +92,10 @@ export const messages = defineMessages({
     privateKey: {
         id: 'linkedHubs.privateKey',
         defaultMessage: 'Private key',
+    },
+    key: {
+        id: 'linkedHubs.key',
+        defaultMessage: 'Key',
     },
     certificate: {
         id: 'linkedHubs.certificate',
@@ -407,9 +419,17 @@ export const messages = defineMessages({
         id: 'linkedHubs.linkHub',
         defaultMessage: 'Link Hub',
     },
+    linkHubDescription: {
+        id: 'linkedHubs.linkHubDescription',
+        defaultMessage: 'Pre-configure Hub',
+    },
     hubDetails: {
         id: 'linkedHubs.hubDetails',
         defaultMessage: 'Hub Details',
+    },
+    hubDetailsDescription: {
+        id: 'linkedHubs.hubDetailsDescription',
+        defaultMessage: 'Basic setup',
     },
     name: {
         id: 'linkedHubs.name',
@@ -495,5 +515,9 @@ export const messages = defineMessages({
     deviceProviderNameTooltip: {
         id: 'linkedHubs.deviceProviderNameTooltip',
         defaultMessage: 'The value from coap-gateway configuration',
+    },
+    tlsDescription: {
+        id: 'linkedHubs.tlsDescription',
+        defaultMessage: 'TLS ensures the privacy and integrity of data exchanged between client and server.',
     },
 })

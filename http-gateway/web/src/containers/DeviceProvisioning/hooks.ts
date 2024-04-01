@@ -192,7 +192,7 @@ export const useEnrollmentGroupDetail = (enrollmentGroupId?: string): StreamApiP
         }
 
         if (!psk.startsWith('/')) {
-            pemToString(psk)
+            return pemToString(psk)
         }
 
         return psk

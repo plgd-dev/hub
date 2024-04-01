@@ -27,7 +27,7 @@ const Step2: FC<Props> = (props) => {
     const { defaultFormData } = props
 
     const { formatMessage: _ } = useIntl()
-    const { updateData, setFormError, setStep } = useContext(FormContext)
+    const { setStep } = useContext(FormContext)
 
     const schema = useValidationsSchema('group1')
 
@@ -38,7 +38,7 @@ const Step2: FC<Props> = (props) => {
         updateField,
         watch,
         trigger,
-    } = useForm<Inputs>({ defaultFormData, updateData, setFormError, errorKey: 'step2', schema })
+    } = useForm<Inputs>({ defaultFormData, errorKey: 'step2', schema })
 
     const { fields, append, remove } = useFieldArray({
         control,

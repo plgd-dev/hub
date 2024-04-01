@@ -1,4 +1,4 @@
-import React, { FC, useContext, useEffect, useMemo, useState } from 'react'
+import React, { FC, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
 import { Controller } from 'react-hook-form'
 
@@ -7,7 +7,6 @@ import Headline from '@shared-ui/components/Atomic/Headline'
 import Spacer from '@shared-ui/components/Atomic/Spacer'
 import FormInput from '@shared-ui/components/Atomic/FormInput'
 import FormGroup from '@shared-ui/components/Atomic/FormGroup'
-import { FormContext } from '@shared-ui/common/context/FormContext'
 import { useForm } from '@shared-ui/common/hooks'
 import FormSelect from '@shared-ui/components/Atomic/FormSelect'
 import { OptionType } from '@shared-ui/components/Atomic/FormSelect/FormSelect.types'
@@ -25,7 +24,6 @@ const Tab1: FC<Props> = (props) => {
     const { formatMessage: _ } = useIntl()
     const { defaultFormData, resetIndex } = props
 
-    const { updateData, setFormDirty, setFormError, commonInputProps, commonFormGroupProps } = useContext(FormContext)
     const { data: hubsData } = useLinkedHubsList()
     const schema = useValidationsSchema('combine')
 
@@ -39,9 +37,6 @@ const Tab1: FC<Props> = (props) => {
         watch,
     } = useForm<Inputs>({
         defaultFormData,
-        updateData,
-        setFormError,
-        setFormDirty,
         errorKey: 'tab1',
         schema,
     })
@@ -76,9 +71,8 @@ const Tab1: FC<Props> = (props) => {
             {
                 attribute: _(g.name),
                 value: (
-                    <FormGroup {...commonFormGroupProps} error={errors.name ? _(g.requiredField, { field: _(g.name) }) : undefined} id='name'>
+                    <FormGroup error={errors.name ? _(g.requiredField, { field: _(g.name) }) : undefined} id='name'>
                         <FormInput
-                            {...commonInputProps}
                             {...register('name', { required: true, validate: (val) => val !== '' })}
                             onBlur={(e) => updateField('name', e.target.value)}
                             placeholder={_(g.name)}
@@ -89,7 +83,7 @@ const Tab1: FC<Props> = (props) => {
             {
                 attribute: _(t.linkedHubs),
                 value: (
-                    <FormGroup {...commonFormGroupProps} error={errors.hubIds ? _(g.requiredField, { field: _(t.linkedHubs) }) : undefined} id='linkedHubs'>
+                    <FormGroup error={errors.hubIds ? _(g.requiredField, { field: _(t.linkedHubs) }) : undefined} id='linkedHubs'>
                         <div>
                             <Controller
                                 control={control}
@@ -118,9 +112,8 @@ const Tab1: FC<Props> = (props) => {
             {
                 attribute: _(g.ownerID),
                 value: (
-                    <FormGroup {...commonFormGroupProps} error={errors.owner ? _(g.ownerID, { field: _(g.name) }) : undefined} id='owner'>
+                    <FormGroup error={errors.owner ? _(g.ownerID, { field: _(g.name) }) : undefined} id='owner'>
                         <FormInput
-                            {...commonInputProps}
                             {...register('owner', { required: true, validate: (val) => val !== '' })}
                             onBlur={(e) => updateField('owner', e.target.value)}
                             placeholder={_(g.ownerID)}
@@ -130,7 +123,7 @@ const Tab1: FC<Props> = (props) => {
             },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [commonFormGroupProps, commonInputProps, control, errors.hubIds, errors.name, errors.owner, linkedHubs, register, updateField]
+        [control, errors.hubIds, errors.name, errors.owner, linkedHubs, register, updateField]
     )
 
     const certificateChain = watch('attestationMechanism.x509.certificateChain')

@@ -25,7 +25,7 @@ const Step1: FC<any> = (props) => {
 
     const { formatMessage: _ } = useIntl()
     const { data: hubsData } = useLinkedHubsList()
-    const { updateData, setFormError, setStep } = useContext(FormContext)
+    const { setStep } = useContext(FormContext)
     const schema = useValidationsSchema('group1')
 
     const {
@@ -35,8 +35,6 @@ const Step1: FC<any> = (props) => {
         updateField,
     } = useForm<Inputs>({
         defaultFormData,
-        updateData,
-        setFormError,
         errorKey: 'step1',
         schema,
     })

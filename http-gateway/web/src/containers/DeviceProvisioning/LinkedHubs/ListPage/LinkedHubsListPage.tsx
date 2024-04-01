@@ -163,7 +163,7 @@ const LinkedHubsListPage: FC<any> = () => {
         <PageLayout
             breadcrumbs={breadcrumbs}
             header={
-                <Button icon={<IconPlus />} onClick={() => navigate(generatePath(pages.DPS.LINKED_HUBS.ADD))} variant='primary'>
+                <Button icon={<IconPlus />} onClick={() => navigate(generatePath(pages.DPS.LINKED_HUBS.ADD.LINK, { step: '' }))} variant='primary'>
                     {_(t.linkedHub)}
                 </Button>
             }

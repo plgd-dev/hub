@@ -3,6 +3,9 @@ import { useIntl } from 'react-intl'
 import { useParams } from 'react-router-dom'
 import { useForm } from '@shared-ui/common/hooks'
 import { Controller, useFieldArray } from 'react-hook-form'
+import get from 'lodash/get'
+import * as styles from '../Tab.styles'
+import isFunction from 'lodash/isFunction'
 
 import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
 import FormGroup from '@shared-ui/components/Atomic/FormGroup'
@@ -18,17 +21,14 @@ import ValidationMessage from '@shared-ui/components/Atomic/ValidationMessage'
 import { Props, Inputs } from './Tab1.types'
 import { messages as g } from '../../../../../Global.i18n'
 import { messages as t } from '../../../LinkedHubs.i18n'
-import * as styles from '../Tab.styles'
-import isFunction from 'lodash/isFunction'
 import { useValidationsSchema } from '@/containers/DeviceProvisioning/LinkedHubs/validationSchema'
-import get from 'lodash/get'
 
 const Tab1: FC<Props> = (props) => {
     const { defaultFormData, resetIndex } = props
     const { formatMessage: _ } = useIntl()
     const { hubId } = useParams()
 
-    const { updateData, setFormError, setFormDirty, commonFormGroupProps, commonInputProps } = useContext(FormContext)
+    const { setFormError } = useContext(FormContext)
     const schema = useValidationsSchema('group1')
 
     const {
@@ -38,7 +38,7 @@ const Tab1: FC<Props> = (props) => {
         control,
         reset,
         watch,
-    } = useForm<Inputs>({ defaultFormData, updateData, setFormError, setFormDirty, errorKey: 'tab1', schema })
+    } = useForm<Inputs>({ defaultFormData, errorKey: 'tab1', schema })
 
     const { fields, append, remove } = useFieldArray({
         control,
@@ -73,21 +73,15 @@ const Tab1: FC<Props> = (props) => {
                         {
                             attribute: _(g.id),
                             key: 'r-id',
-                            value: <FormInput {...commonInputProps} disabled value={hubId} />,
+                            value: <FormInput disabled value={hubId} />,
                         },
                         {
                             required: true,
                             attribute: _(g.name),
                             key: 'r-name',
                             value: (
-                                <FormGroup {...commonFormGroupProps} error={get(errors, 'name.message')} id='name'>
-                                    <FormInput
-                                        {...commonInputProps}
-                                        placeholder={_(g.name)}
-                                        {...register('name')}
-                                        key='name'
-                                        onBlur={(e) => updateField('name', e.target.value)}
-                                    />
+                                <FormGroup error={get(errors, 'name.message')} id='name'>
+                                    <FormInput placeholder={_(g.name)} {...register('name')} key='name' onBlur={(e) => updateField('name', e.target.value)} />
                                 </FormGroup>
                             ),
                         },
@@ -97,7 +91,6 @@ const Tab1: FC<Props> = (props) => {
                             key: `r-${field.id}`,
                             value: (
                                 <FormGroup
-                                    {...commonFormGroupProps}
                                     error={errors.gateways?.[index] ? _(t.deviceGateway, { field: _(t.deviceGateway) }) : undefined}
                                     id={`gateways.${index}`}
                                     key={field.id}
@@ -109,7 +102,6 @@ const Tab1: FC<Props> = (props) => {
                                         render={({ field: { onChange, value } }) => (
                                             <div css={styles.flex}>
                                                 <FormInput
-                                                    {...commonInputProps}
                                                     onBlur={(e) => updateField(`gateways.${index}`, { value: e.target.value, id: field.id }, true)}
                                                     onChange={(v) => {
                                                         onChange({ value: v.target.value, id: field.id })

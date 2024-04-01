@@ -1,6 +1,6 @@
 import React, { FC, lazy, useCallback, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { useNavigate, useParams } from 'react-router-dom'
+import { generatePath, useNavigate, useParams } from 'react-router-dom'
 import cloneDeep from 'lodash/cloneDeep'
 
 import ContentSwitch from '@shared-ui/components/Atomic/ContentSwitch'
@@ -9,6 +9,7 @@ import FullPageWizard from '@shared-ui/components/Templates/FullPageWizard'
 import usePersistentState from '@shared-ui/common/hooks/usePersistentState'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import Loadable from '@shared-ui/components/Atomic/Loadable'
+import { getApiErrorMessage } from '@shared-ui/common/utils'
 
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '../LinkedHubs.i18n'
@@ -16,7 +17,6 @@ import { DEFAULT_FORM_DATA } from '@/containers/DeviceProvisioning/LinkedHubs/ut
 import notificationId from '@/notificationId'
 import { createLinkedHub } from '@/containers/DeviceProvisioning/rest'
 import { pages } from '@/routes'
-import { getApiErrorMessage } from '@shared-ui/common/utils'
 
 const Step1 = lazy(() => import('./Steps/Step1'))
 const Step2 = lazy(() => import('./Steps/Step2'))
@@ -32,23 +32,23 @@ const LinkNewHubPage: FC<any> = () => {
         () => [
             {
                 name: _(t.linkHub),
-                description: 'Pre-configure Hub',
-                link: '',
+                description: _(t.linkHubDescription),
+                link: pages.DPS.LINKED_HUBS.ADD.TABS[0],
             },
             {
                 name: _(t.hubDetails),
-                description: 'Basic setup',
-                link: '/hub-detail',
+                description: _(t.hubDetailsDescription),
+                link: pages.DPS.LINKED_HUBS.ADD.TABS[1],
             },
             {
-                name: _(t.certificateAuthority),
-                description: 'Signing certificate',
-                link: '/certificate-authority',
+                name: _(t.certificateAuthorityDescription),
+                description: _(t.certificateAuthorityDescription),
+                link: pages.DPS.LINKED_HUBS.ADD.TABS[2],
             },
             {
                 name: _(t.authorization),
-                description: 'JWT Token Acquisition',
-                link: '/authorization',
+                description: _(t.authorizationDescription),
+                link: pages.DPS.LINKED_HUBS.ADD.TABS[3],
             },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -62,7 +62,7 @@ const LinkNewHubPage: FC<any> = () => {
         (item: number) => {
             setActiveItem(item)
 
-            navigate(`${pages.DPS.LINKED_HUBS.ADD}${steps[item].link}`)
+            navigate(generatePath(pages.DPS.LINKED_HUBS.ADD.LINK, { step: steps[item].link }))
         },
         [navigate, steps]
     )
