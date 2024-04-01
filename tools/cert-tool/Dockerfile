@@ -1,4 +1,4 @@
-FROM golang:1.20.14-alpine AS build
+FROM golang:1.22.1-alpine AS build
 ARG DIRECTORY
 ARG NAME
 ARG VERSION
