@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"fmt"
+	"errors"
 
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
 	"github.com/plgd-dev/hub/v2/pkg/log"
@@ -128,7 +128,7 @@ func (s *Store) PullOutSubscription(subscripionID string) (SubscriptionData, boo
 func (s *Store) PullOutCloud(ctx context.Context, cloudID string) (*CloudData, error) {
 	cloud, ok := s.cache.PullOutCloud(cloudID)
 	if !ok {
-		return cloud, fmt.Errorf("not found")
+		return cloud, errors.New("not found")
 	}
 	return cloud, s.db.RemoveLinkedCloud(ctx, cloudID)
 }
@@ -136,7 +136,7 @@ func (s *Store) PullOutCloud(ctx context.Context, cloudID string) (*CloudData, e
 func (s *Store) PullOutLinkedAccount(ctx context.Context, cloudID, linkedAccountID string) (*LinkedAccountData, error) {
 	cloud, ok := s.cache.PullOutLinkedAccount(cloudID, linkedAccountID)
 	if !ok {
-		return cloud, fmt.Errorf("not found")
+		return cloud, errors.New("not found")
 	}
 	return cloud, s.db.RemoveLinkedAccount(ctx, linkedAccountID)
 }

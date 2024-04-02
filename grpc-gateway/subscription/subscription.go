@@ -1,6 +1,7 @@
 package subscription
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -129,13 +130,8 @@ func (s *Sub) Init(owner string, subCache *SubscriptionsCache) error {
 	return nil
 }
 
-func (s *Sub) isFilteredEvent(e *pb.Event, eventType FilterBitmask) (bool, error) {
-	if e == nil {
-		return false, fmt.Errorf("invalid event")
-	}
-	if !IsFilteredBit(s.filter, eventType) {
-		return false, nil
-	}
+//nolint:gocyclo
+func (s *Sub) isFilteredEventByType(e *pb.Event) (bool, error) {
 	switch ev := e.GetType().(type) {
 	case *pb.Event_DeviceRegistered_:
 		return true, nil
@@ -171,6 +167,16 @@ func (s *Sub) isFilteredEvent(e *pb.Event, eventType FilterBitmask) (bool, error
 		return isFilteredDevice(s.filteredDeviceIDs, ev.DeviceMetadataUpdated.GroupID()), nil
 	}
 	return false, fmt.Errorf("unknown event type('%T')", e.GetType())
+}
+
+func (s *Sub) isFilteredEvent(e *pb.Event, eventType FilterBitmask) (bool, error) {
+	if e == nil {
+		return false, errors.New("invalid event")
+	}
+	if !IsFilteredBit(s.filter, eventType) {
+		return false, nil
+	}
+	return s.isFilteredEventByType(e)
 }
 
 func (s *Sub) ProcessEvent(e *pb.Event, eventType FilterBitmask) error {

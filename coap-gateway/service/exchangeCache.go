@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"sync"
 
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
@@ -40,7 +40,7 @@ func (e *ExchangeCache) getFutureToken(authorizationCode string) (*future.Future
 // Execute Exchange or returned cached value.
 func (e *ExchangeCache) Execute(ctx context.Context, provider *oauth2.PlgdProvider, authorizationCode string) (*oauth2.Token, error) {
 	if authorizationCode == "" {
-		return nil, fmt.Errorf("invalid authorization code")
+		return nil, errors.New("invalid authorization code")
 	}
 
 	f, set := e.getFutureToken(authorizationCode)

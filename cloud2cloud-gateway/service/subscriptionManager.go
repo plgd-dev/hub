@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -73,12 +74,12 @@ func (s *SubscriptionManager) storeToSubs(sub store.Subscription) {
 func (s *SubscriptionManager) Connect(id string) error {
 	subRaw, ok := s.subscriptions.Load(id)
 	if !ok {
-		return fmt.Errorf("not found")
+		return errors.New("not found")
 	}
 	sub := subRaw.(*SubscriptionData)
 	if sub.sub != nil {
 		if !ok {
-			return fmt.Errorf("already connected")
+			return errors.New("already connected")
 		}
 	}
 	ctx := s.ctx
@@ -117,7 +118,7 @@ func cancelSubscription(ctx context.Context, emitEvent emitEventFunc, sub store.
 func (s *SubscriptionManager) PullOut(ctx context.Context, id, href string) (store.Subscription, error) {
 	subDataRaw, ok := s.subscriptions.PullOut(id)
 	if !ok {
-		return store.Subscription{}, fmt.Errorf("not found")
+		return store.Subscription{}, errors.New("not found")
 	}
 	subData := subDataRaw.(*SubscriptionData)
 	if href != "" && subData.data.Href != href {

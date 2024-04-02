@@ -1,7 +1,7 @@
 package service
 
 import (
-	"fmt"
+	"errors"
 	"os"
 	"os/signal"
 	"sync"
@@ -40,7 +40,7 @@ func (s *Service) Add(services ...APIService) {
 
 func (s *Service) Serve() error {
 	if !s.serving.CompareAndSwap(false, true) {
-		return fmt.Errorf("already serving")
+		return errors.New("already serving")
 	}
 	defer close(s.done)
 	var wg sync.WaitGroup

@@ -1,6 +1,7 @@
 package pb
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 
@@ -26,7 +27,7 @@ func (signingRecord *SigningRecord) Unmarshal(b []byte) error {
 
 func (signingRecord *SigningRecord) Validate() error {
 	if signingRecord.GetId() == "" {
-		return fmt.Errorf("empty signing record ID")
+		return errors.New("empty signing record ID")
 	}
 	if _, err := uuid.Parse(signingRecord.GetId()); err != nil {
 		return fmt.Errorf("invalid signing record ID(%v): %w", signingRecord.GetId(), err)
@@ -37,19 +38,19 @@ func (signingRecord *SigningRecord) Validate() error {
 		}
 	}
 	if signingRecord.GetCommonName() == "" {
-		return fmt.Errorf("empty signing record commonName")
+		return errors.New("empty signing record commonName")
 	}
 	if signingRecord.GetOwner() == "" {
-		return fmt.Errorf("empty signing record owner")
+		return errors.New("empty signing record owner")
 	}
 	if signingRecord.GetCredential() != nil && signingRecord.GetCredential().GetDate() == 0 {
-		return fmt.Errorf("empty signing credential date")
+		return errors.New("empty signing credential date")
 	}
 	if signingRecord.GetCredential() != nil && signingRecord.GetCredential().GetValidUntilDate() == 0 {
-		return fmt.Errorf("empty signing record credential expiration date")
+		return errors.New("empty signing record credential expiration date")
 	}
 	if signingRecord.GetCredential() != nil && signingRecord.GetCredential().GetCertificatePem() == "" {
-		return fmt.Errorf("empty signing record credential certificate")
+		return errors.New("empty signing record credential certificate")
 	}
 	return nil
 }

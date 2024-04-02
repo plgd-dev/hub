@@ -18,15 +18,15 @@ func MakeEventMeta(connectionID string, sequence, version uint64, hubID string) 
 }
 
 func EqualResource(x, y *commands.Resource) bool {
-	return x.DeviceId == y.DeviceId &&
-		EqualStringSlice(x.ResourceTypes, y.ResourceTypes) &&
-		EqualStringSlice(x.Interfaces, y.Interfaces) &&
-		x.Anchor == y.Anchor &&
-		x.Title == y.Title &&
-		EqualStringSlice(x.SupportedContentTypes, y.SupportedContentTypes) &&
-		x.ValidUntil == y.ValidUntil &&
-		((x.Policy == nil && y.Policy == nil) ||
-			(x.Policy != nil && y.Policy != nil && x.Policy.BitFlags == y.Policy.BitFlags))
+	return x.GetDeviceId() == y.GetDeviceId() &&
+		EqualStringSlice(x.GetResourceTypes(), y.GetResourceTypes()) &&
+		EqualStringSlice(x.GetInterfaces(), y.GetInterfaces()) &&
+		x.GetAnchor() == y.GetAnchor() &&
+		x.GetTitle() == y.GetTitle() &&
+		EqualStringSlice(x.GetSupportedContentTypes(), y.GetSupportedContentTypes()) &&
+		x.GetValidUntil() == y.GetValidUntil() &&
+		((x.GetPolicy() == nil && y.GetPolicy() == nil) ||
+			(x.GetPolicy() != nil && y.GetPolicy() != nil && x.GetPolicy().GetBitFlags() == y.GetPolicy().GetBitFlags()))
 }
 
 func EqualStringSlice(x, y []string) bool {

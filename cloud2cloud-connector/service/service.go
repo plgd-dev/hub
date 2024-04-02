@@ -125,8 +125,8 @@ func newStore(ctx context.Context, config pkgMongo.Config, fileWatcher *fsnotify
 		return nil, nil, fmt.Errorf("cannot create mongodb subscription store: %w", err)
 	}
 	fl.AddFunc(func() {
-		if err := db.Close(ctx); err != nil {
-			log.Errorf("failed to close subscription store: %w", err)
+		if errC := db.Close(ctx); errC != nil {
+			log.Errorf("failed to close subscription store: %w", errC)
 		}
 	})
 

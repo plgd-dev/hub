@@ -255,8 +255,8 @@ func NewDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn
 
 	if cfg.ObservationType == ObservationType_PerDevice {
 		etags := getETags(ctx, deviceID, rdClient, cfg)
-		resourcesObserver, err := createDiscoveryResourceObserver(ctx, deviceID, coapConn, callbacks, etags, cfg.Logger)
-		if err == nil {
+		resourcesObserver, errC := createDiscoveryResourceObserver(ctx, deviceID, coapConn, callbacks, etags, cfg.Logger)
+		if errC == nil {
 			return &DeviceObserver{
 				deviceID:          deviceID,
 				observationType:   ObservationType_PerDevice,
@@ -267,15 +267,15 @@ func NewDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn
 				raClient:          raClient,
 			}, nil
 		}
-		cfg.Logger.Debugf("NewDeviceObserver: failed to create /oic/res observation for device(%v): %v", deviceID, err)
+		cfg.Logger.Debugf("NewDeviceObserver: failed to create /oic/res observation for device(%v): %v", deviceID, errC)
 	}
 	if cfg.RequireBatchObserveEnabled {
 		return nil, createError(fmt.Errorf("device(%v) doesn't support batch observe, which is required by configuration", deviceID))
 	}
 
-	resourcesObserver, err := createPublishedResourcesObserver(ctx, deviceID, coapConn, callbacks, published, cfg.Logger)
-	if err != nil {
-		return nil, createError(err)
+	resourcesObserver, errC := createPublishedResourcesObserver(ctx, deviceID, coapConn, callbacks, published, cfg.Logger)
+	if errC != nil {
+		return nil, createError(errC)
 	}
 	return &DeviceObserver{
 		deviceID:          deviceID,
@@ -289,12 +289,12 @@ func NewDeviceObserver(ctx context.Context, deviceID string, coapConn ClientConn
 }
 
 func emptyDeviceIDError() error {
-	return fmt.Errorf("empty deviceID")
+	return errors.New("empty deviceID")
 }
 
 func IsDiscoveryResourceObservable(links schema.ResourceLinks) (bool, error) {
 	if len(links) == 0 {
-		return false, fmt.Errorf("no links")
+		return false, errors.New("no links")
 	}
 	resourceHref := resources.ResourceURI
 	observeInterface := interfaces.OC_IF_B
@@ -328,7 +328,7 @@ func loadTwinEnabled(ctx context.Context, rdClient GrpcGatewayClient, deviceID s
 		return fmt.Errorf("cannot get device(%v) metadata: %w", deviceID, err)
 	}
 	if deviceID == "" {
-		return false, metadataError(fmt.Errorf("invalid deviceID"))
+		return false, metadataError(errors.New("invalid deviceID"))
 	}
 	deviceMetadataClient, err := rdClient.GetDevicesMetadata(ctx, &pb.GetDevicesMetadataRequest{
 		DeviceIdFilter: []string{deviceID},
@@ -413,7 +413,7 @@ func (d *DeviceObserver) GetResources() ([]*commands.ResourceId, error) {
 		return nil, nil
 	}
 	if d.resourcesObserver == nil {
-		return nil, getResourcesError(fmt.Errorf("resources observer is nil"))
+		return nil, getResourcesError(errors.New("resources observer is nil"))
 	}
 	return d.resourcesObserver.getResources(), nil
 }

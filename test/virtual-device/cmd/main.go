@@ -9,6 +9,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -75,7 +76,7 @@ func generateIdentityCert(deviceID string, signerCert []*x509.Certificate, signe
 func makeVerifyCertificate(signerCert []*x509.Certificate) func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
 	return func(rawCerts [][]byte, _ [][]*x509.Certificate) error {
 		if len(rawCerts) == 0 {
-			return fmt.Errorf("empty certificates chain")
+			return errors.New("empty certificates chain")
 		}
 		intermediateCAPool := x509.NewCertPool()
 		certs := make([]*x509.Certificate, 0, len(rawCerts))
@@ -191,7 +192,7 @@ func signUpDevice(ctx context.Context, deviceID string, co *client.Conn) (servic
 		return service.CoapSignUpResponse{}, err
 	}
 	if signUpResp.AccessToken == "" {
-		return service.CoapSignUpResponse{}, fmt.Errorf("cannot sign up device: empty access token")
+		return service.CoapSignUpResponse{}, errors.New("cannot sign up device: empty access token")
 	}
 	return signUpResp, nil
 }
@@ -286,12 +287,12 @@ func publishResources(ctx context.Context, deviceID string, co *client.Conn, num
 		})
 	}
 
-	wkRd := wkRd{
+	wk := wkRd{
 		DeviceID:   deviceID,
 		Links:      links,
 		TimeToLive: 0,
 	}
-	inputCbor, err := cbor.Encode(wkRd)
+	inputCbor, err := cbor.Encode(wk)
 	if err != nil {
 		return err
 	}
@@ -341,7 +342,7 @@ func encodePlatformResource(w *responsewriter.ResponseWriter[*client.Conn]) []by
 	pCbor, err := cbor.Encode(p)
 	if err != nil {
 		fmt.Printf("cannot encode platform: %v", err)
-		err := w.SetResponse(codes.Content, message.AppOcfCbor, bytes.NewReader([]byte{}))
+		err = w.SetResponse(codes.Content, message.AppOcfCbor, bytes.NewReader([]byte{}))
 		if err != nil {
 			fmt.Printf(errSetResponseFmt, err)
 		}
@@ -426,7 +427,7 @@ func processBatchResourceLinks(w *responsewriter.ResponseWriter[*client.Conn], d
 	inputCbor, err := cbor.Encode(data)
 	if err != nil {
 		fmt.Printf("cannot encode resource data: %v", err)
-		err := w.SetResponse(codes.Content, message.AppOcfCbor, bytes.NewReader([]byte{}))
+		err = w.SetResponse(codes.Content, message.AppOcfCbor, bytes.NewReader([]byte{}))
 		if err != nil {
 			fmt.Printf(errSetResponseFmt, err)
 		}
@@ -514,7 +515,7 @@ func processGetResourceLinks(w *responsewriter.ResponseWriter[*client.Conn], dev
 	inputCbor, err := cbor.Encode(links)
 	if err != nil {
 		fmt.Printf("cannot encode resource links: %v", err)
-		err := w.SetResponse(codes.Content, message.AppOcfCbor, bytes.NewReader([]byte{}))
+		err = w.SetResponse(codes.Content, message.AppOcfCbor, bytes.NewReader([]byte{}))
 		if err != nil {
 			fmt.Printf(errSetResponseFmt, err)
 		}

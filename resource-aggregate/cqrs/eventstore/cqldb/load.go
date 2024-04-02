@@ -3,6 +3,7 @@ package cqldb
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/gocql/gocql"
@@ -166,7 +167,7 @@ func snapshotQueriesToFilter(deviceID string, queries []eventstore.SnapshotQuery
 		}
 		filter.WriteString(timestampKey)
 		filter.WriteString(">=")
-		filter.WriteString(fmt.Sprintf("%v", timestamp))
+		filter.WriteString(strconv.FormatInt(timestamp, 10))
 		filter.WriteString(" ALLOW FILTERING")
 	}
 	return filter.String()

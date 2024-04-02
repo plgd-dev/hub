@@ -81,7 +81,7 @@ func (s *Store) CreateSigningRecord(ctx context.Context, signingRecord *store.Si
 		return err
 	}
 	if !applied {
-		return fmt.Errorf("cannot insert signing record: already exists")
+		return errors.New("cannot insert signing record: already exists")
 	}
 	return nil
 }
@@ -251,7 +251,7 @@ func (s *Store) deviceIDFilterToPrimaryKeys(ctx context.Context, owner string, d
 
 func (s *Store) ownerFilterToPrimaryKeys(ctx context.Context, owner string) (primaryKeysValues, error) {
 	if owner == "" {
-		return nil, fmt.Errorf("invalid owner")
+		return nil, errors.New("invalid owner")
 	}
 
 	var b strings.Builder

@@ -107,13 +107,13 @@ func subscribe(ctx context.Context, tracerProvider trace.TracerProvider, href, c
 
 	go func() {
 		defer func() {
-			if err := w.Close(); err != nil {
-				log.Errorf("failed to close write pipe: %v", err)
+			if errC := w.Close(); errC != nil {
+				log.Errorf("failed to close write pipe: %w", errC)
 			}
 		}()
-		err := json.WriteTo(w, reqBody)
-		if err != nil {
-			log.Errorf("cannot encode %+v to json: %w", reqBody, err)
+		errW := json.WriteTo(w, reqBody)
+		if errW != nil {
+			log.Errorf("cannot encode %+v to json: %w", reqBody, errW)
 		}
 	}()
 	httpResp, err := client.Do(req)
@@ -212,7 +212,7 @@ func (s *SubscriptionManager) handleEvent(ctx context.Context, header events.Eve
 
 	ctx = kitNetGrpc.CtxWithToken(ctx, subData.linkedAccount.Data.Origin().AccessToken.String())
 	if header.EventType == events.EventType_SubscriptionCanceled {
-		err := s.handleCancelEvent(header)
+		err = s.handleCancelEvent(header)
 		if err != nil {
 			return http.StatusGone, fmt.Errorf("cannot cancel subscription: %w", err)
 		}

@@ -20,7 +20,7 @@ func (s *EventStore) LoadDeviceMetadataByServiceIDs(ctx context.Context, service
 		s.LogDebugfFunc("mongodb.Evenstore.LoadDocMetadataFromByServiceIDs takes %v", time.Since(t))
 	}()
 	if len(serviceIDs) == 0 {
-		return nil, fmt.Errorf("not supported")
+		return nil, errors.New("not supported")
 	}
 	serviceIDs = strings.Unique(serviceIDs)
 

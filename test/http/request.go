@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -42,7 +43,7 @@ func NewHTTPRequest(method, url string, body io.Reader) *HTTPRequestBuilder {
 }
 
 func (c *HTTPRequestBuilder) AuthToken(token string) *HTTPRequestBuilder {
-	c.header["Authorization"] = fmt.Sprintf("bearer %s", token)
+	c.header["Authorization"] = "bearer " + token
 	return c
 }
 
@@ -144,7 +145,7 @@ func DoHTTPRequest(t *testing.T, req *http.Request) *http.Response {
 
 func ReadHTTPResponse(t *testing.T, w io.Reader, contentType string, data interface{}) {
 	readFrom := func(_ io.Reader, _ interface{}) error {
-		return fmt.Errorf("not supported")
+		return errors.New("not supported")
 	}
 	switch contentType {
 	case message.AppJSON.String():
@@ -159,7 +160,7 @@ func ReadHTTPResponse(t *testing.T, w io.Reader, contentType string, data interf
 			}
 			val := reflect.ValueOf(v)
 			if val.Kind() != reflect.Ptr {
-				return fmt.Errorf("some: check must be a pointer")
+				return errors.New("some: check must be a pointer")
 			}
 			val.Elem().Set(reflect.ValueOf(string(b)))
 			return nil

@@ -54,7 +54,7 @@ func NewResourceSubscription(ctx context.Context, resourceID *commands.ResourceI
 	}
 
 	if resourceContentChangedHandler == nil {
-		return nil, fmt.Errorf("invalid handler - it's supports: ResourceContentChangedHandler")
+		return nil, errors.New("invalid handler - it's supports: ResourceContentChangedHandler")
 	}
 	client, err := New(gwClient).SubscribeToEventsWithCurrentState(ctx, time.Minute)
 	if err != nil {
@@ -85,7 +85,7 @@ func NewResourceSubscription(ctx context.Context, resourceID *commands.ResourceI
 		return nil, fmt.Errorf("unexpected event %+v", ev)
 	}
 	if op.GetErrorStatus().GetCode() != pb.Event_OperationProcessed_ErrorStatus_OK {
-		return nil, fmt.Errorf(op.GetErrorStatus().GetMessage())
+		return nil, errors.New(op.GetErrorStatus().GetMessage())
 	}
 
 	var wg sync.WaitGroup
@@ -141,7 +141,7 @@ func (s *ResourceSubscription) handleCancel(cancel *pb.Event_SubscriptionCancele
 		s.closeErrorHandler.OnClose()
 		return
 	}
-	s.closeErrorHandler.Error(fmt.Errorf(reason))
+	s.closeErrorHandler.Error(errors.New(reason))
 }
 
 func (s *ResourceSubscription) runRecv() {

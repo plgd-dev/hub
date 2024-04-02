@@ -6,7 +6,6 @@ import (
 	"crypto/ecdsa"
 	"crypto/x509"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/karrick/tparse/v2"
@@ -26,7 +25,7 @@ type Signer struct {
 
 func checkCertificatePrivateKey(cert []*x509.Certificate, priv *ecdsa.PrivateKey) error {
 	if len(cert) == 0 {
-		return fmt.Errorf("at least one certificate need to be set")
+		return errors.New("at least one certificate need to be set")
 	}
 	x509Cert := cert[0]
 	switch pub := x509Cert.PublicKey.(type) {
@@ -57,7 +56,7 @@ func NewSigner(ownerClaim string, hubID string, signerConfig SignerConfig) (*Sig
 	if err != nil {
 		return nil, err
 	}
-	if err := checkCertificatePrivateKey(certificate, privateKey); err != nil {
+	if err = checkCertificatePrivateKey(certificate, privateKey); err != nil {
 		return nil, err
 	}
 	if len(certificate) == 1 && pkgX509.IsRootCA(certificate[0]) {
@@ -76,13 +75,13 @@ func NewSigner(ownerClaim string, hubID string, signerConfig SignerConfig) (*Sig
 
 	certificateAuthorities := make([]*x509.Certificate, 0, len(signerConfig.caPoolArray)*4)
 	for _, caFile := range signerConfig.caPoolArray {
-		data, err := caFile.Read()
-		if err != nil {
-			return nil, err
+		data, errR := caFile.Read()
+		if errR != nil {
+			return nil, errR
 		}
-		certs, err := pkgX509.ParseX509(data)
-		if err != nil {
-			return nil, err
+		certs, errR := pkgX509.ParseX509(data)
+		if errR != nil {
+			return nil, errR
 		}
 		certificateAuthorities = append(certificateAuthorities, certs...)
 	}
@@ -108,21 +107,26 @@ func NewSigner(ownerClaim string, hubID string, signerConfig SignerConfig) (*Sig
 	}, nil
 }
 
+func (s *Signer) prepareSigningRecord(ctx context.Context, template *x509.Certificate) (*pb.SigningRecord, error) {
+	subject, err := overrideSubject(ctx, template.Subject, s.ownerClaim, s.hubID, "")
+	if err != nil {
+		return nil, err
+	}
+	template.Subject = subject
+	owner, err := ownerToUUID(ctx, s.ownerClaim)
+	if err != nil {
+		return nil, err
+	}
+	return toSigningRecord(owner, template)
+}
+
 func (s *Signer) Sign(ctx context.Context, csr []byte) ([]byte, *pb.SigningRecord, error) {
 	notBefore := s.validFrom()
 	notAfter := notBefore.Add(s.validFor)
 	var signingRecord *pb.SigningRecord
 	signer := certificateSigner.New(s.certificate, s.privateKey, certificateSigner.WithNotBefore(notBefore), certificateSigner.WithNotAfter(notAfter), certificateSigner.WithOverrideCertTemplate(func(template *x509.Certificate) error {
-		subject, err := overrideSubject(ctx, template.Subject, s.ownerClaim, s.hubID, "")
-		if err != nil {
-			return err
-		}
-		template.Subject = subject
-		owner, err := ownerToUUID(ctx, s.ownerClaim)
-		if err != nil {
-			return err
-		}
-		signingRecord, err = toSigningRecord(owner, template)
+		var err error
+		signingRecord, err = s.prepareSigningRecord(ctx, template)
 		return err
 	}))
 	crt, err := signer.Sign(ctx, csr)
@@ -134,16 +138,8 @@ func (s *Signer) SignIdentityCSR(ctx context.Context, csr []byte) ([]byte, *pb.S
 	notAfter := notBefore.Add(s.validFor)
 	var signingRecord *pb.SigningRecord
 	signer := certificateSigner.NewIdentityCertificateSigner(s.certificate, s.privateKey, certificateSigner.WithNotBefore(notBefore), certificateSigner.WithNotAfter(notAfter), certificateSigner.WithOverrideCertTemplate(func(template *x509.Certificate) error {
-		subject, err := overrideSubject(ctx, template.Subject, s.ownerClaim, s.hubID, "uuid:")
-		if err != nil {
-			return err
-		}
-		template.Subject = subject
-		owner, err := ownerToUUID(ctx, s.ownerClaim)
-		if err != nil {
-			return err
-		}
-		signingRecord, err = toSigningRecord(owner, template)
+		var err error
+		signingRecord, err = s.prepareSigningRecord(ctx, template)
 		return err
 	}))
 	cert, err := signer.Sign(ctx, csr)

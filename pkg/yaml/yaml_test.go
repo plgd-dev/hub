@@ -131,7 +131,7 @@ func TestMergeYamlNodes(t *testing.T) {
 			// merge the nodes
 			got, err := MergeYamlNodes(tt.args.node1, tt.args.node2)
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				return
 			}
 			require.NoError(t, err)

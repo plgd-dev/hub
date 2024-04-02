@@ -23,7 +23,7 @@ func TestLoadDeviceMetadataByServiceIDs(t *testing.T) {
 
 	ctx := context.Background()
 	store, err := NewTestEventStore(ctx, fileWatcher, logger)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, store)
 	defer func() {
 		t.Log("clearing db")

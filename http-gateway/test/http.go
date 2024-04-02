@@ -55,7 +55,7 @@ func (c *RequestBuilder) DeviceId(deviceID string) *RequestBuilder {
 }
 
 func (c *RequestBuilder) Twin(v bool) *RequestBuilder {
-	c.AddQuery(uri.TwinQueryKey, fmt.Sprintf("%v", v))
+	c.AddQuery(uri.TwinQueryKey, strconv.FormatBool(v))
 	return c
 }
 
@@ -63,7 +63,7 @@ func (c *RequestBuilder) Timestamp(v time.Time) *RequestBuilder {
 	if v.IsZero() {
 		return c
 	}
-	c.AddQuery(uri.TimestampFilterQueryKey, fmt.Sprintf("%v", v.UnixNano()))
+	c.AddQuery(uri.TimestampFilterQueryKey, strconv.FormatInt(v.UnixNano(), 10))
 	return c
 }
 
@@ -102,7 +102,7 @@ func (c *RequestBuilder) ResourceHref(resourceHref string) *RequestBuilder {
 }
 
 func (c *RequestBuilder) AuthToken(token string) *RequestBuilder {
-	c.header["Authorization"] = fmt.Sprintf("bearer %s", token)
+	c.header["Authorization"] = "bearer " + token
 	return c
 }
 

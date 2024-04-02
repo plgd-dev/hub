@@ -12,7 +12,6 @@ import (
 	"github.com/plgd-dev/hub/v2/certificate-authority/store"
 	"github.com/plgd-dev/hub/v2/certificate-authority/test"
 	hubTest "github.com/plgd-dev/hub/v2/test"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -355,7 +354,7 @@ func TestStoreDeleteExpiredRecords(t *testing.T) {
 	var h1 testSigningRecordHandler
 	err = s.LoadSigningRecords(ctx, "owner", nil, h1.Handle)
 	require.NoError(t, err)
-	require.Len(t, h1.lcs, 0)
+	require.Empty(t, h1.lcs)
 }
 
 type testSigningRecordHandler struct {
@@ -520,10 +519,10 @@ func TestStoreLoadSigningRecords(t *testing.T) {
 			var h testSigningRecordHandler
 			err := s.LoadSigningRecords(ctx, "owner", tt.args.query, h.Handle)
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				return
 			}
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			require.Len(t, h.lcs, len(tt.want))
 			h.lcs.Sort()
 			tt.want.Sort()

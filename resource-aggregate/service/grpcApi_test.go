@@ -113,12 +113,12 @@ func TestRequestHandlerPublishResource(t *testing.T) {
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, noop.NewTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		errC := eventstore.Close(ctx)
-		assert.NoError(t, errC)
+		require.NoError(t, errC)
 	}()
 	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -136,9 +136,9 @@ func TestRequestHandlerPublishResource(t *testing.T) {
 		tfunc := func(t *testing.T) {
 			response, err := requestHandler.PublishResourceLinks(ctx, tt.args.request)
 			if tt.wantError {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			if tt.want != nil {
 				assert.Equal(t, tt.want.AuditContext, response.AuditContext)
@@ -232,12 +232,12 @@ func TestRequestHandlerUnpublishResource(t *testing.T) {
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, noop.NewTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		errC := eventstore.Close(ctx)
-		assert.NoError(t, errC)
+		require.NoError(t, errC)
 	}()
 	naClient, publisher, err := natsTest.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -253,7 +253,7 @@ func TestRequestHandlerUnpublishResource(t *testing.T) {
 
 	pubReq := testMakePublishResourceRequest(deviceID, []string{href})
 	_, err = requestHandler.PublishResourceLinks(ctx, pubReq)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
@@ -262,9 +262,9 @@ func TestRequestHandlerUnpublishResource(t *testing.T) {
 			}))
 			response, err := requestHandler.UnpublishResourceLinks(ctx, tt.args.request)
 			if tt.wantError {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, response)
 		}
@@ -321,12 +321,12 @@ func TestRequestHandlerNotifyResourceChanged(t *testing.T) {
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, noop.NewTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		errC := eventstore.Close(ctx)
-		assert.NoError(t, errC)
+		require.NoError(t, errC)
 	}()
 	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -344,9 +344,9 @@ func TestRequestHandlerNotifyResourceChanged(t *testing.T) {
 		tfunc := func(t *testing.T) {
 			response, err := requestHandler.NotifyResourceChanged(ctx, tt.args.request)
 			if tt.wantError {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, response)
 		}
@@ -422,12 +422,12 @@ func TestRequestHandlerUpdateResourceContent(t *testing.T) {
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, noop.NewTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		errC := eventstore.Close(ctx)
-		assert.NoError(t, errC)
+		require.NoError(t, errC)
 	}()
 	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -448,7 +448,7 @@ func TestRequestHandlerUpdateResourceContent(t *testing.T) {
 			}
 			response, err := requestHandler.UpdateResource(ctx, tt.args.request)
 			if tt.wantError {
-				assert.Error(t, err)
+				require.Error(t, err)
 				return
 			}
 			require.NoError(t, err)
@@ -519,12 +519,12 @@ func TestRequestHandlerConfirmResourceUpdate(t *testing.T) {
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, noop.NewTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		errC := eventstore.Close(ctx)
-		assert.NoError(t, errC)
+		require.NoError(t, errC)
 	}()
 	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -547,9 +547,9 @@ func TestRequestHandlerConfirmResourceUpdate(t *testing.T) {
 		tfunc := func(t *testing.T) {
 			response, err := requestHandler.ConfirmResourceUpdate(ctx, tt.args.request)
 			if tt.wantError {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, response)
 		}
@@ -614,12 +614,12 @@ func TestRequestHandlerRetrieveResource(t *testing.T) {
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, noop.NewTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		errC := eventstore.Close(ctx)
-		assert.NoError(t, errC)
+		require.NoError(t, errC)
 	}()
 	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -640,7 +640,7 @@ func TestRequestHandlerRetrieveResource(t *testing.T) {
 			}
 			response, err := requestHandler.RetrieveResource(ctx, tt.args.request)
 			if tt.wantError {
-				assert.Error(t, err)
+				require.Error(t, err)
 				return
 			}
 			require.NoError(t, err)
@@ -711,12 +711,12 @@ func TestRequestHandlerConfirmResourceRetrieve(t *testing.T) {
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, noop.NewTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		errC := eventstore.Close(ctx)
-		assert.NoError(t, errC)
+		require.NoError(t, errC)
 	}()
 	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -742,9 +742,9 @@ func TestRequestHandlerConfirmResourceRetrieve(t *testing.T) {
 			}
 			response, err := requestHandler.ConfirmResourceRetrieve(ctx, tt.args.request)
 			if tt.wantError {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			assert.Equal(t, tt.want, response)
 		}
@@ -809,12 +809,12 @@ func TestRequestHandlerDeleteResource(t *testing.T) {
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, noop.NewTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		errC := eventstore.Close(ctx)
-		assert.NoError(t, errC)
+		require.NoError(t, errC)
 	}()
 	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -836,7 +836,7 @@ func TestRequestHandlerDeleteResource(t *testing.T) {
 			}
 			response, err := requestHandler.DeleteResource(ctx, tt.args.request)
 			if tt.wantError {
-				assert.Error(t, err)
+				require.Error(t, err)
 				return
 			}
 			require.NoError(t, err)
@@ -907,12 +907,12 @@ func TestRequestHandlerConfirmResourceDelete(t *testing.T) {
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, noop.NewTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		errC := eventstore.Close(ctx)
-		assert.NoError(t, errC)
+		require.NoError(t, errC)
 	}()
 	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -938,7 +938,7 @@ func TestRequestHandlerConfirmResourceDelete(t *testing.T) {
 			}
 			response, err := requestHandler.ConfirmResourceDelete(ctx, tt.args.request)
 			if tt.wantError {
-				assert.Error(t, err)
+				require.Error(t, err)
 				return
 			}
 			require.NoError(t, err)
@@ -1005,12 +1005,12 @@ func TestRequestHandlerCreateResource(t *testing.T) {
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, noop.NewTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		errC := eventstore.Close(ctx)
-		assert.NoError(t, errC)
+		require.NoError(t, errC)
 	}()
 	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -1032,7 +1032,7 @@ func TestRequestHandlerCreateResource(t *testing.T) {
 			}
 			response, err := requestHandler.CreateResource(ctx, tt.args.request)
 			if tt.wantError {
-				assert.Error(t, err)
+				require.Error(t, err)
 				return
 			}
 			require.NoError(t, err)
@@ -1103,12 +1103,12 @@ func TestRequestHandlerConfirmResourceCreate(t *testing.T) {
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, noop.NewTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		errC := eventstore.Close(ctx)
-		assert.NoError(t, errC)
+		require.NoError(t, errC)
 	}()
 	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -1134,7 +1134,7 @@ func TestRequestHandlerConfirmResourceCreate(t *testing.T) {
 			}
 			response, err := requestHandler.ConfirmResourceCreate(ctx, tt.args.request)
 			if tt.wantError {
-				assert.Error(t, err)
+				require.Error(t, err)
 				return
 			}
 			require.NoError(t, err)

@@ -206,7 +206,7 @@ func TestRequestHandlerGetResource(t *testing.T) {
 				values = append(values, value.GetData())
 			}
 			if tt.wantCode != http.StatusOK {
-				require.Len(t, values, 0)
+				require.Empty(t, values)
 				return
 			}
 			require.Len(t, values, 1)

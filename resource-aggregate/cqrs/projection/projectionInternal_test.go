@@ -21,7 +21,6 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 )
@@ -59,7 +58,7 @@ func TestProjection(t *testing.T) {
 
 	naPubClient, publisher, err := natsTest.NewClientAndPublisher(config.MakePublisherConfig(), fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
-	assert.NotNil(t, publisher)
+	require.NotNil(t, publisher)
 	defer func() {
 		publisher.Close()
 		naPubClient.Close()
@@ -74,8 +73,8 @@ func TestProjection(t *testing.T) {
 		subscriber.WithGoPool(pool.Submit),
 		subscriber.WithUnmarshaler(utils.Unmarshal),
 	)
-	assert.NoError(t, err)
-	assert.NotNil(t, subscriber)
+	require.NoError(t, err)
+	require.NotNil(t, subscriber)
 	defer func() {
 		subscriber.Close()
 		naSubClient.Close()
@@ -168,7 +167,7 @@ func TestProjection(t *testing.T) {
 		models = append(models, m)
 		return true
 	})
-	require.Equal(t, 1, len(models))
+	require.Len(t, models, 1)
 
 	err = projection.Project(ctx, []eventstore.SnapshotQuery{{
 		GroupID:     res2.DeviceId,
@@ -180,7 +179,7 @@ func TestProjection(t *testing.T) {
 		models = append(models, m)
 		return true
 	})
-	require.Equal(t, 2, len(models))
+	require.Len(t, models, 2)
 
 	err = projection.SubscribeTo(topics)
 	require.NoError(t, err)
@@ -208,7 +207,7 @@ func TestProjection(t *testing.T) {
 		models = append(models, m)
 		return true
 	})
-	require.Equal(t, 3, len(models))
+	require.Len(t, models, 3)
 
 	err = projection.SubscribeTo(topics[0:1])
 	require.NoError(t, err)
@@ -229,7 +228,7 @@ func TestProjection(t *testing.T) {
 		models = append(models, m)
 		return true
 	})
-	require.Equal(t, 2, len(models))
+	require.Len(t, models, 2)
 	projection.lock.Unlock()
 
 	err = projection.SubscribeTo(nil)
@@ -253,6 +252,6 @@ func TestProjection(t *testing.T) {
 		models = append(models, m)
 		return true
 	})
-	require.Equal(t, 2, len(models))
+	require.Len(t, models, 2)
 	projection.lock.Unlock()
 }

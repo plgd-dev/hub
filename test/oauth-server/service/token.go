@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -234,7 +235,7 @@ func (requestHandler *RequestHandler) getToken(w http.ResponseWriter, r *http.Re
 	if clientID == "" {
 		clientID, _, ok = r.BasicAuth()
 		if !ok {
-			writeError(w, fmt.Errorf("authorization header is not set"), http.StatusBadRequest)
+			writeError(w, errors.New("authorization header is not set"), http.StatusBadRequest)
 			return
 		}
 	}
@@ -303,7 +304,7 @@ func (requestHandler *RequestHandler) validateTokenRequest(clientCfg *Client, to
 		return fmt.Errorf("client(%v) not found", tokenReq.ClientID)
 	}
 	if clientCfg.ClientSecret != "" && clientCfg.ClientSecret != tokenReq.Password {
-		return fmt.Errorf("invalid client secret")
+		return errors.New("invalid client secret")
 	}
 	if clientCfg.RequiredRedirectURI != "" && clientCfg.RequiredRedirectURI != tokenReq.RedirectURI {
 		return fmt.Errorf("invalid redirect uri(%v)", tokenReq.RedirectURI)

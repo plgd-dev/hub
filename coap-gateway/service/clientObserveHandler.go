@@ -178,17 +178,14 @@ func (s *resourceSubscription) Init(ctx context.Context) error {
 
 	var d *events.ResourceChanged
 	for {
-		resource, err := client.Recv()
-		if errors.Is(err, io.EOF) {
+		resource, errR := client.Recv()
+		if errors.Is(errR, io.EOF) {
 			break
 		}
-		if err != nil {
-			return err
+		if errR != nil {
+			return errR
 		}
 		d = resource.Data
-	}
-	if err != nil {
-		return err
 	}
 	authCtx, err := s.client.GetAuthorizationContext()
 	if err != nil {
@@ -254,7 +251,7 @@ func startResourceObservation(req *mux.Message, client *session, authCtx *author
 		return nil, statusErrorf(coapconv.GrpcErr2CoapCode(err, coapconv.Retrieve), "%w", getStartObserveResourceErr(deviceID, href, err))
 	}
 	if !ok {
-		return nil, statusErrorf(coapCodes.Unauthorized, "%w", getStartObserveResourceErr(deviceID, href, fmt.Errorf("unauthorized access")))
+		return nil, statusErrorf(coapCodes.Unauthorized, "%w", getStartObserveResourceErr(deviceID, href, errors.New("unauthorized access")))
 	}
 	token := req.Token().String()
 	sub := newResourceSubscription(req, client, authCtx, deviceID, href)
@@ -294,7 +291,7 @@ func stopResourceObservation(req *mux.Message, client *session, deviceID, href s
 		return nil, statusErrorf(coapCodes.BadRequest, "%w", getStopObserveResourceErr(deviceID, href, err))
 	}
 	if !canceled {
-		return nil, statusErrorf(coapCodes.BadRequest, "%w", getStopObserveResourceErr(deviceID, href, fmt.Errorf("subscription not found")))
+		return nil, statusErrorf(coapCodes.BadRequest, "%w", getStopObserveResourceErr(deviceID, href, errors.New("subscription not found")))
 	}
 	return CreateResourceContentToObserver(client, nil, 1, req.Token())
 }
@@ -306,7 +303,7 @@ func clientResetObservationHandler(req *mux.Message, client *session) (*pool.Mes
 		return nil, statusErrorf(coapCodes.BadRequest, "%w", fmt.Errorf("cannot reset resource observation: %w", err))
 	}
 	if !canceled {
-		return nil, statusErrorf(coapCodes.BadRequest, "%w", fmt.Errorf("cannot reset resource observation: not found"))
+		return nil, statusErrorf(coapCodes.BadRequest, "%w", errors.New("cannot reset resource observation: not found"))
 	}
 	// reset does not send response
 	return nil, nil

@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -191,7 +192,7 @@ func (a *CertManager) getTLSKeyPair() (*tls.Certificate, error) {
 		}
 	}
 	if a.private.tlsKeyPair == nil {
-		return nil, fmt.Errorf("certificate is not loaded")
+		return nil, errors.New("certificate is not loaded")
 	}
 
 	return a.private.tlsKeyPair, nil

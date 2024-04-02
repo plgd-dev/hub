@@ -252,7 +252,7 @@ func TestResourceProjection_Register(t *testing.T) {
 			return events.NewResourceLinksSnapshotTaken(), nil
 		},
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -263,9 +263,9 @@ func TestResourceProjection_Register(t *testing.T) {
 				assert.False(t, gotLoaded)
 			}
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -319,19 +319,19 @@ func TestResourceProjection_Unregister(t *testing.T) {
 			return events.NewResourceLinksSnapshotTaken(), nil
 		},
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	_, err = p.Register(ctx, d1res1.DeviceId)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	_, err = p.Register(ctx, d1res1.DeviceId)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := p.Unregister(tt.args.deviceID)
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -458,12 +458,12 @@ func TestResourceLinksProjection_Models(t *testing.T) {
 			return events.NewResourceLinksSnapshotTaken(), nil
 		},
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err = p.Register(ctx, tt.args.deviceID)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			got := []cqrsEventStore.Model{}
 			p.Models(func(m cqrsEventStore.Model) (wantNext bool) {
 				got = append(got, m)
@@ -726,12 +726,12 @@ func TestResourceStateProjection_Models(t *testing.T) {
 			return events.NewResourceStateSnapshotTaken(), nil
 		},
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err = p.Register(ctx, tt.args.resourceID.GetDeviceId())
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			got := []cqrsEventStore.Model{}
 			p.Models(func(m cqrsEventStore.Model) (wantNext bool) {
 				got = append(got, m)
@@ -789,16 +789,16 @@ func TestResourceProjection_ForceUpdate(t *testing.T) {
 			return events.NewResourceStateSnapshotTaken(), nil
 		},
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	_, err = p.Register(ctx, d1res1.DeviceId)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := p.ForceUpdate(ctx, tt.args.resourceID)
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}

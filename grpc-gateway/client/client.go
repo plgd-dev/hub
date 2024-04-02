@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -44,7 +45,7 @@ func New(client pb.GrpcGatewayClient) *Client {
 // NewFromConfig constructs a new client client. For every call there is expected jwt token for grpc stored in context.
 func NewFromConfig(cfg *Config, tlsCfg *tls.Config) (*Client, error) {
 	if cfg == nil || cfg.GatewayAddress == "" {
-		return nil, fmt.Errorf("missing client client config")
+		return nil, errors.New("missing client client config")
 	}
 
 	keepAlive := keepalive.ClientParameters{

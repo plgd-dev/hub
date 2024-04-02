@@ -97,7 +97,7 @@ func (i *iterator) RewindToNextAggregateEvent(ctx context.Context) EventUnmarsha
 		if nextAggregateEvent != nil {
 			return nextAggregateEvent
 		}
-		if snapshot == nil && nextAggregateEvent == nil {
+		if snapshot == nil {
 			return nil
 		}
 	}

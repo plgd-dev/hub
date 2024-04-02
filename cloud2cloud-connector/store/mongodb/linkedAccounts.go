@@ -14,21 +14,21 @@ const resLinkedAccountCName = "linkedAccounts"
 
 func validateLinkedAccount(sub store.LinkedAccount) error {
 	if sub.ID == "" {
-		return fmt.Errorf("invalid ID")
+		return errors.New("invalid ID")
 	}
 	if sub.UserID == "" {
-		return fmt.Errorf("invalid UserID")
+		return errors.New("invalid UserID")
 	}
 	if sub.LinkedCloudID == "" {
-		return fmt.Errorf("invalid LinkedCloudID")
+		return errors.New("invalid LinkedCloudID")
 	}
 	origin := sub.Data.Origin()
 	if origin.AccessToken == "" && origin.RefreshToken == "" {
-		return fmt.Errorf("invalid Data.OriginCloud.AccessToken and Data.OriginCloud.RefreshToken")
+		return errors.New("invalid Data.OriginCloud.AccessToken and Data.OriginCloud.RefreshToken")
 	}
 	target := sub.Data.Target()
 	if target.AccessToken == "" && target.RefreshToken == "" {
-		return fmt.Errorf("invalid Data.TargetCloud.AccessToken and Data.TargetCloud.RefreshToken")
+		return errors.New("invalid Data.TargetCloud.AccessToken and Data.TargetCloud.RefreshToken")
 	}
 	return nil
 }
@@ -59,21 +59,21 @@ func (s *Store) UpdateLinkedAccount(ctx context.Context, sub store.LinkedAccount
 		return fmt.Errorf("cannot update linked account: %w", err)
 	}
 	if res.MatchedCount == 0 {
-		return fmt.Errorf("cannot update linked account: not found")
+		return errors.New("cannot update linked account: not found")
 	}
 	return nil
 }
 
 func (s *Store) RemoveLinkedAccount(ctx context.Context, linkedAccountID string) error {
 	if linkedAccountID == "" {
-		return fmt.Errorf("cannot remove linked account: invalid linkedAccountID")
+		return errors.New("cannot remove linked account: invalid linkedAccountID")
 	}
 	res, err := s.Collection(resLinkedAccountCName).DeleteOne(ctx, bson.M{"_id": linkedAccountID})
 	if err != nil {
 		return fmt.Errorf("cannot remove linked account: %w", err)
 	}
 	if res.DeletedCount == 0 {
-		return fmt.Errorf("cannot remove linked account: not found")
+		return errors.New("cannot remove linked account: not found")
 	}
 	return nil
 }

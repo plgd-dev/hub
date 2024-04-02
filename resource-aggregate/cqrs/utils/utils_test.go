@@ -7,6 +7,7 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDummyForCoverage(t *testing.T) {
@@ -34,17 +35,17 @@ func TestProtobufMarshaler(t *testing.T) {
 	req := events.ResourceChanged{}
 
 	out, err := utils.Marshal(&req)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotEmpty(t, out)
 
 	a := struct{}{}
 	_, err = utils.Marshal(a)
-	assert.Error(t, err)
+	require.Error(t, err)
 
 	resp := events.ResourceChanged{}
 	err = utils.Unmarshal(out, &resp)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	err = utils.Unmarshal(out, a)
-	assert.Error(t, err)
+	require.Error(t, err)
 }

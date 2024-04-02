@@ -29,7 +29,7 @@ func NewDefaultRetryFunc(limit int) RetryFunc {
 	counter := new(int)
 	return func() (time.Time, error) {
 		if *counter >= limit {
-			return time.Time{}, fmt.Errorf("retry reach limit")
+			return time.Time{}, errors.New("retry reach limit")
 		}
 		*counter++
 		return time.Now().Add(time.Millisecond * 10), nil
@@ -130,7 +130,7 @@ func HandleRetry(ctx context.Context, retryFunc RetryFunc) error {
 	select {
 	case <-time.After(time.Until(when)):
 	case <-ctx.Done():
-		return fmt.Errorf("retry canceled")
+		return errors.New("retry canceled")
 	}
 	return nil
 }
@@ -169,7 +169,7 @@ func (a *Aggregate) HandleCommandWithAggregateModelWrapper(ctx context.Context, 
 	}
 	snapshot, ok := amodel.TakeSnapshot(newVersion + uint64(len(newEvents)-1))
 	if !ok {
-		return nil, false, fmt.Errorf("cannot take snapshot")
+		return nil, false, errors.New("cannot take snapshot")
 	}
 	// save all events except last one, because last one will be replaced by snapshot
 	saveEvents := make([]eventstore.Event, 0, len(newEvents))

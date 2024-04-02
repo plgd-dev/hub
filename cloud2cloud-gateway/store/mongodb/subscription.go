@@ -75,49 +75,49 @@ func makeDBSub(sub store.Subscription) DBSub {
 
 func validateDevicesSubscription(sub store.Subscription) error {
 	if sub.DeviceID != "" {
-		return fmt.Errorf("invalid DeviceID for devices subscription type")
+		return errors.New("invalid DeviceID for devices subscription type")
 	}
 	if sub.Href != "" {
-		return fmt.Errorf("invalid Href for devices subscription type")
+		return errors.New("invalid Href for devices subscription type")
 	}
 	return nil
 }
 
 func validateDeviceSubscription(sub store.Subscription) error {
 	if sub.DeviceID == "" {
-		return fmt.Errorf("invalid DeviceID for device subscription type")
+		return errors.New("invalid DeviceID for device subscription type")
 	}
 	if sub.Href != "" {
-		return fmt.Errorf("invalid Href for device subscription type")
+		return errors.New("invalid Href for device subscription type")
 	}
 	return nil
 }
 
 func validateResourceSubscription(sub store.Subscription) error {
 	if sub.DeviceID == "" {
-		return fmt.Errorf("invalid DeviceID for resource subscription type")
+		return errors.New("invalid DeviceID for resource subscription type")
 	}
 	if sub.Href == "" {
-		return fmt.Errorf("invalid Href for resource subscription type")
+		return errors.New("invalid Href for resource subscription type")
 	}
 	return nil
 }
 
 func validateSubscription(sub store.Subscription) error {
 	if sub.ID == "" {
-		return fmt.Errorf("invalid ID")
+		return errors.New("invalid ID")
 	}
 	if len(sub.EventTypes) == 0 {
-		return fmt.Errorf("invalid EventTypes")
+		return errors.New("invalid EventTypes")
 	}
 	if sub.URL == "" {
-		return fmt.Errorf("invalid URL")
+		return errors.New("invalid URL")
 	}
 	if sub.SigningSecret == "" {
-		return fmt.Errorf("invalid SigningSecret")
+		return errors.New("invalid SigningSecret")
 	}
 	if sub.AccessToken == "" {
-		return fmt.Errorf("invalid AccessToken")
+		return errors.New("invalid AccessToken")
 	}
 
 	switch sub.Type {
@@ -156,7 +156,7 @@ func (s *Store) IncrementSubscriptionSequenceNumber(ctx context.Context, subscri
 func (s *Store) SetInitialized(ctx context.Context, subscriptionID string) error {
 	col := s.Collection(subscriptionsCName)
 	if subscriptionID == "" {
-		return fmt.Errorf("cannot set initialized: invalid subscriptionId")
+		return errors.New("cannot set initialized: invalid subscriptionId")
 	}
 
 	opts := &options.UpdateOptions{}
@@ -193,7 +193,7 @@ func (s *Store) LoadSubscriptions(ctx context.Context, query store.SubscriptionQ
 	case query.Type == "" && query.DeviceID == "" && query.Href == "":
 		iter, err = col.Find(ctx, bson.M{})
 	case query.Type == "":
-		return fmt.Errorf("invalid Type")
+		return errors.New("invalid Type")
 	case query.DeviceID != "" && query.Href != "":
 		q := bson.M{
 			typeKey:     query.Type,

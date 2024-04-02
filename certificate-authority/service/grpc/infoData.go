@@ -3,6 +3,7 @@ package grpc
 import (
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"regexp"
 )
@@ -25,7 +26,7 @@ func (d infoData) String() string {
 func getInfoData(csr []byte) (infoData, error) {
 	csrBlock, _ := pem.Decode(csr)
 	if csrBlock == nil {
-		return infoData{}, fmt.Errorf("pem not found")
+		return infoData{}, errors.New("pem not found")
 	}
 
 	certificateRequest, err := x509.ParseCertificateRequest(csrBlock.Bytes)

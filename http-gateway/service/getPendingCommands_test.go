@@ -293,9 +293,9 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 	secureGWShutdown()
 
 	createFn := func() {
-		ctx, cancel := context.WithTimeout(ctx, time.Second)
+		createCtx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
-		_, err := c.CreateResource(ctx, &pb.CreateResourceRequest{
+		_, errC := c.CreateResource(createCtx, &pb.CreateResourceRequest{
 			ResourceId: commands.NewResourceID(deviceID, device.ResourceURI),
 			Content: &pb.Content{
 				ContentType: message.AppOcfCbor.String(),
@@ -304,22 +304,22 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 				}),
 			},
 		})
-		require.Error(t, err)
+		require.Error(t, errC)
 	}
 	createFn()
 	retrieveFn := func() {
-		ctx, cancel := context.WithTimeout(ctx, time.Second)
+		retrieveCtx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
-		_, err := c.GetResourceFromDevice(ctx, &pb.GetResourceFromDeviceRequest{
+		_, errG := c.GetResourceFromDevice(retrieveCtx, &pb.GetResourceFromDeviceRequest{
 			ResourceId: commands.NewResourceID(deviceID, platform.ResourceURI),
 		})
-		require.Error(t, err)
+		require.Error(t, errG)
 	}
 	retrieveFn()
 	updateFn := func() {
-		ctx, cancel := context.WithTimeout(ctx, time.Second)
+		updateCtx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
-		_, err := c.UpdateResource(ctx, &pb.UpdateResourceRequest{
+		_, errU := c.UpdateResource(updateCtx, &pb.UpdateResourceRequest{
 			ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 			Content: &pb.Content{
 				ContentType: message.AppOcfCbor.String(),
@@ -328,26 +328,26 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 				}),
 			},
 		})
-		require.Error(t, err)
+		require.Error(t, errU)
 	}
 	updateFn()
 	deleteFn := func() {
-		ctx, cancel := context.WithTimeout(ctx, time.Second)
+		deleteCtx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
-		_, err := c.DeleteResource(ctx, &pb.DeleteResourceRequest{
+		_, errD := c.DeleteResource(deleteCtx, &pb.DeleteResourceRequest{
 			ResourceId: commands.NewResourceID(deviceID, device.ResourceURI),
 		})
-		require.Error(t, err)
+		require.Error(t, errD)
 	}
 	deleteFn()
 	updateDeviceMetadataFn := func() {
-		ctx, cancel := context.WithTimeout(ctx, time.Second)
+		updateCtx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
-		_, err := c.UpdateDeviceMetadata(ctx, &pb.UpdateDeviceMetadataRequest{
+		_, errU := c.UpdateDeviceMetadata(updateCtx, &pb.UpdateDeviceMetadataRequest{
 			DeviceId:    deviceID,
 			TwinEnabled: false,
 		})
-		require.Error(t, err)
+		require.Error(t, errU)
 	}
 	updateDeviceMetadataFn()
 

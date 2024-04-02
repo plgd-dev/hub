@@ -40,12 +40,12 @@ func updateDeviceResource(ctx context.Context, tracerProvider trace.TracerProvid
 	go func() {
 		defer func() {
 			if errC := w.Close(); errC != nil {
-				log.Errorf("failed to close write pipe: %v", errC)
+				log.Errorf("failed to close write pipe: %w", errC)
 			}
 		}()
-		_, err := w.Write(content)
-		if err != nil {
-			log.Errorf("cannot update content of device %v resource %v: %w", deviceID, href, err)
+		_, errW := w.Write(content)
+		if errW != nil {
+			log.Errorf("cannot update content of device %v resource %v: %w", deviceID, href, errW)
 		}
 	}()
 	httpResp, err := client.Do(req)

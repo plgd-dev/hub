@@ -41,7 +41,6 @@ import (
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/plgd-dev/hub/v2/test/sdk"
 	"github.com/plgd-dev/kit/v2/codec/json"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/ugorji/go/codec"
 )
@@ -123,8 +122,8 @@ func (d *ResourceLinkRepresentation) UnmarshalJSON(data []byte) error {
 	}
 	dec := func(data []byte) (interface{}, error) {
 		var r interface{}
-		err := json.Decode(data, &r)
-		return r, err
+		errD := json.Decode(data, &r)
+		return r, errD
 	}
 	for k, v := range reps {
 		if strings.HasSuffix(rep.Href, k) {
@@ -874,7 +873,7 @@ func DeviceIsBatchObservable(ctx context.Context, t *testing.T, deviceID string)
 	var links schema.ResourceLinks
 	err := GetResource(ctx, deviceID, resources.ResourceURI, resources.ResourceType, &links, deviceClient.WithQuery("di="+deviceID))
 	require.NoError(t, err)
-	require.Equal(t, 1, len(links))
+	require.Len(t, links, 1)
 	return links[0].Policy.BitMask.Has(schema.Observable) &&
 		pkgStrings.Contains(links[0].Interfaces, interfaces.OC_IF_B)
 }
@@ -894,13 +893,7 @@ func ProtobufToInterface(t *testing.T, val interface{}) interface{} {
 
 func RequireToCheckFunc(checFunc func(t require.TestingT, expected interface{}, actual interface{}, msgAndArgs ...interface{})) func(t *testing.T, expected interface{}, actual interface{}, msgAndArgs ...interface{}) {
 	return func(t *testing.T, expected interface{}, actual interface{}, msgAndArgs ...interface{}) {
-		checFunc(t, expected, actual, msgAndArgs)
-	}
-}
-
-func AssertToCheckFunc(checFunc func(t assert.TestingT, expected interface{}, actual interface{}, msgAndArgs ...interface{}) bool) func(t *testing.T, expected interface{}, actual interface{}, msgAndArgs ...interface{}) {
-	return func(t *testing.T, expected interface{}, actual interface{}, msgAndArgs ...interface{}) {
-		checFunc(t, expected, actual, msgAndArgs)
+		checFunc(t, expected, actual, msgAndArgs...)
 	}
 }
 

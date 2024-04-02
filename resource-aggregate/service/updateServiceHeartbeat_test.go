@@ -17,7 +17,6 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/service"
 	raTest "github.com/plgd-dev/hub/v2/resource-aggregate/test"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 )
@@ -37,12 +36,12 @@ func TestNewServiceHeartbeat(t *testing.T) {
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, noop.NewTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		errC := eventstore.Close(ctx)
-		assert.NoError(t, errC)
+		require.NoError(t, errC)
 	}()
 	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -74,7 +73,7 @@ func TestNewServiceHeartbeat(t *testing.T) {
 				},
 				ResponseChan: chans[j],
 			})
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		}(i)
 	}
 	wg.Wait()
@@ -87,15 +86,15 @@ func TestNewServiceHeartbeat(t *testing.T) {
 		chosen, value, ok := reflect.Select(cases)
 		if ok {
 			if chosen == 0 {
-				assert.Fail(t, "context canceled")
+				require.Fail(t, "context canceled")
 			}
 			if chosen != 0 {
 				data := value.Interface().(service.UpdateServiceMetadataResponseChanData)
-				assert.NoError(t, data.Err)
+				require.NoError(t, data.Err)
 			}
 		}
 		if !ok {
-			assert.Fail(t, "channel closed")
+			require.Fail(t, "channel closed")
 			break
 		}
 	}

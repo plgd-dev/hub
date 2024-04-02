@@ -18,20 +18,20 @@ const (
 
 // ToUUID converts resource href and device id to unique resource ID
 func (r *ResourceId) ToUUID() uuid.UUID {
-	if len(r.Href) == 0 {
+	if len(r.GetHref()) == 0 {
 		return uuid.Nil
 	}
-	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(r.DeviceId+r.Href))
+	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(r.GetDeviceId()+r.GetHref()))
 }
 
 // ToUUID converts resource href and device id to unique resource ID
 func (r *Resource) ToUUID() uuid.UUID {
-	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(r.DeviceId+r.Href))
+	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(r.GetDeviceId()+r.GetHref()))
 }
 
 // GetResourceID converts resource href and device id to resource id struct
 func (r *Resource) GetResourceID() *ResourceId {
-	return &ResourceId{DeviceId: r.DeviceId, Href: r.Href}
+	return &ResourceId{DeviceId: r.GetDeviceId(), Href: r.GetHref()}
 }
 
 func MakeLinksResourceUUID(deviceID string) uuid.UUID {
@@ -138,24 +138,25 @@ func (r *ResourceId) Equal(r1 *ResourceId) bool {
 	if r == nil || r1 == nil {
 		return false
 	}
-	return r.DeviceId == r1.DeviceId && r.Href == r1.Href
+	return r.GetDeviceId() == r1.GetDeviceId() && r.GetHref() == r1.GetHref()
 }
 
 func (r *ResourceId) ToString() string {
 	if r == nil {
 		return ""
 	}
-	if r.DeviceId == "" {
+	deviceID := r.GetDeviceId()
+	if deviceID == "" {
 		return ""
 	}
-	if r.Href == "" {
+	href := r.GetHref()
+	if href == "" {
 		return ""
 	}
-	href := r.Href
 	if href[0] != '/' {
 		href = "/" + href
 	}
-	return r.DeviceId + href
+	return deviceID + href
 }
 
 func ResourceIdFromString(v string) *ResourceId {

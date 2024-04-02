@@ -1,6 +1,7 @@
 package database
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -31,7 +32,7 @@ func (c *Config[MongoConfig, CQLDBConfig]) Validate() error {
 	switch c.Use.ToLower() {
 	case MongoDB.ToLower():
 		if reflect.ValueOf(c.MongoDB).Kind() == reflect.Ptr && reflect.ValueOf(c.MongoDB).IsNil() {
-			return fmt.Errorf("mongoDB - is empty")
+			return errors.New("mongoDB - is empty")
 		}
 		if err := c.MongoDB.Validate(); err != nil {
 			return fmt.Errorf("mongoDB.%w", err)
@@ -39,7 +40,7 @@ func (c *Config[MongoConfig, CQLDBConfig]) Validate() error {
 		c.Use = "mongoDB"
 	case CqlDB.ToLower():
 		if reflect.ValueOf(c.CqlDB).Kind() == reflect.Ptr && reflect.ValueOf(c.CqlDB).IsNil() {
-			return fmt.Errorf("cqlDB - is empty")
+			return errors.New("cqlDB - is empty")
 		}
 		if err := c.CqlDB.Validate(); err != nil {
 			return fmt.Errorf("cqlDB.%w", err)

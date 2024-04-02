@@ -11,7 +11,6 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 )
@@ -28,7 +27,7 @@ func newTestPersistence(t *testing.T) *cqldb.Store {
 		Embedded: cfg,
 		Table:    "testDeviceOwnership",
 	}, fileWatcher, log.Get(), noop.NewTracerProvider())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	p.AddCloseFunc(func() {
 		errC := fileWatcher.Close()
@@ -98,12 +97,12 @@ func TestPersistenceTxRetrieve(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, ok, err := tx.Retrieve(tt.deviceID, tt.owner)
 			if tt.wantErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.want, got)
-				assert.Equal(t, tt.wantOk, ok)
+				require.Error(t, err)
+				return
 			}
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
+			require.Equal(t, tt.wantOk, ok)
 		})
 	}
 }
@@ -158,12 +157,12 @@ func TestPersistenceTxRetrieveByDevice(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got, ok, err := tx.RetrieveByDevice(tt.deviceID)
 			if tt.wantErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.want, got)
-				assert.Equal(t, tt.wantOk, ok)
+				require.Error(t, err)
+				return
 			}
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
+			require.Equal(t, tt.wantOk, ok)
 		})
 	}
 }
@@ -221,8 +220,8 @@ func TestPersistenceTxRetrieveByOwner(t *testing.T) {
 			iter := tx.RetrieveByOwner(tt.owner)
 			defer iter.Close()
 			func() {
-				err := iter.Err()
-				require.NoError(t, err)
+				errC := iter.Err()
+				require.NoError(t, errC)
 			}()
 
 			var retrievedDevices []*persistence.AuthorizedDevice
@@ -235,7 +234,7 @@ func TestPersistenceTxRetrieveByOwner(t *testing.T) {
 				retrievedDevices = append(retrievedDevices, &device)
 			}
 
-			assert.Equal(t, tt.devices, retrievedDevices)
+			require.Equal(t, tt.devices, retrievedDevices)
 		})
 	}
 }
@@ -322,10 +321,10 @@ func TestPersistenceTxPersist(t *testing.T) {
 			}
 			err = tx.Persist(tt.device)
 			if tt.wantErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
+				require.Error(t, err)
+				return
 			}
+			require.NoError(t, err)
 		})
 	}
 }

@@ -5,7 +5,6 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
-	"fmt"
 	"os"
 )
 
@@ -25,7 +24,7 @@ func ParseX509(pemBlock []byte) ([]*x509.Certificate, error) {
 	for {
 		certDERBlock, tmp := pem.Decode(data)
 		if certDERBlock == nil {
-			return nil, fmt.Errorf("cannot decode pem block")
+			return nil, errors.New("cannot decode pem block")
 		}
 		certs, err := x509.ParseCertificates(certDERBlock.Bytes)
 		if err != nil {
@@ -44,7 +43,7 @@ func ParseX509(pemBlock []byte) ([]*x509.Certificate, error) {
 func ParsePrivateKey(pemBlock []byte) (*ecdsa.PrivateKey, error) {
 	certDERBlock, _ := pem.Decode(pemBlock)
 	if certDERBlock == nil {
-		return nil, fmt.Errorf("cannot decode pem block")
+		return nil, errors.New("cannot decode pem block")
 	}
 
 	if key, err := x509.ParsePKCS8PrivateKey(certDERBlock.Bytes); err == nil {

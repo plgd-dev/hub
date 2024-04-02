@@ -217,8 +217,8 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 	err = s.Init(owner, subCache)
 	require.NoError(t, err)
 	defer func() {
-		err := s.Close()
-		require.NoError(t, err)
+		errC := s.Close()
+		require.NoError(t, errC)
 	}()
 
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, rdc, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, nil)

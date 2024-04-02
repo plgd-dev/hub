@@ -3,6 +3,7 @@ package mongodb
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 
 	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
@@ -30,7 +31,7 @@ func NewStore(ctx context.Context, cfg pkgMongo.Config, tls *tls.Config, tracerP
 
 func incrementSubscriptionSequenceNumber(ctx context.Context, col *mongo.Collection, subscriptionID string) (uint64, error) {
 	if subscriptionID == "" {
-		return 0, fmt.Errorf("cannot increment sequence number: invalid subscriptionID")
+		return 0, errors.New("cannot increment sequence number: invalid subscriptionID")
 	}
 
 	var res bson.M

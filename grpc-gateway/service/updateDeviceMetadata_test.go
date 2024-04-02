@@ -3,7 +3,7 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
+	"errors"
 	"testing"
 	"time"
 
@@ -25,7 +25,6 @@ import (
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/plgd-dev/hub/v2/test/service"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -107,7 +106,7 @@ func (f *deviceMetadataUpdatedFilter) WaitForEvent(t time.Duration, correlationI
 				return &ev, nil
 			}
 		case <-time.After(time.Until(deadline)):
-			return nil, fmt.Errorf("timeout")
+			return nil, errors.New("timeout")
 		}
 	}
 }
@@ -157,10 +156,10 @@ func TestRequestHandlerUpdateDeviceMetadataTwinEnabled(t *testing.T) {
 	obsDeviceMetadataUpdated, err := s.Subscribe(ctx, uuid.New().String(), utils.GetDeviceMetadataEventSubject("*", deviceID, (&events.DeviceMetadataUpdated{}).EventType()), deviceMetadataUpdatedFilter)
 	require.NoError(t, err)
 	defer func() {
-		err := obs.Close()
-		assert.NoError(t, err)
-		err = obsDeviceMetadataUpdated.Close()
-		assert.NoError(t, err)
+		errC := obs.Close()
+		require.NoError(t, errC)
+		errC = obsDeviceMetadataUpdated.Close()
+		require.NoError(t, errC)
 	}()
 
 	_, err = c.UpdateDeviceMetadata(ctx, &pb.UpdateDeviceMetadataRequest{
@@ -176,12 +175,12 @@ func TestRequestHandlerUpdateDeviceMetadataTwinEnabled(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.False(t, ev.GetData().GetTwinEnabled())
-	require.Equal(t, ev.GetData().GetTwinSynchronization().GetState(), commands.TwinSynchronization_DISABLED)
+	require.Equal(t, commands.TwinSynchronization_DISABLED, ev.GetData().GetTwinSynchronization().GetState())
 
 	deviceMetadataUpdated, err := deviceMetadataUpdatedFilter.WaitForEvent(time.Second, ev.GetData().GetAuditContext().GetCorrelationId())
 	require.NoError(t, err)
 	require.False(t, deviceMetadataUpdated.GetTwinEnabled())
-	require.Equal(t, deviceMetadataUpdated.GetTwinSynchronization().GetState(), commands.TwinSynchronization_DISABLED)
+	require.Equal(t, commands.TwinSynchronization_DISABLED, deviceMetadataUpdated.GetTwinSynchronization().GetState())
 
 	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
 		ResourceInterface: interfaces.OC_IF_BASELINE,
@@ -215,12 +214,12 @@ func TestRequestHandlerUpdateDeviceMetadataTwinEnabled(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.True(t, ev.GetData().GetTwinEnabled())
-	require.NotEqual(t, ev.GetData().GetTwinSynchronization().GetState(), commands.TwinSynchronization_DISABLED)
+	require.NotEqual(t, commands.TwinSynchronization_DISABLED, ev.GetData().GetTwinSynchronization().GetState())
 
 	deviceMetadataUpdated, err = deviceMetadataUpdatedFilter.WaitForEvent(time.Second, ev.GetData().GetAuditContext().GetCorrelationId())
 	require.NoError(t, err)
 	require.True(t, deviceMetadataUpdated.GetTwinEnabled())
-	require.NotEqual(t, deviceMetadataUpdated.GetTwinSynchronization().GetState(), commands.TwinSynchronization_DISABLED)
+	require.NotEqual(t, commands.TwinSynchronization_DISABLED, deviceMetadataUpdated.GetTwinSynchronization().GetState())
 
 	for {
 		deviceMetadataUpdated, err = deviceMetadataUpdatedFilter.WaitForEvent(time.Second, "")
@@ -319,10 +318,10 @@ func TestRequestHandlerUpdateDeviceMetadataTwinForceSynchronization(t *testing.T
 	obsDeviceMetadataUpdated, err := s.Subscribe(ctx, uuid.New().String(), utils.GetDeviceMetadataEventSubject("*", deviceID, (&events.DeviceMetadataUpdated{}).EventType()), deviceMetadataUpdatedFilter)
 	require.NoError(t, err)
 	defer func() {
-		err := obs.Close()
-		assert.NoError(t, err)
-		err = obsDeviceMetadataUpdated.Close()
-		assert.NoError(t, err)
+		errC := obs.Close()
+		require.NoError(t, errC)
+		errC = obsDeviceMetadataUpdated.Close()
+		require.NoError(t, errC)
 	}()
 
 	ev, err := c.UpdateDeviceMetadata(ctx, &pb.UpdateDeviceMetadataRequest{
@@ -336,7 +335,7 @@ func TestRequestHandlerUpdateDeviceMetadataTwinForceSynchronization(t *testing.T
 	deviceMetadataUpdated, err := deviceMetadataUpdatedFilter.WaitForEvent(time.Second, ev.GetData().GetAuditContext().GetCorrelationId())
 	require.NoError(t, err)
 	require.False(t, deviceMetadataUpdated.GetTwinEnabled())
-	require.Equal(t, deviceMetadataUpdated.GetTwinSynchronization().GetState(), commands.TwinSynchronization_DISABLED)
+	require.Equal(t, commands.TwinSynchronization_DISABLED, deviceMetadataUpdated.GetTwinSynchronization().GetState())
 	require.Equal(t, int64(0), ev.GetData().GetTwinSynchronization().GetForceSynchronizationAt())
 
 	evResourceChanged := waitForResourceChanged(v, plgdtime.ResourceURI)
@@ -355,7 +354,7 @@ func TestRequestHandlerUpdateDeviceMetadataTwinForceSynchronization(t *testing.T
 	deviceMetadataUpdated, err = deviceMetadataUpdatedFilter.WaitForEvent(time.Second, ev.GetData().GetAuditContext().GetCorrelationId())
 	require.NoError(t, err)
 	require.True(t, deviceMetadataUpdated.GetTwinEnabled())
-	require.NotEqual(t, deviceMetadataUpdated.GetTwinSynchronization().GetState(), commands.TwinSynchronization_DISABLED)
+	require.NotEqual(t, commands.TwinSynchronization_DISABLED, deviceMetadataUpdated.GetTwinSynchronization().GetState())
 	require.Greater(t, ev.GetData().GetTwinSynchronization().GetForceSynchronizationAt(), checkTwin)
 	checkTwin = ev.GetData().GetTwinSynchronization().GetForceSynchronizationAt()
 
@@ -412,7 +411,7 @@ func TestRequestHandlerUpdateDeviceMetadataTwinForceSynchronization(t *testing.T
 	deviceMetadataUpdated, err = deviceMetadataUpdatedFilter.WaitForEvent(time.Second, ev.GetData().GetAuditContext().GetCorrelationId())
 	require.NoError(t, err)
 	require.True(t, deviceMetadataUpdated.GetTwinEnabled())
-	require.NotEqual(t, deviceMetadataUpdated.GetTwinSynchronization().GetState(), commands.TwinSynchronization_DISABLED)
+	require.NotEqual(t, commands.TwinSynchronization_DISABLED, deviceMetadataUpdated.GetTwinSynchronization().GetState())
 	require.Greater(t, ev.GetData().GetTwinSynchronization().GetForceSynchronizationAt(), checkTwin)
 	checkTwin = ev.GetData().GetTwinSynchronization().GetForceSynchronizationAt()
 

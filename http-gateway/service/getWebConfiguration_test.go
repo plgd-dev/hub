@@ -159,7 +159,7 @@ func TestRequestHandlerGetWebDirectory(t *testing.T) {
 			want, err := os.ReadFile(tt.wantFile)
 			require.NoError(t, err)
 
-			require.Equal(t, got, want)
+			require.Equal(t, want, got)
 		})
 	}
 }

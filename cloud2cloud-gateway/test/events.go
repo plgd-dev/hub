@@ -17,7 +17,6 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/plgd-dev/kit/v2/codec/json"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -64,7 +63,7 @@ func DecodeEvent(t *testing.T, etype events.EventType, data []byte) interface{} 
 	case events.EventType_ResourcesUnpublished:
 		var links schema.ResourceLinks
 		err := json.Decode(data, &links)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		return links
 	case events.EventType_ResourceChanged:
 		var colContent []map[interface{}]interface{}
@@ -74,7 +73,7 @@ func DecodeEvent(t *testing.T, etype events.EventType, data []byte) interface{} 
 		}
 		var content map[interface{}]interface{}
 		err = json.Decode(data, &content)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		return content
 	case events.EventType_DevicesRegistered:
 		fallthrough
@@ -85,7 +84,7 @@ func DecodeEvent(t *testing.T, etype events.EventType, data []byte) interface{} 
 	case events.EventType_DevicesOffline:
 		var devices []map[string]string
 		err := json.Decode(data, &devices)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		return devices
 	}
 
@@ -134,12 +133,12 @@ func (s *EventsServer) Run(t *testing.T) EventChan {
 		r.StrictSlash(true)
 		r.HandleFunc(s.uri, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			h, err := events.ParseEventHeader(r)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			defer func() {
 				_ = r.Body.Close()
 			}()
 			buf, err := io.ReadAll(r.Body)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			data := DecodeEvent(t, h.EventType, buf)
 			dataChan <- Event{

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
@@ -66,7 +67,7 @@ func getServiceToken(authAddr string) (string, error) {
 	}
 	token := body["access_token"]
 	if token == "" {
-		return "", fmt.Errorf("token not found in body")
+		return "", errors.New("token not found in body")
 	}
 	return token, nil
 }

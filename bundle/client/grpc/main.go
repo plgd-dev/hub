@@ -63,7 +63,7 @@ func getServiceToken(authAddr string, tls *tls.Config) (string, error) {
 	}
 	token := body["access_token"]
 	if token == "" {
-		return "", fmt.Errorf("token not found in body")
+		return "", errors.New("token not found in body")
 	}
 	return token, nil
 }

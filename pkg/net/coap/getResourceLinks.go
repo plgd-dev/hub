@@ -2,6 +2,7 @@ package coap
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 
@@ -36,7 +37,7 @@ func GetResourceLinks(ctx context.Context, coapConn ClientConn, href string, opt
 
 	data := msg.Body()
 	if data == nil {
-		return schema.ResourceLinks{}, 0, fmt.Errorf("empty response")
+		return schema.ResourceLinks{}, 0, errors.New("empty response")
 	}
 
 	var links schema.ResourceLinks
@@ -69,7 +70,7 @@ func GetEndpointsFromResourceType(ctx context.Context, coapConn ClientConn, reso
 		return nil, err
 	}
 	if len(links) == 0 {
-		return nil, fmt.Errorf("no local endpoints found")
+		return nil, errors.New("no local endpoints found")
 	}
 	endpoints := make([]string, 0, 8)
 	for _, ep := range links[0].Endpoints {

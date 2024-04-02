@@ -16,7 +16,6 @@ import (
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/plgd-dev/hub/v2/test/service"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -96,7 +95,7 @@ func TestClient_GetDevice(t *testing.T) {
 	c := NewTestClient(t)
 	defer func() {
 		err := c.Close()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}()
 
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
@@ -104,9 +103,9 @@ func TestClient_GetDevice(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx, cancel := context.WithTimeout(ctx, time.Second)
+			runctx, cancel := context.WithTimeout(ctx, time.Second)
 			defer cancel()
-			got, err := c.GetDevice(ctx, tt.args.deviceID)
+			got, err := c.GetDevice(runctx, tt.args.deviceID)
 			if tt.wantErr {
 				require.Error(t, err)
 				return

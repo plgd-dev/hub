@@ -2,6 +2,7 @@ package observation
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -68,13 +69,13 @@ func newResourcesObserver(deviceID string, coapConn ClientConn, callbacks Resour
 		fatalCannotCreate(emptyDeviceIDError())
 	}
 	if coapConn == nil {
-		fatalCannotCreate(fmt.Errorf("invalid coap-gateway connection"))
+		fatalCannotCreate(errors.New("invalid coap-gateway connection"))
 	}
 	if callbacks.OnObserveResource == nil {
-		fatalCannotCreate(fmt.Errorf("invalid onObserveResource callback"))
+		fatalCannotCreate(errors.New("invalid onObserveResource callback"))
 	}
 	if callbacks.OnGetResourceContent == nil {
-		fatalCannotCreate(fmt.Errorf("invalid onGetResourceContent callback"))
+		fatalCannotCreate(errors.New("invalid onGetResourceContent callback"))
 	}
 	return &resourcesObserver{
 		deviceID: deviceID,
@@ -124,13 +125,11 @@ func (o *resourcesObserver) setSynchronizedAtResource(href string) bool {
 	o.private.lock.Lock()
 	defer o.private.lock.Unlock()
 	i := o.private.resources.search(href)
-	synced := false
 	if i < len(o.private.resources) && o.private.resources[i].Equals(href) {
-		synced = o.private.resources[i].synced.CompareAndSwap(false, true)
+		if !o.private.resources[i].synced.CompareAndSwap(false, true) {
+			return false
+		}
 	} else {
-		return false
-	}
-	if !synced {
 		return false
 	}
 	if o.isSynchronizedLocked() {
@@ -213,7 +212,7 @@ func (o *resourcesObserver) observeResource(ctx context.Context, obsRes *observe
 		return nil, cannotObserveResourceError(o.deviceID, obsRes.Href(), err)
 	}
 	if obs.Canceled() {
-		return nil, cannotObserveResourceError(o.deviceID, obsRes.Href(), fmt.Errorf("resource not observable"))
+		return nil, cannotObserveResourceError(o.deviceID, obsRes.Href(), errors.New("resource not observable"))
 	}
 	return obs, nil
 }
@@ -373,8 +372,8 @@ func (o *resourcesObserver) CleanObservedResources(ctx context.Context) {
 }
 
 func (o *resourcesObserver) cleanObservedResourcesLocked(ctx context.Context) {
-	observedResources := o.popObservedResourcesLocked()
-	for _, obs := range observedResources {
+	ors := o.popObservedResourcesLocked()
+	for _, obs := range ors {
 		if v := obs.PopObservation(); v != nil {
 			if err := v.Cancel(ctx); err != nil {
 				o.logger.Errorf("cannot cancel resource('/%v%v') observation: %w", o.deviceID, obs.Href(), err)

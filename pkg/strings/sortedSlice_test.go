@@ -335,7 +335,7 @@ func TestSortedSlice_Intersection(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := tt.slice.Intersection(tt.args.second)
-			require.Equal(t, got, tt.want)
+			require.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -392,7 +392,7 @@ func TestSortedSlice_Equal(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := tt.slice.Equal(tt.args.second)
-			require.Equal(t, got, tt.want)
+			require.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -473,7 +473,7 @@ func TestSortedSlice_IsSuperslice(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := tt.slice.IsSuperslice(tt.args.s)
-			require.Equal(t, got, tt.want)
+			require.Equal(t, tt.want, got)
 		})
 	}
 }
