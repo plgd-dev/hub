@@ -1,4 +1,4 @@
-import React, { FC, useCallback, useMemo, useState } from 'react'
+import React, { FC, useCallback, useContext, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
 import { Control, Controller, FieldErrors, UseFormRegister, UseFormSetValue } from 'react-hook-form'
 import get from 'lodash/get'
@@ -26,6 +26,7 @@ import { nameLengthValidator, stringToPem } from '@/containers/DeviceProvisionin
 import { messages as g } from '@/containers/Global.i18n'
 import { useCaI18n } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
 import { Inputs } from './EnrollmentGroups.types'
+import { FormContext } from '@shared-ui/common/context/FormContext'
 
 type Chunk2Props = {
     certificateChain?: string
@@ -209,14 +210,20 @@ export const DetailFromChunk3: FC<Chunk3Props> = (props) => {
     const { register, isEditMode, setValue, updateField, errors, preSharedKeySettings, setPreSharedKeySettings } = props
 
     const { formatMessage: _ } = useIntl()
+    const { commonInputProps, commonFormGroupProps } = useContext(FormContext)
 
     const bottomRows = useMemo(
         () => [
             {
                 attribute: _(t.preSharedKey),
                 value: (
-                    <FormGroup error={get(errors, 'preSharedKey.message')} id='preSharedKey'>
-                        <FormInput inlineStyle={isEditMode} {...register('preSharedKey')} onBlur={(e) => updateField('preSharedKey', e.target.value)} />
+                    <FormGroup {...commonFormGroupProps} error={get(errors, 'preSharedKey.message')} id='preSharedKey'>
+                        <FormInput
+                            {...commonInputProps}
+                            inlineStyle={isEditMode}
+                            {...register('preSharedKey')}
+                            onBlur={(e) => updateField('preSharedKey', e.target.value)}
+                        />
                     </FormGroup>
                 ),
             },

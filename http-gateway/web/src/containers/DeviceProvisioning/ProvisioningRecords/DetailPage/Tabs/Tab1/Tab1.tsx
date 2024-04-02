@@ -1,5 +1,6 @@
 import React, { FC } from 'react'
 import { useIntl } from 'react-intl'
+import { useMediaQuery } from 'react-responsive'
 
 import Column from '@shared-ui/components/Atomic/Grid/Column'
 import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
@@ -9,14 +10,13 @@ import TileExpand from '@shared-ui/components/Atomic/TileExpand/TileExpand'
 import { tagVariants } from '@shared-ui/components/Atomic/Tag/constants'
 import { Information } from '@shared-ui/components/Atomic/TileExpand/TileExpand.types'
 import Row from '@shared-ui/components/Atomic/Grid/Row'
+import Spacer from '@shared-ui/components/Atomic/Spacer'
 
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '../../../ProvisioningRecords.i18n'
 import DateFormat from '@/containers/PendingCommands/DateFormat'
 import { Props } from './Tab1.types'
 import TileExpandEnhanced from '../../TileExpandEnhanced/TileExpandEnhanced'
-import { useMediaQuery } from 'react-responsive'
-import Spacer from '@shared-ui/components/Atomic/Spacer'
 
 const Tab1: FC<Props> = (props) => {
     const { data, isDeviceMode } = props
@@ -50,7 +50,7 @@ const Tab1: FC<Props> = (props) => {
                                             }}
                                             justifyContent={justifyContent.END}
                                         >
-                                            {data.localEndpoints?.map?.((endpoint: string) => <Tag key={endpoint}>{endpoint}</Tag>)}
+                                            {data.localEndpoints?.map?.((endpoint: string, key) => <Tag key={`${endpoint}${key}`}>{endpoint}</Tag>)}
                                         </TagGroup>
                                     ) : (
                                         '-'
@@ -83,7 +83,7 @@ const Tab1: FC<Props> = (props) => {
                                                         >
                                                             {data.cloud.gateways?.map?.((gateway: { uri: string; id: string }, key: number) => (
                                                                 <Tag
-                                                                    key={gateway.id}
+                                                                    key={`${gateway.uri}${gateway.id}}`}
                                                                     variant={key === data.cloud.selectedGateway ? tagVariants.BLUE : tagVariants.WHITE}
                                                                 >
                                                                     {gateway.uri}
