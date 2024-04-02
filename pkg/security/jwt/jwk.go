@@ -2,6 +2,7 @@ package jwt
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"sync"
@@ -53,21 +54,21 @@ func (c *KeyCache) GetKey(token *jwt.Token) (interface{}, error) {
 func (c *KeyCache) LookupKey(token *jwt.Token) (jwk.Key, error) {
 	id, ok := token.Header["kid"].(string)
 	if !ok {
-		return nil, fmt.Errorf("missing key id in token")
+		return nil, errors.New("missing key id in token")
 	}
 
 	c.m.Lock()
 	defer c.m.Unlock()
 
 	if c.keys == nil {
-		return nil, fmt.Errorf("empty JWK cache")
+		return nil, errors.New("empty JWK cache")
 	}
 	if key, ok := c.keys.LookupKeyID(id); ok {
 		if key.Algorithm().String() == token.Method.Alg() {
 			return key, nil
 		}
 	}
-	return nil, fmt.Errorf("could not find JWK")
+	return nil, errors.New("could not find JWK")
 }
 
 func (c *KeyCache) FetchKeys() error {

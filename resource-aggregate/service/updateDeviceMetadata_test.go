@@ -105,12 +105,12 @@ func TestAggregateHandleUpdateDeviceMetadata(t *testing.T) {
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, noop.NewTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		errC := eventstore.Close(ctx)
-		assert.NoError(t, errC)
+		require.NoError(t, errC)
 	}()
 	naClient, publisher, err := natsTest.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -119,7 +119,7 @@ func TestAggregateHandleUpdateDeviceMetadata(t *testing.T) {
 		naClient.Close()
 	}()
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			ag, err := service.NewAggregate(commands.NewResourceID(tt.args.request.GetDeviceId(), commands.StatusHref), eventstore, service.NewDeviceMetadataFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
@@ -235,12 +235,12 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	eventstore, err = mongodb.New(ctx, config.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, noop.NewTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		errC := eventstore.Close(ctx)
-		assert.NoError(t, errC)
+		require.NoError(t, errC)
 	}()
 	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)

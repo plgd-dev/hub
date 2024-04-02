@@ -25,7 +25,6 @@ import (
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/plgd-dev/kit/v2/codec/json"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -77,21 +76,21 @@ func TestRequestHandlerSubscribeToDevices(t *testing.T) {
 		r := router.NewRouter()
 		r.StrictSlash(true)
 		r.HandleFunc(eventsURI, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			h, err := events.ParseEventHeader(r)
-			assert.NoError(t, err)
+			h, err2 := events.ParseEventHeader(r)
+			require.NoError(t, err2)
 			defer func() {
 				_ = r.Body.Close()
 			}()
-			assert.Equal(t, wantEventType, h.EventType)
-			buf, err := io.ReadAll(r.Body)
-			assert.NoError(t, err)
+			require.Equal(t, wantEventType, h.EventType)
+			buf, err2 := io.ReadAll(r.Body)
+			require.NoError(t, err2)
 			var v interface{}
-			err = json.Decode(buf, &v)
-			assert.NoError(t, err)
-			assert.Equal(t, v, wantEventContent)
+			err2 = json.Decode(buf, &v)
+			require.NoError(t, err2)
+			require.Equal(t, wantEventContent, v)
 			w.WriteHeader(http.StatusOK)
-			err = eventsServer.Close()
-			assert.NoError(t, err)
+			err2 = eventsServer.Close()
+			require.NoError(t, err2)
 		})).Methods("POST")
 		_ = http.Serve(eventsServer, r)
 	}()
@@ -109,7 +108,7 @@ func TestRequestHandlerSubscribeToDevices(t *testing.T) {
 	require.NoError(t, err)
 	req := testHttp.NewHTTPRequest(http.MethodPost, uri, bytes.NewBuffer(data)).AuthToken(token).Accept(accept).Build(ctx, t)
 	resp := testHttp.DoHTTPRequest(t, req)
-	assert.Equal(t, wantCode, resp.StatusCode)
+	require.Equal(t, wantCode, resp.StatusCode)
 	defer func() {
 		_ = resp.Body.Close()
 	}()
@@ -170,21 +169,21 @@ func TestRequestHandlerSubscribeToDevicesOffline(t *testing.T) {
 		r := router.NewRouter()
 		r.StrictSlash(true)
 		r.HandleFunc(eventsURI, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			h, err := events.ParseEventHeader(r)
-			assert.NoError(t, err)
+			h, err2 := events.ParseEventHeader(r)
+			require.NoError(t, err2)
 			defer func() {
 				_ = r.Body.Close()
 			}()
-			assert.Equal(t, wantEventType, h.EventType)
-			buf, err := io.ReadAll(r.Body)
-			assert.NoError(t, err)
+			require.Equal(t, wantEventType, h.EventType)
+			buf, err2 := io.ReadAll(r.Body)
+			require.NoError(t, err2)
 			var v interface{}
-			err = json.Decode(buf, &v)
-			assert.NoError(t, err)
-			assert.Equal(t, v, wantEventContent)
+			err2 = json.Decode(buf, &v)
+			require.NoError(t, err2)
+			require.Equal(t, wantEventContent, v)
 			w.WriteHeader(http.StatusOK)
-			err = eventsServer.Close()
-			assert.NoError(t, err)
+			err2 = eventsServer.Close()
+			require.NoError(t, err2)
 		})).Methods("POST")
 		_ = http.Serve(eventsServer, r)
 	}()
@@ -202,7 +201,7 @@ func TestRequestHandlerSubscribeToDevicesOffline(t *testing.T) {
 	require.NoError(t, err)
 	req := testHttp.NewHTTPRequest(http.MethodPost, uri, bytes.NewBuffer(data)).AuthToken(oauthTest.GetDefaultAccessToken(t)).Accept(accept).Build(ctx, t)
 	resp := testHttp.DoHTTPRequest(t, req)
-	assert.Equal(t, wantCode, resp.StatusCode)
+	require.Equal(t, wantCode, resp.StatusCode)
 	defer func() {
 		_ = resp.Body.Close()
 	}()

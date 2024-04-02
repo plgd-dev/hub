@@ -29,6 +29,6 @@ func getJWKs(t *testing.T) map[string]interface{} {
 	err := json.ReadFrom(res.Body, &body)
 	require.NoError(t, err)
 	require.NotEmpty(t, body["keys"])
-	require.Equal(t, 2, len(body["keys"].([]interface{})))
+	require.Len(t, body["keys"].([]interface{}), 2)
 	return body
 }

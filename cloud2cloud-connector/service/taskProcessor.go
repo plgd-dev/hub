@@ -150,9 +150,9 @@ func (h *TaskProcessor) Run(ctx context.Context, subscriptionManager *Subscripti
 		for process {
 			select {
 			case e := <-h.tasksChan:
-				ctx, cancel := context.WithTimeout(ctx, h.timeout)
+				runctx, cancel := context.WithTimeout(ctx, h.timeout)
 				defer cancel()
-				err := h.runTask(ctx, e, subscriptionManager)
+				err := h.runTask(runctx, e, subscriptionManager)
 				if err != nil {
 					log.Errorf("cannot process task %+v: %w", e, err)
 				}

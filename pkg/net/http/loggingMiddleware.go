@@ -2,6 +2,7 @@ package http
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -58,7 +59,7 @@ func (w *statusWriter) Write(b []byte) (int, error) {
 func (w *statusWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	writer, ok := w.ResponseWriter.(http.Hijacker)
 	if !ok {
-		return nil, nil, fmt.Errorf("not supported by the underlying writer")
+		return nil, nil, errors.New("not supported by the underlying writer")
 	}
 	return writer.Hijack()
 }

@@ -78,23 +78,25 @@ func TestCertificateAuthorityServerCleanUpSigningRecords(t *testing.T) {
 	require.NoError(t, err)
 	var got pb.SigningRecords
 	for {
-		r, err := client.Recv()
-		if errors.Is(err, io.EOF) {
+		r, errR := client.Recv()
+		if errors.Is(errR, io.EOF) {
 			break
 		}
+		require.NoError(t, errR)
 		got = append(got, r)
 	}
-	require.Equal(t, 1, len(got))
+	require.Len(t, got, 1)
 	time.Sleep(4 * time.Second)
 	client, err = grpcClient.GetSigningRecords(ctx, &pb.GetSigningRecordsRequest{})
 	require.NoError(t, err)
 	got = nil
 	for {
-		r, err := client.Recv()
-		if errors.Is(err, io.EOF) {
+		r, errR := client.Recv()
+		if errors.Is(errR, io.EOF) {
 			break
 		}
+		require.NoError(t, errR)
 		got = append(got, r)
 	}
-	require.Equal(t, 0, len(got))
+	require.Empty(t, got)
 }

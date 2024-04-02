@@ -2,7 +2,7 @@ package service_test
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"testing"
 	"time"
 
@@ -27,7 +27,6 @@ import (
 	raTest "github.com/plgd-dev/hub/v2/resource-aggregate/test"
 	hubTest "github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 	"google.golang.org/grpc/codes"
@@ -99,12 +98,12 @@ func TestAggregateHandlePublishResourceLinks(t *testing.T) {
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, noop.NewTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		errC := eventstore.Close(ctx)
-		assert.NoError(t, errC)
+		require.NoError(t, errC)
 	}()
 	naClient, publisher, err := natsTest.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -113,7 +112,7 @@ func TestAggregateHandlePublishResourceLinks(t *testing.T) {
 		naClient.Close()
 	}()
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
 			ag, err := service.NewAggregate(commands.NewResourceID(tt.args.request.GetDeviceId(), commands.ResourceLinksHref), eventstore, service.NewResourceLinksFactoryModel(tt.args.userID, tt.args.owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
@@ -123,7 +122,7 @@ func TestAggregateHandlePublishResourceLinks(t *testing.T) {
 				require.Error(t, err)
 				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
 				require.True(t, ok)
-				assert.Equal(t, tt.want, s.Code())
+				require.Equal(t, tt.want, s.Code())
 			} else {
 				require.NoError(t, err)
 				service.PublishEvents(publisher, tt.args.userID, tt.args.request.GetDeviceId(), ag.ResourceID(), events, logger)
@@ -137,7 +136,7 @@ func testHandlePublishResource(ctx context.Context, t *testing.T, publisher *pub
 	pc := testMakePublishResourceRequest(deviceID, hrefs)
 
 	ag, err := service.NewAggregate(commands.NewResourceID(pc.GetDeviceId(), commands.ResourceLinksHref), eventstore, service.NewResourceLinksFactoryModel(userID, owner, hubID), cqrsAggregate.NewDefaultRetryFunc(1))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	events, err := ag.PublishResourceLinks(ctx, pc)
 	require.NoError(t, err)
 	service.PublishEvents(publisher, userID, deviceID, ag.ResourceID(), events, log.Get())
@@ -150,7 +149,7 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 	const owner = "owner"
 
 	pool, err := ants.NewPool(16)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	defer pool.Release()
 
 	cfg := raTest.MakeConfig(t)
@@ -172,7 +171,7 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 	require.NoError(t, err)
 	defer func() {
 		errC := eventstore.Close(ctx)
-		assert.NoError(t, errC)
+		require.NoError(t, errC)
 	}()
 
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.ResourceLinksHref), eventstore, service.NewResourceLinksFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
@@ -181,21 +180,21 @@ func TestAggregateDuplicitPublishResource(t *testing.T) {
 
 	events, err := ag.PublishResourceLinks(ctx, pc1)
 	require.NoError(t, err)
-	assert.Equal(t, 1, len(events))
+	require.Len(t, events, 1)
 
 	ag2, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.ResourceLinksHref), eventstore, service.NewResourceLinksFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
 	pc2 := testMakePublishResourceRequest(deviceID, []string{resourceID})
 	events, err = ag2.PublishResourceLinks(ctx, pc2)
 	require.NoError(t, err)
-	assert.Empty(t, events)
+	require.Empty(t, events)
 
 	ag3, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.ResourceLinksHref), eventstore, service.NewResourceLinksFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
 	require.NoError(t, err)
 	pc3 := testMakePublishResourceRequest(deviceID, []string{resourceID, resourceID, resourceID})
 	events, err = ag3.PublishResourceLinks(ctx, pc3)
 	require.NoError(t, err)
-	assert.Empty(t, events)
+	require.Empty(t, events)
 }
 
 func TestAggregateHandleUnpublishResource(t *testing.T) {
@@ -224,12 +223,12 @@ func TestAggregateHandleUnpublishResource(t *testing.T) {
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, noop.NewTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		errC := eventstore.Close(ctx)
-		assert.NoError(t, errC)
+		require.NoError(t, errC)
 	}()
 	naClient, publisher, err := natsTest.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -243,14 +242,14 @@ func TestAggregateHandleUnpublishResource(t *testing.T) {
 	pc := testMakeUnpublishResourceRequest(deviceID, []string{resourceID})
 
 	ag, err := service.NewAggregate(commands.NewResourceID(pc.GetDeviceId(), commands.ResourceLinksHref), eventstore, service.NewResourceLinksFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	events, err := ag.UnpublishResourceLinks(ctx, pc)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	service.PublishEvents(publisher, userID, deviceID, ag.ResourceID(), events, logger)
 
 	_, err = ag.UnpublishResourceLinks(ctx, pc)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestAggregateHandleUnpublishAllResources(t *testing.T) {
@@ -278,12 +277,12 @@ func TestAggregateHandleUnpublishAllResources(t *testing.T) {
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, noop.NewTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		errC := eventstore.Close(ctx)
-		assert.NoError(t, errC)
+		require.NoError(t, errC)
 	}()
 	naClient, publisher, err := natsTest.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -297,14 +296,14 @@ func TestAggregateHandleUnpublishAllResources(t *testing.T) {
 	pc := testMakeUnpublishResourceRequest(deviceID, []string{})
 
 	ag, err := service.NewAggregate(commands.NewResourceID(pc.GetDeviceId(), commands.ResourceLinksHref), eventstore, service.NewResourceLinksFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	events, err := ag.UnpublishResourceLinks(ctx, pc)
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(events))
+	require.NoError(t, err)
+	require.Len(t, events, 1)
 
 	unpublishedResourceLinks := (events[0].(*raEvents.ResourceLinksUnpublished)).Hrefs
-	assert.Equal(t, 3, len(unpublishedResourceLinks))
-	assert.Contains(t, unpublishedResourceLinks, resourceID1, resourceID2, resourceID3)
+	require.Len(t, unpublishedResourceLinks, 3)
+	require.Contains(t, unpublishedResourceLinks, resourceID1, resourceID2, resourceID3)
 
 	service.PublishEvents(publisher, userID, deviceID, ag.ResourceID(), events, logger)
 
@@ -339,12 +338,12 @@ func TestAggregateHandleUnpublishResourceSubset(t *testing.T) {
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, noop.NewTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		errC := eventstore.Close(ctx)
-		assert.NoError(t, errC)
+		require.NoError(t, errC)
 	}()
 	naClient, publisher, err := natsTest.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -356,20 +355,20 @@ func TestAggregateHandleUnpublishResourceSubset(t *testing.T) {
 	testHandlePublishResource(ctx, t, publisher, eventstore, userID, deviceID, owner, cfg.HubID, []string{resourceID1, resourceID2, resourceID3, resourceID4})
 
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, commands.ResourceLinksHref), eventstore, service.NewResourceLinksFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	pc := testMakeUnpublishResourceRequest(deviceID, []string{resourceID1, resourceID3})
 	events, err := ag.UnpublishResourceLinks(ctx, pc)
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(events))
-	assert.Equal(t, []string{resourceID1, resourceID3}, (events[0].(*raEvents.ResourceLinksUnpublished)).Hrefs)
+	require.NoError(t, err)
+	require.Len(t, events, 1)
+	require.Equal(t, []string{resourceID1, resourceID3}, (events[0].(*raEvents.ResourceLinksUnpublished)).Hrefs)
 
 	service.PublishEvents(publisher, userID, deviceID, ag.ResourceID(), events, logger)
 
 	pc = testMakeUnpublishResourceRequest(deviceID, []string{resourceID1, resourceID4, resourceID4})
 	events, err = ag.UnpublishResourceLinks(ctx, pc)
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(events))
-	assert.Equal(t, []string{resourceID4}, (events[0].(*raEvents.ResourceLinksUnpublished)).Hrefs)
+	require.NoError(t, err)
+	require.Len(t, events, 1)
+	require.Equal(t, []string{resourceID4}, (events[0].(*raEvents.ResourceLinksUnpublished)).Hrefs)
 }
 
 func testMakePublishResourceRequest(deviceID string, href []string) *commands.PublishResourceLinksRequest {
@@ -652,12 +651,12 @@ func TestAggregateHandleNotifyContentChanged(t *testing.T) {
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, noop.NewTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		errC := eventstore.Close(ctx)
-		assert.NoError(t, errC)
+		require.NoError(t, errC)
 	}()
 	naClient, publisher, err := natsTest.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -669,7 +668,7 @@ func TestAggregateHandleNotifyContentChanged(t *testing.T) {
 	testHandlePublishResource(ctx, t, publisher, eventstore, userID, deviceID, owner, cfg.HubID, []string{resourceID})
 
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), eventstore, service.NewResourceStateFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -678,12 +677,12 @@ func TestAggregateHandleNotifyContentChanged(t *testing.T) {
 				require.Error(t, err)
 				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
 				require.True(t, ok)
-				assert.Equal(t, tt.wantStatusCode, s.Code())
+				require.Equal(t, tt.wantStatusCode, s.Code())
 				return
 			}
 			require.NoError(t, err)
 			if tt.wantEvents {
-				assert.NotEmpty(t, gotEvents)
+				require.NotEmpty(t, gotEvents)
 			}
 		})
 	}
@@ -770,16 +769,16 @@ func TestAggregateHandleUpdateResourceContent(t *testing.T) {
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, noop.NewTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		errC := eventstore.Close(ctx)
-		assert.NoError(t, errC)
+		require.NoError(t, errC)
 	}()
 
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), eventstore, service.NewResourceStateFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -793,12 +792,12 @@ func TestAggregateHandleUpdateResourceContent(t *testing.T) {
 				require.Error(t, err)
 				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
 				require.True(t, ok)
-				assert.Equal(t, tt.wantStatusCode, s.Code())
+				require.Equal(t, tt.wantStatusCode, s.Code())
 				return
 			}
 			require.NoError(t, err)
 			if tt.wantEvents {
-				assert.NotEmpty(t, gotEvents)
+				require.NotEmpty(t, gotEvents)
 			}
 			time.Sleep(tt.args.sleep)
 		})
@@ -857,12 +856,12 @@ func TestAggregateHandleConfirmResourceUpdate(t *testing.T) {
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, noop.NewTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		errC := eventstore.Close(ctx)
-		assert.NoError(t, errC)
+		require.NoError(t, errC)
 	}()
 
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), eventstore, service.NewResourceStateFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
@@ -884,12 +883,12 @@ func TestAggregateHandleConfirmResourceUpdate(t *testing.T) {
 				require.Error(t, err)
 				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
 				require.True(t, ok)
-				assert.Equal(t, tt.wantStatusCode, s.Code())
+				require.Equal(t, tt.wantStatusCode, s.Code())
 				return
 			}
 			require.NoError(t, err)
 			if tt.wantEvents {
-				assert.NotEmpty(t, gotEvents)
+				require.NotEmpty(t, gotEvents)
 			}
 		})
 	}
@@ -967,16 +966,16 @@ func TestAggregateHandleRetrieveResource(t *testing.T) {
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, noop.NewTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		errC := eventstore.Close(ctx)
-		assert.NoError(t, errC)
+		require.NoError(t, errC)
 	}()
 
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), eventstore, service.NewResourceStateFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -989,12 +988,12 @@ func TestAggregateHandleRetrieveResource(t *testing.T) {
 				require.Error(t, err)
 				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
 				require.True(t, ok)
-				assert.Equal(t, tt.wantStatusCode, s.Code())
+				require.Equal(t, tt.wantStatusCode, s.Code())
 				return
 			}
 			require.NoError(t, err)
 			if tt.wantEvents {
-				assert.NotEmpty(t, gotEvents)
+				require.NotEmpty(t, gotEvents)
 			}
 			time.Sleep(tt.args.sleep)
 		})
@@ -1053,16 +1052,16 @@ func TestAggregateHandleNotifyResourceContentResourceProcessed(t *testing.T) {
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, noop.NewTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		errC := eventstore.Close(ctx)
-		assert.NoError(t, errC)
+		require.NoError(t, errC)
 	}()
 
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), eventstore, service.NewResourceStateFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, err = ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resourceID, 0))
 	require.NoError(t, err)
@@ -1080,12 +1079,12 @@ func TestAggregateHandleNotifyResourceContentResourceProcessed(t *testing.T) {
 				require.Error(t, err)
 				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
 				require.True(t, ok)
-				assert.Equal(t, tt.wantStatusCode, s.Code())
+				require.Equal(t, tt.wantStatusCode, s.Code())
 				return
 			}
 			require.NoError(t, err)
 			if tt.wantEvents {
-				assert.NotEmpty(t, gotEvents)
+				require.NotEmpty(t, gotEvents)
 			}
 		})
 	}
@@ -1093,7 +1092,7 @@ func TestAggregateHandleNotifyResourceContentResourceProcessed(t *testing.T) {
 
 func testListDevicesOfUserFunc(userID string) ([]string, codes.Code, error) {
 	if userID == testUnauthorizedUser {
-		return nil, codes.Unauthenticated, fmt.Errorf("unauthorized access")
+		return nil, codes.Unauthenticated, errors.New("unauthorized access")
 	}
 	return testUserDevices, codes.OK, nil
 }
@@ -1171,16 +1170,16 @@ func TestAggregateHandleDeleteResource(t *testing.T) {
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, noop.NewTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		errC := eventstore.Close(ctx)
-		assert.NoError(t, errC)
+		require.NoError(t, errC)
 	}()
 
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), eventstore, service.NewResourceStateFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1193,12 +1192,12 @@ func TestAggregateHandleDeleteResource(t *testing.T) {
 				require.Error(t, err)
 				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
 				require.True(t, ok)
-				assert.Equal(t, tt.wantStatusCode, s.Code())
+				require.Equal(t, tt.wantStatusCode, s.Code())
 				return
 			}
 			require.NoError(t, err)
 			if tt.wantEvents {
-				assert.NotEmpty(t, gotEvents)
+				require.NotEmpty(t, gotEvents)
 			}
 			time.Sleep(tt.args.sleep)
 		})
@@ -1258,16 +1257,16 @@ func TestAggregateHandleConfirmResourceDelete(t *testing.T) {
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, noop.NewTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		errC := eventstore.Close(ctx)
-		assert.NoError(t, errC)
+		require.NoError(t, errC)
 	}()
 
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), eventstore, service.NewResourceStateFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, err = ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resourceID, 0))
 	require.NoError(t, err)
@@ -1285,13 +1284,13 @@ func TestAggregateHandleConfirmResourceDelete(t *testing.T) {
 				require.Error(t, err)
 				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
 				require.True(t, ok)
-				assert.Equal(t, tt.wantStatusCode, s.Code())
+				require.Equal(t, tt.wantStatusCode, s.Code())
 				return
 			}
 			require.NoError(t, err)
 
 			if tt.wantEvents {
-				assert.NotEmpty(t, gotEvents)
+				require.NotEmpty(t, gotEvents)
 			}
 		})
 	}
@@ -1369,16 +1368,16 @@ func TestAggregateHandleCreateResource(t *testing.T) {
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, noop.NewTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		errC := eventstore.Close(ctx)
-		assert.NoError(t, errC)
+		require.NoError(t, errC)
 	}()
 
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), eventstore, service.NewResourceStateFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -1391,12 +1390,12 @@ func TestAggregateHandleCreateResource(t *testing.T) {
 				require.Error(t, err)
 				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
 				require.True(t, ok)
-				assert.Equal(t, tt.wantStatusCode, s.Code())
+				require.Equal(t, tt.wantStatusCode, s.Code())
 				return
 			}
 			require.NoError(t, err)
 			if tt.wantEvents {
-				assert.NotEmpty(t, gotEvents)
+				require.NotEmpty(t, gotEvents)
 			}
 			time.Sleep(tt.args.sleep)
 		})
@@ -1456,16 +1455,16 @@ func TestAggregateHandleConfirmResourceCreate(t *testing.T) {
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, noop.NewTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		errC := eventstore.Close(ctx)
-		assert.NoError(t, errC)
+		require.NoError(t, errC)
 	}()
 
 	ag, err := service.NewAggregate(commands.NewResourceID(deviceID, resourceID), eventstore, service.NewResourceStateFactoryModel(userID, owner, cfg.HubID), cqrsAggregate.NewDefaultRetryFunc(1))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, err = ag.NotifyResourceChanged(ctx, testMakeNotifyResourceChangedRequest(deviceID, resourceID, 0))
 	require.NoError(t, err)
@@ -1483,13 +1482,13 @@ func TestAggregateHandleConfirmResourceCreate(t *testing.T) {
 				require.Error(t, err)
 				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
 				require.True(t, ok)
-				assert.Equal(t, tt.wantStatusCode, s.Code())
+				require.Equal(t, tt.wantStatusCode, s.Code())
 				return
 			}
 			require.NoError(t, err)
 
 			if tt.wantEvents {
-				assert.NotEmpty(t, gotEvents)
+				require.NotEmpty(t, gotEvents)
 			}
 		})
 	}

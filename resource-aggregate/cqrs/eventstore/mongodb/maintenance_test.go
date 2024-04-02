@@ -75,7 +75,7 @@ func TestMaintenance(t *testing.T) {
 		mongodb.WithMarshaler(bson.Marshal),
 		mongodb.WithUnmarshaler(bson.Unmarshal),
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, store)
 	defer func() {
 		t.Log("clearing db")
@@ -161,5 +161,5 @@ func TestMaintenance(t *testing.T) {
 	eh3 := newMockRecordHandler()
 	err = store.Query(ctx, 777, eh3)
 	require.NoError(t, err)
-	require.Equal(t, 0, len(eh3.tasks))
+	require.Empty(t, eh3.tasks)
 }

@@ -109,7 +109,7 @@ func (e *Snapshot) HandleCommand(_ context.Context, cmd Command, newVersion uint
 		return []eventstore.Event{&Published{DeviceId: req.DeviceId, Href: req.Href, EventVersion: newVersion}}, nil
 	case *Unpublish:
 		if !e.IsPublished {
-			return nil, fmt.Errorf("not allowed to unpublish twice in tests")
+			return nil, errors.New("not allowed to unpublish twice in tests")
 		}
 		e.IsPublished = false
 		return []eventstore.Event{&Unpublished{DeviceId: req.DeviceId, Href: req.Href, EventVersion: newVersion}}, nil

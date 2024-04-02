@@ -117,7 +117,7 @@ func getRefreshTokenDataFromClaims(ctx context.Context, client *session, accessT
 		owner = req.UserID
 	}
 	if owner == "" {
-		return "", "", fmt.Errorf("cannot determine owner")
+		return "", "", errors.New("cannot determine owner")
 	}
 	return deviceID, owner, nil
 }
@@ -149,7 +149,7 @@ func refreshTokenPostHandler(req *mux.Message, client *session) (*pool.Message, 
 	}
 
 	if token.RefreshToken == "" {
-		return nil, statusErrorf(coapCodes.Unauthorized, "%w", fmt.Errorf(fmtErr, refreshToken.DeviceID, fmt.Errorf("refresh didn't return a refresh token")))
+		return nil, statusErrorf(coapCodes.Unauthorized, "%w", fmt.Errorf(fmtErr, refreshToken.DeviceID, errors.New("refresh didn't return a refresh token")))
 	}
 
 	deviceID, owner, err := getRefreshTokenDataFromClaims(req.Context(), client, token.AccessToken.String(), refreshToken)
@@ -163,12 +163,12 @@ func refreshTokenPostHandler(req *mux.Message, client *session) (*pool.Message, 
 		return nil, statusErrorf(coapCodes.Unauthorized, "%w", fmt.Errorf(fmtErr, deviceID, fmt.Errorf("cannot check owning: %w", err)))
 	}
 	if !ok {
-		return nil, statusErrorf(coapCodes.Unauthorized, "%w", fmt.Errorf(fmtErr, deviceID, fmt.Errorf("device is not registered")))
+		return nil, statusErrorf(coapCodes.Unauthorized, "%w", fmt.Errorf(fmtErr, deviceID, errors.New("device is not registered")))
 	}
 
 	expire, ok := ValidUntil(token.Expiry)
 	if !ok {
-		return nil, statusErrorf(coapCodes.Unauthorized, "%w", fmt.Errorf(fmtErr, deviceID, fmt.Errorf("expired access token")))
+		return nil, statusErrorf(coapCodes.Unauthorized, "%w", fmt.Errorf(fmtErr, deviceID, errors.New("expired access token")))
 	}
 
 	validUntil := pkgTime.Unix(0, expire)

@@ -63,7 +63,7 @@ func TestRequestHandlerGetEvents(t *testing.T) {
 	defer shutdownDevSim()
 
 	events := getAllEvents(ctx, t, c)
-	require.True(t, len(events) > 0)
+	require.NotEmpty(t, events)
 
 	type args struct {
 		req *pb.GetEventsRequest

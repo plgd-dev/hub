@@ -3,7 +3,7 @@ package x509
 import (
 	"bytes"
 	"crypto/x509"
-	"fmt"
+	"errors"
 )
 
 func IsRootCA(cert *x509.Certificate) bool {
@@ -29,10 +29,10 @@ func setCAPools(roots *x509.CertPool, intermediates *x509.CertPool, certs []*x50
 // Verify verifies certificate against certificate authorities.
 func Verify(certificates []*x509.Certificate, certificateAuthorities []*x509.Certificate, useSystemRoots bool, opts x509.VerifyOptions) ([][]*x509.Certificate, error) {
 	if len(certificates) == 0 {
-		return nil, fmt.Errorf("at least one certificate need to be set")
+		return nil, errors.New("at least one certificate need to be set")
 	}
 	if len(certificateAuthorities) == 0 {
-		return nil, fmt.Errorf("at least one certificate authority need to be set")
+		return nil, errors.New("at least one certificate authority need to be set")
 	}
 	intermediateCA := x509.NewCertPool()
 	rootCA := x509.NewCertPool()

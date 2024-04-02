@@ -132,7 +132,7 @@ func TestAudienceOfOne(t *testing.T) {
 	c[pkgJwt.ClaimAudience] = "test"
 	aud, err := c.GetAudience()
 	require.NoError(t, err)
-	require.Equal(t, []string(aud), []string{c[pkgJwt.ClaimAudience].(string)})
+	require.Equal(t, []string{c[pkgJwt.ClaimAudience].(string)}, []string(aud))
 }
 
 func TestAudienceOfTwo(t *testing.T) {
@@ -482,7 +482,6 @@ func checkClaims(t *testing.T, tokenClaims jwt.Claims, expError error) {
 }
 
 func TestValidate(t *testing.T) {
-	now := time.Now()
 	expiredTime := now.Add(-time.Hour)
 	futureTime := now.Add(time.Hour)
 

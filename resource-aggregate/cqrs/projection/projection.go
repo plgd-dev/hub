@@ -75,7 +75,7 @@ func (p *Projection) Register(ctx context.Context, deviceID string) (created boo
 		return errors.ErrorOrNil()
 	}
 	if updateSubscriber {
-		err := p.cqrsProjection.SubscribeTo(topics)
+		err = p.cqrsProjection.SubscribeTo(topics)
 		if err != nil {
 			return false, releaseAndReturnError(deviceID, err)
 		}

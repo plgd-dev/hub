@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/plgd-dev/go-coap/v3/message"
@@ -34,10 +35,10 @@ type CoapSignUpResponse struct {
 // Check that all required request fields are set
 func (request CoapSignUpRequest) checkOAuthRequest() error {
 	if request.DeviceID == "" {
-		return fmt.Errorf("invalid device id")
+		return errors.New("invalid device id")
 	}
 	if request.AuthorizationCode == "" {
-		return fmt.Errorf("invalid authorization code")
+		return errors.New("invalid authorization code")
 	}
 	return nil
 }
@@ -81,7 +82,7 @@ func getSignUpToken(ctx context.Context, client *session, signUp CoapSignUpReque
 		return nil, statusErrorf(coapCodes.ServiceUnavailable, errFmtSignUP, err)
 	}
 	if token.RefreshToken == "" {
-		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignUP, fmt.Errorf("exchange didn't return a refresh token"))
+		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignUP, errors.New("exchange didn't return a refresh token"))
 	}
 	return token, nil
 }
@@ -97,7 +98,7 @@ func getSignUpDataFromClaims(ctx context.Context, client *session, accessToken s
 		return "", "", err
 	}
 	if owner == "" {
-		return "", "", fmt.Errorf("cannot determine owner")
+		return "", "", errors.New("cannot determine owner")
 	}
 
 	deviceID, err := client.server.VerifyAndResolveDeviceID(client.tlsDeviceID, signUp.DeviceID, claim)
@@ -129,7 +130,7 @@ func signUpPostHandler(req *mux.Message, client *session) (*pool.Message, error)
 
 	validUntil, ok := ValidUntil(token.Expiry)
 	if !ok {
-		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignUP, fmt.Errorf("expired access token"))
+		return nil, statusErrorf(coapCodes.Unauthorized, errFmtSignUP, errors.New("expired access token"))
 	}
 
 	deviceID, owner, err := getSignUpDataFromClaims(req.Context(), client, token.AccessToken.String(), signUp)
@@ -139,7 +140,7 @@ func signUpPostHandler(req *mux.Message, client *session) (*pool.Message, error)
 	setDeviceIDToTracerSpan(req.Context(), deviceID)
 
 	ctx := kitNetGrpc.CtxWithToken(req.Context(), token.AccessToken.String())
-	if _, err := client.server.isClient.AddDevice(ctx, &pb.AddDeviceRequest{
+	if _, err = client.server.isClient.AddDevice(ctx, &pb.AddDeviceRequest{
 		DeviceId: deviceID,
 	}); err != nil {
 		return nil, statusErrorf(coapconv.GrpcErr2CoapCode(err, coapconv.Update), errFmtSignUP, err)

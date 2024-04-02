@@ -27,8 +27,8 @@ func TestObservingResource(t *testing.T) {
 
 	c := NewTestClient(t)
 	defer func() {
-		err := c.Close()
-		assert.NoError(t, err)
+		errC := c.Close()
+		require.NoError(t, errC)
 	}()
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
@@ -37,8 +37,8 @@ func TestObservingResource(t *testing.T) {
 	id, err := c.ObserveResource(ctx, deviceID, configuration.ResourceURI, h)
 	require.NoError(t, err)
 	defer func() {
-		err := c.StopObservingResource(id)
-		require.NoError(t, err)
+		errS := c.StopObservingResource(id)
+		require.NoError(t, errS)
 	}()
 
 	name := "observe simulator"
@@ -56,7 +56,7 @@ func TestObservingResource(t *testing.T) {
 	require.Equal(t, name, d.Name)
 
 	err = c.UpdateResource(ctx, deviceID, configuration.ResourceURI, map[string]interface{}{"n": test.TestDeviceName}, nil)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func makeTestObservationHandler() *testObservationHandler {

@@ -15,7 +15,6 @@ import (
 	natsTest "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/test"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 )
@@ -113,5 +112,5 @@ func persistDevice(t *testing.T, p Persistence, d *persistence.AuthorizedDevice)
 	tx := p.NewTransaction(context.Background())
 	defer tx.Close()
 	err := tx.Persist(d)
-	assert.Nil(t, err)
+	require.NoError(t, err)
 }

@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"regexp"
 	"time"
@@ -104,7 +105,7 @@ func (s *CertificateAuthorityServer) SignCertificate(ctx context.Context, req *p
 	}
 	signer := s.GetSigner()
 	if signer == nil {
-		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, fmtError, fmt.Errorf("signer is empty")))
+		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, fmtError, errors.New("signer is empty")))
 	}
 	cert, signingRecord, err := signer.Sign(ctx, req.GetCertificateSigningRequest())
 	if err != nil {

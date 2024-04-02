@@ -114,7 +114,7 @@ func (s *DeviceSubscriptions) doOp(ctx context.Context, req *pb.SubscribeToEvent
 		return nil, fmt.Errorf("unexpected event %+v", ev)
 	}
 	if op.GetErrorStatus().GetCode() != pb.Event_OperationProcessed_ErrorStatus_OK {
-		return nil, fmt.Errorf(op.GetErrorStatus().GetMessage())
+		return nil, errors.New(op.GetErrorStatus().GetMessage())
 	}
 	return ev, nil
 }
@@ -146,70 +146,70 @@ type deviceSub struct {
 
 func (s *deviceSub) HandleResourcePublished(ctx context.Context, val *events.ResourceLinksPublished) error {
 	if s.ResourcePublishedHandler == nil {
-		return fmt.Errorf("ResourcePublishedHandler in not supported")
+		return errors.New("ResourcePublishedHandler in not supported")
 	}
 	return s.ResourcePublishedHandler.HandleResourcePublished(ctx, val)
 }
 
 func (s *deviceSub) HandleResourceUnpublished(ctx context.Context, val *events.ResourceLinksUnpublished) error {
 	if s.ResourceUnpublishedHandler == nil {
-		return fmt.Errorf("ResourceUnpublishedHandler in not supported")
+		return errors.New("ResourceUnpublishedHandler in not supported")
 	}
 	return s.ResourceUnpublishedHandler.HandleResourceUnpublished(ctx, val)
 }
 
 func (s *deviceSub) HandleResourceUpdatePending(ctx context.Context, val *events.ResourceUpdatePending) error {
 	if s.ResourceUpdatePendingHandler == nil {
-		return fmt.Errorf("ResourceUpdatePendingHandler in not supported")
+		return errors.New("ResourceUpdatePendingHandler in not supported")
 	}
 	return s.ResourceUpdatePendingHandler.HandleResourceUpdatePending(ctx, val)
 }
 
 func (s *deviceSub) HandleResourceUpdated(ctx context.Context, val *events.ResourceUpdated) error {
 	if s.ResourceUpdatedHandler == nil {
-		return fmt.Errorf("ResourceUpdatedHandler in not supported")
+		return errors.New("ResourceUpdatedHandler in not supported")
 	}
 	return s.ResourceUpdatedHandler.HandleResourceUpdated(ctx, val)
 }
 
 func (s *deviceSub) HandleResourceRetrievePending(ctx context.Context, val *events.ResourceRetrievePending) error {
 	if s.ResourceRetrievePendingHandler == nil {
-		return fmt.Errorf("ResourceRetrievePendingHandler in not supported")
+		return errors.New("ResourceRetrievePendingHandler in not supported")
 	}
 	return s.ResourceRetrievePendingHandler.HandleResourceRetrievePending(ctx, val)
 }
 
 func (s *deviceSub) HandleResourceRetrieved(ctx context.Context, val *events.ResourceRetrieved) error {
 	if s.ResourceRetrievedHandler == nil {
-		return fmt.Errorf("ResourceRetrievedHandler in not supported")
+		return errors.New("ResourceRetrievedHandler in not supported")
 	}
 	return s.ResourceRetrievedHandler.HandleResourceRetrieved(ctx, val)
 }
 
 func (s *deviceSub) HandleResourceDeletePending(ctx context.Context, val *events.ResourceDeletePending) error {
 	if s.ResourceDeletePendingHandler == nil {
-		return fmt.Errorf("ResourceDeletePendingHandler in not supported")
+		return errors.New("ResourceDeletePendingHandler in not supported")
 	}
 	return s.ResourceDeletePendingHandler.HandleResourceDeletePending(ctx, val)
 }
 
 func (s *deviceSub) HandleResourceDeleted(ctx context.Context, val *events.ResourceDeleted) error {
 	if s.ResourceDeletedHandler == nil {
-		return fmt.Errorf("ResourceDeletedHandler in not supported")
+		return errors.New("ResourceDeletedHandler in not supported")
 	}
 	return s.ResourceDeletedHandler.HandleResourceDeleted(ctx, val)
 }
 
 func (s *deviceSub) HandleResourceCreatePending(ctx context.Context, val *events.ResourceCreatePending) error {
 	if s.ResourceCreatePendingHandler == nil {
-		return fmt.Errorf("ResourceCreatePendingHandler in not supported")
+		return errors.New("ResourceCreatePendingHandler in not supported")
 	}
 	return s.ResourceCreatePendingHandler.HandleResourceCreatePending(ctx, val)
 }
 
 func (s *deviceSub) HandleResourceCreated(ctx context.Context, val *events.ResourceCreated) error {
 	if s.ResourceCreatedHandler == nil {
-		return fmt.Errorf("ResourceCreatedHandler in not supported")
+		return errors.New("ResourceCreatedHandler in not supported")
 	}
 	return s.ResourceCreatedHandler.HandleResourceCreated(ctx, val)
 }
@@ -229,7 +229,7 @@ func (s *Subcription) Cancel(ctx context.Context) error {
 
 func getSubscribeTypeAndHandler(closeErrorHandler SubscriptionHandler, handle interface{}) ([]pb.SubscribeToEvents_CreateSubscription_Event, *deviceSub, error) {
 	if closeErrorHandler == nil {
-		return nil, nil, fmt.Errorf("invalid closeErrorHandler")
+		return nil, nil, errors.New("invalid closeErrorHandler")
 	}
 	var resourcePublishedHandler ResourcePublishedHandler
 	var resourceUnpublishedHandler ResourceUnpublishedHandler
@@ -285,7 +285,7 @@ func getSubscribeTypeAndHandler(closeErrorHandler SubscriptionHandler, handle in
 	}
 
 	if len(filterEvents) == 0 {
-		return nil, nil, fmt.Errorf("invalid handler - supported handlers: ResourcePublishedHandler, ResourceUnpublishedHandler, ResourceUpdatePendingHandler, ResourceUpdatedHandler, ResourceRetrievePendingHandler, ResourceRetrievedHandler, ResourceDeletePendingHandler, ResourceDeletedHandler, ResourceCreatePendingHandler, ResourceCreatedHandler")
+		return nil, nil, errors.New("invalid handler - supported handlers: ResourcePublishedHandler, ResourceUnpublishedHandler, ResourceUpdatePendingHandler, ResourceUpdatedHandler, ResourceRetrievePendingHandler, ResourceRetrievedHandler, ResourceDeletePendingHandler, ResourceDeletedHandler, ResourceCreatePendingHandler, ResourceCreatedHandler")
 	}
 
 	return filterEvents, &deviceSub{
@@ -306,7 +306,7 @@ func getSubscribeTypeAndHandler(closeErrorHandler SubscriptionHandler, handle in
 func (s *DeviceSubscriptions) Subscribe(ctx context.Context, deviceID string, closeErrorHandler SubscriptionHandler, handle interface{}) (*Subcription, error) {
 	token, err := uuid.NewRandom()
 	if err != nil {
-		return nil, fmt.Errorf("cannot generate token for subscribe")
+		return nil, errors.New("cannot generate token for subscribe")
 	}
 
 	filterEvents, eh, err := getSubscribeTypeAndHandler(closeErrorHandler, handle)
@@ -336,7 +336,7 @@ func (s *DeviceSubscriptions) Subscribe(ctx context.Context, deviceID string, cl
 		}
 		cancelToken, err := uuid.NewRandom()
 		if err != nil {
-			return fmt.Errorf("cannot generate token for cancellation")
+			return errors.New("cannot generate token for cancellation")
 		}
 		_, err = s.doOp(ctx, &pb.SubscribeToEvents{
 			Action: &pb.SubscribeToEvents_CancelSubscription_{
@@ -437,7 +437,7 @@ func (s *DeviceSubscriptions) handleSubscriptionCanceled(e *pb.Event) (processed
 		ha.OnClose()
 		return true
 	}
-	ha.Error(fmt.Errorf(reason))
+	ha.Error(errors.New(reason))
 	return true
 }
 

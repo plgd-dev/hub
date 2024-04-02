@@ -42,9 +42,9 @@ func (p *ClientCredentialsPlgdProvider) Exchange(ctx context.Context, authorizat
 	m := pkgJwt.Claims(claims)
 	c := p.Config.ToDefaultClientCredentials()
 	if p.deviceIDClaim != "" {
-		deviceID, err := m.GetDeviceID(p.deviceIDClaim)
-		if err != nil {
-			return nil, fmt.Errorf("cannot get deviceIDClaim: %w", err)
+		deviceID, errG := m.GetDeviceID(p.deviceIDClaim)
+		if errG != nil {
+			return nil, fmt.Errorf("cannot get deviceIDClaim: %w", errG)
 		}
 		if deviceID == "" {
 			return nil, fmt.Errorf("deviceIDClaim('%v') is not set in token", p.deviceIDClaim)

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/plgd-dev/hub/v2/coap-gateway/service/observation"
@@ -30,7 +31,7 @@ func (c *session) getDeviceObserver(ctx context.Context) (*observation.DeviceObs
 	}
 	deviceObserver, ok := v.(*observation.DeviceObserver)
 	if !ok {
-		return nil, false, getError(fmt.Errorf("invalid future value"))
+		return nil, false, getError(errors.New("invalid future value"))
 	}
 	return deviceObserver, true, nil
 }
@@ -59,8 +60,7 @@ func (c *session) replaceDeviceObserverWithDeviceTwin(ctx context.Context, twinE
 		observationType = obs.GetObservationType()
 	}
 	if deviceID == "" {
-		err := fmt.Errorf("cannot replace device observer: invalid device id")
-		return false, err
+		return false, errors.New("cannot replace device observer: invalid device id")
 	}
 	twinEnabled = twinEnabled || twinForceSynchronization
 	if !twinForceSynchronization && prevTwinEnabled == twinEnabled {
@@ -68,8 +68,8 @@ func (c *session) replaceDeviceObserverWithDeviceTwin(ctx context.Context, twinE
 	}
 	deviceObserverFuture, setDeviceObserver := future.New()
 	oldDeviceObserver := c.replaceDeviceObserver(deviceObserverFuture)
-	if err := cleanDeviceObserver(ctx, oldDeviceObserver); err != nil {
-		c.Errorf("failed to close replaced device observer: %w", err)
+	if errD := cleanDeviceObserver(ctx, oldDeviceObserver); errD != nil {
+		c.Errorf("failed to close replaced device observer: %w", errD)
 	}
 
 	deviceObserver, err := observation.NewDeviceObserver(c.Context(), deviceID, c, c, c,
@@ -98,7 +98,7 @@ func toDeviceObserver(ctx context.Context, devObsFut *future.Future) (*observati
 	}
 	deviceObserver, ok := v.(*observation.DeviceObserver)
 	if !ok {
-		return nil, fmt.Errorf("invalid future value")
+		return nil, errors.New("invalid future value")
 	}
 	return deviceObserver, nil
 }

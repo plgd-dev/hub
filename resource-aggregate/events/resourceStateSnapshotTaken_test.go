@@ -117,21 +117,21 @@ func TestEqual(t *testing.T) {
 			ContentType:       "text",
 			CoapContentFormat: int32(message.TextPlain),
 		},
-		AuditContext: res.AuditContext,
-		Status:       res.Status,
+		AuditContext: res.GetAuditContext(),
+		Status:       res.GetStatus(),
 	}
 
 	resWithChangedAuditContext := events.ResourceChanged{
-		Content: res.Content,
+		Content: res.GetContent(),
 		AuditContext: &commands.AuditContext{
 			UserId: "502",
 		},
-		Status: res.Status,
+		Status: res.GetStatus(),
 	}
 
 	resWithChangedStatus := events.ResourceChanged{
-		Content:      res.Content,
-		AuditContext: res.AuditContext,
+		Content:      res.GetContent(),
+		AuditContext: res.GetAuditContext(),
 		Status:       commands.Status_ERROR,
 	}
 

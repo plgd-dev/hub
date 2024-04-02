@@ -287,7 +287,7 @@ func AcceptanceTest(ctx context.Context, t *testing.T, store eventstore.EventSto
 	eh1 := NewMockEventHandler()
 	err = store.LoadFromSnapshot(ctx, []eventstore.SnapshotQuery{{GroupID: uuid.Nil.String()}}, eh1)
 	require.NoError(t, err)
-	require.Equal(t, 0, len(eh1.events))
+	require.Empty(t, eh1.events)
 
 	t.Log("load events")
 	eh2 := NewMockEventHandler()

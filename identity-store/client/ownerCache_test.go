@@ -127,7 +127,7 @@ func TestOwnerCacheSubscribe(t *testing.T) {
 	time.Sleep(time.Millisecond * 100)
 
 	for _, d := range devices[:2] {
-		_, err := c.AddDevice(ctx, &pb.AddDeviceRequest{DeviceId: d})
+		_, err = c.AddDevice(ctx, &pb.AddDeviceRequest{DeviceId: d})
 		require.NoError(t, err)
 	}
 	time.Sleep(time.Millisecond * 100)

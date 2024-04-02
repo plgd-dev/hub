@@ -2,6 +2,7 @@ package message
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"testing"
@@ -72,7 +73,7 @@ func TestIsTempError(t *testing.T) {
 		},
 		{
 			name: "any error as temporary",
-			args: args{err: fmt.Errorf("any error")},
+			args: args{err: errors.New("any error")},
 			want: true,
 		},
 		{

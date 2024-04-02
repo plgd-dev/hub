@@ -11,7 +11,6 @@ import (
 	"github.com/plgd-dev/hub/v2/certificate-authority/store"
 	"github.com/plgd-dev/hub/v2/certificate-authority/test"
 	hubTest "github.com/plgd-dev/hub/v2/test"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -93,9 +92,9 @@ func TestStoreUpdateSigningRecord(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := s.UpdateSigningRecord(ctx, tt.args.sub)
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 			err = s.FlushBulkWriter()
 			require.NoError(t, err)
@@ -221,10 +220,10 @@ func TestStoreDeleteSigningRecords(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			n, err := s.DeleteSigningRecords(ctx, tt.args.owner, tt.args.query)
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.want, n)
+				require.NoError(t, err)
+				require.Equal(t, tt.want, n)
 			}
 		})
 	}
@@ -283,8 +282,8 @@ func TestStoreDeleteExpiredRecords(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := s.DeleteNonDeviceExpiredRecords(ctx, tt.args.now)
-			assert.NoError(t, err)
-			assert.Equal(t, tt.want, got)
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
 		})
 	}
 }

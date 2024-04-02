@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"time"
 
@@ -27,7 +28,7 @@ func newAuthInterceptor() Interceptor {
 		}
 		e := ctx.Value(&authCtxKey)
 		if e == nil {
-			return ctx, fmt.Errorf("invalid authorization context")
+			return ctx, errors.New("invalid authorization context")
 		}
 		authCtx := e.(*authorizationContext)
 		err := authCtx.IsValid()
@@ -60,7 +61,7 @@ func (s *Service) verifyDeviceID(tlsDeviceID string, claim pkgJwt.Claims) (strin
 		return jwtDeviceID, nil
 	}
 	if tlsDeviceID == "" {
-		return "", fmt.Errorf("certificate of device doesn't contain device id")
+		return "", errors.New("certificate of device doesn't contain device id")
 	}
 	if s.config.APIs.COAP.Authorization.DeviceIDClaim != "" && jwtDeviceID != tlsDeviceID {
 		return "", fmt.Errorf("access token issued to the device ('%v') used by the different device ('%v')", jwtDeviceID, tlsDeviceID)
@@ -81,7 +82,7 @@ func (s *Service) VerifyAndResolveDeviceID(tlsDeviceID, paramDeviceID string, cl
 
 func verifyChain(chain []*x509.Certificate, capool *x509.CertPool, identityPropertiesRequired bool) error {
 	if len(chain) == 0 {
-		return fmt.Errorf("certificate chain is empty")
+		return errors.New("certificate chain is empty")
 	}
 	certificate := chain[0]
 	intermediateCAPool := x509.NewCertPool()
@@ -109,10 +110,10 @@ func verifyChain(chain []*x509.Certificate, capool *x509.CertPool, identityPrope
 		}
 	}
 	if !ekuHasClient {
-		return fmt.Errorf("the extended key usage field in the device certificate does not contain client authentication")
+		return errors.New("the extended key usage field in the device certificate does not contain client authentication")
 	}
 	if !ekuHasServer {
-		return fmt.Errorf("the extended key usage field in the device certificate does not contain server authentication")
+		return errors.New("the extended key usage field in the device certificate does not contain server authentication")
 	}
 	if !identityPropertiesRequired {
 		return nil
@@ -131,17 +132,17 @@ func MakeGetConfigForClient(tlsCfg *tls.Config, identityPropertiesRequired bool)
 		ClientAuth:     tlsCfg.ClientAuth,
 		ClientCAs:      tlsCfg.ClientCAs,
 		VerifyPeerCertificate: func(_ [][]byte, chains [][]*x509.Certificate) error {
-			var errors *multierror.Error
+			var errs *multierror.Error
 			for _, chain := range chains {
 				err := verifyChain(chain, tlsCfg.ClientCAs, identityPropertiesRequired)
 				if err == nil {
 					return nil
 				}
-				errors = multierror.Append(errors, err)
+				errs = multierror.Append(errs, err)
 			}
-			err := fmt.Errorf("empty chains")
-			if errors.ErrorOrNil() != nil {
-				err = errors
+			err := errors.New("empty chains")
+			if errs.ErrorOrNil() != nil {
+				err = errs
 			}
 			return pkgX509.NewError(chains, err)
 		},

@@ -211,7 +211,7 @@ func (p *PersistenceTx) Delete(deviceID, userID string) error {
 		return err
 	}
 	if res.DeletedCount == 0 {
-		return fmt.Errorf("not found")
+		return errors.New("not found")
 	}
 	if err := p.tx.CommitTransaction(p.ctx); err != nil {
 		return fmt.Errorf("cannot commit transaction: %w", err)

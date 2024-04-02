@@ -97,7 +97,7 @@ func TestForwardErrorf(t *testing.T) {
 			s, ok := status.FromError(err)
 			require.True(t, ok)
 			assert.Equal(t, tt.wantCode, s.Code())
-			test.CheckProtobufs(t, tt.wantDetails, s.Details(), test.AssertToCheckFunc(assert.Equal))
+			test.CheckProtobufs(t, tt.wantDetails, s.Details(), test.RequireToCheckFunc(require.Equal))
 			assert.Equal(t, tt.wantMessage, s.Message())
 		})
 	}

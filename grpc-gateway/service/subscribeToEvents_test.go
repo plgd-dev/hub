@@ -35,7 +35,6 @@ import (
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	serviceTest "github.com/plgd-dev/hub/v2/test/service"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 	"google.golang.org/grpc"
@@ -201,7 +200,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 			require.NoError(t, err)
 			defer func() {
 				errC := client.CloseSend()
-				assert.NoError(t, errC)
+				require.NoError(t, errC)
 			}()
 			var wg sync.WaitGroup
 			wg.Add(1)
@@ -209,11 +208,11 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 				defer wg.Done()
 				var events []*pb.Event
 				for range tt.want {
-					ev, err := client.Recv()
-					if errors.Is(err, io.EOF) {
+					ev, errR := client.Recv()
+					if errors.Is(errR, io.EOF) {
 						break
 					}
-					require.NoError(t, err)
+					require.NoError(t, errR)
 					events = append(events, ev)
 				}
 				pbTest.CmpEvents(t, tt.want, events)
@@ -663,9 +662,9 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 	secureGWShutdown()
 
 	createFn := func(timeToLive time.Duration) {
-		ctx, cancel := context.WithTimeout(ctx, time.Second)
+		createCtx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
-		_, err := c.CreateResource(ctx, &pb.CreateResourceRequest{
+		_, errC := c.CreateResource(createCtx, &pb.CreateResourceRequest{
 			ResourceId: commands.NewResourceID(deviceID, device.ResourceURI),
 			Content: &pb.Content{
 				ContentType: message.AppOcfCbor.String(),
@@ -675,27 +674,27 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 			},
 			TimeToLive: int64(timeToLive),
 		})
-		require.Error(t, err)
+		require.Error(t, errC)
 	}
 	createFn(time.Millisecond * 500) // for test expired event
 	createFn(0)
 
 	retrieveFn := func(timeToLive time.Duration) {
-		ctx, cancel := context.WithTimeout(ctx, time.Second)
+		retrieveCtx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
-		_, err := c.GetResourceFromDevice(ctx, &pb.GetResourceFromDeviceRequest{
+		_, errG := c.GetResourceFromDevice(retrieveCtx, &pb.GetResourceFromDeviceRequest{
 			ResourceId: commands.NewResourceID(deviceID, platform.ResourceURI),
 			TimeToLive: int64(timeToLive),
 		})
-		require.Error(t, err)
+		require.Error(t, errG)
 	}
 	retrieveFn(time.Millisecond * 500) // for test expired event
 	retrieveFn(0)
 
 	updateFn := func(timeToLive time.Duration) {
-		ctx, cancel := context.WithTimeout(ctx, time.Second)
+		updateCtx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
-		_, err := c.UpdateResource(ctx, &pb.UpdateResourceRequest{
+		_, errU := c.UpdateResource(updateCtx, &pb.UpdateResourceRequest{
 			ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 			Content: &pb.Content{
 				ContentType: message.AppOcfCbor.String(),
@@ -705,32 +704,32 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 			},
 			TimeToLive: int64(timeToLive),
 		})
-		require.Error(t, err)
+		require.Error(t, errU)
 	}
 	updateFn(time.Millisecond * 500) // for test expired event
 	updateFn(0)
 
 	deleteFn := func(timeToLive time.Duration) {
-		ctx, cancel := context.WithTimeout(ctx, time.Second)
+		deleteCtx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
-		_, err := c.DeleteResource(ctx, &pb.DeleteResourceRequest{
+		_, errD := c.DeleteResource(deleteCtx, &pb.DeleteResourceRequest{
 			ResourceId: commands.NewResourceID(deviceID, device.ResourceURI),
 			TimeToLive: int64(timeToLive),
 		})
-		require.Error(t, err)
+		require.Error(t, errD)
 	}
 	deleteFn(time.Millisecond * 500) // for test expired event
 	deleteFn(0)
 
 	updateDeviceMetadataFn := func(timeToLive time.Duration) {
-		ctx, cancel := context.WithTimeout(ctx, time.Second)
+		updateCtx, cancel := context.WithTimeout(ctx, time.Second)
 		defer cancel()
-		_, err := c.UpdateDeviceMetadata(ctx, &pb.UpdateDeviceMetadataRequest{
+		_, errU := c.UpdateDeviceMetadata(updateCtx, &pb.UpdateDeviceMetadataRequest{
 			DeviceId:    deviceID,
 			TwinEnabled: false,
 			TimeToLive:  int64(timeToLive),
 		})
-		require.Error(t, err)
+		require.Error(t, errU)
 	}
 	updateDeviceMetadataFn(time.Millisecond * 500) // for test expired event
 	updateDeviceMetadataFn(0)                      // for test expired event

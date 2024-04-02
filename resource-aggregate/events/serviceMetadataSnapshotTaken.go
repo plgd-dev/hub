@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"time"
@@ -73,7 +74,7 @@ func (d *ServiceMetadataSnapshotTaken) CheckInitialized() bool {
 }
 
 func (d *ServiceMetadataSnapshotTaken) HandleServiceMetadataUpdated(_ context.Context, upd *ServiceMetadataUpdated) (bool, error) {
-	if d.ServiceMetadataUpdated.Equal(upd) {
+	if d.GetServiceMetadataUpdated().Equal(upd) {
 		return false, nil
 	}
 	valid := make(map[string]*ServicesHeartbeat_Heartbeat, len(d.GetServiceMetadataUpdated().GetServicesHeartbeat().GetValid())+len(upd.GetServicesHeartbeat().GetValid()))
@@ -322,7 +323,7 @@ func (d *ServiceMetadataSnapshotTaken) confirmExpiredServices(ctx context.Contex
 	d.EventMetadata = em
 	snapshot, ok := d.TakeSnapshot(em.GetVersion())
 	if !ok {
-		return nil, fmt.Errorf("cannot take snapshot")
+		return nil, errors.New("cannot take snapshot")
 	}
 	return []eventstore.Event{snapshot}, nil
 }

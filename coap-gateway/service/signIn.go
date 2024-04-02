@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -33,13 +34,13 @@ type CoapSignInResp struct {
 // Check that all required request fields are set
 func (request CoapSignInReq) checkOAuthRequest() error {
 	if request.DeviceID == "" {
-		return fmt.Errorf("invalid device id")
+		return errors.New("invalid device id")
 	}
 	if request.UserID == "" {
-		return fmt.Errorf("invalid user id")
+		return errors.New("invalid user id")
 	}
 	if request.AccessToken == "" {
-		return fmt.Errorf("invalid access token")
+		return errors.New("invalid access token")
 	}
 	return nil
 }
@@ -217,7 +218,7 @@ func getSignInDataFromClaims(ctx context.Context, client *session, signIn CoapSi
 		return "", time.Time{}, err
 	}
 
-	if err := jwtClaims.ValidateOwnerClaim(client.server.config.APIs.COAP.Authorization.OwnerClaim, signIn.UserID); err != nil {
+	if err = jwtClaims.ValidateOwnerClaim(client.server.config.APIs.COAP.Authorization.OwnerClaim, signIn.UserID); err != nil {
 		return "", time.Time{}, err
 	}
 

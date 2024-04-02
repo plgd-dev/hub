@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -15,7 +16,7 @@ func (rh *RequestHandler) retrieveSubscription(w http.ResponseWriter, r *http.Re
 
 	sub, ok := rh.subMgr.Load(subscriptionID)
 	if !ok {
-		return http.StatusNotFound, fmt.Errorf("not found")
+		return http.StatusNotFound, errors.New("not found")
 	}
 
 	if href != "" && sub.Href != href {

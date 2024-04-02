@@ -13,7 +13,6 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
-	"fmt"
 	"io"
 	"os"
 	"reflect"
@@ -435,7 +434,7 @@ func testCoapDialWithHandler(t *testing.T, deviceID string, withTLS, identityCer
 			InsecureSkipVerify: true,
 			VerifyPeerCertificate: func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
 				if len(rawCerts) == 0 {
-					return fmt.Errorf("empty certificates chain")
+					return errors.New("empty certificates chain")
 				}
 				intermediateCAPool := x509.NewCertPool()
 				certs := make([]*x509.Certificate, 0, len(rawCerts))

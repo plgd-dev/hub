@@ -79,9 +79,9 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		return nil, fmt.Errorf("cannot connect to grpc-gateway: %w", err)
 	}
 	s.AddCloseFunc(func() {
-		err := grpcConn.Close()
-		if err != nil {
-			logger.Errorf("error occurs during close connection to grpc-gateway: %v", err)
+		errC := grpcConn.Close()
+		if errC != nil {
+			logger.Errorf("error occurs during close connection to grpc-gateway: %v", errC)
 		}
 	})
 	grpcClient := pb.NewGrpcGatewayClient(grpcConn.GRPC())

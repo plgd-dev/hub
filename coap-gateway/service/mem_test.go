@@ -6,6 +6,7 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -221,7 +222,7 @@ func testDevices(t *testing.T, numDevices, numResources, expRSSInMB int, resourc
 				err = cmdService.Start()
 				require.NoError(t, err)
 			} else {
-				require.NoError(t, fmt.Errorf("service process is dead - canceling test"))
+				require.NoError(t, errors.New("service process is dead - canceling test"))
 			}
 		}
 		t.Logf("waiting for service to start: %v, serviceRSS %v\n", time.Since(now), bToMb(serviceRSS))
@@ -250,8 +251,8 @@ func testDevices(t *testing.T, numDevices, numResources, expRSSInMB int, resourc
 	}()
 
 	coapShutdown := func() {
-		err := s.Close()
-		require.NoError(t, err)
+		errC := s.Close()
+		require.NoError(t, errC)
 		wg.Wait()
 	}
 	defer coapShutdown()

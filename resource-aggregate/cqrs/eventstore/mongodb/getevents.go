@@ -2,7 +2,7 @@ package mongodb
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
@@ -163,7 +163,7 @@ func (s *EventStore) GetEvents(ctx context.Context, queries []eventstore.GetEven
 		s.LogDebugfFunc("mongodb.Evenstore.GetEvents takes %v", time.Since(t))
 	}()
 	if len(queries) == 0 {
-		return fmt.Errorf("not supported")
+		return errors.New("not supported")
 	}
 
 	eventFilter := GetNormalizedGetEventsFilter(queries)

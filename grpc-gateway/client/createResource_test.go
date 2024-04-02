@@ -70,17 +70,17 @@ func TestClient_CreateResource(t *testing.T) {
 	c := NewTestClient(t)
 	defer func() {
 		err := c.Close()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}()
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx, cancel := context.WithTimeout(ctx, time.Second)
+			runctx, cancel := context.WithTimeout(ctx, time.Second)
 			defer cancel()
 			var got interface{}
-			err := c.CreateResource(ctx, tt.args.deviceID, tt.args.href, tt.args.data, &got)
+			err := c.CreateResource(runctx, tt.args.deviceID, tt.args.href, tt.args.data, &got)
 			if tt.wantErr {
 				require.Error(t, err)
 				var grpcStatus interface {

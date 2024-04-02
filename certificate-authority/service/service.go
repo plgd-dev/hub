@@ -52,14 +52,14 @@ func newStore(ctx context.Context, config StorageConfig, fileWatcher *fsnotify.W
 		return nil, nil, err
 	}
 	fl.AddFunc(func() {
-		if err := db.Close(ctx); err != nil {
-			log.Errorf("failed to close mongodb store: %w", err)
+		if errC := db.Close(ctx); errC != nil {
+			log.Errorf("failed to close mongodb store: %w", errC)
 		}
 	})
 	if config.CleanUpRecords == "" {
 		return db, fl.ToFunction(), nil
 	}
-	s, err := gocron.NewScheduler(gocron.WithLocation(time.Local))
+	s, err := gocron.NewScheduler(gocron.WithLocation(time.Local)) //nolint:gosmopolitan
 	if err != nil {
 		fl.Execute()
 		return nil, nil, fmt.Errorf("cannot create cron job: %w", err)

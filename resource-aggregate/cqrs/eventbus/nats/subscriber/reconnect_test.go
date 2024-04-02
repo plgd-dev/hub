@@ -3,7 +3,7 @@ package subscriber_test
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"testing"
 	"time"
 
@@ -95,7 +95,7 @@ func TestSubscriberReconnect(t *testing.T) {
 	select {
 	case <-ch:
 	case <-ctx.Done():
-		require.NoError(t, fmt.Errorf("Timeout"))
+		require.NoError(t, errors.New("Timeout"))
 	}
 	naClient1, pub1, err := natsTest.NewClientAndPublisher(config.MakePublisherConfig(), fileWatcher, logger, publisher.WithMarshaler(json.Marshal))
 	require.NoError(t, err)

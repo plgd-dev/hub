@@ -107,8 +107,8 @@ func TestNew(t *testing.T) {
 			}
 			require.NoError(t, err)
 			go func() {
-				err := got.Serve()
-				require.NoError(t, err)
+				errS := got.Serve()
+				require.NoError(t, errS)
 			}()
 			err = got.Close()
 			require.NoError(t, err)
@@ -152,8 +152,8 @@ func TestOnClientInactivityTCP(t *testing.T) {
 	}))
 	require.NoError(t, err)
 	go func() {
-		err := got.Serve()
-		require.NoError(t, err)
+		errS := got.Serve()
+		require.NoError(t, errS)
 	}()
 	time.Sleep(time.Second * 3)
 
@@ -217,8 +217,8 @@ func TestOnClientInactivityUDP(t *testing.T) {
 	}))
 	require.NoError(t, err)
 	go func() {
-		err := got.Serve()
-		require.NoError(t, err)
+		errS := got.Serve()
+		require.NoError(t, errS)
 	}()
 	time.Sleep(time.Second * 3)
 
@@ -278,8 +278,8 @@ func TestOnClientInactivityCustomTCP(t *testing.T) {
 	closeChan := make(chan struct{}, 2)
 	got, err := New(ctx, cfg, router, fileWatcher, logger, WithOnInactivityConnection(func(conn mux.Conn) {
 		numInactiveClients.Inc()
-		err := conn.Close()
-		require.NoError(t, err)
+		errC := conn.Close()
+		require.NoError(t, errC)
 	}), WithOnNewConnection(func(conn mux.Conn) {
 		conn.AddOnClose(func() {
 			closeChan <- struct{}{}
@@ -287,8 +287,8 @@ func TestOnClientInactivityCustomTCP(t *testing.T) {
 	}))
 	require.NoError(t, err)
 	go func() {
-		err := got.Serve()
-		require.NoError(t, err)
+		errS := got.Serve()
+		require.NoError(t, errS)
 	}()
 	time.Sleep(time.Second * 3)
 
@@ -349,8 +349,8 @@ func TestOnClientInactivityCustomUDP(t *testing.T) {
 	closeChan := make(chan struct{}, 2)
 	got, err := New(ctx, cfg, router, fileWatcher, logger, WithOnInactivityConnection(func(conn mux.Conn) {
 		numInactiveClients.Inc()
-		err := conn.Close()
-		require.NoError(t, err)
+		errC := conn.Close()
+		require.NoError(t, errC)
 	}), WithOnNewConnection(func(conn mux.Conn) {
 		conn.AddOnClose(func() {
 			closeChan <- struct{}{}
@@ -358,8 +358,8 @@ func TestOnClientInactivityCustomUDP(t *testing.T) {
 	}))
 	require.NoError(t, err)
 	go func() {
-		err := got.Serve()
-		require.NoError(t, err)
+		errS := got.Serve()
+		require.NoError(t, errS)
 	}()
 	time.Sleep(time.Second * 3)
 

@@ -3,7 +3,6 @@ package cqldb
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sort"
 	"strings"
 
@@ -40,7 +39,7 @@ func (a etagTimestamps) toETags(limit int) [][]byte {
 // Get latest ETags for device resources from event store for batch observing
 func (s *EventStore) GetLatestDeviceETags(ctx context.Context, deviceID string, limit uint32) ([][]byte, error) {
 	if deviceID == "" {
-		return nil, fmt.Errorf("deviceID is invalid")
+		return nil, errors.New("deviceID is invalid")
 	}
 	var q strings.Builder
 	q.WriteString(cqldb.SelectCommand)

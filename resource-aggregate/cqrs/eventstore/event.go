@@ -2,6 +2,7 @@ package eventstore
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -153,7 +154,7 @@ func validateFirstEvent(event Event) error {
 	}
 
 	if event.Timestamp().IsZero() {
-		return fmt.Errorf("invalid zero events[0].Timestamp")
+		return errors.New("invalid zero events[0].Timestamp")
 	}
 
 	return nil

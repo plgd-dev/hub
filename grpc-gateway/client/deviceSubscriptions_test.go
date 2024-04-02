@@ -23,7 +23,6 @@ import (
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 )
@@ -85,8 +84,8 @@ func TestObserveDeviceResourcesRetrieve(t *testing.T) {
 
 	c := NewTestClient(t)
 	defer func() {
-		err := c.Close()
-		assert.NoError(t, err)
+		errC := c.Close()
+		require.NoError(t, errC)
 	}()
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
@@ -95,8 +94,8 @@ func TestObserveDeviceResourcesRetrieve(t *testing.T) {
 	sub, err := c.NewDeviceSubscription(ctx, deviceID, h)
 	require.NoError(t, err)
 	defer func() {
-		wait, err := sub.Cancel()
-		require.NoError(t, err)
+		wait, errC := sub.Cancel()
+		require.NoError(t, errC)
 		wait()
 	}()
 
@@ -180,8 +179,8 @@ func TestObserveDeviceResourcesUpdate(t *testing.T) {
 
 	c := NewTestClient(t)
 	defer func() {
-		err := c.Close()
-		assert.NoError(t, err)
+		errC := c.Close()
+		require.NoError(t, errC)
 	}()
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
@@ -193,8 +192,8 @@ func TestObserveDeviceResourcesUpdate(t *testing.T) {
 	sub, err := c.NewDeviceSubscription(ctx, deviceID, h)
 	require.NoError(t, err)
 	defer func() {
-		wait, err := sub.Cancel()
-		require.NoError(t, err)
+		wait, errC := sub.Cancel()
+		require.NoError(t, errC)
 		wait()
 	}()
 
@@ -208,8 +207,8 @@ func TestObserveDeviceResourcesUpdate(t *testing.T) {
 				v := map[string]interface{}{
 					"value": true,
 				}
-				d, err := cbor.Encode(v)
-				require.NoError(t, err)
+				d, errEnc := cbor.Encode(v)
+				require.NoError(t, errEnc)
 				return d
 			}(),
 		},
@@ -308,8 +307,8 @@ func TestObserveDeviceResourcesCreateAndDelete(t *testing.T) {
 
 	c := NewTestClient(t)
 	defer func() {
-		err := c.Close()
-		assert.NoError(t, err)
+		errC := c.Close()
+		require.NoError(t, errC)
 	}()
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
@@ -318,8 +317,8 @@ func TestObserveDeviceResourcesCreateAndDelete(t *testing.T) {
 	sub, err := c.NewDeviceSubscription(ctx, deviceID, h)
 	require.NoError(t, err)
 	defer func() {
-		wait, err := sub.Cancel()
-		require.NoError(t, err)
+		wait, errC := sub.Cancel()
+		require.NoError(t, errC)
 		wait()
 	}()
 

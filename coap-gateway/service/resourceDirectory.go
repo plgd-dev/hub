@@ -146,7 +146,7 @@ func observeResources(ctx context.Context, client *session, w wkRd, sequenceNumb
 			return
 		}
 		if !ok {
-			x.client.Errorf("%w", x.observeError(x.w.DeviceID, fmt.Errorf("cannot get device observer")))
+			x.client.Errorf("%w", x.observeError(x.w.DeviceID, errors.New("cannot get device observer")))
 			return
 		}
 		if errObs := obs.AddPublishedResources(x.ctx, x.publishedResources); errObs != nil {
@@ -170,8 +170,8 @@ func resourceDirectoryPublishHandler(req *mux.Message, client *session) (*pool.M
 		return nil, statusErrorf(coapCodes.BadRequest, "%w", err)
 	}
 
-	if errCode, err := observeResources(req.Context(), client, w, req.Sequence()); err != nil {
-		return nil, statusErrorf(errCode, "%w", err)
+	if errCode, errO := observeResources(req.Context(), client, w, req.Sequence()); errO != nil {
+		return nil, statusErrorf(errCode, "%w", errO)
 	}
 
 	accept := coapconv.GetAccept(req.Options())
@@ -209,7 +209,7 @@ func parseUnpublishQueryString(queries []string) (deviceID string, instanceIDs [
 	}
 
 	if deviceID == "" {
-		return "", nil, fmt.Errorf("deviceID not found")
+		return "", nil, errors.New("deviceID not found")
 	}
 
 	return

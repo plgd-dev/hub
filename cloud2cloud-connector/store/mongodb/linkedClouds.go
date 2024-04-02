@@ -14,22 +14,22 @@ const resLinkedCloudCName = "LinkedCloud"
 
 func validateLinkedCloud(sub store.LinkedCloud) error {
 	if sub.ID == "" {
-		return fmt.Errorf("cannot save linked cloud: invalid Id")
+		return errors.New("cannot save linked cloud: invalid Id")
 	}
 	if sub.Endpoint.URL == "" {
-		return fmt.Errorf("cannot save linked cloud: invalid URL")
+		return errors.New("cannot save linked cloud: invalid URL")
 	}
 	if sub.OAuth.ClientID == "" {
-		return fmt.Errorf("cannot save linked cloud: invalid ClientId")
+		return errors.New("cannot save linked cloud: invalid ClientId")
 	}
 	if sub.OAuth.ClientSecret == "" {
-		return fmt.Errorf("cannot save linked cloud: invalid ClientSecret")
+		return errors.New("cannot save linked cloud: invalid ClientSecret")
 	}
 	if sub.OAuth.AuthURL == "" {
-		return fmt.Errorf("cannot save linked cloud: invalid AuthUrl")
+		return errors.New("cannot save linked cloud: invalid AuthUrl")
 	}
 	if sub.OAuth.TokenURL == "" {
-		return fmt.Errorf("cannot save linked cloud: invalid TokenUrl")
+		return errors.New("cannot save linked cloud: invalid TokenUrl")
 	}
 	return nil
 }
@@ -46,7 +46,7 @@ func (s *Store) UpdateLinkedCloud(ctx context.Context, sub store.LinkedCloud) er
 		return fmt.Errorf("cannot save linked cloud: %w", err)
 	}
 	if res.MatchedCount == 0 {
-		return fmt.Errorf("cannot update linked cloud: not found")
+		return errors.New("cannot update linked cloud: not found")
 	}
 	return nil
 }
@@ -67,7 +67,7 @@ func (s *Store) InsertLinkedCloud(ctx context.Context, sub store.LinkedCloud) er
 
 func (s *Store) RemoveLinkedCloud(ctx context.Context, linkedCloudID string) error {
 	if linkedCloudID == "" {
-		return fmt.Errorf("cannot remove linked cloud: invalid LinkedCloudId")
+		return errors.New("cannot remove linked cloud: invalid LinkedCloudId")
 	}
 
 	res, err := s.Collection(resLinkedCloudCName).DeleteOne(ctx, bson.M{"_id": linkedCloudID})
@@ -75,7 +75,7 @@ func (s *Store) RemoveLinkedCloud(ctx context.Context, linkedCloudID string) err
 		return fmt.Errorf("cannot remove linked cloud: %w", err)
 	}
 	if res.DeletedCount == 0 {
-		return fmt.Errorf("cannot remove linked cloud: not found")
+		return errors.New("cannot remove linked cloud: not found")
 	}
 	return nil
 }

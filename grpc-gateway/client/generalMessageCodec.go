@@ -1,6 +1,7 @@
 package client
 
 import (
+	"errors"
 	"fmt"
 	"io"
 
@@ -55,7 +56,7 @@ func (GeneralMessageCodec) Decode(m *pool.Message, v interface{}) error {
 	}
 
 	if m.Body() == nil {
-		return fmt.Errorf("unexpected empty body")
+		return errors.New("unexpected empty body")
 	}
 
 	if err := decoder(m.Body(), v); err != nil {

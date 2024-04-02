@@ -2,7 +2,7 @@ package cqldb
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"strings"
 
 	"github.com/plgd-dev/hub/v2/pkg/cqldb"
@@ -30,7 +30,7 @@ func getDeviceIDFilter(queries []eventstore.DeleteQuery) string {
 func (s *EventStore) Delete(ctx context.Context, queries []eventstore.DeleteQuery) error {
 	deviceIDFilter := getDeviceIDFilter(queries)
 	if len(deviceIDFilter) == 0 {
-		return fmt.Errorf("failed to delete documents: invalid query")
+		return errors.New("failed to delete documents: invalid query")
 	}
 
 	return s.client.Session().Query("delete from " + s.Table() + " " + cqldb.WhereClause + " " + deviceIDKey + " in (" + deviceIDFilter + ");").WithContext(ctx).Exec()

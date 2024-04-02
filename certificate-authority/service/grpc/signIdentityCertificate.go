@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"crypto/x509/pkix"
+	"errors"
 	"fmt"
 
 	"github.com/plgd-dev/hub/v2/certificate-authority/pb"
@@ -45,7 +46,7 @@ func (s *CertificateAuthorityServer) SignIdentityCertificate(ctx context.Context
 	}
 	signer := s.GetSigner()
 	if signer == nil {
-		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, fmtError, fmt.Errorf("signer is empty")))
+		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, fmtError, errors.New("signer is empty")))
 	}
 	cert, signingRecord, err := signer.SignIdentityCSR(ctx, req.GetCertificateSigningRequest())
 	if err != nil {

@@ -221,7 +221,7 @@ func (s *SubscriptionData) createDevicesSubscription(ctx context.Context, emitEv
 		}
 
 		for _, e := range eventTypes {
-			_, err := emitEvent(ctx, e, s.Data(), s.IncrementSequenceNumber, makeDevicesRepresentation([]string{}))
+			_, err = emitEvent(ctx, e, s.Data(), s.IncrementSequenceNumber, makeDevicesRepresentation([]string{}))
 			if err != nil {
 				return nil, createSubDevicesError(err)
 			}
@@ -339,7 +339,7 @@ func (s *SubscriptionData) createDeviceSubscription(ctx context.Context, emitEve
 
 func (s *SubscriptionData) Connect(ctx context.Context, emitEvent emitEventFunc, deleteSub func(ctx context.Context, subID, href string) (store.Subscription, error)) error {
 	if s.Subscription() != nil {
-		return fmt.Errorf("is already connected")
+		return errors.New("is already connected")
 	}
 	h := closeEventHandler{
 		ctx:       ctx,

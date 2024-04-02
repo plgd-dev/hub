@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -154,7 +155,7 @@ func validateCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fn
 			fnc(req, client)
 		case coapCodes.Empty:
 			if !ok {
-				client.logAndWriteErrorResponse(fmt.Errorf("cannot handle command: client not found"), coapCodes.InternalServerError, req.Token())
+				client.logAndWriteErrorResponse(errors.New("cannot handle command: client not found"), coapCodes.InternalServerError, req.Token())
 				closeClient(client)
 				return
 			}

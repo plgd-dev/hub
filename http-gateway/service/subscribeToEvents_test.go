@@ -160,30 +160,30 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 
 	send := func(req *pb.SubscribeToEvents) error {
 		marshaler := runtime.JSONPb{}
-		data, err := marshaler.Marshal(req)
-		require.NoError(t, err)
+		data, errM := marshaler.Marshal(req)
+		require.NoError(t, errM)
 		return wsConn.WriteMessage(websocket.TextMessage, data)
 	}
 	sendBackwardResourceIDFilter := func(req *pb.SubscribeToEvents, resourceIDFilter []string) error {
 		marshaler := runtime.JSONPb{}
-		data, err := marshaler.Marshal(req)
-		require.NoError(t, err)
+		data, errM := marshaler.Marshal(req)
+		require.NoError(t, errM)
 
-		newData, err := sjson.Delete(string(data), "createSubscription.resourceIdFilter")
-		require.NoError(t, err)
-		newData, err = sjson.Set(newData, "createSubscription.resourceIdFilter", resourceIDFilter)
-		require.NoError(t, err)
+		newData, errM := sjson.Delete(string(data), "createSubscription.resourceIdFilter")
+		require.NoError(t, errM)
+		newData, errM = sjson.Set(newData, "createSubscription.resourceIdFilter", resourceIDFilter)
+		require.NoError(t, errM)
 		return wsConn.WriteMessage(websocket.TextMessage, []byte(newData))
 	}
 
 	recv := func() (*pb.Event, error) {
-		_, reader, err := wsConn.NextReader()
-		if err != nil {
-			return nil, err
+		_, reader, errM := wsConn.NextReader()
+		if errM != nil {
+			return nil, errM
 		}
 		var event pb.Event
-		err = httpgwTest.Unmarshal(http.StatusOK, reader, &event)
-		return &event, err
+		errM = httpgwTest.Unmarshal(http.StatusOK, reader, &event)
+		return &event, errM
 	}
 	createResourceSub := &pb.SubscribeToEvents{
 		CorrelationId: "testToken",

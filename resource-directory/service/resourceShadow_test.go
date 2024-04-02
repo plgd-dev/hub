@@ -19,7 +19,6 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-directory/service"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 )
@@ -235,8 +234,8 @@ func TestResourceTwinGetResources(t *testing.T) {
 			fmt.Println(tt.name)
 			var s testGrpcGateway_GetResourcesServer
 			err := rd.GetResources(tt.args.req, &s)
-			assert.NoError(t, err)
-			test.CheckProtobufs(t, tt.want, s.got, test.AssertToCheckFunc(assert.Equal))
+			require.NoError(t, err)
+			test.CheckProtobufs(t, tt.want, s.got, test.RequireToCheckFunc(require.Equal))
 		})
 	}
 }

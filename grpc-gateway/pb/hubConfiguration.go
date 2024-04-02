@@ -1,18 +1,22 @@
 package pb
 
+func copyScopes(scopes []string) []string {
+	if len(scopes) == 0 {
+		return nil
+	}
+	sc := make([]string, len(scopes))
+	copy(sc, scopes)
+	return sc
+}
+
 func (r *WebOAuthClient) Clone() *WebOAuthClient {
 	if r == nil {
 		return nil
 	}
-	var scopes []string
-	if len(r.Scopes) > 0 {
-		scopes = make([]string, len(r.Scopes))
-		copy(scopes, r.Scopes)
-	}
 	return &WebOAuthClient{
-		ClientId: r.ClientId,
-		Audience: r.Audience,
-		Scopes:   scopes,
+		ClientId: r.GetClientId(),
+		Audience: r.GetAudience(),
+		Scopes:   copyScopes(r.GetScopes()),
 	}
 }
 
@@ -20,15 +24,10 @@ func (r *DeviceOAuthClient) Clone() *DeviceOAuthClient {
 	if r == nil {
 		return nil
 	}
-	var scopes []string
-	if len(r.Scopes) > 0 {
-		scopes = make([]string, len(r.Scopes))
-		copy(scopes, r.Scopes)
-	}
 	return &DeviceOAuthClient{
-		ProviderName: r.ProviderName,
-		ClientId:     r.ClientId,
-		Audience:     r.Audience,
-		Scopes:       scopes,
+		ProviderName: r.GetProviderName(),
+		ClientId:     r.GetClientId(),
+		Audience:     r.GetAudience(),
+		Scopes:       copyScopes(r.GetScopes()),
 	}
 }

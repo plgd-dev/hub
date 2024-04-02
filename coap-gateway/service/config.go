@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -174,7 +175,7 @@ func (c *COAPConfigMarshalerUnmarshaler) Validate() error {
 		return err
 	}
 	if !c.InjectedCOAPConfig.TLSConfig.IdentityPropertiesRequired && c.Authorization.DeviceIDClaim != "" {
-		return fmt.Errorf("tls.identityPropertiesRequired('%v') - %w", c.InjectedCOAPConfig.TLSConfig.IdentityPropertiesRequired, fmt.Errorf("combination with authorization.deviceIDClaim is not supported"))
+		return fmt.Errorf("tls.identityPropertiesRequired('%v') - %w", c.InjectedCOAPConfig.TLSConfig.IdentityPropertiesRequired, errors.New("combination with authorization.deviceIDClaim is not supported"))
 	}
 	return nil
 }

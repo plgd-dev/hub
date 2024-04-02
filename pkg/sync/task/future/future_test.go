@@ -2,7 +2,7 @@ package future
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"sync"
 	"testing"
 	"time"
@@ -29,7 +29,7 @@ func TestFutureReadyAfterError(t *testing.T) {
 	fut, set := New()
 	require.False(t, fut.Ready())
 
-	set(nil, fmt.Errorf("test error"))
+	set(nil, errors.New("test error"))
 	require.True(t, fut.Ready())
 
 	val, err := fut.Get(context.Background())

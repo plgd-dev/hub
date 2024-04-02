@@ -48,9 +48,9 @@ func TestDeviceMetadataUpdated_Equal(t *testing.T) {
 		{
 			name: "Identity",
 			fields: fields{
-				Connection:   upd.Connection,
-				TwinEnabled:  upd.TwinEnabled,
-				AuditContext: upd.AuditContext,
+				Connection:   upd.GetConnection(),
+				TwinEnabled:  upd.GetTwinEnabled(),
+				AuditContext: upd.GetAuditContext(),
 			},
 			args: args{upd},
 			want: true,
@@ -61,8 +61,8 @@ func TestDeviceMetadataUpdated_Equal(t *testing.T) {
 				Connection: &commands.Connection{
 					Status: commands.Connection_OFFLINE,
 				},
-				TwinEnabled:  upd.TwinEnabled,
-				AuditContext: upd.AuditContext,
+				TwinEnabled:  upd.GetTwinEnabled(),
+				AuditContext: upd.GetAuditContext(),
 			},
 			args: args{upd},
 			want: false,
@@ -70,9 +70,9 @@ func TestDeviceMetadataUpdated_Equal(t *testing.T) {
 		{
 			name: "Changed TwinSynchronization",
 			fields: fields{
-				Connection:   upd.Connection,
+				Connection:   upd.GetConnection(),
 				TwinEnabled:  false,
-				AuditContext: upd.AuditContext,
+				AuditContext: upd.GetAuditContext(),
 			},
 			args: args{upd},
 			want: false,
@@ -80,11 +80,11 @@ func TestDeviceMetadataUpdated_Equal(t *testing.T) {
 		{
 			name: "Changed AuditContext.UserId",
 			fields: fields{
-				Connection:  upd.Connection,
-				TwinEnabled: upd.TwinEnabled,
+				Connection:  upd.GetConnection(),
+				TwinEnabled: upd.GetTwinEnabled(),
 				AuditContext: &commands.AuditContext{
-					UserId:        upd.AuditContext.UserId + "0",
-					CorrelationId: upd.AuditContext.CorrelationId,
+					UserId:        upd.GetAuditContext().GetUserId() + "0",
+					CorrelationId: upd.GetAuditContext().GetCorrelationId(),
 				},
 			},
 			args: args{upd},
@@ -93,11 +93,11 @@ func TestDeviceMetadataUpdated_Equal(t *testing.T) {
 		{
 			name: "Changed AuditContext.CorrelationId",
 			fields: fields{
-				Connection:  upd.Connection,
-				TwinEnabled: upd.TwinEnabled,
+				Connection:  upd.GetConnection(),
+				TwinEnabled: upd.GetTwinEnabled(),
 				AuditContext: &commands.AuditContext{
-					UserId:        upd.AuditContext.UserId,
-					CorrelationId: upd.AuditContext.CorrelationId + "0",
+					UserId:        upd.GetAuditContext().GetUserId(),
+					CorrelationId: upd.GetAuditContext().GetCorrelationId() + "0",
 				},
 			},
 			args: args{upd},

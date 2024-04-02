@@ -3,7 +3,6 @@ package mongodb_test
 import (
 	"context"
 	"errors"
-	"fmt"
 	"reflect"
 	"sort"
 	"sync"
@@ -20,7 +19,7 @@ var (
 		UserId: "userId",
 	}
 
-	errCannotUnmarshalEvent = fmt.Errorf("cannot unmarshal event")
+	errCannotUnmarshalEvent = errors.New("cannot unmarshal event")
 )
 
 func MakeResourceLinksPublishedEvent(resources []*commands.Resource, deviceID string, eventMetadata *events.EventMetadata) eventstore.EventUnmarshaler {

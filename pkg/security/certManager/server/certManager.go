@@ -2,6 +2,7 @@ package server
 
 import (
 	"crypto/tls"
+	"errors"
 	"fmt"
 
 	"github.com/plgd-dev/hub/v2/pkg/config/property/urischeme"
@@ -43,7 +44,7 @@ func (c *Config) Validate() error {
 
 func (c *Config) CAPoolArray() ([]urischeme.URIScheme, error) {
 	if !c.validated {
-		return nil, fmt.Errorf("call Validate() first")
+		return nil, errors.New("call Validate() first")
 	}
 	return c.caPoolArray, nil
 }

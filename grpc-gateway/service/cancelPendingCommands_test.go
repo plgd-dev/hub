@@ -19,7 +19,7 @@ func TestRequestHandlerCancelPendingCommands(t *testing.T) {
 	client, resourcePendings, _, shutdown := pbTest.InitPendingEvents(ctx, t)
 	defer shutdown()
 
-	require.Equal(t, len(resourcePendings), 4)
+	require.Len(t, resourcePendings, 4)
 
 	type args struct {
 		req *pb.CancelPendingCommandsRequest

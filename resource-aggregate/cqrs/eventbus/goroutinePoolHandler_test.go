@@ -3,11 +3,11 @@ package eventbus
 import (
 	"context"
 	"errors"
-	"fmt"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type mockEventHandler struct {
@@ -241,19 +241,19 @@ func TestGoroutinePoolHandler_Handle(t *testing.T) {
 				eh,
 				func(err error) {
 					if wantErr {
-						assert.Error(t, err)
+						require.Error(t, err)
 					} else {
-						assert.NoError(t, err)
+						require.NoError(t, err)
 					}
 				})
 			err := ep.Handle(tt.args.ctx, tt.args.iter)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			select {
 			case <-eh.processed:
 				assert.Equal(t, tt.want, eh.events)
 			case <-time.After(time.Millisecond * 100):
 				if !tt.wantTimeout {
-					assert.NoError(t, fmt.Errorf("timeout"))
+					require.Fail(t, "timeout")
 				}
 			}
 		})

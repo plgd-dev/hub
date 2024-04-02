@@ -55,8 +55,9 @@ func (d *ServiceMetadataUpdated) CopyData(event *ServiceMetadataUpdated) {
 	d.EventMetadata = event.GetEventMetadata()
 	d.OpenTelemetryCarrier = event.GetOpenTelemetryCarrier()
 
-	d.ServicesHeartbeat = &ServicesHeartbeat{}
-	d.ServicesHeartbeat.CopyData(event.GetServicesHeartbeat())
+	sh := &ServicesHeartbeat{}
+	sh.CopyData(event.GetServicesHeartbeat())
+	d.ServicesHeartbeat = sh
 }
 
 func (d *ServiceMetadataUpdated) CheckInitialized() bool {

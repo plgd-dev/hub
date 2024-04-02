@@ -36,7 +36,7 @@ func decodeETag(cur *mongo.Cursor) ([]byte, error) {
 		return nil, fmt.Errorf("cannot convert etag %T to primitive.Binary", etagRaw)
 	}
 	if len(etag.Data) == 0 {
-		return nil, fmt.Errorf("etag is empty")
+		return nil, errors.New("etag is empty")
 	}
 	return etag.Data, nil
 }
@@ -49,7 +49,7 @@ func (s *EventStore) GetLatestDeviceETags(ctx context.Context, deviceID string, 
 		s.LogDebugfFunc("mongodb.Evenstore.GetLatestETag takes %v", time.Since(t))
 	}()
 	if deviceID == "" {
-		return nil, fmt.Errorf("deviceID is invalid")
+		return nil, errors.New("deviceID is invalid")
 	}
 	filter := bson.D{
 		bson.E{Key: groupIDKey, Value: deviceID},

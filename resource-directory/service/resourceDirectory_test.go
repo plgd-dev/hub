@@ -20,7 +20,6 @@ import (
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 )
@@ -86,7 +85,7 @@ func TestResourceDirectoryGetResourceLinks(t *testing.T) {
 			var s testGrpcGateway_GetResourceLinksServer
 			err := rd.GetResourceLinks(tt.args.request, &s)
 			require.NoError(t, err)
-			test.CheckProtobufs(t, tt.want, s.got, test.AssertToCheckFunc(assert.Equal))
+			test.CheckProtobufs(t, tt.want, s.got, test.RequireToCheckFunc(require.Equal))
 		}
 		t.Run(tt.name, fn)
 	}

@@ -82,13 +82,13 @@ func (a *authorizationContext) GetJWTClaims() pkgJwt.Claims {
 
 func (a *authorizationContext) IsValid() error {
 	if a == nil {
-		return fmt.Errorf("invalid authorization context")
+		return errors.New("invalid authorization context")
 	}
 	if a.AccessToken == "" {
-		return fmt.Errorf("invalid access token")
+		return errors.New("invalid access token")
 	}
 	if !a.Expire.IsZero() && time.Now().UnixNano() > a.Expire.UnixNano() {
-		return fmt.Errorf("token is expired")
+		return errors.New("token is expired")
 	}
 	return nil
 }
@@ -837,7 +837,7 @@ func (c *session) unpublishResourceLinks(ctx context.Context, hrefs []string, in
 		return resp.UnpublishedHrefs
 	}
 	if !ok {
-		logUnpublishError(fmt.Errorf("device observer not found"))
+		logUnpublishError(errors.New("device observer not found"))
 		return resp.UnpublishedHrefs
 	}
 	observer.RemovePublishedResources(ctx, resp.UnpublishedHrefs)

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"net/url"
 	"regexp"
@@ -58,7 +59,7 @@ func resourceDirectoryPublishHandler(req *mux.Message, client *Client) {
 	}
 	p.SequenceNumber = req.Sequence()
 
-	if err := client.handler.PublishResources(p); err != nil {
+	if err = client.handler.PublishResources(p); err != nil {
 		client.logAndWriteErrorResponse(err, coapCodes.InternalServerError, req.Token())
 		return
 	}
@@ -99,7 +100,7 @@ func parseUnpublishRequestFromQuery(queries []string) (UnpublishRequest, error) 
 	}
 
 	if req.DeviceID == "" {
-		return UnpublishRequest{}, fmt.Errorf("deviceID not found")
+		return UnpublishRequest{}, errors.New("deviceID not found")
 	}
 
 	return req, nil

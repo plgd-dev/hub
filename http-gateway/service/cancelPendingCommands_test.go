@@ -32,7 +32,7 @@ func TestRequestHandlerCancelPendingCommands(t *testing.T) {
 	_, resourcePendings, _, shutdown := pbTest.InitPendingEvents(ctx, t)
 	defer shutdown()
 
-	require.Equal(t, len(resourcePendings), 4)
+	require.Len(t, resourcePendings, 4)
 
 	type args struct {
 		deviceID            string
@@ -109,7 +109,7 @@ func TestRequestHandlerCancelResourceCommand(t *testing.T) {
 	_, resourcePendings, _, shutdown := pbTest.InitPendingEvents(ctx, t)
 	defer shutdown()
 
-	require.Equal(t, len(resourcePendings), 4)
+	require.Len(t, resourcePendings, 4)
 
 	type args struct {
 		deviceID      string

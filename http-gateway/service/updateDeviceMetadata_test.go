@@ -163,8 +163,8 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 	}()
 
 	updateDeviceTwinSynchronization := func(in *pb.UpdateDeviceMetadataRequest) error {
-		data, err := protojson.Marshal(in)
-		require.NoError(t, err)
+		data, errM := protojson.Marshal(in)
+		require.NoError(t, errM)
 
 		rb := httpgwTest.NewRequest(http.MethodPut, uri.DeviceMetadata, bytes.NewReader(data)).AuthToken(token).DeviceId(deviceID)
 		resp := httpgwTest.HTTPDo(t, rb.Build())
@@ -173,8 +173,8 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 		}(resp)
 
 		var got pb.UpdateDeviceMetadataResponse
-		err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &got)
-		return err
+		errM = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &got)
+		return errM
 	}
 
 	err = updateDeviceTwinSynchronization(&pb.UpdateDeviceMetadataRequest{

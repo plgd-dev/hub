@@ -63,7 +63,7 @@ func TestRequestHandlerGetTokenWithDefaultScopes(t *testing.T) {
 	token := getToken(t, test.ClientTest, "", "", "", code, "", "", "", service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusOK)
 
 	require.NotEmpty(t, token["access_token"])
-	require.Equal(t, token["scope"], service.DefaultScope)
+	require.Equal(t, service.DefaultScope, token["scope"])
 	validator := test.GetJWTValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs))
 	accessToken, err := validator.Parse(token["access_token"])
 	require.NoError(t, err)
@@ -78,7 +78,7 @@ func TestRequestHandlerGetTokenWithCuscomScopes(t *testing.T) {
 	token := getToken(t, test.ClientTest, "", "", "", code, "", "", "", service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusOK)
 
 	require.NotEmpty(t, token["access_token"])
-	require.Equal(t, token["scope"], "r:* w:*")
+	require.Equal(t, "r:* w:*", token["scope"])
 	validator := test.GetJWTValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs))
 	accessToken, err := validator.Parse(token["access_token"])
 	require.NoError(t, err)
@@ -125,7 +125,7 @@ func TestRequestHandlerGetTokenWithValidRequiredParams(t *testing.T) {
 	code := getAuthorize(t, test.ClientTestRequiredParams, "", "http://localhost:7777", "", "r:*", "code", http.StatusFound, false, false)
 	token := getToken(t, test.ClientTestRequiredParams, test.ClientTestRequiredParamsSecret, "", "http://localhost:7777", code, "", "", "", service.AllowedGrantType_AUTHORIZATION_CODE, http.StatusOK)
 	require.NotEmpty(t, token["access_token"])
-	require.Equal(t, token["scope"], "r:*")
+	require.Equal(t, "r:*", token["scope"])
 	validator := test.GetJWTValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs))
 	accessToken, err := validator.Parse(token["access_token"])
 	require.NoError(t, err)
@@ -153,7 +153,7 @@ func TestRequestHandlerGetTokenWithValidRefreshToken(t *testing.T) {
 
 	token := getToken(t, test.ClientTest, test.ClientTestRequiredParamsSecret, "invalidRefreshToken", "http://localhost:7777", "", "refresh-token", "", "", service.AllowedGrantType_REFRESH_TOKEN, http.StatusOK)
 	require.NotEmpty(t, token["access_token"])
-	require.Equal(t, token["scope"], service.DefaultScope)
+	require.Equal(t, service.DefaultScope, token["scope"])
 	validator := test.GetJWTValidator(fmt.Sprintf("https://%s%s", config.OAUTH_SERVER_HOST, uri.JWKs))
 	accessToken, err := validator.Parse(token["access_token"])
 	require.NoError(t, err)
@@ -229,12 +229,12 @@ func TestGetRequestHandlerGetTokenWithDeviceIDAndOwnerClaim(t *testing.T) {
 			if tt.wantDeviceID == "" {
 				require.Empty(t, claims[uri.DeviceIDClaimKey])
 			} else {
-				require.Equal(t, claims[uri.DeviceIDClaimKey], tt.wantDeviceID)
+				require.Equal(t, tt.wantDeviceID, claims[uri.DeviceIDClaimKey])
 			}
 			if tt.wantOwner == "" {
 				require.Empty(t, claims[uri.OwnerClaimKey])
 			} else {
-				require.Equal(t, claims[uri.OwnerClaimKey], tt.wantOwner)
+				require.Equal(t, tt.wantOwner, claims[uri.OwnerClaimKey])
 			}
 		})
 	}

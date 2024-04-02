@@ -69,7 +69,7 @@ func (p *projection) SubscribeTo(topics []string) error {
 	}
 	if p.observer == nil {
 		if p.subscriber == nil {
-			return fmt.Errorf("projection doesn't support subscribe to topics")
+			return errors.New("projection doesn't support subscribe to topics")
 		}
 		observer, err := p.subscriber.Subscribe(p.ctx, p.subscriptionID, topics, p)
 		if err != nil {
