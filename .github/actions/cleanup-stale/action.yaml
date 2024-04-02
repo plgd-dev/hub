@@ -44,7 +44,7 @@ runs:
         password: ${{ inputs.token }}
 
     - name: Delete untagged images with no dependency
-      uses: Chizkiyahu/delete-untagged-ghcr-action@v3
+      uses: Chizkiyahu/delete-untagged-ghcr-action@v4
       with:
         repository: ${{ github.repository }}
         repository_owner: ${{ github.repository_owner }}
