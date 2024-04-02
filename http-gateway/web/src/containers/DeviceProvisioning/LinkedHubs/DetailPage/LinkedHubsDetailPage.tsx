@@ -3,7 +3,6 @@ import { generatePath, useNavigate, useParams } from 'react-router-dom'
 import { useIntl } from 'react-intl'
 import isEqual from 'lodash/isEqual'
 import ReactDOM from 'react-dom'
-import cloneDeep from 'lodash/cloneDeep'
 import { useRecoilState } from 'recoil'
 
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
@@ -29,6 +28,7 @@ import testId from '@/testId'
 import { messages as dpsT } from '@/containers/DeviceProvisioning/DeviceProvisioning.i18n'
 import { dirtyFormState } from '@/store/recoil.store'
 import { pages } from '@/routes'
+import { formatDataForSave } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
 
 const Tab1 = lazy(() => import('./Tabs/Tab1/Tab1'))
 const Tab2 = lazy(() => import('./Tabs/Tab2/Tab2'))
@@ -146,10 +146,7 @@ const LinkedHubsDetailPage: FC<Props> = () => {
         setPageLoading(true)
 
         try {
-            const copy = cloneDeep(formData)
-            copy.gateways = copy.gateways.map((i: { value: string }) => i.value)
-
-            await updateLinkedHubData(hubId!, copy)
+            await updateLinkedHubData(hubId!, formatDataForSave(formData))
 
             Notification.success(
                 { title: _(t.linkedHubUpdated), message: _(t.linkedHubUpdatedMessage) },

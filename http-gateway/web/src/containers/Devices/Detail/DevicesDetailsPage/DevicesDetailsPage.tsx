@@ -2,6 +2,7 @@ import React, { FC, lazy, useCallback, useEffect, useState } from 'react'
 import { useIntl } from 'react-intl'
 import { generatePath, useNavigate, useParams } from 'react-router-dom'
 import { useResizeDetector } from 'react-resize-detector'
+import isEmpty from 'lodash/isEmpty'
 
 import NotFoundPage from '@shared-ui/components/Templates/NotFoundPage'
 import { useIsMounted, WellKnownConfigType } from '@shared-ui/common/hooks'
@@ -12,6 +13,7 @@ import { getApiErrorMessage } from '@shared-ui/common/utils'
 import { clientAppSettings, security } from '@shared-ui/common/services'
 import EditNameModal from '@shared-ui/components/Organisms/EditNameModal'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
+import { BreadcrumbItem } from '@shared-ui/components/Layout/Header/Breadcrumbs/Breadcrumbs.types'
 
 import DevicesDetailsHeader from '../DevicesDetailsHeader'
 import { devicesStatuses, NO_DEVICE_NAME } from '../../constants'
@@ -32,7 +34,6 @@ import notificationId from '@/notificationId'
 import testId from '@/testId'
 import PageLayout from '@/containers/Common/PageLayout'
 import { pages } from '@/routes'
-import { BreadcrumbItem } from '@shared-ui/components/Layout/Header/Breadcrumbs/Breadcrumbs.types'
 
 const Tab1 = lazy(() => import('./Tabs/Tab1/Tab1'))
 const Tab2 = lazy(() => import('./Tabs/Tab2/Tab2'))
@@ -55,7 +56,7 @@ const DevicesDetailsPage: FC<Props> = (props) => {
     const { data: resourcesData, loading: loadingResources, error: resourcesError, refresh } = useDevicesResources(id)
     const { data: pendingCommandsData, refresh: refreshPendingCommands, loading: pendingCommandsLoading } = useDevicePendingCommands(id)
     const { data: certificates, loading: certificatesLoading, refresh: certificateRefresh, error: certificateError } = useDeviceCertificates(id)
-    const { data: provisioningRecords, loading: provisioningRecordsLoading } = useDeviceProvisioningRecord(id)
+    const { data: provisioningRecords, loading: provisioningRecordsLoading, error: provisioningRecordsError } = useDeviceProvisioningRecord(id)
 
     const { ref, width, height } = useResizeDetector()
 
@@ -90,7 +91,7 @@ const DevicesDetailsPage: FC<Props> = (props) => {
         (i: number) => {
             setActiveTabItem(i)
 
-            navigate(generatePath(pages.DEVICES.DETAIL.LINK, { id, tab: pages.DEVICES.DETAIL.TABS[i], section: '' }), { replace: true })
+            navigate(generatePath(pages.DEVICES.DETAIL.LINK, { id, tab: pages.DEVICES.DETAIL.TABS[i], section: '' }))
 
             refreshPendingCommands()
             refreshSoftwareUpdate()
@@ -100,15 +101,19 @@ const DevicesDetailsPage: FC<Props> = (props) => {
     )
 
     if (deviceError) {
-        return <NotFoundPage message={_(t.deviceNotFoundMessage, { id })} title={_(t.deviceNotFound)} />
+        return <NotFoundPage message={_(t.deviceNotFound)} title={_(t.deviceNotFoundMessage, { id })} />
     }
 
     if (resourcesError) {
-        return <NotFoundPage message={_(t.deviceResourcesNotFoundMessage, { id })} title={_(t.deviceResourcesNotFound)} />
+        return <NotFoundPage message={_(t.deviceResourcesNotFound)} title={_(t.deviceResourcesNotFoundMessage, { id })} />
     }
 
-    if (certificateError) {
-        return <NotFoundPage message={_(t.deviceCertificatesNotFound, { id })} title={_(t.deviceCertificatesNotFoundMessage)} />
+    if (certificateError || (certificates?.length === 0 && defaultActiveTab === 2)) {
+        return <NotFoundPage message={_(t.deviceCertificatesNotFound)} title={_(t.deviceCertificatesNotFoundMessage, { id })} />
+    }
+
+    if (provisioningRecordsError || (isEmpty(provisioningRecords) && defaultActiveTab === 3)) {
+        return <NotFoundPage message={_(t.deviceProvisioningRecordNotFound)} title={_(t.deviceProvisioningRecordNotFoundMessage, { id })} />
     }
 
     const resources = resourcesData?.[0]?.resources || []
@@ -283,7 +288,7 @@ const DevicesDetailsPage: FC<Props> = (props) => {
                         {
                             content: <Tab4 provisioningRecords={provisioningRecords} />,
                             dataTestId: testId.devices.detail.tabProvisioningRecords,
-                            disabled: provisioningRecords?.length === 0 || provisioningRecordsLoading,
+                            disabled: provisioningRecords?.length === 0 || isEmpty(provisioningRecords) || provisioningRecordsLoading,
                             id: 3,
                             name: _(t.dps),
                         },

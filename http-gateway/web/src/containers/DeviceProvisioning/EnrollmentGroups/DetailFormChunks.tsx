@@ -51,6 +51,8 @@ export const DetailFromChunk2: FC<Chunk2Props> = (props) => {
         dataChain: undefined,
     })
 
+    const { commonFormGroupProps } = useContext(FormContext)
+
     const { parsedData: certData } = useCaData({
         data: certificateChain && certificateChain !== '' ? [certificateChain] : [],
         onError: (e) => Notification.error({ title: _(t.certificationParsingError), message: e }, { notificationId: errorNotificationId }),
@@ -83,7 +85,11 @@ export const DetailFromChunk2: FC<Chunk2Props> = (props) => {
             ? {
                   attribute: _(t.leadCertificate),
                   value: (
-                      <FormGroup error={get(errors, 'attestationMechanism.x509.leadCertificateName.message')} id='matchingCertificate'>
+                      <FormGroup
+                          {...commonFormGroupProps}
+                          error={get(errors, 'attestationMechanism.x509.leadCertificateName.message')}
+                          id='matchingCertificate'
+                      >
                           <div>
                               <Controller
                                   control={control}

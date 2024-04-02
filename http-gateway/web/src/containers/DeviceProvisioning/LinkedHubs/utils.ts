@@ -2,6 +2,8 @@ import { useIntl } from 'react-intl'
 
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
 import { messages as g } from '@/containers/Global.i18n'
+import cloneDeep from 'lodash/cloneDeep'
+import { stringToPem } from '@/containers/DeviceProvisioning/utils'
 
 export const DEFAULT_FORM_DATA = {
     certificateAuthority: {
@@ -37,6 +39,17 @@ export const DEFAULT_FORM_DATA = {
         },
     },
     gateways: [],
+}
+
+export const formatDataForSave = (data: any) => {
+    const dataForSave = cloneDeep(data)
+    dataForSave.gateways = dataForSave.gateways.map((i: { value: string }) => i.value)
+
+    if (dataForSave.clientSecret && dataForSave.clientSecret !== '' && !dataForSave.clientSecret.startsWith('/')) {
+        dataForSave.clientSecret = stringToPem(dataForSave.clientSecret)
+    }
+
+    return dataForSave
 }
 
 export function useCaI18n() {

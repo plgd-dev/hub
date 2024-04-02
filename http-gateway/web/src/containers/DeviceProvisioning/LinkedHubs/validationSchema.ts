@@ -34,6 +34,10 @@ export const useValidationsSchema = (group: 'group1' | 'group2' | 'group3') => {
                             time: z.string().min(1, { message: _(g.requiredField, { field: _(t.keepAliveTime) }) }),
                             timeout: z.string().min(1, { message: _(g.requiredField, { field: _(t.keepAliveTimeout) }) }),
                         }),
+                        tls: z.object({
+                            key: z.string().optional(),
+                            cert: z.string().optional(),
+                        }),
                     }),
                 }),
             }),

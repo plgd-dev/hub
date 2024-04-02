@@ -19,6 +19,9 @@ import { messages as g } from '@/containers/Global.i18n'
 import { Props, Inputs } from './Step1.types'
 import { getAppWellKnownConfiguration } from '@/containers/App/AppRest'
 import { DEFAULT_FORM_DATA } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
+import Notification from '@shared-ui/components/Atomic/Notification/Toast'
+import { getApiErrorMessage } from '@shared-ui/common/utils'
+import notificationId from '@/notificationId'
 
 const Step1: FC<Props> = (props) => {
     const { defaultFormData } = props
@@ -47,8 +50,10 @@ const Step1: FC<Props> = (props) => {
 
             const fetchWellKnownConfig = async () => {
                 try {
+                    const validateUrl = (url: string) => (url.startsWith('http://') || url.startsWith('https://') ? url : `https://${url}`)
+
                     const { data: wellKnown } = await openTelemetry.withTelemetry(
-                        () => getAppWellKnownConfiguration(values.endpoint),
+                        () => getAppWellKnownConfiguration(validateUrl(values.endpoint)),
                         'get-endpoint-hub-configuration'
                     )
 
@@ -78,6 +83,11 @@ const Step1: FC<Props> = (props) => {
                 } catch (e) {
                     console.error(e)
                     setLoading(false)
+
+                    Notification.error(
+                        { title: _(t.getWellKnowPresetError), message: _(t.getWellKnowPresetErrorMessage) },
+                        { notificationId: notificationId.HUB_DPS_ENROLLMENT_GROUP_LIST_PAGE_ERROR }
+                    )
                 }
             }
 

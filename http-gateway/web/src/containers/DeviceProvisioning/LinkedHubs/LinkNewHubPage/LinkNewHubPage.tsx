@@ -1,7 +1,6 @@
 import React, { FC, lazy, useCallback, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
 import { generatePath, useNavigate, useParams } from 'react-router-dom'
-import cloneDeep from 'lodash/cloneDeep'
 
 import ContentSwitch from '@shared-ui/components/Atomic/ContentSwitch'
 import { FormContext, getFormContextDefault } from '@shared-ui/common/context/FormContext'
@@ -13,7 +12,7 @@ import { getApiErrorMessage } from '@shared-ui/common/utils'
 
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '../LinkedHubs.i18n'
-import { DEFAULT_FORM_DATA } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
+import { DEFAULT_FORM_DATA, formatDataForSave } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
 import notificationId from '@/notificationId'
 import { createLinkedHub } from '@/containers/DeviceProvisioning/rest'
 import { pages } from '@/routes'
@@ -70,10 +69,8 @@ const LinkNewHubPage: FC<any> = () => {
     const onSubmit = async () => {
         try {
             delete formData.id
-            const copy = cloneDeep(formData)
-            copy.gateways = copy.gateways.map((i: { value: string }) => i.value)
 
-            await createLinkedHub(copy)
+            await createLinkedHub(formatDataForSave(formData))
 
             Notification.success(
                 { title: _(t.linkedHubsCreated), message: _(t.linkedHubsCreatedMessage) },

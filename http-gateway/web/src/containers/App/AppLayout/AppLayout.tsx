@@ -77,6 +77,8 @@ const AppLayout: FC<Props> = (props) => {
 
     useEffect(() => {
         window.localStorage.setItem('storedPathname', location.pathname.toString())
+        setDirtyState(false)
+        setBlock(undefined)
     }, [location.pathname])
 
     const handleItemClick = (item: MenuItem | SubMenuItem, e: SyntheticEvent) => {

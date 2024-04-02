@@ -520,4 +520,24 @@ export const messages = defineMessages({
         id: 'linkedHubs.tlsDescription',
         defaultMessage: 'TLS ensures the privacy and integrity of data exchanged between client and server.',
     },
+    getWellKnowPresetError: {
+        id: 'linkedHubs.getWellKnowPresetError',
+        defaultMessage: 'Unable to prefill data from well-known configuration',
+    },
+    getWellKnowPresetErrorMessage: {
+        id: 'linkedHubs.getWellKnowPresetErrorMessage',
+        defaultMessage: 'TODO TEXT',
+    },
+    certificateKeyPair: {
+        id: 'linkedHubs.certificateKeyPair',
+        defaultMessage: 'Certificate Key Pair',
+    },
+    requiredWithoutCaPool: {
+        id: 'linkedHubs.requiredWithoutCaPool',
+        defaultMessage: 'Required without Use system CA Pool',
+    },
+    caPoolList: {
+        id: 'linkedHubs.caPoolList',
+        defaultMessage: 'CA Pool List',
+    },
 })
