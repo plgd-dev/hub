@@ -13,14 +13,13 @@ import { openTelemetry } from '@shared-ui/common/services/opentelemetry'
 import ButtonBox from '@shared-ui/components/Atomic/ButtonBox'
 import * as commonStyles from '@shared-ui/components/Templates/FullPageWizard/FullPageWizardCommon.styles'
 import FullPageWizard from '@shared-ui/components/Templates/FullPageWizard'
+import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 
 import { messages as t } from '../../../LinkedHubs.i18n'
 import { messages as g } from '@/containers/Global.i18n'
 import { Props, Inputs } from './Step1.types'
 import { getAppWellKnownConfiguration } from '@/containers/App/AppRest'
 import { DEFAULT_FORM_DATA } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
-import Notification from '@shared-ui/components/Atomic/Notification/Toast'
-import { getApiErrorMessage } from '@shared-ui/common/utils'
 import notificationId from '@/notificationId'
 
 const Step1: FC<Props> = (props) => {

@@ -146,7 +146,7 @@ const LinkedHubsDetailPage: FC<Props> = () => {
         setPageLoading(true)
 
         try {
-            await updateLinkedHubData(hubId!, formatDataForSave(formData))
+            await updateLinkedHubData(hubId as string, formatDataForSave(formData))
 
             Notification.success(
                 { title: _(t.linkedHubUpdated), message: _(t.linkedHubUpdatedMessage) },

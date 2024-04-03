@@ -14,7 +14,6 @@ import { pages } from '@/routes'
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '../../../../Devices.i18n'
 import { getStatusFromCode } from '@/containers/DeviceProvisioning/utils'
-import isEmpty from 'lodash/isEmpty'
 
 const TabContent1 = lazy(() => import('../../../../../DeviceProvisioning/ProvisioningRecords/DetailPage/Tabs/Tab1'))
 const TabContent2 = lazy(() => import('../../../../../DeviceProvisioning/ProvisioningRecords/DetailPage/Tabs/Tab2'))
