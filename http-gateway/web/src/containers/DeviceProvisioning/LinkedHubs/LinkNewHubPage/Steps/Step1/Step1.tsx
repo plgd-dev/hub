@@ -87,6 +87,8 @@ const Step1: FC<Props> = (props) => {
                         { title: _(t.getWellKnowPresetError), message: _(t.getWellKnowPresetErrorMessage) },
                         { notificationId: notificationId.HUB_DPS_ENROLLMENT_GROUP_LIST_PAGE_ERROR }
                     )
+
+                    setStep?.(1)
                 }
             }
 

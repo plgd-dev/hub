@@ -1,8 +1,8 @@
 import { useIntl } from 'react-intl'
+import cloneDeep from 'lodash/cloneDeep'
 
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
 import { messages as g } from '@/containers/Global.i18n'
-import cloneDeep from 'lodash/cloneDeep'
 import { stringToPem } from '@/containers/DeviceProvisioning/utils'
 
 export const DEFAULT_FORM_DATA = {
@@ -45,8 +45,12 @@ export const formatDataForSave = (data: any) => {
     const dataForSave = cloneDeep(data)
     dataForSave.gateways = dataForSave.gateways.map((i: { value: string }) => i.value)
 
-    if (dataForSave.clientSecret && dataForSave.clientSecret !== '' && !dataForSave.clientSecret.startsWith('/')) {
-        dataForSave.clientSecret = stringToPem(dataForSave.clientSecret)
+    if (
+        dataForSave.authorization.provider.clientSecret &&
+        dataForSave.authorization.provider.clientSecret !== '' &&
+        !dataForSave.authorization.provider.clientSecret.startsWith('/')
+    ) {
+        dataForSave.authorization.provider.clientSecret = stringToPem(dataForSave.authorization.provider.clientSecret)
     }
 
     return dataForSave

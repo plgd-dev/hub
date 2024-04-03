@@ -56,14 +56,19 @@ const LinkNewHubPage: FC<any> = () => {
 
     const [activeItem, setActiveItem] = useState(step ? steps.findIndex((s) => s.link.includes(step)) : 0)
     const [formData, setFormData, rehydrated] = usePersistentState<any>('dps-create-linked-hub-form', DEFAULT_FORM_DATA)
+    const [visitedStep, setVisitedStep] = useState<number>(activeItem)
 
     const onStepChange = useCallback(
         (item: number) => {
             setActiveItem(item)
 
             navigate(generatePath(pages.DPS.LINKED_HUBS.ADD.LINK, { step: steps[item].link }))
+
+            if (item > visitedStep) {
+                setVisitedStep(item)
+            }
         },
-        [navigate, steps]
+        [navigate, steps, visitedStep]
     )
 
     const onSubmit = async () => {
@@ -113,6 +118,7 @@ const LinkNewHubPage: FC<any> = () => {
             onStepChange={onStepChange}
             steps={steps}
             title={_(t.linkNewHub)}
+            visitedStep={visitedStep}
         >
             <Loadable condition={rehydrated}>
                 <FormContext.Provider value={context}>
