@@ -109,6 +109,7 @@ export const pages = {
         PROVISIONING_RECORDS: {
             LINK: '/device-provisioning/provisioning-records',
             DETAIL: '/device-provisioning/provisioning-records/:recordId/:tab',
+            TABS: ['', 'credentials', 'acls'],
         },
         ENROLLMENT_GROUPS: {
             LINK: '/device-provisioning/enrollment-groups',

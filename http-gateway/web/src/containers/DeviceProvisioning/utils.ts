@@ -3,10 +3,11 @@ import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 
 import { provisioningStatuses } from '@/containers/DeviceProvisioning/constants'
 import { CA_BASE64_PREFIX } from '@shared-ui/components/Organisms/CaPool'
+import { DataType } from '@/containers/DeviceProvisioning/ProvisioningRecords/ProvisioningRecordsListPage.types'
 
 export const getStatusFromCode = (code: number) => ([67, 68, 69, 95].includes(code) ? provisioningStatuses.SUCCESS : provisioningStatuses.ERROR)
 
-export const getStatusFromData = (data: any) => {
+export const getProvisioningRecordStatus = (data: DataType) => {
     const statuses = [
         getStatusFromCode(data.acl.status.coapCode),
         getStatusFromCode(data.cloud.status.coapCode),
@@ -16,6 +17,16 @@ export const getStatusFromData = (data: any) => {
     ]
 
     if (statuses.some((status) => status === provisioningStatuses.ERROR)) {
+        return provisioningStatuses.ERROR
+    }
+
+    return provisioningStatuses.SUCCESS
+}
+
+export const getStatusFromData = (data: any) => {
+    const provisioningRecordStatus = getProvisioningRecordStatus(data)
+
+    if (provisioningRecordStatus === provisioningStatuses.ERROR) {
         return provisioningStatuses.ERROR
     }
 
