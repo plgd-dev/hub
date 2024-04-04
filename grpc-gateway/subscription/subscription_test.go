@@ -43,7 +43,7 @@ func waitForEvent(ctx context.Context, t *testing.T, recvChan <-chan *pb.Event) 
 
 func check(t *testing.T, ev *pb.Event, expectedEvent *pb.Event) {
 	if expectedEvent.GetResourcePublished() != nil {
-		expectedEvent.SubscriptionId = ev.SubscriptionId
+		expectedEvent.SubscriptionId = ev.GetSubscriptionId()
 	}
 	pbTest.CmpEvent(t, expectedEvent, ev, "")
 }

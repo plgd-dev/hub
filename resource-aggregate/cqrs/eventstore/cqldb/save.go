@@ -109,27 +109,27 @@ func (s *EventStore) Save(ctx context.Context, events ...eventstore.Event) (even
 	if err := eventstore.ValidateEventsBeforeSave(events); err != nil {
 		return eventstore.Fail, err
 	}
-	if events[0].Version() == 0 {
-		lastEvent, data, err := getLatestEventsSnapshot(events, s.config.marshalerFunc)
-		if err != nil {
-			return eventstore.Fail, err
-		}
-		kvs := eventToKeyValues(lastEvent, true, data)
-		keys := kvs.Keys()
-		values := kvs.Values()
-
-		q := "insert into " + s.Table() + " (" + strings.Join(keys, ",") + ") values (" + strings.Join(values, ",") + ") if not exists;"
-		ok, err := s.client.Session().Query(q).WithContext(ctx).ScanCAS(nil, nil, nil, nil, nil, nil, nil, nil, nil)
-		if err != nil {
-			if errors.Is(err, gocql.ErrNotFound) {
-				return eventstore.Ok, nil
-			}
-			return eventstore.Fail, fmt.Errorf("cannot insert first events('%v'): %w", events, err)
-		}
-		if !ok {
-			return eventstore.ConcurrencyException, nil
-		}
-		return eventstore.Ok, nil
+	if events[0].Version() != 0 {
+		return s.saveEvent(ctx, events)
 	}
-	return s.saveEvent(ctx, events)
+	lastEvent, data, err := getLatestEventsSnapshot(events, s.config.marshalerFunc)
+	if err != nil {
+		return eventstore.Fail, err
+	}
+	kvs := eventToKeyValues(lastEvent, true, data)
+	keys := kvs.Keys()
+	values := kvs.Values()
+
+	q := "insert into " + s.Table() + " (" + strings.Join(keys, ",") + ") values (" + strings.Join(values, ",") + ") if not exists;"
+	ok, err := s.client.Session().Query(q).WithContext(ctx).ScanCAS(nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	if err != nil {
+		if errors.Is(err, gocql.ErrNotFound) {
+			return eventstore.Ok, nil
+		}
+		return eventstore.Fail, fmt.Errorf("cannot insert first events('%v'): %w", events, err)
+	}
+	if !ok {
+		return eventstore.ConcurrencyException, nil
+	}
+	return eventstore.Ok, nil
 }

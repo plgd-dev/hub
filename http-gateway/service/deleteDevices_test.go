@@ -93,7 +93,7 @@ func TestRequestHandlerDeleteDevices(t *testing.T) {
 			var got pb.DeleteDevicesResponse
 			err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &got)
 			require.NoError(t, err)
-			require.Equal(t, tt.want.DeviceIds, got.DeviceIds)
+			require.Equal(t, tt.want.GetDeviceIds(), got.GetDeviceIds())
 		})
 	}
 }

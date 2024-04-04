@@ -171,7 +171,7 @@ func TestOwnerCacheSubscribe(t *testing.T) {
 		DeviceIds: devices[:1],
 	})
 	require.NoError(t, err)
-	assert.Equal(t, devices[:1], deleted.DeviceIds)
+	assert.Equal(t, devices[:1], deleted.GetDeviceIds())
 
 	// check update - after expiration
 	time.Sleep(time.Millisecond * 100) // wait for synchronize the cache, so update doesn't change the cache

@@ -151,14 +151,14 @@ func (p *Projection) wantToReloadDevice(rl *resourceLinksProjection, hrefFilter 
 		if len(hrefFilter) > 0 && !hrefFilter[res.GetHref()] {
 			return true
 		}
-		if !hasMatchingType(res.ResourceTypes, typeFilter) {
+		if !hasMatchingType(res.GetResourceTypes(), typeFilter) {
 			return true
 		}
 		reload := true
 		p.Models(func(eventstore.Model) (wantNext bool) {
 			reload = false
 			return true
-		}, commands.NewResourceID(rl.GetDeviceID(), res.Href))
+		}, commands.NewResourceID(rl.GetDeviceID(), res.GetHref()))
 		if reload {
 			finalReload = true
 			return false
@@ -173,7 +173,7 @@ func (p *Projection) loadResourceWithLinks(deviceID string, hrefFilter map[strin
 		if len(hrefFilter) > 0 && !hrefFilter[res.GetHref()] {
 			return false
 		}
-		if !hasMatchingType(res.ResourceTypes, typeFilter) {
+		if !hasMatchingType(res.GetResourceTypes(), typeFilter) {
 			return false
 		}
 		return true
@@ -204,7 +204,7 @@ func (p *Projection) loadResourceWithLinks(deviceID string, hrefFilter map[strin
 					Resource:   res,
 				})
 				return err == nil
-			}, commands.NewResourceID(rl.GetDeviceID(), res.Href))
+			}, commands.NewResourceID(rl.GetDeviceID(), res.GetHref()))
 			return true
 		})
 		return err

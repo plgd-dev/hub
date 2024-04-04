@@ -35,14 +35,14 @@ func (rd *ResourceDirectory) sendResourceLinks(srv pb.GrpcGateway_GetResourceLin
 }
 
 func (rd *ResourceDirectory) GetResourceLinks(in *pb.GetResourceLinksRequest, srv pb.GrpcGateway_GetResourceLinksServer) error {
-	deviceIDs := filterDevices(rd.userDeviceIds, in.DeviceIdFilter)
+	deviceIDs := filterDevices(rd.userDeviceIds, in.GetDeviceIdFilter())
 	if len(deviceIDs) == 0 {
 		log.Debug("ResourceDirectory.GetResourceLinks.filterDevices returns empty deviceIDs")
 		return nil
 	}
 
 	typeFilter := make(strings.Set)
-	typeFilter.Add(in.TypeFilter...)
+	typeFilter.Add(in.GetTypeFilter()...)
 
 	toReloadDevices := make(strings.Set)
 	err := rd.sendResourceLinks(srv, deviceIDs, typeFilter, toReloadDevices)

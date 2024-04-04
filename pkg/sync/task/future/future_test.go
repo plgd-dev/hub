@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/plgd-dev/hub/v2/test/config"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -60,8 +61,8 @@ func TestFutureGetMultithreaded(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			value, err := fut.Get(ctx)
-			require.NoError(t, err)
-			require.Equal(t, val, value.(string))
+			assert.NoError(t, err)
+			assert.Equal(t, val, value.(string))
 		}()
 	}
 

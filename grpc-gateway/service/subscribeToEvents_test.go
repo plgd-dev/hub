@@ -35,6 +35,7 @@ import (
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	serviceTest "github.com/plgd-dev/hub/v2/test/service"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 	"google.golang.org/grpc"
@@ -212,10 +213,10 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 					if errors.Is(errR, io.EOF) {
 						break
 					}
-					require.NoError(t, errR)
+					assert.NoError(t, errR)
 					events = append(events, ev)
 				}
-				pbTest.CmpEvents(t, tt.want, events)
+				pbTest.AssertCmpEvents(t, tt.want, events)
 			}()
 			err = client.Send(tt.args.sub)
 			require.NoError(t, err)
@@ -264,7 +265,7 @@ func TestRequestHandlerSubscribeForCreateEvents(t *testing.T) {
 	ev, err := client.Recv()
 	require.NoError(t, err)
 	expectedEvent := &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
+		SubscriptionId: ev.GetSubscriptionId(),
 		Type:           pbTest.OperationProcessedOK(),
 		CorrelationId:  "testToken",
 	}
@@ -277,7 +278,7 @@ func TestRequestHandlerSubscribeForCreateEvents(t *testing.T) {
 	ev, err = client.Recv()
 	require.NoError(t, err)
 	pbTest.CmpEvent(t, &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
+		SubscriptionId: ev.GetSubscriptionId(),
 		CorrelationId:  "testToken",
 		Type: &pb.Event_ResourceCreatePending{
 			ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, test.TestResourceSwitchesHref, "",
@@ -298,7 +299,7 @@ func TestRequestHandlerSubscribeForCreateEvents(t *testing.T) {
 	ev, err = client.Recv()
 	require.NoError(t, err)
 	pbTest.CmpEvent(t, &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
+		SubscriptionId: ev.GetSubscriptionId(),
 		CorrelationId:  "testToken",
 		Type: &pb.Event_ResourceCreated{
 			ResourceCreated: pbTest.MakeResourceCreated(t, deviceID, test.TestResourceSwitchesHref, "", switchData),
@@ -345,7 +346,7 @@ func TestRequestHandlerSubscribeForHrefEvents(t *testing.T) {
 	ev, err := client.Recv()
 	require.NoError(t, err)
 	expectedEvent := &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
+		SubscriptionId: ev.GetSubscriptionId(),
 		Type:           pbTest.OperationProcessedOK(),
 		CorrelationId:  "testToken",
 	}
@@ -363,7 +364,7 @@ func TestRequestHandlerSubscribeForHrefEvents(t *testing.T) {
 		}
 		if ev.GetResourceCreatePending() != nil {
 			pbTest.CmpEvent(t, &pb.Event{
-				SubscriptionId: ev.SubscriptionId,
+				SubscriptionId: ev.GetSubscriptionId(),
 				CorrelationId:  "testToken",
 				Type: &pb.Event_ResourceCreatePending{
 					ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, test.TestResourceSwitchesHref, "",
@@ -394,7 +395,7 @@ func TestRequestHandlerSubscribeForHrefEvents(t *testing.T) {
 		}
 		if ev.GetResourceCreated() != nil {
 			pbTest.CmpEvent(t, &pb.Event{
-				SubscriptionId: ev.SubscriptionId,
+				SubscriptionId: ev.GetSubscriptionId(),
 				CorrelationId:  "testToken",
 				Type: &pb.Event_ResourceCreated{
 					ResourceCreated: pbTest.MakeResourceCreated(t, deviceID, test.TestResourceSwitchesHref, "", switchData),
@@ -750,12 +751,12 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 			ev, err := client.Recv()
 			require.NoError(t, err)
 			expectedEvent := &pb.Event{
-				SubscriptionId: ev.SubscriptionId,
+				SubscriptionId: ev.GetSubscriptionId(),
 				Type:           pbTest.OperationProcessedOK(),
 				CorrelationId:  correlationID,
 			}
 			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
-			subscriptionID := ev.SubscriptionId
+			subscriptionID := ev.GetSubscriptionId()
 			fmt.Printf("sub %v\n", subscriptionID)
 
 			values := make([]*pb.PendingCommand, 0, 1)
@@ -859,17 +860,17 @@ func TestRequestHandlerIssue270(t *testing.T) {
 	ev, err := client.Recv()
 	require.NoError(t, err)
 	expectedEvent := &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
+		SubscriptionId: ev.GetSubscriptionId(),
 		Type:           pbTest.OperationProcessedOK(),
 		CorrelationId:  "testToken",
 	}
-	fmt.Printf("SUBSCRIPTION ID: %v\n", ev.SubscriptionId)
+	fmt.Printf("SUBSCRIPTION ID: %v\n", ev.GetSubscriptionId())
 	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
 
 	ev, err = client.Recv()
 	require.NoError(t, err)
 	expectedEvent = &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
+		SubscriptionId: ev.GetSubscriptionId(),
 		Type: &pb.Event_DeviceRegistered_{
 			DeviceRegistered: &pb.Event_DeviceRegistered{
 				DeviceIds: []string{},
@@ -886,7 +887,7 @@ func TestRequestHandlerIssue270(t *testing.T) {
 	ev, err = client.Recv()
 	require.NoError(t, err)
 	expectedEvent = &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
+		SubscriptionId: ev.GetSubscriptionId(),
 		Type: &pb.Event_DeviceRegistered_{
 			DeviceRegistered: &pb.Event_DeviceRegistered{
 				DeviceIds: []string{deviceID},
@@ -902,7 +903,7 @@ func TestRequestHandlerIssue270(t *testing.T) {
 	ev, err = client.Recv()
 	require.NoError(t, err)
 	pbTest.CmpEvent(t, &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
+		SubscriptionId: ev.GetSubscriptionId(),
 		Type: &pb.Event_DeviceMetadataUpdated{
 			DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
 				DeviceId: deviceID,
@@ -930,7 +931,7 @@ func TestRequestHandlerIssue270(t *testing.T) {
 
 		if ev.GetDeviceUnregistered() != nil {
 			expectedEvent = &pb.Event{
-				SubscriptionId: ev.SubscriptionId,
+				SubscriptionId: ev.GetSubscriptionId(),
 				Type: &pb.Event_DeviceUnregistered_{
 					DeviceUnregistered: &pb.Event_DeviceUnregistered{
 						DeviceIds: []string{deviceID},
@@ -961,7 +962,7 @@ func waitForDevice(t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, 
 		// this alternate to multiple values
 		ev.GetDeviceMetadataUpdated().TwinSynchronization = nil
 		pbTest.CmpEvent(t, &pb.Event{
-			SubscriptionId: ev.SubscriptionId,
+			SubscriptionId: ev.GetSubscriptionId(),
 			Type: &pb.Event_DeviceMetadataUpdated{
 				DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
 					DeviceId: deviceID,
@@ -1036,7 +1037,7 @@ func TestCoAPGatewayServiceHeartbeat(t *testing.T) {
 	ev, err := client.Recv()
 	require.NoError(t, err)
 	expectedEvent := &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
+		SubscriptionId: ev.GetSubscriptionId(),
 		Type:           pbTest.OperationProcessedOK(),
 		CorrelationId:  "testToken",
 	}
@@ -1066,7 +1067,7 @@ func TestCoAPGatewayServiceHeartbeat(t *testing.T) {
 	ev, err = client.Recv()
 	require.NoError(t, err)
 	pbTest.CmpEvent(t, &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
+		SubscriptionId: ev.GetSubscriptionId(),
 		Type: &pb.Event_DeviceMetadataUpdated{
 			DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
 				DeviceId: deviceID,
@@ -1107,7 +1108,7 @@ func TestCoAPGatewayServiceHeartbeat(t *testing.T) {
 	ev, err = client.Recv()
 	require.NoError(t, err)
 	pbTest.CmpEvent(t, &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
+		SubscriptionId: ev.GetSubscriptionId(),
 		Type: &pb.Event_DeviceMetadataUpdated{
 			DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
 				DeviceId: deviceID,

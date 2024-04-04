@@ -101,7 +101,7 @@ func TestRequestHandlerGetDevice(t *testing.T) {
 					return
 				}
 				require.NoError(t, err)
-				assert.NotEmpty(t, dev.ProtocolIndependentId)
+				assert.NotEmpty(t, dev.GetProtocolIndependentId())
 				devices = append(devices, &dev)
 			}
 			pbTest.CmpDeviceValues(t, tt.want, devices)

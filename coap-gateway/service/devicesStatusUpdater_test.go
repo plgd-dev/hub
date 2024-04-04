@@ -64,7 +64,7 @@ func onboardDeviceAndGetDevice(ctx context.Context, t *testing.T, device device.
 			break
 		}
 		require.NoError(t, err)
-		assert.NotEmpty(t, dev.ProtocolIndependentId)
+		assert.NotEmpty(t, dev.GetProtocolIndependentId())
 		dev.ProtocolIndependentId = ""
 		devices = append(devices, dev)
 	}

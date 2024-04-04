@@ -82,18 +82,20 @@ var (
 )
 
 func validatePublish(request *commands.PublishResourceLinksRequest) error {
-	if len(request.Resources) == 0 {
+	resources := request.GetResources()
+	if len(resources) == 0 {
 		return status.Errorf(codes.InvalidArgument, "empty publish is not accepted")
 	}
-	for _, res := range request.Resources {
-		if len(res.Href) <= 1 || res.Href[:1] != "/" {
+	for _, res := range resources {
+		href := res.GetHref()
+		if len(href) <= 1 || href[:1] != "/" {
 			return status.Errorf(codes.InvalidArgument, "invalid resource href")
 		}
-		if res.DeviceId == "" {
+		if res.GetDeviceId() == "" {
 			return status.Errorf(codes.InvalidArgument, "invalid device id")
 		}
 	}
-	if request.DeviceId == "" {
+	if request.GetDeviceId() == "" {
 		return errInvalidDeviceID
 	}
 	return nil
@@ -103,7 +105,7 @@ func validateUnpublish(request *commands.UnpublishResourceLinksRequest) error {
 	if request.GetDeviceId() == "" {
 		return errInvalidDeviceID
 	}
-	for _, href := range request.Hrefs {
+	for _, href := range request.GetHrefs() {
 		if href == "" {
 			return status.Errorf(codes.InvalidArgument, "invalid resource id")
 		}
@@ -112,7 +114,7 @@ func validateUnpublish(request *commands.UnpublishResourceLinksRequest) error {
 }
 
 func validateNotifyContentChanged(request *commands.NotifyResourceChangedRequest) error {
-	if request.Content == nil {
+	if request.GetContent() == nil {
 		return errInvalidContent
 	}
 	if request.GetResourceId().GetDeviceId() == "" {
@@ -128,7 +130,7 @@ func validateUpdateResourceContent(request *commands.UpdateResourceRequest) erro
 	if err := checkTimeToLive(request.GetTimeToLive()); err != nil {
 		return err
 	}
-	if request.Content == nil {
+	if request.GetContent() == nil {
 		return errInvalidContent
 	}
 	if request.GetResourceId().GetDeviceId() == "" {
@@ -160,7 +162,7 @@ func validateRetrieveResource(request *commands.RetrieveResourceRequest) error {
 }
 
 func validateConfirmResourceUpdate(request *commands.ConfirmResourceUpdateRequest) error {
-	if request.Content == nil {
+	if request.GetContent() == nil {
 		return errInvalidContent
 	}
 	if request.GetResourceId().GetDeviceId() == "" {
@@ -177,7 +179,7 @@ func validateConfirmResourceUpdate(request *commands.ConfirmResourceUpdateReques
 }
 
 func validateConfirmResourceRetrieve(request *commands.ConfirmResourceRetrieveRequest) error {
-	if request.Content == nil {
+	if request.GetContent() == nil {
 		return errInvalidContent
 	}
 	if request.GetResourceId().GetDeviceId() == "" {

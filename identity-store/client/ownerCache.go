@@ -186,7 +186,7 @@ func (c *OwnerCache) getOwnerDevices(ctx context.Context, isClient pbIS.Identity
 		if err != nil {
 			return nil, status.Errorf(status.Convert(err).Code(), "cannot receive owners devices: %v", err)
 		}
-		ownerDevices = append(ownerDevices, device.DeviceId)
+		ownerDevices = append(ownerDevices, device.GetDeviceId())
 	}
 	return ownerDevices, nil
 }

@@ -64,14 +64,14 @@ func (s *Service) publishDevicesUnregistered(ctx context.Context, owner, userID,
 
 func getDeviceIDs(request *pb.DeleteDevicesRequest, tx persistence.PersistenceTx, owner string) ([]string, error) {
 	var deviceIds []string
-	if len(request.DeviceIds) == 0 {
+	if len(request.GetDeviceIds()) == 0 {
 		var err error
 		if deviceIds, err = getOwnerDevices(tx, owner); err != nil {
 			return nil, status.Errorf(codes.InvalidArgument, "cannot delete devices: %v", err)
 		}
 		return deviceIds, nil
 	}
-	deviceIds = getUniqueDeviceIds(request.DeviceIds)
+	deviceIds = getUniqueDeviceIds(request.GetDeviceIds())
 	if len(deviceIds) == 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "cannot delete devices: invalid DeviceIds")
 	}
@@ -112,7 +112,7 @@ func (s *Service) DeleteDevices(ctx context.Context, request *pb.DeleteDevicesRe
 		return &pb.DeleteDevicesResponse{}, nil
 	}
 
-	var deletedDeviceIDs []string
+	deletedDeviceIDs := make([]string, 0, len(deviceIDs))
 	for _, deviceID := range deviceIDs {
 		ok, err := deleteDevice(tx, deviceID, owner)
 		if err != nil {
@@ -126,7 +126,9 @@ func (s *Service) DeleteDevices(ctx context.Context, request *pb.DeleteDevicesRe
 
 	s.publishDevicesUnregistered(ctx, owner, userID, s.hubID, deletedDeviceIDs)
 
-	return &pb.DeleteDevicesResponse{
-		DeviceIds: deletedDeviceIDs,
-	}, nil
+	resp := &pb.DeleteDevicesResponse{}
+	if len(deletedDeviceIDs) > 0 {
+		resp.DeviceIds = deletedDeviceIDs
+	}
+	return resp, nil
 }

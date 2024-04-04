@@ -157,7 +157,7 @@ func TestRequestHandlerSubscribeToDevice(t *testing.T) {
 	resources = testSubscribeToDeviceDecodeResources(links)
 	var unpublishedSwitches []*commands.Resource
 	for _, res := range resources {
-		if res.Href == test.TestResourceSwitchesInstanceHref(switchID2) {
+		if res.GetHref() == test.TestResourceSwitchesInstanceHref(switchID2) {
 			unpublishedSwitches = append(unpublishedSwitches, &commands.Resource{
 				DeviceId: deviceID,
 				Href:     test.TestResourceSwitchesInstanceHref(switchID2),

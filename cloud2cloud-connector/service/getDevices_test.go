@@ -94,7 +94,7 @@ func testRequestHandlerGetDevices(t *testing.T, events store.Events) {
 					break
 				}
 				require.NoError(t, err)
-				assert.NotEmpty(t, dev.ProtocolIndependentId)
+				assert.NotEmpty(t, dev.GetProtocolIndependentId())
 				dev.ProtocolIndependentId = ""
 				if dev.GetMetadata().GetConnection() != nil {
 					dev.GetMetadata().GetConnection().Id = ""

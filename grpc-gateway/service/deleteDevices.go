@@ -28,7 +28,7 @@ func partitionDeletedDevices(expected, actual []string) ([]string, []string) {
 
 func (r *RequestHandler) DeleteDevices(ctx context.Context, req *pb.DeleteDevicesRequest) (*pb.DeleteDevicesResponse, error) {
 	// get unique non-empty ids
-	deviceIDs, _ := strings.Split(strings.Unique(req.DeviceIdFilter), func(s string) bool {
+	deviceIDs, _ := strings.Split(strings.Unique(req.GetDeviceIdFilter()), func(s string) bool {
 		return s != ""
 	})
 

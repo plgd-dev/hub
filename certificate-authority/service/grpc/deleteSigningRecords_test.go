@@ -55,7 +55,7 @@ func TestCertificateAuthorityServerDeleteSigningRecords(t *testing.T) {
 			name: "valid",
 			args: args{
 				req: &pb.DeleteSigningRecordsRequest{
-					IdFilter: []string{r.Id},
+					IdFilter: []string{r.GetId()},
 				},
 			},
 			want: 1,

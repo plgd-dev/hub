@@ -13,7 +13,7 @@ import (
 
 func getUniqueDeviceIdsFromDeleteRequest(request *commands.DeleteDevicesRequest) []string {
 	deviceIDs := make(strings.Set)
-	for _, deviceID := range request.DeviceIds {
+	for _, deviceID := range request.GetDeviceIds() {
 		if deviceID != "" {
 			deviceIDs.Add(deviceID)
 		}

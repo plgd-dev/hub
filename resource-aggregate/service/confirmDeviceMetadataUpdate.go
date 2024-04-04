@@ -47,7 +47,7 @@ func (r RequestHandler) ConfirmDeviceMetadataUpdate(ctx context.Context, request
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.Internal, "cannot validate user access: %v", err))
 	}
 
-	resID := commands.NewResourceID(request.DeviceId, commands.StatusHref)
+	resID := commands.NewResourceID(request.GetDeviceId(), commands.StatusHref)
 	aggregate, err := NewAggregate(resID, r.eventstore, NewDeviceMetadataFactoryModel(userID, owner, r.config.HubID), cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, log.LogAndReturnError(kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot confirm device('%v') metadata update: %v", request.GetDeviceId(), err))

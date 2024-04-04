@@ -45,7 +45,7 @@ func New(client pb.GrpcGatewayClient) *Client {
 // NewFromConfig constructs a new client client. For every call there is expected jwt token for grpc stored in context.
 func NewFromConfig(cfg *Config, tlsCfg *tls.Config) (*Client, error) {
 	if cfg == nil || cfg.GatewayAddress == "" {
-		return nil, errors.New("missing client client config")
+		return nil, errors.New("missing client config")
 	}
 
 	keepAlive := keepalive.ClientParameters{
@@ -195,19 +195,20 @@ func (c *Client) GetResourceLinksIterator(ctx context.Context, deviceIDs []strin
 // GetResourcesIterator gets resources contents from resource twin (cache of backend). JWT token must be stored in context for grpc call.
 // By resourceIDs you can specify resources by deviceID and Href which will be retrieved from the backend, nil means all resources.
 // Or by deviceIDs or resourceTypes you can filter output when you get all resources.
-// Eg:
+//
+// Example:
 //
 //	 get all resources
 //		it := client.GetResourcesIterator(ctx, nil, nil)
 //
 //	 get all oic.wk.d resources
-//	 iter := client.GetResourcesIterator(ctx, nil, nil, "oic.wk.d")
+//	 	it := client.GetResourcesIterator(ctx, nil, nil, "oic.wk.d")
 //
 //	 get oic.wk.d resources of 2 devices
-//	 iter := client.GetResourcesIterator(ctx, nil, string["60f6869d-343a-4989-7462-81ef215d31af", "07ef9eb6-1ce9-4ce4-73a6-9ee0a1d534d2"], "oic.wk.d")
+//	 	it := client.GetResourcesIterator(ctx, nil, string["60f6869d-343a-4989-7462-81ef215d31af", "07ef9eb6-1ce9-4ce4-73a6-9ee0a1d534d2"], "oic.wk.d")
 //
 //	 get a certain resource /oic/p of the device"60f6869d-343a-4989-7462-81ef215d31af"
-//	 iter := client.GetResourcesIterator(ctx, commands.NewResourceID("60f6869d-343a-4989-7462-81ef215d31af", /oic/p), nil)
+//	 	it := client.GetResourcesIterator(ctx, commands.NewResourceID("60f6869d-343a-4989-7462-81ef215d31af", /oic/p), nil)
 //
 // Next queries the next resource value.
 // Returns false when failed or having no more items.

@@ -187,8 +187,8 @@ func TestRequestHandlerDeleteResourceAfterUnpublish(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
-	require.Len(t, respUnpublish.UnpublishedHrefs, 1)
-	require.Equal(t, respUnpublish.UnpublishedHrefs[0], test.TestResourceSwitchesInstanceHref(switchID2))
+	require.Len(t, respUnpublish.GetUnpublishedHrefs(), 1)
+	require.Equal(t, respUnpublish.GetUnpublishedHrefs()[0], test.TestResourceSwitchesInstanceHref(switchID2))
 	// for update resource-directory cache
 	time.Sleep(time.Second)
 

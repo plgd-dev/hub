@@ -139,10 +139,10 @@ func TestRequestHandler_DeleteDevices(t *testing.T) {
 			}
 			require.NoError(t, err)
 			if tt.want != nil {
-				sort.Strings(tt.want.DeviceIds)
-				sort.Strings(response.DeviceIds)
-				require.Equal(t, tt.want.DeviceIds, response.DeviceIds)
-				require.Equal(t, tt.want.AuditContext, response.AuditContext)
+				sort.Strings(tt.want.GetDeviceIds())
+				sort.Strings(response.GetDeviceIds())
+				require.Equal(t, tt.want.GetDeviceIds(), response.GetDeviceIds())
+				require.Equal(t, tt.want.GetAuditContext(), response.GetAuditContext())
 			}
 		})
 	}

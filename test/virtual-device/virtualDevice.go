@@ -20,6 +20,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
@@ -72,7 +73,7 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 	_, err := isClient.AddDevice(ctx, &pb.AddDeviceRequest{
 		DeviceId: deviceID,
 	})
-	require.NoError(t, err)
+	assert.NoError(t, err) //nolint:testifylint
 
 	for {
 		_, err = raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
@@ -101,7 +102,7 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 			// device is still not loaded to owner in resource-aggregate
 			continue
 		}
-		require.NoError(t, err)
+		assert.NoError(t, err) //nolint:testifylint
 	}
 
 	resources := CreateDeviceResourceLinks(deviceID, numResources)
@@ -114,7 +115,7 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 		},
 	}
 	_, err = raClient.PublishResourceLinks(ctx, &pub)
-	require.NoError(t, err)
+	assert.NoError(t, err) //nolint:testifylint
 
 	_, err = raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
 		DeviceId:      deviceID,
@@ -131,7 +132,8 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 			Sequence:     incSeq(),
 		},
 	})
-	require.NoError(t, err)
+	assert.NoError(t, err) //nolint:testifylint
+
 	for i := 0; i < numResources; i++ {
 		_, err = raClient.NotifyResourceChanged(ctx, &commands.NotifyResourceChangedRequest{
 			ResourceId: commands.NewResourceID(deviceID, fmt.Sprintf("/res-%v", i)),
@@ -145,8 +147,9 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 			},
 			Status: commands.Status_OK,
 		})
-		require.NoError(t, err)
+		assert.NoError(t, err) //nolint:testifylint
 	}
+
 	_, err = raClient.NotifyResourceChanged(ctx, &commands.NotifyResourceChangedRequest{
 		ResourceId: commands.NewResourceID(deviceID, "/oic/d"),
 		CommandMetadata: &commands.CommandMetadata{
@@ -159,7 +162,7 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 		},
 		Status: commands.Status_OK,
 	})
-	require.NoError(t, err)
+	assert.NoError(t, err) //nolint:testifylint
 
 	_, err = raClient.NotifyResourceChanged(ctx, &commands.NotifyResourceChangedRequest{
 		ResourceId: commands.NewResourceID(deviceID, "/oic/p"),
@@ -173,7 +176,7 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 		},
 		Status: commands.Status_OK,
 	})
-	require.NoError(t, err)
+	assert.NoError(t, err) //nolint:testifylint
 
 	_, err = raClient.UpdateDeviceMetadata(ctx, &commands.UpdateDeviceMetadataRequest{
 		DeviceId:      deviceID,
@@ -190,7 +193,7 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 			Sequence:     incSeq(),
 		},
 	})
-	require.NoError(t, err)
+	assert.NoError(t, err)
 }
 
 func CreateDevices(ctx context.Context, t *testing.T, numDevices int, numResourcesPerDevice int, protocol commands.Connection_Protocol) {

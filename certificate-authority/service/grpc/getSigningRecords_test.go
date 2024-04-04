@@ -63,7 +63,7 @@ func TestCertificateAuthorityServerGetSigningRecords(t *testing.T) {
 			name: "valid",
 			args: args{
 				req: &pb.GetSigningRecordsRequest{
-					IdFilter: []string{r.Id},
+					IdFilter: []string{r.GetId()},
 				},
 			},
 			want: []*pb.SigningRecord{r},

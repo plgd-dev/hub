@@ -16,6 +16,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/service"
 	"github.com/plgd-dev/hub/v2/test/config"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/atomic"
 )
@@ -108,7 +109,7 @@ func TestNew(t *testing.T) {
 			require.NoError(t, err)
 			go func() {
 				errS := got.Serve()
-				require.NoError(t, errS)
+				assert.NoError(t, errS)
 			}()
 			err = got.Close()
 			require.NoError(t, err)
@@ -153,7 +154,7 @@ func TestOnClientInactivityTCP(t *testing.T) {
 	require.NoError(t, err)
 	go func() {
 		errS := got.Serve()
-		require.NoError(t, errS)
+		assert.NoError(t, errS)
 	}()
 	time.Sleep(time.Second * 3)
 
@@ -218,7 +219,7 @@ func TestOnClientInactivityUDP(t *testing.T) {
 	require.NoError(t, err)
 	go func() {
 		errS := got.Serve()
-		require.NoError(t, errS)
+		assert.NoError(t, errS)
 	}()
 	time.Sleep(time.Second * 3)
 
@@ -288,7 +289,7 @@ func TestOnClientInactivityCustomTCP(t *testing.T) {
 	require.NoError(t, err)
 	go func() {
 		errS := got.Serve()
-		require.NoError(t, errS)
+		assert.NoError(t, errS)
 	}()
 	time.Sleep(time.Second * 3)
 
@@ -359,7 +360,7 @@ func TestOnClientInactivityCustomUDP(t *testing.T) {
 	require.NoError(t, err)
 	go func() {
 		errS := got.Serve()
-		require.NoError(t, errS)
+		assert.NoError(t, errS)
 	}()
 	time.Sleep(time.Second * 3)
 

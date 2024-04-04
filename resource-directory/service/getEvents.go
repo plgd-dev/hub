@@ -285,7 +285,7 @@ func (p *resourceEvent) Handle(ctx context.Context, iter eventstore.Iter) error 
 }
 
 func getDeviceQueries(deviceIDFilter []string, userDeviceIDs strings.Set) []eventstore.GetEventsQuery {
-	var queries []eventstore.GetEventsQuery
+	queries := make([]eventstore.GetEventsQuery, 0, len(deviceIDFilter))
 	for _, deviceID := range deviceIDFilter {
 		if _, ok := userDeviceIDs[deviceID]; !ok {
 			log.Debugf("permission denied, device with id %v skipped", deviceID)
@@ -299,7 +299,7 @@ func getDeviceQueries(deviceIDFilter []string, userDeviceIDs strings.Set) []even
 }
 
 func getResourceQueries(resourceFilter []*pb.ResourceIdFilter, userDeviceIDs strings.Set) []eventstore.GetEventsQuery {
-	var queries []eventstore.GetEventsQuery
+	queries := make([]eventstore.GetEventsQuery, 0, len(resourceFilter))
 	for _, filter := range resourceFilter {
 		if !userDeviceIDs.HasOneOf(filter.GetResourceId().GetDeviceId()) {
 			log.Debugf("permission denied, resource belonging to device %v skipped", filter.GetResourceId().GetDeviceId())
@@ -314,7 +314,7 @@ func getResourceQueries(resourceFilter []*pb.ResourceIdFilter, userDeviceIDs str
 }
 
 func getUserDeviceQueries(userDeviceIds strings.Set) []eventstore.GetEventsQuery {
-	var queries []eventstore.GetEventsQuery
+	queries := make([]eventstore.GetEventsQuery, 0, len(userDeviceIds))
 	for device := range userDeviceIds {
 		queries = append(queries, eventstore.GetEventsQuery{
 			GroupID: device,
@@ -342,13 +342,13 @@ func (r *RequestHandler) GetEvents(req *pb.GetEventsRequest, srv pb.GrpcGateway_
 	}
 
 	// for backward compatibility and http api
-	req.ResourceIdFilter = append(req.ResourceIdFilter, req.ConvertHTTPResourceIDFilter()...)
+	req.ResourceIdFilter = append(req.GetResourceIdFilter(), req.ConvertHTTPResourceIDFilter()...)
 
 	var queries []eventstore.GetEventsQuery
-	if len(req.DeviceIdFilter) == 0 && len(req.GetResourceIdFilter()) == 0 {
+	if len(req.GetDeviceIdFilter()) == 0 && len(req.GetResourceIdFilter()) == 0 {
 		queries = getUserDeviceQueries(mapUserDeviceIDs)
 	} else {
-		queries = getDeviceQueries(req.DeviceIdFilter, mapUserDeviceIDs)
+		queries = getDeviceQueries(req.GetDeviceIdFilter(), mapUserDeviceIDs)
 		queries = append(queries, getResourceQueries(req.GetResourceIdFilter(), mapUserDeviceIDs)...)
 		if len(queries) == 0 {
 			log.Debugf("None of the filters are satisfied for user %v", owner)
@@ -356,7 +356,7 @@ func (r *RequestHandler) GetEvents(req *pb.GetEventsRequest, srv pb.GrpcGateway_
 		}
 	}
 
-	err = r.eventStore.GetEvents(srv.Context(), queries, req.TimestampFilter, &resourceEvent{srv: srv})
+	err = r.eventStore.GetEvents(srv.Context(), queries, req.GetTimestampFilter(), &resourceEvent{srv: srv})
 	if err != nil {
 		return log.LogAndReturnError(status.Errorf(status.Convert(err).Code(), "cannot get events: %v", err))
 	}

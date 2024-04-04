@@ -20,7 +20,6 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/service"
 	raTest "github.com/plgd-dev/hub/v2/resource-aggregate/test"
 	"github.com/plgd-dev/hub/v2/test/config"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 	"google.golang.org/grpc/codes"
@@ -129,7 +128,7 @@ func TestAggregateHandleUpdateDeviceMetadata(t *testing.T) {
 				require.Error(t, err)
 				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))
 				require.True(t, ok)
-				assert.Equal(t, tt.want, s.Code())
+				require.Equal(t, tt.want, s.Code())
 				return
 			}
 			require.NoError(t, err)
@@ -263,12 +262,12 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 			}
 			require.NoError(t, err)
 			if tt.want != nil {
-				assert.Equal(t, tt.want.AuditContext, response.AuditContext)
+				require.Equal(t, tt.want.GetAuditContext(), response.GetAuditContext())
 			}
 			if tt.want.GetValidUntil() == 0 {
-				assert.Equal(t, tt.want.ValidUntil, response.GetValidUntil())
+				require.Equal(t, tt.want.GetValidUntil(), response.GetValidUntil())
 			} else {
-				assert.Less(t, tt.want.ValidUntil, response.GetValidUntil())
+				require.Less(t, tt.want.GetValidUntil(), response.GetValidUntil())
 			}
 			time.Sleep(tt.args.sleep)
 		}
