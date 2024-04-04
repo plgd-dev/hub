@@ -24,12 +24,12 @@ require (
 	github.com/jtacoma/uritemplates v1.0.0
 	github.com/karrick/tparse/v2 v2.8.2
 	github.com/lestrrat-go/jwx/v2 v2.0.21
-	github.com/nats-io/nats.go v1.34.0
+	github.com/nats-io/nats.go v1.34.1
 	github.com/panjf2000/ants/v2 v2.9.1
 	github.com/pion/dtls/v2 v2.2.8-0.20240327211025-8244c4570c01
 	github.com/pion/logging v0.2.2
-	github.com/plgd-dev/device/v2 v2.4.5-0.20240403073803-48efa094e7b0
-	github.com/plgd-dev/go-coap/v3 v3.3.4-0.20240403064319-6ed2ef2c4664
+	github.com/plgd-dev/device/v2 v2.4.5-0.20240404111749-b0552c0bf48b
+	github.com/plgd-dev/go-coap/v3 v3.3.4-0.20240404104253-8d54d1cdfc79
 	github.com/plgd-dev/kit/v2 v2.0.0-20211006190727-057b33161b90
 	github.com/pseudomuto/protoc-gen-doc v1.5.1
 	github.com/sirupsen/logrus v1.9.3
@@ -50,12 +50,12 @@ require (
 	go.uber.org/atomic v1.11.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/exp v0.0.0-20240325151524-a685a6edb6d8
-	golang.org/x/net v0.22.0
+	golang.org/x/net v0.23.0
 	golang.org/x/oauth2 v0.18.0
 	golang.org/x/sync v0.6.0
 	google.golang.org/api v0.172.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240401170217-c3f982113cda
-	google.golang.org/grpc v1.62.1
+	google.golang.org/grpc v1.63.0
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.3.0
 	google.golang.org/protobuf v1.33.0
 	gopkg.in/yaml.v3 v3.0.1

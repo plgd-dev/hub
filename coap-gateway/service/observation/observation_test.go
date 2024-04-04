@@ -69,7 +69,7 @@ func TestIsResourceObservableWithInterface(t *testing.T) {
 	coapShutdown := coapgwTest.SetUp(t, makeHandler, nil)
 	defer coapShutdown()
 
-	grpcConn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	grpcConn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)

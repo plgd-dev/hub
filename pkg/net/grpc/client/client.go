@@ -60,6 +60,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		v = append(v, opts...)
 	}
 
+	//nolint:staticcheck // TODO: update once the replacement is available
 	conn, err := grpc.DialContext(ctx, config.Addr, v...)
 	if err != nil {
 		return nil, fmt.Errorf("cannot dial: %w", err)

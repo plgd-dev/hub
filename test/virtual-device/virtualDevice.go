@@ -199,7 +199,7 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 func CreateDevices(ctx context.Context, t *testing.T, numDevices int, numResourcesPerDevice int, protocol commands.Connection_Protocol) {
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
-	isConn, err := grpc.Dial(config.IDENTITY_STORE_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	isConn, err := grpc.NewClient(config.IDENTITY_STORE_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -208,7 +208,7 @@ func CreateDevices(ctx context.Context, t *testing.T, numDevices int, numResourc
 	}()
 	isClient := pb.NewIdentityStoreClient(isConn)
 
-	raConn, err := grpc.Dial(config.RESOURCE_AGGREGATE_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	raConn, err := grpc.NewClient(config.RESOURCE_AGGREGATE_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
