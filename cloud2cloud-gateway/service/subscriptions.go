@@ -361,20 +361,19 @@ func (s *SubscriptionData) Connect(ctx context.Context, emitEvent emitEventFunc,
 	}
 
 	sub, err := createSubscriptionFunc(ctx, emitEvent, &h)
-	if err != nil {
-		if status.Convert(err).Code() == codes.Unauthenticated {
-			subToCancel, errSub := deleteSub(ctx, s.data.ID, "")
-			if errSub == nil {
-				if err2 := cancelSubscription(ctx, emitEvent, subToCancel); err2 != nil {
-					log.Errorf("cannot cancel subscription %v: %w", subToCancel.ID, err2)
-				}
+	if err == nil {
+		s.Store(sub)
+		return nil
+	}
+	if status.Convert(err).Code() == codes.Unauthenticated {
+		subToCancel, errSub := deleteSub(ctx, s.data.ID, "")
+		if errSub == nil {
+			if err2 := cancelSubscription(ctx, emitEvent, subToCancel); err2 != nil {
+				log.Errorf("cannot cancel subscription %v: %w", subToCancel.ID, err2)
 			}
 		}
-		return err
 	}
-
-	s.Store(sub)
-	return nil
+	return err
 }
 
 func (s *SubscriptionData) IncrementSequenceNumber(ctx context.Context) (uint64, error) {

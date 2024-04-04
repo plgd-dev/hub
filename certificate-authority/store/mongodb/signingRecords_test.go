@@ -11,6 +11,7 @@ import (
 	"github.com/plgd-dev/hub/v2/certificate-authority/store"
 	"github.com/plgd-dev/hub/v2/certificate-authority/test"
 	hubTest "github.com/plgd-dev/hub/v2/test"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -395,7 +396,7 @@ func TestStoreLoadSigningRecords(t *testing.T) {
 			name: "id - another owner",
 			args: args{
 				owner: "another owner",
-				query: &store.SigningRecordsQuery{IdFilter: []string{lcs[1].Id}},
+				query: &store.SigningRecordsQuery{IdFilter: []string{lcs[1].GetId()}},
 			},
 			want: []*store.SigningRecord{lcs[1]},
 		},
@@ -403,7 +404,7 @@ func TestStoreLoadSigningRecords(t *testing.T) {
 			name: "multiple queries",
 			args: args{
 				owner: "owner",
-				query: &store.SigningRecordsQuery{IdFilter: []string{lcs[0].Id, lcs[2].Id}},
+				query: &store.SigningRecordsQuery{IdFilter: []string{lcs[0].GetId(), lcs[2].GetId()}},
 			},
 			want: []*store.SigningRecord{lcs[0], lcs[2]},
 		},
@@ -482,12 +483,12 @@ func BenchmarkSigningRecords(b *testing.B) {
 				go func(l *pb.SigningRecord) {
 					defer wg.Done()
 					err := s.UpdateSigningRecord(ctx, l)
-					require.NoError(b, err)
+					assert.NoError(b, err)
 				}(l)
 			}
 			wg.Wait()
 			err := s.FlushBulkWriter()
-			require.NoError(b, err)
+			assert.NoError(b, err)
 		}()
 	}
 }

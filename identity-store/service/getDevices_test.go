@@ -84,7 +84,7 @@ func (d *mockGeDevicesServer) Send(r *pb.Device) error {
 	if d.resourceValues == nil {
 		d.resourceValues = make(map[string]*pb.Device)
 	}
-	d.resourceValues[r.DeviceId] = r
+	d.resourceValues[r.GetDeviceId()] = r
 	return nil
 }
 

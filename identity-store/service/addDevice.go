@@ -90,13 +90,14 @@ func (s *Service) AddDevice(ctx context.Context, request *pb.AddDeviceRequest) (
 		return nil, log.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot add device: %v", err))
 	}
 
-	if request.DeviceId == "" {
+	deviceID := request.GetDeviceId()
+	if deviceID == "" {
 		return nil, log.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot add device: invalid DeviceId"))
 	}
 
-	dev, ok, err := tx.RetrieveByDevice(request.DeviceId)
+	dev, ok, err := tx.RetrieveByDevice(deviceID)
 	if err != nil {
-		return nil, log.LogAndReturnError(status.Errorf(codes.Internal, "cannot add device %v: %v", request.DeviceId, err.Error()))
+		return nil, log.LogAndReturnError(status.Errorf(codes.Internal, "cannot add device %v: %v", deviceID, err.Error()))
 	}
 	if ok {
 		if dev.Owner == owner {
@@ -106,7 +107,7 @@ func (s *Service) AddDevice(ctx context.Context, request *pb.AddDeviceRequest) (
 	}
 
 	d := persistence.AuthorizedDevice{
-		DeviceID: request.DeviceId,
+		DeviceID: deviceID,
 		Owner:    owner,
 	}
 
@@ -114,7 +115,7 @@ func (s *Service) AddDevice(ctx context.Context, request *pb.AddDeviceRequest) (
 		return nil, log.LogAndReturnError(status.Errorf(codes.Internal, "cannot add device up: %v", err.Error()))
 	}
 
-	s.publishDevicesRegistered(ctx, owner, userID, s.hubID, []string{request.DeviceId})
+	s.publishDevicesRegistered(ctx, owner, userID, s.hubID, []string{deviceID})
 
 	return &pb.AddDeviceResponse{}, nil
 }

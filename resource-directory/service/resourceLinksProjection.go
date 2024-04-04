@@ -117,7 +117,7 @@ func (rlp *resourceLinksProjection) ToResourceLinksPublished(typeFilter strings.
 	rlp.private.lock.RLock()
 	defer rlp.private.lock.RUnlock()
 	for _, resource := range rlp.private.snapshot.GetResources() {
-		if hasMatchingType(resource.ResourceTypes, typeFilter) {
+		if hasMatchingType(resource.GetResourceTypes(), typeFilter) {
 			resources = append(resources, resource)
 		}
 	}

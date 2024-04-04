@@ -15,7 +15,7 @@ func CleanUpResourceStateSnapshotTaken(e *events.ResourceStateSnapshotTaken, res
 	if e.GetAuditContext() != nil && resetCorrelationID {
 		e.GetAuditContext().CorrelationId = ""
 	}
-	CleanUpResourceChanged(e.LatestResourceChange, resetCorrelationID)
+	CleanUpResourceChanged(e.GetLatestResourceChange(), resetCorrelationID)
 	if e.GetLatestResourceChange().GetContent().GetData() != nil {
 		e.LatestResourceChange.Content.Data = nil
 	}

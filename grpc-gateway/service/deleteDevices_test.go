@@ -78,7 +78,7 @@ func TestRequestHandlerDeleteDevices(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			resp, err := c.DeleteDevices(ctx, tt.args.req)
 			require.NoError(t, err)
-			require.Equal(t, tt.want.DeviceIds, resp.DeviceIds)
+			require.Equal(t, tt.want.GetDeviceIds(), resp.GetDeviceIds())
 		})
 	}
 }
@@ -87,7 +87,7 @@ func waitForOperationProcessedEvent(t *testing.T, subClient pb.GrpcGateway_Subsc
 	ev, err := subClient.Recv()
 	require.NoError(t, err)
 	expectedEvent := &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
+		SubscriptionId: ev.GetSubscriptionId(),
 		CorrelationId:  corID,
 		Type: &pb.Event_OperationProcessed_{
 			OperationProcessed: &pb.Event_OperationProcessed{
@@ -105,7 +105,7 @@ func waitForStopEvent(t *testing.T, subClient pb.GrpcGateway_SubscribeToEventsCl
 	require.NoError(t, err)
 
 	expectedEvent := &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
+		SubscriptionId: ev.GetSubscriptionId(),
 		CorrelationId:  corID,
 		Type: &pb.Event_DeviceUnregistered_{
 			DeviceUnregistered: &pb.Event_DeviceUnregistered{
@@ -161,7 +161,7 @@ func TestRequestHandlerReconnectAfterDeleteDevice(t *testing.T) {
 		DeviceIdFilter: []string{deviceID},
 	})
 	require.NoError(t, err)
-	require.Equal(t, []string{deviceID}, resp.DeviceIds)
+	require.Equal(t, []string{deviceID}, resp.GetDeviceIds())
 	waitForStopEvent(t, subClient, deviceID, correlationID)
 	err = subClient.CloseSend()
 	require.NoError(t, err)

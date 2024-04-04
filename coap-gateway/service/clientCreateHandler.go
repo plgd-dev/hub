@@ -37,14 +37,14 @@ func clientCreateHandler(req *mux.Message, client *session) (*pool.Message, erro
 		code = coapconv.GrpcErr2CoapCode(err, coapconv.Create)
 		return nil, statusErrorf(code, errFmtCreateResource, fmt.Sprintf(" /%v%v", deviceID, href), err)
 	}
-	if content == nil || len(content.Data) == 0 {
+	if len(content.GetData()) == 0 {
 		return client.createResponse(code, req.Token(), coapMessage.TextPlain, nil), nil
 	}
-	mediaType, err := coapconv.MakeMediaType(-1, content.ContentType)
+	mediaType, err := coapconv.MakeMediaType(-1, content.GetContentType())
 	if err != nil {
 		return nil, statusErrorf(coapCodes.BadRequest, "cannot encode response for create resource %v: %w", fmt.Sprintf(" /%v%v", deviceID, href), err)
 	}
-	return client.createResponse(code, req.Token(), mediaType, content.Data), nil
+	return client.createResponse(code, req.Token(), mediaType, content.GetData()), nil
 }
 
 func clientCreateDeviceHandler(req *mux.Message, client *session, deviceID, href string) (*commands.Content, error) {

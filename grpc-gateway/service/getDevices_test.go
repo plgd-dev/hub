@@ -96,7 +96,7 @@ func TestRequestHandlerGetDevices(t *testing.T) {
 					break
 				}
 				require.NoError(t, err)
-				assert.NotEmpty(t, dev.ProtocolIndependentId)
+				assert.NotEmpty(t, dev.GetProtocolIndependentId())
 				assert.NotEmpty(t, dev.GetData().GetContent().GetData())
 				assert.NotEmpty(t, dev.GetMetadata().GetConnection().GetServiceId())
 				devices = append(devices, dev)

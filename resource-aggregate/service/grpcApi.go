@@ -118,7 +118,7 @@ func (r RequestHandler) PublishResourceLinks(ctx context.Context, request *comma
 		return nil, log.LogAndReturnError(cannotValidateAccessError(err))
 	}
 
-	resID := commands.NewResourceID(request.DeviceId, commands.ResourceLinksHref)
+	resID := commands.NewResourceID(request.GetDeviceId(), commands.ResourceLinksHref)
 	aggregate, err := NewAggregate(resID, r.eventstore, NewResourceLinksFactoryModel(userID, owner, r.config.HubID), cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, log.LogAndReturnError(grpc.ForwardErrorf(codes.InvalidArgument, "cannot publish resource links: %v", err))
@@ -139,7 +139,7 @@ func newPublishResourceLinksResponse(events []eventstore.Event, deviceID string,
 		if rlp, ok := event.(*raEvents.ResourceLinksPublished); ok {
 			return &commands.PublishResourceLinksResponse{
 				AuditContext:       auditContext,
-				PublishedResources: rlp.Resources,
+				PublishedResources: rlp.GetResources(),
 				DeviceId:           deviceID,
 			}
 		}
@@ -156,7 +156,7 @@ func (r RequestHandler) UnpublishResourceLinks(ctx context.Context, request *com
 		return nil, log.LogAndReturnError(cannotValidateAccessError(err))
 	}
 
-	resID := commands.NewResourceID(request.DeviceId, commands.ResourceLinksHref)
+	resID := commands.NewResourceID(request.GetDeviceId(), commands.ResourceLinksHref)
 	aggregate, err := NewAggregate(resID, r.eventstore, NewResourceLinksFactoryModel(userID, owner, r.config.HubID), cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, log.LogAndReturnError(grpc.ForwardErrorf(codes.InvalidArgument, "cannot unpublish resource links: %v", err))
@@ -193,7 +193,7 @@ func newUnpublishResourceLinksResponse(events []eventstore.Event, deviceID strin
 		if rlu, ok := event.(*raEvents.ResourceLinksUnpublished); ok {
 			return &commands.UnpublishResourceLinksResponse{
 				AuditContext:     auditContext,
-				UnpublishedHrefs: rlu.Hrefs,
+				UnpublishedHrefs: rlu.GetHrefs(),
 				DeviceId:         deviceID,
 			}
 		}
@@ -205,7 +205,7 @@ func newUnpublishResourceLinksResponse(events []eventstore.Event, deviceID strin
 }
 
 func (r RequestHandler) notifyResourceChanged(ctx context.Context, request *commands.NotifyResourceChangedRequest, userID, owner string) error {
-	aggregate, err := NewAggregate(request.ResourceId, r.eventstore, NewResourceStateFactoryModel(userID, owner, r.config.HubID), cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(request.GetResourceId(), r.eventstore, NewResourceStateFactoryModel(userID, owner, r.config.HubID), cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return log.LogAndReturnError(grpc.ForwardErrorf(codes.InvalidArgument, "cannot notify about resource content change: %v", err))
 	}
@@ -243,7 +243,7 @@ func (r RequestHandler) UpdateResource(ctx context.Context, request *commands.Up
 	}
 	request.TimeToLive = checkTimeToLiveForDefault(r.config.Clients.Eventstore.DefaultCommandTimeToLive, request.GetTimeToLive())
 
-	aggregate, err := NewAggregate(request.ResourceId, r.eventstore, NewResourceStateFactoryModel(userID, owner, r.config.HubID), cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(request.GetResourceId(), r.eventstore, NewResourceStateFactoryModel(userID, owner, r.config.HubID), cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, log.LogAndReturnError(grpc.ForwardErrorf(codes.InvalidArgument, "cannot update resource content: %v", err))
 	}
@@ -275,7 +275,7 @@ func (r RequestHandler) ConfirmResourceUpdate(ctx context.Context, request *comm
 	if err != nil {
 		return nil, log.LogAndReturnError(cannotValidateAccessError(err))
 	}
-	aggregate, err := NewAggregate(request.ResourceId, r.eventstore, NewResourceStateFactoryModel(userID, owner, r.config.HubID), cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(request.GetResourceId(), r.eventstore, NewResourceStateFactoryModel(userID, owner, r.config.HubID), cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, log.LogAndReturnError(grpc.ForwardErrorf(codes.InvalidArgument, "cannot confirm resource content update: %v", err))
 	}
@@ -299,7 +299,7 @@ func (r RequestHandler) RetrieveResource(ctx context.Context, request *commands.
 	}
 	request.TimeToLive = checkTimeToLiveForDefault(r.config.Clients.Eventstore.DefaultCommandTimeToLive, request.GetTimeToLive())
 
-	aggregate, err := NewAggregate(request.ResourceId, r.eventstore, NewResourceStateFactoryModel(userID, owner, r.config.HubID), cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(request.GetResourceId(), r.eventstore, NewResourceStateFactoryModel(userID, owner, r.config.HubID), cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, log.LogAndReturnError(grpc.ForwardErrorf(codes.InvalidArgument, "cannot retrieve resource content: %v", err))
 	}
@@ -331,7 +331,7 @@ func (r RequestHandler) ConfirmResourceRetrieve(ctx context.Context, request *co
 	if err != nil {
 		return nil, log.LogAndReturnError(cannotValidateAccessError(err))
 	}
-	aggregate, err := NewAggregate(request.ResourceId, r.eventstore, NewResourceStateFactoryModel(userID, owner, r.config.HubID), cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(request.GetResourceId(), r.eventstore, NewResourceStateFactoryModel(userID, owner, r.config.HubID), cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, log.LogAndReturnError(grpc.ForwardErrorf(codes.InvalidArgument, "ccannot confirm resource content retrieve: %v", err))
 	}
@@ -356,7 +356,7 @@ func (r RequestHandler) DeleteResource(ctx context.Context, request *commands.De
 	}
 	request.TimeToLive = checkTimeToLiveForDefault(r.config.Clients.Eventstore.DefaultCommandTimeToLive, request.GetTimeToLive())
 
-	aggregate, err := NewAggregate(request.ResourceId, r.eventstore, NewResourceStateFactoryModel(userID, owner, r.config.HubID), cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(request.GetResourceId(), r.eventstore, NewResourceStateFactoryModel(userID, owner, r.config.HubID), cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, log.LogAndReturnError(grpc.ForwardErrorf(codes.InvalidArgument, "cannot delete resource: %v", err))
 	}
@@ -389,7 +389,7 @@ func (r RequestHandler) ConfirmResourceDelete(ctx context.Context, request *comm
 		return nil, log.LogAndReturnError(cannotValidateAccessError(err))
 	}
 
-	aggregate, err := NewAggregate(request.ResourceId, r.eventstore, NewResourceStateFactoryModel(userID, owner, r.config.HubID), cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(request.GetResourceId(), r.eventstore, NewResourceStateFactoryModel(userID, owner, r.config.HubID), cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, log.LogAndReturnError(grpc.ForwardErrorf(codes.InvalidArgument, "cannot confirm resource deletion: %v", err))
 	}
@@ -414,7 +414,7 @@ func (r RequestHandler) CreateResource(ctx context.Context, request *commands.Cr
 	}
 	request.TimeToLive = checkTimeToLiveForDefault(r.config.Clients.Eventstore.DefaultCommandTimeToLive, request.GetTimeToLive())
 
-	aggregate, err := NewAggregate(request.ResourceId, r.eventstore, NewResourceStateFactoryModel(userID, owner, r.config.HubID), cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(request.GetResourceId(), r.eventstore, NewResourceStateFactoryModel(userID, owner, r.config.HubID), cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, log.LogAndReturnError(grpc.ForwardErrorf(codes.InvalidArgument, "cannot create resource: %v", err))
 	}
@@ -447,7 +447,7 @@ func (r RequestHandler) ConfirmResourceCreate(ctx context.Context, request *comm
 		return nil, log.LogAndReturnError(cannotValidateAccessError(err))
 	}
 
-	aggregate, err := NewAggregate(request.ResourceId, r.eventstore, NewResourceStateFactoryModel(userID, owner, r.config.HubID), cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
+	aggregate, err := NewAggregate(request.GetResourceId(), r.eventstore, NewResourceStateFactoryModel(userID, owner, r.config.HubID), cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry))
 	if err != nil {
 		return nil, log.LogAndReturnError(grpc.ForwardErrorf(codes.InvalidArgument, "cannot confirm resource creation: %v", err))
 	}

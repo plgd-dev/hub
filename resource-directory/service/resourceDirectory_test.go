@@ -131,6 +131,6 @@ func (s *testGrpcGateway_GetResourceLinksServer) Send(d *events.ResourceLinksPub
 	if s.got == nil {
 		s.got = make(map[string]*events.ResourceLinksPublished)
 	}
-	s.got[d.DeviceId] = pbTest.CleanUpResourceLinksPublished(d, true)
+	s.got[d.GetDeviceId()] = pbTest.CleanUpResourceLinksPublished(d, true)
 	return nil
 }

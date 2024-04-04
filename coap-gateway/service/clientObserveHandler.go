@@ -185,7 +185,7 @@ func (s *resourceSubscription) Init(ctx context.Context) error {
 		if errR != nil {
 			return errR
 		}
-		d = resource.Data
+		d = resource.GetData()
 	}
 	authCtx, err := s.client.GetAuthorizationContext()
 	if err != nil {

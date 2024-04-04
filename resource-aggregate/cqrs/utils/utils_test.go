@@ -22,13 +22,13 @@ func TestDummyForCoverage(t *testing.T) {
 	hubID := "h"
 
 	em := events.MakeEventMeta(connID, sequence, version, hubID)
-	assert.Equal(t, connID, em.ConnectionId)
-	assert.Equal(t, sequence, em.Sequence)
-	assert.Equal(t, version, em.Version)
-	assert.Equal(t, hubID, em.HubId)
+	assert.Equal(t, connID, em.GetConnectionId())
+	assert.Equal(t, sequence, em.GetSequence())
+	assert.Equal(t, version, em.GetVersion())
+	assert.Equal(t, hubID, em.GetHubId())
 	ac := commands.NewAuditContext(userID, corID, userID)
-	assert.Equal(t, corID, ac.CorrelationId)
-	assert.Equal(t, userID, ac.UserId)
+	assert.Equal(t, corID, ac.GetCorrelationId())
+	assert.Equal(t, userID, ac.GetUserId())
 }
 
 func TestProtobufMarshaler(t *testing.T) {

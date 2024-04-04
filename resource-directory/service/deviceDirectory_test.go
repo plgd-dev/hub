@@ -47,7 +47,7 @@ func TestDeviceDirectoryGetDevices(t *testing.T) {
 			},
 			wantStatusCode: codes.OK,
 			wantResponse: map[string]*pb.Device{
-				ddResource2.Resource.DeviceId: testMakeDeviceResouceProtobuf(ddResource2.Resource.DeviceId, deviceResourceTypes, true),
+				ddResource2.Resource.GetDeviceId(): testMakeDeviceResouceProtobuf(ddResource2.Resource.GetDeviceId(), deviceResourceTypes, true),
 			},
 		},
 
@@ -60,7 +60,7 @@ func TestDeviceDirectoryGetDevices(t *testing.T) {
 			},
 			wantStatusCode: codes.OK,
 			wantResponse: map[string]*pb.Device{
-				ddResource1.Resource.DeviceId: testMakeDeviceResouceProtobuf(ddResource1.Resource.DeviceId, deviceResourceTypes, false),
+				ddResource1.Resource.GetDeviceId(): testMakeDeviceResouceProtobuf(ddResource1.Resource.GetDeviceId(), deviceResourceTypes, false),
 			},
 		},
 		{
@@ -72,8 +72,8 @@ func TestDeviceDirectoryGetDevices(t *testing.T) {
 			},
 			wantStatusCode: codes.OK,
 			wantResponse: map[string]*pb.Device{
-				ddResource1.Resource.DeviceId: testMakeDeviceResouceProtobuf(ddResource1.Resource.DeviceId, deviceResourceTypes, false),
-				ddResource2.Resource.DeviceId: testMakeDeviceResouceProtobuf(ddResource2.Resource.DeviceId, deviceResourceTypes, true),
+				ddResource1.Resource.GetDeviceId(): testMakeDeviceResouceProtobuf(ddResource1.Resource.GetDeviceId(), deviceResourceTypes, false),
+				ddResource2.Resource.GetDeviceId(): testMakeDeviceResouceProtobuf(ddResource2.Resource.GetDeviceId(), deviceResourceTypes, true),
 			},
 		},
 		{
@@ -94,20 +94,20 @@ func TestDeviceDirectoryGetDevices(t *testing.T) {
 			},
 			wantStatusCode: codes.OK,
 			wantResponse: map[string]*pb.Device{
-				ddResource1.Resource.DeviceId: testMakeDeviceResouceProtobuf(ddResource1.Resource.DeviceId, deviceResourceTypes, false),
-				ddResource2.Resource.DeviceId: testMakeDeviceResouceProtobuf(ddResource2.Resource.DeviceId, deviceResourceTypes, true),
+				ddResource1.Resource.GetDeviceId(): testMakeDeviceResouceProtobuf(ddResource1.Resource.GetDeviceId(), deviceResourceTypes, false),
+				ddResource2.Resource.GetDeviceId(): testMakeDeviceResouceProtobuf(ddResource2.Resource.GetDeviceId(), deviceResourceTypes, true),
 			},
 		},
 		{
 			name: "project_one_device",
 			args: args{
 				request: &pb.GetDevicesRequest{
-					DeviceIdFilter: []string{ddResource1.Resource.DeviceId},
+					DeviceIdFilter: []string{ddResource1.Resource.GetDeviceId()},
 				},
 			},
 			wantStatusCode: codes.OK,
 			wantResponse: map[string]*pb.Device{
-				ddResource1.Resource.DeviceId: testMakeDeviceResouceProtobuf(ddResource1.Resource.DeviceId, deviceResourceTypes, false),
+				ddResource1.Resource.GetDeviceId(): testMakeDeviceResouceProtobuf(ddResource1.Resource.GetDeviceId(), deviceResourceTypes, false),
 			},
 		},
 	}
@@ -269,20 +269,20 @@ func testCreateResourceDeviceEventstores() (resourceEventStore *mockEvents.MockE
 	resourceEventStore = mockEvents.NewMockEventStore()
 
 	// without cloud state
-	resourceEventStore.Append(ddResource0.DeviceId, commands.MakeLinksResourceUUID(ddResource0.DeviceId).String(), mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{ddResource0.Resource}, ddResource0.GetDeviceId(), events.MakeEventMeta("a", 0, 0, "hubID")))
-	resourceEventStore.Append(ddResource0.DeviceId, ddResource0.Resource.ToUUID().String(), mockEvents.MakeResourceChangedEvent(ddResource0.Resource.GetResourceID(), ddResource0.Content, events.MakeEventMeta("a", 0, 0, "hubID"), mockEvents.MakeAuditContext("userId", "0")))
+	resourceEventStore.Append(ddResource0.GetDeviceId(), commands.MakeLinksResourceUUID(ddResource0.GetDeviceId()).String(), mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{ddResource0.Resource}, ddResource0.GetDeviceId(), events.MakeEventMeta("a", 0, 0, "hubID")))
+	resourceEventStore.Append(ddResource0.GetDeviceId(), ddResource0.Resource.ToUUID().String(), mockEvents.MakeResourceChangedEvent(ddResource0.Resource.GetResourceID(), ddResource0.Content, events.MakeEventMeta("a", 0, 0, "hubID"), mockEvents.MakeAuditContext("userId", "0")))
 
-	resourceEventStore.Append(ddResource1.DeviceId, commands.MakeLinksResourceUUID(ddResource1.DeviceId).String(), mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{ddResource1.Resource}, ddResource1.GetDeviceId(), events.MakeEventMeta("a", 0, 0, "hubID")))
-	resourceEventStore.Append(ddResource1.DeviceId, ddResource1.Resource.ToUUID().String(), mockEvents.MakeResourceChangedEvent(ddResource1.Resource.GetResourceID(), ddResource1.Content, events.MakeEventMeta("a", 0, 0, "hubID"), mockEvents.MakeAuditContext("userId", "0")))
-	resourceEventStore.Append(ddResource1Cloud.DeviceId, ddResource1Cloud.AggregateID(), mockEvents.MakeDeviceMetadata(ddResource1Cloud.DeviceId, ddResource1Cloud, events.MakeEventMeta("a", 0, 0, "hubID")))
+	resourceEventStore.Append(ddResource1.GetDeviceId(), commands.MakeLinksResourceUUID(ddResource1.GetDeviceId()).String(), mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{ddResource1.Resource}, ddResource1.GetDeviceId(), events.MakeEventMeta("a", 0, 0, "hubID")))
+	resourceEventStore.Append(ddResource1.GetDeviceId(), ddResource1.Resource.ToUUID().String(), mockEvents.MakeResourceChangedEvent(ddResource1.Resource.GetResourceID(), ddResource1.Content, events.MakeEventMeta("a", 0, 0, "hubID"), mockEvents.MakeAuditContext("userId", "0")))
+	resourceEventStore.Append(ddResource1Cloud.GetDeviceId(), ddResource1Cloud.AggregateID(), mockEvents.MakeDeviceMetadata(ddResource1Cloud.GetDeviceId(), ddResource1Cloud, events.MakeEventMeta("a", 0, 0, "hubID")))
 
 	// with cloud state - online
-	resourceEventStore.Append(ddResource2.DeviceId, commands.MakeLinksResourceUUID(ddResource2.DeviceId).String(), mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{ddResource2.Resource}, ddResource2.Resource.GetDeviceId(), events.MakeEventMeta("a", 0, 0, "hubID")))
-	resourceEventStore.Append(ddResource2.DeviceId, ddResource2.Resource.ToUUID().String(), mockEvents.MakeResourceChangedEvent(ddResource2.Resource.GetResourceID(), ddResource2.Content, events.MakeEventMeta("a", 0, 0, "hubID"), mockEvents.MakeAuditContext("userId", "0")))
-	resourceEventStore.Append(ddResource2Cloud.DeviceId, ddResource2Cloud.AggregateID(), mockEvents.MakeDeviceMetadata(ddResource2Cloud.DeviceId, ddResource2Cloud, events.MakeEventMeta("a", 0, 0, "hubID")))
+	resourceEventStore.Append(ddResource2.GetDeviceId(), commands.MakeLinksResourceUUID(ddResource2.GetDeviceId()).String(), mockEvents.MakeResourceLinksPublishedEvent([]*commands.Resource{ddResource2.Resource}, ddResource2.Resource.GetDeviceId(), events.MakeEventMeta("a", 0, 0, "hubID")))
+	resourceEventStore.Append(ddResource2.GetDeviceId(), ddResource2.Resource.ToUUID().String(), mockEvents.MakeResourceChangedEvent(ddResource2.Resource.GetResourceID(), ddResource2.Content, events.MakeEventMeta("a", 0, 0, "hubID"), mockEvents.MakeAuditContext("userId", "0")))
+	resourceEventStore.Append(ddResource2Cloud.GetDeviceId(), ddResource2Cloud.AggregateID(), mockEvents.MakeDeviceMetadata(ddResource2Cloud.GetDeviceId(), ddResource2Cloud, events.MakeEventMeta("a", 0, 0, "hubID")))
 
 	// without device resource
-	resourceEventStore.Append(ddResource4Cloud.DeviceId, ddResource4Cloud.AggregateID(), mockEvents.MakeDeviceMetadata(ddResource4Cloud.DeviceId, ddResource2Cloud, events.MakeEventMeta("a", 0, 1, "hubID")))
+	resourceEventStore.Append(ddResource4Cloud.GetDeviceId(), ddResource4Cloud.AggregateID(), mockEvents.MakeDeviceMetadata(ddResource4Cloud.GetDeviceId(), ddResource2Cloud, events.MakeEventMeta("a", 0, 1, "hubID")))
 
 	return resourceEventStore
 }
@@ -300,6 +300,6 @@ func (s *testGrpcGateway_GetDevicesServer) Send(d *pb.Device) error {
 	if s.got == nil {
 		s.got = make(map[string]*pb.Device)
 	}
-	s.got[d.Id] = d
+	s.got[d.GetId()] = d
 	return nil
 }

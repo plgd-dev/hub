@@ -393,7 +393,7 @@ func (i *SigningRecordsIterator) close() error {
 
 func (i *SigningRecordsIterator) Next(_ context.Context, s *store.SigningRecord) bool {
 	for i.next(s) {
-		if _, ok := i.provided[s.Id]; !ok {
+		if _, ok := i.provided[s.GetId()]; !ok {
 			// filter duplicated records
 			i.provided[s.GetId()] = struct{}{}
 			return true

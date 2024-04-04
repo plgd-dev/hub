@@ -496,25 +496,27 @@ func getTLSInfo(conn net.Conn, logger log.Logger) (deviceID string, validUntil t
 		logger.Debugf("cannot get deviceID from certificate: certificate is not set")
 		return "", time.Time{}
 	}
-	if tlsCon, ok := conn.(*dtls.Conn); ok {
-		peerCertificates := tlsCon.ConnectionState().PeerCertificates
-		if len(peerCertificates) > 0 {
-			cert, err := x509.ParseCertificate(peerCertificates[0])
-			if err != nil {
-				logger.Warnf("cannot get deviceID from certificate: %w", err)
-				return "", time.Time{}
-			}
-			deviceID, err := coap.GetDeviceIDFromIdentityCertificate(cert)
-			if err == nil {
-				return deviceID, cert.NotAfter
-			}
-			logger.Warnf("cannot get deviceID from certificate %v: %w", cert.Subject.CommonName, err)
-			return "", cert.NotAfter
-		}
-		logger.Debugf("cannot get deviceID from certificate: certificate is not set")
+
+	tlsCon, ok := conn.(*dtls.Conn)
+	if !ok {
+		logger.Debugf("cannot get deviceID from certificate: unsupported connection type")
 		return "", time.Time{}
 	}
-	logger.Debugf("cannot get deviceID from certificate: unsupported connection type")
+	peerCertificates := tlsCon.ConnectionState().PeerCertificates
+	if len(peerCertificates) > 0 {
+		cert, err := x509.ParseCertificate(peerCertificates[0])
+		if err != nil {
+			logger.Warnf("cannot get deviceID from certificate: %w", err)
+			return "", time.Time{}
+		}
+		deviceID, err := coap.GetDeviceIDFromIdentityCertificate(cert)
+		if err == nil {
+			return deviceID, cert.NotAfter
+		}
+		logger.Warnf("cannot get deviceID from certificate %v: %w", cert.Subject.CommonName, err)
+		return "", cert.NotAfter
+	}
+	logger.Debugf("cannot get deviceID from certificate: certificate is not set")
 	return "", time.Time{}
 }
 

@@ -13,6 +13,7 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/hub/v2/test"
 	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/service"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -327,6 +328,26 @@ func CmpEvent(t *testing.T, expected, got *pb.Event, cmpInterface string) {
 	}
 
 	cmp(t, expected, got, cmpInterface)
+}
+
+func AssertCmpEvents(t *testing.T, expected, got []*pb.Event) {
+	assert.Len(t, got, len(expected))
+
+	// normalize
+	for i := range expected {
+		expected[i].SubscriptionId = ""
+		got[i].SubscriptionId = ""
+		CleanUpEvent(t, expected[i])
+		CleanUpEvent(t, got[i])
+	}
+
+	// compare
+	for _, gotV := range got {
+		test.CheckProtobufs(t, expected, gotV, test.AssertToCheckFunc(assert.Contains))
+	}
+	for _, expectedV := range expected {
+		test.CheckProtobufs(t, got, expectedV, test.AssertToCheckFunc(assert.Contains))
+	}
 }
 
 func CmpEvents(t *testing.T, expected, got []*pb.Event) {

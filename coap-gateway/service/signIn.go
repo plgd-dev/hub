@@ -170,10 +170,10 @@ func subscribeToDeviceEvents(client *session, owner, deviceID string) error {
 		if evt == nil {
 			return
 		}
-		if evt.Owner != owner {
+		if evt.GetOwner() != owner {
 			return
 		}
-		if !strings.Contains(evt.DeviceIds, deviceID) {
+		if !strings.Contains(evt.GetDeviceIds(), deviceID) {
 			return
 		}
 		client.Close()

@@ -17,6 +17,7 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/service"
 	raTest "github.com/plgd-dev/hub/v2/resource-aggregate/test"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 )
@@ -73,7 +74,7 @@ func TestNewServiceHeartbeat(t *testing.T) {
 				},
 				ResponseChan: chans[j],
 			})
-			require.NoError(t, err)
+			assert.NoError(t, err)
 		}(i)
 	}
 	wg.Wait()

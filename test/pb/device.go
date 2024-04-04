@@ -20,10 +20,10 @@ func CmpDeviceValues(t *testing.T, expected, got []*pbGrpc.Device) {
 		dev.Metadata.Connection.ConnectedAt = 0
 		dev.Metadata.Connection.LocalEndpoints = nil
 		dev.Metadata.Connection.ServiceId = ""
-		if dev.Metadata.TwinSynchronization != nil {
-			dev.Metadata.TwinSynchronization.SyncingAt = 0
-			dev.Metadata.TwinSynchronization.InSyncAt = 0
-			dev.Metadata.TwinSynchronization.CommandMetadata = nil
+		if dev.GetMetadata().GetTwinSynchronization() != nil {
+			dev.GetMetadata().GetTwinSynchronization().SyncingAt = 0
+			dev.GetMetadata().GetTwinSynchronization().InSyncAt = 0
+			dev.GetMetadata().GetTwinSynchronization().CommandMetadata = nil
 		}
 		dev.Data = nil
 	}
@@ -73,7 +73,7 @@ func CleanUpDeviceMetadataUpdated(e *events.DeviceMetadataUpdated, resetCorrelat
 }
 
 func CleanUpDeviceMetadataSnapshotTaken(e *events.DeviceMetadataSnapshotTaken, resetCorrelationID bool) {
-	CleanUpDeviceMetadataUpdated(e.DeviceMetadataUpdated, resetCorrelationID)
+	CleanUpDeviceMetadataUpdated(e.GetDeviceMetadataUpdated(), resetCorrelationID)
 	e.EventMetadata = nil
 }
 

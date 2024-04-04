@@ -54,8 +54,8 @@ func (rp *resourceProjection) handleResourceStateSnapshotTakenLocked(eu eventsto
 	if err := eu.Unmarshal(&s); err != nil {
 		return err
 	}
-	rp.private.resourceID = s.ResourceId
-	rp.private.content = s.LatestResourceChange
+	rp.private.resourceID = s.GetResourceId()
+	rp.private.content = s.GetLatestResourceChange()
 	rp.private.onResourceChangedVersion = eu.Version()
 	rp.private.resourceUpdatePendings = s.GetResourceUpdatePendings()
 	rp.private.resourceCreatePendings = s.GetResourceCreatePendings()
@@ -69,7 +69,7 @@ func (rp *resourceProjection) handleResourceChangedLocked(eu eventstore.EventUnm
 	if err := eu.Unmarshal(&s); err != nil {
 		return err
 	}
-	rp.private.resourceID = s.ResourceId
+	rp.private.resourceID = s.GetResourceId()
 	rp.private.content = &s
 	rp.private.onResourceChangedVersion = eu.Version()
 	return nil
@@ -81,7 +81,7 @@ func (rp *resourceProjection) handleResourceUpdatePendingLocked(eu eventstore.Ev
 		return err
 	}
 	rp.private.resourceUpdatePendings = append(rp.private.resourceUpdatePendings, &s)
-	rp.private.resourceID = s.ResourceId
+	rp.private.resourceID = s.GetResourceId()
 	return nil
 }
 
@@ -90,7 +90,7 @@ func (rp *resourceProjection) handleResourceUpdatedLocked(eu eventstore.EventUnm
 	if err := eu.Unmarshal(&s); err != nil {
 		return err
 	}
-	rp.private.resourceID = s.ResourceId
+	rp.private.resourceID = s.GetResourceId()
 	tmp := make([]*events.ResourceUpdatePending, 0, 16)
 	var found bool
 	for _, cu := range rp.private.resourceUpdatePendings {
@@ -111,7 +111,7 @@ func (rp *resourceProjection) handleResourceRetrievePendingLocked(eu eventstore.
 	if err := eu.Unmarshal(&s); err != nil {
 		return err
 	}
-	rp.private.resourceID = s.ResourceId
+	rp.private.resourceID = s.GetResourceId()
 	rp.private.resourceRetrievePendings = append(rp.private.resourceRetrievePendings, &s)
 	return nil
 }
@@ -121,7 +121,7 @@ func (rp *resourceProjection) handleResourceDeletePendingLocked(eu eventstore.Ev
 	if err := eu.Unmarshal(&s); err != nil {
 		return err
 	}
-	rp.private.resourceID = s.ResourceId
+	rp.private.resourceID = s.GetResourceId()
 	rp.private.resourceDeletePendings = append(rp.private.resourceDeletePendings, &s)
 	return nil
 }
@@ -131,7 +131,7 @@ func (rp *resourceProjection) handleResourceRetrievedLocked(eu eventstore.EventU
 	if err := eu.Unmarshal(&s); err != nil {
 		return err
 	}
-	rp.private.resourceID = s.ResourceId
+	rp.private.resourceID = s.GetResourceId()
 	tmp := make([]*events.ResourceRetrievePending, 0, 16)
 	var found bool
 	for _, cu := range rp.private.resourceRetrievePendings {
@@ -152,7 +152,7 @@ func (rp *resourceProjection) handleResourceDeletedLocked(eu eventstore.EventUnm
 	if err := eu.Unmarshal(&s); err != nil {
 		return err
 	}
-	rp.private.resourceID = s.ResourceId
+	rp.private.resourceID = s.GetResourceId()
 	tmp := make([]*events.ResourceDeletePending, 0, 16)
 	var found bool
 	for _, cu := range rp.private.resourceDeletePendings {
@@ -174,7 +174,7 @@ func (rp *resourceProjection) handleResourceCreatePendingLocked(eu eventstore.Ev
 		return err
 	}
 	rp.private.resourceCreatePendings = append(rp.private.resourceCreatePendings, &s)
-	rp.private.resourceID = s.ResourceId
+	rp.private.resourceID = s.GetResourceId()
 	return nil
 }
 
@@ -183,7 +183,7 @@ func (rp *resourceProjection) handleResourceCreatedLocked(eu eventstore.EventUnm
 	if err := eu.Unmarshal(&s); err != nil {
 		return err
 	}
-	rp.private.resourceID = s.ResourceId
+	rp.private.resourceID = s.GetResourceId()
 	tmp := make([]*events.ResourceCreatePending, 0, 16)
 	var found bool
 	for _, cu := range rp.private.resourceCreatePendings {

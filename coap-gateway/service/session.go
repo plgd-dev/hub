@@ -827,21 +827,21 @@ func (c *session) unpublishResourceLinks(ctx context.Context, hrefs []string, in
 		return nil
 	}
 
-	if len(resp.UnpublishedHrefs) == 0 {
+	if len(resp.GetUnpublishedHrefs()) == 0 {
 		return nil
 	}
 
 	observer, ok, err := c.getDeviceObserver(ctx)
 	if err != nil {
 		logUnpublishError(err)
-		return resp.UnpublishedHrefs
+		return resp.GetUnpublishedHrefs()
 	}
 	if !ok {
 		logUnpublishError(errors.New("device observer not found"))
-		return resp.UnpublishedHrefs
+		return resp.GetUnpublishedHrefs()
 	}
-	observer.RemovePublishedResources(ctx, resp.UnpublishedHrefs)
-	return resp.UnpublishedHrefs
+	observer.RemovePublishedResources(ctx, resp.GetUnpublishedHrefs())
+	return resp.GetUnpublishedHrefs()
 }
 
 func (c *session) sendErrorConfirmResourceCreate(ctx context.Context, resourceID *commands.ResourceId, correlationID string, code codes.Code, errToSend error) {

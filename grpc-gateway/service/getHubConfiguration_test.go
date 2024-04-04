@@ -51,7 +51,7 @@ func TestRequestHandlerGetHubConfiguration(t *testing.T) {
 			got, err := c.GetHubConfiguration(ctxWithoutToken, &pb.HubConfigurationRequest{})
 			require.NoError(t, err)
 			require.NotEmpty(t, got.GetBuildInfo())
-			got.BuildInfo.ReleaseUrl = expected.BuildInfo.ReleaseUrl
+			got.BuildInfo.ReleaseUrl = expected.GetBuildInfo().GetReleaseUrl()
 			pbTest.CmpHubConfigurationResponse(t, tt.want, got)
 		})
 	}

@@ -243,9 +243,9 @@ func CmpPendingCmds(t *testing.T, want []*pb.PendingCommand, got []*pb.PendingCo
 }
 
 func CmpCancelPendingCmdResponses(t *testing.T, want *pb.CancelPendingCommandsResponse, got *pb.CancelPendingCommandsResponse) {
-	sort.Strings(want.CorrelationIds)
-	sort.Strings(got.CorrelationIds)
-	require.Equal(t, want.CorrelationIds, got.CorrelationIds)
+	sort.Strings(want.GetCorrelationIds())
+	sort.Strings(got.GetCorrelationIds())
+	require.Equal(t, want.GetCorrelationIds(), got.GetCorrelationIds())
 }
 
 func CleanUpResourceCreatePending(e *events.ResourceCreatePending, resetCorrelationID bool) *events.ResourceCreatePending {

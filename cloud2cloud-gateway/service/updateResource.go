@@ -47,7 +47,7 @@ func statusToHttpStatus(status commands.Status) int {
 
 func sendResponse(w http.ResponseWriter, processed *raEvents.ResourceUpdated) (int, error) {
 	statusCode := statusToHttpStatus(processed.GetStatus())
-	if processed.Content != nil {
+	if processed.GetContent() != nil {
 		var content interface{}
 		err := unmarshalContent(processed.GetContent(), &content)
 		if err != nil {

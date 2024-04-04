@@ -25,6 +25,7 @@ import (
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/plgd-dev/hub/v2/test/service"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -404,7 +405,7 @@ func TestRequestHandlerRunMultipleParallelUpdateResource(t *testing.T) {
 						}),
 					},
 				})
-				require.NoError(t, err)
+				assert.NoError(t, err)
 			}
 		}()
 	}

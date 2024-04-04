@@ -265,7 +265,7 @@ func waitForResourceChanged(filter *contentChangedFilter, ignoreHrefs ...string)
 			return ev
 		}
 		for _, ignoreHref := range ignoreHrefs {
-			if ignoreHref == evChanged.GetResourceId().Href {
+			if ignoreHref == evChanged.GetResourceId().GetHref() {
 				return waitForResourceChanged(filter, ignoreHrefs...)
 			}
 		}

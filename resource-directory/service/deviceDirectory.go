@@ -132,10 +132,10 @@ func filterDevices(deviceIds strings.Set, deviceIDsFilter []string) strings.Set 
 
 func (dd *DeviceDirectory) sendDevices(deviceIDs strings.Set, req *pb.GetDevicesRequest, srv pb.GrpcGateway_GetDevicesServer, toReloadDevices strings.Set) (err error) {
 	typeFilter := make(strings.Set)
-	typeFilter.Add(req.TypeFilter...)
+	typeFilter.Add(req.GetTypeFilter()...)
 	return dd.projection.LoadDevicesMetadata(deviceIDs, toReloadDevices, func(m *deviceMetadataProjection) error {
 		deviceMetadataUpdated := m.GetDeviceMetadataUpdated()
-		if !hasMatchingStatus(deviceMetadataUpdated.GetConnection().IsOnline(), req.StatusFilter) {
+		if !hasMatchingStatus(deviceMetadataUpdated.GetConnection().IsOnline(), req.GetStatusFilter()) {
 			return nil
 		}
 		resourceIdFilter := []*commands.ResourceId{commands.NewResourceID(m.GetDeviceID(), device.ResourceURI)}
@@ -161,7 +161,7 @@ func (dd *DeviceDirectory) sendDevices(deviceIDs strings.Set, req *pb.GetDevices
 }
 
 func (dd *DeviceDirectory) GetDevices(req *pb.GetDevicesRequest, srv pb.GrpcGateway_GetDevicesServer) (err error) {
-	deviceIDs := filterDevices(dd.userDeviceIds, req.DeviceIdFilter)
+	deviceIDs := filterDevices(dd.userDeviceIds, req.GetDeviceIdFilter())
 	if len(deviceIDs) == 0 {
 		log.Debug("DeviceDirectory.GetDevices.filterDevices returns empty deviceIDs")
 		return nil

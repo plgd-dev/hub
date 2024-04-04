@@ -57,14 +57,14 @@ func clientRetrieveHandler(req *mux.Message, client *session) (*pool.Message, er
 		}
 	}
 
-	if content == nil || len(content.Data) == 0 {
+	if len(content.GetData()) == 0 {
 		return client.createResponse(code, req.Token(), coapMessage.TextPlain, nil), nil
 	}
-	mediaType, err := coapconv.MakeMediaType(-1, content.ContentType)
+	mediaType, err := coapconv.MakeMediaType(-1, content.GetContentType())
 	if err != nil {
 		return nil, statusErrorf(code, errFmtRetrieveResource, fmt.Sprintf(" /%v%v", deviceID, href), err)
 	}
-	return client.createResponse(code, req.Token(), mediaType, content.Data), nil
+	return client.createResponse(code, req.Token(), mediaType, content.GetData()), nil
 }
 
 func clientRetrieveFromResourceTwinHandler(ctx context.Context, client *session, deviceID, href string, etag []byte) (*commands.Content, coapCodes.Code, error) {
@@ -91,11 +91,11 @@ func clientRetrieveFromResourceTwinHandler(ctx context.Context, client *session,
 		if err != nil {
 			return nil, coapconv.GrpcErr2CoapCode(err, coapconv.Retrieve), err
 		}
-		if resourceValue.GetData().GetResourceId().GetDeviceId() == deviceID && resourceValue.GetData().GetResourceId().GetHref() == href && resourceValue.GetData().Content != nil {
+		if resourceValue.GetData().GetResourceId().GetDeviceId() == deviceID && resourceValue.GetData().GetResourceId().GetHref() == href && resourceValue.GetData().GetContent() != nil {
 			if etag != nil && bytes.Equal(etag, resourceValue.GetData().GetEtag()) {
 				return nil, coapCodes.Valid, nil
 			}
-			return resourceValue.GetData().Content, coapCodes.Content, nil
+			return resourceValue.GetData().GetContent(), coapCodes.Content, nil
 		}
 	}
 	return nil, coapCodes.NotFound, errors.New("not found")

@@ -294,7 +294,7 @@ func (o *Observer) handleMsg(msg *nats.Msg) {
 		hasNext: true,
 		e:       &e,
 		dataUnmarshaler: func(v interface{}) error {
-			return o.dataUnmarshaler(e.Data, v)
+			return o.dataUnmarshaler(e.GetData(), v)
 		},
 	}
 

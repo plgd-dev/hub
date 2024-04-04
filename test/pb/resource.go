@@ -412,9 +412,9 @@ func CmpResourceValuesBasic(t *testing.T, expected, got []*pb.Resource) {
 }
 
 func CmpHubConfigurationResponse(t *testing.T, expected, got *pb.HubConfigurationResponse) {
-	require.NotEmpty(t, got.CertificateAuthorities)
+	require.NotEmpty(t, got.GetCertificateAuthorities())
 	got.CertificateAuthorities = ""
-	require.NotEqual(t, int64(0), got.CurrentTime)
+	require.NotEqual(t, int64(0), got.GetCurrentTime())
 	got.CurrentTime = 0
 	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
 }

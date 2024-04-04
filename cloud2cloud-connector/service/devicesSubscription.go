@@ -135,7 +135,7 @@ func (s *SubscriptionManager) handleDevicesUnregistered(ctx context.Context, sub
 		if err != nil {
 			errors = multierror.Append(errors, fmt.Errorf("cannot remove device %v from user: %w", device.ID, err))
 		}
-		if err == nil && len(resp.DeviceIds) != 1 {
+		if err == nil && len(resp.GetDeviceIds()) != 1 {
 			errors = multierror.Append(errors, fmt.Errorf("cannot remove device %v from user", device.ID))
 		}
 		err = s.devicesSubscription.Delete(userID, device.ID)

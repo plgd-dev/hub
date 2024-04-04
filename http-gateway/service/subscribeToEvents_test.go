@@ -212,7 +212,7 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 	ev, err := recv()
 	require.NoError(t, err)
 	expectedEvent := &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
+		SubscriptionId: ev.GetSubscriptionId(),
 		Type: &pb.Event_OperationProcessed_{
 			OperationProcessed: &pb.Event_OperationProcessed{
 				ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
@@ -223,7 +223,7 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 		CorrelationId: "testToken",
 	}
 	pbTest.CmpEvent(t, expectedEvent, ev, "")
-	baseSubID := ev.SubscriptionId
+	baseSubID := ev.GetSubscriptionId()
 
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, nil)
 
@@ -269,7 +269,7 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 	ev, err = recv()
 	require.NoError(t, err)
 	expectedEvent = &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
+		SubscriptionId: ev.GetSubscriptionId(),
 		Type: &pb.Event_OperationProcessed_{
 			OperationProcessed: &pb.Event_OperationProcessed{
 				ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
@@ -285,7 +285,7 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 		c:            c,
 		deviceID:     deviceID,
 		baseSubID:    baseSubID,
-		subUpdatedID: ev.SubscriptionId,
+		subUpdatedID: ev.GetSubscriptionId(),
 		recv:         recv,
 	}
 	updChecker.checkUpdateLightResource(ctx, t, 99)
@@ -308,7 +308,7 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 	ev, err = recv()
 	require.NoError(t, err)
 	expectedEvent = &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
+		SubscriptionId: ev.GetSubscriptionId(),
 		Type: &pb.Event_OperationProcessed_{
 			OperationProcessed: &pb.Event_OperationProcessed{
 				ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
@@ -319,7 +319,7 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 		CorrelationId: "receivePending + resourceReceived",
 	}
 	pbTest.CmpEvent(t, expectedEvent, ev, "")
-	subReceivedID := ev.SubscriptionId
+	subReceivedID := ev.GetSubscriptionId()
 
 	_, err = c.GetResourceFromDevice(ctx, &pb.GetResourceFromDeviceRequest{
 		ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
@@ -367,7 +367,7 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 
 		if ev.GetDeviceUnregistered() != nil {
 			expectedEvent = &pb.Event{
-				SubscriptionId: ev.SubscriptionId,
+				SubscriptionId: ev.GetSubscriptionId(),
 				Type: &pb.Event_DeviceUnregistered_{
 					DeviceUnregistered: &pb.Event_DeviceUnregistered{
 						DeviceIds: []string{deviceID},

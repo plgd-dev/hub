@@ -41,6 +41,7 @@ import (
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/plgd-dev/hub/v2/test/sdk"
 	"github.com/plgd-dev/kit/v2/codec/json"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/ugorji/go/codec"
 )
@@ -511,7 +512,7 @@ func OnboardDeviceForClient(ctx context.Context, t *testing.T, c pb.GrpcGatewayC
 		ev, err := subClient.Recv()
 		require.NoError(t, err)
 		expectedEvent := &pb.Event{
-			SubscriptionId: ev.SubscriptionId,
+			SubscriptionId: ev.GetSubscriptionId(),
 			CorrelationId:  "allEvents",
 			Type: &pb.Event_OperationProcessed_{
 				OperationProcessed: &pb.Event_OperationProcessed{
@@ -892,6 +893,12 @@ func ProtobufToInterface(t *testing.T, val interface{}) interface{} {
 }
 
 func RequireToCheckFunc(checFunc func(t require.TestingT, expected interface{}, actual interface{}, msgAndArgs ...interface{})) func(t *testing.T, expected interface{}, actual interface{}, msgAndArgs ...interface{}) {
+	return func(t *testing.T, expected interface{}, actual interface{}, msgAndArgs ...interface{}) {
+		checFunc(t, expected, actual, msgAndArgs...)
+	}
+}
+
+func AssertToCheckFunc(checFunc func(t assert.TestingT, expected interface{}, actual interface{}, msgAndArgs ...interface{}) bool) func(t *testing.T, expected interface{}, actual interface{}, msgAndArgs ...interface{}) {
 	return func(t *testing.T, expected interface{}, actual interface{}, msgAndArgs ...interface{}) {
 		checFunc(t, expected, actual, msgAndArgs...)
 	}

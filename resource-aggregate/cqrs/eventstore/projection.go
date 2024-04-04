@@ -137,37 +137,37 @@ func (i *iterator) RewindIgnore(ctx context.Context) (EventUnmarshaler, bool) {
 }
 
 func (i *iterator) Next(ctx context.Context) (EventUnmarshaler, bool) {
-	if i.firstEvent != nil {
-		tmp := i.firstEvent
-		i.firstEvent = nil
-		ignore, reload := i.model.Update(tmp)
-		i.model.LogDebugfFunc("projection.iterator.next: GroupID %v: AggregateID %v: Version %v, EvenType %v, ignore %v reload %v", tmp.GroupID, tmp.AggregateID, tmp.Version, tmp.EventType, ignore, reload)
-		if reload {
-			snapshot, nextAggregateEvent := i.RewindToSnapshot(ctx)
-			if snapshot == nil {
-				i.nextEventToProcess = nextAggregateEvent
-				i.reload = &VersionQuery{GroupID: tmp.GroupID(), AggregateID: tmp.AggregateID(), Version: i.model.version}
-				return nil, false
-			}
-			tmp = snapshot
-			ignore, reload = i.model.Update(tmp)
-			if reload {
-				i.nextEventToProcess = i.RewindToNextAggregateEvent(ctx)
-				i.reload = &VersionQuery{GroupID: tmp.GroupID(), AggregateID: tmp.AggregateID(), Version: i.model.version}
-				return nil, false
-			}
+	if i.firstEvent == nil {
+		e, ok := i.RewindIgnore(ctx)
+		if ok {
+			i.model.LogDebugfFunc("projection.iterator.next: GroupID %v: AggregateID %v: Version %v, EvenType %v", e.GroupID, e.AggregateID, e.Version, e.EventType)
 		}
-		if ignore {
-			return i.RewindIgnore(ctx)
-		}
-		return tmp, true
+		return e, ok
 	}
 
-	e, ok := i.RewindIgnore(ctx)
-	if ok {
-		i.model.LogDebugfFunc("projection.iterator.next: GroupID %v: AggregateID %v: Version %v, EvenType %v", e.GroupID, e.AggregateID, e.Version, e.EventType)
+	tmp := i.firstEvent
+	i.firstEvent = nil
+	ignore, reload := i.model.Update(tmp)
+	i.model.LogDebugfFunc("projection.iterator.next: GroupID %v: AggregateID %v: Version %v, EvenType %v, ignore %v reload %v", tmp.GroupID, tmp.AggregateID, tmp.Version, tmp.EventType, ignore, reload)
+	if reload {
+		snapshot, nextAggregateEvent := i.RewindToSnapshot(ctx)
+		if snapshot == nil {
+			i.nextEventToProcess = nextAggregateEvent
+			i.reload = &VersionQuery{GroupID: tmp.GroupID(), AggregateID: tmp.AggregateID(), Version: i.model.version}
+			return nil, false
+		}
+		tmp = snapshot
+		ignore, reload = i.model.Update(tmp)
+		if reload {
+			i.nextEventToProcess = i.RewindToNextAggregateEvent(ctx)
+			i.reload = &VersionQuery{GroupID: tmp.GroupID(), AggregateID: tmp.AggregateID(), Version: i.model.version}
+			return nil, false
+		}
 	}
-	return e, ok
+	if ignore {
+		return i.RewindIgnore(ctx)
+	}
+	return tmp, true
 }
 
 func (i *iterator) Err() error {
