@@ -298,7 +298,7 @@ func AcceptanceTest(ctx context.Context, t *testing.T, store eventstore.EventSto
 	eh1 := NewMockEventHandler()
 	err = store.LoadFromSnapshot(ctx, []eventstore.SnapshotQuery{{GroupID: "notExist"}}, eh1)
 	require.NoError(t, err)
-	require.Equal(t, 0, len(eh1.events))
+	require.Empty(t, eh1.events)
 
 	t.Log("load events")
 	eh2 := NewMockEventHandler()
@@ -392,7 +392,7 @@ func AcceptanceTest(ctx context.Context, t *testing.T, store eventstore.EventSto
 		},
 	}, eh8)
 	require.NoError(t, err)
-	require.Equal(t, 0, len(eh8.events[aggregateID1Path.GroupID][aggregateID1Path.AggregateID]))
+	require.Empty(t, eh8.events[aggregateID1Path.GroupID][aggregateID1Path.AggregateID])
 
 	t.Log("load events up to version without version specified")
 	eh9 := NewMockEventHandler()
@@ -403,7 +403,7 @@ func AcceptanceTest(ctx context.Context, t *testing.T, store eventstore.EventSto
 		},
 	}, eh9)
 	require.NoError(t, err)
-	require.Equal(t, 0, len(eh9.events[aggregateID1Path.GroupID][aggregateID1Path.AggregateID]))
+	require.Empty(t, eh9.events[aggregateID1Path.GroupID][aggregateID1Path.AggregateID])
 
 	t.Log("test projection all")
 	model := NewMockEventHandler()

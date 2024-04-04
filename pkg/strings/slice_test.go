@@ -65,7 +65,7 @@ func TestIntersection(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := Intersection(tt.args.s1, tt.args.s2)
-			require.Equal(t, got, tt.want)
+			require.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -121,8 +121,8 @@ func TestSplit(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotTrue, gotFalse := Split(tt.args.s, tt.args.f)
-			require.Equal(t, gotTrue, tt.wantTrue)
-			require.Equal(t, gotFalse, tt.wantFalse)
+			require.Equal(t, tt.wantTrue, gotTrue)
+			require.Equal(t, tt.wantFalse, gotFalse)
 		})
 	}
 }
@@ -168,7 +168,7 @@ func TestUnique(t *testing.T) {
 			got := Unique(tt.args.s)
 			sort.Strings(got)
 			sort.Strings(tt.want)
-			require.Equal(t, got, tt.want)
+			require.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -211,7 +211,7 @@ func TestContains(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := Contains(tt.args.slice, tt.args.s)
-			require.Equal(t, got, tt.want)
+			require.Equal(t, tt.want, got)
 		})
 	}
 }

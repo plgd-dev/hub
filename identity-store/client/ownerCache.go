@@ -222,13 +222,13 @@ func (c *OwnerCache) Subscribe(owner string, onEvent func(e *events.Event)) (fun
 			closeFunc = c.makeCloseFunc(owner, handlerID)
 		}
 		if s.subscription == nil {
-			err := s.subscribeLocked(owner, c.conn.Subscribe, func(msg *nats.Msg) {
+			errS := s.subscribeLocked(owner, c.conn.Subscribe, func(msg *nats.Msg) {
 				if errH := s.Handle(msg); errH != nil {
 					c.errFunc(errH)
 				}
 			})
-			if err != nil {
-				return err
+			if errS != nil {
+				return errS
 			}
 		}
 		return nil

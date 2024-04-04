@@ -252,7 +252,7 @@ func getDocID(event eventstore.Event) string {
 }
 
 func getLatestSnapshotVersion(events []eventstore.Event) (uint64, error) {
-	err := fmt.Errorf("not found")
+	err := errors.New("not found")
 	var latestSnapshotVersion uint64
 	for _, e := range events {
 		if e.IsSnapshot() {

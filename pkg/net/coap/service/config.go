@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -48,7 +49,7 @@ func (c *Config) validateKeepAliveAndInactivityMonitor() error {
 		}
 	}
 	if c.KeepAlive == nil && c.InactivityMonitor == nil {
-		return fmt.Errorf("keepAlive or inactivityMonitor must be set")
+		return errors.New("keepAlive or inactivityMonitor must be set")
 	}
 	return nil
 }

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -43,7 +44,7 @@ func (rh *RequestHandler) oAuthCallback(w http.ResponseWriter, r *http.Request) 
 
 	cacheData := rh.provisionCache.Load(state)
 	if cacheData == nil {
-		return http.StatusBadRequest, fmt.Errorf("invalid/expired OAuth state")
+		return http.StatusBadRequest, errors.New("invalid/expired OAuth state")
 	}
 	rh.provisionCache.Delete(state)
 	data := cacheData.Data()

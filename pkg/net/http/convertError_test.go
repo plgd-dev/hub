@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"testing"
@@ -42,11 +43,11 @@ func TestErrToStatus(t *testing.T) {
 		{
 			name: "coap",
 			args: args{
-				err: coapStatus.Error(forbidden, fmt.Errorf("coap error")),
+				err: coapStatus.Error(forbidden, errors.New("coap error")),
 			},
 			want: http.StatusForbidden,
 		},
-		{name: "grpc", args: args{err: fmt.Errorf("unknown error")}, want: http.StatusInternalServerError},
+		{name: "grpc", args: args{err: errors.New("unknown error")}, want: http.StatusInternalServerError},
 		{name: "sdkError", args: args{err: SdkError{errorCode: codes.PermissionDenied}}, want: http.StatusForbidden},
 	}
 	for _, tt := range tests {

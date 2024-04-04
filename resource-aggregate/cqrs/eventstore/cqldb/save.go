@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/gocql/gocql"
@@ -54,8 +55,8 @@ func eventToKeyValues(event eventstore.Event, insert bool, data []byte) keyValue
 		kvs = append(kvs, keyValue{Key: idKey, Val: event.AggregateID()})
 		kvs = append(kvs, keyValue{Key: eventTypeKey, Val: "'" + event.EventType() + "'"})
 	}
-	kvs = append(kvs, keyValue{Key: versionKey, Val: fmt.Sprintf("%v", event.Version())})
-	kvs = append(kvs, keyValue{Key: timestampKey, Val: fmt.Sprintf("%v", event.Timestamp().UnixNano())})
+	kvs = append(kvs, keyValue{Key: versionKey, Val: strconv.FormatUint(event.Version(), 10)})
+	kvs = append(kvs, keyValue{Key: timestampKey, Val: strconv.FormatInt(event.Timestamp().UnixNano(), 10)})
 	kvs = append(kvs, keyValue{Key: snapshotKey, Val: encodeToBlob(data)})
 	serviceID, ok := event.ServiceID()
 	if ok {
@@ -69,7 +70,7 @@ func eventToKeyValues(event eventstore.Event, insert bool, data []byte) keyValue
 	etagData := event.ETag()
 	if etagData != nil {
 		kvs = append(kvs, keyValue{Key: etagKey, Val: encodeToBlob(etagData.ETag)})
-		kvs = append(kvs, keyValue{Key: etagTimestampKey, Val: fmt.Sprintf("%v", etagData.Timestamp)})
+		kvs = append(kvs, keyValue{Key: etagTimestampKey, Val: strconv.FormatInt(etagData.Timestamp, 10)})
 	} else {
 		kvs = append(kvs, keyValue{Key: etagKey, Val: "null"})
 		kvs = append(kvs, keyValue{Key: etagTimestampKey, Val: "0"})
@@ -88,7 +89,7 @@ func (s *EventStore) saveEvent(ctx context.Context, events []eventstore.Event) (
 		return eventstore.Fail, err
 	}
 	setters := eventsToCQLSetValue(lastEvent, snapshotBinary)
-	q := "update " + s.client.Keyspace() + "." + s.config.Table + " set " + setters + " " + cqldb.WhereClause + " " + deviceIDKey + "=" + lastEvent.GroupID() + " and " + idKey + "=" + lastEvent.AggregateID() + " if " + versionKey + "=" + fmt.Sprintf("%v", events[0].Version()-1) + ";"
+	q := "update " + s.client.Keyspace() + "." + s.config.Table + " set " + setters + " " + cqldb.WhereClause + " " + deviceIDKey + "=" + lastEvent.GroupID() + " and " + idKey + "=" + lastEvent.AggregateID() + " if " + versionKey + "=" + strconv.FormatUint(events[0].Version()-1, 10) + ";"
 	ok, err := s.client.Session().Query(q).WithContext(ctx).ScanCAS(nil)
 	if err != nil {
 		return eventstore.Fail, fmt.Errorf("cannot update snapshot event('%v'): %w", events, err)

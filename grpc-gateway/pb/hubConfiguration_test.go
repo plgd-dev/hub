@@ -14,7 +14,7 @@ func TestDeviceOAuthClient_Clone(t *testing.T) {
 	}
 	b := a.Clone()
 	require.Equal(t, &a, b)
-	require.NotEqual(t, fmt.Sprintf("%p", &a.Scopes), fmt.Sprintf("%p", b.Scopes))
+	require.NotEqual(t, fmt.Sprintf("%p", &a.Scopes), fmt.Sprintf("%p", b.GetScopes()))
 }
 
 func TestWebOAuthClient_Clone(t *testing.T) {
@@ -24,5 +24,5 @@ func TestWebOAuthClient_Clone(t *testing.T) {
 	}
 	b := a.Clone()
 	require.Equal(t, &a, b)
-	require.NotEqual(t, fmt.Sprintf("%p", &a.Scopes), fmt.Sprintf("%p", b.Scopes))
+	require.NotEqual(t, fmt.Sprintf("%p", &a.Scopes), fmt.Sprintf("%p", b.GetScopes()))
 }

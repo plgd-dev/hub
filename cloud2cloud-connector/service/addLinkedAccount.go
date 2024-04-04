@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -28,7 +29,7 @@ func (h *LinkedCloudHandler) Handle(ctx context.Context, iter store.LinkedCloudI
 		h.linkedCloud = s
 		return iter.Err()
 	}
-	return fmt.Errorf("not found")
+	return errors.New("not found")
 }
 
 func generateRandomString(n int) (string, error) {
@@ -42,14 +43,14 @@ func generateRandomString(n int) (string, error) {
 func (rh *RequestHandler) handleOAuth(w http.ResponseWriter, r *http.Request, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) (int, error) {
 	t, err := generateRandomString(32)
 	if err != nil {
-		return http.StatusInternalServerError, fmt.Errorf("cannot generate token")
+		return http.StatusInternalServerError, errors.New("cannot generate token")
 	}
 	_, loaded := rh.provisionCache.LoadOrStore(t, cache.NewElement(ProvisionCacheData{
 		linkedAccount: linkedAccount,
 		linkedCloud:   linkedCloud,
 	}, time.Now().Add(CacheExpiration), nil))
 	if loaded {
-		return http.StatusInternalServerError, fmt.Errorf("cannot store key - collision")
+		return http.StatusInternalServerError, errors.New("cannot store key - collision")
 	}
 
 	if !linkedAccount.Data.HasOrigin() {
@@ -86,7 +87,7 @@ func (rh *RequestHandler) addLinkedAccount(w http.ResponseWriter, r *http.Reques
 		UserID:        userID,
 	}
 	if linkedAccount.LinkedCloudID == "" {
-		return http.StatusBadRequest, fmt.Errorf("invalid cloud_id")
+		return http.StatusBadRequest, errors.New("invalid cloud_id")
 	}
 	return rh.handleOAuth(w, r, linkedAccount, linkedCloud)
 }

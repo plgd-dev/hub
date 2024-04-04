@@ -51,7 +51,7 @@ func Unmarshal(code int, input io.Reader, v protoreflect.ProtoMessage) error {
 		u := protojson.UnmarshalOptions{
 			DiscardUnknown: true,
 		}
-		err := u.Unmarshal(data, v)
+		err = u.Unmarshal(data, v)
 		if err != nil {
 			return err
 		}

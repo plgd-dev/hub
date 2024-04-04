@@ -30,8 +30,8 @@ func TestResourceLinksSnapshotTakenGetNewPublishedLinks(t *testing.T) {
 	}
 
 	res1Upd := commands.Resource{
-		Href:     res.Href,
-		DeviceId: res.Href + "-upd",
+		Href:     res.GetHref(),
+		DeviceId: res.GetHref() + "-upd",
 	}
 
 	tests := []struct {
@@ -66,7 +66,7 @@ func TestResourceLinksSnapshotTakenGetNewPublishedLinks(t *testing.T) {
 			name: "Identical",
 			fields: fields{
 				Resources: map[string]*commands.Resource{
-					res.Href: &res,
+					res.GetHref(): &res,
 				},
 			},
 			args: args{
@@ -92,7 +92,7 @@ func TestResourceLinksSnapshotTakenGetNewPublishedLinks(t *testing.T) {
 			name: "New published resource (2)",
 			fields: fields{
 				Resources: map[string]*commands.Resource{
-					res.Href: &res,
+					res.GetHref(): &res,
 				},
 			},
 			args: args{
@@ -106,8 +106,8 @@ func TestResourceLinksSnapshotTakenGetNewPublishedLinks(t *testing.T) {
 			name: "Updated resource",
 			fields: fields{
 				Resources: map[string]*commands.Resource{
-					res.Href:     &res,
-					resHref.Href: &resHref,
+					res.GetHref():     &res,
+					resHref.GetHref(): &resHref,
 				},
 			},
 			args: args{
@@ -369,7 +369,7 @@ func TestResourceLinksSnapshotTakenHandleEventResourceLinksUnpublished(t *testin
 				Hrefs: tt.args.hrefs,
 			})
 			if len(tt.want) == 0 {
-				require.Len(t, got, 0)
+				require.Empty(t, got)
 				return
 			}
 			sort.Strings(tt.want)

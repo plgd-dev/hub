@@ -2,7 +2,7 @@ package queue
 
 import (
 	"container/list"
-	"fmt"
+	"errors"
 	"sync"
 
 	"github.com/panjf2000/ants/v2"
@@ -21,7 +21,7 @@ type Queue struct {
 // New creates task queue which is processed by goroutines.
 func New(cfg Config) (*Queue, error) {
 	if cfg.Size <= 0 {
-		return nil, fmt.Errorf("invalid value of Size")
+		return nil, errors.New("invalid value of Size")
 	}
 	p, err := ants.NewPool(cfg.GoPoolSize, ants.WithPreAlloc(true), ants.WithExpiryDuration(cfg.MaxIdleTime), ants.WithNonblocking(true))
 	if err != nil {
@@ -38,7 +38,7 @@ func (q *Queue) appendQueue(tasks []func()) error {
 	q.mutex.Lock()
 	defer q.mutex.Unlock()
 	if q.queue.Len()+len(tasks) > q.limit {
-		return fmt.Errorf("reached limit of max processed jobs")
+		return errors.New("reached limit of max processed jobs")
 	}
 	for _, t := range tasks {
 		q.queue.PushBack(t)

@@ -13,7 +13,6 @@ import (
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/plgd-dev/hub/v2/test/service"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -97,18 +96,18 @@ func TestClientUpdateResource(t *testing.T) {
 
 	c := NewTestClient(t)
 	defer func() {
-		err := c.Close()
-		assert.NoError(t, err)
+		errC := c.Close()
+		require.NoError(t, errC)
 	}()
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx, cancel := context.WithTimeout(ctx, time.Second)
+			runctx, cancel := context.WithTimeout(ctx, time.Second)
 			defer cancel()
 			var got interface{}
-			err := c.UpdateResource(ctx, tt.args.deviceID, tt.args.href, tt.args.data, &got, tt.args.opts...)
+			err := c.UpdateResource(runctx, tt.args.deviceID, tt.args.href, tt.args.data, &got, tt.args.opts...)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
@@ -135,7 +134,7 @@ func TestUpdateConfigurationName(t *testing.T) {
 	c := NewTestClient(t)
 	defer func() {
 		err := c.Close()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}()
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c.GrpcGatewayClient(), deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
@@ -145,7 +144,7 @@ func TestUpdateConfigurationName(t *testing.T) {
 		for _, link := range test.GetAllBackendResourceLinks() {
 			var got interface{}
 			err := c.GetResource(ctx, devID, link.Href, &got)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			resourceData[link.Href] = got
 		}
 		return resourceData

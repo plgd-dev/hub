@@ -7,7 +7,6 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
-	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -159,7 +158,7 @@ func TestDontCreateObservationAfterRefreshTokenAndSignIn(t *testing.T) {
 			observedPath[path] = struct{}{}
 			h(w, r)
 		} else {
-			require.NoError(t, fmt.Errorf("cannot observe the same resource twice"))
+			require.NoError(t, errors.New("cannot observe the same resource twice"))
 		}
 	})
 	if co == nil {
@@ -320,6 +319,6 @@ func TestCertificateExpiration(t *testing.T) {
 		// connection was closed by certificate expiration
 		return
 	case <-time.After(2 * duration):
-		require.NoError(t, fmt.Errorf("timeout"))
+		require.NoError(t, errors.New("timeout"))
 	}
 }

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/plgd-dev/device/v2/schema/device"
@@ -52,7 +53,7 @@ func NewDeviceDirectory(projection *Projection, deviceIds []string) *DeviceDirec
 
 func decodeContent(content *commands.Content, v interface{}) error {
 	if content == nil {
-		return fmt.Errorf("cannot parse empty content")
+		return errors.New("cannot parse empty content")
 	}
 
 	var decoder func([]byte, interface{}) error

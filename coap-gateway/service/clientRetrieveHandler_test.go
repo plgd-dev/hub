@@ -106,7 +106,7 @@ func TestClientRetrieveHandler(t *testing.T) {
 				req.SetOptionString(message.URIQuery, tt.args.query)
 			}
 			resp, err := co.Do(req)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Equal(t, tt.wantsCode.String(), resp.Code().String())
 		})
 	}

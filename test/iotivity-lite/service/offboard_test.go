@@ -3,7 +3,7 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
-	"fmt"
+	"errors"
 	"strings"
 	"sync"
 	"testing"
@@ -21,7 +21,6 @@ import (
 	iotService "github.com/plgd-dev/hub/v2/test/iotivity-lite/service"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/plgd-dev/hub/v2/test/service"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/atomic"
 	"google.golang.org/grpc"
@@ -50,13 +49,13 @@ func TestOffboard(t *testing.T) {
 		log.Debugf("%+v", h.CallCounter.Data)
 		signInCount, ok := h.CallCounter.Data[iotService.SignInKey]
 		require.True(t, ok)
-		require.True(t, signInCount > 0)
+		require.Greater(t, signInCount, 0)
 		publishCount, ok := h.CallCounter.Data[iotService.PublishKey]
 		require.True(t, ok)
 		require.Equal(t, 1, publishCount)
 		singOffCount, ok := h.CallCounter.Data[iotService.SignOffKey]
 		require.True(t, ok)
-		require.True(t, singOffCount > 0)
+		require.Greater(t, singOffCount, 0)
 	}
 
 	coapShutdown := coapgwTest.SetUp(t, makeHandler, validateHandler)
@@ -120,7 +119,7 @@ func (sh *switchableHandler) blockSignInChannel() chan struct{} {
 func (sh *switchableHandler) SignIn(req coapgwService.CoapSignInReq) (coapgwService.CoapSignInResp, error) {
 	resp, err := sh.CoapHandlerWithCounter.SignIn(req)
 	if sh.failSignIn.Load() {
-		return coapgwService.CoapSignInResp{}, fmt.Errorf("sign in disabled")
+		return coapgwService.CoapSignInResp{}, errors.New("sign in disabled")
 	}
 	b := sh.blockSignInChannel()
 	if b != nil {
@@ -146,7 +145,7 @@ func (sh *switchableHandler) blockSignOff() chan struct{} {
 func (sh *switchableHandler) SignOff() error {
 	err := sh.CoapHandlerWithCounter.SignOff()
 	if sh.failSignOff.Load() {
-		return fmt.Errorf("sign off disabled")
+		return errors.New("sign off disabled")
 	}
 	b := sh.blockSignOffChannel()
 	if b != nil {
@@ -172,7 +171,7 @@ func (sh *switchableHandler) blockRefresh() chan struct{} {
 func (sh *switchableHandler) RefreshToken(req coapgwService.CoapRefreshTokenReq) (coapgwService.CoapRefreshTokenResp, error) {
 	resp, err := sh.CoapHandlerWithCounter.RefreshToken(req)
 	if sh.failRefreshToken.Load() {
-		return coapgwService.CoapRefreshTokenResp{}, fmt.Errorf("refresh token disabled")
+		return coapgwService.CoapRefreshTokenResp{}, errors.New("refresh token disabled")
 	}
 	b := sh.blockRefreshChannel()
 	if b != nil {
@@ -334,14 +333,14 @@ func TestOffboardWithSignInByRefreshToken(t *testing.T) {
 		defer h.CallCounter.Lock.Unlock()
 		log.Debugf("%+v", h.CallCounter.Data)
 		signInCount, ok := h.CallCounter.Data[iotService.SignInKey]
-		assert.True(t, ok)
-		assert.True(t, signInCount > 1)
+		require.True(t, ok)
+		require.Greater(t, signInCount, 1)
 		refreshCount, ok := h.CallCounter.Data[iotService.RefreshTokenKey]
-		assert.True(t, ok)
-		assert.True(t, refreshCount > 0)
+		require.True(t, ok)
+		require.Greater(t, refreshCount, 0)
 		signOffCount, ok := h.CallCounter.Data[iotService.SignOffKey]
-		assert.True(t, ok)
-		assert.Equal(t, 1, signOffCount)
+		require.True(t, ok)
+		require.Equal(t, 1, signOffCount)
 	}
 
 	coapShutdown := coapgwTest.SetUp(t, makeHandler, func(coapgwTestService.ServiceHandler) {})

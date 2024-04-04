@@ -2,7 +2,7 @@ package mongodb
 
 import (
 	"context"
-	"fmt"
+	"errors"
 
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/kit/v2/strings"
@@ -29,7 +29,7 @@ func getDeviceIDFilter(queries []eventstore.DeleteQuery) bson.A {
 func (s *EventStore) Delete(ctx context.Context, queries []eventstore.DeleteQuery) error {
 	deviceIDFilter := getDeviceIDFilter(queries)
 	if len(deviceIDFilter) == 0 {
-		return fmt.Errorf("failed to delete documents: invalid query")
+		return errors.New("failed to delete documents: invalid query")
 	}
 
 	col := s.client().Database(s.DBName()).Collection(getEventCollectionName())

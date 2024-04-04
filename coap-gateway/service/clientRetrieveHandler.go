@@ -98,7 +98,7 @@ func clientRetrieveFromResourceTwinHandler(ctx context.Context, client *session,
 			return resourceValue.GetData().Content, coapCodes.Content, nil
 		}
 	}
-	return nil, coapCodes.NotFound, fmt.Errorf("not found")
+	return nil, coapCodes.NotFound, errors.New("not found")
 }
 
 func clientRetrieveFromDeviceHandler(req *mux.Message, client *session, deviceID, href string) (*commands.Content, coapCodes.Code, error) {

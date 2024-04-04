@@ -52,7 +52,7 @@ func (i *iterator) parseDocument() bool {
 		return false
 	}
 	if len(i.events) == 0 {
-		i.err = fmt.Errorf("invalid data, no events found")
+		i.err = errors.New("invalid data, no events found")
 		return false
 	}
 	i.groupID, ok = doc[groupIDKey].(string)
@@ -339,7 +339,7 @@ func (s *EventStore) LoadFromSnapshot(ctx context.Context, queries []eventstore.
 		s.LogDebugfFunc("mongodb.Evenstore.LoadFromSnapshot takes %v", time.Since(t))
 	}()
 	if len(queries) == 0 {
-		return fmt.Errorf("not supported")
+		return errors.New("not supported")
 	}
 
 	normalizeQuery := make(map[string][]eventstore.SnapshotQuery)

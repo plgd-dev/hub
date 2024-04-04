@@ -179,8 +179,8 @@ func validateETags(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 	require.NoError(t, err)
 
 	defer func() {
-		err := sdkClient.Close(context.Background())
-		require.NoError(t, err)
+		errC := sdkClient.Close(context.Background())
+		require.NoError(t, errC)
 	}()
 
 	// get resource from device via SDK
@@ -201,7 +201,7 @@ func validateETags(ctx context.Context, t *testing.T, c pb.GrpcGatewayClient, de
 		Etag:       [][]byte{cfg2.GetData().GetEtag()},
 	})
 	require.NoError(t, err)
-	require.Equal(t, checkTag.GetData().GetStatus(), commands.Status_NOT_MODIFIED)
+	require.Equal(t, commands.Status_NOT_MODIFIED, checkTag.GetData().GetStatus())
 	require.Empty(t, checkTag.GetData().GetContent().GetData())
 	require.Empty(t, checkTag.GetData().GetContent().GetContentType())
 	require.Equal(t, int32(-1), checkTag.GetData().GetContent().GetCoapContentFormat())

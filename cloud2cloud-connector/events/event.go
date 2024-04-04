@@ -4,6 +4,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -51,7 +52,7 @@ func invalidKey(key string) string {
 }
 
 func invalidKeyError(key string) error {
-	return fmt.Errorf(invalidKey(key))
+	return errors.New(invalidKey(key))
 }
 
 func invalidKeyValueError(key string, value interface{}, err error) error {
@@ -120,7 +121,7 @@ func ParseEventHeader(r *http.Request) (h EventHeader, _ error) {
 	if r.Method == "POST" && v != "" {
 		acceptEncoding = strings.Split(v, ",")
 		if len(acceptEncoding) != 1 {
-			return h, invalidKeyValueError(AcceptEncodingKey, acceptEncoding, fmt.Errorf("more than 1"))
+			return h, invalidKeyValueError(AcceptEncodingKey, acceptEncoding, errors.New("more than 1"))
 		}
 	}
 

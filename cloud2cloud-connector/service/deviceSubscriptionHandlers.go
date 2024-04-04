@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync/atomic"
 	"time"
@@ -41,15 +42,15 @@ func (h deviceSubscriptionHandlers) RetrieveResource(ctx context.Context, event 
 }
 
 func (h deviceSubscriptionHandlers) DeleteResource(context.Context, *raEvents.ResourceDeletePending) error {
-	return fmt.Errorf(NOT_SUPPORTED_ERR)
+	return errors.New(NOT_SUPPORTED_ERR)
 }
 
 func (h deviceSubscriptionHandlers) CreateResource(context.Context, *raEvents.ResourceCreatePending) error {
-	return fmt.Errorf(NOT_SUPPORTED_ERR)
+	return errors.New(NOT_SUPPORTED_ERR)
 }
 
 func (h deviceSubscriptionHandlers) UpdateDeviceMetadata(context.Context, *raEvents.DeviceMetadataUpdatePending) error {
-	return fmt.Errorf(NOT_SUPPORTED_ERR)
+	return errors.New(NOT_SUPPORTED_ERR)
 }
 
 func (h deviceSubscriptionHandlers) OnDeviceSubscriberReconnectError(err error) {

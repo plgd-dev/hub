@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -22,7 +23,7 @@ type testSetupSecureClient struct {
 	mfgCert tls.Certificate
 }
 
-var errNotSet = fmt.Errorf("not set")
+var errNotSet = errors.New("not set")
 
 func (c *testSetupSecureClient) GetManufacturerCertificate() (tls.Certificate, error) {
 	if c.mfgCert.PrivateKey == nil {
@@ -132,7 +133,7 @@ func NewClient(opts ...Option) (*client.Client, error) {
 
 	mfgTrustedCABlock, _ := pem.Decode(MfgTrustedCA)
 	if mfgTrustedCABlock == nil {
-		return nil, fmt.Errorf("mfgTrustedCABlock is empty")
+		return nil, errors.New("mfgTrustedCABlock is empty")
 	}
 	mfgCA, err := x509.ParseCertificates(mfgTrustedCABlock.Bytes)
 	if err != nil {
@@ -145,16 +146,16 @@ func NewClient(opts ...Option) (*client.Client, error) {
 
 	identityIntermediateCABlock, _ := pem.Decode(identityIntermediateCA)
 	if identityIntermediateCABlock == nil {
-		return nil, fmt.Errorf("identityIntermediateCABlock is empty")
+		return nil, errors.New("identityIntermediateCABlock is empty")
 	}
 	identityIntermediateCAKeyBlock, _ := pem.Decode(identityIntermediateCAKey)
 	if identityIntermediateCAKeyBlock == nil {
-		return nil, fmt.Errorf("identityIntermediateCAKeyBlock is empty")
+		return nil, errors.New("identityIntermediateCAKeyBlock is empty")
 	}
 
 	identityTrustedCABlock, _ := pem.Decode(identityTrustedCA)
 	if identityTrustedCABlock == nil {
-		return nil, fmt.Errorf("identityTrustedCABlock is empty")
+		return nil, errors.New("identityTrustedCABlock is empty")
 	}
 	identityTrustedCACert, err := x509.ParseCertificates(identityTrustedCABlock.Bytes)
 	if err != nil {

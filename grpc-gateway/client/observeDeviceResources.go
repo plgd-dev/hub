@@ -46,7 +46,7 @@ func (c *Client) ObserveDeviceResources(ctx context.Context, deviceID string, ha
 	sub, err := c.NewDeviceSubscription(ctx, deviceID, &deviceResourcesObservation{
 		h: handler,
 		removeSubscription: func() {
-			if _, err := c.stopObservingDeviceResources(ID.String()); err != nil {
+			if _, err = c.stopObservingDeviceResources(ID.String()); err != nil {
 				handler.Error(fmt.Errorf("failed to stop device('%v') resources observation: %w", ID.String(), err))
 			}
 		},

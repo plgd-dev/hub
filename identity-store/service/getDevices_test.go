@@ -9,7 +9,6 @@ import (
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 )
@@ -27,13 +26,13 @@ func TestUserDevicesList(t *testing.T) {
 	}()
 	persistDevice(t, s.service.persistence, newTestDevice())
 	err := s.service.GetDevices(newGetDevicesRequest(), srv)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	r := map[string]*pb.Device{
 		testDeviceID: {
 			DeviceId: testDeviceID,
 		},
 	}
-	assert.Equal(t, r, srv.resourceValues)
+	require.Equal(t, r, srv.resourceValues)
 }
 
 func TestListingMoreDevices(t *testing.T) {
@@ -53,8 +52,7 @@ func TestListingMoreDevices(t *testing.T) {
 	persistDevice(t, s.service.persistence, d)
 
 	err := s.service.GetDevices(newGetDevicesRequest(), srv)
-	assert := assert.New(t)
-	assert.NoError(err)
+	require.NoError(t, err)
 	r := map[string]*pb.Device{
 		testDeviceID: {
 			DeviceId: testDeviceID,
@@ -63,7 +61,7 @@ func TestListingMoreDevices(t *testing.T) {
 			DeviceId: d.DeviceID,
 		},
 	}
-	assert.Equal(r, srv.resourceValues)
+	require.Equal(t, r, srv.resourceValues)
 }
 
 func newGetDevicesRequest() *pb.GetDevicesRequest {

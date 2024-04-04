@@ -25,7 +25,6 @@ import (
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/plgd-dev/hub/v2/test/service"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -244,7 +243,7 @@ func TestRequestHandlerGetAfterUpdateResource(t *testing.T) {
 		client, err := c.GetResources(ctx, &pb.GetResourcesRequest{
 			DeviceIdFilter: []string{devID},
 		})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		for {
 			value, err := client.Recv()
 			if errors.Is(err, io.EOF) {
@@ -307,13 +306,13 @@ func TestRequestHandlerRunMultipleUpdateResource(t *testing.T) {
 		func() {
 			t.Logf("TestRequestHandlerMultipleUpdateResource:run %v\n", i)
 			lightHref := test.TestResourceLightInstanceHref("1")
-			ctx, cancel := context.WithTimeout(ctx, time.Second*3)
+			subCtx, cancel := context.WithTimeout(ctx, time.Second*3)
 			defer cancel()
-			subClient, err := c.SubscribeToEvents(ctx)
+			subClient, err := c.SubscribeToEvents(subCtx)
 			require.NoError(t, err)
 			defer func() {
-				err = subClient.CloseSend()
-				require.NoError(t, err)
+				errC := subClient.CloseSend()
+				require.NoError(t, errC)
 			}()
 
 			err = subClient.Send(&pb.SubscribeToEvents{Action: &pb.SubscribeToEvents_CreateSubscription_{
@@ -329,9 +328,9 @@ func TestRequestHandlerRunMultipleUpdateResource(t *testing.T) {
 			require.NoError(t, err)
 			ev, err := subClient.Recv()
 			require.NoError(t, err)
-			require.Equal(t, ev.GetOperationProcessed().GetErrorStatus().GetCode(), pb.Event_OperationProcessed_ErrorStatus_OK)
+			require.Equal(t, pb.Event_OperationProcessed_ErrorStatus_OK, ev.GetOperationProcessed().GetErrorStatus().GetCode())
 			for j := 1; j >= 0; j-- {
-				_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
+				_, err = c.UpdateResource(subCtx, &pb.UpdateResourceRequest{
 					ResourceId: commands.NewResourceID(deviceID, lightHref),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),
@@ -393,10 +392,10 @@ func TestRequestHandlerRunMultipleParallelUpdateResource(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			lightHref := test.TestResourceLightInstanceHref("1")
-			ctx, cancel := context.WithTimeout(ctx, timeout)
+			updateCtx, cancel := context.WithTimeout(ctx, timeout)
 			defer cancel()
 			for j := 1; j >= 0; j-- {
-				_, err := c.UpdateResource(ctx, &pb.UpdateResourceRequest{
+				_, err := c.UpdateResource(updateCtx, &pb.UpdateResourceRequest{
 					ResourceId: commands.NewResourceID(deviceID, lightHref),
 					Content: &pb.Content{
 						ContentType: message.AppOcfCbor.String(),

@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"sync"
 
 	"github.com/plgd-dev/hub/v2/pkg/log"
@@ -66,7 +66,7 @@ func refresh(ctx context.Context, providers map[string]*oauth2.PlgdProvider, que
 		return nil, err
 	}
 
-	return nil, fmt.Errorf("invalid token")
+	return nil, errors.New("invalid token")
 }
 
 func (r *RefreshCache) getFutureToken(refreshToken string) (*future.Future, future.SetFunc) {
@@ -83,7 +83,7 @@ func (r *RefreshCache) getFutureToken(refreshToken string) (*future.Future, futu
 
 func (r *RefreshCache) Execute(ctx context.Context, providers map[string]*oauth2.PlgdProvider, queue *queue.Queue, refreshToken string, logger log.Logger) (*oauth2.Token, error) {
 	if refreshToken == "" {
-		return nil, fmt.Errorf("invalid refreshToken")
+		return nil, errors.New("invalid refreshToken")
 	}
 
 	f, set := r.getFutureToken(refreshToken)

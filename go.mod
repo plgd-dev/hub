@@ -8,7 +8,7 @@ require (
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/fullstorydev/grpchan v1.1.1
 	github.com/fxamacker/cbor/v2 v2.6.0
-	github.com/go-co-op/gocron/v2 v2.2.5
+	github.com/go-co-op/gocron/v2 v2.2.9
 	github.com/gocql/gocql v1.6.0
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/golang/snappy v0.0.4
@@ -24,12 +24,12 @@ require (
 	github.com/jtacoma/uritemplates v1.0.0
 	github.com/karrick/tparse/v2 v2.8.2
 	github.com/lestrrat-go/jwx/v2 v2.0.21
-	github.com/nats-io/nats.go v1.33.1
-	github.com/panjf2000/ants/v2 v2.9.0
-	github.com/pion/dtls/v2 v2.2.8-0.20240201071732-2597464081c8
+	github.com/nats-io/nats.go v1.34.0
+	github.com/panjf2000/ants/v2 v2.9.1
+	github.com/pion/dtls/v2 v2.2.8-0.20240327211025-8244c4570c01
 	github.com/pion/logging v0.2.2
-	github.com/plgd-dev/device/v2 v2.3.2-0.20240305073234-ee311673e17c
-	github.com/plgd-dev/go-coap/v3 v3.3.4-0.20240303135359-ce5dcc5ef1ba
+	github.com/plgd-dev/device/v2 v2.4.5-0.20240403073803-48efa094e7b0
+	github.com/plgd-dev/go-coap/v3 v3.3.4-0.20240403064319-6ed2ef2c4664
 	github.com/plgd-dev/kit/v2 v2.0.0-20211006190727-057b33161b90
 	github.com/pseudomuto/protoc-gen-doc v1.5.1
 	github.com/sirupsen/logrus v1.9.3
@@ -49,12 +49,12 @@ require (
 	go.opentelemetry.io/otel/trace v1.24.0
 	go.uber.org/atomic v1.11.0
 	go.uber.org/zap v1.27.0
-	golang.org/x/exp v0.0.0-20240222234643-814bf88cf225
+	golang.org/x/exp v0.0.0-20240325151524-a685a6edb6d8
 	golang.org/x/net v0.22.0
 	golang.org/x/oauth2 v0.18.0
 	golang.org/x/sync v0.6.0
-	google.golang.org/api v0.169.0
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240308144416-29370a3891b7
+	google.golang.org/api v0.172.0
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240401170217-c3f982113cda
 	google.golang.org/grpc v1.62.1
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.3.0
 	google.golang.org/protobuf v1.33.0
@@ -62,15 +62,15 @@ require (
 )
 
 require (
-	cloud.google.com/go/compute v1.25.0 // indirect
+	cloud.google.com/go/compute v1.25.1 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	github.com/Masterminds/semver v1.4.2 // indirect
 	github.com/Masterminds/sprig v2.15.0+incompatible // indirect
 	github.com/aokoli/goutils v1.0.1 // indirect
 	github.com/bufbuild/protocompile v0.9.0 // indirect
-	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
+	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
+	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.3.0 // indirect
 	github.com/dsnet/golib/memfile v1.0.0 // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.0.4 // indirect
 	github.com/go-logr/logr v1.4.1 // indirect
@@ -81,8 +81,8 @@ require (
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/s2a-go v0.1.7 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.2 // indirect
-	github.com/googleapis/gax-go/v2 v2.12.2 // indirect
-	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.1 // indirect
+	github.com/googleapis/gax-go/v2 v2.12.3 // indirect
+	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.1.0 // indirect
 	github.com/hailocab/go-hostpool v0.0.0-20160125115350-e80d13ce29ed // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/huandu/xstrings v1.0.0 // indirect
@@ -101,7 +101,7 @@ require (
 	github.com/mwitkow/go-proto-validators v0.0.0-20180403085117-0950a7990007 // indirect
 	github.com/nats-io/nkeys v0.4.7 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
-	github.com/pion/transport/v3 v3.0.1 // indirect
+	github.com/pion/transport/v3 v3.0.2 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/pseudomuto/protokit v0.2.0 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
@@ -121,10 +121,10 @@ require (
 	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20240308144416-29370a3891b7 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240401170217-c3f982113cda // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 )
 
 // note: github.com/pion/dtls/v2/pkg/net package is not yet available in release branches,
 // so we force to the use of the pinned master branch
-replace github.com/pion/dtls/v2 => github.com/pion/dtls/v2 v2.2.8-0.20240201071732-2597464081c8
+replace github.com/pion/dtls/v2 => github.com/pion/dtls/v2 v2.2.8-0.20240327211025-8244c4570c01

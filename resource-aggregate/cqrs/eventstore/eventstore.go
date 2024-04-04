@@ -2,7 +2,7 @@ package eventstore
 
 import (
 	"context"
-	"fmt"
+	"errors"
 )
 
 // VersionQuery used to load events from version.
@@ -69,4 +69,4 @@ type EventStore interface {
 }
 
 // ErrNotSupported is returned when the operation is not supported.
-var ErrNotSupported = fmt.Errorf("not supported")
+var ErrNotSupported = errors.New("not supported")

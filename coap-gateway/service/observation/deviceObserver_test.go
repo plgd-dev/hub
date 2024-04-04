@@ -121,13 +121,13 @@ func (h *observerHandler) SignIn(req coapgwService.CoapSignInReq) (coapgwService
 
 	err = h.service.Submit(func() {
 		if prevDeviceObserver != nil {
-			v, err := prevDeviceObserver.Get(h.ctx)
-			require.NoError(h.t, err)
+			v, errD := prevDeviceObserver.Get(h.ctx)
+			require.NoError(h.t, errD)
 			obs := v.(*observation.DeviceObserver)
 			obs.Clean(h.ctx)
 		}
-		deviceObserver, err := h.deviceObserverFactory.makeDeviceObserver(h.ctx, h.coapConn, h.OnObserveResource, h.OnGetResourceContent, h.UpdateTwinSynchronizationStatus, observation.WithRequireBatchObserveEnabled(h.requireBatchObserveEnabled))
-		require.NoError(h.t, err)
+		deviceObserver, errD := h.deviceObserverFactory.makeDeviceObserver(h.ctx, h.coapConn, h.OnObserveResource, h.OnGetResourceContent, h.UpdateTwinSynchronizationStatus, observation.WithRequireBatchObserveEnabled(h.requireBatchObserveEnabled))
+		require.NoError(h.t, errD)
 		setDeviceObserver(deviceObserver, nil)
 	})
 	require.NoError(h.t, err)
@@ -298,7 +298,7 @@ func testPreregisterVirtualDevice(ctx context.Context, t *testing.T, deviceID st
 	ev, err := client.Recv()
 	require.NoError(t, err)
 	require.NotEmpty(t, ev.GetOperationProcessed())
-	require.Equal(t, ev.GetOperationProcessed().GetErrorStatus().GetCode(), pb.Event_OperationProcessed_ErrorStatus_OK)
+	require.Equal(t, pb.Event_OperationProcessed_ErrorStatus_OK, ev.GetOperationProcessed().GetErrorStatus().GetCode())
 	virtualdevice.CreateDevice(ctx, t, "name-"+deviceID, deviceID, numResources, test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME), isClient, raClient)
 	resources := virtualdevice.CreateDeviceResourceLinks(deviceID, numResources)
 	links := make([]schema.ResourceLink, 0, len(resources))

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -48,7 +49,7 @@ func (rh *RequestHandler) RetrieveResourceWithContentQuery(ctx context.Context, 
 		}
 		return code, err
 	}
-	return http.StatusBadRequest, fmt.Errorf("invalid content query parameter")
+	return http.StatusBadRequest, errors.New("invalid content query parameter")
 }
 
 func (rh *RequestHandler) RetrieveResource(w http.ResponseWriter, r *http.Request) {

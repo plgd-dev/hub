@@ -78,7 +78,7 @@ func (requestHandler *RequestHandler) getHubConfiguration(w http.ResponseWriter,
 		m := serverMux.NewJsonpbMarshaler()
 		w.Header().Set(contentTypeHeaderKey, uri.ApplicationProtoJsonContentType)
 		w.WriteHeader(http.StatusOK)
-		if err := m.NewEncoder(w).Encode(resp); err != nil {
+		if err = m.NewEncoder(w).Encode(resp); err != nil {
 			log.Errorf("failed to write response: %v", err)
 		}
 		return

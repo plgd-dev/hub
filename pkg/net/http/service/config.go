@@ -1,6 +1,7 @@
 package http
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/plgd-dev/hub/v2/pkg/config"
@@ -32,19 +33,19 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("HTTPConnection.%w", err)
 	}
 	if c.TraceProvider == nil {
-		return fmt.Errorf("traceProvider is required")
+		return errors.New("traceProvider is required")
 	}
 	if c.AuthRules == nil {
-		return fmt.Errorf("authRules is required")
+		return errors.New("authRules is required")
 	}
 	if c.FileWatcher == nil {
-		return fmt.Errorf("fileWatcher is required")
+		return errors.New("fileWatcher is required")
 	}
 	if c.Logger == nil {
-		return fmt.Errorf("logger is required")
+		return errors.New("logger is required")
 	}
 	if c.ServiceName == "" {
-		return fmt.Errorf("serviceName is required")
+		return errors.New("serviceName is required")
 	}
 
 	return nil

@@ -6,7 +6,7 @@ import (
 	"crypto/rand"
 	"crypto/x509"
 	"encoding/pem"
-	"fmt"
+	"errors"
 	"math/big"
 	"time"
 
@@ -58,11 +58,11 @@ func New(caCert []*x509.Certificate, caKey crypto.PrivateKey, opts ...Opt) *Cert
 
 func (s *CertificateSigner) Sign(_ context.Context, csr []byte) ([]byte, error) {
 	if len(s.caCert) == 0 {
-		return nil, fmt.Errorf("cannot sign with empty signer CA certificates")
+		return nil, errors.New("cannot sign with empty signer CA certificates")
 	}
 	csrBlock, _ := pem.Decode(csr)
 	if csrBlock == nil {
-		return nil, fmt.Errorf("pem not found")
+		return nil, errors.New("pem not found")
 	}
 
 	certificateRequest, err := x509.ParseCertificateRequest(csrBlock.Bytes)
@@ -106,7 +106,7 @@ func (s *CertificateSigner) Sign(_ context.Context, csr []byte) ([]byte, error) 
 		ExtraExtensions:    certificateRequest.Extensions,
 	}
 	if s.cfg.OverrideCertTemplate != nil {
-		if err := s.cfg.OverrideCertTemplate(&template); err != nil {
+		if err = s.cfg.OverrideCertTemplate(&template); err != nil {
 			return nil, err
 		}
 	}

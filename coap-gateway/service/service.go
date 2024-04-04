@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -291,7 +292,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 
 	if firstProvider == nil {
 		nats.Close()
-		return nil, fmt.Errorf("device providers are empty")
+		return nil, errors.New("device providers are empty")
 	}
 
 	keyCache := jwt.NewKeyCache(firstProvider.OpenID.JWKSURL, firstProvider.HTTP())
@@ -357,7 +358,7 @@ func onUnprocessedRequestError(code coapCodes.Code) error {
 	if code == coapCodes.Content {
 		errMsg = "notification from client was dropped"
 	}
-	return fmt.Errorf(errMsg)
+	return errors.New(errMsg)
 }
 
 func wantToCloseClientOnError(req *mux.Message) bool {
@@ -391,7 +392,7 @@ func (s *Service) processCommandTask(req *mux.Message, client *session, span tra
 			}()
 		}
 	default:
-		err := onUnprocessedRequestError(req.Code())
+		err = onUnprocessedRequestError(req.Code())
 		client.logRequestResponse(req, nil, err)
 		span.RecordError(err)
 		span.SetStatus(otelCodes.Error, err.Error())
@@ -449,7 +450,7 @@ func executeCommand(s mux.ResponseWriter, req *mux.Message, server *Service, fnc
 	if !ok {
 		client = newSession(server, s.Conn(), "", time.Time{})
 		if req.Code() == coapCodes.Empty {
-			client.logRequestResponse(req, nil, fmt.Errorf("cannot handle command: client not found"))
+			client.logRequestResponse(req, nil, errors.New("cannot handle command: client not found"))
 			client.Close()
 			return
 		}

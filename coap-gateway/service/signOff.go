@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math"
 	"net/url"
@@ -74,13 +75,13 @@ func (s signOffData) updateSignOffDataFromAuthContext(client *session) signOffDa
 
 func (s signOffData) validateSignOffData() error {
 	if s.deviceID == "" {
-		return fmt.Errorf("invalid device id")
+		return errors.New("invalid device id")
 	}
 	if s.userID == "" {
-		return fmt.Errorf("invalid user id")
+		return errors.New("invalid user id")
 	}
 	if s.accessToken == "" {
-		return fmt.Errorf("invalid access token")
+		return errors.New("invalid access token")
 	}
 	return nil
 }
@@ -91,7 +92,7 @@ func getSignOffDataFromClaims(ctx context.Context, client *session, sod signOffD
 		return "", err
 	}
 
-	if err := jwtClaims.ValidateOwnerClaim(client.server.config.APIs.COAP.Authorization.OwnerClaim, sod.userID); err != nil {
+	if err = jwtClaims.ValidateOwnerClaim(client.server.config.APIs.COAP.Authorization.OwnerClaim, sod.userID); err != nil {
 		return "", err
 	}
 
@@ -125,7 +126,7 @@ func signOffHandler(req *mux.Message, client *session) (*pool.Message, error) {
 
 	err = client.blockSignOff.Acquire(ctx, math.MaxInt64)
 	if err != nil {
-		return nil, statusErrorf(coapCodes.ServiceUnavailable, errFmtSignOff, fmt.Errorf("cannot acquire sign off lock: some commands are in progress"))
+		return nil, statusErrorf(coapCodes.ServiceUnavailable, errFmtSignOff, errors.New("cannot acquire sign off lock: some commands are in progress"))
 	}
 	defer client.blockSignOff.Release(math.MaxInt64)
 

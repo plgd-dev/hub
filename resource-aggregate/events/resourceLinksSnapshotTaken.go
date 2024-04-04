@@ -89,7 +89,7 @@ func (e *ResourceLinksSnapshotTaken) GetNewPublishedLinks(pub *ResourceLinksPubl
 	published := make([]*commands.Resource, 0, len(pub.GetResources()))
 
 	for _, resPub := range pub.GetResources() {
-		resSnap, ok := e.Resources[resPub.Href]
+		resSnap, ok := e.GetResources()[resPub.GetHref()]
 		if !ok || !EqualResource(resPub, resSnap) {
 			published = append(published, resPub)
 		}
@@ -226,7 +226,7 @@ func (e *ResourceLinksSnapshotTakenForCommand) HandleCommand(ctx context.Context
 		if newVersion == 0 {
 			return nil, status.Errorf(codes.NotFound, errInvalidVersion)
 		}
-		if req.CommandMetadata == nil {
+		if req.GetCommandMetadata() == nil {
 			return nil, status.Errorf(codes.InvalidArgument, errInvalidCommandMetadata)
 		}
 

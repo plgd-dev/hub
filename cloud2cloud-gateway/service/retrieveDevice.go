@@ -65,7 +65,7 @@ func (rh *RequestHandler) GetResourceLinks(ctx context.Context, deviceIdFilter [
 		}
 	}
 	if len(resourceLinks) == 0 {
-		return nil, fmt.Errorf("cannot get resource links: not found")
+		return nil, errors.New("cannot get resource links: not found")
 	}
 	return resourceLinks, nil
 }
@@ -216,7 +216,7 @@ func (rh *RequestHandler) RetrieveDeviceWithContentQuery(ctx context.Context, w 
 	case ContentQueryAllValue:
 		return rh.RetrieveDeviceWithRepresentations(ctx, w, routeVars[deviceIDKey], encoder)
 	}
-	return http.StatusBadRequest, fmt.Errorf("invalid content query parameter")
+	return http.StatusBadRequest, errors.New("invalid content query parameter")
 }
 
 func (rh *RequestHandler) RetrieveDevice(w http.ResponseWriter, r *http.Request) {

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"testing"
 	"time"
 
@@ -141,7 +140,7 @@ func (eh *mockEventHandler) waitForEvent(timeout time.Duration) (mockEvent, erro
 	case e := <-eh.newEvent:
 		return e, nil
 	case <-time.After(timeout):
-		return mockEvent{}, fmt.Errorf("timeout")
+		return mockEvent{}, errors.New("timeout")
 	}
 }
 
@@ -152,7 +151,7 @@ func testWaitForAnyEvent(timeout time.Duration, eh1 *mockEventHandler, eh2 *mock
 	case e := <-eh2.newEvent:
 		return e, nil
 	case <-time.After(timeout):
-		return mockEvent{}, fmt.Errorf("timeout")
+		return mockEvent{}, errors.New("timeout")
 	}
 }
 
@@ -243,7 +242,7 @@ func acceptanceTest(ctx context.Context, t *testing.T, timeout time.Duration, pu
 		},
 	}
 
-	require.Equal(t, 2, len(publishTopics))
+	require.Len(t, publishTopics, 2)
 
 	t.Log("Without subscription")
 	err := publisher.Publish(ctx, publishTopics[0:1], aggregateID1Path.GroupID, aggregateID1Path.AggregateID, eventsToPublish[0])

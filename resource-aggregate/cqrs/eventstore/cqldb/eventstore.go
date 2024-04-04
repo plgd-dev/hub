@@ -138,11 +138,11 @@ func encodeToBlob(data []byte) string {
 
 func getLatestEventsSnapshot(events []eventstore.Event, marshaler MarshalerFunc) (eventstore.Event, []byte, error) {
 	if len(events) == 0 {
-		return nil, nil, fmt.Errorf("empty events")
+		return nil, nil, errors.New("empty events")
 	}
 	lastEvent := events[len(events)-1]
 	if !lastEvent.IsSnapshot() {
-		return nil, nil, fmt.Errorf("the last event must be a snapshot")
+		return nil, nil, errors.New("the last event must be a snapshot")
 	}
 	// Marshal event data if there is any.
 	snapshot, err := marshaler(lastEvent)

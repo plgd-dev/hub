@@ -137,7 +137,7 @@ func (i *iterator) Close() {
 
 func (p *PersistenceTx) Persist(d *persistence.AuthorizedDevice) error {
 	if d == nil {
-		return fmt.Errorf("cannot persist nil device")
+		return errors.New("cannot persist nil device")
 	}
 	if p.err != nil {
 		return p.err

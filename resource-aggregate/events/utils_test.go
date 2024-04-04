@@ -94,8 +94,9 @@ func TestEqualResource(t *testing.T) {
 	resInterfacesNil.Interfaces = nil
 
 	resInterfaces2 := createResource()
-	resInterfaces2.Interfaces = make([]string, 1)
-	copy(resInterfaces2.Interfaces, res.Interfaces)
+	interfaces := make([]string, 1)
+	copy(interfaces, res.GetInterfaces())
+	resInterfaces2.Interfaces = interfaces
 
 	resAnchor := createResource()
 	resAnchor.Anchor = "Anchor2"

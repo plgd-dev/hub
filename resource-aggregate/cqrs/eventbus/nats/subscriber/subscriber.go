@@ -3,6 +3,7 @@ package subscriber
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -146,7 +147,7 @@ func New(conn *nats.Conn, pendingLimits natsClient.PendingLimitsConfig, logger l
 	}
 
 	if cfg.dataUnmarshaler == nil {
-		return nil, fmt.Errorf("invalid eventUnmarshaler")
+		return nil, errors.New("invalid eventUnmarshaler")
 	}
 
 	s := &Subscriber{

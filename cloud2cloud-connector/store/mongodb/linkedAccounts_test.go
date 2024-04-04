@@ -7,7 +7,6 @@ import (
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/test"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -45,10 +44,10 @@ func TestStoreInsertLinkedAccount(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := s.InsertLinkedAccount(ctx, tt.args.sub)
 			if tt.wantErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
+				require.Error(t, err)
+				return
 			}
+			require.NoError(t, err)
 		})
 	}
 }
@@ -107,10 +106,10 @@ func TestStoreUpdateLinkedAccount(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := s.UpdateLinkedAccount(ctx, tt.args.sub)
 			if tt.wantErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
+				require.Error(t, err)
+				return
 			}
+			require.NoError(t, err)
 		})
 	}
 }
@@ -159,10 +158,10 @@ func TestStoreRemoveLinkedAccount(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := s.RemoveLinkedAccount(ctx, tt.args.linkedAccountID)
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				return
 			}
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		})
 	}
 }
@@ -241,11 +240,11 @@ func TestStoreLoadLinkedAccounts(t *testing.T) {
 			var h testLinkedAccountHandler
 			err := s.LoadLinkedAccounts(ctx, tt.args.query, &h)
 			if tt.wantErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.want, h.accs)
+				require.Error(t, err)
+				return
 			}
+			require.NoError(t, err)
+			require.Equal(t, tt.want, h.accs)
 		})
 	}
 }

@@ -391,13 +391,13 @@ func (c *SubscriptionsCache) Subscribe(subject string, onEvent SendEventWithType
 			closeFunc = c.makeCloseFunc(subject, handlerID)
 		}
 		if s.subscription == nil {
-			err := s.subscribeLocked(subject, c.conn.Subscribe, func(msg *nats.Msg) {
-				if err := s.handleEvent(msg); err != nil {
-					c.errFunc(err)
+			errS := s.subscribeLocked(subject, c.conn.Subscribe, func(msg *nats.Msg) {
+				if errH := s.handleEvent(msg); errH != nil {
+					c.errFunc(errH)
 				}
 			})
-			if err != nil {
-				return err
+			if errS != nil {
+				return errS
 			}
 		}
 		return nil

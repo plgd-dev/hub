@@ -7,7 +7,6 @@ import (
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/test"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2/oauth"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -85,10 +84,10 @@ func TestStoreUpdateLinkedCloud(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := s.UpdateLinkedCloud(ctx, tt.args.sub)
 			if tt.wantErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
+				require.Error(t, err)
+				return
 			}
+			require.NoError(t, err)
 		})
 	}
 }
@@ -142,10 +141,10 @@ func TestStoreRemoveLinkedCloud(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := s.RemoveLinkedCloud(ctx, tt.args.LinkedCloudID)
 			if tt.wantErr {
-				assert.Error(t, err)
-			} else {
-				assert.NoError(t, err)
+				require.Error(t, err)
+				return
 			}
+			require.NoError(t, err)
 		})
 	}
 }
@@ -242,11 +241,11 @@ func TestStoreLoadLinkedClouds(t *testing.T) {
 			var h testLinkedCloudHandler
 			err := s.LoadLinkedClouds(ctx, tt.args.query, &h)
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				return
 			}
-			assert.NoError(t, err)
-			assert.Equal(t, tt.want, h.lcs)
+			require.NoError(t, err)
+			require.Equal(t, tt.want, h.lcs)
 		})
 	}
 }

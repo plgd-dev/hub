@@ -89,12 +89,12 @@ func TestAggregateHandleCancelPendingMetadataUpdates(t *testing.T) {
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, noop.NewTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		errC := eventstore.Close(ctx)
-		assert.NoError(t, errC)
+		require.NoError(t, errC)
 	}()
 	naClient, publisher, err := natsTest.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -212,12 +212,12 @@ func TestRequestHandlerCancelPendingMetadataUpdates(t *testing.T) {
 	err = eventstore.Clear(ctx)
 	require.NoError(t, err)
 	err = eventstore.Close(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	eventstore, err = mongodb.New(ctx, cfg.Clients.Eventstore.Connection.MongoDB, fileWatcher, logger, noop.NewTracerProvider(), mongodb.WithUnmarshaler(utils.Unmarshal), mongodb.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		errC := eventstore.Close(ctx)
-		assert.NoError(t, errC)
+		require.NoError(t, errC)
 	}()
 	naClient, publisher, err := natsTest.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
@@ -244,10 +244,10 @@ func TestRequestHandlerCancelPendingMetadataUpdates(t *testing.T) {
 
 	for _, tt := range test {
 		tfunc := func(t *testing.T) {
-			ctx := kitNetGrpc.CtxWithIncomingToken(ctx, config.CreateJwtToken(t, jwt.MapClaims{
+			cpmuCtx := kitNetGrpc.CtxWithIncomingToken(ctx, config.CreateJwtToken(t, jwt.MapClaims{
 				"sub": tt.args.userID,
 			}))
-			want, err := requestHandler.CancelPendingMetadataUpdates(ctx, tt.args.request)
+			want, err := requestHandler.CancelPendingMetadataUpdates(cpmuCtx, tt.args.request)
 			if tt.wantErr {
 				require.Error(t, err)
 				s, ok := status.FromError(kitNetGrpc.ForwardFromError(codes.Unknown, err))

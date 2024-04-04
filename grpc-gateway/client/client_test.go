@@ -111,9 +111,6 @@ func (h *gatewayHandler) GetResources(_ *pb.GetResourcesRequest, srv pb.GrpcGate
 	if err != nil {
 		return err
 	}
-	if err != nil {
-		return err
-	}
 	return nil
 }
 

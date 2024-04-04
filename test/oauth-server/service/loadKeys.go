@@ -3,7 +3,7 @@ package service
 import (
 	"crypto/x509"
 	"encoding/pem"
-	"fmt"
+	"errors"
 
 	"github.com/plgd-dev/hub/v2/pkg/config/property/urischeme"
 )
@@ -15,7 +15,7 @@ func LoadPrivateKey(path urischeme.URIScheme) (interface{}, error) {
 	}
 	certDERBlock, _ := pem.Decode(certPEMBlock)
 	if certDERBlock == nil {
-		return nil, fmt.Errorf("cannot decode pem block")
+		return nil, errors.New("cannot decode pem block")
 	}
 
 	if key, err := x509.ParsePKCS8PrivateKey(certDERBlock.Bytes); err == nil {
@@ -27,5 +27,5 @@ func LoadPrivateKey(path urischeme.URIScheme) (interface{}, error) {
 	if key, err := x509.ParsePKCS1PrivateKey(certDERBlock.Bytes); err == nil {
 		return key, nil
 	}
-	return nil, fmt.Errorf("unknown type")
+	return nil, errors.New("unknown type")
 }

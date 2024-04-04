@@ -25,7 +25,8 @@ func isNotModifiedResponse(result interface{}) bool {
 	}
 	data, ok := m["data"]
 	if ok {
-		tmp, ok := data.(map[string]interface{})
+		var tmp map[string]interface{}
+		tmp, ok = data.(map[string]interface{})
 		if !ok {
 			return false
 		}
@@ -104,7 +105,7 @@ func toSimpleResponse(w http.ResponseWriter, rec *httptest.ResponseRecorder, wri
 	writeSimpleResponse(w, rec, result, writeError)
 }
 
-func (requestHandler *RequestHandler) getDevice(w http.ResponseWriter, r *http.Request) {
+func (requestHandler *RequestHandler) serveDevicesRequest(r *http.Request) (string, *httptest.ResponseRecorder, error) {
 	vars := mux.Vars(r)
 	deviceID := vars[uri.DeviceIDKey]
 	type Options struct {
@@ -115,14 +116,21 @@ func (requestHandler *RequestHandler) getDevice(w http.ResponseWriter, r *http.R
 	}
 	v, err := query.Values(opt)
 	if err != nil {
-		serverMux.WriteError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot get device('%v'): %v", deviceID, err))
-		return
+		return deviceID, nil, err
 	}
 	r.URL.Path = uri.Devices
 	r.URL.RawQuery = v.Encode()
 	rec := httptest.NewRecorder()
 	requestHandler.mux.ServeHTTP(rec, r)
+	return deviceID, rec, nil
+}
 
+func (requestHandler *RequestHandler) getDevice(w http.ResponseWriter, r *http.Request) {
+	deviceID, rec, err := requestHandler.serveDevicesRequest(r)
+	if err != nil {
+		serverMux.WriteError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot get device('%v'): %v", deviceID, err))
+		return
+	}
 	toSimpleResponse(w, rec, func(w http.ResponseWriter, err error) {
 		serverMux.WriteError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot get device('%v'): %v", deviceID, err))
 	}, streamResponseKey)

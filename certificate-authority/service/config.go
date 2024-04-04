@@ -89,7 +89,7 @@ func (c *StorageConfig) Validate() error {
 	if c.CleanUpRecords == "" {
 		return nil
 	}
-	s, err := gocron.NewScheduler(gocron.WithLocation(time.Local))
+	s, err := gocron.NewScheduler(gocron.WithLocation(time.Local)) //nolint:gosmopolitan
 	if err != nil {
 		return fmt.Errorf("cannot create cron job: %w", err)
 	}

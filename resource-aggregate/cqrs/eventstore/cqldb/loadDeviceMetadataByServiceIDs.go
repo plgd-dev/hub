@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/gocql/gocql"
@@ -19,7 +20,7 @@ func (s *EventStore) LoadDeviceMetadataByServiceIDs(ctx context.Context, service
 		return nil, status.Errorf(codes.InvalidArgument, "invalid serviceIDs")
 	}
 	serviceIDs = pkgStrings.Unique(serviceIDs)
-	q := cqldb.SelectCommand + " " + deviceIDKey + "," + serviceIDKey + " " + cqldb.FromClause + " " + s.Table() + " " + cqldb.WhereClause + " " + serviceIDKey + " in (" + strings.Join(serviceIDs, ",") + ") LIMIT " + fmt.Sprintf("%v", limit) + ";"
+	q := cqldb.SelectCommand + " " + deviceIDKey + "," + serviceIDKey + " " + cqldb.FromClause + " " + s.Table() + " " + cqldb.WhereClause + " " + serviceIDKey + " in (" + strings.Join(serviceIDs, ",") + ") LIMIT " + strconv.FormatInt(limit, 10) + ";"
 	iter := s.client.Session().Query(q).WithContext(ctx).Iter()
 	if iter == nil {
 		return nil, errors.New("cannot create iterator")

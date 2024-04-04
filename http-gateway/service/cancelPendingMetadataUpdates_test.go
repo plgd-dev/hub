@@ -22,7 +22,7 @@ func TestRequestHandlerCancelPendingMetadataUpdates(t *testing.T) {
 	_, _, devicePendings, shutdown := pbTest.InitPendingEvents(ctx, t)
 	defer shutdown()
 
-	require.Equal(t, len(devicePendings), 2)
+	require.Len(t, devicePendings, 2)
 
 	type args struct {
 		deviceID            string

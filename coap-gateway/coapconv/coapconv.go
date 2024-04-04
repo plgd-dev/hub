@@ -110,7 +110,7 @@ func newCoapResourceCreateOrUpdateRequest(ctx context.Context, messagePool *pool
 		return nil, fmt.Errorf("invalid content type for request: %w", err)
 	}
 	if content == nil {
-		return nil, fmt.Errorf("invalid content for request")
+		return nil, errors.New("invalid content for request")
 	}
 	token, err := message.GetToken()
 	if err != nil {
@@ -416,8 +416,8 @@ func NewUpdateResourceRequest(resourceID *commands.ResourceId, req *mux.Message,
 	return &commands.UpdateResourceRequest{
 		ResourceId: resourceID,
 		Content: &commands.Content{
-			Data:        content.Data,
-			ContentType: content.ContentType,
+			Data:        content.GetData(),
+			ContentType: content.GetContentType(),
 		},
 		ResourceInterface: resourceInterface,
 		CommandMetadata:   metadata,

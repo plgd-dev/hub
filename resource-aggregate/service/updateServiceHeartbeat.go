@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -336,10 +337,10 @@ func (s *ServiceHeartbeat) pop() []UpdateServiceMetadataReqResp {
 
 func (s *ServiceHeartbeat) ProcessRequest(r UpdateServiceMetadataReqResp) error {
 	if r.Request == nil {
-		return fmt.Errorf("invalid request")
+		return errors.New("invalid request")
 	}
 	if r.ResponseChan == nil {
-		return fmt.Errorf("invalid response channel")
+		return errors.New("invalid response channel")
 	}
 	s.push(r)
 	s.wakeUp()
