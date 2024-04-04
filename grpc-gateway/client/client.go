@@ -53,7 +53,7 @@ func NewFromConfig(cfg *Config, tlsCfg *tls.Config) (*Client, error) {
 		PermitWithoutStream: true,
 	}
 
-	conn, err := grpc.Dial(cfg.GatewayAddress, grpc.WithKeepaliveParams(keepAlive), grpc.WithTransportCredentials(credentials.NewTLS(tlsCfg)))
+	conn, err := grpc.NewClient(cfg.GatewayAddress, grpc.WithKeepaliveParams(keepAlive), grpc.WithTransportCredentials(credentials.NewTLS(tlsCfg)))
 	if err != nil {
 		return nil, fmt.Errorf("cannot create certificate authority client: %w", err)
 	}

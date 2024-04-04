@@ -256,7 +256,7 @@ func testDevices(t *testing.T, numDevices, numResources, expRSSInMB int, resourc
 		wg.Wait()
 	}
 	defer coapShutdown()
-	grpcConn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	grpcConn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)

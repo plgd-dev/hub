@@ -178,7 +178,7 @@ func main() {
 	tlsCfg := tls.Config{
 		InsecureSkipVerify: true,
 	}
-	grpcConn, err := grpc.Dial(*addr, grpc.WithTransportCredentials(credentials.NewTLS(&tlsCfg)))
+	grpcConn, err := grpc.NewClient(*addr, grpc.WithTransportCredentials(credentials.NewTLS(&tlsCfg)))
 	if err != nil {
 		log.Fatalf("cannot connect to grpc: %v", err)
 	}

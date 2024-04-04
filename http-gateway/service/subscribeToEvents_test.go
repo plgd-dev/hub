@@ -134,7 +134,7 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 	shutdownHttp := httpgwTest.SetUp(t)
 	defer shutdownHttp()
 
-	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)

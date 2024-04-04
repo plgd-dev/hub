@@ -235,7 +235,7 @@ func main() {
 		*accesstoken = getAccessToken(*authAddr, &tlsCfg)
 	}
 
-	conn, err := grpc.Dial(*addr, grpc.WithTransportCredentials(credentials.NewTLS(&tlsCfg)))
+	conn, err := grpc.NewClient(*addr, grpc.WithTransportCredentials(credentials.NewTLS(&tlsCfg)))
 	if err != nil {
 		log.Fatalf("Error dialing: %v", err)
 	}
