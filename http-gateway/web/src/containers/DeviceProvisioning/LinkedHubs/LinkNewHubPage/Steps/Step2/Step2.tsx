@@ -11,7 +11,6 @@ import IconPlus from '@shared-ui/components/Atomic/Icon/components/IconPlus'
 import Button from '@shared-ui/components/Atomic/Button'
 import IconClose from '@shared-ui/components/Atomic/Icon/components/IconClose'
 import { convertSize } from '@shared-ui/components/Atomic'
-import * as commonStyles from '@shared-ui/components/Templates/FullPageWizard/FullPageWizardCommon.styles'
 import StepButtons from '@shared-ui/components/Templates/FullPageWizard/StepButtons'
 import Show from '@shared-ui/components/Atomic/Show'
 import ValidationMessage from '@shared-ui/components/Atomic/ValidationMessage'
@@ -63,7 +62,7 @@ const Step2: FC<Props> = (props) => {
 
     return (
         <form>
-            <h1 css={commonStyles.headline}>{_(t.hubDetails)}</h1>
+            <FullPageWizard.Headline>{_(t.hubDetails)}</FullPageWizard.Headline>
             <FullPageWizard.Description large>{_(t.addLinkedHubDetailsDescription)}</FullPageWizard.Description>
 
             <FormGroup error={errors.hubId ? errors.hubId.message : undefined} id='hubID'>

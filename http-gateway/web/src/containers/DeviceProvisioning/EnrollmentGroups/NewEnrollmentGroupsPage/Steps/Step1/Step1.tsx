@@ -3,7 +3,6 @@ import { useIntl } from 'react-intl'
 import { Controller } from 'react-hook-form'
 import get from 'lodash/get'
 
-import * as commonStyles from '@shared-ui/components/Templates/FullPageWizard/FullPageWizardCommon.styles'
 import { FormContext } from '@shared-ui/common/context/FormContext'
 import FormInput from '@shared-ui/components/Atomic/FormInput'
 import FormGroup from '@shared-ui/components/Atomic/FormGroup'
@@ -52,7 +51,7 @@ const Step1: FC<any> = (props) => {
 
     return (
         <form>
-            <h1 css={commonStyles.headline}>{_(t.enrollmentConfiguration)}</h1>
+            <FullPageWizard.Headline>{_(t.enrollmentConfiguration)}</FullPageWizard.Headline>
             <FullPageWizard.Description large>{_(t.addEnrollmentGroupDescription)}</FullPageWizard.Description>
 
             <FormGroup error={get(errors, 'name.message')} id='name'>

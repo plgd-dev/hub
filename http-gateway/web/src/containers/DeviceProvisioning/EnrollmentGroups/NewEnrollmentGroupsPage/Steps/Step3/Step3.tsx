@@ -1,7 +1,6 @@
 import React, { FC, useContext, useEffect, useState } from 'react'
 import { useIntl } from 'react-intl'
 
-import * as commonStyles from '@shared-ui/components/Templates/FullPageWizard/FullPageWizardCommon.styles'
 import { useForm } from '@shared-ui/common/hooks'
 import { FormContext } from '@shared-ui/common/context/FormContext'
 import StepButtons from '@shared-ui/components/Templates/FullPageWizard/StepButtons'
@@ -43,7 +42,7 @@ const Step3: FC<any> = (props) => {
 
     return (
         <form>
-            <h1 css={commonStyles.headline}>{_(t.deviceCredentials)}</h1>
+            <FullPageWizard.Headline>{_(t.deviceCredentials)}</FullPageWizard.Headline>
             <FullPageWizard.Description large>{_(t.addEnrollmentGroupDeviceCredentialsDescription)}</FullPageWizard.Description>
 
             <DetailFromChunk3

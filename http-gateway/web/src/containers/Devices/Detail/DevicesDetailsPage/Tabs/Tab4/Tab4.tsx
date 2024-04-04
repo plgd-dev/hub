@@ -1,6 +1,5 @@
 import { FC, useCallback } from 'react'
 import { generatePath, useNavigate, useParams } from 'react-router-dom'
-import { useIntl } from 'react-intl'
 
 import { ItemType } from '@shared-ui/components/Atomic/ContentMenu/ContentMenu.types'
 
@@ -11,7 +10,6 @@ import DetailPage from '@/containers/DeviceProvisioning/ProvisioningRecords/Deta
 const Tab4: FC<Props> = (props) => {
     const { provisioningRecords } = props
 
-    const { formatMessage: _ } = useIntl()
     const { section, id } = useParams()
     const navigate = useNavigate()
 

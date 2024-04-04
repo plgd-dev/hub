@@ -10,7 +10,6 @@ import FormGroup from '@shared-ui/components/Atomic/FormGroup'
 import { FormContext } from '@shared-ui/common/context/FormContext'
 import TimeoutControl from '@shared-ui/components/Atomic/TimeoutControl'
 import Spacer from '@shared-ui/components/Atomic/Spacer'
-import * as commonStyles from '@shared-ui/components/Templates/FullPageWizard/FullPageWizardCommon.styles'
 import StepButtons from '@shared-ui/components/Templates/FullPageWizard/StepButtons'
 import FullPageWizard from '@shared-ui/components/Templates/FullPageWizard'
 
@@ -45,7 +44,7 @@ const Step4: FC<Props> = (props) => {
 
     return (
         <form>
-            <h1 css={commonStyles.headline}>{_(t.authorization)}</h1>
+            <FullPageWizard.Headline>{_(t.authorization)}</FullPageWizard.Headline>
 
             <FullPageWizard.SubHeadline noBorder>{_(t.general)}</FullPageWizard.SubHeadline>
             <FullPageWizard.Description>{_(t.addLinkedHubAuthorizationGeneralDescription)}</FullPageWizard.Description>
@@ -55,7 +54,7 @@ const Step4: FC<Props> = (props) => {
                 <FormInput {...register('authorization.ownerClaim')} onBlur={(e) => updateField('authorization.ownerClaim', e.target.value)} />
             </FormGroup>
 
-            <h2 css={commonStyles.subHeadline}>{_(t.oAuthClient)}</h2>
+            <FullPageWizard.SubHeadline>{_(t.oAuthClient)}</FullPageWizard.SubHeadline>
             <FullPageWizard.Description>{_(t.addLinkedHubAuthorizationoAuthClientDescription)}</FullPageWizard.Description>
 
             <FormGroup error={get(errors, 'authorization.provider.name.message')} id='authorization.provider.name'>

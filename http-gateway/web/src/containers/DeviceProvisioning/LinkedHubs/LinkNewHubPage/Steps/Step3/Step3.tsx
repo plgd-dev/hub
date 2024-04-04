@@ -11,7 +11,6 @@ import FormInput from '@shared-ui/components/Atomic/FormInput'
 import TimeoutControl from '@shared-ui/components/Atomic/TimeoutControl'
 import Spacer from '@shared-ui/components/Atomic/Spacer'
 import TileToggle from '@shared-ui/components/Atomic/TileToggle'
-import * as commonStyles from '@shared-ui/components/Templates/FullPageWizard/FullPageWizardCommon.styles'
 import StepButtons from '@shared-ui/components/Templates/FullPageWizard/StepButtons'
 import FullPageWizard from '@shared-ui/components/Templates/FullPageWizard'
 
@@ -62,13 +61,13 @@ const Step3: FC<Props> = (props) => {
 
     return (
         <form>
-            <h1 css={commonStyles.headline}>{_(t.certificateAuthority)}</h1>
+            <FullPageWizard.Headline>{_(t.certificateAuthority)}</FullPageWizard.Headline>
             <FullPageWizard.Description large>{_(t.addLinkedHubCertificateAuthorityDescription)}</FullPageWizard.Description>
 
             <FullPageWizard.SubHeadline>{_(t.generalKeepAlive)}</FullPageWizard.SubHeadline>
             <FullPageWizard.Description>{_(t.addLinkedHubCertificateAuthorityKeepAliveDescription)}</FullPageWizard.Description>
 
-            <h3 css={commonStyles.groupHeadline}>{_(t.general)}</h3>
+            <FullPageWizard.GroupHeadline>{_(t.general)}</FullPageWizard.GroupHeadline>
             <FormGroup
                 error={errors.certificateAuthority?.grpc?.address ? errors.certificateAuthority?.grpc?.address.message : undefined}
                 id='certificateAuthority.grpc.address'
@@ -80,7 +79,7 @@ const Step3: FC<Props> = (props) => {
                 />
             </FormGroup>
 
-            <h3 css={commonStyles.groupHeadline}>{_(t.keepAlive)}</h3>
+            <FullPageWizard.GroupHeadline>{_(t.keepAlive)}</FullPageWizard.GroupHeadline>
 
             <Controller
                 control={control}

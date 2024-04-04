@@ -11,7 +11,6 @@ import { useForm } from '@shared-ui/common/hooks'
 import { FormContext } from '@shared-ui/common/context/FormContext'
 import { openTelemetry } from '@shared-ui/common/services/opentelemetry'
 import ButtonBox from '@shared-ui/components/Atomic/ButtonBox'
-import * as commonStyles from '@shared-ui/components/Templates/FullPageWizard/FullPageWizardCommon.styles'
 import FullPageWizard from '@shared-ui/components/Templates/FullPageWizard'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 
@@ -94,12 +93,13 @@ const Step1: FC<Props> = (props) => {
 
             fetchWellKnownConfig().then()
         },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [getValues, setStep, updateData]
     )
 
     return (
         <form>
-            <h1 css={commonStyles.headline}>{_(t.linkNewHub)}</h1>
+            <FullPageWizard.Headline>{_(t.linkNewHub)}</FullPageWizard.Headline>
             <FullPageWizard.Description large>{_(t.addLinkedHubDescription)}</FullPageWizard.Description>
             <Row>
                 <Column size={6}>
