@@ -29,6 +29,7 @@ import { messages as dpsT } from '@/containers/DeviceProvisioning/DeviceProvisio
 import { dirtyFormState } from '@/store/recoil.store'
 import { pages } from '@/routes'
 import { formatDataForSave } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
+import { pemToString } from '@/containers/DeviceProvisioning/utils'
 
 const Tab1 = lazy(() => import('./Tabs/Tab1/Tab1'))
 const Tab2 = lazy(() => import('./Tabs/Tab2/Tab2'))
@@ -51,6 +52,15 @@ const LinkedHubsDetailPage: FC<Props> = () => {
             setDefaultData({
                 ...data,
                 gateways: data?.gateways ? data.gateways.map((gateway: string) => ({ value: gateway })) : [],
+                authorization: {
+                    ...data.authorization,
+                    provider: {
+                        ...data.authorization.provider,
+                        clientSecret: data.authorization.provider.clientSecret
+                            ? pemToString(data.authorization.provider.clientSecret)
+                            : data.authorization.provider.clientSecret,
+                    },
+                },
             })
         }
     }, [data])

@@ -165,6 +165,10 @@ export const messages = defineMessages({
         id: 'global.tls',
         defaultMessage: 'TLS',
     },
+    tlsDescription: {
+        id: 'global.tlsDescription',
+        defaultMessage: 'TLS ensures the privacy and integrity of data exchanged between client and server.',
+    },
     showMore: {
         id: 'global.showMore',
         defaultMessage: 'Show More',

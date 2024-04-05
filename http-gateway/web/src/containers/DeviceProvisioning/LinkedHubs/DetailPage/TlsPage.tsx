@@ -15,13 +15,13 @@ import { parse, pemToDER } from '@shared-ui/common/utils/cert-decoder.mjs'
 import TileToggle from '@shared-ui/components/Atomic/TileToggle'
 import Spacer from '@shared-ui/components/Atomic/Spacer'
 import { formatCertName, parseCertificate } from '@shared-ui/common/services/certificates'
+import { getApiErrorMessage } from '@shared-ui/common/utils'
 
 import * as styles from '@/containers/DeviceProvisioning/LinkedHubs/DetailPage/Tabs/Tab.styles'
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
 import notificationId from '@/notificationId'
 import { stringToPem } from '../../utils'
-import { getApiErrorMessage } from '@shared-ui/common/utils'
 
 const modalVariants = {
     ADD_CA_POOL: 'addCaPool',
@@ -43,9 +43,9 @@ const TlsPage: FC<any> = (props) => {
     const { i18n } = useContext(FormContext)
 
     const [caPoolData, setCaPoolData] = useState<any>([])
-    const [caPoolLoading, setCaPoolLoading] = useState(true)
+    const [caPoolLoading, setCaPoolLoading] = useState(false)
     const [certData, setCertData] = useState<any>([])
-    const [certLoading, setCertLoading] = useState<any>(true)
+    const [certLoading, setCertLoading] = useState<any>(false)
 
     const caPool = watch(`${prefix}tls.caPool`)
     const key = watch(`${prefix}tls.key`)
@@ -215,9 +215,9 @@ const TlsPage: FC<any> = (props) => {
     return (
         <form>
             <Headline type='h5'>{_(g.tls)}</Headline>
-            <p>TLS ensures the privacy and integrity of data exchanged between client and server.</p>
+            <p>{_(g.tlsDescription)}</p>
             <hr css={styles.separator} />
-            <Loadable condition={caPool !== undefined && !caPoolLoading}>
+            <Loadable condition={!caPoolLoading}>
                 <CaPool
                     customComponent={
                         <Loadable condition={!loading}>

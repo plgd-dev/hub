@@ -504,6 +504,14 @@ export const messages = defineMessages({
         id: 'linkedHubs.linkedHubUpdatedMessage',
         defaultMessage: 'The selected linked hub has been updated.',
     },
+    linkedHubDeleted: {
+        id: 'linkedHubs.linkedHubDeleted',
+        defaultMessage: 'Linked hub deleted',
+    },
+    linkedHubDeletedMessage: {
+        id: 'linkedHubs.linkedHubDeletedMessage',
+        defaultMessage: 'The selected linked hub has been deleted.',
+    },
     deviceGatewayEmptyError: {
         id: 'linkedHubs.deviceGatewayEmptyError',
         defaultMessage: 'At least one device gateway is required.',
