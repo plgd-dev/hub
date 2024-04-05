@@ -79,7 +79,7 @@ const AppLayout: FC<Props> = (props) => {
         window.localStorage.setItem('storedPathname', location.pathname.toString())
         setDirtyState(false)
         setBlock(undefined)
-    }, [location.pathname])
+    }, [location.pathname, setBlock, setDirtyState])
 
     const handleItemClick = (item: MenuItem | SubMenuItem, e: SyntheticEvent) => {
         e.preventDefault()

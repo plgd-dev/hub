@@ -57,7 +57,7 @@ export const useValidationsSchema = (group: 'group1' | 'group2' | 'group3' | 'co
         group1: schemaGroup1,
         group2: schemaGroup2,
         group3: schemaGroup3,
-        combine: z.union([schemaGroup1, schemaGroup2, schemaGroup3]),
+        combine: schemaGroup1.merge(schemaGroup2).merge(schemaGroup3),
     }
 
     return groups[group]

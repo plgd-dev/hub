@@ -59,13 +59,14 @@ const EnrollmentGroupsDetailPage: FC<Props> = () => {
 
     useEffect(() => {
         const dirty = isDirty || isDirtyData
+
         if (dirtyState !== dirty) {
             setDirtyState(dirty)
         }
     }, [dirtyState, isDirty, isDirtyData, setDirtyState])
 
     useBeforeUnload({
-        when: isDirty || isDirtyData,
+        when: (isDirty || isDirtyData) && process.env.REACT_APP_DIRTY_FORM_CHECKER !== 'false',
         message: _(g.promptDefaultMessage),
     })
 
