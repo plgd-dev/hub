@@ -63,7 +63,7 @@ const CertificatesList: FC<Props> = (props) => {
     const handleDelete = async () => {
         try {
             setDeleting(true)
-            await onDelete(selected)
+            await onDelete(displayData.filter((d: any) => selected.includes(d.id)).map((d: any) => d.origin.id))
 
             Notification.success(
                 { title: _(t.certificatesDeleted), message: _(t.certificatesDeletedMessage) },
@@ -160,8 +160,8 @@ const CertificatesList: FC<Props> = (props) => {
     )
 
     const selectedCount = useMemo(() => selected.length, [selected])
-    const selectedName = useMemo(
-        () => (selectedCount === 1 && displayData ? displayData?.find?.((d: any) => d.id === selected[0])?.name : null),
+    const selectedInfo = useMemo(
+        () => (selectedCount === 1 && displayData ? displayData?.find?.((d: any) => d.id === selected[0]) : null),
         [selectedCount, selected, displayData]
     )
 
@@ -190,8 +190,8 @@ const CertificatesList: FC<Props> = (props) => {
                 deleteInformation={
                     selectedCount === 1
                         ? [
-                              { label: _(g.name), value: selectedName },
-                              { label: _(g.id), value: selected[0] },
+                              { label: _(g.name), value: selectedInfo.name },
+                              { label: _(g.id), value: selectedInfo.origin.id },
                           ]
                         : undefined
                 }
