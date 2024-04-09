@@ -308,10 +308,13 @@ func TestStoreLoadSigningRecords(t *testing.T) {
 	const id = "9d017fad-2961-4fcc-94a9-1e1291a88ffc"
 	const id1 = "9d017fad-2961-4fcc-94a9-1e1291a88ffd"
 	const id2 = "9d017fad-2961-4fcc-94a9-1e1291a88ffe"
+	const owner = "owner"
+	const differentOwner = "owner2"
+	const differentOwnerRecordId = "9d017fad-2961-4fcc-94a9-1e1291a88fff"
 	upds := pb.SigningRecords{
 		{
 			Id:           id,
-			Owner:        "owner",
+			Owner:        owner,
 			CommonName:   "commonName",
 			PublicKey:    "publicKey",
 			DeviceId:     hubTest.GenerateDeviceIDbyIdx(0),
@@ -324,7 +327,7 @@ func TestStoreLoadSigningRecords(t *testing.T) {
 		},
 		{
 			Id:           id1,
-			Owner:        "owner",
+			Owner:        owner,
 			CommonName:   "commonName1",
 			CreationDate: constDate().UnixNano(),
 			PublicKey:    "publicKey",
@@ -337,11 +340,24 @@ func TestStoreLoadSigningRecords(t *testing.T) {
 		},
 		{
 			Id:           id2,
-			Owner:        "owner",
+			Owner:        owner,
 			CommonName:   "commonName2",
 			CreationDate: constDate().UnixNano(),
 			PublicKey:    "publicKey",
 			DeviceId:     hubTest.GenerateDeviceIDbyIdx(2),
+			Credential: &pb.CredentialStatus{
+				CertificatePem: "certificate",
+				Date:           constDate().UnixNano(),
+				ValidUntilDate: constDate().UnixNano(),
+			},
+		},
+		{
+			Id:           differentOwnerRecordId,
+			Owner:        differentOwner,
+			CommonName:   "commonName2",
+			CreationDate: constDate().UnixNano(),
+			PublicKey:    "publicKey",
+			DeviceId:     hubTest.GenerateDeviceIDbyIdx(3),
 			Credential: &pb.CredentialStatus{
 				CertificatePem: "certificate",
 				Date:           constDate().UnixNano(),
@@ -371,7 +387,7 @@ func TestStoreLoadSigningRecords(t *testing.T) {
 		{
 			name: "id",
 			args: args{
-				owner: "owner",
+				owner: owner,
 				query: &store.SigningRecordsQuery{IdFilter: []string{lcs[1].GetId()}},
 			},
 			want: []*store.SigningRecord{lcs[1]},
@@ -379,7 +395,7 @@ func TestStoreLoadSigningRecords(t *testing.T) {
 		{
 			name: "commonName",
 			args: args{
-				owner: "owner",
+				owner: owner,
 				query: &store.SigningRecordsQuery{CommonNameFilter: []string{lcs[1].GetCommonName()}},
 			},
 			want: []*store.SigningRecord{lcs[1]},
@@ -387,26 +403,40 @@ func TestStoreLoadSigningRecords(t *testing.T) {
 		{
 			name: "DeviceID",
 			args: args{
-				owner: "owner",
+				owner: owner,
 				query: &store.SigningRecordsQuery{DeviceIdFilter: []string{lcs[1].GetDeviceId()}},
-			},
-			want: []*store.SigningRecord{lcs[1]},
-		},
-		{
-			name: "id - another owner",
-			args: args{
-				owner: "another owner",
-				query: &store.SigningRecordsQuery{IdFilter: []string{lcs[1].GetId()}},
 			},
 			want: []*store.SigningRecord{lcs[1]},
 		},
 		{
 			name: "multiple queries",
 			args: args{
-				owner: "owner",
+				owner: owner,
 				query: &store.SigningRecordsQuery{IdFilter: []string{lcs[0].GetId(), lcs[2].GetId()}},
 			},
 			want: []*store.SigningRecord{lcs[0], lcs[2]},
+		},
+		{
+			name: "different owner",
+			args: args{
+				owner: differentOwner,
+			},
+			want: []*store.SigningRecord{lcs[3]},
+		},
+		{
+			name: "different owner - id",
+			args: args{
+				owner: differentOwner,
+				query: &store.SigningRecordsQuery{IdFilter: []string{differentOwnerRecordId}},
+			},
+			want: []*store.SigningRecord{lcs[3]},
+		},
+		{
+			name: "different owner but id belongs to owner",
+			args: args{
+				owner: differentOwner,
+				query: &store.SigningRecordsQuery{IdFilter: []string{lcs[1].GetId()}},
+			},
 		},
 		{
 			name: "all records",
@@ -418,7 +448,7 @@ func TestStoreLoadSigningRecords(t *testing.T) {
 		{
 			name: "not found",
 			args: args{
-				owner: "owner",
+				owner: owner,
 				query: &store.SigningRecordsQuery{IdFilter: []string{"not found"}},
 			},
 		},
@@ -436,7 +466,7 @@ func TestStoreLoadSigningRecords(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var h testSigningRecordHandler
-			err := s.LoadSigningRecords(ctx, "owner", tt.args.query, h.Handle)
+			err := s.LoadSigningRecords(ctx, tt.args.owner, tt.args.query, h.Handle)
 			require.NoError(t, err)
 			require.Len(t, h.lcs, len(tt.want))
 			h.lcs.Sort()

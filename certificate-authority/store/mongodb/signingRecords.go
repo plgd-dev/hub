@@ -79,7 +79,12 @@ func toSigningRecordsQueryFilter(owner string, queries *store.SigningRecordsQuer
 	}
 	switch len(or) {
 	case 0:
-		return bson.D{}
+		if owner == "" {
+			return bson.D{}
+		}
+		return bson.D{
+			{Key: store.OwnerKey, Value: owner},
+		}
 	case 1:
 		return or[0]
 	}
