@@ -17,8 +17,7 @@ export const useValidationsSchema = (group: 'group1' | 'group2' | 'group3') => {
                     .trim()
                     .min(1, { message: _(g.requiredField, { field: _(g.name) }) }),
             }),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        []
+        [_]
     )
 
     const schemaGroup2 = useMemo(
@@ -41,8 +40,7 @@ export const useValidationsSchema = (group: 'group1' | 'group2' | 'group3') => {
                     }),
                 }),
             }),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        []
+        [_]
     )
 
     const schemaGroup3 = useMemo(
@@ -62,8 +60,7 @@ export const useValidationsSchema = (group: 'group1' | 'group2' | 'group3') => {
                     }),
                 }),
             }),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        []
+        [_]
     )
 
     const groups = {

@@ -8,22 +8,19 @@ import { messages as t } from './EnrollmentGroups.i18n'
 export const useValidationsSchema = (group: 'group1' | 'group2' | 'group3' | 'combine') => {
     const { formatMessage: _ } = useIntl()
 
-    const schemaGroup1 = useMemo(
-        () =>
-            z.object({
-                name: z
-                    .string()
-                    .trim()
-                    .min(1, { message: _(g.requiredField, { field: _(g.name) }) }),
-                hubIds: z.array(z.string()).min(1, { message: _(g.requiredField, { field: _(t.linkedHubs) }) }),
-                owner: z
-                    .string()
-                    .trim()
-                    .min(1, { message: _(g.requiredField, { field: _(g.ownerID) }) }),
-            }),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        []
-    )
+    const schemaGroup1 = useMemo(() => {
+        return z.object({
+            name: z
+                .string()
+                .trim()
+                .min(1, { message: _(g.requiredField, { field: _(g.name) }) }),
+            hubIds: z.array(z.string()).min(1, { message: _(g.requiredField, { field: _(t.linkedHubs) }) }),
+            owner: z
+                .string()
+                .trim()
+                .min(1, { message: _(g.requiredField, { field: _(g.ownerID) }) }),
+        })
+    }, [_])
 
     const schemaGroup2 = useMemo(
         () =>
@@ -37,8 +34,7 @@ export const useValidationsSchema = (group: 'group1' | 'group2' | 'group3' | 'co
                     }),
                 }),
             }),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        []
+        [_]
     )
 
     const schemaGroup3 = useMemo(
@@ -49,8 +45,7 @@ export const useValidationsSchema = (group: 'group1' | 'group2' | 'group3' | 'co
                     .trim()
                     .min(16, { message: _(g.minLenght, { field: _(t.preSharedKey), length: 16 }) }),
             }),
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        []
+        [_]
     )
 
     const groups = {

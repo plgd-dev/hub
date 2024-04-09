@@ -74,8 +74,7 @@ const EnrollmentGroupsListPage: FC<any> = () => {
                 { title: _(t.enrollmentGroupsError), message: getApiErrorMessage(error) },
                 { notificationId: notificationId.HUB_DPS_ENROLLMENT_GROUP_LIST_PAGE_ERROR }
             )
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [error])
+    }, [error, _])
 
     const columns = useMemo(
         () => [
@@ -98,20 +97,23 @@ const EnrollmentGroupsListPage: FC<any> = () => {
             {
                 Header: _(dpsT.linkedHub),
                 accessor: 'hubsData',
-                Cell: ({ value, row }: { value: { name: string }[]; row: any }) => (
-                    <TagGroup
-                        i18n={{
-                            more: _(g.more),
-                            modalHeadline: _(dpsT.linkedHubs),
-                        }}
-                    >
-                        {value?.map?.((hub: { name: string }) => (
-                            <Tag className='tree-custom-tag' key={`${hub.name}-${row.id}`}>
-                                {hub.name}
-                            </Tag>
-                        ))}
-                    </TagGroup>
-                ),
+                Cell: ({ value, row }: { value: { name: string }[]; row: any }) =>
+                    value.length ? (
+                        <TagGroup
+                            i18n={{
+                                more: _(g.more),
+                                modalHeadline: _(dpsT.linkedHubs),
+                            }}
+                        >
+                            {value?.map?.((hub: { name: string }) => (
+                                <Tag className='tree-custom-tag' key={`${hub.name}-${row.id}`}>
+                                    {hub.name}
+                                </Tag>
+                            ))}
+                        </TagGroup>
+                    ) : (
+                        '-'
+                    ),
                 style: { width: '150px' },
             },
             {

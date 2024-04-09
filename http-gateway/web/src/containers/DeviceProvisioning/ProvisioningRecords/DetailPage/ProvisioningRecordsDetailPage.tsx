@@ -32,14 +32,15 @@ const ProvisioningRecordsListPage = () => {
             { label: _(t.provisioningRecords), link: pages.DPS.PROVISIONING_RECORDS.LINK },
             { label: data?.enrollmentGroupData?.name! },
         ],
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [data?.enrollmentGroupData]
+        [data?.enrollmentGroupData, _]
     )
 
-    const handleTabChange = useCallback((i: ItemType) => {
-        navigate(generatePath(pages.DPS.PROVISIONING_RECORDS.DETAIL, { recordId, tab: pages.DPS.PROVISIONING_RECORDS.TABS[parseInt(i.id)] }))
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
+    const handleTabChange = useCallback(
+        (i: ItemType) => {
+            navigate(generatePath(pages.DPS.PROVISIONING_RECORDS.DETAIL, { recordId, tab: pages.DPS.PROVISIONING_RECORDS.TABS[parseInt(i.id)] }))
+        },
+        [navigate, recordId]
+    )
 
     if (error) {
         return <div>{error}</div>
