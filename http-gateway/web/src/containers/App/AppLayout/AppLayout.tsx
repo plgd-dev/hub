@@ -18,7 +18,7 @@ import { getVersionMarkData } from '@shared-ui/components/Atomic/VersionMark/uti
 import { severities } from '@shared-ui/components/Atomic/VersionMark/constants'
 import { flushDevices } from '@shared-ui/app/clientApp/Devices/slice'
 import { reset } from '@shared-ui/app/clientApp/App/AppRest'
-import { App } from '@shared-ui/components/Atomic'
+import App from '@shared-ui/components/Atomic/App'
 import { ThemeType } from '@shared-ui/components/Atomic/_theme'
 import { clientAppSettings, security } from '@shared-ui/common/services'
 import { useAppVersion, WellKnownConfigType } from '@shared-ui/common/hooks'

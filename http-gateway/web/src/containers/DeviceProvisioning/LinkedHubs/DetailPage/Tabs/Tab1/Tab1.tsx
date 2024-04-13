@@ -4,7 +4,6 @@ import { useParams } from 'react-router-dom'
 import { useForm } from '@shared-ui/common/hooks'
 import { Controller, useFieldArray } from 'react-hook-form'
 import get from 'lodash/get'
-import * as styles from '../Tab.styles'
 import isFunction from 'lodash/isFunction'
 
 import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
@@ -14,13 +13,14 @@ import { FormContext } from '@shared-ui/common/context/FormContext'
 import IconPlus from '@shared-ui/components/Atomic/Icon/components/IconPlus'
 import Button from '@shared-ui/components/Atomic/Button'
 import IconClose from '@shared-ui/components/Atomic/Icon/components/IconClose'
-import { convertSize } from '@shared-ui/components/Atomic'
+import { convertSize } from '@shared-ui/components/Atomic/Icon'
 import { Row } from '@shared-ui/components/Atomic/SimpleStripTable/SimpleStripTable.types'
 import ValidationMessage from '@shared-ui/components/Atomic/ValidationMessage'
 
 import { Props, Inputs } from './Tab1.types'
 import { messages as g } from '../../../../../Global.i18n'
 import { messages as t } from '../../../LinkedHubs.i18n'
+import * as styles from '../Tab.styles'
 import { useValidationsSchema } from '@/containers/DeviceProvisioning/LinkedHubs/validationSchema'
 
 const Tab1: FC<Props> = (props) => {

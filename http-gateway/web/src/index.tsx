@@ -5,9 +5,9 @@ import { persistStore } from 'redux-persist'
 import { PersistGate } from 'redux-persist/integration/react'
 
 import IntlProvider from '@shared-ui/components/Atomic/IntlProvider'
-import { App as AtomicApp } from '@shared-ui/components/Atomic'
+import App from '@shared-ui/components/Atomic/App'
 
-import { App } from '@/containers/App'
+import { App as MainApp } from '@/containers/App'
 import { store } from '@/store'
 // @ts-ignore
 import languages from './languages/languages.json'
@@ -59,9 +59,9 @@ const BaseComponent = () => {
     if (configurationPageFrame) {
         return (
             <ProviderWrapper>
-                <AtomicApp toastContainerPortalTarget={document.getElementById('toast-root')}>
+                <App toastContainerPortalTarget={document.getElementById('toast-root')}>
                     <PreviewApp />
-                </AtomicApp>
+                </App>
             </ProviderWrapper>
         )
     }
@@ -71,7 +71,7 @@ const BaseComponent = () => {
 
     return (
         <ProviderWrapper>
-            <App mockApp={isMockApp} />
+            <MainApp mockApp={isMockApp} />
         </ProviderWrapper>
     )
 }

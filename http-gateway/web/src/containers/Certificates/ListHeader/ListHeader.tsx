@@ -1,7 +1,7 @@
 import React, { FC, useCallback, useState } from 'react'
 import { useIntl } from 'react-intl'
 
-import { IconPlus } from '@shared-ui/components/Atomic'
+import { IconPlus } from '@shared-ui/components/Atomic/Icon'
 import Button from '@shared-ui/components/Atomic/Button'
 import Modal from '@shared-ui/components/Atomic/Modal'
 import Dropzone from '@shared-ui/components/Atomic/Dropzone'

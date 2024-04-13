@@ -2,7 +2,7 @@ import React, { FC } from 'react'
 import { useIntl } from 'react-intl'
 import { generatePath, useNavigate } from 'react-router-dom'
 
-import { IconPlus } from '@shared-ui/components/Atomic'
+import { IconPlus } from '@shared-ui/components/Atomic/Icon'
 import Button from '@shared-ui/components/Atomic/Button'
 
 import { Props } from './ListHeader.types'

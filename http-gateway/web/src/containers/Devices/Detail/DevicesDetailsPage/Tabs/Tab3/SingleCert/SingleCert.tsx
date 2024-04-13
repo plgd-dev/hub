@@ -9,7 +9,7 @@ import { buildCATranslations } from '@shared-ui/components/Organisms/CaPoolModal
 import { parseCertificate } from '@shared-ui/common/services/certificates'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import Button from '@shared-ui/components/Atomic/Button'
-import { IconTrash } from '@shared-ui/components/Atomic'
+import { IconTrash } from '@shared-ui/components/Atomic/Icon'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
 
 import { messages as trans } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'

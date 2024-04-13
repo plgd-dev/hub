@@ -2,7 +2,8 @@ import React, { FC, useCallback, useState } from 'react'
 import { useIntl } from 'react-intl'
 
 import Button from '@shared-ui/components/Atomic/Button'
-import { DeleteModal, IconTrash } from '@shared-ui/components/Atomic'
+import { IconTrash } from '@shared-ui/components/Atomic/Icon'
+import DeleteModal from '@shared-ui/components/Atomic/Modal/components/DeleteModal'
 
 import { Props } from './DetailHeader.types'
 import * as styles from './DetailHeader.styles'
