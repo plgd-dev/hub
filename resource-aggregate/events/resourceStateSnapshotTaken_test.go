@@ -54,25 +54,26 @@ func TestResourceStateSnapshotTakenResourceTypes(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, resourceTypes, e.Types())
 	nextEvents := newIterator([]eventstore.EventUnmarshaler{
-		test.MakeResourceCreatePending(commands.NewResourceID(deviceID, href), &commands.Content{}, events.MakeEventMeta("", 0, 1, hubID), commands.NewAuditContext(userID, "0", userID), time.Now().Add(-time.Second)),
-		test.MakeResourceCreated(commands.NewResourceID(deviceID, href), commands.Status_OK, &commands.Content{}, events.MakeEventMeta("", 0, 2, hubID), commands.NewAuditContext(userID, "0", userID)),
-		test.MakeResourceRetrievePending(commands.NewResourceID(deviceID, href), "", events.MakeEventMeta("", 0, 3, hubID), commands.NewAuditContext(userID, "1", userID), time.Now().Add(-time.Second)),
-		test.MakeResourceRetrieved(commands.NewResourceID(deviceID, href), commands.Status_OK, &commands.Content{}, events.MakeEventMeta("", 0, 4, hubID), commands.NewAuditContext(userID, "1", userID)),
-		test.MakeResourceUpdatePending(commands.NewResourceID(deviceID, href), &commands.Content{}, events.MakeEventMeta("", 0, 5, hubID), commands.NewAuditContext(userID, "2", userID), time.Now().Add(-time.Second)),
-		test.MakeResourceUpdated(commands.NewResourceID(deviceID, href), commands.Status_OK, &commands.Content{}, events.MakeEventMeta("", 0, 6, hubID), commands.NewAuditContext(userID, "2", userID)),
-		test.MakeResourceDeletePending(commands.NewResourceID(deviceID, href), events.MakeEventMeta("", 0, 7, hubID), commands.NewAuditContext(userID, "3", userID), time.Now().Add(-time.Second)),
-		test.MakeResourceDeleted(commands.NewResourceID(deviceID, href), commands.Status_OK, &commands.Content{}, events.MakeEventMeta("", 0, 8, hubID), commands.NewAuditContext(userID, "3", userID)),
+		test.MakeResourceCreatePending(commands.NewResourceID(deviceID, href), &commands.Content{}, events.MakeEventMeta("", 0, 1, hubID), commands.NewAuditContext(userID, "0", userID), time.Now().Add(-time.Second), resourceTypes),
+		test.MakeResourceCreated(commands.NewResourceID(deviceID, href), commands.Status_OK, &commands.Content{}, events.MakeEventMeta("", 0, 2, hubID), commands.NewAuditContext(userID, "0", userID), resourceTypes),
+		test.MakeResourceRetrievePending(commands.NewResourceID(deviceID, href), "", events.MakeEventMeta("", 0, 3, hubID), commands.NewAuditContext(userID, "1", userID), time.Now().Add(-time.Second), resourceTypes),
+		test.MakeResourceRetrieved(commands.NewResourceID(deviceID, href), commands.Status_OK, &commands.Content{}, events.MakeEventMeta("", 0, 4, hubID), commands.NewAuditContext(userID, "1", userID), resourceTypes),
+		test.MakeResourceUpdatePending(commands.NewResourceID(deviceID, href), &commands.Content{}, events.MakeEventMeta("", 0, 5, hubID), commands.NewAuditContext(userID, "2", userID), time.Now().Add(-time.Second), resourceTypes),
+		test.MakeResourceUpdated(commands.NewResourceID(deviceID, href), commands.Status_OK, &commands.Content{}, events.MakeEventMeta("", 0, 6, hubID), commands.NewAuditContext(userID, "2", userID), resourceTypes),
+		test.MakeResourceDeletePending(commands.NewResourceID(deviceID, href), events.MakeEventMeta("", 0, 7, hubID), commands.NewAuditContext(userID, "3", userID), time.Now().Add(-time.Second), resourceTypes),
+		test.MakeResourceDeleted(commands.NewResourceID(deviceID, href), commands.Status_OK, &commands.Content{}, events.MakeEventMeta("", 0, 8, hubID), commands.NewAuditContext(userID, "3", userID), resourceTypes),
 	})
 	err = e.Handle(context.TODO(), nextEvents)
 	require.NoError(t, err)
 	require.Equal(t, resourceTypes, e.Types())
 	resourceTypes = append(resourceTypes, "type3")
-	err = e.Handle(context.TODO(), newIterator([]eventstore.EventUnmarshaler{test.MakeResourceChangedEvent(commands.NewResourceID(deviceID, href), &commands.Content{}, events.MakeEventMeta("", 0, 9, hubID), commands.NewAuditContext(userID, "0", userID), resourceTypes)}))
+	err = e.Handle(context.TODO(), newIterator([]eventstore.EventUnmarshaler{test.MakeResourceChangedEvent(commands.NewResourceID(deviceID, href), &commands.Content{}, events.MakeEventMeta("", 1, 9, hubID), commands.NewAuditContext(userID, "0", userID), resourceTypes)}))
 	require.NoError(t, err)
 	require.Equal(t, resourceTypes, e.Types())
 }
 
-func TestResourceStateSnapshotTaken_Handle(t *testing.T) {
+func TestResourceStateSnapshotTakenHandle(t *testing.T) {
+	resourceTypes := []string{"type1", "type2"}
 	type args struct {
 		events *iterator
 	}
@@ -85,8 +86,8 @@ func TestResourceStateSnapshotTaken_Handle(t *testing.T) {
 			name: "createPending, created",
 			args: args{
 				events: newIterator([]eventstore.EventUnmarshaler{
-					test.MakeResourceCreatePending(commands.NewResourceID("a", "/a"), &commands.Content{}, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "0", "userID"), time.Now().Add(-time.Second)),
-					test.MakeResourceCreated(commands.NewResourceID("a", "/a"), commands.Status_OK, &commands.Content{}, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "0", "userID")),
+					test.MakeResourceCreatePending(commands.NewResourceID("a", "/a"), &commands.Content{}, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "0", "userID"), time.Now().Add(-time.Second), resourceTypes),
+					test.MakeResourceCreated(commands.NewResourceID("a", "/a"), commands.Status_OK, &commands.Content{}, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "0", "userID"), resourceTypes),
 				}),
 			},
 		},
@@ -94,8 +95,8 @@ func TestResourceStateSnapshotTaken_Handle(t *testing.T) {
 			name: "retrievePending, retrieved",
 			args: args{
 				events: newIterator([]eventstore.EventUnmarshaler{
-					test.MakeResourceRetrievePending(commands.NewResourceID("a", "/a"), "", events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "1", "userID"), time.Now().Add(-time.Second)),
-					test.MakeResourceRetrieved(commands.NewResourceID("a", "/a"), commands.Status_OK, &commands.Content{}, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "1", "userID")),
+					test.MakeResourceRetrievePending(commands.NewResourceID("a", "/a"), "", events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "1", "userID"), time.Now().Add(-time.Second), resourceTypes),
+					test.MakeResourceRetrieved(commands.NewResourceID("a", "/a"), commands.Status_OK, &commands.Content{}, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "1", "userID"), resourceTypes),
 				}),
 			},
 		},
@@ -103,8 +104,8 @@ func TestResourceStateSnapshotTaken_Handle(t *testing.T) {
 			name: "updatePending, updated",
 			args: args{
 				events: newIterator([]eventstore.EventUnmarshaler{
-					test.MakeResourceUpdatePending(commands.NewResourceID("a", "/a"), &commands.Content{}, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "2", "userID"), time.Now().Add(-time.Second)),
-					test.MakeResourceUpdated(commands.NewResourceID("a", "/a"), commands.Status_OK, &commands.Content{}, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "2", "userID")),
+					test.MakeResourceUpdatePending(commands.NewResourceID("a", "/a"), &commands.Content{}, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "2", "userID"), time.Now().Add(-time.Second), resourceTypes),
+					test.MakeResourceUpdated(commands.NewResourceID("a", "/a"), commands.Status_OK, &commands.Content{}, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "2", "userID"), resourceTypes),
 				}),
 			},
 		},
@@ -112,8 +113,8 @@ func TestResourceStateSnapshotTaken_Handle(t *testing.T) {
 			name: "deletePending, deleted",
 			args: args{
 				events: newIterator([]eventstore.EventUnmarshaler{
-					test.MakeResourceDeletePending(commands.NewResourceID("a", "/a"), events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "3", "userID"), time.Now().Add(-time.Second)),
-					test.MakeResourceDeleted(commands.NewResourceID("a", "/a"), commands.Status_OK, &commands.Content{}, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "3", "userID")),
+					test.MakeResourceDeletePending(commands.NewResourceID("a", "/a"), events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "3", "userID"), time.Now().Add(-time.Second), resourceTypes),
+					test.MakeResourceDeleted(commands.NewResourceID("a", "/a"), commands.Status_OK, &commands.Content{}, events.MakeEventMeta("", 0, 0, "hubID"), commands.NewAuditContext("userID", "3", "userID"), resourceTypes),
 				}),
 			},
 		},
@@ -228,7 +229,8 @@ var testEventResourceStateSnapshotTaken events.ResourceStateSnapshotTaken = even
 			DeviceId: "devLatest",
 			Href:     "/devLatest",
 		},
-		Content: &commands.Content{},
+		Content:       &commands.Content{},
+		ResourceTypes: []string{"type1", "type2"},
 	},
 	ResourceCreatePendings: []*events.ResourceCreatePending{
 		{
@@ -236,6 +238,7 @@ var testEventResourceStateSnapshotTaken events.ResourceStateSnapshotTaken = even
 				DeviceId: "devCreate",
 				Href:     "/devCreate",
 			},
+			ResourceTypes: []string{"type1", "type2"},
 		},
 	},
 	ResourceRetrievePendings: []*events.ResourceRetrievePending{
@@ -244,6 +247,7 @@ var testEventResourceStateSnapshotTaken events.ResourceStateSnapshotTaken = even
 				DeviceId: "devRetrieve",
 				Href:     "/devRetrieve",
 			},
+			ResourceTypes: []string{"type1", "type2"},
 		},
 	},
 	ResourceUpdatePendings: []*events.ResourceUpdatePending{
@@ -252,6 +256,7 @@ var testEventResourceStateSnapshotTaken events.ResourceStateSnapshotTaken = even
 				DeviceId: "devUpdate",
 				Href:     "/devUpdate",
 			},
+			ResourceTypes: []string{"type1", "type2"},
 		},
 	},
 	ResourceDeletePendings: []*events.ResourceDeletePending{
@@ -260,6 +265,7 @@ var testEventResourceStateSnapshotTaken events.ResourceStateSnapshotTaken = even
 				DeviceId: "devDelete",
 				Href:     "/devDelete",
 			},
+			ResourceTypes: []string{"type1", "type2"},
 		},
 	},
 	AuditContext: &commands.AuditContext{
@@ -272,9 +278,10 @@ var testEventResourceStateSnapshotTaken events.ResourceStateSnapshotTaken = even
 		ConnectionId: "con1",
 		Sequence:     1,
 	},
+	ResourceTypes: []string{"type1", "type2"},
 }
 
-func TestResourceStateSnapshotTaken_CopyData(t *testing.T) {
+func TestResourceStateSnapshotTakenCopyData(t *testing.T) {
 	type args struct {
 		event *events.ResourceStateSnapshotTaken
 	}

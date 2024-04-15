@@ -51,6 +51,7 @@ func NewServicesMetadataFactoryModel(userID, owner, hubID string) func(context.C
 	}
 }
 
+// NewResourceAggregate for creating new resource aggregate.
 func NewResourceAggregate(resourceID *commands.ResourceId, store eventstore.EventStore, factoryModel cqrsAggregate.FactoryModelFunc, retry cqrsAggregate.RetryFunc, addLinkedResources bool) (*Aggregate, error) {
 	a := &Aggregate{
 		eventstore: store,
@@ -83,22 +84,7 @@ func NewResourceAggregate(resourceID *commands.ResourceId, store eventstore.Even
 
 // NewAggregate creates new resource aggreate - it must be created for every run command.
 func NewAggregate(resourceID *commands.ResourceId, store eventstore.EventStore, factoryModel cqrsAggregate.FactoryModelFunc, retry cqrsAggregate.RetryFunc) (*Aggregate, error) {
-	a := &Aggregate{
-		eventstore: store,
-	}
-	cqrsAg, err := cqrsAggregate.NewAggregate(resourceID.GetDeviceId(),
-		resourceID.ToUUID().String(),
-		retry,
-		store,
-		factoryModel,
-		func(string, ...interface{}) {
-			// no-op - we don't want to log debug/trace messages
-		})
-	if err != nil {
-		return nil, fmt.Errorf("cannot create aggregate for resource: %w", err)
-	}
-	a.ag = cqrsAg
-	return a, nil
+	return NewResourceAggregate(resourceID, store, factoryModel, retry, false)
 }
 
 func (a *Aggregate) HandleCommand(ctx context.Context, cmd cqrsAggregate.Command) ([]eventstore.Event, error) {

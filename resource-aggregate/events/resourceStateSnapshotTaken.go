@@ -14,7 +14,6 @@ import (
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/plgd-dev/kit/v2/strings"
-	"golang.org/x/exp/slices"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
@@ -302,7 +301,6 @@ func (e *ResourceStateSnapshotTaken) ValidateSequence(eventMetadata *EventMetada
 
 func (e *ResourceStateSnapshotTaken) handleEventResourceChanged(changed *ResourceChanged) bool {
 	if e.GetLatestResourceChange() == nil ||
-		(len(changed.GetResourceTypes()) > 0 && !slices.Equal(e.GetResourceTypes(), changed.GetResourceTypes())) ||
 		(e.ValidateSequence(changed.GetEventMetadata()) && !e.GetLatestResourceChange().Equal(changed)) {
 		e.ResourceId = changed.GetResourceId()
 		e.EventMetadata = changed.GetEventMetadata()

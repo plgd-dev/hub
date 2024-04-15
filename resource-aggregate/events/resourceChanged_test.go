@@ -34,7 +34,7 @@ var testEventResourceChanged events.ResourceChanged = events.ResourceChanged{
 	ResourceTypes: []string{"type1", "type2"},
 }
 
-func TestResourceChanged_CopyData(t *testing.T) {
+func TestResourceChangedCopyData(t *testing.T) {
 	type args struct {
 		event *events.ResourceChanged
 	}

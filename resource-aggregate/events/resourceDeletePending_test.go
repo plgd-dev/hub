@@ -26,9 +26,10 @@ var testEventResourceDeletePending events.ResourceDeletePending = events.Resourc
 		Sequence:     1,
 	},
 	ResourceInterface: interfaces.OC_IF_BASELINE,
+	ResourceTypes:     []string{"type1", "type2"},
 }
 
-func TestResourceDeletePending_CopyData(t *testing.T) {
+func TestResourceDeletePendingCopyData(t *testing.T) {
 	type args struct {
 		event *events.ResourceDeletePending
 	}

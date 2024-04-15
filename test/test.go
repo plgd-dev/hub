@@ -165,8 +165,8 @@ func (d *ResourceLinkRepresentation) UnmarshalJSON(data []byte) error {
 		}
 	}
 	d.Href = rep.Href
-	d.Representation, err = dec.decode(rep.Rep)
 	d.ResourceTypes = dec.resourceTypes
+	d.Representation, err = dec.decode(rep.Rep)
 	if err != nil {
 		return err
 	}

@@ -31,9 +31,10 @@ var testEventResourceCreated events.ResourceCreated = events.ResourceCreated{
 		ConnectionId: "con1",
 		Sequence:     1,
 	},
+	ResourceTypes: []string{"type1", "type2"},
 }
 
-func TestResourceCreated_CopyData(t *testing.T) {
+func TestResourceCreatedCopyData(t *testing.T) {
 	type args struct {
 		event *events.ResourceCreated
 	}

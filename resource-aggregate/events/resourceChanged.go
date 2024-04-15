@@ -96,7 +96,7 @@ func (rc *ResourceChanged) Equal(changed *ResourceChanged) bool {
 	if rc.GetAuditContext().GetUserId() != changed.GetAuditContext().GetUserId() {
 		return false
 	}
-	if len(changed.GetResourceTypes()) > 0 && !slices.Equal(rc.GetResourceTypes(), changed.GetResourceTypes()) {
+	if !slices.Equal(rc.GetResourceTypes(), changed.GetResourceTypes()) {
 		return false
 	}
 

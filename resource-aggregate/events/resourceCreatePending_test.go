@@ -30,6 +30,7 @@ var testEventResourceCreatePending events.ResourceCreatePending = events.Resourc
 		ConnectionId: "con1",
 		Sequence:     1,
 	},
+	ResourceTypes: []string{"type1", "type2"},
 }
 
 func TestResourceCreatePending_CopyData(t *testing.T) {
