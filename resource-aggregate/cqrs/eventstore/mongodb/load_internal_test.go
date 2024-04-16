@@ -80,7 +80,7 @@ func TestUniqueQuery(t *testing.T) {
 			},
 		},
 		{
-			name: "replace more queries with more general query",
+			name: "replace more queries with more general query with the aggregateID",
 			args: args{
 				queries: []eventstore.SnapshotQuery{
 					{AggregateID: "1", Types: []string{"type1"}},
@@ -90,6 +90,55 @@ func TestUniqueQuery(t *testing.T) {
 			},
 			want: []eventstore.SnapshotQuery{
 				{AggregateID: "1"},
+			},
+		},
+		{
+			name: "replace a query with more general query with the aggregateID",
+			args: args{
+				queries: []eventstore.SnapshotQuery{
+					{AggregateID: "1", Types: []string{"type2", "type1"}},
+				},
+				query: eventstore.SnapshotQuery{AggregateID: "1", Types: []string{"type1"}},
+			},
+			want: []eventstore.SnapshotQuery{
+				{AggregateID: "1", Types: []string{"type1"}},
+			},
+		},
+		{
+			name: "use general query instead of more specific query with the aggregateID",
+			args: args{
+				queries: []eventstore.SnapshotQuery{
+					{AggregateID: "1", Types: []string{"type1"}},
+				},
+				query: eventstore.SnapshotQuery{AggregateID: "1", Types: []string{"type1", "type2"}},
+			},
+			want: []eventstore.SnapshotQuery{
+				{AggregateID: "1", Types: []string{"type1"}},
+			},
+		},
+		{
+			name: "use general query instead of more specific query",
+			args: args{
+				queries: []eventstore.SnapshotQuery{
+					{Types: []string{"type1"}},
+				},
+				query: eventstore.SnapshotQuery{AggregateID: "1", Types: []string{"type1", "type2"}},
+			},
+			want: []eventstore.SnapshotQuery{
+				{Types: []string{"type1"}},
+			},
+		},
+		{
+			name: "general and specific query with types",
+			args: args{
+				queries: []eventstore.SnapshotQuery{
+					{Types: []string{"type2", "type1"}},
+				},
+				query: eventstore.SnapshotQuery{AggregateID: "1", Types: []string{"type1"}},
+			},
+			want: []eventstore.SnapshotQuery{
+				{Types: []string{"type2", "type1"}},
+				{AggregateID: "1", Types: []string{"type1"}},
 			},
 		},
 	}

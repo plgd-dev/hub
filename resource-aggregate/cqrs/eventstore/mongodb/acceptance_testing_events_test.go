@@ -485,6 +485,14 @@ func NewMockEventHandler() *MockEventHandler {
 	return &MockEventHandler{events: make(map[string]map[string][]eventstore.Event)}
 }
 
+func (eh *MockEventHandler) PopEvents() map[string]map[string][]eventstore.Event {
+	eh.lock.Lock()
+	defer eh.lock.Unlock()
+	events := eh.events
+	eh.events = make(map[string]map[string][]eventstore.Event)
+	return events
+}
+
 func (eh *MockEventHandler) SetElement(groupID, aggregateID string, e MockEvent) {
 	var device map[string][]eventstore.Event
 	var ok bool

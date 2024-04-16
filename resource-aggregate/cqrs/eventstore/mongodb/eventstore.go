@@ -386,8 +386,8 @@ func makeDBEventsAndGetETag(events []eventstore.Event, marshaler MarshalerFunc) 
 		if et != nil {
 			etag = et
 		}
-		if len(event.EventType()) > 0 {
-			types = append(types, event.EventType())
+		if len(event.Types()) > 0 {
+			types = event.Types()
 		}
 	}
 	return etag, types, dbEvents, nil

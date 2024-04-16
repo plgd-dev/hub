@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
@@ -385,20 +386,66 @@ func (s *EventStore) loadFromSnapshot(ctx context.Context, groupID string, queri
 	return s.loadEventsQuery(ctx, eventHandler, nil, mongoQueries)
 }
 
+func resourceTypesIsSubset(subset, slice []string) bool {
+	if len(subset) == 0 {
+		return false
+	}
+	if len(subset) > len(slice) {
+		return false
+	}
+	sliceCpy := make([]string, len(slice))
+	copy(sliceCpy, slice)
+	subsetCpy := make([]string, len(subset))
+	copy(subsetCpy, subset)
+
+	sort.SliceStable(subsetCpy, func(i, j int) bool {
+		return subsetCpy[i] < subsetCpy[j]
+	})
+	sort.SliceStable(sliceCpy, func(i, j int) bool {
+		return sliceCpy[i] < sliceCpy[j]
+	})
+	return slices.Equal(subsetCpy, sliceCpy[:len(subsetCpy)])
+}
+
 func uniqueQueryWithEmptyAggregateID(queries []eventstore.SnapshotQuery, query eventstore.SnapshotQuery) []eventstore.SnapshotQuery {
 	if len(query.Types) == 0 {
 		// get all events without filter
 		return []eventstore.SnapshotQuery{query}
 	}
 	for idx, q := range queries {
-		if slices.Equal(q.Types, query.Types) {
+		if resourceTypesIsSubset(query.Types, q.Types) {
 			// get all events with the certain type, replace the queries with the more or equal general one
 			queries[idx] = query
-			queries = removeDuplicates(queries, idx, func(qa eventstore.SnapshotQuery) bool { return slices.Equal(qa.Types, query.Types) })
+			queries = removeDuplicates(queries, idx, func(qa eventstore.SnapshotQuery) bool { return resourceTypesIsSubset(query.Types, qa.Types) })
 			return queries
 		}
 	}
 	return append(queries, query)
+}
+
+func uniqueQueryHandleAtIndex(queries []eventstore.SnapshotQuery, query eventstore.SnapshotQuery, idx int) ([]eventstore.SnapshotQuery, bool) {
+	q := queries[idx]
+	if q.AggregateID == "" && len(q.Types) == 0 || resourceTypesIsSubset(q.Types, query.Types) {
+		return queries, true // No need to add more specific one if there's a general query
+	}
+
+	if q.AggregateID == query.AggregateID {
+		if len(query.Types) == 0 {
+			queries[idx] = query
+			queries = removeDuplicates(queries, idx, func(qa eventstore.SnapshotQuery) bool { return qa.AggregateID == query.AggregateID })
+			return queries, true
+		}
+		if len(q.Types) == 0 || resourceTypesIsSubset(q.Types, query.Types) {
+			return queries, true // No need to add more general one if there's a more specific query
+		}
+		if resourceTypesIsSubset(query.Types, q.Types) {
+			// replace query with the more general one
+			queries[idx] = query
+			queries = removeDuplicates(queries, idx, func(qa eventstore.SnapshotQuery) bool { return resourceTypesIsSubset(qa.Types, query.Types) })
+			return queries, true
+		}
+	}
+	return queries, false
 }
 
 func uniqueQuery(queries []eventstore.SnapshotQuery, query eventstore.SnapshotQuery) []eventstore.SnapshotQuery {
@@ -406,20 +453,10 @@ func uniqueQuery(queries []eventstore.SnapshotQuery, query eventstore.SnapshotQu
 		return uniqueQueryWithEmptyAggregateID(queries, query)
 	}
 
-	for idx, q := range queries {
-		if q.AggregateID == "" && (len(q.Types) == 0 || slices.Equal(q.Types, query.Types)) {
-			return queries // No need to add more specific one if there's a general query
-		}
-
-		if q.AggregateID == query.AggregateID {
-			if len(query.Types) == 0 {
-				queries[idx] = query
-				queries = removeDuplicates(queries, idx, func(qa eventstore.SnapshotQuery) bool { return qa.AggregateID == query.AggregateID })
-				return queries
-			}
-			if len(q.Types) == 0 || slices.Equal(q.Types, query.Types) {
-				return queries // No need to add more general one if there's a more specific query
-			}
+	for idx := range queries {
+		newQueries, handled := uniqueQueryHandleAtIndex(queries, query, idx)
+		if handled {
+			return newQueries
 		}
 	}
 
