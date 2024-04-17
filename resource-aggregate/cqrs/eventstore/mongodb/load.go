@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sort"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
@@ -14,7 +13,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"golang.org/x/exp/slices"
 )
 
 type iterator struct {
@@ -386,25 +384,24 @@ func (s *EventStore) loadFromSnapshot(ctx context.Context, groupID string, queri
 	return s.loadEventsQuery(ctx, eventHandler, nil, mongoQueries)
 }
 
-func resourceTypesIsSubset(subset, slice []string) bool {
-	if len(subset) == 0 {
+func resourceTypesIsSubset(slice, subset []string) bool {
+	if len(slice) == 0 {
 		return false
 	}
-	if len(subset) > len(slice) {
+	if len(slice) > len(subset) {
 		return false
 	}
-	sliceCpy := make([]string, len(slice))
-	copy(sliceCpy, slice)
-	subsetCpy := make([]string, len(subset))
-	copy(subsetCpy, subset)
-
-	sort.SliceStable(subsetCpy, func(i, j int) bool {
-		return subsetCpy[i] < subsetCpy[j]
-	})
-	sort.SliceStable(sliceCpy, func(i, j int) bool {
-		return sliceCpy[i] < sliceCpy[j]
-	})
-	return slices.Equal(subsetCpy, sliceCpy[:len(subsetCpy)])
+	set := make(map[string]struct{}, len(slice))
+	for _, s := range slice {
+		set[s] = struct{}{}
+	}
+	for _, s := range subset {
+		delete(set, s)
+		if len(set) == 0 {
+			return true
+		}
+	}
+	return false
 }
 
 func uniqueQueryWithEmptyAggregateID(queries []eventstore.SnapshotQuery, query eventstore.SnapshotQuery) []eventstore.SnapshotQuery {

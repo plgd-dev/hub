@@ -117,6 +117,18 @@ func TestUniqueQuery(t *testing.T) {
 			},
 		},
 		{
+			name: "use general query instead of more specific query with multiple type and the aggregateID ",
+			args: args{
+				queries: []eventstore.SnapshotQuery{
+					{AggregateID: "1", Types: []string{"type1", "type2", "type3"}},
+				},
+				query: eventstore.SnapshotQuery{AggregateID: "1", Types: []string{"type1", "type3"}},
+			},
+			want: []eventstore.SnapshotQuery{
+				{AggregateID: "1", Types: []string{"type1", "type3"}},
+			},
+		},
+		{
 			name: "use general query instead of more specific query",
 			args: args{
 				queries: []eventstore.SnapshotQuery{
