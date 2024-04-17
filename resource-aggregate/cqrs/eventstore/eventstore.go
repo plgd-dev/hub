@@ -14,15 +14,17 @@ type VersionQuery struct {
 
 // SnapshotQuery used to load events from snapshot.
 type SnapshotQuery struct {
-	GroupID     string // filter by group ID
-	AggregateID string // filter to certain aggregateID, groupID is required
+	GroupID     string   // filter by group ID
+	AggregateID string   // filter to certain aggregateID, groupID is required
+	Types       []string // filter to certain event types, optional
 }
 
 // Get events with given attributes.
 // All filtering options are optional, if none are given then all events are returned,
 type GetEventsQuery struct {
-	GroupID     string // filter by group ID, optional
-	AggregateID string // filter to certain aggregateID, optional
+	GroupID     string   // filter by group ID, optional
+	AggregateID string   // filter to certain aggregateID, optional
+	Types       []string // filter to certain event types, optional
 }
 
 // Delete documents with given group id

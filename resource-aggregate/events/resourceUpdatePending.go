@@ -50,6 +50,10 @@ func (e *ResourceUpdatePending) ServiceID() (string, bool) {
 	return "", false
 }
 
+func (e *ResourceUpdatePending) Types() []string {
+	return e.GetResourceTypes()
+}
+
 func (e *ResourceUpdatePending) CopyData(event *ResourceUpdatePending) {
 	e.ResourceId = event.GetResourceId()
 	e.ResourceInterface = event.GetResourceInterface()
@@ -58,6 +62,7 @@ func (e *ResourceUpdatePending) CopyData(event *ResourceUpdatePending) {
 	e.EventMetadata = event.GetEventMetadata()
 	e.ValidUntil = event.GetValidUntil()
 	e.OpenTelemetryCarrier = event.GetOpenTelemetryCarrier()
+	e.ResourceTypes = event.GetResourceTypes()
 }
 
 func (e *ResourceUpdatePending) CheckInitialized() bool {

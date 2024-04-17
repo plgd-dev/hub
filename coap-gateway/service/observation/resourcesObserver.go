@@ -16,8 +16,8 @@ import (
 )
 
 type (
-	OnObserveResource         = func(ctx context.Context, deviceID, resourceHref string, batch bool, notification *pool.Message) error
-	OnGetResourceContent      = func(ctx context.Context, deviceID, resourceHref string, notification *pool.Message) error
+	OnObserveResource         = func(ctx context.Context, deviceID, resourceHref string, resourceTypes []string, batch bool, notification *pool.Message) error
+	OnGetResourceContent      = func(ctx context.Context, deviceID, resourceHref string, resourceTypes []string, notification *pool.Message) error
 	UpdateTwinSynchronization = func(ctx context.Context, deviceID string, status commands.TwinSynchronization_State, t time.Time) error
 )
 
@@ -153,7 +153,7 @@ func (o *resourcesObserver) addResourceLocked(res *commands.Resource, obsInterfa
 	if o.private.resources.contains(href) {
 		return nil, nil
 	}
-	obsRes := newObservedResource(href, obsInterface, res.IsObservable())
+	obsRes := newObservedResource(href, obsInterface, res.IsObservable(), res.GetResourceTypes())
 	o.private.resources = o.private.resources.insert(obsRes)
 	return obsRes, nil
 }
@@ -179,7 +179,7 @@ func (o *resourcesObserver) handleResource(ctx context.Context, obsRes *observed
 	if len(etags) > 0 {
 		etag = etags[0]
 	}
-	return o.getResourceContent(ctx, obsRes.Href(), etag)
+	return o.getResourceContent(ctx, obsRes.Href(), obsRes.resourceTypes, etag)
 }
 
 // Register to COAP-GW resource observation for given resource
@@ -203,7 +203,7 @@ func (o *resourcesObserver) observeResource(ctx context.Context, obsRes *observe
 			}
 		}
 
-		if err2 := o.callbacks.OnObserveResource(ctx, o.deviceID, obsRes.Href(), batchObservation, msg); err2 != nil {
+		if err2 := o.callbacks.OnObserveResource(ctx, o.deviceID, obsRes.Href(), obsRes.resourceTypes, batchObservation, msg); err2 != nil {
 			_ = o.logger.LogAndReturnError(cannotObserveResourceError(o.deviceID, obsRes.Href(), err2))
 			return
 		}
@@ -218,7 +218,7 @@ func (o *resourcesObserver) observeResource(ctx context.Context, obsRes *observe
 }
 
 // Request resource content form COAP-GW
-func (o *resourcesObserver) getResourceContent(ctx context.Context, href string, etag []byte) error {
+func (o *resourcesObserver) getResourceContent(ctx context.Context, href string, resourceTypes []string, etag []byte) error {
 	cannotGetResourceError := func(deviceID, href string, err error) error {
 		return fmt.Errorf("cannot get resource /%v%v content: %w", deviceID, href, err)
 	}
@@ -242,7 +242,7 @@ func (o *resourcesObserver) getResourceContent(ctx context.Context, href string,
 			o.coapConn.ReleaseMessage(resp)
 		}
 	}()
-	if err := o.callbacks.OnGetResourceContent(ctx, o.deviceID, href, resp); err != nil {
+	if err := o.callbacks.OnGetResourceContent(ctx, o.deviceID, href, resourceTypes, resp); err != nil {
 		return cannotGetResourceError(o.deviceID, href, err)
 	}
 	return nil

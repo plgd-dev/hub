@@ -17,6 +17,7 @@ import (
 	"github.com/plgd-dev/device/v2/schema"
 	"github.com/plgd-dev/device/v2/schema/acl"
 	"github.com/plgd-dev/device/v2/schema/cloud"
+	"github.com/plgd-dev/device/v2/schema/collection"
 	"github.com/plgd-dev/device/v2/schema/configuration"
 	schemaDevice "github.com/plgd-dev/device/v2/schema/device"
 	"github.com/plgd-dev/device/v2/schema/interfaces"
@@ -48,6 +49,7 @@ import (
 
 type ResourceLinkRepresentation struct {
 	Href           string      /*`json:"href"`*/
+	ResourceTypes  []string    /*`json:"rt"`*/
 	Representation interface{} /*`json:"rep"`*/
 }
 
@@ -60,57 +62,85 @@ func (d *ResourceLinkRepresentation) MarshalJSON() ([]byte, error) {
 }
 
 func (d *ResourceLinkRepresentation) UnmarshalJSON(data []byte) error {
-	reps := map[string]func(data []byte) (interface{}, error){
-		configuration.ResourceURI: func(data []byte) (interface{}, error) {
-			var r configuration.Configuration
-			err := json.Decode(data, &r)
-			return r, err
+	type representation struct {
+		decode        func(data []byte) (interface{}, error)
+		resourceTypes []string
+	}
+	reps := map[string]representation{
+		configuration.ResourceURI: {
+			decode: func(data []byte) (interface{}, error) {
+				var r configuration.Configuration
+				err := json.Decode(data, &r)
+				return r, err
+			},
+			resourceTypes: []string{configuration.ResourceType},
 		},
-		schemaDevice.ResourceURI: func(data []byte) (interface{}, error) {
-			var r schemaDevice.Device
-			err := json.Decode(data, &r)
-			r.ProtocolIndependentID = ""
-			return r, err
+		schemaDevice.ResourceURI: {
+			decode: func(data []byte) (interface{}, error) {
+				var r schemaDevice.Device
+				err := json.Decode(data, &r)
+				r.ProtocolIndependentID = ""
+				return r, err
+			},
+			resourceTypes: TestResourceDeviceResourceTypes,
 		},
-		platform.ResourceURI: func(data []byte) (interface{}, error) {
-			var r platform.Platform
-			err := json.Decode(data, &r)
-			r.PlatformIdentifier = ""
-			return r, err
+		platform.ResourceURI: {
+			decode: func(data []byte) (interface{}, error) {
+				var r platform.Platform
+				err := json.Decode(data, &r)
+				r.PlatformIdentifier = ""
+				return r, err
+			},
+			resourceTypes: []string{platform.ResourceType},
 		},
-		maintenance.ResourceURI: func(data []byte) (interface{}, error) {
-			var r MaintenanceResourceRepresentation
-			err := json.Decode(data, &r)
-			return r, err
+		maintenance.ResourceURI: {
+			decode: func(data []byte) (interface{}, error) {
+				var r MaintenanceResourceRepresentation
+				err := json.Decode(data, &r)
+				return r, err
+			},
+			resourceTypes: []string{maintenance.ResourceType},
 		},
-		plgdtime.ResourceURI: func(data []byte) (interface{}, error) {
-			var r PlgdTimeResourceRepresentation
-			err := json.Decode(data, &r)
-			return r, err
+		plgdtime.ResourceURI: {
+			decode: func(data []byte) (interface{}, error) {
+				var r PlgdTimeResourceRepresentation
+				err := json.Decode(data, &r)
+				return r, err
+			},
+			resourceTypes: []string{plgdtime.ResourceType},
 		},
-		TestResourceLightInstanceHref("1"): func(data []byte) (interface{}, error) {
-			var r LightResourceRepresentation
-			err := json.Decode(data, &r)
-			return r, err
+		TestResourceLightInstanceHref("1"): {
+			decode: func(data []byte) (interface{}, error) {
+				var r LightResourceRepresentation
+				err := json.Decode(data, &r)
+				return r, err
+			},
+			resourceTypes: TestResourceLightInstanceResourceTypes,
 		},
-		TestResourceSwitchesHref: func(data []byte) (interface{}, error) {
-			var r schema.ResourceLinks
-			err := json.Decode(data, &r)
-			if err != nil {
-				return nil, err
-			}
-			r.Sort()
-			for i := range r {
-				r[i].Endpoints = nil
-				r[i].InstanceID = 0
-			}
+		TestResourceSwitchesHref: {
+			decode: func(data []byte) (interface{}, error) {
+				var r schema.ResourceLinks
+				err := json.Decode(data, &r)
+				if err != nil {
+					return nil, err
+				}
+				r.Sort()
+				for i := range r {
+					r[i].Endpoints = nil
+					r[i].InstanceID = 0
+				}
 
-			return r, err
+				return r, err
+			},
+			resourceTypes: TestResourceSwitchesResourceTypes,
 		},
-		TestResourceSwitchesInstanceHref("1"): func(data []byte) (interface{}, error) {
-			var r SwitchResourceRepresentation
-			err := json.Decode(data, &r)
-			return r, err
+		TestResourceSwitchesInstanceHref("1"): {
+			decode: func(data []byte) (interface{}, error) {
+				var r SwitchResourceRepresentation
+				err := json.Decode(data, &r)
+				return r, err
+			},
+			resourceTypes: TestResourceLightInstanceResourceTypes,
 		},
 	}
 	var rep struct {
@@ -121,10 +151,12 @@ func (d *ResourceLinkRepresentation) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
-	dec := func(data []byte) (interface{}, error) {
-		var r interface{}
-		errD := json.Decode(data, &r)
-		return r, errD
+	dec := representation{
+		decode: func(data []byte) (interface{}, error) {
+			var r interface{}
+			errD := json.Decode(data, &r)
+			return r, errD
+		},
 	}
 	for k, v := range reps {
 		if strings.HasSuffix(rep.Href, k) {
@@ -133,7 +165,8 @@ func (d *ResourceLinkRepresentation) UnmarshalJSON(data []byte) error {
 		}
 	}
 	d.Href = rep.Href
-	d.Representation, err = dec(rep.Rep)
+	d.ResourceTypes = dec.resourceTypes
+	d.Representation, err = dec.decode(rep.Rep)
 	if err != nil {
 		return err
 	}
@@ -146,6 +179,11 @@ var (
 	TestDeviceModelNumber              = "CS-0"
 	TestDeviceSoftwareVersion          = "1.0.1-rc1"
 	TestDeviceType                     device.Type
+
+	TestResourceSwitchesInstanceResourceTypes = []string{types.BINARY_SWITCH}
+	TestResourceSwitchesResourceTypes         = []string{collection.ResourceType}
+	TestResourceLightInstanceResourceTypes    = []string{types.CORE_LIGHT}
+	TestResourceDeviceResourceTypes           = []string{types.DEVICE_CLOUD, schemaDevice.ResourceType}
 
 	testIovityLiteVersion *sync.Map[string, uint32]
 )
@@ -209,7 +247,7 @@ func GetDeviceResourceRepresentation(deviceID, deviceName string) schemaDevice.D
 		ID:                   deviceID,
 		Interfaces:           []string{interfaces.OC_IF_R, interfaces.OC_IF_BASELINE},
 		Name:                 deviceName,
-		ResourceTypes:        []string{types.DEVICE_CLOUD, schemaDevice.ResourceType},
+		ResourceTypes:        TestResourceDeviceResourceTypes,
 		DataModelVersion:     "ocf.res.1.3.0",
 		SpecificationVersion: "ocf.2.0.5",
 		ModelNumber:          TestDeviceModelNumber,
@@ -239,20 +277,24 @@ func GetAllBackendResourceRepresentations(t *testing.T, deviceID, deviceName str
 				Power: 0,
 				State: false,
 			},
+			ResourceTypes: TestResourceLightInstanceResourceTypes,
 		},
 		{
 			Href: "/" + commands.NewResourceID(deviceID, configuration.ResourceURI).ToString(),
 			Representation: configuration.Configuration{
 				Name: deviceName,
 			},
+			ResourceTypes: []string{configuration.ResourceType},
 		},
 		{
 			Href:           "/" + commands.NewResourceID(deviceID, schemaDevice.ResourceURI).ToString(),
 			Representation: dev,
+			ResourceTypes:  TestResourceDeviceResourceTypes,
 		},
 		{
 			Href:           "/" + commands.NewResourceID(deviceID, maintenance.ResourceURI).ToString(),
 			Representation: MaintenanceResourceRepresentation{},
+			ResourceTypes:  []string{maintenance.ResourceType},
 		},
 		{
 			Href: "/" + commands.NewResourceID(deviceID, platform.ResourceURI).ToString(),
@@ -260,14 +302,17 @@ func GetAllBackendResourceRepresentations(t *testing.T, deviceID, deviceName str
 				ManufacturerName: "ocfcloud.com",
 				Version:          iotVersion,
 			},
+			ResourceTypes: []string{platform.ResourceType},
 		},
 		{
 			Href:           "/" + commands.NewResourceID(deviceID, TestResourceSwitchesHref).ToString(),
 			Representation: schema.ResourceLinks{},
+			ResourceTypes:  []string{collection.ResourceType},
 		},
 		{
 			Href:           "/" + commands.NewResourceID(deviceID, plgdtime.ResourceURI).ToString(),
 			Representation: PlgdTimeResourceRepresentation{},
+			ResourceTypes:  []string{plgdtime.ResourceType},
 		},
 		{
 			Href: "/" + commands.NewResourceID(deviceID, softwareupdate.ResourceURI).ToString(),
@@ -280,6 +325,7 @@ func GetAllBackendResourceRepresentations(t *testing.T, deviceID, deviceName str
 				"swupdateresult": uint64(0),
 				"updatetime":     "1970-01-01T00:00:00Z",
 			},
+			ResourceTypes: []string{softwareupdate.ResourceType},
 		},
 	}
 }
@@ -298,7 +344,7 @@ func DefaultSwitchResourceLink(deviceID, id string) schema.ResourceLink {
 	return schema.ResourceLink{
 		DeviceID:      deviceID,
 		Href:          TestResourceSwitchesInstanceHref(id),
-		ResourceTypes: []string{types.BINARY_SWITCH},
+		ResourceTypes: TestResourceSwitchesInstanceResourceTypes,
 		Interfaces:    []string{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
 		Policy: &schema.Policy{
 			BitMask: schema.Discoverable | schema.Observable,
@@ -738,8 +784,9 @@ func WaitForDevice(t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, 
 			CorrelationId:  correlationID,
 			Type: &pb.Event_ResourceChanged{
 				ResourceChanged: &events.ResourceChanged{
-					ResourceId: commands.NewResourceID(deviceID, r.Href),
-					Status:     commands.Status_OK,
+					ResourceId:    commands.NewResourceID(deviceID, r.Href),
+					Status:        commands.Status_OK,
+					ResourceTypes: r.ResourceTypes,
 				},
 			},
 		}

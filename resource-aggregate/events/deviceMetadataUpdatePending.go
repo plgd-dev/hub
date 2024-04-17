@@ -47,6 +47,10 @@ func (d *DeviceMetadataUpdatePending) ETag() *eventstore.ETagData {
 	return nil
 }
 
+func (d *DeviceMetadataUpdatePending) Types() []string {
+	return nil
+}
+
 func (d *DeviceMetadataUpdatePending) CopyData(event *DeviceMetadataUpdatePending) {
 	d.DeviceId = event.GetDeviceId()
 	d.UpdatePending = event.GetUpdatePending()

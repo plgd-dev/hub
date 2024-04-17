@@ -55,6 +55,10 @@ func getETag(deviceIndex int, resourceIndex int) []byte {
 	return []byte("device" + strconv.Itoa(deviceIndex) + ".resource" + strconv.Itoa(resourceIndex))
 }
 
+func getTypes(resourceIndex int) []string {
+	return []string{"type" + strconv.Itoa(resourceIndex%3), "type" + strconv.Itoa((resourceIndex%3)+3)}
+}
+
 func getNLatestETag(deviceIndex int, limit int) [][]byte {
 	if limit == 0 {
 		limit = getEventsResourceCount / getEventsDeviceCount
@@ -88,6 +92,7 @@ func addEventsForGetEventsToDB(ctx context.Context, t *testing.T, store *mongodb
 			TimestampI:   1 + resourceTimestamp[resourceIndex],
 			ETagI:        getETag(deviceIndex, resourceIndex),
 			ServiceIDI:   getServiceID(serviceIndex),
+			TypesI:       getTypes(resourceIndex),
 		})
 
 		resourceVersion[resourceIndex]++

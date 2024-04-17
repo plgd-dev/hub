@@ -114,14 +114,14 @@ func TestObserveDeviceResourcesRetrieve(t *testing.T) {
 			SubscriptionId: sub.ID(),
 			CorrelationId:  retrieveCorrelationID,
 			Type: &pb.Event_ResourceRetrievePending{
-				ResourceRetrievePending: pbTest.MakeResourceRetrievePending(deviceID, platform.ResourceURI, retrieveCorrelationID),
+				ResourceRetrievePending: pbTest.MakeResourceRetrievePending(deviceID, platform.ResourceURI, []string{platform.ResourceType}, retrieveCorrelationID),
 			},
 		},
 		{
 			SubscriptionId: sub.ID(),
 			CorrelationId:  retrieveCorrelationID,
 			Type: &pb.Event_ResourceRetrieved{
-				ResourceRetrieved: pbTest.MakeResourceRetrieved(t, deviceID, platform.ResourceURI, retrieveCorrelationID,
+				ResourceRetrieved: pbTest.MakeResourceRetrieved(t, deviceID, platform.ResourceURI, []string{platform.ResourceType}, retrieveCorrelationID,
 					map[string]interface{}{
 						"mnmn":                   "ocfcloud.com",
 						"x.org.iotivity.version": test.GetIotivityLiteVersion(t, deviceID),
@@ -224,7 +224,7 @@ func TestObserveDeviceResourcesUpdate(t *testing.T) {
 			SubscriptionId: sub.ID(),
 			CorrelationId:  updCorrelationID,
 			Type: &pb.Event_ResourceUpdatePending{
-				ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), updCorrelationID,
+				ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), test.TestResourceSwitchesInstanceResourceTypes, updCorrelationID,
 					map[string]interface{}{
 						"value": true,
 					}),
@@ -252,7 +252,8 @@ func TestObserveDeviceResourcesUpdate(t *testing.T) {
 							return d
 						}(),
 					},
-					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, updCorrelationID, oauthService.DeviceUserID),
+					AuditContext:  commands.NewAuditContext(oauthService.DeviceUserID, updCorrelationID, oauthService.DeviceUserID),
+					ResourceTypes: test.TestResourceSwitchesInstanceResourceTypes,
 				},
 			},
 		},
@@ -344,7 +345,7 @@ func TestObserveDeviceResourcesCreateAndDelete(t *testing.T) {
 			SubscriptionId: sub.ID(),
 			CorrelationId:  createCorrelationID,
 			Type: &pb.Event_ResourceCreatePending{
-				ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, test.TestResourceSwitchesHref, createCorrelationID,
+				ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, test.TestResourceSwitchesHref, test.TestResourceSwitchesResourceTypes, createCorrelationID,
 					test.MakeSwitchResourceDefaultData()),
 			},
 		},
@@ -352,7 +353,7 @@ func TestObserveDeviceResourcesCreateAndDelete(t *testing.T) {
 			SubscriptionId: sub.ID(),
 			CorrelationId:  createCorrelationID,
 			Type: &pb.Event_ResourceCreated{
-				ResourceCreated: pbTest.MakeResourceCreated(t, deviceID, test.TestResourceSwitchesHref, createCorrelationID,
+				ResourceCreated: pbTest.MakeResourceCreated(t, deviceID, test.TestResourceSwitchesHref, test.TestResourceSwitchesResourceTypes, createCorrelationID,
 					pbTest.MakeCreateSwitchResourceResponseData(switchID)),
 			},
 		},
@@ -382,7 +383,7 @@ func TestObserveDeviceResourcesCreateAndDelete(t *testing.T) {
 			SubscriptionId: sub.ID(),
 			CorrelationId:  delCorrelationID,
 			Type: &pb.Event_ResourceDeletePending{
-				ResourceDeletePending: pbTest.MakeResourceDeletePending(deviceID, test.TestResourceSwitchesInstanceHref(switchID),
+				ResourceDeletePending: pbTest.MakeResourceDeletePending(deviceID, test.TestResourceSwitchesInstanceHref(switchID), test.TestResourceSwitchesInstanceResourceTypes,
 					delCorrelationID),
 			},
 		},
@@ -390,7 +391,7 @@ func TestObserveDeviceResourcesCreateAndDelete(t *testing.T) {
 			SubscriptionId: sub.ID(),
 			CorrelationId:  delCorrelationID,
 			Type: &pb.Event_ResourceDeleted{
-				ResourceDeleted: pbTest.MakeResourceDeleted(deviceID, test.TestResourceSwitchesInstanceHref(switchID),
+				ResourceDeleted: pbTest.MakeResourceDeleted(deviceID, test.TestResourceSwitchesInstanceHref(switchID), test.TestResourceSwitchesInstanceResourceTypes,
 					delCorrelationID),
 			},
 		},

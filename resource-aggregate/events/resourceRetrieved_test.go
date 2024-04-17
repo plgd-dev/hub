@@ -30,10 +30,11 @@ var testEventResourceRetrieved events.ResourceRetrieved = events.ResourceRetriev
 		ConnectionId: "con1",
 		Sequence:     1,
 	},
-	Status: commands.Status_ACCEPTED,
+	Status:        commands.Status_ACCEPTED,
+	ResourceTypes: []string{"type1", "type2"},
 }
 
-func TestResourceRetrieved_CopyData(t *testing.T) {
+func TestResourceRetrievedCopyData(t *testing.T) {
 	type args struct {
 		event *events.ResourceRetrieved
 	}

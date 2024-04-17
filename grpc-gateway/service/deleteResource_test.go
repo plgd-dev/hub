@@ -131,7 +131,7 @@ func TestRequestHandlerDeleteResource(t *testing.T) {
 			}
 			require.NoError(t, err)
 
-			want := pbTest.MakeResourceDeleted(deviceID, tt.args.href, "")
+			want := pbTest.MakeResourceDeleted(deviceID, tt.args.href, test.TestResourceSwitchesInstanceResourceTypes, "")
 			pbTest.CmpResourceDeleted(t, want, got.GetData())
 		})
 	}
@@ -264,7 +264,7 @@ func TestRequestHandlerBatchDeleteResource(t *testing.T) {
 				href: test.TestResourceSwitchesHref,
 			},
 			want: func() *events.ResourceDeleted {
-				rdel := pbTest.MakeResourceDeleted(deviceID, test.TestResourceSwitchesHref, "")
+				rdel := pbTest.MakeResourceDeleted(deviceID, test.TestResourceSwitchesHref, test.TestResourceSwitchesResourceTypes, "")
 				links := test.CollectionLinkRepresentations{}
 				for _, switchID := range switchIDs {
 					links = append(links, test.CollectionLinkRepresentation{

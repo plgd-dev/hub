@@ -72,7 +72,7 @@ func TestRequestHandlerGetResourceFromDevice(t *testing.T) {
 					TimeToLive: int64(time.Hour),
 				},
 			},
-			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceLightInstanceHref("1"), "",
+			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceLightInstanceHref("1"), test.TestResourceLightInstanceResourceTypes, "",
 				map[string]interface{}{
 					"name":  "Light",
 					"power": uint64(0),
@@ -88,7 +88,7 @@ func TestRequestHandlerGetResourceFromDevice(t *testing.T) {
 					TimeToLive: int64(time.Hour),
 				},
 			},
-			want: pbTest.MakeResourceRetrieved(t, deviceID, device.ResourceURI, "",
+			want: pbTest.MakeResourceRetrieved(t, deviceID, device.ResourceURI, test.TestResourceDeviceResourceTypes, "",
 				map[string]interface{}{
 					"n":    deviceName,
 					"di":   deviceID,
@@ -107,7 +107,7 @@ func TestRequestHandlerGetResourceFromDevice(t *testing.T) {
 					TimeToLive: int64(time.Hour),
 				},
 			},
-			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceSwitchesHref, "",
+			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceSwitchesHref, test.TestResourceSwitchesResourceTypes, "",
 				[]map[string]interface{}{
 					{
 						"href": test.TestResourceSwitchesInstanceHref(switchID),
@@ -130,7 +130,7 @@ func TestRequestHandlerGetResourceFromDevice(t *testing.T) {
 					TimeToLive: int64(time.Hour),
 				},
 			},
-			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), "",
+			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), test.TestResourceSwitchesInstanceResourceTypes, "",
 				map[string]interface{}{
 					"value": false,
 				},

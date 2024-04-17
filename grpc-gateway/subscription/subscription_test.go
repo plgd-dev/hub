@@ -70,7 +70,7 @@ func checkAndValidateUpdate(ctx context.Context, t *testing.T, rac raservice.Res
 	})
 	require.NoError(t, err)
 
-	resourceUpdatePending := pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"), updCorrelationID,
+	resourceUpdatePending := pbTest.MakeResourceUpdatePending(t, deviceID, test.TestResourceLightInstanceHref("1"), test.TestResourceLightInstanceResourceTypes, updCorrelationID,
 		map[string]interface{}{
 			"power": value,
 		},
@@ -90,7 +90,7 @@ func checkAndValidateUpdate(ctx context.Context, t *testing.T, rac raservice.Res
 			check(t, ev, &pb.Event{
 				SubscriptionId: s.Id(),
 				Type: &pb.Event_ResourceUpdated{
-					ResourceUpdated: pbTest.MakeResourceUpdated(t, deviceID, test.TestResourceLightInstanceHref("1"), updCorrelationID, nil),
+					ResourceUpdated: pbTest.MakeResourceUpdated(t, deviceID, test.TestResourceLightInstanceHref("1"), test.TestResourceLightInstanceResourceTypes, updCorrelationID, nil),
 				},
 				CorrelationId: correlationID,
 			})
@@ -98,7 +98,7 @@ func checkAndValidateUpdate(ctx context.Context, t *testing.T, rac raservice.Res
 			check(t, ev, &pb.Event{
 				SubscriptionId: s.Id(),
 				Type: &pb.Event_ResourceChanged{
-					ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceLightInstanceHref("1"), "",
+					ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceLightInstanceHref("1"), test.TestResourceLightInstanceResourceTypes, "",
 						test.LightResourceRepresentation{
 							Name:  "Light",
 							Power: value,
@@ -126,8 +126,9 @@ func checkAndValidateRetrieve(ctx context.Context, t *testing.T, rac raservice.R
 		SubscriptionId: s.Id(),
 		Type: &pb.Event_ResourceRetrievePending{
 			ResourceRetrievePending: &events.ResourceRetrievePending{
-				ResourceId:   commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
-				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, retrieveCorrelationID, oauthService.DeviceUserID),
+				ResourceId:    commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
+				AuditContext:  commands.NewAuditContext(oauthService.DeviceUserID, retrieveCorrelationID, oauthService.DeviceUserID),
+				ResourceTypes: test.TestResourceLightInstanceResourceTypes,
 			},
 		},
 		CorrelationId: correlationID,
@@ -135,7 +136,7 @@ func checkAndValidateRetrieve(ctx context.Context, t *testing.T, rac raservice.R
 	check(t, waitForEvent(ctx, t, recvChan), &pb.Event{
 		SubscriptionId: s.Id(),
 		Type: &pb.Event_ResourceRetrieved{
-			ResourceRetrieved: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceLightInstanceHref("1"),
+			ResourceRetrieved: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceLightInstanceHref("1"), test.TestResourceLightInstanceResourceTypes,
 				retrieveCorrelationID,
 				test.LightResourceRepresentation{
 					Name: "Light",
@@ -154,7 +155,7 @@ func getResourceChangedEvents(t *testing.T, deviceID, correlationID, subscriptio
 		events[rid.GetHref()] = &pb.Event{
 			SubscriptionId: subscriptionID,
 			Type: &pb.Event_ResourceChanged{
-				ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, rid.GetHref(), "", res.Representation),
+				ResourceChanged: pbTest.MakeResourceChanged(t, deviceID, rid.GetHref(), res.ResourceTypes, "", res.Representation),
 			},
 			CorrelationId: correlationID,
 		}

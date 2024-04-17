@@ -66,6 +66,10 @@ func (e *ResourceStateSnapshotTaken) ServiceID() (string, bool) {
 	return "", false
 }
 
+func (e *ResourceStateSnapshotTaken) Types() []string {
+	return e.GetResourceTypes()
+}
+
 func (e *ResourceStateSnapshotTaken) CopyData(event *ResourceStateSnapshotTaken) {
 	e.ResourceId = event.GetResourceId()
 	e.LatestResourceChange = event.GetLatestResourceChange()
@@ -75,6 +79,7 @@ func (e *ResourceStateSnapshotTaken) CopyData(event *ResourceStateSnapshotTaken)
 	e.ResourceDeletePendings = event.GetResourceDeletePendings()
 	e.AuditContext = event.GetAuditContext()
 	e.EventMetadata = event.GetEventMetadata()
+	e.ResourceTypes = event.GetResourceTypes()
 }
 
 func (e *ResourceStateSnapshotTaken) CheckInitialized() bool {
@@ -155,7 +160,15 @@ func (e *ResourceStateSnapshotTaken) handleEventResourceCreatePending(createPend
 	e.EventMetadata = createPending.GetEventMetadata()
 	e.ResourceCreatePendings = append(e.ResourceCreatePendings, createPending)
 	e.AuditContext = createPending.GetAuditContext()
+	e.setResourceTypes(createPending.GetResourceTypes())
 	return nil
+}
+
+func (e *ResourceStateSnapshotTaken) setResourceTypes(resourceTypes []string) {
+	if len(resourceTypes) == 0 {
+		return
+	}
+	e.ResourceTypes = resourceTypes
 }
 
 func (e *ResourceStateSnapshotTaken) handleEventResourceUpdatePending(updatePending *ResourceUpdatePending) error {
@@ -171,6 +184,7 @@ func (e *ResourceStateSnapshotTaken) handleEventResourceUpdatePending(updatePend
 	e.EventMetadata = updatePending.GetEventMetadata()
 	e.ResourceUpdatePendings = append(e.ResourceUpdatePendings, updatePending)
 	e.AuditContext = updatePending.GetAuditContext()
+	e.setResourceTypes(updatePending.GetResourceTypes())
 	return nil
 }
 
@@ -187,6 +201,7 @@ func (e *ResourceStateSnapshotTaken) handleEventResourceRetrievePending(retrieve
 	e.EventMetadata = retrievePending.GetEventMetadata()
 	e.ResourceRetrievePendings = append(e.ResourceRetrievePendings, retrievePending)
 	e.AuditContext = retrievePending.GetAuditContext()
+	e.setResourceTypes(retrievePending.GetResourceTypes())
 	return nil
 }
 
@@ -203,6 +218,7 @@ func (e *ResourceStateSnapshotTaken) handleEventResourceDeletePending(deletePend
 	e.EventMetadata = deletePending.GetEventMetadata()
 	e.ResourceDeletePendings = append(e.ResourceDeletePendings, deletePending)
 	e.AuditContext = deletePending.GetAuditContext()
+	e.setResourceTypes(deletePending.GetResourceTypes())
 	return nil
 }
 
@@ -227,6 +243,7 @@ func (e *ResourceStateSnapshotTaken) handleEventResourceCreated(created *Resourc
 	resourceCreatePendings = append(resourceCreatePendings[:index], resourceCreatePendings[index+1:]...)
 	e.ResourceCreatePendings = resourceCreatePendings
 	e.AuditContext = created.GetAuditContext()
+	e.setResourceTypes(created.GetResourceTypes())
 	return nil
 }
 
@@ -247,6 +264,7 @@ func (e *ResourceStateSnapshotTaken) handleEventResourceUpdated(updated *Resourc
 	resourceUpdatePendings = append(resourceUpdatePendings[:index], resourceUpdatePendings[index+1:]...)
 	e.ResourceUpdatePendings = resourceUpdatePendings
 	e.AuditContext = updated.GetAuditContext()
+	e.setResourceTypes(updated.GetResourceTypes())
 	return nil
 }
 
@@ -267,6 +285,7 @@ func (e *ResourceStateSnapshotTaken) handleEventResourceRetrieved(retrieved *Res
 	resourceRetrievePendings = append(resourceRetrievePendings[:index], resourceRetrievePendings[index+1:]...)
 	e.ResourceRetrievePendings = resourceRetrievePendings
 	e.AuditContext = retrieved.GetAuditContext()
+	e.setResourceTypes(retrieved.GetResourceTypes())
 	return nil
 }
 
@@ -287,6 +306,7 @@ func (e *ResourceStateSnapshotTaken) handleEventResourceChanged(changed *Resourc
 		e.EventMetadata = changed.GetEventMetadata()
 		e.LatestResourceChange = changed
 		e.AuditContext = changed.GetAuditContext()
+		e.setResourceTypes(changed.GetResourceTypes())
 		return true
 	}
 	return false
@@ -316,6 +336,7 @@ func (e *ResourceStateSnapshotTaken) handleEventResourceDeleted(deleted *Resourc
 	e.ResourceId = deleted.GetResourceId()
 	e.EventMetadata = deleted.GetEventMetadata()
 	e.AuditContext = deleted.GetAuditContext()
+	e.setResourceTypes(deleted.GetResourceTypes())
 	return nil
 }
 
@@ -475,6 +496,7 @@ func (e *ResourceStateSnapshotTakenForCommand) confirmResourceUpdateRequest(ctx 
 		Content:              req.GetContent(),
 		Status:               req.GetStatus(),
 		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
+		ResourceTypes:        e.resolveResourceTypes(req.GetResourceId().GetHref(), nil),
 	}
 	if err := e.handleEventResourceUpdated(&rc); err != nil {
 		return nil, err
@@ -497,6 +519,7 @@ func (e *ResourceStateSnapshotTakenForCommand) confirmResourceRetrieveRequest(ct
 		Status:               req.GetStatus(),
 		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 		Etag:                 req.GetEtag(),
+		ResourceTypes:        e.resolveResourceTypes(req.GetResourceId().GetHref(), nil),
 	}
 	if err := e.handleEventResourceRetrieved(&rc); err != nil {
 		return nil, err
@@ -518,6 +541,7 @@ func (e *ResourceStateSnapshotTakenForCommand) confirmResourceDeleteRequest(ctx 
 		Content:              req.GetContent(),
 		Status:               req.GetStatus(),
 		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
+		ResourceTypes:        e.resolveResourceTypes(req.GetResourceId().GetHref(), nil),
 	}
 	if err := e.handleEventResourceDeleted(&rc); err != nil {
 		return nil, err
@@ -539,7 +563,9 @@ func (e *ResourceStateSnapshotTakenForCommand) confirmResourceCreateRequest(ctx 
 		Content:              req.GetContent(),
 		Status:               req.GetStatus(),
 		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
+		ResourceTypes:        e.resolveResourceTypes(req.GetResourceId().GetHref(), nil),
 	}
+
 	if err := e.handleEventResourceCreated(&rc); err != nil {
 		return nil, err
 	}
@@ -660,6 +686,7 @@ func (e *ResourceStateSnapshotTakenForCommand) handleNotifyResourceChangedReques
 		Status:               req.GetStatus(),
 		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 		Etag:                 req.GetEtag(),
+		ResourceTypes:        e.resolveResourceTypes(req.GetResourceId().GetHref(), req.GetResourceTypes()),
 	}
 
 	if e.handleEventResourceChanged(&rc) {
@@ -688,6 +715,7 @@ func (e *ResourceStateSnapshotTakenForCommand) handleUpdateResourceRequest(ctx c
 		Content:              content,
 		ValidUntil:           timeToLive2ValidUntil(req.GetTimeToLive()),
 		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
+		ResourceTypes:        e.resolveResourceTypes(req.GetResourceId().GetHref(), nil),
 	}
 
 	if err = e.handleEventResourceUpdatePending(&rc); err != nil {
@@ -712,6 +740,7 @@ func (e *ResourceStateSnapshotTakenForCommand) handleRetrieveResourceRequest(ctx
 		ValidUntil:           timeToLive2ValidUntil(req.GetTimeToLive()),
 		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
 		Etag:                 req.GetEtag(),
+		ResourceTypes:        e.resolveResourceTypes(req.GetResourceId().GetHref(), nil),
 	}
 
 	if err := e.handleEventResourceRetrievePending(&rc); err != nil {
@@ -735,12 +764,36 @@ func (e *ResourceStateSnapshotTakenForCommand) handleDeleteResourceRequest(ctx c
 		ValidUntil:           timeToLive2ValidUntil(req.GetTimeToLive()),
 		ResourceInterface:    req.GetResourceInterface(),
 		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
+		ResourceTypes:        e.resolveResourceTypes(req.GetResourceId().GetHref(), nil),
 	}
 
 	if err := e.handleEventResourceDeletePending(&rc); err != nil {
 		return nil, err
 	}
 	return []eventstore.Event{&rc}, nil
+}
+
+func (e *ResourceStateSnapshotTakenForCommand) resolveResourceTypes(href string, resourceTypes []string) []string {
+	if len(resourceTypes) > 0 {
+		// resourceTypes from command has higher priority
+		return resourceTypes
+	}
+	if e.resourceLinks == nil {
+		// if no resourceLinks, return resourceTypes from snapshot
+		return e.GetResourceTypes()
+	}
+	resources := e.resourceLinks.GetResources()
+	if len(resources) == 0 {
+		// if no resourceLinks, return resourceTypes from snapshot
+		return e.GetResourceTypes()
+	}
+	link, ok := e.resourceLinks.GetResources()[href]
+	if !ok {
+		// if resourceLinks doesn't contain resource, return resourceTypes from snapshot
+		return e.GetResourceTypes()
+	}
+	// return resourceTypes from link
+	return link.GetResourceTypes()
 }
 
 func (e *ResourceStateSnapshotTakenForCommand) handleCreateResourceRequest(ctx context.Context, req *commands.CreateResourceRequest, newVersion uint64) ([]eventstore.Event, error) {
@@ -761,6 +814,7 @@ func (e *ResourceStateSnapshotTakenForCommand) handleCreateResourceRequest(ctx c
 		EventMetadata:        em,
 		ValidUntil:           timeToLive2ValidUntil(req.GetTimeToLive()),
 		OpenTelemetryCarrier: propagation.TraceFromCtx(ctx),
+		ResourceTypes:        e.resolveResourceTypes(req.GetResourceId().GetHref(), nil),
 	}
 
 	if err := e.handleEventResourceCreatePending(&rc); err != nil {
@@ -811,22 +865,25 @@ func (e *ResourceStateSnapshotTaken) TakeSnapshot(version uint64) (eventstore.Ev
 		ResourceRetrievePendings: e.GetResourceRetrievePendings(),
 		ResourceDeletePendings:   e.GetResourceDeletePendings(),
 		AuditContext:             e.GetAuditContext(),
+		ResourceTypes:            e.GetResourceTypes(),
 	}, true
 }
 
 type ResourceStateSnapshotTakenForCommand struct {
-	owner  string
-	hubID  string
-	userID string
+	owner         string
+	hubID         string
+	userID        string
+	resourceLinks *ResourceLinksSnapshotTakenForCommand
 	*ResourceStateSnapshotTaken
 }
 
-func NewResourceStateSnapshotTakenForCommand(userID string, owner string, hubID string) *ResourceStateSnapshotTakenForCommand {
+func NewResourceStateSnapshotTakenForCommand(userID string, owner string, hubID string, resourceLinks *ResourceLinksSnapshotTakenForCommand) *ResourceStateSnapshotTakenForCommand {
 	return &ResourceStateSnapshotTakenForCommand{
 		ResourceStateSnapshotTaken: NewResourceStateSnapshotTaken(),
 		userID:                     userID,
 		owner:                      owner,
 		hubID:                      hubID,
+		resourceLinks:              resourceLinks,
 	}
 }
 

@@ -30,10 +30,11 @@ var testEventResourceChanged events.ResourceChanged = events.ResourceChanged{
 		ConnectionId: "con1",
 		Sequence:     1,
 	},
-	Status: commands.Status_ACCEPTED,
+	Status:        commands.Status_ACCEPTED,
+	ResourceTypes: []string{"type1", "type2"},
 }
 
-func TestResourceChanged_CopyData(t *testing.T) {
+func TestResourceChangedCopyData(t *testing.T) {
 	type args struct {
 		event *events.ResourceChanged
 	}

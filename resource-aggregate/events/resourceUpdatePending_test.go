@@ -34,9 +34,10 @@ var testEventResourceUpdatePending events.ResourceUpdatePending = events.Resourc
 		ConnectionId: "con1",
 		Sequence:     1,
 	},
+	ResourceTypes: []string{"type1", "type2"},
 }
 
-func TestResourceUpdatePending_CopyData(t *testing.T) {
+func TestResourceUpdatePendingCopyData(t *testing.T) {
 	type args struct {
 		event *events.ResourceUpdatePending
 	}

@@ -273,7 +273,7 @@ func CmpResourceCreatePending(t *testing.T, expected, got *events.ResourceCreate
 	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
 }
 
-func MakeResourceCreatePending(t *testing.T, deviceID, href, correlationID string, data interface{}) *events.ResourceCreatePending {
+func MakeResourceCreatePending(t *testing.T, deviceID, href string, resourceTypes []string, correlationID string, data interface{}) *events.ResourceCreatePending {
 	return &events.ResourceCreatePending{
 		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
@@ -284,7 +284,8 @@ func MakeResourceCreatePending(t *testing.T, deviceID, href, correlationID strin
 			CoapContentFormat: -1,
 			Data:              test.EncodeToCbor(t, data),
 		},
-		AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, correlationID, oauthService.DeviceUserID),
+		AuditContext:  commands.NewAuditContext(oauthService.DeviceUserID, correlationID, oauthService.DeviceUserID),
+		ResourceTypes: resourceTypes,
 	}
 }
 
@@ -313,7 +314,7 @@ func CmpResourceUpdatePending(t *testing.T, expected, got *events.ResourceUpdate
 	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
 }
 
-func MakeResourceUpdatePending(t *testing.T, deviceID, href, correlationID string, data interface{}) *events.ResourceUpdatePending {
+func MakeResourceUpdatePending(t *testing.T, deviceID, href string, resourceTypes []string, correlationID string, data interface{}) *events.ResourceUpdatePending {
 	return &events.ResourceUpdatePending{
 		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
@@ -324,7 +325,8 @@ func MakeResourceUpdatePending(t *testing.T, deviceID, href, correlationID strin
 			CoapContentFormat: -1,
 			Data:              test.EncodeToCbor(t, data),
 		},
-		AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, correlationID, oauthService.DeviceUserID),
+		AuditContext:  commands.NewAuditContext(oauthService.DeviceUserID, correlationID, oauthService.DeviceUserID),
+		ResourceTypes: resourceTypes,
 	}
 }
 
@@ -346,13 +348,14 @@ func CmpResourceRetrievePending(t *testing.T, expected, got *events.ResourceRetr
 	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
 }
 
-func MakeResourceRetrievePending(deviceID, href, correlationID string) *events.ResourceRetrievePending {
+func MakeResourceRetrievePending(deviceID, href string, resourceTypes []string, correlationID string) *events.ResourceRetrievePending {
 	return &events.ResourceRetrievePending{
 		ResourceId: &commands.ResourceId{
 			DeviceId: deviceID,
 			Href:     href,
 		},
-		AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, correlationID, oauthService.DeviceUserID),
+		AuditContext:  commands.NewAuditContext(oauthService.DeviceUserID, correlationID, oauthService.DeviceUserID),
+		ResourceTypes: resourceTypes,
 	}
 }
 
@@ -374,10 +377,11 @@ func CmpResourceDeletePending(t *testing.T, expected, got *events.ResourceDelete
 	test.CheckProtobufs(t, expected, got, test.RequireToCheckFunc(require.Equal))
 }
 
-func MakeResourceDeletePending(deviceID, href, correlationID string) *events.ResourceDeletePending {
+func MakeResourceDeletePending(deviceID, href string, resourceTypes []string, correlationID string) *events.ResourceDeletePending {
 	return &events.ResourceDeletePending{
-		ResourceId:   &commands.ResourceId{DeviceId: deviceID, Href: href},
-		AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, correlationID, oauthService.DeviceUserID),
+		ResourceId:    &commands.ResourceId{DeviceId: deviceID, Href: href},
+		AuditContext:  commands.NewAuditContext(oauthService.DeviceUserID, correlationID, oauthService.DeviceUserID),
+		ResourceTypes: resourceTypes,
 	}
 }
 

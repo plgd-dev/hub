@@ -51,6 +51,10 @@ func (e *ResourceRetrieved) ServiceID() (string, bool) {
 	return "", false
 }
 
+func (e *ResourceRetrieved) Types() []string {
+	return e.GetResourceTypes()
+}
+
 func (e *ResourceRetrieved) CopyData(event *ResourceRetrieved) {
 	e.ResourceId = event.GetResourceId()
 	e.Content = event.GetContent()
@@ -58,6 +62,7 @@ func (e *ResourceRetrieved) CopyData(event *ResourceRetrieved) {
 	e.EventMetadata = event.GetEventMetadata()
 	e.Status = event.GetStatus()
 	e.OpenTelemetryCarrier = event.GetOpenTelemetryCarrier()
+	e.ResourceTypes = event.GetResourceTypes()
 }
 
 func (e *ResourceRetrieved) CheckInitialized() bool {
