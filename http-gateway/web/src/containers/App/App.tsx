@@ -7,6 +7,7 @@ import { ThemeProvider } from '@emotion/react'
 
 import PageLoader from '@shared-ui/components/Atomic/PageLoader'
 import { security } from '@shared-ui/common/services/security'
+import { translate } from '@shared-ui/common/services/translate'
 import { openTelemetry } from '@shared-ui/common/services/opentelemetry'
 import ConditionalWrapper from '@shared-ui/components/Atomic/ConditionalWrapper'
 import { useLocalStorage } from '@shared-ui/common/hooks'
@@ -77,6 +78,11 @@ const App = (props: { mockApp: boolean }) => {
             fetchWellKnownConfig().then()
         }
     }, [wellKnownConfig, wellKnownConfigFetched])
+
+    useEffect(() => {
+        // translate helper for non-component files ( functions etc )
+        translate.setTranslator(_)
+    }, [_])
 
     const [theme, themeError, getThemeData] = useAppTheme({
         getTheme,

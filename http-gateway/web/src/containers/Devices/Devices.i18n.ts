@@ -67,11 +67,11 @@ export const messages = defineMessages({
     },
     deviceProvisioningRecordNotFound: {
         id: 'devices.deviceProvisioningRecordNotFound',
-        defaultMessage: 'device certificates not found',
+        defaultMessage: 'device provisioning records not found',
     },
     deviceProvisioningRecordNotFoundMessage: {
         id: 'devices.deviceProvisioningRecordNotFoundMessage',
-        defaultMessage: 'device certificates for device with ID "{id}" does not exist.',
+        defaultMessage: 'Provisioning records for device with ID "{id}" does not exist.',
     },
     href: {
         id: 'devices.href',

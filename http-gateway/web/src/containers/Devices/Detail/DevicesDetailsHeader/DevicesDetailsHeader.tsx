@@ -60,7 +60,7 @@ const DevicesDetailsHeader: FC<Props> = memo((props) => {
 
             if (isMounted.current) {
                 Notification.success(
-                    { title: t.deviceDeleted, message: _(t.deviceWasDeleted, { name: deviceName }) },
+                    { title: _(t.deviceDeleted), message: _(t.deviceWasDeleted, { name: deviceName }) },
                     { notificationId: notificationId.HUB_DEVICES_DETAILS_HEADER_HANDLE_DELETE_DEVICE }
                 )
 

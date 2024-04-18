@@ -55,8 +55,8 @@ const DevicesDetailsPage: FC<Props> = (props) => {
     const { data: softwareUpdateData, refresh: refreshSoftwareUpdate } = useDeviceSoftwareUpdateDetails(id)
     const { data: resourcesData, loading: loadingResources, error: resourcesError, refresh } = useDevicesResources(id)
     const { data: pendingCommandsData, refresh: refreshPendingCommands, loading: pendingCommandsLoading } = useDevicePendingCommands(id)
-    const { data: certificates, loading: certificatesLoading, refresh: certificateRefresh, error: certificateError } = useDeviceCertificates(id)
-    const { data: provisioningRecords, loading: provisioningRecordsLoading, error: provisioningRecordsError } = useDeviceProvisioningRecord(id)
+    const { data: certificates, loading: certificatesLoading, refresh: certificateRefresh } = useDeviceCertificates(id)
+    const { data: provisioningRecords, loading: provisioningRecordsLoading } = useDeviceProvisioningRecord(id)
 
     const { ref, width, height } = useResizeDetector()
 
@@ -108,11 +108,11 @@ const DevicesDetailsPage: FC<Props> = (props) => {
         return <NotFoundPage message={_(t.deviceResourcesNotFound)} title={_(t.deviceResourcesNotFoundMessage, { id })} />
     }
 
-    if (certificateError || (certificates?.length === 0 && defaultActiveTab === 2)) {
+    if (certificates?.length === 0 && defaultActiveTab === 2) {
         return <NotFoundPage message={_(t.deviceCertificatesNotFound)} title={_(t.deviceCertificatesNotFoundMessage, { id })} />
     }
 
-    if (provisioningRecordsError || (isEmpty(provisioningRecords) && defaultActiveTab === 3)) {
+    if (isEmpty(provisioningRecords) && defaultActiveTab === 3) {
         return <NotFoundPage message={_(t.deviceProvisioningRecordNotFound)} title={_(t.deviceProvisioningRecordNotFoundMessage, { id })} />
     }
 
@@ -280,7 +280,7 @@ const DevicesDetailsPage: FC<Props> = (props) => {
                                 />
                             ),
                             dataTestId: testId.devices.detail.tabCertificates,
-                            disabled: certificates?.length === 0 || certificatesLoading,
+                            disabled: !certificates || certificates?.length === 0 || certificatesLoading,
                             id: 2,
                             name: _(t.certificates),
                             innerPadding: false,

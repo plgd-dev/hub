@@ -59,8 +59,9 @@ export const handleEmitNewPendingCommand = (eventData: any) => {
 
 const DEFAULT_NOTIFICATION_DELAY = 500
 
-export const handleEmitUpdatedCommandEvents = (eventData: any) => {
+export const handleEmitUpdatedCommandEvents = (eventData: any, _: any) => {
     const commandType = getUpdatedCommandTypeFromEvent(eventData)
+
     const updatedCommand = commandType ? eventData?.[commandType] || null : null
 
     if (updatedCommand) {
@@ -81,20 +82,20 @@ export const handleEmitUpdatedCommandEvents = (eventData: any) => {
             if (!Notification.isActive(toastId) && status) {
                 if (status === OK) {
                     Notification.success(
-                        { title: d.resourceUpdateSuccess, message: d.resourceWasUpdated },
+                        { title: _(d.resourceUpdateSuccess), message: _(d.resourceWasUpdated) },
                         { variant, toastId, notificationId: notificationId.HUB_HANDLE_EMIT_UPDATED_COMMAND_EVENTS_OK }
                     )
                 } else {
                     if (status === BAD_REQUEST) {
                         Notification.error(
-                            { title: d.resourceUpdateError, message: d.invalidArgument },
+                            { title: _(d.resourceUpdateError), message: _(d.invalidArgument) },
                             { variant, notificationId: notificationId.HUB_HANDLE_EMIT_UPDATED_COMMAND_EVENTS_BAD_REQUEST }
                         )
                     } else {
                         Notification.error(
                             {
-                                title: d.error,
-                                message: d.resourceUpdateError,
+                                title: _(d.error),
+                                message: _(d.resourceUpdateError),
                             },
                             { variant, notificationId: notificationId.HUB_HANDLE_EMIT_UPDATED_COMMAND_EVENTS }
                         )

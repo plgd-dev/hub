@@ -2,6 +2,7 @@ import { store, history } from '@/store'
 
 import { Emitter } from '@shared-ui/common/services/emitter'
 import { notifications } from '@shared-ui/common/services'
+import { translate } from '@shared-ui/common/services/translate'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 
 import { devicesStatuses, resourceEventTypes, DEVICES_STATUS_WS_KEY, DEVICES_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY } from './constants'
@@ -31,18 +32,18 @@ const showToast = async (currentDeviceNotificationsEnabled, deviceId, status) =>
         const getToastMessage = () => {
             switch (status) {
                 case OFFLINE:
-                    return { message: t.deviceWentOffline, params: { name } }
+                    return translate.translate(t.deviceWentOffline, { name })
                 case REGISTERED:
-                    return { message: t.deviceWasRegistered, params: { name } }
+                    return translate.translate(t.deviceWasRegistered, { name })
                 case ONLINE:
                 default:
-                    return { message: t.deviceWentOnline, params: { name } }
+                    return translate.translate(t.deviceWentOnline, { name })
             }
         }
 
         Notification.info(
             {
-                title: t.devicestatusChange,
+                title: translate.translate(t.devicestatusChange),
                 message: [ONLINE, ONLINE, REGISTERED].includes(status) ? getToastMessage() : `Device state: ${status}`,
             },
             {
