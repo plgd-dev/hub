@@ -43,7 +43,7 @@ const LinkedHubsDetailPage: FC<Props> = () => {
     const navigate = useNavigate()
     const tab = tabRoute || ''
 
-    const { data, loading, error, refresh } = useHubDetail(hubId!, !!hubId)
+    const { data, loading, error, refresh } = useHubDetail(hubId || '', !!hubId)
     // transform gateways string[] => {value: string}[]
     const [defaultData, setDefaultData] = useState<any>(undefined)
 

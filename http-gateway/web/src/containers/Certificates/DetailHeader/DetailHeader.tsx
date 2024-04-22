@@ -81,17 +81,6 @@ const DetailHeader: FC<Props> = (props) => {
                 {_(g.delete)}
             </Button>
 
-            {/* <Button*/}
-            {/*    dataTestId={testId.dps.certificates.detail.editNameButton}*/}
-            {/*    disabled={loading}*/}
-            {/*    icon={<IconEdit />}*/}
-            {/*    onClick={() => setEditNameModal(true)}*/}
-            {/*    style={{ marginLeft: 8 }}*/}
-            {/*    variant='tertiary'*/}
-            {/* >*/}
-            {/*    {_(g.editName)}*/}
-            {/* </Button>*/}
-
             <DeleteModal
                 deleteInformation={[
                     { label: _(g.name), value: 'TODO' },

@@ -17,6 +17,7 @@
     "declaration": true,
     "sourceMap": true,
     "importHelpers": true,
+    "useUnknownInCatchVariables": false,
     "downlevelIteration": true,
     "types": ["node", "react", "react-is/next", "@emotion/react/types/css-prop"],
     "paths": {

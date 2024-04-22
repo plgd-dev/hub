@@ -19,11 +19,11 @@ import { messages as trans } from '@/containers/DeviceProvisioning/LinkedHubs/Li
 import { messages as g } from '@/containers/Global.i18n'
 import notificationId from '@/notificationId'
 
-const CertificatesDetailPage: FC<Props> = (props) => {
+const CertificatesDetailPage: FC<Props> = () => {
     const { formatMessage: _ } = useIntl()
     const { certificateId } = useParams()
 
-    const { data, error, loading } = useCertificatesDetail(certificateId!)
+    const { data, error, loading } = useCertificatesDetail(certificateId || '')
     const [parsedCert, setParsedCert] = useState<any>(undefined)
     const [pageLoading, setPageLoading] = useState<any>(undefined)
 

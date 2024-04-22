@@ -37,7 +37,7 @@ const EnrollmentGroupsDetailPage: FC<Props> = () => {
 
     const [pageLoading, setPageLoading] = useState(false)
 
-    const { data, loading, refresh, error } = useEnrollmentGroupDetail(enrollmentId!)
+    const { data, loading, refresh, error } = useEnrollmentGroupDetail(enrollmentId)
 
     const isMounted = useIsMounted()
 
@@ -79,7 +79,7 @@ const EnrollmentGroupsDetailPage: FC<Props> = () => {
     useEffect(() => {
         if (error) {
             Notification.error(
-                { title: _(t.enrollmentGroupsError), message: getApiErrorMessage(error) },
+                { title: _(t.enrollmentGroupsError), message: getApiErrorMessage(error) || '' },
                 { notificationId: notificationId.HUB_DPS_ENROLLMENT_GROUP_DETAIL_PAGE_ERROR }
             )
         }
