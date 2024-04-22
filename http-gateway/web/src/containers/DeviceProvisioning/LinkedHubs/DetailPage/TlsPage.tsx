@@ -127,7 +127,7 @@ const TlsPage: FC<any> = (props) => {
     const handleSaveModalData = useCallback(() => {
         switch (modalData.variant) {
             case modalVariants.ADD_CA_POOL: {
-                setValue(`${prefix}tls.caPool`, [...caPool, stringToPem(modalData.value)], {
+                setValue(`${prefix}tls.caPool`, caPool ? [...caPool, stringToPem(modalData.value)] : [stringToPem(modalData.value)], {
                     shouldDirty: true,
                     shouldTouch: true,
                 })
@@ -211,6 +211,8 @@ const TlsPage: FC<any> = (props) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
         []
     )
+
+    console.log(caPool)
 
     return (
         <form>
