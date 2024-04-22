@@ -34,7 +34,7 @@ func getResourceChanged(t *testing.T, deviceID string, href string) *events.Reso
 	for _, l := range test.GetAllBackendResourceRepresentations(t, deviceID, test.TestDeviceName) {
 		rid := commands.ResourceIdFromString(l.Href)
 		if rid.GetHref() == href {
-			return pbTest.MakeResourceChanged(t, deviceID, rid.GetHref(), "", l.Representation)
+			return pbTest.MakeResourceChanged(t, deviceID, rid.GetHref(), l.ResourceTypes, "", l.Representation)
 		}
 	}
 	return nil
@@ -65,7 +65,7 @@ func getResources(t *testing.T, deviceID, deviceName, switchID string) []*pb.Res
 		if rid.GetHref() == test.TestResourceSwitchesHref {
 			resources = append(resources, &pb.Resource{
 				Types: getResourceType(rid.GetHref()),
-				Data: pbTest.MakeResourceChanged(t, deviceID, rid.GetHref(), "", []interface{}{
+				Data: pbTest.MakeResourceChanged(t, deviceID, rid.GetHref(), res.ResourceTypes, "", []interface{}{
 					map[string]interface{}{
 						"href": test.TestResourceSwitchesInstanceHref(switchID),
 						"if":   []string{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
@@ -80,13 +80,13 @@ func getResources(t *testing.T, deviceID, deviceName, switchID string) []*pb.Res
 		} else {
 			resources = append(resources, &pb.Resource{
 				Types: getResourceType(rid.GetHref()),
-				Data:  pbTest.MakeResourceChanged(t, deviceID, rid.GetHref(), "", res.Representation),
+				Data:  pbTest.MakeResourceChanged(t, deviceID, rid.GetHref(), res.ResourceTypes, "", res.Representation),
 			})
 		}
 	}
 	resources = append(resources, &pb.Resource{
 		Types: []string{types.BINARY_SWITCH},
-		Data:  pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), "", test.SwitchResourceRepresentation{}),
+		Data:  pbTest.MakeResourceChanged(t, deviceID, test.TestResourceSwitchesInstanceHref(switchID), test.TestResourceSwitchesInstanceResourceTypes, "", test.SwitchResourceRepresentation{}),
 	})
 	return resources
 }
@@ -154,7 +154,7 @@ func TestRequestHandlerGetDeviceResources(t *testing.T) {
 	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
-	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	defer func() {

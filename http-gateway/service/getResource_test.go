@@ -47,7 +47,7 @@ func TestRequestHandlerGetResource(t *testing.T) {
 	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
-	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -91,9 +91,10 @@ func TestRequestHandlerGetResource(t *testing.T) {
 					DeviceId: deviceID,
 					Href:     test.TestResourceLightInstanceHref("1"),
 				},
-				Status:       commands.Status_OK,
-				Content:      &commands.Content{}, // content is encoded as json
-				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
+				Status:        commands.Status_OK,
+				Content:       &commands.Content{}, // content is encoded as json
+				AuditContext:  commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
+				ResourceTypes: test.TestResourceLightInstanceResourceTypes,
 			},
 			wantCode: http.StatusOK,
 		},
@@ -104,7 +105,7 @@ func TestRequestHandlerGetResource(t *testing.T) {
 				deviceID:     deviceID,
 				resourceHref: test.TestResourceLightInstanceHref("1"),
 			},
-			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceLightInstanceHref("1"), "",
+			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceLightInstanceHref("1"), test.TestResourceLightInstanceResourceTypes, "",
 				map[string]interface{}{
 					"state": false,
 					"power": uint64(0),
@@ -152,7 +153,7 @@ func TestRequestHandlerGetResource(t *testing.T) {
 				resourceHref:      test.TestResourceLightInstanceHref("1"),
 				resourceInterface: interfaces.OC_IF_BASELINE,
 			},
-			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceLightInstanceHref("1"), "",
+			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceLightInstanceHref("1"), test.TestResourceLightInstanceResourceTypes, "",
 				map[string]interface{}{
 					"state": false,
 					"power": uint64(0),
@@ -171,7 +172,7 @@ func TestRequestHandlerGetResource(t *testing.T) {
 				resourceHref: test.TestResourceLightInstanceHref("1"),
 				twin:         newBool(false),
 			},
-			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceLightInstanceHref("1"), "",
+			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceLightInstanceHref("1"), test.TestResourceLightInstanceResourceTypes, "",
 				map[string]interface{}{
 					"state": false,
 					"power": uint64(0),

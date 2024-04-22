@@ -25,9 +25,10 @@ var testEventResourceRetrievePending events.ResourceRetrievePending = events.Res
 		ConnectionId: "con1",
 		Sequence:     1,
 	},
+	ResourceTypes: []string{"type1", "type2"},
 }
 
-func TestResourceRetrievePending_CopyData(t *testing.T) {
+func TestResourceRetrievePendingCopyData(t *testing.T) {
 	type args struct {
 		event *events.ResourceRetrievePending
 	}

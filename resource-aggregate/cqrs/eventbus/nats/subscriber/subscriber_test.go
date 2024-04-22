@@ -66,6 +66,7 @@ type mockEvent struct {
 	timestamp    int64
 	Data         string
 	ETagI        []byte
+	TypesI       []string
 }
 
 func (e mockEvent) Version() uint64 {
@@ -104,6 +105,10 @@ func (e mockEvent) Timestamp() time.Time {
 
 func (e mockEvent) ServiceID() (string, bool) {
 	return "", false
+}
+
+func (e mockEvent) Types() []string {
+	return e.TypesI
 }
 
 type mockEventHandler struct {

@@ -31,6 +31,7 @@ var testEventResourceDeleted events.ResourceDeleted = events.ResourceDeleted{
 		ConnectionId: "con1",
 		Sequence:     1,
 	},
+	ResourceTypes: []string{"type1", "type2"},
 }
 
 func TestResourceDeleted_CopyData(t *testing.T) {

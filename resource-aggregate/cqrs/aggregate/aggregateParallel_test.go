@@ -19,6 +19,7 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/mongodb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/hub/v2/test/config"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 	"go.uber.org/atomic"
@@ -65,7 +66,7 @@ func testNewEventstore(ctx context.Context, t *testing.T) (eventstore.EventStore
 func cleanUpToSnapshot(ctx context.Context, t *testing.T, store eventstore.EventStore, evs []eventstore.Event) {
 	for _, event := range evs {
 		if err := store.RemoveUpToVersion(ctx, []eventstore.VersionQuery{{GroupID: event.GroupID(), AggregateID: event.AggregateID(), Version: event.Version()}}); err != nil && !errors.Is(err, eventstore.ErrNotSupported) {
-			require.NoError(t, err)
+			assert.NoError(t, err)
 		}
 		fmt.Printf("snapshot at version %v\n", event.Version())
 	}
@@ -82,8 +83,8 @@ func TestParallelRequest(t *testing.T) {
 	href := "/test/resource/1"
 
 	newAggregate := func(deviceID, href string) *aggregate.Aggregate {
-		a, err := aggregate.NewAggregate(deviceID, commands.NewResourceID(deviceID, href).ToUUID().String(), aggregate.NewDefaultRetryFunc(128), store, func(context.Context) (aggregate.AggregateModel, error) {
-			ev := events.NewResourceStateSnapshotTakenForCommand("test", "test", "hubID")
+		a, err := aggregate.NewAggregate(deviceID, commands.NewResourceID(deviceID, href).ToUUID().String(), aggregate.NewDefaultRetryFunc(128), store, func(context.Context, string, string) (aggregate.AggregateModel, error) {
+			ev := events.NewResourceStateSnapshotTakenForCommand("test", "test", "hubID", nil)
 			ev.ResourceId = commands.NewResourceID(deviceID, href)
 			return ev, nil
 		}, nil)

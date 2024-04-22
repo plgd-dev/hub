@@ -132,8 +132,8 @@ func TestProjection(t *testing.T) {
 		CommandMetadata: &commands.CommandMetadata{},
 	}
 
-	a1, err := aggregate.NewAggregate(res1.DeviceId, res1.ToUUID().String(), aggregate.NewDefaultRetryFunc(1), store, func(context.Context) (aggregate.AggregateModel, error) {
-		s := events.NewResourceStateSnapshotTakenForCommand("test", "test", "hubID")
+	a1, err := aggregate.NewAggregate(res1.GetDeviceId(), res1.ToUUID().String(), aggregate.NewDefaultRetryFunc(1), store, func(context.Context, string, string) (aggregate.AggregateModel, error) {
+		s := events.NewResourceStateSnapshotTakenForCommand("test", "test", "hubID", nil)
 		s.ResourceId = &res1
 		return s, nil
 	}, nil)
@@ -143,8 +143,8 @@ func TestProjection(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, evs)
 
-	a2, err := aggregate.NewAggregate(res2.DeviceId, res2.ToUUID().String(), aggregate.NewDefaultRetryFunc(1), store, func(context.Context) (aggregate.AggregateModel, error) {
-		s := events.NewResourceStateSnapshotTakenForCommand("test", "test", "hubID")
+	a2, err := aggregate.NewAggregate(res2.GetDeviceId(), res2.ToUUID().String(), aggregate.NewDefaultRetryFunc(1), store, func(context.Context, string, string) (aggregate.AggregateModel, error) {
+		s := events.NewResourceStateSnapshotTakenForCommand("test", "test", "hubID", nil)
 		s.ResourceId = &res2
 		return s, nil
 	}, nil)
@@ -158,7 +158,7 @@ func TestProjection(t *testing.T) {
 	require.NoError(t, err)
 
 	err = projection.Project(ctx, []eventstore.SnapshotQuery{{
-		GroupID:     res1.DeviceId,
+		GroupID:     res1.GetDeviceId(),
 		AggregateID: res1.ToUUID().String(),
 	}})
 	require.NoError(t, err)
@@ -170,7 +170,7 @@ func TestProjection(t *testing.T) {
 	require.Len(t, models, 1)
 
 	err = projection.Project(ctx, []eventstore.SnapshotQuery{{
-		GroupID:     res2.DeviceId,
+		GroupID:     res2.GetDeviceId(),
 		AggregateID: res2.ToUUID().String(),
 	}})
 	require.NoError(t, err)
@@ -186,8 +186,8 @@ func TestProjection(t *testing.T) {
 
 	time.Sleep(waitForSubscription)
 
-	a3, err := aggregate.NewAggregate(res3.DeviceId, res3.ToUUID().String(), aggregate.NewDefaultRetryFunc(1), store, func(context.Context) (aggregate.AggregateModel, error) {
-		s := events.NewResourceStateSnapshotTakenForCommand("test", "test", "hubID")
+	a3, err := aggregate.NewAggregate(res3.GetDeviceId(), res3.ToUUID().String(), aggregate.NewDefaultRetryFunc(1), store, func(context.Context, string, string) (aggregate.AggregateModel, error) {
+		s := events.NewResourceStateSnapshotTakenForCommand("test", "test", "hubID", nil)
 		s.ResourceId = &res3
 		return s, nil
 	}, nil)
@@ -197,7 +197,7 @@ func TestProjection(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, evs)
 	for _, e := range evs {
-		err = publisher.Publish(ctx, topics, res3.DeviceId, res3.ToUUID().String(), e)
+		err = publisher.Publish(ctx, topics, res3.GetDeviceId(), res3.ToUUID().String(), e)
 		require.NoError(t, err)
 	}
 	time.Sleep(time.Second)
@@ -215,7 +215,7 @@ func TestProjection(t *testing.T) {
 	time.Sleep(waitForSubscription)
 
 	err = projection.Forget([]eventstore.SnapshotQuery{{
-		GroupID:     res3.DeviceId,
+		GroupID:     res3.GetDeviceId(),
 		AggregateID: res3.ToUUID().String(),
 	}})
 	require.NoError(t, err)
@@ -242,7 +242,7 @@ func TestProjection(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, evs)
 	for _, e := range evs {
-		err = publisher.Publish(ctx, topics, res1.DeviceId, res1.ToUUID().String(), e)
+		err = publisher.Publish(ctx, topics, res1.GetDeviceId(), res1.ToUUID().String(), e)
 		require.NoError(t, err)
 	}
 

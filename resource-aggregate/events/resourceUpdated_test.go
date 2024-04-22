@@ -31,9 +31,10 @@ var testEventResourceUpdated events.ResourceUpdated = events.ResourceUpdated{
 		ConnectionId: "con1",
 		Sequence:     1,
 	},
+	ResourceTypes: []string{"type1", "type2"},
 }
 
-func TestResourceUpdated_CopyData(t *testing.T) {
+func TestResourceUpdatedCopyData(t *testing.T) {
 	type args struct {
 		event *events.ResourceUpdated
 	}

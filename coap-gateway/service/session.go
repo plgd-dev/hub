@@ -317,7 +317,7 @@ func (c *session) cancelResourceSubscription(token string) (bool, error) {
 //
 // The received notification is released by this function at the correct moment and must not be released
 // by the caller.
-func (c *session) onGetResourceContent(ctx context.Context, deviceID, href string, notification *pool.Message) error {
+func (c *session) onGetResourceContent(ctx context.Context, deviceID, href string, resourceTypes []string, notification *pool.Message) error {
 	cannotGetResourceContentError := func(deviceID, href string, err error) error {
 		return fmt.Errorf("cannot get resource /%v%v content: %w", deviceID, href, err)
 	}
@@ -327,6 +327,7 @@ func (c *session) onGetResourceContent(ctx context.Context, deviceID, href strin
 		notification                  *pool.Message
 		deviceID                      string
 		href                          string
+		resourceTypes                 []string
 		c                             *session
 		cannotGetResourceContentError func(deviceID, href string, err error) error
 	}{
@@ -334,6 +335,7 @@ func (c *session) onGetResourceContent(ctx context.Context, deviceID, href strin
 		notification:                  notification,
 		deviceID:                      deviceID,
 		href:                          href,
+		resourceTypes:                 resourceTypes,
 		c:                             c,
 		cannotGetResourceContentError: cannotGetResourceContentError,
 	}
@@ -342,7 +344,7 @@ func (c *session) onGetResourceContent(ctx context.Context, deviceID, href strin
 		if x.notification.Code() == codes.NotFound {
 			x.c.unpublishResourceLinks(x.c.getUserAuthorizedContext(x.ctx), []string{x.href}, nil)
 		}
-		err2 := x.c.notifyContentChanged(x.deviceID, x.href, false, x.notification)
+		err2 := x.c.notifyContentChanged(x.deviceID, x.href, x.resourceTypes, false, x.notification)
 		if err2 != nil {
 			// hub is out of sync with the device, for recovery, the device is disconnected from the hub
 			x.c.Close()
@@ -370,7 +372,7 @@ func (c *session) onGetResourceContent(ctx context.Context, deviceID, href strin
 //
 // The received notification is released by this function at the correct moment and must not be released
 // by the caller.
-func (c *session) onObserveResource(ctx context.Context, deviceID, href string, batch bool, notification *pool.Message) error {
+func (c *session) onObserveResource(ctx context.Context, deviceID, href string, resourceTypes []string, batch bool, notification *pool.Message) error {
 	cannotObserResourceError := func(err error) error {
 		return fmt.Errorf("cannot handle resource observation: %w", err)
 	}
@@ -380,6 +382,7 @@ func (c *session) onObserveResource(ctx context.Context, deviceID, href string, 
 		notification             *pool.Message
 		deviceID                 string
 		href                     string
+		resourceTypes            []string
 		c                        *session
 		cannotObserResourceError func(err error) error
 		batch                    bool
@@ -388,6 +391,7 @@ func (c *session) onObserveResource(ctx context.Context, deviceID, href string, 
 		notification:             notification,
 		deviceID:                 deviceID,
 		href:                     href,
+		resourceTypes:            resourceTypes,
 		c:                        c,
 		cannotObserResourceError: cannotObserResourceError,
 		batch:                    batch,
@@ -397,7 +401,7 @@ func (c *session) onObserveResource(ctx context.Context, deviceID, href string, 
 		if x.notification.Code() == codes.NotFound {
 			x.c.unpublishResourceLinks(x.c.getUserAuthorizedContext(x.notification.Context()), []string{x.href}, nil)
 		}
-		err2 := x.c.notifyContentChanged(x.deviceID, x.href, x.batch, x.notification)
+		err2 := x.c.notifyContentChanged(x.deviceID, x.href, x.resourceTypes, x.batch, x.notification)
 		if err2 != nil {
 			// hub is out of sync with the device, for recovery, the device is disconnected from the hub
 			x.c.Close()
@@ -527,7 +531,7 @@ func (c *session) getLocalEndpoints() []string {
 	return localEndpoints
 }
 
-func (c *session) notifyContentChanged(deviceID, href string, batch bool, notification *pool.Message) error {
+func (c *session) notifyContentChanged(deviceID, href string, resourceTypes []string, batch bool, notification *pool.Message) error {
 	if !c.blockSignOff.TryAcquire(1) {
 		c.getLogger().Debugf("cannot notify resource /%v%v content changed: signOff processing", deviceID, href)
 		return nil
@@ -561,7 +565,7 @@ func (c *session) notifyContentChanged(deviceID, href string, batch bool, notifi
 		}
 		return nil
 	}
-	_, err = c.server.raClient.NotifyResourceChanged(ctx, coapconv.NewNotifyResourceChangedRequest(commands.NewResourceID(deviceID, href), c.RemoteAddr().String(), notification))
+	_, err = c.server.raClient.NotifyResourceChanged(ctx, coapconv.NewNotifyResourceChangedRequest(commands.NewResourceID(deviceID, href), resourceTypes, c.RemoteAddr().String(), notification))
 	if err != nil {
 		return notifyError(deviceID, href, err)
 	}
@@ -827,21 +831,21 @@ func (c *session) unpublishResourceLinks(ctx context.Context, hrefs []string, in
 		return nil
 	}
 
-	if len(resp.UnpublishedHrefs) == 0 {
+	if len(resp.GetUnpublishedHrefs()) == 0 {
 		return nil
 	}
 
 	observer, ok, err := c.getDeviceObserver(ctx)
 	if err != nil {
 		logUnpublishError(err)
-		return resp.UnpublishedHrefs
+		return resp.GetUnpublishedHrefs()
 	}
 	if !ok {
 		logUnpublishError(errors.New("device observer not found"))
-		return resp.UnpublishedHrefs
+		return resp.GetUnpublishedHrefs()
 	}
-	observer.RemovePublishedResources(ctx, resp.UnpublishedHrefs)
-	return resp.UnpublishedHrefs
+	observer.RemovePublishedResources(ctx, resp.GetUnpublishedHrefs())
+	return resp.GetUnpublishedHrefs()
 }
 
 func (c *session) sendErrorConfirmResourceCreate(ctx context.Context, resourceID *commands.ResourceId, correlationID string, code codes.Code, errToSend error) {

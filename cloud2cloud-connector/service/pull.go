@@ -70,7 +70,7 @@ func getOwnerDevices(ctx context.Context, isClient pbIS.IdentityStoreClient) (ma
 			continue
 		}
 
-		ownerDevices[device.DeviceId] = true
+		ownerDevices[device.GetDeviceId()] = true
 	}
 	return ownerDevices, nil
 }
@@ -193,7 +193,7 @@ func (p *pullDevicesHandler) deleteDevice(ctx context.Context, userID, deviceID 
 	if err != nil {
 		errors = multierror.Append(errors, fmt.Errorf("cannot delete device %v: %w", deviceID, err))
 	}
-	if err == nil && len(resp.DeviceIds) != 1 {
+	if err == nil && len(resp.GetDeviceIds()) != 1 {
 		errors = multierror.Append(errors, fmt.Errorf("cannot remove device %v", deviceID))
 	}
 	return errors.ErrorOrNil()

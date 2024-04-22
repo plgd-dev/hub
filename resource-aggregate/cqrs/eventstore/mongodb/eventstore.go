@@ -49,6 +49,7 @@ const (
 	isActiveKey               = "isactive"
 	latestETagKey             = "latestetag"
 	etagKey                   = "etag"
+	typesKey                  = "types"
 	latestETagKeyTimestampKey = latestETagKey + "." + timestampKey
 	serviceIDKey              = "serviceid"
 )
@@ -92,6 +93,12 @@ var aggregateIDLatestTimestampQueryIndex = bson.D{
 var groupIDETagLatestTimestampQueryIndex = bson.D{
 	{Key: groupIDKey, Value: 1},
 	{Key: latestETagKeyTimestampKey, Value: -1},
+}
+
+var groupIDTypesQueryIndex = bson.D{
+	{Key: groupIDKey, Value: 1},
+	{Key: typesKey, Value: 1},
+	{Key: isActiveKey, Value: 1},
 }
 
 type signOperator string
@@ -206,6 +213,7 @@ func newEventStoreWithClient(ctx context.Context, store *pkgMongo.Store, dbPrefi
 		aggregateIDLatestTimestampQueryIndex,
 		groupIDETagLatestTimestampQueryIndex,
 		serviceIDQueryIndex,
+		groupIDTypesQueryIndex,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("cannot save events: %w", err)
@@ -290,7 +298,7 @@ func tryToSetServiceID(doc bson.M, events []eventstore.Event) bson.M {
 }
 
 func makeDBDoc(events []eventstore.Event, marshaler MarshalerFunc) (bson.M, error) {
-	etag, e, err := makeDBEventsAndGetETag(events, marshaler)
+	etag, types, e, err := makeDBEventsAndGetETag(events, marshaler)
 	if err != nil {
 		return nil, fmt.Errorf("cannot insert first events('%v'): %w", events, err)
 	}
@@ -312,6 +320,9 @@ func makeDBDoc(events []eventstore.Event, marshaler MarshalerFunc) (bson.M, erro
 	}
 	if etag != nil {
 		d[etagKey] = etag.ETag
+	}
+	if len(types) > 0 {
+		d[typesKey] = types
 	}
 	return tryToSetServiceID(d, events), nil
 }
@@ -354,14 +365,15 @@ func (s *EventStore) Close(ctx context.Context) error {
 }
 
 // newDBEvent returns a new dbEvent for an eventstore.
-func makeDBEventsAndGetETag(events []eventstore.Event, marshaler MarshalerFunc) (*eventstore.ETagData, []bson.M, error) {
+func makeDBEventsAndGetETag(events []eventstore.Event, marshaler MarshalerFunc) (*eventstore.ETagData, []string, []bson.M, error) {
 	dbEvents := make([]bson.M, 0, len(events))
 	var etag *eventstore.ETagData
+	var types []string
 	for idx, event := range events {
 		// Marshal event data if there is any.
 		raw, err := marshaler(event)
 		if err != nil {
-			return nil, nil, fmt.Errorf("cannot create db event from event[%v]: %w", idx, err)
+			return nil, nil, nil, fmt.Errorf("cannot create db event from event[%v]: %w", idx, err)
 		}
 		dbEvents = append(dbEvents, bson.M{
 			versionKey:    event.Version(),
@@ -374,6 +386,9 @@ func makeDBEventsAndGetETag(events []eventstore.Event, marshaler MarshalerFunc) 
 		if et != nil {
 			etag = et
 		}
+		if len(event.Types()) > 0 {
+			types = event.Types()
+		}
 	}
-	return etag, dbEvents, nil
+	return etag, types, dbEvents, nil
 }

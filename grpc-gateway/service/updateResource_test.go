@@ -25,6 +25,7 @@ import (
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/plgd-dev/hub/v2/test/service"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -110,7 +111,7 @@ func TestUpdateResource(t *testing.T) {
 					},
 				},
 			},
-			want: pbTest.MakeResourceUpdated(t, deviceID, test.TestResourceLightInstanceHref("1"), "", nil),
+			want: pbTest.MakeResourceUpdated(t, deviceID, test.TestResourceLightInstanceHref("1"), test.TestResourceLightInstanceResourceTypes, "", nil),
 		},
 		{
 			name: "valid with interface",
@@ -126,7 +127,7 @@ func TestUpdateResource(t *testing.T) {
 					},
 				},
 			},
-			want: pbTest.MakeResourceUpdated(t, deviceID, test.TestResourceLightInstanceHref("1"), "", nil),
+			want: pbTest.MakeResourceUpdated(t, deviceID, test.TestResourceLightInstanceHref("1"), test.TestResourceLightInstanceResourceTypes, "", nil),
 		},
 		{
 			name: "revert update",
@@ -142,7 +143,7 @@ func TestUpdateResource(t *testing.T) {
 					},
 				},
 			},
-			want: pbTest.MakeResourceUpdated(t, deviceID, test.TestResourceLightInstanceHref("1"), "", nil),
+			want: pbTest.MakeResourceUpdated(t, deviceID, test.TestResourceLightInstanceHref("1"), test.TestResourceLightInstanceResourceTypes, "", nil),
 		},
 		{
 			name: "update /switches/1",
@@ -169,8 +170,9 @@ func TestUpdateResource(t *testing.T) {
 						"value": true,
 					}),
 				},
-				Status:       commands.Status_OK,
-				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
+				Status:        commands.Status_OK,
+				AuditContext:  commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
+				ResourceTypes: test.TestResourceSwitchesInstanceResourceTypes,
 			},
 		},
 	}
@@ -182,7 +184,7 @@ func TestUpdateResource(t *testing.T) {
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
-	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -226,7 +228,7 @@ func TestRequestHandlerGetAfterUpdateResource(t *testing.T) {
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
-	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -289,7 +291,7 @@ func TestRequestHandlerRunMultipleUpdateResource(t *testing.T) {
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
-	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -351,7 +353,7 @@ func TestRequestHandlerRunMultipleUpdateResource(t *testing.T) {
 			for j := 1; j >= 0; j-- {
 				ev, err = subClient.Recv()
 				require.NoError(t, err)
-				pbTest.CmpResourceChanged(t, pbTest.MakeResourceChanged(t, deviceID, lightHref, "", makeLightData(j)), ev.GetResourceChanged(), "")
+				pbTest.CmpResourceChanged(t, pbTest.MakeResourceChanged(t, deviceID, lightHref, test.TestResourceLightInstanceResourceTypes, "", makeLightData(j)), ev.GetResourceChanged(), "")
 			}
 		}()
 	}
@@ -372,7 +374,7 @@ func TestRequestHandlerRunMultipleParallelUpdateResource(t *testing.T) {
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
-	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -404,7 +406,7 @@ func TestRequestHandlerRunMultipleParallelUpdateResource(t *testing.T) {
 						}),
 					},
 				})
-				require.NoError(t, err)
+				assert.NoError(t, err)
 			}
 		}()
 	}

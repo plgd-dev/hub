@@ -58,6 +58,10 @@ func (d *DeviceMetadataSnapshotTaken) ServiceID() (string, bool) {
 	return d.GetDeviceMetadataUpdated().GetConnection().GetServiceId(), true
 }
 
+func (d *DeviceMetadataSnapshotTaken) Types() []string {
+	return nil
+}
+
 func (d *DeviceMetadataSnapshotTaken) CopyData(event *DeviceMetadataSnapshotTaken) {
 	d.DeviceId = event.GetDeviceId()
 	d.DeviceMetadataUpdated = event.GetDeviceMetadataUpdated()

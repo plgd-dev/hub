@@ -84,12 +84,13 @@ func updateContentForResponseForETag(v *pb.ResourceIdFilter, val *pb.Resource) b
 			continue
 		}
 		rc := val.GetData()
-		val.Data = &events.ResourceChanged{}
-		val.Data.CopyData(rc)
-		val.Data.Status = commands.Status_NOT_MODIFIED
-		val.Data.Content = &commands.Content{
+		data := &events.ResourceChanged{}
+		data.CopyData(rc)
+		data.Status = commands.Status_NOT_MODIFIED
+		data.Content = &commands.Content{
 			CoapContentFormat: int32(-1),
 		}
+		val.Data = data
 		return true
 	}
 	return false
@@ -236,7 +237,7 @@ func (rd *ResourceTwin) sendDevicesMetadata(srv pb.GrpcGateway_GetDevicesMetadat
 			}
 			return nil
 		}
-		if len(typeFilter) > 0 && !typeFilter.HasOneOf(res.ResourceTypes...) {
+		if len(typeFilter) > 0 && !typeFilter.HasOneOf(res.GetResourceTypes()...) {
 			return nil
 		}
 		return rd.projection.LoadDevicesMetadata(strings.MakeSet(m.GetDeviceID()), toReloadDevices, func(m *deviceMetadataProjection) error {
@@ -254,9 +255,9 @@ func (rd *ResourceTwin) sendDevicesMetadata(srv pb.GrpcGateway_GetDevicesMetadat
 }
 
 func (rd *ResourceTwin) GetDevicesMetadata(req *pb.GetDevicesMetadataRequest, srv pb.GrpcGateway_GetDevicesMetadataServer) error {
-	deviceIDs := filterDevices(rd.userDeviceIds, req.DeviceIdFilter)
+	deviceIDs := filterDevices(rd.userDeviceIds, req.GetDeviceIdFilter())
 	typeFilter := make(strings.Set)
-	typeFilter.Add(req.TypeFilter...)
+	typeFilter.Add(req.GetTypeFilter()...)
 	toReloadDevices := make(strings.Set)
 	err := rd.sendDevicesMetadata(srv, deviceIDs, typeFilter, toReloadDevices)
 	if err != nil {

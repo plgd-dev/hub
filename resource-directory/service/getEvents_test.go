@@ -52,8 +52,9 @@ func getAllOnboardEvents(t *testing.T, deviceID string, links []schema.ResourceL
 			Type: &pb.GetEventsResponse_ResourceStateSnapshotTaken{
 				ResourceStateSnapshotTaken: &events.ResourceStateSnapshotTaken{
 					ResourceId:           rid,
-					LatestResourceChange: pbTest.MakeResourceChanged(t, deviceID, rid.GetHref(), "", r.Representation),
+					LatestResourceChange: pbTest.MakeResourceChanged(t, deviceID, rid.GetHref(), r.ResourceTypes, "", r.Representation),
 					AuditContext:         commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
+					ResourceTypes:        r.ResourceTypes,
 				},
 			},
 		})
@@ -83,7 +84,7 @@ func TestRequestHandlerGetEventsOnOnboard(t *testing.T) {
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
-	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)

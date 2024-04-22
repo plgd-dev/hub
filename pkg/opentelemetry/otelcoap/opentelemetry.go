@@ -109,5 +109,5 @@ func Start(ctx context.Context, path, method string, opts ...Option) (context.Co
 		spanOpts = append(spanOpts, cfg.SpanStartOptions...)
 	}
 
-	return tracer.Start(ctx, DefaultTransportFormatter(path), spanOpts...)
+	return tracer.Start(ctx, DefaultTransportFormatter(path), spanOpts...) //nolint:spancheck
 }

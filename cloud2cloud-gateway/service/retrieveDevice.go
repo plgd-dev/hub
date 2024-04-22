@@ -91,11 +91,11 @@ func unmarshalContent(c *commands.Content, m interface{}) error {
 	case message.TextPlain.String():
 		switch v := m.(type) {
 		case *string:
-			*v = string(c.Data)
+			*v = string(c.GetData())
 		case *[]byte:
-			*v = c.Data
+			*v = c.GetData()
 		case *interface{}:
-			*v = string(c.Data)
+			*v = string(c.GetData())
 		default:
 			return fmt.Errorf("cannot unmarshal resource content: invalid type (%T)", m)
 		}

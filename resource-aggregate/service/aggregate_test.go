@@ -301,7 +301,7 @@ func TestAggregateHandleUnpublishAllResources(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, events, 1)
 
-	unpublishedResourceLinks := (events[0].(*raEvents.ResourceLinksUnpublished)).Hrefs
+	unpublishedResourceLinks := (events[0].(*raEvents.ResourceLinksUnpublished)).GetHrefs()
 	require.Len(t, unpublishedResourceLinks, 3)
 	require.Contains(t, unpublishedResourceLinks, resourceID1, resourceID2, resourceID3)
 
@@ -360,7 +360,7 @@ func TestAggregateHandleUnpublishResourceSubset(t *testing.T) {
 	events, err := ag.UnpublishResourceLinks(ctx, pc)
 	require.NoError(t, err)
 	require.Len(t, events, 1)
-	require.Equal(t, []string{resourceID1, resourceID3}, (events[0].(*raEvents.ResourceLinksUnpublished)).Hrefs)
+	require.Equal(t, []string{resourceID1, resourceID3}, (events[0].(*raEvents.ResourceLinksUnpublished)).GetHrefs())
 
 	service.PublishEvents(publisher, userID, deviceID, ag.ResourceID(), events, logger)
 
@@ -368,7 +368,7 @@ func TestAggregateHandleUnpublishResourceSubset(t *testing.T) {
 	events, err = ag.UnpublishResourceLinks(ctx, pc)
 	require.NoError(t, err)
 	require.Len(t, events, 1)
-	require.Equal(t, []string{resourceID4}, (events[0].(*raEvents.ResourceLinksUnpublished)).Hrefs)
+	require.Equal(t, []string{resourceID4}, (events[0].(*raEvents.ResourceLinksUnpublished)).GetHrefs())
 }
 
 func testMakePublishResourceRequest(deviceID string, href []string) *commands.PublishResourceLinksRequest {

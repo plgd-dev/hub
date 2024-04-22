@@ -100,7 +100,7 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 					"power": 1,
 				},
 			},
-			want:         pbTest.MakeResourceUpdated(t, deviceID, test.TestResourceLightInstanceHref("1"), "", nil),
+			want:         pbTest.MakeResourceUpdated(t, deviceID, test.TestResourceLightInstanceHref("1"), test.TestResourceLightInstanceResourceTypes, "", nil),
 			wantHTTPCode: http.StatusOK,
 		},
 		{
@@ -114,7 +114,7 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 					"power": 102,
 				},
 			},
-			want:         pbTest.MakeResourceUpdated(t, deviceID, test.TestResourceLightInstanceHref("1"), "", nil),
+			want:         pbTest.MakeResourceUpdated(t, deviceID, test.TestResourceLightInstanceHref("1"), test.TestResourceLightInstanceResourceTypes, "", nil),
 			wantHTTPCode: http.StatusOK,
 		},
 		{
@@ -128,7 +128,7 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 				},
 				resourceInterface: interfaces.OC_IF_BASELINE,
 			},
-			want:         pbTest.MakeResourceUpdated(t, deviceID, test.TestResourceLightInstanceHref("1"), "", nil),
+			want:         pbTest.MakeResourceUpdated(t, deviceID, test.TestResourceLightInstanceHref("1"), test.TestResourceLightInstanceResourceTypes, "", nil),
 			wantHTTPCode: http.StatusOK,
 		},
 		{
@@ -142,7 +142,7 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 				},
 				resourceInterface: interfaces.OC_IF_BASELINE,
 			},
-			want:         pbTest.MakeResourceUpdated(t, deviceID, test.TestResourceLightInstanceHref("1"), "", nil),
+			want:         pbTest.MakeResourceUpdated(t, deviceID, test.TestResourceLightInstanceHref("1"), test.TestResourceLightInstanceResourceTypes, "", nil),
 			wantHTTPCode: http.StatusOK,
 		},
 		{
@@ -168,7 +168,8 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 						"value": true,
 					}),
 				},
-				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
+				AuditContext:  commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
+				ResourceTypes: test.TestResourceSwitchesInstanceResourceTypes,
 			},
 			wantHTTPCode: http.StatusOK,
 		},
@@ -186,7 +187,7 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
-	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)

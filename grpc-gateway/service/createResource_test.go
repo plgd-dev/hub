@@ -151,7 +151,7 @@ func TestRequestHandlerCreateResource(t *testing.T) {
 
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
-	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -173,7 +173,7 @@ func TestRequestHandlerCreateResource(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
-			resp := pbTest.MakeResourceCreated(t, deviceID, tt.args.href, "", tt.wantData)
+			resp := pbTest.MakeResourceCreated(t, deviceID, tt.args.href, test.TestResourceSwitchesResourceTypes, "", tt.wantData)
 			pbTest.CmpResourceCreated(t, resp, got.GetData())
 		})
 	}

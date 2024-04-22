@@ -160,8 +160,8 @@ func (h *observerHandler) PublishResources(req coapgwTestService.PublishRequest)
 	return nil
 }
 
-func (h *observerHandler) OnObserveResource(ctx context.Context, deviceID, resourceHref string, _ bool, notification *pool.Message) error {
-	err := h.DefaultObserverHandler.OnObserveResource(ctx, deviceID, resourceHref, notification)
+func (h *observerHandler) OnObserveResource(ctx context.Context, deviceID, resourceHref string, resourceTypes []string, _ bool, notification *pool.Message) error {
+	err := h.DefaultObserverHandler.OnObserveResource(ctx, deviceID, resourceHref, resourceTypes, notification)
 	require.NoError(h.t, err)
 	if !h.done.Load() {
 		h.observedResourceChan <- commands.NewResourceID(deviceID, resourceHref)
@@ -169,8 +169,8 @@ func (h *observerHandler) OnObserveResource(ctx context.Context, deviceID, resou
 	return nil
 }
 
-func (h *observerHandler) OnGetResourceContent(ctx context.Context, deviceID, resourceHref string, notification *pool.Message) error {
-	err := h.DefaultObserverHandler.OnGetResourceContent(ctx, deviceID, resourceHref, notification)
+func (h *observerHandler) OnGetResourceContent(ctx context.Context, deviceID, resourceHref string, resourceTypes []string, notification *pool.Message) error {
+	err := h.DefaultObserverHandler.OnGetResourceContent(ctx, deviceID, resourceHref, resourceTypes, notification)
 	require.NoError(h.t, err)
 	if !h.done.Load() {
 		h.retrievedResourceChan <- commands.NewResourceID(deviceID, resourceHref)
@@ -270,7 +270,7 @@ func TestDeviceObserverRegisterForDiscoveryResource(t *testing.T) {
 }
 
 func testPreregisterVirtualDevice(ctx context.Context, t *testing.T, deviceID string, grpcClient pb.GrpcGatewayClient, raClient raPb.ResourceAggregateClient) {
-	isConn, err := grpc.Dial(config.IDENTITY_STORE_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	isConn, err := grpc.NewClient(config.IDENTITY_STORE_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -451,7 +451,7 @@ func runTestDeviceObserverRegister(ctx context.Context, t *testing.T, deviceID s
 	coapShutdown := coapgwTest.SetUp(t, makeHandler, validateHandler)
 	defer coapShutdown()
 
-	grpcConn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	grpcConn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)

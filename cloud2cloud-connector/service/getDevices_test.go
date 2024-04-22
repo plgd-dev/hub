@@ -70,7 +70,7 @@ func testRequestHandlerGetDevices(t *testing.T, events store.Events) {
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
-	conn, err := grpc.Dial(c2cConnectorTest.GRPC_GATEWAY_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.NewClient(c2cConnectorTest.GRPC_GATEWAY_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -94,7 +94,7 @@ func testRequestHandlerGetDevices(t *testing.T, events store.Events) {
 					break
 				}
 				require.NoError(t, err)
-				assert.NotEmpty(t, dev.ProtocolIndependentId)
+				assert.NotEmpty(t, dev.GetProtocolIndependentId())
 				dev.ProtocolIndependentId = ""
 				if dev.GetMetadata().GetConnection() != nil {
 					dev.GetMetadata().GetConnection().Id = ""

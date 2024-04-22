@@ -100,251 +100,145 @@ func MakeAuditContext(userID string, correlationID string) *commands.AuditContex
 	}
 }
 
-func MakeResourceUpdatePending(resourceID *commands.ResourceId, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext, validUntil time.Time) eventstore.EventUnmarshaler {
-	e := events.ResourceUpdatePending{
-		ResourceId:    resourceID,
-		Content:       content,
-		AuditContext:  auditContext,
-		EventMetadata: eventMetadata,
-		ValidUntil:    pkgTime.UnixNano(validUntil),
-	}
+func newResourceEvent[T interface {
+	GetResourceId() *commands.ResourceId
+	EventType() string
+	CopyData(e T)
+	GetEventMetadata() *events.EventMetadata
+	IsSnapshot() bool
+}](e T) eventstore.EventUnmarshaler {
 	return eventstore.NewLoadedEvent(
 		e.GetEventMetadata().GetVersion(),
-		(&events.ResourceUpdatePending{}).EventType(),
+		e.EventType(),
 		e.GetResourceId().ToUUID().String(),
 		e.GetResourceId().GetDeviceId(),
-		false,
+		e.IsSnapshot(),
 		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
 		func(v interface{}) error {
-			if x, ok := v.(*events.ResourceUpdatePending); ok {
-				x.CopyData(&e)
-				return nil
-			}
-			return errCannotUnmarshalEvent
-		},
-	)
-}
-
-func MakeResourceUpdated(resourceID *commands.ResourceId, status commands.Status, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
-	e := events.ResourceUpdated{
-		ResourceId:    resourceID,
-		Content:       content,
-		Status:        status,
-		AuditContext:  auditContext,
-		EventMetadata: eventMetadata,
-	}
-	return eventstore.NewLoadedEvent(
-		e.GetEventMetadata().GetVersion(),
-		(&events.ResourceUpdated{}).EventType(),
-		e.GetResourceId().ToUUID().String(),
-		e.GetResourceId().GetDeviceId(),
-		false,
-		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
-		func(v interface{}) error {
-			if x, ok := v.(*events.ResourceUpdated); ok {
-				x.CopyData(&e)
-				return nil
-			}
-			return errCannotUnmarshalEvent
-		},
-	)
-}
-
-func MakeResourceCreatePending(resourceID *commands.ResourceId, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext, validUntil time.Time) eventstore.EventUnmarshaler {
-	e := events.ResourceCreatePending{
-		ResourceId:    resourceID,
-		Content:       content,
-		AuditContext:  auditContext,
-		EventMetadata: eventMetadata,
-		ValidUntil:    pkgTime.UnixNano(validUntil),
-	}
-	return eventstore.NewLoadedEvent(
-		e.GetEventMetadata().GetVersion(),
-		(&events.ResourceCreatePending{}).EventType(),
-		e.GetResourceId().ToUUID().String(),
-		e.GetResourceId().GetDeviceId(),
-		false,
-		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
-		func(v interface{}) error {
-			if x, ok := v.(*events.ResourceCreatePending); ok {
-				x.CopyData(&e)
-				return nil
-			}
-			return errCannotUnmarshalEvent
-		},
-	)
-}
-
-func MakeResourceCreated(resourceID *commands.ResourceId, status commands.Status, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
-	e := events.ResourceCreated{
-		ResourceId:    resourceID,
-		Content:       content,
-		Status:        status,
-		AuditContext:  auditContext,
-		EventMetadata: eventMetadata,
-	}
-	return eventstore.NewLoadedEvent(
-		e.GetEventMetadata().GetVersion(),
-		(&events.ResourceCreated{}).EventType(),
-		e.GetResourceId().ToUUID().String(),
-		e.GetResourceId().GetDeviceId(),
-		false,
-		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
-		func(v interface{}) error {
-			if x, ok := v.(*events.ResourceCreated); ok {
-				x.CopyData(&e)
-				return nil
-			}
-			return errCannotUnmarshalEvent
-		},
-	)
-}
-
-func MakeResourceChangedEvent(resourceID *commands.ResourceId, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
-	e := events.ResourceChanged{
-		ResourceId:    resourceID,
-		AuditContext:  auditContext,
-		Content:       content,
-		EventMetadata: eventMetadata,
-	}
-	return eventstore.NewLoadedEvent(
-		e.GetEventMetadata().GetVersion(),
-		(&events.ResourceChanged{}).EventType(),
-		e.GetResourceId().ToUUID().String(),
-		e.GetResourceId().GetDeviceId(),
-		false,
-		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
-		func(v interface{}) error {
-			if x, ok := v.(*events.ResourceChanged); ok {
-				x.CopyData(&e)
-				return nil
-			}
-			return errCannotUnmarshalEvent
-		},
-	)
-}
-
-func MakeResourceRetrievePending(resourceID *commands.ResourceId, resourceInterface string, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext, validUntil time.Time) eventstore.EventUnmarshaler {
-	e := events.ResourceRetrievePending{
-		ResourceId:        resourceID,
-		ResourceInterface: resourceInterface,
-		AuditContext:      auditContext,
-		EventMetadata:     eventMetadata,
-		ValidUntil:        pkgTime.UnixNano(validUntil),
-	}
-	return eventstore.NewLoadedEvent(
-		e.GetEventMetadata().GetVersion(),
-		(&events.ResourceRetrievePending{}).EventType(),
-		e.GetResourceId().ToUUID().String(),
-		e.GetResourceId().GetDeviceId(),
-		false,
-		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
-		func(v interface{}) error {
-			if x, ok := v.(*events.ResourceRetrievePending); ok {
-				x.CopyData(&e)
-				return nil
-			}
-			return errCannotUnmarshalEvent
-		},
-	)
-}
-
-func MakeResourceRetrieved(resourceID *commands.ResourceId, status commands.Status, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
-	e := events.ResourceRetrieved{
-		ResourceId:    resourceID,
-		Content:       content,
-		Status:        status,
-		AuditContext:  auditContext,
-		EventMetadata: eventMetadata,
-	}
-	return eventstore.NewLoadedEvent(
-		e.GetEventMetadata().GetVersion(),
-		(&events.ResourceRetrieved{}).EventType(),
-		e.GetResourceId().ToUUID().String(),
-		e.GetResourceId().GetDeviceId(),
-		false,
-		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
-		func(v interface{}) error {
-			if x, ok := v.(*events.ResourceRetrieved); ok {
-				x.CopyData(&e)
-				return nil
-			}
-			return errCannotUnmarshalEvent
-		},
-	)
-}
-
-func MakeResourceDeletePending(resourceID *commands.ResourceId, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext, validUntil time.Time) eventstore.EventUnmarshaler {
-	e := events.ResourceDeletePending{
-		ResourceId:    resourceID,
-		AuditContext:  auditContext,
-		EventMetadata: eventMetadata,
-		ValidUntil:    pkgTime.UnixNano(validUntil),
-	}
-	return eventstore.NewLoadedEvent(
-		e.GetEventMetadata().GetVersion(),
-		(&events.ResourceDeletePending{}).EventType(),
-		e.GetResourceId().ToUUID().String(),
-		e.GetResourceId().GetDeviceId(),
-		false,
-		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
-		func(v interface{}) error {
-			if x, ok := v.(*events.ResourceDeletePending); ok {
-				x.CopyData(&e)
-				return nil
-			}
-			return errCannotUnmarshalEvent
-		},
-	)
-}
-
-func MakeResourceDeleted(resourceID *commands.ResourceId, status commands.Status, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
-	e := events.ResourceDeleted{
-		ResourceId:    resourceID,
-		Content:       content,
-		Status:        status,
-		AuditContext:  auditContext,
-		EventMetadata: eventMetadata,
-	}
-	return eventstore.NewLoadedEvent(
-		e.GetEventMetadata().GetVersion(),
-		(&events.ResourceDeleted{}).EventType(),
-		e.GetResourceId().ToUUID().String(),
-		e.GetResourceId().GetDeviceId(),
-		false,
-		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
-		func(v interface{}) error {
-			if x, ok := v.(*events.ResourceDeleted); ok {
-				x.CopyData(&e)
-				return nil
-			}
-			return errCannotUnmarshalEvent
-		},
-	)
-}
-
-func MakeResourceStateSnapshotTaken(resourceID *commands.ResourceId, latestResourceChange *events.ResourceChanged, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext) eventstore.EventUnmarshaler {
-	e := events.NewResourceStateSnapshotTaken()
-	e.ResourceId = resourceID
-	e.LatestResourceChange = latestResourceChange
-	e.EventMetadata = eventMetadata
-	e.AuditContext = auditContext
-
-	return eventstore.NewLoadedEvent(
-		e.GetEventMetadata().GetVersion(),
-		(&events.ResourceStateSnapshotTaken{}).EventType(),
-		e.GetResourceId().ToUUID().String(),
-		e.GetResourceId().GetDeviceId(),
-		true,
-		time.Unix(0, e.GetEventMetadata().GetTimestamp()),
-		func(v interface{}) error {
-			if x, ok := v.(*events.ResourceStateSnapshotTaken); ok {
+			if x, ok := v.(T); ok {
 				x.CopyData(e)
 				return nil
 			}
 			return errCannotUnmarshalEvent
 		},
 	)
+}
+
+func MakeResourceUpdatePending(resourceID *commands.ResourceId, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext, validUntil time.Time, resourceTypes []string) eventstore.EventUnmarshaler {
+	e := events.ResourceUpdatePending{
+		ResourceId:    resourceID,
+		Content:       content,
+		AuditContext:  auditContext,
+		EventMetadata: eventMetadata,
+		ValidUntil:    pkgTime.UnixNano(validUntil),
+		ResourceTypes: resourceTypes,
+	}
+	return newResourceEvent(&e)
+}
+
+func MakeResourceUpdated(resourceID *commands.ResourceId, status commands.Status, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext, resourceTypes []string) eventstore.EventUnmarshaler {
+	e := events.ResourceUpdated{
+		ResourceId:    resourceID,
+		Content:       content,
+		Status:        status,
+		AuditContext:  auditContext,
+		EventMetadata: eventMetadata,
+		ResourceTypes: resourceTypes,
+	}
+	return newResourceEvent(&e)
+}
+
+func MakeResourceCreatePending(resourceID *commands.ResourceId, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext, validUntil time.Time, resourceTypes []string) eventstore.EventUnmarshaler {
+	e := events.ResourceCreatePending{
+		ResourceId:    resourceID,
+		Content:       content,
+		AuditContext:  auditContext,
+		EventMetadata: eventMetadata,
+		ValidUntil:    pkgTime.UnixNano(validUntil),
+		ResourceTypes: resourceTypes,
+	}
+	return newResourceEvent(&e)
+}
+
+func MakeResourceCreated(resourceID *commands.ResourceId, status commands.Status, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext, resourceTypes []string) eventstore.EventUnmarshaler {
+	e := events.ResourceCreated{
+		ResourceId:    resourceID,
+		Content:       content,
+		Status:        status,
+		AuditContext:  auditContext,
+		EventMetadata: eventMetadata,
+		ResourceTypes: resourceTypes,
+	}
+	return newResourceEvent(&e)
+}
+
+func MakeResourceChangedEvent(resourceID *commands.ResourceId, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext, resourceTypes []string) eventstore.EventUnmarshaler {
+	e := events.ResourceChanged{
+		ResourceId:    resourceID,
+		AuditContext:  auditContext,
+		Content:       content,
+		EventMetadata: eventMetadata,
+		ResourceTypes: resourceTypes,
+	}
+	return newResourceEvent(&e)
+}
+
+func MakeResourceRetrievePending(resourceID *commands.ResourceId, resourceInterface string, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext, validUntil time.Time, resourceTypes []string) eventstore.EventUnmarshaler {
+	e := events.ResourceRetrievePending{
+		ResourceId:        resourceID,
+		ResourceInterface: resourceInterface,
+		AuditContext:      auditContext,
+		EventMetadata:     eventMetadata,
+		ValidUntil:        pkgTime.UnixNano(validUntil),
+		ResourceTypes:     resourceTypes,
+	}
+	return newResourceEvent(&e)
+}
+
+func MakeResourceRetrieved(resourceID *commands.ResourceId, status commands.Status, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext, resourceTypes []string) eventstore.EventUnmarshaler {
+	e := events.ResourceRetrieved{
+		ResourceId:    resourceID,
+		Content:       content,
+		Status:        status,
+		AuditContext:  auditContext,
+		EventMetadata: eventMetadata,
+		ResourceTypes: resourceTypes,
+	}
+	return newResourceEvent(&e)
+}
+
+func MakeResourceDeletePending(resourceID *commands.ResourceId, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext, validUntil time.Time, resourceTypes []string) eventstore.EventUnmarshaler {
+	e := events.ResourceDeletePending{
+		ResourceId:    resourceID,
+		AuditContext:  auditContext,
+		EventMetadata: eventMetadata,
+		ValidUntil:    pkgTime.UnixNano(validUntil),
+		ResourceTypes: resourceTypes,
+	}
+	return newResourceEvent(&e)
+}
+
+func MakeResourceDeleted(resourceID *commands.ResourceId, status commands.Status, content *commands.Content, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext, resourceTypes []string) eventstore.EventUnmarshaler {
+	e := events.ResourceDeleted{
+		ResourceId:    resourceID,
+		Content:       content,
+		Status:        status,
+		AuditContext:  auditContext,
+		EventMetadata: eventMetadata,
+		ResourceTypes: resourceTypes,
+	}
+	return newResourceEvent(&e)
+}
+
+func MakeResourceStateSnapshotTaken(resourceID *commands.ResourceId, latestResourceChange *events.ResourceChanged, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext, resourceTypes []string) eventstore.EventUnmarshaler {
+	e := events.NewResourceStateSnapshotTaken()
+	e.ResourceId = resourceID
+	e.LatestResourceChange = latestResourceChange
+	e.EventMetadata = eventMetadata
+	e.AuditContext = auditContext
+	e.ResourceTypes = resourceTypes
+
+	return newResourceEvent(e)
 }
 
 func MakeDeviceMetadataUpdatePending(deviceID string, twinEnabled *events.DeviceMetadataUpdatePending_TwinEnabled, eventMetadata *events.EventMetadata, auditContext *commands.AuditContext, validUntil time.Time) eventstore.EventUnmarshaler {
@@ -422,15 +316,16 @@ func MakeDeviceMetadata(deviceID string, deviceMetadataUpdated *events.DeviceMet
 }
 
 type MockEvent struct {
-	VersionI     uint64 `bson:"version"`
-	EventTypeI   string `bson:"eventtype"`
-	IsSnapshotI  bool   `bson:"issnapshot"`
-	AggregateIDI string `bson:"aggregateid"`
-	GroupIDI     string `bson:"groupid"`
-	DataI        []byte `bson:"data"`
-	TimestampI   int64  `bson:"timestamp"`
-	ETagI        []byte `bson:"etag"`
-	ServiceIDI   string `bson:"serviceid"`
+	VersionI     uint64   `bson:"version"`
+	EventTypeI   string   `bson:"eventtype"`
+	IsSnapshotI  bool     `bson:"issnapshot"`
+	AggregateIDI string   `bson:"aggregateid"`
+	GroupIDI     string   `bson:"groupid"`
+	DataI        []byte   `bson:"data"`
+	TimestampI   int64    `bson:"timestamp"`
+	ETagI        []byte   `bson:"etag"`
+	ServiceIDI   string   `bson:"serviceid"`
+	TypesI       []string `bson:"resourcetypes"`
 }
 
 func (e MockEvent) Version() uint64 {
@@ -469,6 +364,10 @@ func (e MockEvent) Timestamp() time.Time {
 
 func (e MockEvent) ServiceID() (string, bool) {
 	return e.ServiceIDI, true
+}
+
+func (e MockEvent) Types() []string {
+	return e.TypesI
 }
 
 type MockEventHandler struct {

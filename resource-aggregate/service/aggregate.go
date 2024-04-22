@@ -21,48 +21,70 @@ type Aggregate struct {
 	eventstore eventstore.EventStore
 }
 
-func NewResourceStateFactoryModel(userID, owner, hubID string) func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
-	return func(context.Context) (cqrsAggregate.AggregateModel, error) {
-		return events.NewResourceStateSnapshotTakenForCommand(userID, owner, hubID), nil
+func NewResourceStateFactoryModel(userID, owner, hubID string) func(context.Context, string, string) (cqrsAggregate.AggregateModel, error) {
+	resourceLinks := events.NewResourceLinksSnapshotTakenForCommand(userID, owner, hubID)
+	resourceState := events.NewResourceStateSnapshotTakenForCommand(userID, owner, hubID, resourceLinks)
+	return func(_ context.Context, groupID string, aggregateID string) (cqrsAggregate.AggregateModel, error) {
+		resID := commands.NewResourceID(groupID, commands.ResourceLinksHref)
+		if aggregateID == resID.ToUUID().String() {
+			return resourceLinks, nil
+		}
+		return resourceState, nil
 	}
 }
 
-func NewResourceLinksFactoryModel(userID, owner, hubID string) func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
-	return func(context.Context) (cqrsAggregate.AggregateModel, error) {
+func NewResourceLinksFactoryModel(userID, owner, hubID string) func(context.Context, string, string) (cqrsAggregate.AggregateModel, error) {
+	return func(context.Context, string, string) (cqrsAggregate.AggregateModel, error) {
 		return events.NewResourceLinksSnapshotTakenForCommand(userID, owner, hubID), nil
 	}
 }
 
-func NewDeviceMetadataFactoryModel(userID, owner, hubID string) func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
-	return func(context.Context) (cqrsAggregate.AggregateModel, error) {
+func NewDeviceMetadataFactoryModel(userID, owner, hubID string) func(context.Context, string, string) (cqrsAggregate.AggregateModel, error) {
+	return func(context.Context, string, string) (cqrsAggregate.AggregateModel, error) {
 		return events.NewDeviceMetadataSnapshotTakenForCommand(userID, owner, hubID), nil
 	}
 }
 
-func NewServicesMetadataFactoryModel(userID, owner, hubID string) func(ctx context.Context) (cqrsAggregate.AggregateModel, error) {
-	return func(context.Context) (cqrsAggregate.AggregateModel, error) {
+func NewServicesMetadataFactoryModel(userID, owner, hubID string) func(context.Context, string, string) (cqrsAggregate.AggregateModel, error) {
+	return func(context.Context, string, string) (cqrsAggregate.AggregateModel, error) {
 		return events.NewServiceMetadataSnapshotTakenForCommand(userID, owner, hubID), nil
 	}
 }
 
-// NewAggregate creates new resource aggreate - it must be created for every run command.
-func NewAggregate(resourceID *commands.ResourceId, store eventstore.EventStore, factoryModel cqrsAggregate.FactoryModelFunc, retry cqrsAggregate.RetryFunc) (*Aggregate, error) {
+// NewResourceAggregate for creating new resource aggregate.
+func NewResourceAggregate(resourceID *commands.ResourceId, store eventstore.EventStore, factoryModel cqrsAggregate.FactoryModelFunc, retry cqrsAggregate.RetryFunc, addLinkedResources bool) (*Aggregate, error) {
 	a := &Aggregate{
 		eventstore: store,
 	}
+	addLink := make([]cqrsAggregate.AdditionalModel, 0, 1)
+	if addLinkedResources {
+		addLink = append(addLink, cqrsAggregate.AdditionalModel{
+			GroupID:     resourceID.GetDeviceId(),
+			AggregateID: commands.NewResourceID(resourceID.GetDeviceId(), commands.ResourceLinksHref).ToUUID().String(),
+		})
+	}
+
 	cqrsAg, err := cqrsAggregate.NewAggregate(resourceID.GetDeviceId(),
 		resourceID.ToUUID().String(),
 		retry,
 		store,
 		factoryModel,
 		func(string, ...interface{}) {
-			// TODO: add debug log
-		})
+			// no-op - we don't want to log debug/trace messages
+		},
+		// load also links state
+		addLink...,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create aggregate for resource: %w", err)
 	}
 	a.ag = cqrsAg
 	return a, nil
+}
+
+// NewAggregate creates new resource aggreate - it must be created for every run command.
+func NewAggregate(resourceID *commands.ResourceId, store eventstore.EventStore, factoryModel cqrsAggregate.FactoryModelFunc, retry cqrsAggregate.RetryFunc) (*Aggregate, error) {
+	return NewResourceAggregate(resourceID, store, factoryModel, retry, false)
 }
 
 func (a *Aggregate) HandleCommand(ctx context.Context, cmd cqrsAggregate.Command) ([]eventstore.Event, error) {
@@ -82,18 +104,20 @@ var (
 )
 
 func validatePublish(request *commands.PublishResourceLinksRequest) error {
-	if len(request.Resources) == 0 {
+	resources := request.GetResources()
+	if len(resources) == 0 {
 		return status.Errorf(codes.InvalidArgument, "empty publish is not accepted")
 	}
-	for _, res := range request.Resources {
-		if len(res.Href) <= 1 || res.Href[:1] != "/" {
+	for _, res := range resources {
+		href := res.GetHref()
+		if len(href) <= 1 || href[:1] != "/" {
 			return status.Errorf(codes.InvalidArgument, "invalid resource href")
 		}
-		if res.DeviceId == "" {
+		if res.GetDeviceId() == "" {
 			return status.Errorf(codes.InvalidArgument, "invalid device id")
 		}
 	}
-	if request.DeviceId == "" {
+	if request.GetDeviceId() == "" {
 		return errInvalidDeviceID
 	}
 	return nil
@@ -103,7 +127,7 @@ func validateUnpublish(request *commands.UnpublishResourceLinksRequest) error {
 	if request.GetDeviceId() == "" {
 		return errInvalidDeviceID
 	}
-	for _, href := range request.Hrefs {
+	for _, href := range request.GetHrefs() {
 		if href == "" {
 			return status.Errorf(codes.InvalidArgument, "invalid resource id")
 		}
@@ -112,7 +136,7 @@ func validateUnpublish(request *commands.UnpublishResourceLinksRequest) error {
 }
 
 func validateNotifyContentChanged(request *commands.NotifyResourceChangedRequest) error {
-	if request.Content == nil {
+	if request.GetContent() == nil {
 		return errInvalidContent
 	}
 	if request.GetResourceId().GetDeviceId() == "" {
@@ -128,7 +152,7 @@ func validateUpdateResourceContent(request *commands.UpdateResourceRequest) erro
 	if err := checkTimeToLive(request.GetTimeToLive()); err != nil {
 		return err
 	}
-	if request.Content == nil {
+	if request.GetContent() == nil {
 		return errInvalidContent
 	}
 	if request.GetResourceId().GetDeviceId() == "" {
@@ -160,7 +184,7 @@ func validateRetrieveResource(request *commands.RetrieveResourceRequest) error {
 }
 
 func validateConfirmResourceUpdate(request *commands.ConfirmResourceUpdateRequest) error {
-	if request.Content == nil {
+	if request.GetContent() == nil {
 		return errInvalidContent
 	}
 	if request.GetResourceId().GetDeviceId() == "" {
@@ -177,7 +201,7 @@ func validateConfirmResourceUpdate(request *commands.ConfirmResourceUpdateReques
 }
 
 func validateConfirmResourceRetrieve(request *commands.ConfirmResourceRetrieveRequest) error {
-	if request.Content == nil {
+	if request.GetContent() == nil {
 		return errInvalidContent
 	}
 	if request.GetResourceId().GetDeviceId() == "" {

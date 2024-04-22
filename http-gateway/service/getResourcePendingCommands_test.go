@@ -59,7 +59,7 @@ func TestRequestHandlerGetResourcePendingCommands(t *testing.T) {
 			want: []*pb.PendingCommand{
 				{
 					Command: &pb.PendingCommand_ResourceCreatePending{
-						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI, "",
+						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI, test.TestResourceDeviceResourceTypes, "",
 							map[string]interface{}{
 								"power": 1,
 							}),
@@ -72,7 +72,8 @@ func TestRequestHandlerGetResourcePendingCommands(t *testing.T) {
 								DeviceId: deviceID,
 								Href:     device.ResourceURI,
 							},
-							AuditContext: commands.NewAuditContext(service.DeviceUserID, "", service.DeviceUserID),
+							AuditContext:  commands.NewAuditContext(service.DeviceUserID, "", service.DeviceUserID),
+							ResourceTypes: test.TestResourceDeviceResourceTypes,
 						},
 					},
 				},
@@ -89,7 +90,7 @@ func TestRequestHandlerGetResourcePendingCommands(t *testing.T) {
 			want: []*pb.PendingCommand{
 				{
 					Command: &pb.PendingCommand_ResourceCreatePending{
-						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI, "",
+						ResourceCreatePending: pbTest.MakeResourceCreatePending(t, deviceID, device.ResourceURI, test.TestResourceDeviceResourceTypes, "",
 							map[string]interface{}{
 								"power": 1,
 							}),
@@ -113,7 +114,8 @@ func TestRequestHandlerGetResourcePendingCommands(t *testing.T) {
 								DeviceId: deviceID,
 								Href:     device.ResourceURI,
 							},
-							AuditContext: commands.NewAuditContext(service.DeviceUserID, "", service.DeviceUserID),
+							AuditContext:  commands.NewAuditContext(service.DeviceUserID, "", service.DeviceUserID),
+							ResourceTypes: test.TestResourceDeviceResourceTypes,
 						},
 					},
 				},
@@ -146,7 +148,7 @@ func TestRequestHandlerGetResourcePendingCommands(t *testing.T) {
 	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
-	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)

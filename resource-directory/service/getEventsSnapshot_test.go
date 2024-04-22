@@ -51,7 +51,7 @@ func TestRequestHandlerGetEventsStateSnapshot(t *testing.T) {
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
-	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -106,8 +106,9 @@ func TestRequestHandlerGetEventsStateSnapshot(t *testing.T) {
 		case *events.ResourceStateSnapshotTaken:
 			pbTest.CmpResourceStateSnapshotTaken(t, &events.ResourceStateSnapshotTaken{
 				ResourceId:           commands.NewResourceID(deviceID, lightHref),
-				LatestResourceChange: pbTest.MakeResourceChanged(t, deviceID, lightHref, "", makeLightData(0)),
+				LatestResourceChange: pbTest.MakeResourceChanged(t, deviceID, lightHref, test.TestResourceLightInstanceResourceTypes, "", makeLightData(0)),
 				AuditContext:         commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
+				ResourceTypes:        test.TestResourceLightInstanceResourceTypes,
 			}, event)
 		default:
 			assert.Fail(t, "unexpected event", "event: %v", ev)

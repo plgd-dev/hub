@@ -15,7 +15,7 @@ import (
 
 // Document
 const (
-	// cqldbdb has all keys in in lowercase
+	// cqldbdb has all keys in lowercase
 	ownerKey    = "ownerkey"
 	deviceIDKey = "deviceid"
 )

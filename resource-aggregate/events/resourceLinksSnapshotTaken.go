@@ -58,6 +58,10 @@ func (e *ResourceLinksSnapshotTaken) ServiceID() (string, bool) {
 	return "", false
 }
 
+func (e *ResourceLinksSnapshotTaken) Types() []string {
+	return nil
+}
+
 func (e *ResourceLinksSnapshotTaken) CloneData(event *ResourceLinksSnapshotTaken) {
 	e.DeviceId = event.GetDeviceId()
 	e.Resources = commands.CloneResourcesMap(event.GetResources())

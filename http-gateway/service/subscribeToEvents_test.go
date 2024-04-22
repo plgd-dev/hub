@@ -79,7 +79,7 @@ func (u *updateChecker) checkUpdateLightResource(ctx context.Context, t *testing
 			expectedEvent := &pb.Event{
 				SubscriptionId: u.subUpdatedID,
 				Type: &pb.Event_ResourceUpdatePending{
-					ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, u.deviceID, test.TestResourceLightInstanceHref("1"), updCorrelationID,
+					ResourceUpdatePending: pbTest.MakeResourceUpdatePending(t, u.deviceID, test.TestResourceLightInstanceHref("1"), test.TestResourceLightInstanceResourceTypes, updCorrelationID,
 						map[string]interface{}{
 							"power": power,
 						}),
@@ -91,7 +91,7 @@ func (u *updateChecker) checkUpdateLightResource(ctx context.Context, t *testing
 			expectedEvent := &pb.Event{
 				SubscriptionId: u.subUpdatedID,
 				Type: &pb.Event_ResourceUpdated{
-					ResourceUpdated: pbTest.MakeResourceUpdated(t, u.deviceID, test.TestResourceLightInstanceHref("1"), updCorrelationID, nil),
+					ResourceUpdated: pbTest.MakeResourceUpdated(t, u.deviceID, test.TestResourceLightInstanceHref("1"), test.TestResourceLightInstanceResourceTypes, updCorrelationID, nil),
 				},
 				CorrelationId: "updatePending + resourceUpdated",
 			}
@@ -100,7 +100,7 @@ func (u *updateChecker) checkUpdateLightResource(ctx context.Context, t *testing
 			expectedEvent := &pb.Event{
 				SubscriptionId: u.baseSubID,
 				Type: &pb.Event_ResourceChanged{
-					ResourceChanged: pbTest.MakeResourceChanged(t, u.deviceID, test.TestResourceLightInstanceHref("1"),
+					ResourceChanged: pbTest.MakeResourceChanged(t, u.deviceID, test.TestResourceLightInstanceHref("1"), test.TestResourceLightInstanceResourceTypes,
 						ev.GetResourceChanged().GetAuditContext().GetCorrelationId(),
 						map[string]interface{}{
 							"state": false,
@@ -134,7 +134,7 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 	shutdownHttp := httpgwTest.SetUp(t)
 	defer shutdownHttp()
 
-	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -212,7 +212,7 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 	ev, err := recv()
 	require.NoError(t, err)
 	expectedEvent := &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
+		SubscriptionId: ev.GetSubscriptionId(),
 		Type: &pb.Event_OperationProcessed_{
 			OperationProcessed: &pb.Event_OperationProcessed{
 				ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
@@ -223,7 +223,7 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 		CorrelationId: "testToken",
 	}
 	pbTest.CmpEvent(t, expectedEvent, ev, "")
-	baseSubID := ev.SubscriptionId
+	baseSubID := ev.GetSubscriptionId()
 
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, nil)
 
@@ -269,7 +269,7 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 	ev, err = recv()
 	require.NoError(t, err)
 	expectedEvent = &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
+		SubscriptionId: ev.GetSubscriptionId(),
 		Type: &pb.Event_OperationProcessed_{
 			OperationProcessed: &pb.Event_OperationProcessed{
 				ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
@@ -285,7 +285,7 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 		c:            c,
 		deviceID:     deviceID,
 		baseSubID:    baseSubID,
-		subUpdatedID: ev.SubscriptionId,
+		subUpdatedID: ev.GetSubscriptionId(),
 		recv:         recv,
 	}
 	updChecker.checkUpdateLightResource(ctx, t, 99)
@@ -308,7 +308,7 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 	ev, err = recv()
 	require.NoError(t, err)
 	expectedEvent = &pb.Event{
-		SubscriptionId: ev.SubscriptionId,
+		SubscriptionId: ev.GetSubscriptionId(),
 		Type: &pb.Event_OperationProcessed_{
 			OperationProcessed: &pb.Event_OperationProcessed{
 				ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
@@ -319,7 +319,7 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 		CorrelationId: "receivePending + resourceReceived",
 	}
 	pbTest.CmpEvent(t, expectedEvent, ev, "")
-	subReceivedID := ev.SubscriptionId
+	subReceivedID := ev.GetSubscriptionId()
 
 	_, err = c.GetResourceFromDevice(ctx, &pb.GetResourceFromDeviceRequest{
 		ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
@@ -331,8 +331,9 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 		SubscriptionId: subReceivedID,
 		Type: &pb.Event_ResourceRetrievePending{
 			ResourceRetrievePending: &events.ResourceRetrievePending{
-				ResourceId:   commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
-				AuditContext: ev.GetResourceRetrievePending().GetAuditContext(),
+				ResourceId:    commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
+				AuditContext:  ev.GetResourceRetrievePending().GetAuditContext(),
+				ResourceTypes: test.TestResourceLightInstanceResourceTypes,
 			},
 		},
 		CorrelationId: "receivePending + resourceReceived",
@@ -345,7 +346,7 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 	expectedEvent = &pb.Event{
 		SubscriptionId: subReceivedID,
 		Type: &pb.Event_ResourceRetrieved{
-			ResourceRetrieved: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceLightInstanceHref("1"), recvCorrelationID,
+			ResourceRetrieved: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceLightInstanceHref("1"), test.TestResourceLightInstanceResourceTypes, recvCorrelationID,
 				map[string]interface{}{
 					"name":  "Light",
 					"power": 0x0,
@@ -367,7 +368,7 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 
 		if ev.GetDeviceUnregistered() != nil {
 			expectedEvent = &pb.Event{
-				SubscriptionId: ev.SubscriptionId,
+				SubscriptionId: ev.GetSubscriptionId(),
 				Type: &pb.Event_DeviceUnregistered_{
 					DeviceUnregistered: &pb.Event_DeviceUnregistered{
 						DeviceIds: []string{deviceID},

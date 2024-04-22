@@ -17,6 +17,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/plgd-dev/kit/v2/codec/json"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -56,25 +57,29 @@ func WaitForEvents(ch EventChan, timeout time.Duration) []Event {
 	return events
 }
 
-func DecodeEvent(t *testing.T, etype events.EventType, data []byte) interface{} {
+func decodeEvent(etype events.EventType, data []byte) (interface{}, error) {
 	switch etype {
 	case events.EventType_ResourcesPublished:
 		fallthrough
 	case events.EventType_ResourcesUnpublished:
 		var links schema.ResourceLinks
 		err := json.Decode(data, &links)
-		require.NoError(t, err)
-		return links
+		if err != nil {
+			return nil, err
+		}
+		return links, nil
 	case events.EventType_ResourceChanged:
 		var colContent []map[interface{}]interface{}
 		err := json.Decode(data, &colContent)
 		if err == nil {
-			return colContent
+			return colContent, nil
 		}
 		var content map[interface{}]interface{}
 		err = json.Decode(data, &content)
-		require.NoError(t, err)
-		return content
+		if err != nil {
+			return nil, err
+		}
+		return content, nil
 	case events.EventType_DevicesRegistered:
 		fallthrough
 	case events.EventType_DevicesUnregistered:
@@ -84,11 +89,13 @@ func DecodeEvent(t *testing.T, etype events.EventType, data []byte) interface{} 
 	case events.EventType_DevicesOffline:
 		var devices []map[string]string
 		err := json.Decode(data, &devices)
-		require.NoError(t, err)
-		return devices
+		if err != nil {
+			return nil, err
+		}
+		return devices, nil
 	}
 
-	return nil
+	return nil, nil
 }
 
 func NewEventsServer(t *testing.T, uri string) *EventsServer {
@@ -133,14 +140,15 @@ func (s *EventsServer) Run(t *testing.T) EventChan {
 		r.StrictSlash(true)
 		r.HandleFunc(s.uri, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			h, err := events.ParseEventHeader(r)
-			require.NoError(t, err)
+			assert.NoError(t, err) //nolint:testifylint
 			defer func() {
 				_ = r.Body.Close()
 			}()
 			buf, err := io.ReadAll(r.Body)
-			require.NoError(t, err)
+			assert.NoError(t, err) //nolint:testifylint
 
-			data := DecodeEvent(t, h.EventType, buf)
+			data, err := decodeEvent(h.EventType, buf)
+			assert.NoError(t, err) //nolint:testifylint
 			dataChan <- Event{
 				header: h,
 				data:   data,

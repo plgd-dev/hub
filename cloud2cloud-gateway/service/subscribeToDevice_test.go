@@ -46,7 +46,7 @@ func TestRequestHandlerSubscribeToDevicePublishedOnly(t *testing.T) {
 	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
-	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -91,7 +91,7 @@ func TestRequestHandlerSubscribeToDevice(t *testing.T) {
 	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
-	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -157,7 +157,7 @@ func TestRequestHandlerSubscribeToDevice(t *testing.T) {
 	resources = testSubscribeToDeviceDecodeResources(links)
 	var unpublishedSwitches []*commands.Resource
 	for _, res := range resources {
-		if res.Href == test.TestResourceSwitchesInstanceHref(switchID2) {
+		if res.GetHref() == test.TestResourceSwitchesInstanceHref(switchID2) {
 			unpublishedSwitches = append(unpublishedSwitches, &commands.Resource{
 				DeviceId: deviceID,
 				Href:     test.TestResourceSwitchesInstanceHref(switchID2),

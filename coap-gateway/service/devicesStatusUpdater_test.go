@@ -33,7 +33,7 @@ func onboardDeviceAndGetDevice(ctx context.Context, t *testing.T, device device.
 	servicesTeardown := testService.SetUpServices(context.Background(), t, testService.SetUpServicesCertificateAuthority|testService.SetUpServicesId|testService.SetUpServicesResourceAggregate|testService.SetUpServicesResourceDirectory|testService.SetUpServicesCoapGateway|testService.SetUpServicesGrpcGateway, testService.WithCOAPGWConfig(coapCfg))
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
-	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -64,7 +64,7 @@ func onboardDeviceAndGetDevice(ctx context.Context, t *testing.T, device device.
 			break
 		}
 		require.NoError(t, err)
-		assert.NotEmpty(t, dev.ProtocolIndependentId)
+		assert.NotEmpty(t, dev.GetProtocolIndependentId())
 		dev.ProtocolIndependentId = ""
 		devices = append(devices, dev)
 	}

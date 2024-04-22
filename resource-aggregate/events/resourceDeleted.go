@@ -51,6 +51,10 @@ func (e *ResourceDeleted) ServiceID() (string, bool) {
 	return "", false
 }
 
+func (e *ResourceDeleted) Types() []string {
+	return e.GetResourceTypes()
+}
+
 func (e *ResourceDeleted) CopyData(event *ResourceDeleted) {
 	e.ResourceId = event.GetResourceId()
 	e.Status = event.GetStatus()
@@ -58,6 +62,7 @@ func (e *ResourceDeleted) CopyData(event *ResourceDeleted) {
 	e.AuditContext = event.GetAuditContext()
 	e.EventMetadata = event.GetEventMetadata()
 	e.OpenTelemetryCarrier = event.GetOpenTelemetryCarrier()
+	e.ResourceTypes = event.GetResourceTypes()
 }
 
 func (e *ResourceDeleted) CheckInitialized() bool {

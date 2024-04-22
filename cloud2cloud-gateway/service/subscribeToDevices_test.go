@@ -25,6 +25,7 @@ import (
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/plgd-dev/kit/v2/codec/json"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -53,7 +54,7 @@ func TestRequestHandlerSubscribeToDevices(t *testing.T) {
 	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
-	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -77,20 +78,20 @@ func TestRequestHandlerSubscribeToDevices(t *testing.T) {
 		r.StrictSlash(true)
 		r.HandleFunc(eventsURI, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			h, err2 := events.ParseEventHeader(r)
-			require.NoError(t, err2)
+			assert.NoError(t, err2) //nolint:testifylint
 			defer func() {
 				_ = r.Body.Close()
 			}()
-			require.Equal(t, wantEventType, h.EventType)
+			assert.Equal(t, wantEventType, h.EventType)
 			buf, err2 := io.ReadAll(r.Body)
-			require.NoError(t, err2)
+			assert.NoError(t, err2) //nolint:testifylint
 			var v interface{}
 			err2 = json.Decode(buf, &v)
-			require.NoError(t, err2)
-			require.Equal(t, wantEventContent, v)
+			assert.NoError(t, err2) //nolint:testifylint
+			assert.Equal(t, wantEventContent, v)
 			w.WriteHeader(http.StatusOK)
 			err2 = eventsServer.Close()
-			require.NoError(t, err2)
+			assert.NoError(t, err2)
 		})).Methods("POST")
 		_ = http.Serve(eventsServer, r)
 	}()
@@ -146,7 +147,7 @@ func TestRequestHandlerSubscribeToDevicesOffline(t *testing.T) {
 	gwShutdown := coapgwTest.New(t, coapgwCfg)
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
-	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -170,20 +171,20 @@ func TestRequestHandlerSubscribeToDevicesOffline(t *testing.T) {
 		r.StrictSlash(true)
 		r.HandleFunc(eventsURI, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			h, err2 := events.ParseEventHeader(r)
-			require.NoError(t, err2)
+			assert.NoError(t, err2) //nolint:testifylint
 			defer func() {
 				_ = r.Body.Close()
 			}()
-			require.Equal(t, wantEventType, h.EventType)
+			assert.Equal(t, wantEventType, h.EventType)
 			buf, err2 := io.ReadAll(r.Body)
-			require.NoError(t, err2)
+			assert.NoError(t, err2) //nolint:testifylint
 			var v interface{}
 			err2 = json.Decode(buf, &v)
-			require.NoError(t, err2)
-			require.Equal(t, wantEventContent, v)
+			assert.NoError(t, err2) //nolint:testifylint
+			assert.Equal(t, wantEventContent, v)
 			w.WriteHeader(http.StatusOK)
 			err2 = eventsServer.Close()
-			require.NoError(t, err2)
+			assert.NoError(t, err2)
 		})).Methods("POST")
 		_ = http.Serve(eventsServer, r)
 	}()

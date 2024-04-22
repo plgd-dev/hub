@@ -121,7 +121,7 @@ func TestRequestHandlerGetDevices(t *testing.T) {
 	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
-	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	defer func() {
@@ -134,7 +134,7 @@ func TestRequestHandlerGetDevices(t *testing.T) {
 	defer shutdownDevSim()
 
 	toStringSlice := func(s []pb.GetDevicesRequest_Status) []string {
-		var sf []string
+		sf := make([]string, 0, len(s))
 		for _, v := range s {
 			sf = append(sf, strconv.FormatInt(int64(v), 10))
 		}
@@ -158,7 +158,7 @@ func TestRequestHandlerGetDevices(t *testing.T) {
 					break
 				}
 				require.NoError(t, err)
-				assert.NotEmpty(t, dev.ProtocolIndependentId)
+				assert.NotEmpty(t, dev.GetProtocolIndependentId())
 				devices = append(devices, &dev)
 			}
 			pbTest.CmpDeviceValues(t, tt.want, devices)

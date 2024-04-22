@@ -36,7 +36,7 @@ func TestRequestHandlerGetHubConfiguration(t *testing.T) {
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
 
-	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -51,7 +51,7 @@ func TestRequestHandlerGetHubConfiguration(t *testing.T) {
 			got, err := c.GetHubConfiguration(ctxWithoutToken, &pb.HubConfigurationRequest{})
 			require.NoError(t, err)
 			require.NotEmpty(t, got.GetBuildInfo())
-			got.BuildInfo.ReleaseUrl = expected.BuildInfo.ReleaseUrl
+			got.BuildInfo.ReleaseUrl = expected.GetBuildInfo().GetReleaseUrl()
 			pbTest.CmpHubConfigurationResponse(t, tt.want, got)
 		})
 	}

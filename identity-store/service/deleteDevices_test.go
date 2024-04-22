@@ -145,8 +145,8 @@ func TestServiceDeleteDevices(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
-			sort.Strings(tt.want.DeviceIds)
-			sort.Strings(got.DeviceIds)
+			sort.Strings(tt.want.GetDeviceIds())
+			sort.Strings(got.GetDeviceIds())
 			require.Equal(t, tt.want, got)
 		})
 	}

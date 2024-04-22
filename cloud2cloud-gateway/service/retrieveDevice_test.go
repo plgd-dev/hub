@@ -61,12 +61,14 @@ type DevicesAllRepresentation struct {
 func getDevicesAllRepresentation(t *testing.T, deviceID, deviceName, switchID string) DevicesAllRepresentation {
 	links := test.GetAllBackendResourceRepresentations(t, deviceID, deviceName)
 	for i := range links {
+		links[i].ResourceTypes = nil
 		if strings.HasSuffix(links[i].Href, test.TestResourceSwitchesHref) {
 			l := test.DefaultSwitchResourceLink(deviceID, switchID)
 			l.DeviceID = ""
 			links[i].Representation = schema.ResourceLinks{l}
 			continue
 		}
+		// according OCF spec, resource link should not contain resource types field with content
 	}
 	links = append(links, test.ResourceLinkRepresentation{
 		Href:           "/" + commands.NewResourceID(deviceID, test.TestResourceSwitchesInstanceHref(switchID)).ToString(),
@@ -92,7 +94,7 @@ func TestRequestHandlerRetrieveDevice(t *testing.T) {
 	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
-	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -268,6 +270,9 @@ func TestRequestHandlerRetrieveDevice(t *testing.T) {
 				d.Device.ProtocolIndependentID = ""
 				d.Device.ManufacturerName = nil
 				d.Links = d.Links.Sort()
+				for i := range d.Links {
+					d.Links[i].ResourceTypes = nil
+				}
 				got = d
 			} else if _, ok := tt.want.(DevicesBaseRepresentation); ok {
 				d := DevicesBaseRepresentation{}

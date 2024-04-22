@@ -48,7 +48,7 @@ func testRequestHandlerGetResourceFromDevice(t *testing.T, events store.Events) 
 				},
 			},
 			wantContentType: message.AppOcfCbor.String(),
-			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceLightInstanceHref("1"), "", map[string]interface{}{
+			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceLightInstanceHref("1"), test.TestResourceLightInstanceResourceTypes, "", map[string]interface{}{
 				"name":  "Light",
 				"power": uint64(0),
 				"state": false,
@@ -62,7 +62,7 @@ func testRequestHandlerGetResourceFromDevice(t *testing.T, events store.Events) 
 				},
 			},
 			wantContentType: message.AppOcfCbor.String(),
-			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceSwitchesHref, "", []map[interface{}]interface{}{
+			want: pbTest.MakeResourceRetrieved(t, deviceID, test.TestResourceSwitchesHref, test.TestResourceSwitchesResourceTypes, "", []map[interface{}]interface{}{
 				{
 					"href": test.TestResourceSwitchesInstanceHref(switchID),
 					"if":   []interface{}{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
@@ -80,7 +80,7 @@ func testRequestHandlerGetResourceFromDevice(t *testing.T, events store.Events) 
 				},
 			},
 			wantContentType: message.AppOcfCbor.String(),
-			want: pbTest.MakeResourceRetrieved(t, deviceID, device.ResourceURI, "", map[string]interface{}{
+			want: pbTest.MakeResourceRetrieved(t, deviceID, device.ResourceURI, test.TestResourceDeviceResourceTypes, "", map[string]interface{}{
 				"di":   deviceID,
 				"dmv":  "ocf.res.1.3.0",
 				"icv":  "ocf.2.0.5",
@@ -107,7 +107,7 @@ func testRequestHandlerGetResourceFromDevice(t *testing.T, events store.Events) 
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
-	conn, err := grpc.Dial(c2cConnectorTest.GRPC_GATEWAY_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.NewClient(c2cConnectorTest.GRPC_GATEWAY_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)

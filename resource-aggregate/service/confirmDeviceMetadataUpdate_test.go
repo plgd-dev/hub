@@ -220,7 +220,7 @@ func TestRequestHandlerConfirmDeviceMetadataUpdate(t *testing.T) {
 			}
 			require.NoError(t, err)
 			if tt.want != nil {
-				assert.Equal(t, tt.want.AuditContext, response.AuditContext)
+				assert.Equal(t, tt.want.GetAuditContext(), response.GetAuditContext())
 			}
 		}
 		t.Run(tt.name, tfunc)

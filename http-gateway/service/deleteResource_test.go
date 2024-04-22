@@ -119,7 +119,7 @@ func TestRequestHandlerDeleteResource(t *testing.T) {
 	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
-	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)
@@ -149,7 +149,7 @@ func TestRequestHandlerDeleteResource(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
-			want := pbTest.MakeResourceDeleted(deviceID, tt.args.href, "")
+			want := pbTest.MakeResourceDeleted(deviceID, tt.args.href, test.TestResourceSwitchesInstanceResourceTypes, "")
 			pbTest.CmpResourceDeleted(t, want, got.GetData())
 		})
 	}
@@ -198,7 +198,7 @@ func TestRequestHandlerBatchDeleteResource(t *testing.T) {
 				href:   test.TestResourceSwitchesHref,
 			},
 			want: func() *events.ResourceDeleted {
-				rdel := pbTest.MakeResourceDeleted(deviceID, test.TestResourceSwitchesHref, "")
+				rdel := pbTest.MakeResourceDeleted(deviceID, test.TestResourceSwitchesHref, test.TestResourceSwitchesResourceTypes, "")
 				links := test.CollectionLinkRepresentations{}
 				for _, switchID := range switchIDs {
 					links = append(links, test.CollectionLinkRepresentation{
@@ -229,7 +229,7 @@ func TestRequestHandlerBatchDeleteResource(t *testing.T) {
 	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
 
-	conn, err := grpc.Dial(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
 	require.NoError(t, err)

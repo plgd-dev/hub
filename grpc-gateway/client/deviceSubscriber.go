@@ -322,7 +322,7 @@ func (s *DeviceSubscriber) createSpanEvent(ctx context.Context, name string) (co
 		opentelemetry.InstrumentationName,
 		trace.WithInstrumentationVersion(opentelemetry.SemVersion()),
 	)
-	return tracer.Start(ctx, name, trace.WithSpanKind(trace.SpanKindConsumer))
+	return tracer.Start(ctx, name, trace.WithSpanKind(trace.SpanKindConsumer)) //nolint:spancheck
 }
 
 func (s *DeviceSubscriber) processPendingCommand(ctx context.Context, h *DeviceSubscriptionHandlers, ev *pbGRPC.PendingCommand) error {
