@@ -35,7 +35,7 @@ export const DEFAULT_FORM_DATA = {
                     useSystemCaPool: true,
                 },
             },
-            scopes: [],
+            scopes: [{ value: '' }],
         },
     },
     gateways: [],
@@ -52,6 +52,8 @@ export const formatDataForSave = (data: any) => {
     ) {
         dataForSave.authorization.provider.clientSecret = stringToPem(dataForSave.authorization.provider.clientSecret)
     }
+
+    dataForSave.authorization.provider.scopes = dataForSave.authorization.provider.scopes.map((i: { value: string }) => i.value).join(',')
 
     return dataForSave
 }

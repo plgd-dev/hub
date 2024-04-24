@@ -40,7 +40,7 @@ const LinkNewHubPage: FC<any> = () => {
                 link: pages.DPS.LINKED_HUBS.ADD.TABS[1],
             },
             {
-                name: _(t.certificateAuthorityDescription),
+                name: _(t.deviceAuthentication),
                 description: _(t.certificateAuthorityDescription),
                 link: pages.DPS.LINKED_HUBS.ADD.TABS[2],
             },
@@ -78,7 +78,7 @@ const LinkNewHubPage: FC<any> = () => {
             await createLinkedHub(formatDataForSave(formData))
 
             Notification.success(
-                { title: _(t.linkedHubsCreated), message: _(t.linkedHubsCreatedMessage) },
+                { title: _(t.linkedHubCreated), message: _(t.linkedHubCreatedMessage, { name: formData.name }) },
                 { notificationId: notificationId.HUB_DPS_LINKED_HUBS_CREATED }
             )
 

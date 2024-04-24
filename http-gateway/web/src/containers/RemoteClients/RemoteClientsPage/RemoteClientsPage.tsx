@@ -1,6 +1,6 @@
 import { FC, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { Helmet } from 'react-helmet'
+import { useDocumentTitle } from 'usehooks-ts'
 import { useDispatch } from 'react-redux'
 
 import { useWellKnownConfiguration, WellKnownConfigType } from '@shared-ui/common/hooks'
@@ -20,6 +20,7 @@ import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '../RemoteClients.i18n'
 import RemoteClientsAuthProvider from '@/containers/RemoteClients/RemoteClientsAuthProvider'
 import { updateRemoteClient } from '@/containers/RemoteClients/slice'
+import appConfig from '@/config'
 
 const RemoteClientsPage: FC<Props> = (props) => {
     const { children } = props
@@ -130,6 +131,8 @@ const RemoteClientsPage: FC<Props> = (props) => {
         [parentalContext, unauthorizedCallback]
     )
 
+    useDocumentTitle(`${clientData.clientName} | ${appConfig.appName}`)
+
     // just config page with context ( isHub and updateRemoteClient)
     if (clientData.status === remoteClientStatuses.UNREACHABLE) {
         return <AppContext.Provider value={contextValue}>{children(clientData, false, false, initializedByAnother)}</AppContext.Provider>
@@ -166,7 +169,6 @@ const RemoteClientsPage: FC<Props> = (props) => {
     return (
         <AppContext.Provider value={contextValue}>
             <div css={styles.detailPage}>
-                <Helmet title={`${clientData.clientName}`} />
                 <RemoteClientsAuthProvider
                     clientData={clientData}
                     loading={loading}

@@ -31,12 +31,12 @@ const Tab2: FC<Props> = (props) => {
 
     const menu = useMemo(
         () => [
-            { id: '0', icon: <IconInfo />, link: '', title: _(t.generalKeepAlive) },
+            { id: '0', icon: <IconInfo />, link: '', title: _(t.general) },
             {
                 id: '1',
                 icon: <IconShield />,
                 link: 'tls',
-                title: _(g.tls),
+                title: _(t.connectionSecurity),
                 children: [
                     { id: '10', title: _(t.caPool), contentRef: contentRef1 },
                     { id: '11', title: _(t.privateKey), contentRef: contentRef2 },

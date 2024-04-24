@@ -212,11 +212,9 @@ const TlsPage: FC<any> = (props) => {
         []
     )
 
-    console.log(caPool)
-
     return (
         <form>
-            <Headline type='h5'>{_(g.tls)}</Headline>
+            <Headline type='h5'>{_(t.connectionSecurity)}</Headline>
             <p>{_(g.tlsDescription)}</p>
             <hr css={styles.separator} />
             <Loadable condition={!caPoolLoading}>

@@ -22,7 +22,7 @@ export type AuthorizationDataType = {
         clientId: string
         clientSecret: string
         name: string
-        scopes: string[]
+        scopes: { value: string; id?: string }[]
         http: {
             idleConnTimeout: string
             maxConnsPerHost: number

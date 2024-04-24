@@ -23,11 +23,11 @@ export const messages = defineMessages({
     },
     deleteLinkedHubMessage: {
         id: 'linkedHubs.deleteLinkedHubMessage',
-        defaultMessage: 'Are you sure you want to delete this linked hub?',
+        defaultMessage: 'Are you sure you want to delete this linked Hub?',
     },
     deleteLinkedHubsMessage: {
         id: 'linkedHubs.deleteLinkedHubsMessage',
-        defaultMessage: 'Are you sure you want to delete {count} linked hubs?',
+        defaultMessage: 'Are you sure you want to delete {count} linked Hubs?',
     },
     certificateAuthority: {
         id: 'linkedHubs.certificateAuthority',
@@ -35,7 +35,7 @@ export const messages = defineMessages({
     },
     certificateAuthorityDescription: {
         id: 'linkedHubs.certificateAuthorityDescription',
-        defaultMessage: 'Signing certificate',
+        defaultMessage: 'Certificate signing configuration',
     },
     authorization: {
         id: 'linkedHubs.authorization',
@@ -68,6 +68,10 @@ export const messages = defineMessages({
     keepAlive: {
         id: 'linkedHubs.keepAlive',
         defaultMessage: 'Keep alive',
+    },
+    connectionKeepAlive: {
+        id: 'linkedHubs.connectionKeepAlive',
+        defaultMessage: 'Connection Keep alive',
     },
     time: {
         id: 'linkedHubs.time',
@@ -111,7 +115,7 @@ export const messages = defineMessages({
     },
     addCaPool: {
         id: 'linkedHubs.addCaPool',
-        defaultMessage: 'Add Ca Pool',
+        defaultMessage: 'Add CA Pool',
     },
     oAuthClient: {
         id: 'linkedHubs.oAuthClient',
@@ -124,6 +128,10 @@ export const messages = defineMessages({
     hTTP: {
         id: 'linkedHubs.hTTP',
         defaultMessage: 'HTTP',
+    },
+    httpClient: {
+        id: 'linkedHubs.httpClient',
+        defaultMessage: 'HTTP Client',
     },
     ownerClaim: {
         id: 'linkedHubs.ownerClaim',
@@ -421,7 +429,7 @@ export const messages = defineMessages({
     },
     linkHubDescription: {
         id: 'linkedHubs.linkHubDescription',
-        defaultMessage: 'Pre-configure Hub',
+        defaultMessage: 'Link your device endpoint',
     },
     hubDetails: {
         id: 'linkedHubs.hubDetails',
@@ -446,17 +454,17 @@ export const messages = defineMessages({
     addLinkedHubDescription: {
         id: 'linkedHubs.addLinkedHubDescription',
         defaultMessage:
-            'The new linked hub offers a configuration interface for enrollment groups, enabling the onboarding of devices to the hub. Upon completing the setup, populate the "Endpoint" field with values retrieved from the hub.',
+            'Automated Device Provisioning simplifies the process of onboarding devices across multiple instances of the plgd Hub. Link all your Hub instances seamlessly to connect your devices to the desired endpoint.',
     },
     addLinkedHubDetailsDescription: {
         id: 'linkedHubs.addLinkedHubDetailsDescription',
         defaultMessage:
-            ' By configuring the Hub ID, the device will verify if the ID matches the certificate of the CoAP gateway. CoAP gateways serve as entry points for devices to connect to the hub infrastructure.',
+            'Each hub instance is uniquely identified by its ID, essential for authentication purposes verified by the device. CoAP Gateways serve as the entry points for devices.',
     },
     addLinkedHubCertificateAuthorityDescription: {
         id: 'linkedHubs.addLinkedHubCertificateAuthorityDescription',
         defaultMessage:
-            "As a client, the DPS service forwards the device's certificate signing requests, using the owner's JWT token, to enable communication with the  CoAP gateway. Proper TLS configuration is essential for this process to ensure secure communication.",
+            'In a linked plgd hub instance, devices may need to authenticate using identity certificates. The Certificate Authority (CA) service issues these certificates, ensuring trusted authentication.',
     },
     addLinkedHubCertificateAuthorityKeepAliveDescription: {
         id: 'linkedHubs.addLinkedHubCertificateAuthorityKeepAliveDescription',
@@ -478,7 +486,7 @@ export const messages = defineMessages({
     },
     addLinkedHubAuthorizationHttpDescription: {
         id: 'linkedHubs.addLinkedHubAuthorizationHttpDescription',
-        defaultMessage: 'An HTTP client facilitates access to servers for retrieving web resources or data.',
+        defaultMessage: 'Advanced setup of the HTTP Client tailored for interacting with the configured OAuth 2.0 Server.',
     },
     linkedHubsDeleted: {
         id: 'linkedHubs.linkedHubDeleted',
@@ -488,13 +496,13 @@ export const messages = defineMessages({
         id: 'linkedHubs.linkedHubsDeletedMessage',
         defaultMessage: 'The selected linked hubs has been deleted.',
     },
-    linkedHubsCreated: {
-        id: 'linkedHubs.linkedHubsCreated',
-        defaultMessage: 'Linked hubs created',
+    linkedHubCreated: {
+        id: 'linkedHubs.linkedHubCreated',
+        defaultMessage: 'Linked hub created',
     },
-    linkedHubsCreatedMessage: {
-        id: 'linkedHubs.linkedHubsCreatedMessage',
-        defaultMessage: 'The selected linked hubs has been created.',
+    linkedHubCreatedMessage: {
+        id: 'linkedHubs.linkedHubCreatedMessage',
+        defaultMessage: 'Linked hub {name} was successfully created.',
     },
     linkedHubUpdated: {
         id: 'linkedHubs.linkedHubUpdated',
@@ -526,7 +534,8 @@ export const messages = defineMessages({
     },
     tlsDescription: {
         id: 'linkedHubs.tlsDescription',
-        defaultMessage: 'TLS ensures the privacy and integrity of data exchanged between client and server.',
+        defaultMessage:
+            'Configure a client certificate if communication between the Device Provisioning service and the Certificate Authority service requires it.',
     },
     getWellKnowPresetError: {
         id: 'linkedHubs.getWellKnowPresetError',
@@ -547,5 +556,17 @@ export const messages = defineMessages({
     caPoolList: {
         id: 'linkedHubs.caPoolList',
         defaultMessage: 'CA Pool List',
+    },
+    deviceAuthentication: {
+        id: 'linkedHubs.deviceAuthentication',
+        defaultMessage: 'Device Authentication',
+    },
+    connectionSecurity: {
+        id: 'linkedHubs.connectionSecurity',
+        defaultMessage: 'Connection Security',
+    },
+    addScope: {
+        id: 'linkedHubs.addScope',
+        defaultMessage: 'Add Scope',
     },
 })

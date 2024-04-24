@@ -167,7 +167,8 @@ export const messages = defineMessages({
     },
     tlsDescription: {
         id: 'global.tlsDescription',
-        defaultMessage: 'TLS ensures the privacy and integrity of data exchanged between client and server.',
+        defaultMessage:
+            'Configure a client certificate if communication between the Device Provisioning service and the Certificate Authority service requires it.',
     },
     showMore: {
         id: 'global.showMore',
@@ -320,5 +321,13 @@ export const messages = defineMessages({
     details: {
         id: 'global.details',
         defaultMessage: 'Details',
+    },
+    showAdvancedConfiguration: {
+        id: 'global.showAdvancedConfiguration',
+        defaultMessage: 'Show advanced configuration',
+    },
+    hideAdvancedConfiguration: {
+        id: 'global.hideAdvancedConfiguration',
+        defaultMessage: 'Hide advanced configuration',
     },
 })

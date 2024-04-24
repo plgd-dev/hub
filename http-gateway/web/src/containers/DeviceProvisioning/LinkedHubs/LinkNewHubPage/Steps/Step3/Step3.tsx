@@ -61,13 +61,9 @@ const Step3: FC<Props> = (props) => {
 
     return (
         <form>
-            <FullPageWizard.Headline>{_(t.certificateAuthority)}</FullPageWizard.Headline>
+            <FullPageWizard.Headline>{_(t.deviceAuthentication)}</FullPageWizard.Headline>
             <FullPageWizard.Description large>{_(t.addLinkedHubCertificateAuthorityDescription)}</FullPageWizard.Description>
 
-            <FullPageWizard.SubHeadline>{_(t.generalKeepAlive)}</FullPageWizard.SubHeadline>
-            <FullPageWizard.Description>{_(t.addLinkedHubCertificateAuthorityKeepAliveDescription)}</FullPageWizard.Description>
-
-            <FullPageWizard.GroupHeadline>{_(t.general)}</FullPageWizard.GroupHeadline>
             <FormGroup
                 error={errors.certificateAuthority?.grpc?.address ? errors.certificateAuthority?.grpc?.address.message : undefined}
                 id='certificateAuthority.grpc.address'
@@ -79,38 +75,19 @@ const Step3: FC<Props> = (props) => {
                 />
             </FormGroup>
 
-            <FullPageWizard.GroupHeadline>{_(t.keepAlive)}</FullPageWizard.GroupHeadline>
+            <FullPageWizard.ToggleConfiguration
+                i18n={{
+                    hide: _(g.hideAdvancedConfiguration),
+                    show: _(g.showAdvancedConfiguration),
+                }}
+            >
+                <FullPageWizard.GroupHeadline tooltipText={_(t.addLinkedHubCertificateAuthorityKeepAliveDescription)}>
+                    {_(t.connectionKeepAlive)}
+                </FullPageWizard.GroupHeadline>
 
-            <Controller
-                control={control}
-                name='certificateAuthority.grpc.keepAlive.time'
-                render={({ field: { onChange, value } }) => (
-                    <TimeoutControl
-                        required
-                        watchUnitChange
-                        align='left'
-                        defaultTtlValue={parseInt(value, 10)}
-                        defaultValue={parseInt(value, 10)}
-                        error={errors.certificateAuthority?.grpc?.keepAlive?.time?.message}
-                        i18n={{
-                            default: _(g.default),
-                            duration: _(g.time),
-                            unit: _(g.metric),
-                            placeholder: '',
-                        }}
-                        onBlur={(v) => updateField('certificateAuthority.grpc.keepAlive.time', v)}
-                        onChange={(v) => onChange(v.toString())}
-                        rightStyle={{
-                            width: 150,
-                        }}
-                    />
-                )}
-            />
-
-            <Spacer type='pt-5'>
                 <Controller
                     control={control}
-                    name='certificateAuthority.grpc.keepAlive.timeout'
+                    name='certificateAuthority.grpc.keepAlive.time'
                     render={({ field: { onChange, value } }) => (
                         <TimeoutControl
                             required
@@ -118,14 +95,14 @@ const Step3: FC<Props> = (props) => {
                             align='left'
                             defaultTtlValue={parseInt(value, 10)}
                             defaultValue={parseInt(value, 10)}
-                            error={errors.certificateAuthority?.grpc?.keepAlive?.timeout?.message}
+                            error={errors.certificateAuthority?.grpc?.keepAlive?.time?.message}
                             i18n={{
                                 default: _(g.default),
-                                duration: _(g.timeout),
+                                duration: _(g.time),
                                 unit: _(g.metric),
                                 placeholder: '',
                             }}
-                            onBlur={(v) => updateField('certificateAuthority.grpc.keepAlive.timeout', v)}
+                            onBlur={(v) => updateField('certificateAuthority.grpc.keepAlive.time', v)}
                             onChange={(v) => onChange(v.toString())}
                             rightStyle={{
                                 width: 150,
@@ -133,25 +110,53 @@ const Step3: FC<Props> = (props) => {
                         />
                     )}
                 />
-            </Spacer>
 
-            <Spacer type='pt-5'>
-                <Controller
-                    control={control}
-                    name='certificateAuthority.grpc.keepAlive.permitWithoutStream'
-                    render={({ field: { onChange, value } }) => (
-                        <TileToggle
-                            darkBg
-                            checked={(value as boolean) ?? false}
-                            name={_(t.permitWithoutStream)}
-                            onChange={(e) => {
-                                updateField('certificateAuthority.grpc.keepAlive.permitWithoutStream', e.target.value === 'on')
-                                onChange(e)
-                            }}
-                        />
-                    )}
-                />
-            </Spacer>
+                <Spacer type='pt-5'>
+                    <Controller
+                        control={control}
+                        name='certificateAuthority.grpc.keepAlive.timeout'
+                        render={({ field: { onChange, value } }) => (
+                            <TimeoutControl
+                                required
+                                watchUnitChange
+                                align='left'
+                                defaultTtlValue={parseInt(value, 10)}
+                                defaultValue={parseInt(value, 10)}
+                                error={errors.certificateAuthority?.grpc?.keepAlive?.timeout?.message}
+                                i18n={{
+                                    default: _(g.default),
+                                    duration: _(g.timeout),
+                                    unit: _(g.metric),
+                                    placeholder: '',
+                                }}
+                                onBlur={(v) => updateField('certificateAuthority.grpc.keepAlive.timeout', v)}
+                                onChange={(v) => onChange(v.toString())}
+                                rightStyle={{
+                                    width: 150,
+                                }}
+                            />
+                        )}
+                    />
+                </Spacer>
+
+                <Spacer type='pt-5'>
+                    <Controller
+                        control={control}
+                        name='certificateAuthority.grpc.keepAlive.permitWithoutStream'
+                        render={({ field: { onChange, value } }) => (
+                            <TileToggle
+                                darkBg
+                                checked={(value as boolean) ?? false}
+                                name={_(t.permitWithoutStream)}
+                                onChange={(e) => {
+                                    updateField('certificateAuthority.grpc.keepAlive.permitWithoutStream', e.target.value === 'on')
+                                    onChange(e)
+                                }}
+                            />
+                        )}
+                    />
+                </Spacer>
+            </FullPageWizard.ToggleConfiguration>
 
             <SubStepTls
                 control={control}

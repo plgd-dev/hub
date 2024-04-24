@@ -83,7 +83,7 @@ const Step2: FC<Props> = (props) => {
                             id={`gateways.${index}`}
                             key={field.id}
                         >
-                            <FormLabel required text={_(t.deviceGateway)} />
+                            {index === 0 && <FormLabel required text={_(t.deviceGateway)} />}
                             <Controller
                                 control={control}
                                 name={`gateways.${index}` as any}

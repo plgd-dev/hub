@@ -65,7 +65,7 @@ const TabContent1: FC<Props> = (props) => {
                 </Spacer>
             </Loadable>
             <Spacer type='pt-8'>
-                <Headline type='h5'>{_(t.keepAlive)}</Headline>
+                <Headline type='h5'>{_(t.connectionKeepAlive)}</Headline>
                 <Spacer type='pt-4'>
                     <Loadable condition={!loading}>
                         <SimpleStripTable

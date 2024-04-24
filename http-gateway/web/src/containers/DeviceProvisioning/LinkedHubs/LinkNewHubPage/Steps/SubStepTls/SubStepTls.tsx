@@ -89,102 +89,66 @@ const SubStepTls: FC<Props> = (props) => {
     return (
         <div>
             <Spacer type='pt-12'>
-                <h2 css={commonStyles.subHeadline}>TLS</h2>
+                <h2 css={commonStyles.subHeadline}>{_(t.connectionSecurity)}</h2>
             </Spacer>
 
             <FullPageWizard.Description>{_(t.tlsDescription)}</FullPageWizard.Description>
 
-            <h3 css={commonStyles.groupHeadline}>{_(t.caPool)}</h3>
-
-            <Spacer type='mb-5'>
-                <Controller
-                    control={control}
-                    name={`${prefix}tls.useSystemCaPool`}
-                    render={({ field: { onChange, value } }) => (
-                        <TileToggle
-                            darkBg
-                            checked={(value as boolean) ?? false}
-                            name={_(t.useSystemCAPool)}
-                            onChange={(e) => {
-                                updateField(`${prefix}tls.useSystemCaPool`, e.target.value === 'on')
-                                onChange(e)
-                            }}
-                        />
-                    )}
-                />
-            </Spacer>
-
-            <FormLabel required={!useSystemCaPool} text={_(t.caPoolList)} tooltipText={_(t.requiredWithoutCaPool)} />
-            <Dropzone
-                smallPadding
-                customFileRenders={[{ format: 'pem', icon: 'icon-file-pem' }]}
-                description={_(t.uploadCertDescription)}
-                maxFiles={10}
-                onFilesDrop={(files) => {
-                    setTimeout(() => {
-                        setValue(`${prefix}tls.caPool`, [...caPool, ...files.map((f) => stringToPem(f))], {
-                            shouldDirty: true,
-                            shouldTouch: true,
-                        })
-                    }, 100)
+            <FullPageWizard.ToggleConfiguration
+                i18n={{
+                    hide: _(g.hideAdvancedConfiguration),
+                    show: _(g.showAdvancedConfiguration),
                 }}
-                renderThumbs={false}
-                title={_(t.uploadCertTitle)}
-                validator={(file) => nameLengthValidator(file)}
-            />
+            >
+                <h3 css={commonStyles.groupHeadline}>{_(t.caPool)}</h3>
 
-            {caPoolData && caPoolData.length > 0 && (
-                <Spacer type='pt-6'>
-                    <CaList
-                        actions={{
-                            onDelete: handleDeleteCaItem,
-                            onView: handleViewCa,
-                        }}
-                        data={caPoolData}
-                        i18n={{
-                            title: _(g.uploadedCaPools),
-                            download: _(g.download),
-                            delete: _(g.delete),
-                            view: _(g.view),
-                        }}
+                <Spacer type='mb-5'>
+                    <Controller
+                        control={control}
+                        name={`${prefix}tls.useSystemCaPool`}
+                        render={({ field: { onChange, value } }) => (
+                            <TileToggle
+                                darkBg
+                                checked={(value as boolean) ?? false}
+                                name={_(t.useSystemCAPool)}
+                                onChange={(e) => {
+                                    updateField(`${prefix}tls.useSystemCaPool`, e.target.value === 'on')
+                                    onChange(e)
+                                }}
+                            />
+                        )}
                     />
                 </Spacer>
-            )}
 
-            <Spacer type='pt-8'>
-                <h3 css={commonStyles.groupHeadline}>{_(t.certificateKeyPair)}</h3>
-            </Spacer>
+                <FormLabel required={!useSystemCaPool} text={_(t.caPoolList)} tooltipText={_(t.requiredWithoutCaPool)} />
+                <Dropzone
+                    smallPadding
+                    customFileRenders={[{ format: 'pem', icon: 'icon-file-pem' }]}
+                    description={_(t.uploadCertDescription)}
+                    maxFiles={10}
+                    onFilesDrop={(files) => {
+                        setTimeout(() => {
+                            setValue(`${prefix}tls.caPool`, [...caPool, ...files.map((f) => stringToPem(f))], {
+                                shouldDirty: true,
+                                shouldTouch: true,
+                            })
+                        }, 100)
+                    }}
+                    renderThumbs={false}
+                    title={_(t.uploadCertTitle)}
+                    validator={(file) => nameLengthValidator(file)}
+                />
 
-            <FormGroup id={`${prefix}tls.key`}>
-                <FormLabel marginBottom={key === ''} required={cert !== '' || key !== ''} text={_(t.key)} />
-
-                {key === '' ? (
-                    <Dropzone
-                        smallPadding
-                        customFileRenders={[{ format: 'pem', icon: 'icon-file-pem' }]}
-                        description={_(t.uploadCertKeyDescription)}
-                        maxFiles={1}
-                        onFilesDrop={(files) => {
-                            setTimeout(() => {
-                                setValue(`${prefix}tls.key`, stringToPem(files[0]), {
-                                    shouldDirty: true,
-                                    shouldTouch: true,
-                                })
-                            }, 100)
-                        }}
-                        renderThumbs={false}
-                        title={_(t.uploadCertTitle)}
-                        validator={(file) => nameLengthValidator(file, true)}
-                    />
-                ) : (
-                    <Spacer type='pt-2'>
+                {caPoolData && caPoolData.length > 0 && (
+                    <Spacer type='pt-6'>
                         <CaList
                             actions={{
-                                onDelete: () => setValue(`${prefix}tls.key`, '', { shouldDirty: true, shouldTouch: true }),
+                                onDelete: handleDeleteCaItem,
+                                onView: handleViewCa,
                             }}
-                            data={[{ id: 0, name: key, data: [], dataChain: '' }]}
+                            data={caPoolData}
                             i18n={{
-                                title: '',
+                                title: _(g.uploadedCaPools),
                                 download: _(g.download),
                                 delete: _(g.delete),
                                 view: _(g.view),
@@ -192,38 +156,39 @@ const SubStepTls: FC<Props> = (props) => {
                         />
                     </Spacer>
                 )}
-            </FormGroup>
 
-            <FormGroup id={`${prefix}tls.cert`}>
-                <FormLabel marginBottom={cert === ''} required={cert !== '' || key !== ''} text={_(t.certificate)} />
+                <Spacer type='pt-8'>
+                    <h3 css={commonStyles.groupHeadline}>{_(t.certificateKeyPair)}</h3>
+                </Spacer>
 
-                {cert === '' ? (
-                    <Dropzone
-                        smallPadding
-                        customFileRenders={[{ format: 'pem', icon: 'icon-file-pem' }]}
-                        description={_(t.uploadCertDescription)}
-                        maxFiles={1}
-                        onFilesDrop={(files) => {
-                            setTimeout(() => {
-                                setValue(`${prefix}tls.cert`, stringToPem(files[0]), {
-                                    shouldDirty: true,
-                                    shouldTouch: true,
-                                })
-                            }, 100)
-                        }}
-                        renderThumbs={false}
-                        title={_(t.uploadCertTitle)}
-                        validator={(file) => nameLengthValidator(file)}
-                    />
-                ) : (
-                    <Spacer type='pt-2'>
-                        <Loadable condition={certData.length > 0}>
+                <FormGroup id={`${prefix}tls.key`}>
+                    <FormLabel marginBottom={key === ''} required={cert !== '' || key !== ''} text={_(t.key)} />
+
+                    {key === '' ? (
+                        <Dropzone
+                            smallPadding
+                            customFileRenders={[{ format: 'pem', icon: 'icon-file-pem' }]}
+                            description={_(t.uploadCertKeyDescription)}
+                            maxFiles={1}
+                            onFilesDrop={(files) => {
+                                setTimeout(() => {
+                                    setValue(`${prefix}tls.key`, stringToPem(files[0]), {
+                                        shouldDirty: true,
+                                        shouldTouch: true,
+                                    })
+                                }, 100)
+                            }}
+                            renderThumbs={false}
+                            title={_(t.uploadCertTitle)}
+                            validator={(file) => nameLengthValidator(file, true)}
+                        />
+                    ) : (
+                        <Spacer type='pt-2'>
                             <CaList
                                 actions={{
-                                    onDelete: () => setValue(`${prefix}tls.cert`, '', { shouldDirty: true, shouldTouch: true }),
-                                    onView: handleViewCert,
+                                    onDelete: () => setValue(`${prefix}tls.key`, '', { shouldDirty: true, shouldTouch: true }),
                                 }}
-                                data={certData}
+                                data={[{ id: 0, name: key, data: [], dataChain: '' }]}
                                 i18n={{
                                     title: '',
                                     download: _(g.download),
@@ -231,10 +196,52 @@ const SubStepTls: FC<Props> = (props) => {
                                     view: _(g.view),
                                 }}
                             />
-                        </Loadable>
-                    </Spacer>
-                )}
-            </FormGroup>
+                        </Spacer>
+                    )}
+                </FormGroup>
+
+                <FormGroup id={`${prefix}tls.cert`}>
+                    <FormLabel marginBottom={cert === ''} required={cert !== '' || key !== ''} text={_(t.certificate)} />
+
+                    {cert === '' ? (
+                        <Dropzone
+                            smallPadding
+                            customFileRenders={[{ format: 'pem', icon: 'icon-file-pem' }]}
+                            description={_(t.uploadCertDescription)}
+                            maxFiles={1}
+                            onFilesDrop={(files) => {
+                                setTimeout(() => {
+                                    setValue(`${prefix}tls.cert`, stringToPem(files[0]), {
+                                        shouldDirty: true,
+                                        shouldTouch: true,
+                                    })
+                                }, 100)
+                            }}
+                            renderThumbs={false}
+                            title={_(t.uploadCertTitle)}
+                            validator={(file) => nameLengthValidator(file)}
+                        />
+                    ) : (
+                        <Spacer type='pt-2'>
+                            <Loadable condition={certData.length > 0}>
+                                <CaList
+                                    actions={{
+                                        onDelete: () => setValue(`${prefix}tls.cert`, '', { shouldDirty: true, shouldTouch: true }),
+                                        onView: handleViewCert,
+                                    }}
+                                    data={certData}
+                                    i18n={{
+                                        title: '',
+                                        download: _(g.download),
+                                        delete: _(g.delete),
+                                        view: _(g.view),
+                                    }}
+                                />
+                            </Loadable>
+                        </Spacer>
+                    )}
+                </FormGroup>
+            </FullPageWizard.ToggleConfiguration>
 
             <CaPoolModal
                 data={caModalData?.data}

@@ -2,7 +2,6 @@ import { useMemo } from 'react'
 import { BrowserRouter } from 'react-router-dom'
 import { useAuth } from 'oidc-react'
 import { Global } from '@emotion/react'
-import { Helmet } from 'react-helmet'
 import { RecoilRoot } from 'recoil'
 
 import { InitServices } from '@shared-ui/common/services/init-services'
@@ -11,13 +10,14 @@ import { useLocalStorage } from '@shared-ui/common/hooks'
 import { clientAppSettings, security } from '@shared-ui/common/services'
 import { AppContextType } from '@shared-ui/app/share/AppContext.types'
 import AppContext from '@shared-ui/app/share/AppContext'
+import { useDocumentTitle } from 'usehooks-ts'
 
-import appConfig from '@/config'
 import AppLoader from '@/containers/App/AppLoader/AppLoader'
 import { Props } from './AppInner.types'
 import { deviceStatusListener } from '../../Devices/websockets'
 import { globalStyle } from './AppInner.global.styles'
 import AppLayout from '@/containers/App/AppLayout/AppLayout'
+import appConfig from '@/config'
 
 const AppInner = (props: Props) => {
     const { wellKnownConfig, openTelemetry, collapsed, setCollapsed } = props
@@ -40,6 +40,8 @@ const AppInner = (props: Props) => {
         [footerExpanded, collapsed, setCollapsed, setFooterExpanded, wellKnownConfig, openTelemetry]
     )
 
+    useDocumentTitle(appConfig.appName)
+
     if (!userData || isLoading) {
         return <AppLoader />
     } else {
@@ -57,7 +59,6 @@ const AppInner = (props: Props) => {
         <RecoilRoot>
             <AppContext.Provider value={contextValue}>
                 <InitServices deviceStatusListener={deviceStatusListener} />
-                <Helmet defaultTitle={appConfig.appName} titleTemplate={`%s | ${appConfig.appName}`} />
                 <BrowserRouter>
                     <AppLayout
                         buildInformation={wellKnownConfig?.buildInfo}
