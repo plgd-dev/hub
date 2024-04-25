@@ -114,6 +114,19 @@ func resourceEventsMatcher(r *http.Request, rm *mux.RouteMatch) bool {
 	return false
 }
 
+func thingMatcher(r *http.Request, rm *mux.RouteMatch) bool {
+	// /api/v1/things/{deviceId}
+	paths := matchPrefixAndSplitURIPath(r.RequestURI, uri.Things)
+	if len(paths) == 1 {
+		if rm.Vars == nil {
+			rm.Vars = make(map[string]string)
+		}
+		rm.Vars[uri.DeviceIDKey] = unescapeString(paths[0])
+		return true
+	}
+	return false
+}
+
 func wsRequestMutator(incoming, outgoing *http.Request) *http.Request {
 	outgoing.Method = http.MethodPost
 	accept := getAccept(incoming)
@@ -173,6 +186,7 @@ func NewRequestHandler(config *Config, r *mux.Router, client *client.Client) (*R
 	r.HandleFunc(uri.AliasDeviceEvents, requestHandler.getEvents).Methods(http.MethodGet)
 	r.HandleFunc(uri.Configuration, requestHandler.getHubConfiguration).Methods(http.MethodGet)
 	r.HandleFunc(uri.HubConfiguration, requestHandler.getHubConfiguration).Methods(http.MethodGet)
+	r.HandleFunc(uri.Things, requestHandler.getThings).Methods(http.MethodGet)
 
 	r.PathPrefix(uri.Devices).Methods(http.MethodPost).MatcherFunc(resourceLinksMatcher).HandlerFunc(requestHandler.createResource)
 	r.PathPrefix(uri.Devices).Methods(http.MethodGet).MatcherFunc(resourcePendingCommandsMatcher).HandlerFunc(requestHandler.getResourcePendingCommands)
@@ -180,6 +194,8 @@ func NewRequestHandler(config *Config, r *mux.Router, client *client.Client) (*R
 	r.PathPrefix(uri.Devices).Methods(http.MethodGet).MatcherFunc(resourceMatcher).HandlerFunc(requestHandler.getResource)
 	r.PathPrefix(uri.Devices).Methods(http.MethodPut).MatcherFunc(resourceMatcher).HandlerFunc(requestHandler.updateResource)
 	r.PathPrefix(uri.Devices).Methods(http.MethodGet).MatcherFunc(resourceEventsMatcher).HandlerFunc(requestHandler.getEvents)
+
+	r.PathPrefix(uri.Things).Methods(http.MethodGet).MatcherFunc(thingMatcher).HandlerFunc(requestHandler.getThing)
 
 	// register grpc-proxy handler
 	if err := pb.RegisterGrpcGatewayHandlerClient(context.Background(), requestHandler.mux, requestHandler.client.GrpcGatewayClient()); err != nil {

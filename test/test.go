@@ -2,6 +2,7 @@ package test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -13,6 +14,7 @@ import (
 
 	deviceClient "github.com/plgd-dev/device/v2/client"
 	"github.com/plgd-dev/device/v2/client/core"
+	bridgeDevice "github.com/plgd-dev/device/v2/cmd/bridge-device/device"
 	deviceCoap "github.com/plgd-dev/device/v2/pkg/net/coap"
 	"github.com/plgd-dev/device/v2/schema"
 	"github.com/plgd-dev/device/v2/schema/acl"
@@ -198,6 +200,10 @@ func TestResourceLightInstanceHref(id string) string {
 
 func TestResourceSwitchesInstanceHref(id string) string {
 	return TestResourceSwitchesHref + "/" + id
+}
+
+func TestBridgeDeviceInstanceName(id string) string {
+	return "bridged-device-" + id
 }
 
 type LightResourceRepresentation struct {
@@ -570,7 +576,7 @@ func OnboardDeviceForClient(ctx context.Context, t *testing.T, c pb.GrpcGatewayC
 		}
 		CheckProtobufs(t, expectedEvent, ev, RequireToCheckFunc(require.Equal))
 		onboard()
-		WaitForDevice(t, subClient, d.GetID(), ev.GetSubscriptionId(), ev.GetCorrelationId(), expectedResources)
+		WaitForDevice(t, subClient, d, ev.GetSubscriptionId(), ev.GetCorrelationId(), expectedResources)
 		err = subClient.CloseSend()
 		require.NoError(t, err)
 	} else {
@@ -606,7 +612,7 @@ func OffBoardDevSim(ctx context.Context, t *testing.T, deviceID string) {
 	OffboardDevice(ctx, t, ocf.NewDevice(deviceID, TestDeviceName))
 }
 
-func WaitForDevice(t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, deviceID, subID, correlationID string, expectedResources []schema.ResourceLink) {
+func WaitForDevice(t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, dev device.Device, subID, correlationID string, expectedResources []schema.ResourceLink) {
 	getID := func(ev *pb.Event) string {
 		switch v := ev.GetType().(type) {
 		case *pb.Event_DeviceRegistered_:
@@ -638,7 +644,7 @@ func WaitForDevice(t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, 
 				val.DeviceMetadataUpdated.GetConnection().ConnectedAt = 0
 				require.NotEmpty(t, val.DeviceMetadataUpdated.GetConnection().GetServiceId())
 				val.DeviceMetadataUpdated.GetConnection().ServiceId = ""
-				if TestDeviceType != device.Bridged && !config.COAP_GATEWAY_UDP_ENABLED {
+				if dev.GetType() != device.Bridged && !config.COAP_GATEWAY_UDP_ENABLED {
 					// TODO: fix bug in iotivity-lite, for DTLS it is not fill endpoints
 					require.NotEmpty(t, val.DeviceMetadataUpdated.GetConnection().GetLocalEndpoints())
 				}
@@ -675,7 +681,7 @@ func WaitForDevice(t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, 
 			CorrelationId:  correlationID,
 			Type: &pb.Event_DeviceRegistered_{
 				DeviceRegistered: &pb.Event_DeviceRegistered{
-					DeviceIds: []string{deviceID},
+					DeviceIds: []string{dev.GetID()},
 					EventMetadata: &isEvents.EventMetadata{
 						HubId: config.HubID(),
 					},
@@ -695,7 +701,7 @@ func WaitForDevice(t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, 
 			CorrelationId:  correlationID,
 			Type: &pb.Event_DeviceMetadataUpdated{
 				DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
-					DeviceId: deviceID,
+					DeviceId: dev.GetID(),
 					Connection: &commands.Connection{
 						Status:   commands.Connection_ONLINE,
 						Protocol: StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
@@ -723,7 +729,7 @@ func WaitForDevice(t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, 
 			CorrelationId:  correlationID,
 			Type: &pb.Event_DeviceMetadataUpdated{
 				DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
-					DeviceId: deviceID,
+					DeviceId: dev.GetID(),
 					Connection: &commands.Connection{
 						Status:   commands.Connection_ONLINE,
 						Protocol: StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
@@ -751,7 +757,7 @@ func WaitForDevice(t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, 
 			CorrelationId:  correlationID,
 			Type: &pb.Event_DeviceMetadataUpdated{
 				DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
-					DeviceId: deviceID,
+					DeviceId: dev.GetID(),
 					Connection: &commands.Connection{
 						Status:   commands.Connection_ONLINE,
 						Protocol: StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
@@ -768,8 +774,8 @@ func WaitForDevice(t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, 
 			CorrelationId:  correlationID,
 			Type: &pb.Event_ResourcePublished{
 				ResourcePublished: &events.ResourceLinksPublished{
-					DeviceId:  deviceID,
-					Resources: ResourceLinksToResources(deviceID, expectedResources),
+					DeviceId:  dev.GetID(),
+					Resources: ResourceLinksToResources(dev.GetID(), expectedResources),
 				},
 			},
 		},
@@ -777,14 +783,14 @@ func WaitForDevice(t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, 
 	for _, r := range expectedResources {
 		expectedEvents[getID(&pb.Event{Type: &pb.Event_ResourceChanged{
 			ResourceChanged: &events.ResourceChanged{
-				ResourceId: commands.NewResourceID(deviceID, r.Href),
+				ResourceId: commands.NewResourceID(dev.GetID(), r.Href),
 			},
 		}})] = &pb.Event{
 			SubscriptionId: subID,
 			CorrelationId:  correlationID,
 			Type: &pb.Event_ResourceChanged{
 				ResourceChanged: &events.ResourceChanged{
-					ResourceId:    commands.NewResourceID(deviceID, r.Href),
+					ResourceId:    commands.NewResourceID(dev.GetID(), r.Href),
 					Status:        commands.Status_OK,
 					ResourceTypes: r.ResourceTypes,
 				},
@@ -824,12 +830,12 @@ func MustGetHostname() string {
 	return n
 }
 
-func MustFindDeviceByName(name string) (deviceID string) {
+func MustFindDeviceByName(name string, getResourceOpts ...device.GetResourceOpts) (deviceID string) {
 	var err error
 	for i := 0; i < 3; i++ {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
-		deviceID, err = device.FindDeviceByName(ctx, name, nil)
+		deviceID, err = device.FindDeviceByName(ctx, name, getResourceOpts...)
 		if err == nil {
 			return deviceID
 		}
@@ -837,12 +843,20 @@ func MustFindDeviceByName(name string) (deviceID string) {
 	panic(err)
 }
 
+func GetBridgeDeviceConfig() (bridgeDevice.Config, error) {
+	cfgFile := os.Getenv("TEST_BRIDGE_DEVICE_CONFIG")
+	if cfgFile == "" {
+		return bridgeDevice.Config{}, errors.New("TEST_BRIDGE_DEVICE_CONFIG not set")
+	}
+	return bridgeDevice.LoadConfig(cfgFile)
+}
+
 func MustFindTestDevice() device.Device {
-	var getResourceOpts func(*core.Device) deviceCoap.OptionFunc
+	var getResourceOpts []device.GetResourceOpts
 	if TestDeviceType == device.Bridged {
-		getResourceOpts = func(d *core.Device) deviceCoap.OptionFunc {
+		getResourceOpts = append(getResourceOpts, func(d *core.Device) deviceCoap.OptionFunc {
 			return deviceCoap.WithQuery("di=" + d.DeviceID())
-		}
+		})
 	}
 
 	var deviceID string
@@ -850,7 +864,7 @@ func MustFindTestDevice() device.Device {
 	for i := 0; i < 3; i++ {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
-		deviceID, err = device.FindDeviceByName(ctx, TestDeviceName, getResourceOpts)
+		deviceID, err = device.FindDeviceByName(ctx, TestDeviceName, getResourceOpts...)
 		if err == nil {
 			break
 		}
@@ -861,7 +875,11 @@ func MustFindTestDevice() device.Device {
 	}
 
 	if TestDeviceType == device.Bridged {
-		return bridge.NewDevice(deviceID, TestDeviceName)
+		bridgeDeviceCfg, err := GetBridgeDeviceConfig()
+		if err != nil {
+			panic(err)
+		}
+		return bridge.NewDevice(deviceID, TestDeviceName, bridgeDeviceCfg.NumResourcesPerDevice, true)
 	}
 	return ocf.NewDevice(deviceID, TestDeviceName)
 }

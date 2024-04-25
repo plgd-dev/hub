@@ -34,6 +34,7 @@ import (
 	coapgwTestService "github.com/plgd-dev/hub/v2/test/coap-gateway/service"
 	coapgwTest "github.com/plgd-dev/hub/v2/test/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/test/config"
+	"github.com/plgd-dev/hub/v2/test/device/ocf"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/plgd-dev/hub/v2/test/service"
@@ -299,13 +300,13 @@ func testPreregisterVirtualDevice(ctx context.Context, t *testing.T, deviceID st
 	require.NoError(t, err)
 	require.NotEmpty(t, ev.GetOperationProcessed())
 	require.Equal(t, pb.Event_OperationProcessed_ErrorStatus_OK, ev.GetOperationProcessed().GetErrorStatus().GetCode())
-	virtualdevice.CreateDevice(ctx, t, "name-"+deviceID, deviceID, numResources, test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME), isClient, raClient)
-	resources := virtualdevice.CreateDeviceResourceLinks(deviceID, numResources)
+	virtualdevice.CreateDevice(ctx, t, "name-"+deviceID, deviceID, numResources, false, test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME), isClient, raClient)
+	resources := virtualdevice.CreateDeviceResourceLinks(deviceID, numResources, false)
 	links := make([]schema.ResourceLink, 0, len(resources))
 	for _, r := range resources {
 		links = append(links, r.ToSchema())
 	}
-	test.WaitForDevice(t, client, deviceID, ev.GetSubscriptionId(), ev.GetCorrelationId(), links)
+	test.WaitForDevice(t, client, ocf.NewDevice(deviceID, test.TestDeviceName), ev.GetSubscriptionId(), ev.GetCorrelationId(), links)
 }
 
 func testValidateResourceLinks(ctx context.Context, t *testing.T, deviceID string, grpcClient pb.GrpcGatewayClient, _ raPb.ResourceAggregateClient) {

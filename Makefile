@@ -40,7 +40,7 @@ TEST_DATABASE ?= mongodb
 CERT_TOOL_SIGN_ALG ?= ECDSA-SHA256
 # supported values: P256, P384, P521
 CERT_TOOL_ELLIPTIC_CURVE ?= P256
-CERT_TOOL_IMAGE=ghcr.io/plgd-dev/hub/cert-tool:vnext
+CERT_TOOL_IMAGE = ghcr.io/plgd-dev/hub/cert-tool:vnext
 
 SUBDIRS := bundle certificate-authority cloud2cloud-connector cloud2cloud-gateway coap-gateway grpc-gateway resource-aggregate resource-directory http-gateway identity-store test/oauth-server tools/cert-tool
 .PHONY: $(SUBDIRS) push proto/generate clean build test env mongo nats certificates hub-build http-gateway-www simulators
@@ -225,6 +225,65 @@ simulators: simulators/clean
 	$(call RUN-DOCKER-DEVICE,$(DEVICE_SIMULATOR_RES_OBSERVABLE_NAME),$(DEVICE_SIMULATOR_RES_OBSERVABLE_IMG))
 .PHONY: simulators
 
+BRIDGE_DEVICE_SRC_DIR = $(WORKING_DIRECTORY)/test/bridge-device
+# BRIDGE_DEVICE_IMAGE = ghcr.io/plgd-dev/device/bridge-device:vnext
+BRIDGE_DEVICE_IMAGE = ghcr.io/plgd-dev/device/bridge-device:vnext-pr464
+BRIDGE_DEVICE_NAME = bridgedev
+BRIDGE_DEVICE_ID ?= 8f596b43-29c0-4147-8b40-e99268ab30f7
+BRIDGE_DEVICE_RESOURCES_PER_DEVICE ?= 3
+BRIDGE_DEVICES_COUNT ?= 3
+
+define SET-BRIDGE-DEVICE-CONFIG
+	yq -i '.apis.coap.id = "$(BRIDGE_DEVICE_ID)"' $(1)
+	yq -i '.apis.coap.externalAddresses=["127.0.0.1:15683","[::1]:15683"]' $(1)
+	yq -i '.cloud.enabled=true' $(1)
+	yq -i '.cloud.cloudID="$(CLOUD_SID)"' $(1)
+	yq -i '.cloud.tls.caPoolPath="$(2)/certs/root_ca.crt"' $(1)
+	yq -i '.cloud.tls.keyPath="$(2)/certs/coap.key"' $(1)
+	yq -i '.cloud.tls.certPath="$(2)/certs/coap.crt"' $(1)
+	yq -i '.numGeneratedBridgedDevices=$(BRIDGE_DEVICES_COUNT)' $(1)
+	yq -i '.numResourcesPerDevice=$(BRIDGE_DEVICE_RESOURCES_PER_DEVICE)' $(1)
+	yq -i '.thingDescription.enabled=true' $(1)
+	yq -i '.thingDescription.file="$(2)/bridge/bridge-device.jsonld"' $(1)
+endef
+
+# config-docker.yaml -> copy of configuration with paths valid inside docker container
+# config-test.yaml -> copy of configuration with paths valid on host machine
+simulators/bridge/env: simulators/bridge/clean certificates
+	mkdir -p $(WORKING_DIRECTORY)/.tmp/bridge
+	cp $(BRIDGE_DEVICE_SRC_DIR)/bridge-device.jsonld $(WORKING_DIRECTORY)/.tmp/bridge/
+	cp $(BRIDGE_DEVICE_SRC_DIR)/config.yaml $(WORKING_DIRECTORY)/.tmp/bridge/config-docker.yaml
+	$(call SET-BRIDGE-DEVICE-CONFIG,$(WORKING_DIRECTORY)/.tmp/bridge/config-docker.yaml,)
+	cp $(BRIDGE_DEVICE_SRC_DIR)/config.yaml $(WORKING_DIRECTORY)/.tmp/bridge/config-test.yaml
+	$(call SET-BRIDGE-DEVICE-CONFIG,$(WORKING_DIRECTORY)/.tmp/bridge/config-test.yaml,$(WORKING_DIRECTORY)/.tmp)
+
+.PHONY: simulators/bridge/env
+
+define RUN-BRIDGE-DOCKER-DEVICE
+	docker pull $(BRIDGE_DEVICE_IMAGE) ; \
+	docker run \
+		-d \
+		--name=$(BRIDGE_DEVICE_NAME) \
+		--network=host \
+		-v $(WORKING_DIRECTORY)/.tmp/certs:/certs \
+		-v $(WORKING_DIRECTORY)/.tmp/bridge:/bridge \
+		$(BRIDGE_DEVICE_IMAGE) -config /bridge/config-docker.yaml
+endef
+
+simulators/bridge: simulators/bridge/env
+	$(call RUN-BRIDGE-DOCKER-DEVICE)
+
+.PHONY: simulators/bridge
+
+simulators/bridge/clean:
+	rm -rf $(WORKING_DIRECTORY)/.tmp/bridge || :
+	$(call REMOVE-DOCKER-DEVICE,$(BRIDGE_DEVICE_NAME))
+
+.PHONY: simulators/bridge/clean
+
+simulators: simulators/bridge
+simulators/clean: simulators/bridge/clean
+
 env/test/mem: clean certificates nats mongo privateKeys scylla
 .PHONY: env/test/mem
 
@@ -235,6 +294,7 @@ define RUN-DOCKER
 	docker run \
 		--rm \
 		--network=host \
+		-v $(WORKING_DIRECTORY)/.tmp/bridge:/bridge \
 		-v $(WORKING_DIRECTORY)/.tmp/certs:/certs \
 		-v $(WORKING_DIRECTORY)/.tmp/coverage:/coverage \
 		-v $(WORKING_DIRECTORY)/.tmp/report:/report \
@@ -253,6 +313,7 @@ define RUN-DOCKER
 		-e TEST_OAUTH_SERVER_ID_TOKEN_PRIVATE_KEY=/privKeys/idTokenKey.pem \
 		-e TEST_OAUTH_SERVER_ACCESS_TOKEN_PRIVATE_KEY=/privKeys/accessTokenKey.pem \
 		-e TEST_HTTP_GW_WWW_ROOT=/usr/local/www \
+		-e TEST_BRIDGE_DEVICE_CONFIG=/bridge/config-docker.yaml \
 		hub-test \
 		$(1) ;
 endef

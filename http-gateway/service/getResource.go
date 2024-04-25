@@ -47,7 +47,7 @@ func getETags(r *http.Request) [][]byte {
 	return etags
 }
 
-func (requestHandler *RequestHandler) getResourceFromTwin(w http.ResponseWriter, r *http.Request, resourceID *pb.ResourceIdFilter) {
+func (requestHandler *RequestHandler) getResourceFromTwin(r *http.Request, resourceID *pb.ResourceIdFilter) (*httptest.ResponseRecorder, error) {
 	type Options struct {
 		ResourceIDFilter []string `url:"httpResourceIdFilter"`
 	}
@@ -57,33 +57,27 @@ func (requestHandler *RequestHandler) getResourceFromTwin(w http.ResponseWriter,
 
 	v, err := query.Values(opt)
 	if err != nil {
-		serverMux.WriteError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, errFmtFromTwin, resourceID, err))
-		return
+		return nil, err
 	}
 	r.URL.Path = uri.Resources
 	r.URL.RawQuery = v.Encode()
 	rec := httptest.NewRecorder()
 	requestHandler.mux.ServeHTTP(rec, r)
-
-	toSimpleResponse(w, rec, func(w http.ResponseWriter, err error) {
-		serverMux.WriteError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, errFmtFromTwin, resourceID, err))
-	}, streamResponseKey)
+	return rec, nil
 }
 
-func (requestHandler *RequestHandler) getResource(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	deviceID := vars[uri.DeviceIDKey]
-	resourceHref := vars[uri.ResourceHrefKey]
-	twin := r.URL.Query().Get(uri.TwinQueryKey)
-	resourceInterface := r.URL.Query().Get(uri.ResourceInterfaceQueryKey)
+func (requestHandler *RequestHandler) serveResourceRequest(r *http.Request, deviceID, resourceHref, twin, resourceInterface string) (*httptest.ResponseRecorder, error) {
 	resourceID := pb.ResourceIdFilter{
 		ResourceId: commands.NewResourceID(deviceID, resourceHref),
 		Etag:       getETags(r),
 	}
 
 	if (twin == "" || strings.ToLower(twin) == "true") && resourceInterface == "" {
-		requestHandler.getResourceFromTwin(w, r, &resourceID)
-		return
+		rec, err := requestHandler.getResourceFromTwin(r, &resourceID)
+		if err != nil {
+			return nil, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, errFmtFromTwin, &resourceID, err)
+		}
+		return rec, nil
 	}
 
 	query := r.URL.Query()
@@ -97,7 +91,21 @@ func (requestHandler *RequestHandler) getResource(w http.ResponseWriter, r *http
 
 	rec := httptest.NewRecorder()
 	requestHandler.mux.ServeHTTP(rec, r)
+	return rec, nil
+}
+
+func (requestHandler *RequestHandler) getResource(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	deviceID := vars[uri.DeviceIDKey]
+	resourceHref := vars[uri.ResourceHrefKey]
+	twin := r.URL.Query().Get(uri.TwinQueryKey)
+	resourceInterface := r.URL.Query().Get(uri.ResourceInterfaceQueryKey)
+	rec, err := requestHandler.serveResourceRequest(r, deviceID, resourceHref, twin, resourceInterface)
+	if err != nil {
+		serverMux.WriteError(w, err)
+		return
+	}
 	toSimpleResponse(w, rec, func(w http.ResponseWriter, err error) {
-		serverMux.WriteError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot get resource('%v') from the device: %v", resourceID.ToString(), err))
-	})
+		serverMux.WriteError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot get resource('%v/%v') from the device: %v", deviceID, resourceHref, err))
+	}, streamResponseKey)
 }
