@@ -30,11 +30,6 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 
 option go_package = "github.com/plgd-dev/hub/v2/snapshot-service/pb;pb";
 
-message Id {
-  string id = 1;
-  uint64 version = 2;
-}
-
 message IdFilter {
   string id = 1;
   oneof version {
@@ -45,9 +40,10 @@ message IdFilter {
 }
 
 message Condition {
-  Id id = 1;
-  string name = 2;
-  bool enabled = 3;
+  string id = 1;
+  uint64 version = 2;
+  string name = 3;
+  bool enabled = 4;
   repeated string device_id_filter = 5;
   repeated string resource_type_filter = 6;
   repeated string resource_href_filter = 7;
@@ -62,10 +58,6 @@ message Condition {
   InvokeConfiguration invoke_configuration = 9;
 }
 
-message CreateConditionReponse { Id id = 1; }
-message UpdateConditionResponse {
-  Id id = 1; // for new version 
-} 
 message GetConditionsRequest { repeated IdFilter id_filter = 1; }
 message DeleteConditionsRequest { repeated IdFilter id_filter = 1; }
 message DeleteConditionsResponse { int64 count = 1; }
@@ -83,18 +75,14 @@ message Configuration {
       ResourceTypes resource_types = 2; 
     }
     resourceaggregate.pb.Content content = 3;
-    string resource_interface = 6; // optional update interface
-    int64 time_to_live = 7; // optional update command time to live
+    int64 time_to_live = 4; // optional update command time to live
   }
-  Id id = 1;
-  string name = 2;
-  repeated Resource resources = 3;
+  string id = 1;
+  uint64 version = 2;
+  string name = 3;
+  repeated Resource resources = 4;
 }
 
-message CreateConfigurationReponse { Id id = 1; }
-message UpdateConfigurationReponse  {
-  Id id = 1; // for new version 
-} 
 message GetConfigurationsRequest { repeated IdFilter id_filter = 1; }
 message DeleteConfigurationsRequest { repeated IdFilter id_filter = 1; }
 message DeleteConfigurationsResponse { int64 count = 1; }
@@ -118,10 +106,14 @@ message AppliedConfiguration {
   }
   string id = 1;
   string device_id = 2;
-  Id configuration_id = 3;
+  message RelationTo {
+    string id = 1;
+    uint64 version = 2;
+  }
+  RelationTo configuration_id = 3;
   oneof executed_by {
     bool on_demaned = 4;
-    Id condition_id = 5;
+    RelationTo condition_id = 5;
   }
   repeated Resource resources = 6;
 }
@@ -129,8 +121,8 @@ message AppliedConfiguration {
 message InvokeConfigurationRequest {
   string id = 1;
   repeated string device_id_filter = 2; // at least one must be set
-  bool force = 3;
-  bool keep_updating_on_failure = 4;
+  bool force = 3; // force update even if the configuration has already been applied to device
+  bool keep_updating_on_failure = 4; // if any update resource fails continue with next resource
 }
 
 message GetAppliedConfigurationsRequest {
@@ -144,7 +136,7 @@ message DeleteAppliedConfigurationsRequest { repeated string id_filter = 1; }
 message DeleteAppliedConfigurationsResponse { int64 count = 1; }
 
 service SnapshotService {
-  rpc CreateCondition(Condition) returns (CreateConditionReponse) {
+  rpc CreateCondition(Condition) returns (Condition) {
     option (google.api.http) = {
       post: "/api/v1/conditions";
       body: "*";
@@ -172,9 +164,9 @@ service SnapshotService {
     };
   }
 
-  rpc UpdateCondition(Condition) returns (UpdateConditionResponse) {
+  rpc UpdateCondition(Condition) returns (Condition) {
     option (google.api.http) = {
-      put: "/api/v1/conditions/{id.id}";
+      put: "/api/v1/conditions/{id}";
       body: "*";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
@@ -182,7 +174,7 @@ service SnapshotService {
     };
   }
 
-  rpc CreateConfiguration(Configuration) returns (CreateConfigurationReponse) {
+  rpc CreateConfiguration(Configuration) returns (Configuration) {
     option (google.api.http) = {
       post: "/api/v1/configurations";
       body: "*";
@@ -210,9 +202,9 @@ service SnapshotService {
     };
   }
 
-  rpc UpdateConfiguration(Configuration) returns (UpdateConfigurationReponse) {
+  rpc UpdateConfiguration(Configuration) returns (Configuration) {
     option (google.api.http) = {
-      put: "/api/v1/configurations/{id.id}";
+      put: "/api/v1/configurations/{id}";
       body: "*";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {

@@ -183,6 +183,10 @@
                 </li>
               
                 <li>
+                  <a href="#snapshotservice.pb.AppliedConfiguration.RelationTo"><span class="badge">M</span>AppliedConfiguration.RelationTo</a>
+                </li>
+              
+                <li>
                   <a href="#snapshotservice.pb.AppliedConfiguration.Resource"><span class="badge">M</span>AppliedConfiguration.Resource</a>
                 </li>
               
@@ -200,14 +204,6 @@
               
                 <li>
                   <a href="#snapshotservice.pb.Configuration.Resource"><span class="badge">M</span>Configuration.Resource</a>
-                </li>
-              
-                <li>
-                  <a href="#snapshotservice.pb.CreateConditionReponse"><span class="badge">M</span>CreateConditionReponse</a>
-                </li>
-              
-                <li>
-                  <a href="#snapshotservice.pb.CreateConfigurationReponse"><span class="badge">M</span>CreateConfigurationReponse</a>
                 </li>
               
                 <li>
@@ -247,10 +243,6 @@
                 </li>
               
                 <li>
-                  <a href="#snapshotservice.pb.Id"><span class="badge">M</span>Id</a>
-                </li>
-              
-                <li>
                   <a href="#snapshotservice.pb.IdFilter"><span class="badge">M</span>IdFilter</a>
                 </li>
               
@@ -260,14 +252,6 @@
               
                 <li>
                   <a href="#snapshotservice.pb.ResourceTypes"><span class="badge">M</span>ResourceTypes</a>
-                </li>
-              
-                <li>
-                  <a href="#snapshotservice.pb.UpdateConditionResponse"><span class="badge">M</span>UpdateConditionResponse</a>
-                </li>
-              
-                <li>
-                  <a href="#snapshotservice.pb.UpdateConfigurationReponse"><span class="badge">M</span>UpdateConfigurationReponse</a>
                 </li>
               
               
@@ -322,7 +306,7 @@
               
                 <tr>
                   <td>configuration_id</td>
-                  <td><a href="#snapshotservice.pb.Id">Id</a></td>
+                  <td><a href="#snapshotservice.pb.AppliedConfiguration.RelationTo">AppliedConfiguration.RelationTo</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -336,7 +320,7 @@
               
                 <tr>
                   <td>condition_id</td>
-                  <td><a href="#snapshotservice.pb.Id">Id</a></td>
+                  <td><a href="#snapshotservice.pb.AppliedConfiguration.RelationTo">AppliedConfiguration.RelationTo</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -345,6 +329,37 @@
                   <td>resources</td>
                   <td><a href="#snapshotservice.pb.AppliedConfiguration.Resource">AppliedConfiguration.Resource</a></td>
                   <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="snapshotservice.pb.AppliedConfiguration.RelationTo">AppliedConfiguration.RelationTo</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>version</td>
+                  <td><a href="#uint64">uint64</a></td>
+                  <td></td>
                   <td><p> </p></td>
                 </tr>
               
@@ -426,7 +441,14 @@
               
                 <tr>
                   <td>id</td>
-                  <td><a href="#snapshotservice.pb.Id">Id</a></td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>version</td>
+                  <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -537,7 +559,14 @@
               
                 <tr>
                   <td>id</td>
-                  <td><a href="#snapshotservice.pb.Id">Id</a></td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>version</td>
+                  <td><a href="#uint64">uint64</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -595,65 +624,10 @@
                 </tr>
               
                 <tr>
-                  <td>resource_interface</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>optional update interface </p></td>
-                </tr>
-              
-                <tr>
                   <td>time_to_live</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>optional update command time to live </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="snapshotservice.pb.CreateConditionReponse">CreateConditionReponse</h3>
-        <p></p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>id</td>
-                  <td><a href="#snapshotservice.pb.Id">Id</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="snapshotservice.pb.CreateConfigurationReponse">CreateConfigurationReponse</h3>
-        <p></p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>id</td>
-                  <td><a href="#snapshotservice.pb.Id">Id</a></td>
-                  <td></td>
-                  <td><p> </p></td>
                 </tr>
               
             </tbody>
@@ -900,37 +874,6 @@
 
         
       
-        <h3 id="snapshotservice.pb.Id">Id</h3>
-        <p></p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>id</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-              
-                <tr>
-                  <td>version</td>
-                  <td><a href="#uint64">uint64</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
         <h3 id="snapshotservice.pb.IdFilter">IdFilter</h3>
         <p></p>
 
@@ -1004,14 +947,14 @@
                   <td>force</td>
                   <td><a href="#bool">bool</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>force update even if the configuration has already been applied to device </p></td>
                 </tr>
               
                 <tr>
                   <td>keep_updating_on_failure</td>
                   <td><a href="#bool">bool</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>if any update resource fails continue with next resource </p></td>
                 </tr>
               
             </tbody>
@@ -1043,54 +986,6 @@
                   <td><a href="#uint32">uint32</a></td>
                   <td></td>
                   <td><p>minimal number of resources that will be updated </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="snapshotservice.pb.UpdateConditionResponse">UpdateConditionResponse</h3>
-        <p></p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>id</td>
-                  <td><a href="#snapshotservice.pb.Id">Id</a></td>
-                  <td></td>
-                  <td><p>for new version </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="snapshotservice.pb.UpdateConfigurationReponse">UpdateConfigurationReponse</h3>
-        <p></p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>id</td>
-                  <td><a href="#snapshotservice.pb.Id">Id</a></td>
-                  <td></td>
-                  <td><p>for new version </p></td>
                 </tr>
               
             </tbody>
@@ -1164,7 +1059,7 @@
               <tr>
                 <td>CreateCondition</td>
                 <td><a href="#snapshotservice.pb.Condition">Condition</a></td>
-                <td><a href="#snapshotservice.pb.CreateConditionReponse">CreateConditionReponse</a></td>
+                <td><a href="#snapshotservice.pb.Condition">Condition</a></td>
                 <td><p></p></td>
               </tr>
             
@@ -1185,14 +1080,14 @@
               <tr>
                 <td>UpdateCondition</td>
                 <td><a href="#snapshotservice.pb.Condition">Condition</a></td>
-                <td><a href="#snapshotservice.pb.UpdateConditionResponse">UpdateConditionResponse</a></td>
+                <td><a href="#snapshotservice.pb.Condition">Condition</a></td>
                 <td><p></p></td>
               </tr>
             
               <tr>
                 <td>CreateConfiguration</td>
                 <td><a href="#snapshotservice.pb.Configuration">Configuration</a></td>
-                <td><a href="#snapshotservice.pb.CreateConfigurationReponse">CreateConfigurationReponse</a></td>
+                <td><a href="#snapshotservice.pb.Configuration">Configuration</a></td>
                 <td><p></p></td>
               </tr>
             
@@ -1213,7 +1108,7 @@
               <tr>
                 <td>UpdateConfiguration</td>
                 <td><a href="#snapshotservice.pb.Configuration">Configuration</a></td>
-                <td><a href="#snapshotservice.pb.UpdateConfigurationReponse">UpdateConfigurationReponse</a></td>
+                <td><a href="#snapshotservice.pb.Configuration">Configuration</a></td>
                 <td><p></p></td>
               </tr>
             
@@ -1291,7 +1186,7 @@
               <tr>
                 <td>UpdateCondition</td>
                 <td>PUT</td>
-                <td>/api/v1/conditions/{id.id}</td>
+                <td>/api/v1/conditions/{id}</td>
                 <td>*</td>
               </tr>
               
@@ -1331,7 +1226,7 @@
               <tr>
                 <td>UpdateConfiguration</td>
                 <td>PUT</td>
-                <td>/api/v1/configurations/{id.id}</td>
+                <td>/api/v1/configurations/{id}</td>
                 <td>*</td>
               </tr>
               

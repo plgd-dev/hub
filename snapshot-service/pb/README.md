@@ -5,13 +5,12 @@
 
 - [snapshot-service/pb/service.proto](#snapshot-service_pb_service-proto)
     - [AppliedConfiguration](#snapshotservice-pb-AppliedConfiguration)
+    - [AppliedConfiguration.RelationTo](#snapshotservice-pb-AppliedConfiguration-RelationTo)
     - [AppliedConfiguration.Resource](#snapshotservice-pb-AppliedConfiguration-Resource)
     - [Condition](#snapshotservice-pb-Condition)
     - [Condition.InvokeConfiguration](#snapshotservice-pb-Condition-InvokeConfiguration)
     - [Configuration](#snapshotservice-pb-Configuration)
     - [Configuration.Resource](#snapshotservice-pb-Configuration-Resource)
-    - [CreateConditionReponse](#snapshotservice-pb-CreateConditionReponse)
-    - [CreateConfigurationReponse](#snapshotservice-pb-CreateConfigurationReponse)
     - [DeleteAppliedConfigurationsRequest](#snapshotservice-pb-DeleteAppliedConfigurationsRequest)
     - [DeleteAppliedConfigurationsResponse](#snapshotservice-pb-DeleteAppliedConfigurationsResponse)
     - [DeleteConditionsRequest](#snapshotservice-pb-DeleteConditionsRequest)
@@ -21,12 +20,9 @@
     - [GetAppliedConfigurationsRequest](#snapshotservice-pb-GetAppliedConfigurationsRequest)
     - [GetConditionsRequest](#snapshotservice-pb-GetConditionsRequest)
     - [GetConfigurationsRequest](#snapshotservice-pb-GetConfigurationsRequest)
-    - [Id](#snapshotservice-pb-Id)
     - [IdFilter](#snapshotservice-pb-IdFilter)
     - [InvokeConfigurationRequest](#snapshotservice-pb-InvokeConfigurationRequest)
     - [ResourceTypes](#snapshotservice-pb-ResourceTypes)
-    - [UpdateConditionResponse](#snapshotservice-pb-UpdateConditionResponse)
-    - [UpdateConfigurationReponse](#snapshotservice-pb-UpdateConfigurationReponse)
   
     - [AppliedConfiguration.Resource.Status](#snapshotservice-pb-AppliedConfiguration-Resource-Status)
   
@@ -53,10 +49,26 @@
 | ----- | ---- | ----- | ----------- |
 | id | [string](#string) |  |  |
 | device_id | [string](#string) |  |  |
-| configuration_id | [Id](#snapshotservice-pb-Id) |  |  |
+| configuration_id | [AppliedConfiguration.RelationTo](#snapshotservice-pb-AppliedConfiguration-RelationTo) |  |  |
 | on_demaned | [bool](#bool) |  |  |
-| condition_id | [Id](#snapshotservice-pb-Id) |  |  |
+| condition_id | [AppliedConfiguration.RelationTo](#snapshotservice-pb-AppliedConfiguration-RelationTo) |  |  |
 | resources | [AppliedConfiguration.Resource](#snapshotservice-pb-AppliedConfiguration-Resource) | repeated |  |
+
+
+
+
+
+
+<a name="snapshotservice-pb-AppliedConfiguration-RelationTo"></a>
+
+### AppliedConfiguration.RelationTo
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
+| version | [uint64](#uint64) |  |  |
 
 
 
@@ -91,7 +103,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [Id](#snapshotservice-pb-Id) |  |  |
+| id | [string](#string) |  |  |
+| version | [uint64](#uint64) |  |  |
 | name | [string](#string) |  |  |
 | enabled | [bool](#bool) |  |  |
 | device_id_filter | [string](#string) | repeated |  |
@@ -130,7 +143,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [Id](#snapshotservice-pb-Id) |  |  |
+| id | [string](#string) |  |  |
+| version | [uint64](#uint64) |  |  |
 | name | [string](#string) |  |  |
 | resources | [Configuration.Resource](#snapshotservice-pb-Configuration-Resource) | repeated |  |
 
@@ -150,38 +164,7 @@
 | href | [string](#string) |  |  |
 | resource_types | [ResourceTypes](#snapshotservice-pb-ResourceTypes) |  |  |
 | content | [resourceaggregate.pb.Content](#resourceaggregate-pb-Content) |  |  |
-| resource_interface | [string](#string) |  | optional update interface |
 | time_to_live | [int64](#int64) |  | optional update command time to live |
-
-
-
-
-
-
-<a name="snapshotservice-pb-CreateConditionReponse"></a>
-
-### CreateConditionReponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [Id](#snapshotservice-pb-Id) |  |  |
-
-
-
-
-
-
-<a name="snapshotservice-pb-CreateConfigurationReponse"></a>
-
-### CreateConfigurationReponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [Id](#snapshotservice-pb-Id) |  |  |
 
 
 
@@ -326,22 +309,6 @@
 
 
 
-<a name="snapshotservice-pb-Id"></a>
-
-### Id
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
-| version | [uint64](#uint64) |  |  |
-
-
-
-
-
-
 <a name="snapshotservice-pb-IdFilter"></a>
 
 ### IdFilter
@@ -370,8 +337,8 @@
 | ----- | ---- | ----- | ----------- |
 | id | [string](#string) |  |  |
 | device_id_filter | [string](#string) | repeated | at least one must be set |
-| force | [bool](#bool) |  |  |
-| keep_updating_on_failure | [bool](#bool) |  |  |
+| force | [bool](#bool) |  | force update even if the configuration has already been applied to device |
+| keep_updating_on_failure | [bool](#bool) |  | if any update resource fails continue with next resource |
 
 
 
@@ -388,36 +355,6 @@
 | ----- | ---- | ----- | ----------- |
 | types | [string](#string) | repeated | all types must match resource |
 | min | [uint32](#uint32) |  | minimal number of resources that will be updated |
-
-
-
-
-
-
-<a name="snapshotservice-pb-UpdateConditionResponse"></a>
-
-### UpdateConditionResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [Id](#snapshotservice-pb-Id) |  | for new version |
-
-
-
-
-
-
-<a name="snapshotservice-pb-UpdateConfigurationReponse"></a>
-
-### UpdateConfigurationReponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id | [Id](#snapshotservice-pb-Id) |  | for new version |
 
 
 
@@ -453,14 +390,14 @@
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| CreateCondition | [Condition](#snapshotservice-pb-Condition) | [CreateConditionReponse](#snapshotservice-pb-CreateConditionReponse) |  |
+| CreateCondition | [Condition](#snapshotservice-pb-Condition) | [Condition](#snapshotservice-pb-Condition) |  |
 | GetConditions | [GetConditionsRequest](#snapshotservice-pb-GetConditionsRequest) | [Condition](#snapshotservice-pb-Condition) stream |  |
 | DeleteConditions | [DeleteConditionsRequest](#snapshotservice-pb-DeleteConditionsRequest) | [DeleteConditionsResponse](#snapshotservice-pb-DeleteConditionsResponse) |  |
-| UpdateCondition | [Condition](#snapshotservice-pb-Condition) | [UpdateConditionResponse](#snapshotservice-pb-UpdateConditionResponse) |  |
-| CreateConfiguration | [Configuration](#snapshotservice-pb-Configuration) | [CreateConfigurationReponse](#snapshotservice-pb-CreateConfigurationReponse) |  |
+| UpdateCondition | [Condition](#snapshotservice-pb-Condition) | [Condition](#snapshotservice-pb-Condition) |  |
+| CreateConfiguration | [Configuration](#snapshotservice-pb-Configuration) | [Configuration](#snapshotservice-pb-Configuration) |  |
 | GetConfigurations | [GetConfigurationsRequest](#snapshotservice-pb-GetConfigurationsRequest) | [Configuration](#snapshotservice-pb-Configuration) stream |  |
 | DeleteConfigurations | [DeleteConfigurationsRequest](#snapshotservice-pb-DeleteConfigurationsRequest) | [DeleteConfigurationsResponse](#snapshotservice-pb-DeleteConfigurationsResponse) |  |
-| UpdateConfiguration | [Configuration](#snapshotservice-pb-Configuration) | [UpdateConfigurationReponse](#snapshotservice-pb-UpdateConfigurationReponse) |  |
+| UpdateConfiguration | [Configuration](#snapshotservice-pb-Configuration) | [Configuration](#snapshotservice-pb-Configuration) |  |
 | InvokeConfiguration | [InvokeConfigurationRequest](#snapshotservice-pb-InvokeConfigurationRequest) | [AppliedConfiguration](#snapshotservice-pb-AppliedConfiguration) stream | streaming process of update configuration to invoker |
 | GetAppliedConfigurations | [GetAppliedConfigurationsRequest](#snapshotservice-pb-GetAppliedConfigurationsRequest) | [AppliedConfiguration](#snapshotservice-pb-AppliedConfiguration) stream |  |
 | DeleteAppliedConfigurations | [DeleteAppliedConfigurationsRequest](#snapshotservice-pb-DeleteAppliedConfigurationsRequest) | [DeleteAppliedConfigurationsResponse](#snapshotservice-pb-DeleteAppliedConfigurationsResponse) |  |

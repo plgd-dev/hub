@@ -36,14 +36,14 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SnapshotServiceClient interface {
-	CreateCondition(ctx context.Context, in *Condition, opts ...grpc.CallOption) (*CreateConditionReponse, error)
+	CreateCondition(ctx context.Context, in *Condition, opts ...grpc.CallOption) (*Condition, error)
 	GetConditions(ctx context.Context, in *GetConditionsRequest, opts ...grpc.CallOption) (SnapshotService_GetConditionsClient, error)
 	DeleteConditions(ctx context.Context, in *DeleteConditionsRequest, opts ...grpc.CallOption) (*DeleteConditionsResponse, error)
-	UpdateCondition(ctx context.Context, in *Condition, opts ...grpc.CallOption) (*UpdateConditionResponse, error)
-	CreateConfiguration(ctx context.Context, in *Configuration, opts ...grpc.CallOption) (*CreateConfigurationReponse, error)
+	UpdateCondition(ctx context.Context, in *Condition, opts ...grpc.CallOption) (*Condition, error)
+	CreateConfiguration(ctx context.Context, in *Configuration, opts ...grpc.CallOption) (*Configuration, error)
 	GetConfigurations(ctx context.Context, in *GetConfigurationsRequest, opts ...grpc.CallOption) (SnapshotService_GetConfigurationsClient, error)
 	DeleteConfigurations(ctx context.Context, in *DeleteConfigurationsRequest, opts ...grpc.CallOption) (*DeleteConfigurationsResponse, error)
-	UpdateConfiguration(ctx context.Context, in *Configuration, opts ...grpc.CallOption) (*UpdateConfigurationReponse, error)
+	UpdateConfiguration(ctx context.Context, in *Configuration, opts ...grpc.CallOption) (*Configuration, error)
 	// streaming process of update configuration to invoker
 	InvokeConfiguration(ctx context.Context, in *InvokeConfigurationRequest, opts ...grpc.CallOption) (SnapshotService_InvokeConfigurationClient, error)
 	GetAppliedConfigurations(ctx context.Context, in *GetAppliedConfigurationsRequest, opts ...grpc.CallOption) (SnapshotService_GetAppliedConfigurationsClient, error)
@@ -58,8 +58,8 @@ func NewSnapshotServiceClient(cc grpc.ClientConnInterface) SnapshotServiceClient
 	return &snapshotServiceClient{cc}
 }
 
-func (c *snapshotServiceClient) CreateCondition(ctx context.Context, in *Condition, opts ...grpc.CallOption) (*CreateConditionReponse, error) {
-	out := new(CreateConditionReponse)
+func (c *snapshotServiceClient) CreateCondition(ctx context.Context, in *Condition, opts ...grpc.CallOption) (*Condition, error) {
+	out := new(Condition)
 	err := c.cc.Invoke(ctx, SnapshotService_CreateCondition_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -108,8 +108,8 @@ func (c *snapshotServiceClient) DeleteConditions(ctx context.Context, in *Delete
 	return out, nil
 }
 
-func (c *snapshotServiceClient) UpdateCondition(ctx context.Context, in *Condition, opts ...grpc.CallOption) (*UpdateConditionResponse, error) {
-	out := new(UpdateConditionResponse)
+func (c *snapshotServiceClient) UpdateCondition(ctx context.Context, in *Condition, opts ...grpc.CallOption) (*Condition, error) {
+	out := new(Condition)
 	err := c.cc.Invoke(ctx, SnapshotService_UpdateCondition_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -117,8 +117,8 @@ func (c *snapshotServiceClient) UpdateCondition(ctx context.Context, in *Conditi
 	return out, nil
 }
 
-func (c *snapshotServiceClient) CreateConfiguration(ctx context.Context, in *Configuration, opts ...grpc.CallOption) (*CreateConfigurationReponse, error) {
-	out := new(CreateConfigurationReponse)
+func (c *snapshotServiceClient) CreateConfiguration(ctx context.Context, in *Configuration, opts ...grpc.CallOption) (*Configuration, error) {
+	out := new(Configuration)
 	err := c.cc.Invoke(ctx, SnapshotService_CreateConfiguration_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -167,8 +167,8 @@ func (c *snapshotServiceClient) DeleteConfigurations(ctx context.Context, in *De
 	return out, nil
 }
 
-func (c *snapshotServiceClient) UpdateConfiguration(ctx context.Context, in *Configuration, opts ...grpc.CallOption) (*UpdateConfigurationReponse, error) {
-	out := new(UpdateConfigurationReponse)
+func (c *snapshotServiceClient) UpdateConfiguration(ctx context.Context, in *Configuration, opts ...grpc.CallOption) (*Configuration, error) {
+	out := new(Configuration)
 	err := c.cc.Invoke(ctx, SnapshotService_UpdateConfiguration_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -253,14 +253,14 @@ func (c *snapshotServiceClient) DeleteAppliedConfigurations(ctx context.Context,
 // All implementations must embed UnimplementedSnapshotServiceServer
 // for forward compatibility
 type SnapshotServiceServer interface {
-	CreateCondition(context.Context, *Condition) (*CreateConditionReponse, error)
+	CreateCondition(context.Context, *Condition) (*Condition, error)
 	GetConditions(*GetConditionsRequest, SnapshotService_GetConditionsServer) error
 	DeleteConditions(context.Context, *DeleteConditionsRequest) (*DeleteConditionsResponse, error)
-	UpdateCondition(context.Context, *Condition) (*UpdateConditionResponse, error)
-	CreateConfiguration(context.Context, *Configuration) (*CreateConfigurationReponse, error)
+	UpdateCondition(context.Context, *Condition) (*Condition, error)
+	CreateConfiguration(context.Context, *Configuration) (*Configuration, error)
 	GetConfigurations(*GetConfigurationsRequest, SnapshotService_GetConfigurationsServer) error
 	DeleteConfigurations(context.Context, *DeleteConfigurationsRequest) (*DeleteConfigurationsResponse, error)
-	UpdateConfiguration(context.Context, *Configuration) (*UpdateConfigurationReponse, error)
+	UpdateConfiguration(context.Context, *Configuration) (*Configuration, error)
 	// streaming process of update configuration to invoker
 	InvokeConfiguration(*InvokeConfigurationRequest, SnapshotService_InvokeConfigurationServer) error
 	GetAppliedConfigurations(*GetAppliedConfigurationsRequest, SnapshotService_GetAppliedConfigurationsServer) error
@@ -272,7 +272,7 @@ type SnapshotServiceServer interface {
 type UnimplementedSnapshotServiceServer struct {
 }
 
-func (UnimplementedSnapshotServiceServer) CreateCondition(context.Context, *Condition) (*CreateConditionReponse, error) {
+func (UnimplementedSnapshotServiceServer) CreateCondition(context.Context, *Condition) (*Condition, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateCondition not implemented")
 }
 func (UnimplementedSnapshotServiceServer) GetConditions(*GetConditionsRequest, SnapshotService_GetConditionsServer) error {
@@ -281,10 +281,10 @@ func (UnimplementedSnapshotServiceServer) GetConditions(*GetConditionsRequest, S
 func (UnimplementedSnapshotServiceServer) DeleteConditions(context.Context, *DeleteConditionsRequest) (*DeleteConditionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteConditions not implemented")
 }
-func (UnimplementedSnapshotServiceServer) UpdateCondition(context.Context, *Condition) (*UpdateConditionResponse, error) {
+func (UnimplementedSnapshotServiceServer) UpdateCondition(context.Context, *Condition) (*Condition, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateCondition not implemented")
 }
-func (UnimplementedSnapshotServiceServer) CreateConfiguration(context.Context, *Configuration) (*CreateConfigurationReponse, error) {
+func (UnimplementedSnapshotServiceServer) CreateConfiguration(context.Context, *Configuration) (*Configuration, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateConfiguration not implemented")
 }
 func (UnimplementedSnapshotServiceServer) GetConfigurations(*GetConfigurationsRequest, SnapshotService_GetConfigurationsServer) error {
@@ -293,7 +293,7 @@ func (UnimplementedSnapshotServiceServer) GetConfigurations(*GetConfigurationsRe
 func (UnimplementedSnapshotServiceServer) DeleteConfigurations(context.Context, *DeleteConfigurationsRequest) (*DeleteConfigurationsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteConfigurations not implemented")
 }
-func (UnimplementedSnapshotServiceServer) UpdateConfiguration(context.Context, *Configuration) (*UpdateConfigurationReponse, error) {
+func (UnimplementedSnapshotServiceServer) UpdateConfiguration(context.Context, *Configuration) (*Configuration, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateConfiguration not implemented")
 }
 func (UnimplementedSnapshotServiceServer) InvokeConfiguration(*InvokeConfigurationRequest, SnapshotService_InvokeConfigurationServer) error {

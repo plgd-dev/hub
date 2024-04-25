@@ -87,7 +87,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/pbCreateConditionReponse"
+              "$ref": "#/definitions/pbCondition"
             }
           },
           "default": {
@@ -112,14 +112,14 @@
         ]
       }
     },
-    "/api/v1/conditions/{id.id}": {
+    "/api/v1/conditions/{id}": {
       "put": {
         "operationId": "SnapshotService_UpdateCondition",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/pbUpdateConditionResponse"
+              "$ref": "#/definitions/pbCondition"
             }
           },
           "default": {
@@ -131,7 +131,7 @@
         },
         "parameters": [
           {
-            "name": "id.id",
+            "name": "id",
             "in": "path",
             "required": true,
             "type": "string"
@@ -143,14 +143,9 @@
             "schema": {
               "type": "object",
               "properties": {
-                "id": {
-                  "type": "object",
-                  "properties": {
-                    "version": {
-                      "type": "string",
-                      "format": "uint64"
-                    }
-                  }
+                "version": {
+                  "type": "string",
+                  "format": "uint64"
                 },
                 "name": {
                   "type": "string"
@@ -247,7 +242,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/pbCreateConfigurationReponse"
+              "$ref": "#/definitions/pbConfiguration"
             }
           },
           "default": {
@@ -367,65 +362,6 @@
         ]
       }
     },
-    "/api/v1/configurations/{id.id}": {
-      "put": {
-        "operationId": "SnapshotService_UpdateConfiguration",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/pbUpdateConfigurationReponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/googlerpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "id.id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "properties": {
-                "id": {
-                  "type": "object",
-                  "properties": {
-                    "version": {
-                      "type": "string",
-                      "format": "uint64"
-                    }
-                  }
-                },
-                "name": {
-                  "type": "string"
-                },
-                "resources": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "$ref": "#/definitions/pbConfigurationResource"
-                  }
-                }
-              }
-            }
-          }
-        ],
-        "tags": [
-          "Configurations"
-        ]
-      }
-    },
     "/api/v1/configurations/{id}": {
       "post": {
         "summary": "streaming process of update configuration to invoker",
@@ -475,10 +411,64 @@
                   "title": "at least one must be set"
                 },
                 "force": {
-                  "type": "boolean"
+                  "type": "boolean",
+                  "title": "force update even if the configuration has already been applied to device"
                 },
                 "keepUpdatingOnFailure": {
-                  "type": "boolean"
+                  "type": "boolean",
+                  "title": "if any update resource fails continue with next resource"
+                }
+              }
+            }
+          }
+        ],
+        "tags": [
+          "Configurations"
+        ]
+      },
+      "put": {
+        "operationId": "SnapshotService_UpdateConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbConfiguration"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "version": {
+                  "type": "string",
+                  "format": "uint64"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "resources": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "$ref": "#/definitions/pbConfigurationResource"
+                  }
                 }
               }
             }
@@ -491,6 +481,18 @@
     }
   },
   "definitions": {
+    "AppliedConfigurationRelationTo": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string",
+          "format": "uint64"
+        }
+      }
+    },
     "AppliedConfigurationResourceStatus": {
       "type": "string",
       "enum": [
@@ -548,13 +550,13 @@
           "type": "string"
         },
         "configurationId": {
-          "$ref": "#/definitions/pbId"
+          "$ref": "#/definitions/AppliedConfigurationRelationTo"
         },
         "onDemaned": {
           "type": "boolean"
         },
         "conditionId": {
-          "$ref": "#/definitions/pbId"
+          "$ref": "#/definitions/AppliedConfigurationRelationTo"
         },
         "resources": {
           "type": "array",
@@ -612,7 +614,11 @@
       "type": "object",
       "properties": {
         "id": {
-          "$ref": "#/definitions/pbId"
+          "type": "string"
+        },
+        "version": {
+          "type": "string",
+          "format": "uint64"
         },
         "name": {
           "type": "string"
@@ -650,7 +656,11 @@
       "type": "object",
       "properties": {
         "id": {
-          "$ref": "#/definitions/pbId"
+          "type": "string"
+        },
+        "version": {
+          "type": "string",
+          "format": "uint64"
         },
         "name": {
           "type": "string"
@@ -676,10 +686,6 @@
         "content": {
           "$ref": "#/definitions/pbContent"
         },
-        "resourceInterface": {
-          "type": "string",
-          "title": "optional update interface"
-        },
         "timeToLive": {
           "type": "string",
           "format": "int64",
@@ -701,22 +707,6 @@
           "type": "integer",
           "format": "int32",
           "title": "-1 means content-format was not provided"
-        }
-      }
-    },
-    "pbCreateConditionReponse": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "$ref": "#/definitions/pbId"
-        }
-      }
-    },
-    "pbCreateConfigurationReponse": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "$ref": "#/definitions/pbId"
         }
       }
     },
@@ -769,18 +759,6 @@
         "hubId": {
           "type": "string",
           "title": "the hub which sent the event"
-        }
-      }
-    },
-    "pbId": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "version": {
-          "type": "string",
-          "format": "uint64"
         }
       }
     },
@@ -854,24 +832,6 @@
             "type": "string"
           },
           "title": "Open telemetry data propagated to asynchronous events"
-        }
-      }
-    },
-    "pbUpdateConditionResponse": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "$ref": "#/definitions/pbId",
-          "title": "for new version"
-        }
-      }
-    },
-    "pbUpdateConfigurationReponse": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "$ref": "#/definitions/pbId",
-          "title": "for new version"
         }
       }
     },
