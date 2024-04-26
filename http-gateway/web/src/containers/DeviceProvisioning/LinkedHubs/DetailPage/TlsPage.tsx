@@ -232,7 +232,7 @@ const TlsPage: FC<any> = (props) => {
                     }
                     data={caPoolData}
                     headline={_(t.caPool)}
-                    headlineRef={contentRefs.ref1}
+                    headlineRef={contentRefs?.ref1}
                     i18n={commonI18n}
                     onAdd={() =>
                         setModalData({
@@ -253,8 +253,8 @@ const TlsPage: FC<any> = (props) => {
                     <CaPool
                         data={key ? [{ id: '0', name: key }] : []}
                         headline={_(t.privateKey)}
-                        headlineRef={contentRefs.ref2}
-                        i18n={commonI18n}
+                        headlineRef={contentRefs?.ref2}
+                        i18n={{ ...commonI18n, placeholder: _(t.noPrivateKey) }}
                         onAdd={
                             key
                                 ? undefined
@@ -283,8 +283,8 @@ const TlsPage: FC<any> = (props) => {
                     <CaPool
                         data={cert ? certData : []}
                         headline={_(t.certificate)}
-                        headlineRef={contentRefs.ref3}
-                        i18n={commonI18n}
+                        headlineRef={contentRefs?.ref3}
+                        i18n={{ ...commonI18n, placeholder: _(t.noCertificate) }}
                         onAdd={
                             cert
                                 ? undefined

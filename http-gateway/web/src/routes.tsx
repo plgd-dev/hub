@@ -377,7 +377,6 @@ export const Routes = () => {
 
             {/* ***** LINKED HUBS ***** */}
             <Route path='/device-provisioning/linked-hubs'>
-                <Route element={withSuspense(<LinkedHubsDetailPage />)} path=':hubId/:tab/:section' />
                 <Route element={withSuspense(<LinkedHubsDetailPage />)} path=':hubId/:tab' />
                 <Route element={withSuspense(<LinkedHubsDetailPage />)} path=':hubId' />
                 <Route element={withSuspense(<LinkedHubsListPage />)} path='' />

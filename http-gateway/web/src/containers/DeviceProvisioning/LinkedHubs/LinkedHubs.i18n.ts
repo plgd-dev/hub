@@ -569,4 +569,12 @@ export const messages = defineMessages({
         id: 'linkedHubs.addScope',
         defaultMessage: 'Add Scope',
     },
+    noPrivateKey: {
+        id: 'linkedHubs.noPrivateKey',
+        defaultMessage: 'No available private key',
+    },
+    noCertificate: {
+        id: 'linkedHubs.noCertificate',
+        defaultMessage: 'No available certificate',
+    },
 })
