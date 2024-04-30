@@ -1,4 +1,4 @@
-import React, { FC, useContext, useEffect, useMemo } from 'react'
+import React, { FC, useContext, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
 import { Controller } from 'react-hook-form'
 import get from 'lodash/get'
@@ -28,6 +28,8 @@ const Step3: FC<Props> = (props) => {
     const { setStep } = useContext(FormContext)
 
     const schema = useValidationsSchema('group2')
+
+    const [advancedView, setAdvancedView] = useState(true)
 
     const {
         formState: { errors, isValid },
@@ -64,23 +66,26 @@ const Step3: FC<Props> = (props) => {
             <FullPageWizard.Headline>{_(t.deviceAuthentication)}</FullPageWizard.Headline>
             <FullPageWizard.Description large>{_(t.addLinkedHubCertificateAuthorityDescription)}</FullPageWizard.Description>
 
-            <FormGroup
-                error={errors.certificateAuthority?.grpc?.address ? errors.certificateAuthority?.grpc?.address.message : undefined}
-                id='certificateAuthority.grpc.address'
-            >
-                <FormLabel required text={_(t.address)} />
-                <FormInput
-                    {...register('certificateAuthority.grpc.address')}
-                    onBlur={(e) => updateField('certificateAuthority.grpc.address', e.target.value)}
-                />
-            </FormGroup>
-
             <FullPageWizard.ToggleConfiguration
+                defaultShow
+                hideToggleLink
                 i18n={{
                     hide: _(g.hideAdvancedConfiguration),
                     show: _(g.showAdvancedConfiguration),
                 }}
+                onShowChange={setAdvancedView}
             >
+                <FormGroup
+                    error={errors.certificateAuthority?.grpc?.address ? errors.certificateAuthority?.grpc?.address.message : undefined}
+                    id='certificateAuthority.grpc.address'
+                >
+                    <FormLabel required text={_(t.address)} />
+                    <FormInput
+                        {...register('certificateAuthority.grpc.address')}
+                        onBlur={(e) => updateField('certificateAuthority.grpc.address', e.target.value)}
+                    />
+                </FormGroup>
+
                 <FullPageWizard.GroupHeadline tooltipText={_(t.addLinkedHubCertificateAuthorityKeepAliveDescription)}>
                     {_(t.connectionKeepAlive)}
                 </FullPageWizard.GroupHeadline>
@@ -156,19 +161,20 @@ const Step3: FC<Props> = (props) => {
                         )}
                     />
                 </Spacer>
-            </FullPageWizard.ToggleConfiguration>
 
-            <SubStepTls
-                control={control}
-                prefix='certificateAuthority.grpc.'
-                setValue={(field: string, value: any) => {
-                    // @ts-ignore
-                    setValue(field, value)
-                    updateField(field, value)
-                }}
-                updateField={updateField}
-                watch={watch}
-            />
+                <SubStepTls
+                    collapse={false}
+                    control={control}
+                    prefix='certificateAuthority.grpc.'
+                    setValue={(field: string, value: any) => {
+                        // @ts-ignore
+                        setValue(field, value)
+                        updateField(field, value)
+                    }}
+                    updateField={updateField}
+                    watch={watch}
+                />
+            </FullPageWizard.ToggleConfiguration>
 
             <StepButtons
                 disableNext={!isFormValid}
@@ -180,6 +186,7 @@ const Step3: FC<Props> = (props) => {
                 }}
                 onClickBack={() => setStep?.(1)}
                 onClickNext={() => setStep?.(3)}
+                showRequiredMessage={advancedView}
             />
         </form>
     )

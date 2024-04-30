@@ -613,4 +613,20 @@ export const messages = defineMessages({
         id: 'devices.acls',
         defaultMessage: 'ACLs',
     },
+    resourceGetKnowConfErrorTitle: {
+        id: 'devices.resourceGetKnowConfErrorTitle',
+        defaultMessage: 'Request failed',
+    },
+    resourceGetKnowConfErrorMessage: {
+        id: 'devices.resourceGetKnowConfErrorMessage',
+        defaultMessage: 'Unable to load resource `/.well-known/wot`',
+    },
+    advancedView: {
+        id: 'devices.advancedView',
+        defaultMessage: 'Advanced view',
+    },
+    general: {
+        id: 'devices.general',
+        defaultMessage: 'General',
+    },
 })

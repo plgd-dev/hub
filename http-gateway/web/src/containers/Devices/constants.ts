@@ -40,6 +40,11 @@ export const knownInterfaces = {
 
 export const knownResourceTypes = {
     OIC_WK_CON: 'oic.wk.con', // contains device name
+    WOT_THING: 'wot.thing',
+}
+
+export const knownResourceHref = {
+    WELL_KNOW_WOT: '/.well-known/wot',
 }
 
 export const defaultNewResource = {

@@ -43,7 +43,7 @@ export const useValidationsSchema = (group: 'group1' | 'group2' | 'group3' | 'co
                 preSharedKey: z
                     .string()
                     .trim()
-                    .min(16, { message: _(g.minLenght, { field: _(t.preSharedKey), length: 16 }) }),
+                    .min(16, { message: _(g.minLength, { field: _(t.preSharedKey), length: 16 }) }),
             }),
         [_]
     )

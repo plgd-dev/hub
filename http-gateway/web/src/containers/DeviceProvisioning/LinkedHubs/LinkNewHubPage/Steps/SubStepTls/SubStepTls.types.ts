@@ -4,4 +4,9 @@ export type Props = {
     setValue: any
     updateField: any
     prefix: string
+    collapse?: boolean
+}
+
+export const defaultProps: Partial<Props> = {
+    collapse: true,
 }

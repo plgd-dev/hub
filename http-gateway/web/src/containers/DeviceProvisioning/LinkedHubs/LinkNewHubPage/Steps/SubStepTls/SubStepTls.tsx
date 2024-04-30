@@ -20,11 +20,12 @@ import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/Linked
 import { useCaI18n } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
 import { messages as g } from '@/containers/Global.i18n'
 import notificationId from '@/notificationId'
-import { Props } from './SubStepTls.types'
+import { defaultProps, Props } from './SubStepTls.types'
 import { nameLengthValidator, stringToPem } from '@/containers/DeviceProvisioning/utils'
+import ConditionalWrapper from '@shared-ui/components/Atomic/ConditionalWrapper'
 
 const SubStepTls: FC<Props> = (props) => {
-    const { control, setValue, updateField, watch, prefix } = props
+    const { collapse, control, setValue, updateField, watch, prefix } = { ...defaultProps, ...props }
 
     const { formatMessage: _ } = useIntl()
     const i18n = useCaI18n()
@@ -94,11 +95,18 @@ const SubStepTls: FC<Props> = (props) => {
 
             <FullPageWizard.Description>{_(t.tlsDescription)}</FullPageWizard.Description>
 
-            <FullPageWizard.ToggleConfiguration
-                i18n={{
-                    hide: _(g.hideAdvancedConfiguration),
-                    show: _(g.showAdvancedConfiguration),
-                }}
+            <ConditionalWrapper
+                condition={collapse}
+                wrapper={(children) => (
+                    <FullPageWizard.ToggleConfiguration
+                        i18n={{
+                            hide: _(g.hideAdvancedConfiguration),
+                            show: _(g.showAdvancedConfiguration),
+                        }}
+                    >
+                        {children}
+                    </FullPageWizard.ToggleConfiguration>
+                )}
             >
                 <h3 css={commonStyles.groupHeadline}>{_(t.caPool)}</h3>
 
@@ -186,7 +194,11 @@ const SubStepTls: FC<Props> = (props) => {
                         <Spacer type='pt-2'>
                             <CaList
                                 actions={{
-                                    onDelete: () => setValue(`${prefix}tls.key`, '', { shouldDirty: true, shouldTouch: true }),
+                                    onDelete: () =>
+                                        setValue(`${prefix}tls.key`, '', {
+                                            shouldDirty: true,
+                                            shouldTouch: true,
+                                        }),
                                 }}
                                 data={[{ id: 0, name: key, data: [], dataChain: '' }]}
                                 i18n={{
@@ -226,7 +238,11 @@ const SubStepTls: FC<Props> = (props) => {
                             <Loadable condition={certData.length > 0}>
                                 <CaList
                                     actions={{
-                                        onDelete: () => setValue(`${prefix}tls.cert`, '', { shouldDirty: true, shouldTouch: true }),
+                                        onDelete: () =>
+                                            setValue(`${prefix}tls.cert`, '', {
+                                                shouldDirty: true,
+                                                shouldTouch: true,
+                                            }),
                                         onView: handleViewCert,
                                     }}
                                     data={certData}
@@ -241,7 +257,7 @@ const SubStepTls: FC<Props> = (props) => {
                         </Spacer>
                     )}
                 </FormGroup>
-            </FullPageWizard.ToggleConfiguration>
+            </ConditionalWrapper>
 
             <CaPoolModal
                 data={caModalData?.data}

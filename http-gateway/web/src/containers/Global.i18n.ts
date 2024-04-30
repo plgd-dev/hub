@@ -178,8 +178,8 @@ export const messages = defineMessages({
         id: 'global.requiredField',
         defaultMessage: 'Required field {field}',
     },
-    minLenght: {
-        id: 'global.minLenght',
+    minLength: {
+        id: 'global.minLength',
         defaultMessage: 'Minimum length for field {field} is {length}',
     },
     default: {

@@ -9,6 +9,9 @@ import ContentSwitch from '@shared-ui/components/Atomic/ContentSwitch'
 import usePersistentState from '@shared-ui/common/hooks/usePersistentState'
 import { FormContext, getFormContextDefault } from '@shared-ui/common/context/FormContext'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
+import { security } from '@shared-ui/common/services'
+import { WellKnownConfigType } from '@shared-ui/common/hooks'
+import { getOwnerId } from '@shared-ui/common/services/api-utils'
 
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '../EnrollmentGroups.i18n'
@@ -49,8 +52,17 @@ const NewEnrollmentGroupsPage: FC<any> = () => {
         []
     )
 
+    const wellKnownConfig = security.getWellKnowConfig() as WellKnownConfigType & {
+        defaultCommandTimeToLive: number
+    }
+
+    const defaultFormData = {
+        ...DEFAULT_FORM_DATA,
+        owner: getOwnerId(wellKnownConfig.jwtOwnerClaim || ''),
+    }
+
     const [activeItem, setActiveItem] = useState(step ? steps.findIndex((s) => s.link.includes(step)) : 0)
-    const [formData, setFormData, rehydrated] = usePersistentState<any>('dps-create-enrollment-group-form', DEFAULT_FORM_DATA)
+    const [formData, setFormData, rehydrated] = usePersistentState<any>('dps-create-enrollment-group-form', defaultFormData)
 
     const onStepChange = useCallback(
         (item: number) => {
@@ -99,7 +111,7 @@ const NewEnrollmentGroupsPage: FC<any> = () => {
                 close: _(g.close),
             }}
             onClose={() => {
-                setFormData(DEFAULT_FORM_DATA)
+                setFormData(defaultFormData)
                 navigate(generatePath(pages.DPS.ENROLLMENT_GROUPS.LINK))
             }}
             onStepChange={onStepChange}

@@ -83,8 +83,8 @@ const Step1: FC<any> = (props) => {
             </FormGroup>
 
             <FormGroup error={get(errors, 'owner.message')} id='owner'>
-                <FormLabel required={true} text={_(g.ownerID)} />
-                <FormInput {...register('owner')} onBlur={(e) => updateField('owner', e.target.value)} />
+                <FormLabel text={_(g.ownerID)} />
+                <FormInput {...register('owner')} readOnly />
             </FormGroup>
 
             <StepButtons

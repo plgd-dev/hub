@@ -539,11 +539,11 @@ export const messages = defineMessages({
     },
     getWellKnowPresetError: {
         id: 'linkedHubs.getWellKnowPresetError',
-        defaultMessage: 'Unable to prefill data from well-known configuration',
+        defaultMessage: 'Retrieve error',
     },
     getWellKnowPresetErrorMessage: {
         id: 'linkedHubs.getWellKnowPresetErrorMessage',
-        defaultMessage: 'TODO TEXT',
+        defaultMessage: 'Unable to retrieve information from the provided hub endpoint',
     },
     certificateKeyPair: {
         id: 'linkedHubs.certificateKeyPair',
