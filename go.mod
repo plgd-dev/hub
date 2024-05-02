@@ -8,7 +8,7 @@ require (
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/fullstorydev/grpchan v1.1.1
 	github.com/fxamacker/cbor/v2 v2.6.0
-	github.com/go-co-op/gocron/v2 v2.3.0
+	github.com/go-co-op/gocron/v2 v2.4.0
 	github.com/gocql/gocql v1.6.0
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/golang/snappy v0.0.4
