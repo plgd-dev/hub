@@ -100,7 +100,7 @@ message AppliedConfiguration {
       FAIL = 5;
     };
     Status status = 3;
-    int64 timestamp_start = 4; // when the rule association was applied
+    int64 timestamp_start = 4; // when the update resource command starts
     int64 valid_until = 5; // how long the command is valid
     resourceaggregate.pb.ResourceUpdated resource_updated = 6;
   }
