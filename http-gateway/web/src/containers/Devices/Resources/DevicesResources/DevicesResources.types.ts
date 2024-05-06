@@ -16,10 +16,6 @@ export type Props = {
     onCreate: (href: string) => void
     onUpdate: (data: { href: string; currentInterface?: string }) => void
     onDelete: (href: string) => void
-    pageSize: {
-        height?: number
-        width?: number
-    }
 } & DeviceResourcesCrudType
 
 export type GetColumnsType = {

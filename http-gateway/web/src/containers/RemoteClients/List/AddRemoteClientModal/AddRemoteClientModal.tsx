@@ -336,6 +336,5 @@ const AddRemoteClientModal: FC<Props> = (props) => {
 }
 
 AddRemoteClientModal.displayName = 'AddRemoteClientModal'
-AddRemoteClientModal.defaultProps = defaultProps
 
 export default AddRemoteClientModal

@@ -8,14 +8,14 @@ import TimeoutControl from '@shared-ui/components/Atomic/TimeoutControl'
 import { DeleteModal } from '@shared-ui/components/Atomic/Modal'
 import { security } from '@shared-ui/common/services'
 import DevicesResourcesModal from '@shared-ui/components/Organisms/DevicesResourcesModal'
-import { DevicesResourcesModalParamsType } from '@shared-ui/components/Organisms/DevicesResourcesModal/DevicesResourcesModal.types'
+import {
+    DevicesDetailsResourceModalData,
+    DevicesResourcesModalParamsType,
+} from '@shared-ui/components/Organisms/DevicesResourcesModal/DevicesResourcesModal.types'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
-import GeneratedResourceForm from '@shared-ui/components/Organisms/GeneratedResourceForm'
 import Loadable from '@shared-ui/components/Atomic/Loadable'
-import ConditionalWrapper from '@shared-ui/components/Atomic/ConditionalWrapper'
-import ContentSwitch from '@shared-ui/components/Atomic/ContentSwitch'
-import Switch from '@shared-ui/components/Atomic/Switch'
+import { Property } from '@shared-ui/components/Organisms/GeneratedResourceForm/GeneratedResourceForm.types'
 
 import { Props } from './Tab2.types'
 import DevicesResources from '@/containers/Devices/Resources/DevicesResources'
@@ -28,7 +28,6 @@ import {
     hasGeneratedResourcesForm,
     isErrorOnlyWarning,
 } from '@/containers/Devices/utils'
-import { DevicesDetailsResourceModalData } from '@/containers/Devices/Detail/DevicesDetailsPage/DevicesDetailsPage.types'
 import { messages as t } from '@/containers/Devices/Devices.i18n'
 import { messages as g } from '@/containers/Global.i18n'
 import { isNotificationActive, toggleActiveNotification } from '@/containers/Devices/slice'
@@ -38,7 +37,7 @@ import notificationId from '@/notificationId'
 import { pages } from '@/routes'
 
 const Tab2: FC<Props> = (props) => {
-    const { deviceStatus, deviceName, isOnline, isActiveTab, isUnregistered, loading, resourcesData, loadingResources, pageSize, refreshResources } = props
+    const { deviceStatus, deviceName, isOnline, isActiveTab, isUnregistered, loading, resourcesData, loadingResources, refreshResources } = props
     const { id: routerId, ...others } = useParams()
     const id = routerId || ''
     const hrefParam = others['*'] || ''
@@ -49,10 +48,8 @@ const Tab2: FC<Props> = (props) => {
     const [deleteResourceHref, setDeleteResourceHref] = useState<string>('')
     const [resourceModal, setResourceModal] = useState(false)
     const [ttlHasError, setTtlHasError] = useState(false)
-    const [generatedFormResourceData, setGeneratedFormResourceData] = useState<any>(undefined)
-    const [advancedView, setAdvancedView] = useState(false)
 
-    const resources = useMemo(() => resourcesData?.data?.content?.links || [], [resourcesData])
+    const resources = useMemo(() => resourcesData?.[0]?.resources || [], [resourcesData])
     const { formatMessage: _ } = useIntl()
     const isMounted = useIsMounted()
     const navigate = useNavigate()
@@ -61,6 +58,29 @@ const Tab2: FC<Props> = (props) => {
         defaultCommandTimeToLive: number
     }
     const [ttl, setTtl] = useState(wellKnownConfig?.defaultCommandTimeToLive || 0)
+
+    const generatedResourcesForm = useMemo(() => hasGeneratedResourcesForm(resources), [resources])
+
+    const loadFormData = async () => {
+        try {
+            const { data: resourceData } = await getDevicesResourcesApi({
+                deviceId: id,
+                href: knownResourceHref.WELL_KNOW_WOT,
+                currentInterface: '',
+            })
+
+            return resourceData.data.content
+        } catch (error) {
+            if (error) {
+                Notification.error(
+                    { title: _(t.resourceGetKnowConfErrorTitle), message: _(t.resourceGetKnowConfErrorMessage) },
+                    {
+                        notificationId: notificationId.HUB_DEVICES_DETAILS_PAGE_TAB2_GET_RESOURCE,
+                    }
+                )
+            }
+        }
+    }
 
     // Open the resource modal when href is present
     useEffect(
@@ -101,6 +121,7 @@ const Tab2: FC<Props> = (props) => {
                         ...defaultNewResource,
                         rt: supportedTypes,
                     },
+                    formProperties: false,
                     type: resourceModalTypes.CREATE_RESOURCE,
                 })
                 setResourceModal(true)
@@ -141,6 +162,13 @@ const Tab2: FC<Props> = (props) => {
                 currentInterface,
             })
 
+            let formProperties: Property | false = false
+
+            if (generatedResourcesForm) {
+                const generatedFormResourceData = await loadFormData()
+                formProperties = href === knownResourceHref.WELL_KNOW_WOT ? generatedFormResourceData : generatedFormResourceData?.properties[href]
+            }
+
             omit(resourceData, ['data.content.if', 'data.content.rt'])
 
             if (isMounted.current) {
@@ -157,6 +185,7 @@ const Tab2: FC<Props> = (props) => {
                         interfaces,
                     },
                     resourceData,
+                    formProperties,
                 })
                 setResourceModal(true)
                 navigate(`${generatePath(pages.DEVICES.DETAIL.LINK, { id, tab: pages.DEVICES.DETAIL.TABS[1], section: '' })}${href}`)
@@ -275,71 +304,19 @@ const Tab2: FC<Props> = (props) => {
         setDeleteResourceHref('')
     }
 
-    const generatedResourcesForm = useMemo(
-        () => hasGeneratedResourcesForm(resources) && process.env.REACT_APP_DEVICES_GENERATED_RESOURCE_FORM === 'true',
-        [resources]
-    )
-
-    useEffect(() => {
-        const loadFormData = async () => {
-            try {
-                const { data: resourceData } = await getDevicesResourcesApi({
-                    deviceId: id,
-                    href: knownResourceHref.WELL_KNOW_WOT,
-                    currentInterface: '',
-                })
-
-                setGeneratedFormResourceData(resourceData.data.content)
-            } catch (error) {
-                if (error) {
-                    Notification.error(
-                        { title: _(t.resourceGetKnowConfErrorTitle), message: _(t.resourceGetKnowConfErrorMessage) },
-                        {
-                            notificationId: notificationId.HUB_DEVICES_DETAILS_PAGE_TAB2_GET_RESOURCE,
-                        }
-                    )
-                }
-            }
-        }
-
-        if (generatedResourcesForm) {
-            loadFormData().then((r) => console.log(r))
-        }
-    }, [_, generatedResourcesForm, id])
-
     return (
         <>
             <Loadable condition={!!resourcesData}>
-                <>
-                    {generatedResourcesForm && (
-                        <div style={{ paddingBottom: 12 }}>
-                            <Switch checked={advancedView} label={_(t.advancedView)} onChange={() => setAdvancedView(!advancedView)} />
-                        </div>
-                    )}
-                    <ConditionalWrapper
-                        condition={generatedResourcesForm}
-                        wrapper={(child) => <ContentSwitch activeItem={advancedView ? 1 : 0}>{child}</ContentSwitch>}
-                    >
-                        {generatedResourcesForm ? (
-                            <GeneratedResourceForm
-                                i18n={{ general: _(t.general), minLength: (field, length) => _(g.minLength, { field, length }) }}
-                                properties={generatedFormResourceData?.properties}
-                            />
-                        ) : (
-                            <div />
-                        )}
-                        <DevicesResources
-                            data={resources}
-                            deviceStatus={deviceStatus}
-                            isActiveTab={isActiveTab}
-                            loading={loadingResource}
-                            onCreate={openCreateModal}
-                            onDelete={openDeleteModal}
-                            onUpdate={openUpdateModal}
-                            pageSize={{ width: pageSize.width, height: pageSize.height }} // tree switch
-                        />
-                    </ConditionalWrapper>
-                </>
+                <DevicesResources
+                    data={resources}
+                    deviceStatus={deviceStatus}
+                    isActiveTab={isActiveTab}
+                    loading={loadingResource}
+                    onCreate={openCreateModal}
+                    onDelete={openDeleteModal}
+                    onUpdate={openUpdateModal}
+                    // pageSize={{ width: pageSize.width, height: pageSize.height }} // tree switch
+                />
             </Loadable>
             <DevicesResourcesModal
                 {...resourceModalData}
@@ -350,12 +327,19 @@ const Tab2: FC<Props> = (props) => {
                 deviceResourceUpdateListener={deviceResourceUpdateListener}
                 fetchResource={openUpdateModal}
                 i18n={{
+                    advancedView: _(g.advancedView),
                     close: _(t.close),
                     commandTimeout: _(t.commandTimeout),
+                    compactView: _(t.compactView),
+                    content: _(t.content),
                     create: _(t.create),
                     creating: _(t.creating),
                     deviceId: _(t.deviceId),
+                    fullView: _(t.fullView),
                     interfaces: _(t.interfaces),
+                    invalidNumber: _(g.invalidNumber),
+                    maxValue: (field: string, length: number) => _(g.maxValue, { field, length }),
+                    minValue: (field: string, length: number) => _(g.minValue, { field, length }),
                     notifications: _(t.notifications),
                     off: _(t.off),
                     on: _(t.on),
@@ -366,8 +350,6 @@ const Tab2: FC<Props> = (props) => {
                     types: _(t.types),
                     update: _(t.update),
                     updating: _(t.updating),
-                    fullView: _(t.fullView),
-                    compactView: _(t.compactView),
                 }}
                 isDeviceOnline={isOnline}
                 isNotificationActive={isNotificationActive}
@@ -390,6 +372,7 @@ const Tab2: FC<Props> = (props) => {
                         }}
                         onChange={setTtl}
                         onTtlHasError={setTtlHasError}
+                        size='small'
                         ttlHasError={ttlHasError}
                     />
                 }

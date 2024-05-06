@@ -182,6 +182,14 @@ export const messages = defineMessages({
         id: 'global.minLength',
         defaultMessage: 'Minimum length for field {field} is {length}',
     },
+    minValue: {
+        id: 'global.minValue',
+        defaultMessage: 'Minimum value for field {field} is {length}',
+    },
+    maxValue: {
+        id: 'global.maxValue',
+        defaultMessage: 'Maximum value for field {field} is {length}',
+    },
     default: {
         id: 'global.default',
         defaultMessage: 'default',
@@ -329,5 +337,13 @@ export const messages = defineMessages({
     hideAdvancedConfiguration: {
         id: 'global.hideAdvancedConfiguration',
         defaultMessage: 'Hide advanced configuration',
+    },
+    advancedView: {
+        id: 'global.advancedView',
+        defaultMessage: 'Advanced view',
+    },
+    invalidNumber: {
+        id: 'global.invalidNumber',
+        defaultMessage: 'Invalid number',
     },
 })

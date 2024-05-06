@@ -1,4 +1,4 @@
-import { FC, memo, useMemo } from 'react'
+import { FC, memo, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useIntl } from 'react-intl'
 import classNames from 'classnames'
 
@@ -14,6 +14,7 @@ import { tagVariants } from '@shared-ui/components/Atomic/Tag/constants'
 import TagGroup from '@shared-ui/components/Atomic/TagGroup'
 import { messages as app } from '@shared-ui/app/clientApp/App/App.i18n'
 import Tag from '@shared-ui/components/Atomic/Tag'
+import AppContext from '@shared-ui/app/share/AppContext'
 
 import { devicesStatuses, RESOURCE_TREE_DEPTH_SIZE } from '../../constants'
 import { messages as t } from '../../Devices.i18n'
@@ -200,13 +201,16 @@ const getTreeColumns = ({ _, onUpdate, onCreate, onDelete, isUnregistered, loadi
 ]
 
 const DevicesResources: FC<Props> = memo((props) => {
-    const { data, onUpdate, onCreate, onDelete, deviceStatus, isActiveTab, loading, pageSize } = props
+    const { data, onUpdate, onCreate, onDelete, deviceStatus, isActiveTab, loading } = props
     const { formatMessage: _ } = useIntl()
     const [treeViewActive, setTreeViewActive] = useLocalStorage('treeViewActive', false)
     const isUnregistered = devicesStatuses.UNREGISTERED === deviceStatus
     const greyedOutClassName = classNames({
         'grayed-out': isUnregistered,
     })
+    const [height, setHeight] = useState(0)
+    const ref = useRef<any>(null)
+    const { footerExpanded } = useContext(AppContext)
 
     const columns = useMemo(
         () => getColumns({ _, onUpdate, loading, isUnregistered, onCreate, onDelete }),
@@ -218,8 +222,14 @@ const DevicesResources: FC<Props> = memo((props) => {
         [onUpdate, onCreate, onDelete, isUnregistered, loading] //eslint-disable-line
     )
 
+    useEffect(() => {
+        setTimeout(() => {
+            setHeight(ref?.current?.clientHeight)
+        }, 300)
+    }, [footerExpanded])
+
     return (
-        <>
+        <div ref={ref} style={{ height: '100%' }}>
             <div
                 className={classNames('d-flex justify-content-between align-items-center', greyedOutClassName)}
                 style={{
@@ -249,10 +259,10 @@ const DevicesResources: FC<Props> = memo((props) => {
                         search: _(t.search),
                     }}
                     isActiveTab={isActiveTab}
-                    pageSize={pageSize}
+                    pageSize={{ height: height - 32 }}
                 />
             )}
-        </>
+        </div>
     )
 })
 

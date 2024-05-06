@@ -1,7 +1,6 @@
 import React, { FC, lazy, useCallback, useEffect, useState } from 'react'
 import { useIntl } from 'react-intl'
 import { generatePath, useNavigate, useParams } from 'react-router-dom'
-import { useResizeDetector } from 'react-resize-detector'
 import isEmpty from 'lodash/isEmpty'
 
 import NotFoundPage from '@shared-ui/components/Templates/NotFoundPage'
@@ -57,8 +56,6 @@ const DevicesDetailsPage: FC<Props> = (props) => {
     const { data: pendingCommandsData, refresh: refreshPendingCommands, loading: pendingCommandsLoading } = useDevicePendingCommands(id)
     const { data: certificates, loading: certificatesLoading, refresh: certificateRefresh } = useDeviceCertificates(id)
     const { data: provisioningRecords, loading: provisioningRecordsLoading } = useDeviceProvisioningRecord(id)
-
-    const { ref, width, height } = useResizeDetector()
 
     const wellKnownConfig = security.getWellKnowConfig() as WellKnownConfigType & {
         defaultCommandTimeToLive: number
@@ -196,7 +193,6 @@ const DevicesDetailsPage: FC<Props> = (props) => {
 
     return (
         <div
-            ref={ref}
             style={{
                 height: '100%',
                 display: 'flex',
@@ -264,7 +260,6 @@ const DevicesDetailsPage: FC<Props> = (props) => {
                                     isUnregistered={isUnregistered}
                                     loading={loading}
                                     loadingResources={loadingResources}
-                                    pageSize={{ height, width }}
                                     refreshResources={refreshResources}
                                     resourcesData={resourcesData}
                                 />

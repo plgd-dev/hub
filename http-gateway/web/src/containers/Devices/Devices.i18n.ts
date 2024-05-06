@@ -629,4 +629,8 @@ export const messages = defineMessages({
         id: 'devices.general',
         defaultMessage: 'General',
     },
+    content: {
+        id: 'devices.content',
+        defaultMessage: 'Content',
+    },
 })
