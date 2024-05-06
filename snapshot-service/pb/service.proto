@@ -1,3 +1,11 @@
+// TODO overit ze pending command sa nezmaze na neexistujucom resource ak sa device pripoji a nepublishne hned resource
+// Overit correlation id - ak sa pouziva rovnake napriec viacerymi resourcami
+
+// scenare
+// - Uzivatel vie vytvorit config, automaticka (backend) inkrementacia verzie
+// - Uzivatel updatne config, verzia sa inkrementuje, Modal -> chces aplikovat na vsetky uz provisionnute devici? Informovat uzivatela, ze niektore devici mozu byt offline a command moze vyexpirovat.
+// - Uzivatel updatne config, verzia sa inkrementuje, informujeme uzivatela ze vsetky pending commandy z predoslej verzie budu cancelnute ako aj dalsie sekvencne updaty resourcov pre predoslu verziu
+
 syntax = "proto3";
 
 package snapshotservice.pb;
@@ -30,52 +38,38 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 
 option go_package = "github.com/plgd-dev/hub/v2/snapshot-service/pb;pb";
 
-message IdFilter {
-  string id = 1;
+// /configuration/123?version=latest :) Jozko spravi :)
+message IDFilter {
+  string id = 1; 
   oneof version {
     uint64 value = 2;
     bool all = 3;
-    bool max = 4;
+    bool latest = 4;
   }
 }
 
-message Condition {
+message Condition { // driven by resource change event
   string id = 1;
   uint64 version = 2;
   string name = 3;
   bool enabled = 4;
-  repeated string device_id_filter = 5;
-  repeated string resource_type_filter = 6;
-  repeated string resource_href_filter = 7;
-  string yq_expression = 8;
-  
-  message InvokeConfiguration {
-    string id = 1; // latest version of cfg
-    bool keep_updating_on_failure = 2;
-    string api_access_token = 3; // token used to update resources in the configuration
-    // or do we want to use token from device to update self resources ?
-  }
-  InvokeConfiguration invoke_configuration = 9;
+  string configuration_id = 5;
+  repeated string device_id_filter = 6;
+  repeated string resource_type_filter = 7;
+  repeated string resource_href_filter = 8;
+  string yq_expression = 9;
+  string api_access_token = 10; // token used to update resources in the configuration
 }
 
 message GetConditionsRequest { repeated IdFilter id_filter = 1; }
 message DeleteConditionsRequest { repeated IdFilter id_filter = 1; }
 message DeleteConditionsResponse { int64 count = 1; }
 
-
-message ResourceTypes {
-  repeated string types = 1; // all types must match resource
-  uint32 min = 2; // minimal number of resources that will be updated
-}
-
 message Configuration {
   message Resource {
-    oneof filter {
-      string href  = 1;
-      ResourceTypes resource_types = 2; 
-    }
+    string href  = 1;
     resourceaggregate.pb.Content content = 3;
-    int64 time_to_live = 4; // optional update command time to live
+    int64 time_to_live = 4; // optional update command time to live, 0 is infinite
   }
   string id = 1;
   uint64 version = 2;
@@ -83,53 +77,49 @@ message Configuration {
   repeated Resource resources = 4;
 }
 
-message GetConfigurationsRequest { repeated IdFilter id_filter = 1; }
+message GetConfigurationsRequest { repeated IDFilter id_filter = 1; }
 message DeleteConfigurationsRequest { repeated IdFilter id_filter = 1; }
 message DeleteConfigurationsResponse { int64 count = 1; }
 
-message AppliedConfiguration {
+message AppliedDeviceConfiguration { //TODO naming 
   message Resource {
-    resourceaggregate.pb.ResourceId resource_id = 1;
-    uint32 configuration_resources_idx = 2; // index of resource in configuration resources array. For resource types it could be mutliple resources.
+    resourceaggregate.pb.ResourceId resource_id = 1; // TODO Jozo href only?
+    string correlation_id = 2; // Reused from invoke command or generated. Can be used to retrieve corresponding pending command.
     enum Status {
       QUEUED = 0;
-      INPROGRESS = 1;
-      WAITING_FOR_REOURCE = 2;
-      DONE = 3;
-      TIMEOUT = 4;
-      FAIL = 5;
+      PENDING = 1;
+      DONE = 2;
+      TIMEOUT = 3;
     };
     Status status = 3;
-    int64 timestamp_start = 4; // when the update resource command starts
-    int64 valid_until = 5; // how long the command is valid
-    resourceaggregate.pb.ResourceUpdated resource_updated = 6;
+    resourceaggregate.pb.ResourceUpdated resource_updated = 4;
   }
   string id = 1;
   string device_id = 2;
-  message RelationTo {
+  message RelationTo { //TODO naming
     string id = 1;
     uint64 version = 2;
   }
   RelationTo configuration_id = 3;
   oneof executed_by {
     bool on_demaned = 4;
-    RelationTo condition_id = 5;
+    RelationTo condition_id = 5; //TODO Naming
   }
-  repeated Resource resources = 6;
+  repeated Resource resources = 6; //TODO naming
 }
 
 message InvokeConfigurationRequest {
-  string id = 1;
-  repeated string device_id_filter = 2; // at least one must be set
+  string configuration_id = 1; // applies latest configuration
+  string device_id = 2;
   bool force = 3; // force update even if the configuration has already been applied to device
-  bool keep_updating_on_failure = 4; // if any update resource fails continue with next resource
+  string correlation_id = 4; // propagated down to the resource update command
 }
 
-message GetAppliedConfigurationsRequest {
+message GetAppliedDeviceConfigurationsRequest { //TODO Naming
   repeated string id_filter = 1;
-  repeated IdFilter configuration_id_filter = 2;
+  repeated IDFilter configuration_id_filter = 2;
   repeated string device_id_filter = 3;
-  repeated string condition_id_filter = 4;
+  repeated IDFilter condition_id_filter = 4;
 }
 
 message DeleteAppliedConfigurationsRequest { repeated string id_filter = 1; }
