@@ -119,7 +119,7 @@ const Tab1: FC<Props> = (props) => {
                                             groupTitle: _(g.information),
                                             rows: [
                                                 {
-                                                    attribute: _(t.ownerId),
+                                                    attribute: _(g.owner),
                                                     value: data.ownership.owner,
                                                 },
                                             ],

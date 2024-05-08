@@ -122,7 +122,7 @@ const EnrollmentGroupsDetailPage: FC<Props> = () => {
                 dataForSave.preSharedKey = stringToPem(dataForSave.preSharedKey)
             }
 
-            await updateEnrollmentGroup(enrollmentId!, dataForSave)
+            await updateEnrollmentGroup(enrollmentId || '', dataForSave)
 
             Notification.success(
                 { title: _(t.enrollmentGroupUpdated), message: _(t.enrollmentGroupUpdatedMessage) },

@@ -41,6 +41,8 @@ const Tab1: FC<Props> = (props) => {
         schema,
     })
 
+    console.log(defaultFormData)
+
     const linkedHubs = useMemo(
         () =>
             hubsData
@@ -110,13 +112,13 @@ const Tab1: FC<Props> = (props) => {
                 ),
             },
             {
-                attribute: _(g.ownerID),
+                attribute: _(g.owner),
                 value: (
-                    <FormGroup error={errors.owner ? _(g.ownerID, { field: _(g.name) }) : undefined} id='owner'>
+                    <FormGroup error={errors.owner ? _(g.owner, { field: _(g.name) }) : undefined} id='owner'>
                         <FormInput
                             {...register('owner', { required: true, validate: (val) => val !== '' })}
                             onBlur={(e) => updateField('owner', e.target.value)}
-                            placeholder={_(g.ownerID)}
+                            placeholder={_(g.owner)}
                         />
                     </FormGroup>
                 ),

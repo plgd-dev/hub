@@ -121,6 +121,10 @@ export const messages = defineMessages({
         id: 'global.ownerID',
         defaultMessage: 'Owner ID',
     },
+    owner: {
+        id: 'global.owner',
+        defaultMessage: 'Owner',
+    },
     linkedHub: {
         id: 'global.linkedHub',
         defaultMessage: 'Linked Hub',
