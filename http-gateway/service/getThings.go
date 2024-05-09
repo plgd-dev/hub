@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -22,6 +23,7 @@ import (
 	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	wotTD "github.com/web-of-things-open-source/thingdescription-go/thingDescription"
 )
@@ -36,32 +38,46 @@ type GetThingsResponse struct {
 	Links []ThingLink `json:"links"`
 }
 
-const ThingLinkRelationItem = "item"
+const (
+	ThingLinkRelationItem       = "item"
+	ThingLinkRelationCollection = "collection"
+)
 
-func (requestHandler *RequestHandler) getThings(w http.ResponseWriter, r *http.Request) {
-	client, err := requestHandler.client.GrpcGatewayClient().GetResourceLinks(r.Context(), &pb.GetResourceLinksRequest{
-		TypeFilter: []string{bridgeResourcesTD.ResourceType},
+func (requestHandler *RequestHandler) getResourceLinks(ctx context.Context, deviceFilter []string, typeFilter []string) ([]*events.ResourceLinksPublished, error) {
+	client, err := requestHandler.client.GrpcGatewayClient().GetResourceLinks(ctx, &pb.GetResourceLinksRequest{
+		DeviceIdFilter: deviceFilter,
+		TypeFilter:     typeFilter,
 	})
 	if err != nil {
-		serverMux.WriteError(w, fmt.Errorf("cannot get resource links: %w", err))
-		return
+		return nil, fmt.Errorf("cannot get resource links: %w", err)
 	}
-	links := make([]ThingLink, 0)
+	links := make([]*events.ResourceLinksPublished, 0, 16)
 	for {
 		link, err := client.Recv()
 		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
-			serverMux.WriteError(w, fmt.Errorf("cannot receive resource link: %w", err))
-			return
+			return nil, fmt.Errorf("cannot receive resource link: %w", err)
 		}
+		links = append(links, link)
+	}
+	return links, nil
+}
+
+func (requestHandler *RequestHandler) getThings(w http.ResponseWriter, r *http.Request) {
+	resLinks, err := requestHandler.getResourceLinks(r.Context(), nil, []string{bridgeResourcesTD.ResourceType})
+	if err != nil {
+		serverMux.WriteError(w, err)
+		return
+	}
+	links := make([]ThingLink, 0, len(resLinks))
+	for _, l := range resLinks {
 		links = append(links, ThingLink{
-			Href: "/" + link.GetDeviceId(),
+			Href: "/" + l.GetDeviceId(),
 			Rel:  ThingLinkRelationItem,
 		})
 	}
-
 	things := GetThingsResponse{
 		Base:  requestHandler.config.UI.WebConfiguration.HTTPGatewayAddress + uri.Things,
 		Links: links,
@@ -76,7 +92,7 @@ func patchProperty(pe wotTD.PropertyElement, deviceID, href, contentType string)
 	if err != nil {
 		return wotTD.PropertyElement{}, fmt.Errorf("cannot parse deviceID: %w", err)
 	}
-	const propertyBaseURL = ""
+	propertyBaseURL := "/" + uri.DevicesPathKey + "/" + deviceID + "/" + uri.ResourcesPathKey
 	patchFnMap := map[string]func(wotTD.PropertyElement) (wotTD.PropertyElement, error){
 		schemaDevice.ResourceURI: func(pe wotTD.PropertyElement) (wotTD.PropertyElement, error) {
 			return bridgeResourcesTD.PatchDeviceResourcePropertyElement(pe, deviceUUID, propertyBaseURL, contentType, "")
@@ -109,7 +125,151 @@ func patchProperty(pe wotTD.PropertyElement, deviceID, href, contentType string)
 	return pe, nil
 }
 
-func (requestHandler *RequestHandler) thingDescriptionResponse(w http.ResponseWriter, rec *httptest.ResponseRecorder, writeError func(w http.ResponseWriter, err error), deviceID string) {
+func isDeviceLink(le wotTD.IconLinkElement) (string, bool) {
+	if le.Href == "" {
+		return "", false
+	}
+	if le.Href[0] != '/' {
+		return "", false
+	}
+	if le.Rel == nil {
+		return "", false
+	}
+	validRefs := map[string]struct{}{
+		ThingLinkRelationItem:       {},
+		ThingLinkRelationCollection: {},
+	}
+	if _, ok := validRefs[*le.Rel]; !ok {
+		return "", false
+	}
+	linkedDeviceID := le.Href
+	if linkedDeviceID[0] == '/' {
+		linkedDeviceID = linkedDeviceID[1:]
+	}
+	uuidDeviceID, err := uuid.Parse(linkedDeviceID)
+	if err != nil {
+		return "", false
+	}
+	if uuidDeviceID == uuid.Nil {
+		return "", false
+	}
+	return linkedDeviceID, true
+}
+
+func getLinkedDevices(links []wotTD.IconLinkElement) []string {
+	devices := make([]string, 0, len(links))
+	for _, l := range links {
+		if deviceID, ok := isDeviceLink(l); ok {
+			devices = append(devices, deviceID)
+		}
+	}
+	return devices
+}
+
+func ThingPatchLink(le wotTD.IconLinkElement, validateDevice map[string]struct{}) (wotTD.IconLinkElement, bool) {
+	if le.Href == "" {
+		return wotTD.IconLinkElement{}, false
+	}
+	device, ok := isDeviceLink(le)
+	if !ok {
+		return le, true
+	}
+	if len(validateDevice) == 0 {
+		return wotTD.IconLinkElement{}, false
+	}
+	if _, ok := validateDevice[device]; !ok {
+		return wotTD.IconLinkElement{}, false
+	}
+	le.Href = "/" + uri.ThingsPathKey + le.Href
+	return le, true
+}
+
+func makeDevicePropertiesValidator(deviceID string, links []*events.ResourceLinksPublished) (map[string]struct{}, bool) {
+	for _, l := range links {
+		if l.GetDeviceId() == deviceID {
+			validateProperties := map[string]struct{}{}
+			for _, r := range l.GetResources() {
+				validateProperties[r.GetHref()] = struct{}{}
+			}
+			return validateProperties, true
+		}
+	}
+	return nil, false
+}
+
+func makeDeviceLinkValidator(links []*events.ResourceLinksPublished) map[string]struct{} {
+	validator := make(map[string]struct{})
+	for _, l := range links {
+		validator[l.GetDeviceId()] = struct{}{}
+	}
+	return validator
+}
+
+func (requestHandler *RequestHandler) thingSetBase(td *wotTD.ThingDescription) error {
+	baseURL := requestHandler.config.UI.WebConfiguration.HTTPGatewayAddress + uri.API
+	base, err := url.Parse(baseURL)
+	if err != nil {
+		return fmt.Errorf("cannot parse base url: %w", err)
+	}
+	td.Base = *base
+	return nil
+}
+
+func (requestHandler *RequestHandler) thingSetProperties(ctx context.Context, deviceID string, td *wotTD.ThingDescription) error {
+	deviceLinks, err := requestHandler.getResourceLinks(ctx, []string{deviceID}, nil)
+	if err != nil {
+		return fmt.Errorf("cannot get resource links: %w", err)
+	}
+	validateProperties, ok := makeDevicePropertiesValidator(deviceID, deviceLinks)
+	if !ok {
+		return fmt.Errorf("cannot get resource links for device %v", deviceID)
+	}
+	for href, prop := range td.Properties {
+		if len(prop.Forms) > 0 {
+			continue
+		}
+		_, ok := validateProperties[href]
+		if !ok {
+			_, ok = validateProperties["/"+href]
+		}
+		if !ok {
+			delete(td.Properties, href)
+			continue
+		}
+		patchedProp, err := patchProperty(prop, deviceID, href, message.AppJSON.String())
+		if err != nil {
+			return fmt.Errorf("cannot patch device resource property element: %w", err)
+		}
+		td.Properties[href] = patchedProp
+	}
+	return nil
+}
+
+func (requestHandler *RequestHandler) thingSetLinks(ctx context.Context, td *wotTD.ThingDescription) {
+	linkedDevices := getLinkedDevices(td.Links)
+	var validLinkedDevices map[string]struct{}
+	if len(linkedDevices) > 0 {
+		links, err := requestHandler.getResourceLinks(ctx, linkedDevices, []string{bridgeResourcesTD.ResourceType})
+		if err == nil {
+			validLinkedDevices = makeDeviceLinkValidator(links)
+		}
+	}
+	patchedLinks := make([]wotTD.IconLinkElement, 0, len(td.Links))
+	for _, link := range td.Links {
+		patchedLink, ok := ThingPatchLink(link, validLinkedDevices)
+		if !ok {
+			continue
+		}
+		patchedLinks = append(patchedLinks, patchedLink)
+	}
+	if len(patchedLinks) == 0 {
+		td.Links = nil
+	} else {
+		td.Links = patchedLinks
+	}
+}
+
+func (requestHandler *RequestHandler) thingDescriptionResponse(ctx context.Context, w http.ResponseWriter, rec *httptest.ResponseRecorder, writeError func(w http.ResponseWriter, err error), deviceID string) {
 	content := jsoniter.Get(rec.Body.Bytes(), streamResponseKey, "data", "content")
 	if content.ValueType() != jsoniter.ObjectValue {
 		writeError(w, errors.New("cannot decode thingDescription content"))
@@ -123,29 +283,18 @@ func (requestHandler *RequestHandler) thingDescriptionResponse(w http.ResponseWr
 	}
 
 	// .base
-	baseURL := requestHandler.config.UI.WebConfiguration.HTTPGatewayAddress + uri.Devices + "/" + deviceID + "/" + uri.ResourcesPathKey
-	base, err := url.Parse(baseURL)
-	if err != nil {
-		writeError(w, fmt.Errorf("cannot parse base url: %w", err))
+	if err = requestHandler.thingSetBase(&td); err != nil {
+		writeError(w, fmt.Errorf("cannot set base url: %w", err))
 		return
 	}
-	td.Base = *base
 
 	// .properties.forms
-	for href, prop := range td.Properties {
-		if len(prop.Forms) > 0 {
-			continue
-		}
-		patchedProp, err := patchProperty(prop, deviceID, href, message.AppJSON.String())
-		if err != nil {
-			writeError(w, fmt.Errorf("cannot patch device resource property element: %w", err))
-			return
-		}
-		td.Properties[href] = patchedProp
+	if err = requestHandler.thingSetProperties(ctx, deviceID, &td); err != nil {
+		writeError(w, fmt.Errorf("cannot set properties: %w", err))
 	}
 
-	// links
-	// TODO
+	// .links
+	requestHandler.thingSetLinks(ctx, &td)
 
 	writeSimpleResponse(w, rec, td, writeError)
 }
@@ -158,5 +307,5 @@ func (requestHandler *RequestHandler) getThing(w http.ResponseWriter, r *http.Re
 		serverMux.WriteError(w, err)
 		return
 	}
-	requestHandler.thingDescriptionResponse(w, rec, serverMux.WriteError, deviceID)
+	requestHandler.thingDescriptionResponse(r.Context(), w, rec, serverMux.WriteError, deviceID)
 }

@@ -34,6 +34,7 @@ const (
 	AcceptHeaderKey        = "Accept"
 	ETagHeaderKey          = "ETag"
 
+	DevicesPathKey                = "devices"
 	ResourcesPathKey              = "resources"
 	ResourceLinksPathKey          = "resource-links"
 	PendingCommandsPathKey        = "pending-commands"

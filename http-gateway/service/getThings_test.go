@@ -18,8 +18,6 @@ import (
 	bridgeDevice "github.com/plgd-dev/device/v2/cmd/bridge-device/device"
 	"github.com/plgd-dev/device/v2/pkg/codec/json"
 	deviceCoap "github.com/plgd-dev/device/v2/pkg/net/coap"
-	schemaCloud "github.com/plgd-dev/device/v2/schema/cloud"
-	schemaCredential "github.com/plgd-dev/device/v2/schema/credential"
 	schemaDevice "github.com/plgd-dev/device/v2/schema/device"
 	schemaMaintenance "github.com/plgd-dev/device/v2/schema/maintenance"
 	"github.com/plgd-dev/go-coap/v3/message"
@@ -200,11 +198,11 @@ func TestBridgeDeviceGetThings(t *testing.T) {
 	}
 }
 
-func getPatchedTD(t *testing.T, deviceCfg bridgeDevice.Config, deviceID, title, host string) *wotTD.ThingDescription {
+func getPatchedTD(t *testing.T, deviceCfg bridgeDevice.Config, deviceID string, links []wotTD.IconLinkElement, validateDevices map[string]struct{}, title, host string) *wotTD.ThingDescription {
 	td, err := bridgeDevice.GetThingDescription(deviceCfg.ThingDescription.File, deviceCfg.NumResourcesPerDevice)
 	require.NoError(t, err)
 
-	baseURL := host + httpgwUri.Devices + "/" + deviceID + "/" + httpgwUri.ResourcesPathKey
+	baseURL := host + httpgwUri.API
 	base, err := url.Parse(baseURL)
 	require.NoError(t, err)
 	td.Base = *base
@@ -215,7 +213,7 @@ func getPatchedTD(t *testing.T, deviceCfg bridgeDevice.Config, deviceID, title, 
 
 	deviceUUID, err := uuid.Parse(deviceID)
 	require.NoError(t, err)
-	propertyBaseURL := ""
+	propertyBaseURL := "/" + httpgwUri.DevicesPathKey + "/" + deviceID + "/" + httpgwUri.ResourcesPathKey
 	dev, ok := bridgeResourcesTD.GetOCFResourcePropertyElement(schemaDevice.ResourceURI)
 	require.True(t, ok)
 	dev, err = bridgeResourcesTD.PatchDeviceResourcePropertyElement(dev, deviceUUID, propertyBaseURL, message.AppJSON.String(), bridgeDevice.DeviceResourceType)
@@ -232,22 +230,6 @@ func getPatchedTD(t *testing.T, deviceCfg bridgeDevice.Config, deviceID, title, 
 	require.NoError(t, err)
 	td.Properties[schemaMaintenance.ResourceURI] = mnt
 
-	if deviceCfg.Cloud.Enabled {
-		cloudCfg, ok := bridgeResourcesTD.GetOCFResourcePropertyElement(schemaCloud.ResourceURI)
-		require.True(t, ok)
-		cloudCfg, err = bridgeResourcesTD.PatchCloudResourcePropertyElement(cloudCfg, deviceUUID, propertyBaseURL, message.AppJSON.String())
-		require.NoError(t, err)
-		td.Properties[schemaCloud.ResourceURI] = cloudCfg
-	}
-
-	if deviceCfg.Credential.Enabled {
-		cred, ok := bridgeResourcesTD.GetOCFResourcePropertyElement(schemaCredential.ResourceURI)
-		require.True(t, ok)
-		cred, err = bridgeResourcesTD.PatchCredentialResourcePropertyElement(cred, deviceUUID, propertyBaseURL, message.AppJSON.String())
-		require.NoError(t, err)
-		td.Properties[schemaCredential.ResourceURI] = cred
-	}
-
 	for i := 0; i < deviceCfg.NumResourcesPerDevice; i++ {
 		href := bridgeDevice.GetTestResourceHref(i)
 		prop := bridgeDevice.GetPropertyDescriptionForTestResource()
@@ -256,7 +238,31 @@ func getPatchedTD(t *testing.T, deviceCfg bridgeDevice.Config, deviceID, title, 
 		td.Properties[href] = prop
 	}
 
+	expectedLinks := make([]wotTD.IconLinkElement, 0, len(links))
+	for _, link := range links {
+		patchedLink, ok := httpgwService.ThingPatchLink(link, validateDevices)
+		if !ok {
+			continue
+		}
+		expectedLinks = append(expectedLinks, patchedLink)
+	}
+	td.Links = expectedLinks
+
 	return &td
+}
+
+func bridgeDeviceInstanceName(idx int) string {
+	return test.TestBridgeDeviceInstanceName(strconv.Itoa(idx))
+}
+
+func onboardBridgeDevice(ctx context.Context, t *testing.T, idx int, c pb.GrpcGatewayClient, bridgeDeviceCfg bridgeDevice.Config) (string, func()) {
+	bdName := bridgeDeviceInstanceName(idx)
+	bdID := test.MustFindDeviceByName(bdName, func(d *core.Device) deviceCoap.OptionFunc {
+		return deviceCoap.WithQuery("di=" + d.DeviceID())
+	})
+	bd := bridge.NewDevice(bdID, bdName, bridgeDeviceCfg.NumResourcesPerDevice, true)
+	shutdownBd := test.OnboardDevice(ctx, t, c, bd, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, bd.GetDefaultResources())
+	return bdID, shutdownBd
 }
 
 func TestBridgeDeviceGetThing(t *testing.T) {
@@ -265,7 +271,9 @@ func TestBridgeDeviceGetThing(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
-	tearDown := service.SetUp(ctx, t)
+	raCfg := raTest.MakeConfig(t)
+	raCfg.APIs.GRPC.TLS.ClientCertificateRequired = false
+	tearDown := service.SetUp(ctx, t, service.WithRAConfig(raCfg))
 	defer tearDown()
 	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = kitNetGrpc.CtxWithToken(ctx, token)
@@ -283,13 +291,111 @@ func TestBridgeDeviceGetThing(t *testing.T) {
 	shutdownHttp := httpgwTest.New(t, httpgwCfg)
 	defer shutdownHttp()
 
-	bdName := test.TestBridgeDeviceInstanceName("0")
-	bdID := test.MustFindDeviceByName(bdName, func(d *core.Device) deviceCoap.OptionFunc {
-		return deviceCoap.WithQuery("di=" + d.DeviceID())
+	deviceIDs := make([]string, 0, 2)
+	validLinkedDevices := make(map[string]struct{}, 2)
+	for i := 0; i < 2; i++ {
+		bdID, shutdownBd := onboardBridgeDevice(ctx, t, i, c, bridgeDeviceCfg)
+		defer shutdownBd()
+		deviceIDs = append(deviceIDs, bdID)
+		validLinkedDevices[bdID] = struct{}{}
+	}
+
+	// update TD links in resource twin
+	wotRes, err := c.GetResources(ctx, &pb.GetResourcesRequest{
+		ResourceIdFilter: []*pb.ResourceIdFilter{
+			{
+				ResourceId: &commands.ResourceId{
+					DeviceId: deviceIDs[0],
+					Href:     bridgeResourcesTD.ResourceURI,
+				},
+			},
+		},
 	})
-	bd := bridge.NewDevice(bdID, bdName, bridgeDeviceCfg.NumResourcesPerDevice, true)
-	shutdownBd := test.OnboardDevice(ctx, t, c, bd, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, bd.GetDefaultResources())
-	defer shutdownBd()
+	require.NoError(t, err)
+	resources := make([]*pb.Resource, 0, 1)
+	for {
+		res, errR := wotRes.Recv()
+		if errors.Is(errR, io.EOF) {
+			break
+		}
+		require.NoError(t, errR)
+		resources = append(resources, res)
+	}
+	require.Len(t, resources, 1)
+
+	var updateLinksTD wotTD.ThingDescription
+	err = json.Decode(resources[0].GetData().GetContent().GetData(), &updateLinksTD)
+	require.NoError(t, err)
+	links := []wotTD.IconLinkElement{
+		{
+			Rel:  bridgeTD.StringToPtr("icon"),
+			Href: "https://example.com/icon.png",
+		},
+		{
+			Rel:  bridgeTD.StringToPtr(httpgwService.ThingLinkRelationItem),
+			Href: "/" + deviceIDs[1],
+		},
+		{
+			Rel:  bridgeTD.StringToPtr(httpgwService.ThingLinkRelationCollection),
+			Href: "/" + deviceIDs[1],
+		},
+		{
+			Rel:  bridgeTD.StringToPtr(httpgwService.ThingLinkRelationItem),
+			Href: "/" + uuid.NewString(),
+		},
+	}
+	updateLinksTD.Links = links
+	data, err := json.Encode(updateLinksTD)
+	require.NoError(t, err)
+
+	sub, err := c.SubscribeToEvents(ctx)
+	require.NoError(t, err)
+
+	err = sub.Send(&pb.SubscribeToEvents{
+		Action: &pb.SubscribeToEvents_CreateSubscription_{CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
+			EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED},
+			ResourceIdFilter: []*pb.ResourceIdFilter{
+				{
+					ResourceId: resources[0].GetData().GetResourceId(),
+				},
+			},
+		}},
+	})
+	require.NoError(t, err)
+	s, err := sub.Recv()
+	require.NoError(t, err)
+	require.Equal(t, pb.Event_OperationProcessed_ErrorStatus_OK, s.GetOperationProcessed().GetErrorStatus().GetCode())
+
+	// overwrite TD links in resource twin
+	raConn, err := grpc.NewClient(config.RESOURCE_AGGREGATE_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
+	})))
+	require.NoError(t, err)
+	defer func() {
+		_ = raConn.Close()
+	}()
+	raC := raPb.NewResourceAggregateClient(raConn)
+	_, err = raC.NotifyResourceChanged(ctx, &commands.NotifyResourceChangedRequest{
+		ResourceId: resources[0].GetData().GetResourceId(),
+		Status:     commands.Status_OK,
+		Content: &commands.Content{
+			Data:              data,
+			CoapContentFormat: int32(message.AppJSON),
+			ContentType:       message.AppJSON.String(),
+		},
+		CommandMetadata: &commands.CommandMetadata{
+			ConnectionId: "test",
+			Sequence:     1,
+		},
+	})
+	require.NoError(t, err)
+
+	ev, err := sub.Recv()
+	require.NoError(t, err)
+	require.Equal(t, commands.Status_OK, ev.GetResourceChanged().GetStatus())
+
+	err = sub.CloseSend()
+	require.NoError(t, err)
 
 	type args struct {
 		accept   string
@@ -304,27 +410,11 @@ func TestBridgeDeviceGetThing(t *testing.T) {
 		{
 			name: "json: get from resource twin",
 			args: args{
-				deviceID: bdID,
+				deviceID: deviceIDs[0],
 			},
-			want:     getPatchedTD(t, bridgeDeviceCfg, bdID, bdName, httpgwCfg.UI.WebConfiguration.HTTPGatewayAddress),
+			want:     getPatchedTD(t, bridgeDeviceCfg, deviceIDs[0], links, validLinkedDevices, bridgeDeviceInstanceName(0), httpgwCfg.UI.WebConfiguration.HTTPGatewayAddress),
 			wantCode: http.StatusOK,
 		},
-		// TODO: do we want to support other formats?
-		// {
-		// 	name: "jsonpb: get from resource twin",
-		// 	args: args{
-		// 		accept:   uri.ApplicationProtoJsonContentType,
-		// 		deviceID: bdID,
-		// 	},
-		// 	want: pbTest.MakeResourceRetrieved(t, bdID, thingDescription.ResourceURI, []string{thingDescription.ResourceType}, "",
-		// 		map[string]interface{}{
-		// 			"state": false,
-		// 			"power": uint64(0),
-		// 			"name":  "Light",
-		// 		},
-		// 	),
-		// 	wantCode: http.StatusOK,
-		// },
 	}
 
 	for _, tt := range tests {
