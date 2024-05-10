@@ -13,6 +13,7 @@ import (
 	"github.com/gorilla/mux"
 	jsoniter "github.com/json-iterator/go"
 	bridgeDeviceTD "github.com/plgd-dev/device/v2/bridge/device/thingDescription"
+	"github.com/plgd-dev/device/v2/bridge/resources"
 	bridgeResourcesTD "github.com/plgd-dev/device/v2/bridge/resources/thingDescription"
 	schemaCloud "github.com/plgd-dev/device/v2/schema/cloud"
 	schemaCredential "github.com/plgd-dev/device/v2/schema/credential"
@@ -23,10 +24,11 @@ import (
 	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/pkg/security/openid"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
-	"github.com/plgd-dev/kit/v2/codec/json"
 	wotTD "github.com/web-of-things-open-source/thingdescription-go/thingDescription"
+	"google.golang.org/grpc/codes"
 )
 
 type ThingLink struct {
@@ -103,6 +105,32 @@ func (requestHandler *RequestHandler) getThings(w http.ResponseWriter, r *http.R
 	}
 }
 
+func CreateHTTPForms(hrefUri *url.URL, opsBits resources.SupportedOperation, contentType message.MediaType) []wotTD.FormElementProperty {
+	supportedByOps := map[resources.SupportedOperation]wotTD.StickyDescription{
+		resources.SupportedOperationRead:  wotTD.Readproperty,
+		resources.SupportedOperationWrite: wotTD.Writeproperty,
+	}
+
+	ops := make([]string, 0, len(supportedByOps))
+	for opBit, op := range supportedByOps {
+		if opsBits.HasOperation(opBit) {
+			ops = append(ops, string(op))
+		}
+	}
+	if len(ops) == 0 {
+		return nil
+	}
+	return []wotTD.FormElementProperty{
+		{
+			ContentType: bridgeDeviceTD.StringToPtr(contentType.String()),
+			Href:        *hrefUri,
+			Op: &wotTD.FormElementPropertyOp{
+				StringArray: ops,
+			},
+		},
+	}
+}
+
 func patchProperty(pe wotTD.PropertyElement, deviceID, href string, contentType message.MediaType) (wotTD.PropertyElement, error) {
 	deviceUUID, err := uuid.Parse(deviceID)
 	if err != nil {
@@ -111,16 +139,16 @@ func patchProperty(pe wotTD.PropertyElement, deviceID, href string, contentType 
 	propertyBaseURL := "/" + uri.DevicesPathKey + "/" + deviceID + "/" + uri.ResourcesPathKey
 	patchFnMap := map[string]func(wotTD.PropertyElement) (wotTD.PropertyElement, error){
 		schemaDevice.ResourceURI: func(pe wotTD.PropertyElement) (wotTD.PropertyElement, error) {
-			return bridgeResourcesTD.PatchDeviceResourcePropertyElement(pe, deviceUUID, propertyBaseURL, contentType, "")
+			return bridgeResourcesTD.PatchDeviceResourcePropertyElement(pe, deviceUUID, propertyBaseURL, contentType, "", CreateHTTPForms)
 		},
 		schemaMaintenance.ResourceURI: func(pe wotTD.PropertyElement) (wotTD.PropertyElement, error) {
-			return bridgeResourcesTD.PatchMaintenanceResourcePropertyElement(pe, deviceUUID, propertyBaseURL, contentType)
+			return bridgeResourcesTD.PatchMaintenanceResourcePropertyElement(pe, deviceUUID, propertyBaseURL, contentType, CreateHTTPForms)
 		},
 		schemaCloud.ResourceURI: func(pe wotTD.PropertyElement) (wotTD.PropertyElement, error) {
-			return bridgeResourcesTD.PatchCloudResourcePropertyElement(pe, deviceUUID, propertyBaseURL, contentType)
+			return bridgeResourcesTD.PatchCloudResourcePropertyElement(pe, deviceUUID, propertyBaseURL, contentType, CreateHTTPForms)
 		},
 		schemaCredential.ResourceURI: func(pe wotTD.PropertyElement) (wotTD.PropertyElement, error) {
-			return bridgeResourcesTD.PatchCredentialResourcePropertyElement(pe, deviceUUID, propertyBaseURL, contentType)
+			return bridgeResourcesTD.PatchCredentialResourcePropertyElement(pe, deviceUUID, propertyBaseURL, contentType, CreateHTTPForms)
 		},
 	}
 	patchFn, ok := patchFnMap[href]
@@ -133,8 +161,8 @@ func patchProperty(pe wotTD.PropertyElement, deviceID, href string, contentType 
 	}
 
 	propOps := bridgeDeviceTD.GetPropertyElementOperations(pe)
-	pe, err = bridgeDeviceTD.PatchPropertyElement(pe, nil, true, deviceUUID, propertyBaseURL+href,
-		propOps.ToSupportedOperations(), contentType)
+	pe, err = bridgeDeviceTD.PatchPropertyElement(pe, nil, deviceUUID, propertyBaseURL+href,
+		propOps.ToSupportedOperations(), contentType, CreateHTTPForms)
 	if err != nil {
 		return wotTD.PropertyElement{}, err
 	}
@@ -306,7 +334,7 @@ func (requestHandler *RequestHandler) thingDescriptionResponse(ctx context.Conte
 		return
 	}
 	var td wotTD.ThingDescription
-	err := json.Decode([]byte(content.ToString()), &td)
+	err := td.UnmarshalJSON([]byte(content.ToString()))
 	if err != nil {
 		writeError(w, fmt.Errorf("cannot decode thingDescription content: %w", err))
 		return
@@ -329,7 +357,22 @@ func (requestHandler *RequestHandler) thingDescriptionResponse(ctx context.Conte
 	// .links
 	requestHandler.thingSetLinks(ctx, &td)
 
-	writeSimpleResponse(w, rec, td, writeError)
+	// marshal thingDescription
+	data, err := td.MarshalJSON()
+	if err != nil {
+		writeError(w, fmt.Errorf("cannot encode thingDescription: %w", err))
+		return
+	}
+	// copy everything from response recorder
+	// to actual response writer
+	for k, v := range rec.Header() {
+		w.Header()[k] = v
+	}
+	w.WriteHeader(rec.Code)
+	_, err = w.Write(data)
+	if err != nil {
+		writeError(w, kitNetGrpc.ForwardErrorf(codes.Internal, "cannot encode response: %v", err))
+	}
 }
 
 func (requestHandler *RequestHandler) getThing(w http.ResponseWriter, r *http.Request) {

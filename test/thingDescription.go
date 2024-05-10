@@ -13,6 +13,13 @@ func CmpThingDescription(t *testing.T, expected, got *wotTD.ThingDescription) {
 	sort.Strings(got.Type.StringArray)
 	sortProperties := func(td *wotTD.ThingDescription) {
 		for key, prop := range td.Properties {
+			for idx, form := range prop.Forms {
+				if form.Op.StringArray == nil {
+					continue
+				}
+				sort.Strings(form.Op.StringArray)
+				prop.Forms[idx] = form
+			}
 			if prop.Type == nil {
 				continue
 			}
