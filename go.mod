@@ -1,6 +1,8 @@
 module github.com/plgd-dev/hub/v2
 
-go 1.20
+go 1.22
+
+toolchain go1.22.0
 
 require (
 	github.com/favadi/protoc-go-inject-tag v1.4.0
@@ -28,7 +30,7 @@ require (
 	github.com/panjf2000/ants/v2 v2.9.1
 	github.com/pion/dtls/v2 v2.2.8-0.20240501061905-2c36d63320a0
 	github.com/pion/logging v0.2.2
-	github.com/plgd-dev/device/v2 v2.5.1-0.20240503101127-50d52f0569fe
+	github.com/plgd-dev/device/v2 v2.5.1-0.20240510131130-e10f602b7f77
 	github.com/plgd-dev/go-coap/v3 v3.3.4
 	github.com/plgd-dev/kit/v2 v2.0.0-20211006190727-057b33161b90
 	github.com/pseudomuto/protoc-gen-doc v1.5.1
@@ -38,7 +40,7 @@ require (
 	github.com/tidwall/sjson v1.2.5
 	github.com/ugorji/go/codec v1.2.12
 	github.com/vincent-petithory/dataurl v1.0.0
-	github.com/web-of-things-open-source/thingdescription-go v0.0.0-20240417084639-a2aca7547975
+	github.com/web-of-things-open-source/thingdescription-go v0.0.0-20240510130416-741fef736e1e
 	go.mongodb.org/mongo-driver v1.15.0
 	go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo v0.49.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.49.0
@@ -73,6 +75,7 @@ require (
 	github.com/dsnet/golib/memfile v1.0.0 // indirect
 	github.com/envoyproxy/protoc-gen-validate v1.0.4 // indirect
 	github.com/fredbi/uri v1.1.0 // indirect
+	github.com/go-json-experiment/json v0.0.0-20240418180308-af2d5061e6c2 // indirect
 	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect

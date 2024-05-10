@@ -217,7 +217,7 @@ func getPatchedTD(t *testing.T, deviceCfg bridgeDevice.Config, deviceID string, 
 	propertyBaseURL := "/" + httpgwUri.DevicesPathKey + "/" + deviceID + "/" + httpgwUri.ResourcesPathKey
 	dev, ok := bridgeResourcesTD.GetOCFResourcePropertyElement(schemaDevice.ResourceURI)
 	require.True(t, ok)
-	dev, err = bridgeResourcesTD.PatchDeviceResourcePropertyElement(dev, deviceUUID, propertyBaseURL, message.AppJSON.String(), bridgeDevice.DeviceResourceType)
+	dev, err = bridgeResourcesTD.PatchDeviceResourcePropertyElement(dev, deviceUUID, propertyBaseURL, message.AppJSON, bridgeDevice.DeviceResourceType)
 	require.NoError(t, err)
 	schemaMap := bridgeDevice.GetDataSchemaForAdditionalProperties()
 	for name, schema := range schemaMap {
@@ -232,14 +232,14 @@ func getPatchedTD(t *testing.T, deviceCfg bridgeDevice.Config, deviceID string, 
 
 	mnt, ok := bridgeResourcesTD.GetOCFResourcePropertyElement(schemaMaintenance.ResourceURI)
 	require.True(t, ok)
-	mnt, err = bridgeResourcesTD.PatchMaintenanceResourcePropertyElement(mnt, deviceUUID, propertyBaseURL, message.AppJSON.String())
+	mnt, err = bridgeResourcesTD.PatchMaintenanceResourcePropertyElement(mnt, deviceUUID, propertyBaseURL, message.AppJSON)
 	require.NoError(t, err)
 	td.Properties[schemaMaintenance.ResourceURI] = mnt
 
 	for i := 0; i < deviceCfg.NumResourcesPerDevice; i++ {
 		href := bridgeDevice.GetTestResourceHref(i)
 		prop := bridgeDevice.GetPropertyDescriptionForTestResource()
-		prop, err := bridgeDevice.PatchTestResourcePropertyElement(prop, deviceUUID, propertyBaseURL+href, message.AppJSON.String())
+		prop, err := bridgeDevice.PatchTestResourcePropertyElement(prop, deviceUUID, propertyBaseURL+href, message.AppJSON)
 		require.NoError(t, err)
 		td.Properties[href] = prop
 	}

@@ -96,14 +96,14 @@ func (requestHandler *RequestHandler) getThings(w http.ResponseWriter, r *http.R
 		Links:               links,
 		Security:            td.Security,
 		SecurityDefinitions: td.SecurityDefinitions,
-		ID:                  "urn:uuid:" + hubCfg.Id,
+		ID:                  "urn:uuid:" + hubCfg.GetId(),
 	}
 	if err := jsonResponseWriter(w, things); err != nil {
 		log.Errorf("failed to write response: %v", err)
 	}
 }
 
-func patchProperty(pe wotTD.PropertyElement, deviceID, href, contentType string) (wotTD.PropertyElement, error) {
+func patchProperty(pe wotTD.PropertyElement, deviceID, href string, contentType message.MediaType) (wotTD.PropertyElement, error) {
 	deviceUUID, err := uuid.Parse(deviceID)
 	if err != nil {
 		return wotTD.PropertyElement{}, fmt.Errorf("cannot parse deviceID: %w", err)
@@ -252,7 +252,7 @@ func (requestHandler *RequestHandler) thingSetProperties(ctx context.Context, de
 			delete(td.Properties, href)
 			continue
 		}
-		patchedProp, err := patchProperty(prop, deviceID, href, message.AppJSON.String())
+		patchedProp, err := patchProperty(prop, deviceID, href, message.AppJSON)
 		if err != nil {
 			return fmt.Errorf("cannot patch device resource property element: %w", err)
 		}
