@@ -23,6 +23,7 @@ import (
 	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/security/openid"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	wotTD "github.com/web-of-things-open-source/thingdescription-go/thingDescription"
@@ -34,8 +35,11 @@ type ThingLink struct {
 }
 
 type GetThingsResponse struct {
-	Base  string      `json:"base"`
-	Links []ThingLink `json:"links"`
+	Base                string                          `json:"base"`
+	Security            *wotTD.TypeDeclaration          `json:"security"`
+	ID                  string                          `json:"id"`
+	SecurityDefinitions map[string]wotTD.SecurityScheme `json:"securityDefinitions"`
+	Links               []ThingLink                     `json:"links"`
 }
 
 const (
@@ -71,6 +75,12 @@ func (requestHandler *RequestHandler) getThings(w http.ResponseWriter, r *http.R
 		serverMux.WriteError(w, err)
 		return
 	}
+	hubCfg, err := requestHandler.client.GrpcGatewayClient().GetHubConfiguration(r.Context(), &pb.HubConfigurationRequest{})
+	if err != nil {
+		serverMux.WriteError(w, err)
+		return
+	}
+
 	links := make([]ThingLink, 0, len(resLinks))
 	for _, l := range resLinks {
 		links = append(links, ThingLink{
@@ -78,9 +88,15 @@ func (requestHandler *RequestHandler) getThings(w http.ResponseWriter, r *http.R
 			Rel:  ThingLinkRelationItem,
 		})
 	}
+	var td wotTD.ThingDescription
+	ThingSetSecurity(&td, requestHandler.openIDConfig)
+
 	things := GetThingsResponse{
-		Base:  requestHandler.config.UI.WebConfiguration.HTTPGatewayAddress + uri.Things,
-		Links: links,
+		Base:                requestHandler.config.UI.WebConfiguration.HTTPGatewayAddress + uri.Things,
+		Links:               links,
+		Security:            td.Security,
+		SecurityDefinitions: td.SecurityDefinitions,
+		ID:                  "urn:uuid:" + hubCfg.Id,
 	}
 	if err := jsonResponseWriter(w, things); err != nil {
 		log.Errorf("failed to write response: %v", err)
@@ -269,18 +285,35 @@ func (requestHandler *RequestHandler) thingSetLinks(ctx context.Context, td *wot
 	}
 }
 
+func ThingSetSecurity(td *wotTD.ThingDescription, openIDConfig openid.Config) {
+	td.Security = &wotTD.TypeDeclaration{
+		String: bridgeDeviceTD.StringToPtr("oauth2_sc"),
+	}
+	td.SecurityDefinitions = map[string]wotTD.SecurityScheme{
+		"oauth2_sc": {
+			Scheme:        "oauth2",
+			Flow:          bridgeDeviceTD.StringToPtr("code"),
+			Authorization: &openIDConfig.AuthURL,
+			Token:         &openIDConfig.TokenURL,
+		},
+	}
+}
+
 func (requestHandler *RequestHandler) thingDescriptionResponse(ctx context.Context, w http.ResponseWriter, rec *httptest.ResponseRecorder, writeError func(w http.ResponseWriter, err error), deviceID string) {
 	content := jsoniter.Get(rec.Body.Bytes(), streamResponseKey, "data", "content")
 	if content.ValueType() != jsoniter.ObjectValue {
 		writeError(w, errors.New("cannot decode thingDescription content"))
 		return
 	}
-	td := wotTD.ThingDescription{}
+	var td wotTD.ThingDescription
 	err := json.Decode([]byte(content.ToString()), &td)
 	if err != nil {
 		writeError(w, fmt.Errorf("cannot decode thingDescription content: %w", err))
 		return
 	}
+
+	// .security
+	ThingSetSecurity(&td, requestHandler.openIDConfig)
 
 	// .base
 	if err = requestHandler.thingSetBase(&td); err != nil {

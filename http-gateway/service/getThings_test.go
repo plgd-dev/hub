@@ -28,6 +28,7 @@ import (
 	isPb "github.com/plgd-dev/hub/v2/identity-store/pb"
 	isTest "github.com/plgd-dev/hub/v2/identity-store/test"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/pkg/security/openid"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	raPb "github.com/plgd-dev/hub/v2/resource-aggregate/service"
 	raTest "github.com/plgd-dev/hub/v2/resource-aggregate/test"
@@ -223,6 +224,11 @@ func getPatchedTD(t *testing.T, deviceCfg bridgeDevice.Config, deviceID string, 
 		dev.Properties.DataSchemaMap[name] = schema
 	}
 	td.Properties[schemaDevice.ResourceURI] = dev
+
+	httpgwService.ThingSetSecurity(&td, openid.Config{
+		TokenURL: "https://localhost:20009/oauth/token",
+		AuthURL:  "https://localhost:20009/authorize",
+	})
 
 	mnt, ok := bridgeResourcesTD.GetOCFResourcePropertyElement(schemaMaintenance.ResourceURI)
 	require.True(t, ok)

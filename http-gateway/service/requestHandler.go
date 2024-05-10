@@ -16,14 +16,16 @@ import (
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	"github.com/plgd-dev/hub/v2/pkg/security/openid"
 	pkgStrings "github.com/plgd-dev/hub/v2/pkg/strings"
 )
 
 // RequestHandler for handling incoming request
 type RequestHandler struct {
-	client *client.Client
-	config *Config
-	mux    *runtime.ServeMux
+	client       *client.Client
+	config       *Config
+	mux          *runtime.ServeMux
+	openIDConfig openid.Config
 }
 
 func matchPrefixAndSplitURIPath(requestURI, prefix string) []string {
@@ -166,10 +168,11 @@ func (requestHandler *RequestHandler) setupUIHandler(r *mux.Router) {
 }
 
 // NewHTTP returns HTTP handler
-func NewRequestHandler(config *Config, r *mux.Router, client *client.Client) (*RequestHandler, error) {
+func NewRequestHandler(config *Config, r *mux.Router, client *client.Client, openIDConfig openid.Config) (*RequestHandler, error) {
 	requestHandler := &RequestHandler{
-		client: client,
-		config: config,
+		client:       client,
+		config:       config,
+		openIDConfig: openIDConfig,
 		mux: serverMux.New(
 			runtime.WithMarshalerOption(ApplicationSubscribeToEventsMIMEWildcard, newSubscribeToEventsMarshaler(serverMux.NewJsonMarshaler())),
 			runtime.WithMarshalerOption(ApplicationSubscribeToEventsProtoJsonContentType, serverMux.NewJsonpbMarshaler()),
