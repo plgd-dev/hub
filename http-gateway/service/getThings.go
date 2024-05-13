@@ -269,9 +269,6 @@ func (requestHandler *RequestHandler) thingSetProperties(ctx context.Context, de
 		return fmt.Errorf("cannot get resource links for device %v", deviceID)
 	}
 	for href, prop := range td.Properties {
-		if len(prop.Forms) > 0 {
-			continue
-		}
 		_, ok := validateProperties[href]
 		if !ok {
 			_, ok = validateProperties["/"+href]
