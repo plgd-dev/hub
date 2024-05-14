@@ -21,6 +21,7 @@ const (
 	TimestampFilterQueryKey      = "timestampFilter"
 	CorrelationIdFilterQueryKey  = "correlationIdFilter"
 	ETagQueryKey                 = "etag"
+	OnlyContentQueryKey          = "onlyContent"
 
 	AliasInterfaceQueryKey        = "interface"
 	AliasCommandFilterQueryKey    = "command"
@@ -140,4 +141,5 @@ var QueryCaseInsensitive = map[string]string{
 	strings.ToLower(TimestampFilterQueryKey):       TimestampFilterQueryKey,
 	strings.ToLower(TimeToLiveQueryKey):            TimeToLiveQueryKey,
 	strings.ToLower(CorrelationIdFilterQueryKey):   CorrelationIdFilterQueryKey,
+	strings.ToLower(OnlyContentQueryKey):           OnlyContentQueryKey,
 }

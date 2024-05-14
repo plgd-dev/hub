@@ -389,6 +389,7 @@ paths:
         - $ref: "#/components/parameters/shadow"
         - $ref: "#/components/parameters/timeToLive"
         - $ref: "#/components/parameters/etag"
+        - $ref: "#/components/parameters/onlyContent"
       responses:
         200:
           description: "Resource content."
@@ -419,6 +420,7 @@ paths:
       parameters:
         - $ref: "#/components/parameters/interface"
         - $ref: "#/components/parameters/timeToLive"
+        - $ref: "#/components/parameters/onlyContent"
       requestBody:
         description: "Updated content of the resource."
         content:
@@ -1762,6 +1764,13 @@ components:
       schema:
         type: string
         format: base64
+    onlyContent:
+      name: onlyContent
+      in: query
+      description: "Return only content of the resource in the response."
+      schema:
+        type: boolean
+        default: false
   responses:
     ok:
       description: Content is stored in body.

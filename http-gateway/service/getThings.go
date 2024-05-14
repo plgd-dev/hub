@@ -120,6 +120,12 @@ func CreateHTTPForms(hrefUri *url.URL, opsBits resources.SupportedOperation, con
 	if len(ops) == 0 {
 		return nil
 	}
+	q := hrefUri.Query()
+	if len(q) > 0 && q.Has("di") {
+		q.Del("di")
+	}
+	q.Add(uri.OnlyContentQueryKey, "1")
+	hrefUri.RawQuery = q.Encode()
 	return []wotTD.FormElementProperty{
 		{
 			ContentType: bridgeDeviceTD.StringToPtr(contentType.String()),
@@ -169,6 +175,11 @@ func patchProperty(pe wotTD.PropertyElement, deviceID, href string, contentType 
 	return pe, nil
 }
 
+var validRefs = map[string]struct{}{
+	ThingLinkRelationItem:       {},
+	ThingLinkRelationCollection: {},
+}
+
 func isDeviceLink(le wotTD.IconLinkElement) (string, bool) {
 	if le.Href == "" {
 		return "", false
@@ -179,10 +190,7 @@ func isDeviceLink(le wotTD.IconLinkElement) (string, bool) {
 	if le.Rel == nil {
 		return "", false
 	}
-	validRefs := map[string]struct{}{
-		ThingLinkRelationItem:       {},
-		ThingLinkRelationCollection: {},
-	}
+
 	if _, ok := validRefs[*le.Rel]; !ok {
 		return "", false
 	}

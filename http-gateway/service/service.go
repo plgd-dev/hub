@@ -86,7 +86,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	})
 	grpcClient := pb.NewGrpcGatewayClient(grpcConn.GRPC())
 	client := client.New(grpcClient)
-	_, err = NewRequestHandler(&config, s.GetRouter(), client, validator.OpenIDConfiguration())
+	_, err = NewRequestHandler(&config, s.GetRouter(), client, validator.OpenIDConfiguration(), logger)
 	if err != nil {
 		var errors *multierror.Error
 		errors = multierror.Append(errors, fmt.Errorf("cannot create request handler: %w", err))

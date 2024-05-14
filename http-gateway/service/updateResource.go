@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/httptest"
 
 	"github.com/gorilla/mux"
 	"github.com/plgd-dev/go-coap/v3/message"
@@ -53,5 +54,14 @@ func (requestHandler *RequestHandler) updateResource(w http.ResponseWriter, r *h
 	}
 
 	r.Body = newBody
-	requestHandler.mux.ServeHTTP(w, r)
+	rec := httptest.NewRecorder()
+	onlyContent := r.URL.Query().Get(uri.OnlyContentQueryKey)
+	requestHandler.mux.ServeHTTP(rec, r)
+	allowEmptyContent := false
+	if parseBoolQuery(onlyContent) {
+		allowEmptyContent = requestHandler.filterOnlyContent(rec, "data", "content")
+	}
+	toSimpleResponse(w, rec, allowEmptyContent, func(w http.ResponseWriter, err error) {
+		serverMux.WriteError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot update resource('/%v%v') from the device: %v", deviceID, href, err))
+	}, streamResponseKey)
 }

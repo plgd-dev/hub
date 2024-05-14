@@ -226,8 +226,7 @@ simulators: simulators/clean
 .PHONY: simulators
 
 BRIDGE_DEVICE_SRC_DIR = $(WORKING_DIRECTORY)/test/bridge-device
-# BRIDGE_DEVICE_IMAGE = ghcr.io/plgd-dev/device/bridge-device:vnext
-BRIDGE_DEVICE_IMAGE = ghcr.io/plgd-dev/device/bridge-device:vnext-pr464
+BRIDGE_DEVICE_IMAGE = ghcr.io/plgd-dev/device/bridge-device:vnext
 BRIDGE_DEVICE_NAME = bridgedev
 BRIDGE_DEVICE_ID ?= 8f596b43-29c0-4147-8b40-e99268ab30f7
 BRIDGE_DEVICE_RESOURCES_PER_DEVICE ?= 3
