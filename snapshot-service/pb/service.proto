@@ -59,6 +59,7 @@ message Condition { // driven by resource change event
   repeated string resource_href_filter = 8;
   string yq_expression = 9;
   string api_access_token = 10; // token used to update resources in the configuration
+  string owner = 11;
 }
 
 message GetConditionsRequest { repeated IdFilter id_filter = 1; }
@@ -75,6 +76,7 @@ message Configuration {
   uint64 version = 2;
   string name = 3;
   repeated Resource resources = 4;
+  string owner = 5;
 }
 
 message GetConfigurationsRequest { repeated IDFilter id_filter = 1; }
@@ -106,6 +108,7 @@ message AppliedDeviceConfiguration { //TODO naming
     RelationTo condition_id = 5; //TODO Naming
   }
   repeated Resource resources = 6; //TODO naming
+  string owner = 7;
 }
 
 message InvokeConfigurationRequest {
