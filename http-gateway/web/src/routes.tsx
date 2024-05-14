@@ -364,7 +364,7 @@ export const Routes = () => {
                 <Route element={withSuspense(<RemoteClientDevicesDetailPage defaultActiveTab={1} />)} path=':id/devices/:deviceId/resources/:resource' />
                 <Route element={withSuspense(<RemoteClientDevicesDetailPage defaultActiveTab={1} />)} path=':id/devices/:deviceId/resources' />
                 <Route element={withSuspense(<RemoteClientDevicesDetailPage defaultActiveTab={0} />)} path=':id/devices/:deviceId' />
-                <Route element={withSuspense(<RemoteClientDetailPage defaultActiveTab={1} />)} path=':id/configurator' />
+                <Route element={withSuspense(<RemoteClientDetailPage defaultActiveTab={1} />)} path=':id/configuration' />
                 <Route element={withSuspense(<RemoteClientDetailPage defaultActiveTab={0} />)} path=':id' />
                 <Route element={withSuspense(<RemoteClientsListPage />)} path='' />
             </Route>

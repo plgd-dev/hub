@@ -41,8 +41,6 @@ const Tab1: FC<Props> = (props) => {
         schema,
     })
 
-    console.log(defaultFormData)
-
     const linkedHubs = useMemo(
         () =>
             hubsData
