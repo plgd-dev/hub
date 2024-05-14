@@ -90,7 +90,7 @@ message AppliedDeviceConfiguration { //TODO naming
     enum Status {
       QUEUED = 0;
       PENDING = 1;
-      DONE = 2;
+      DONE = 2; If done look to resource_updated even update resource failed for resource aggregate.
       TIMEOUT = 3;
     };
     Status status = 3;
