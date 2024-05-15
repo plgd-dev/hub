@@ -104,7 +104,7 @@ message AppliedDeviceConfiguration { //TODO naming
   }
   RelationTo configuration_id = 3;
   oneof executed_by {
-    bool on_demaned = 4;
+    bool on_demand = 4;
     RelationTo condition_id = 5; //TODO Naming
   }
   repeated Resource resources = 6; //TODO naming
