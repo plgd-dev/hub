@@ -19,6 +19,40 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HubConfiguration"
+  "/api/v1/things":
+    get:
+      tags:
+        - "Web of Things"
+      summary: "Retrieve Hub Thing Description"
+      description: |
+        Retrieve the description of the PLGD hub, including links to all associated things.
+      responses:
+        200:
+          description: "Thing description of the plgd hub."
+          content:
+            application/json:
+              schema:
+                $ref: "https://raw.githubusercontent.com/plgd-dev/hub/main/http-gateway/swagger.wot.yaml#/components/schemas/thing"
+        401:
+          $ref: "#/components/responses/unauthorized"
+  "/api/v1/things/{deviceId}":
+    get:
+      tags:
+        - "Web of Things"
+      summary: "Retrieve Device Thing Description"
+      description: |
+        Retrieve the thing description for a specific device. The device must be listed in the links of /api/v1/things.
+      parameters:
+        - $ref: "#/components/parameters/deviceId"
+      responses:
+        200:
+          description: "Thing description of the device."
+          content:
+            application/json:
+              schema:
+                $ref: "https://raw.githubusercontent.com/plgd-dev/hub/main/http-gateway/swagger.wot.yaml#/components/schemas/thing"
+        401:
+          $ref: "#/components/responses/unauthorized"
   "/api/v1/devices":
     get:
       tags:

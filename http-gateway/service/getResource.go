@@ -78,7 +78,7 @@ func parseBoolQuery(str string) bool {
 	return val
 }
 
-func (requestHandler *RequestHandler) serveResourceRequest(r *http.Request, deviceID, resourceHref, twin, resourceInterface string) (*httptest.ResponseRecorder, error) {
+func (requestHandler *RequestHandler) serveResourceRequest(r *http.Request, deviceID, resourceHref, twin, resourceInterface string) (*httptest.ResponseRecorder, bool, error) {
 	resourceID := pb.ResourceIdFilter{
 		ResourceId: commands.NewResourceID(deviceID, resourceHref),
 		Etag:       getETags(r),
@@ -87,9 +87,9 @@ func (requestHandler *RequestHandler) serveResourceRequest(r *http.Request, devi
 	if (twin == "" || parseBoolQuery(twin)) && resourceInterface == "" {
 		rec, err := requestHandler.getResourceFromTwin(r, &resourceID)
 		if err != nil {
-			return nil, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, errFmtFromTwin, &resourceID, err)
+			return nil, false, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, errFmtFromTwin, &resourceID, err)
 		}
-		return rec, nil
+		return rec, true, nil
 	}
 
 	query := r.URL.Query()
@@ -103,7 +103,7 @@ func (requestHandler *RequestHandler) serveResourceRequest(r *http.Request, devi
 
 	rec := httptest.NewRecorder()
 	requestHandler.mux.ServeHTTP(rec, r)
-	return rec, nil
+	return rec, false, nil
 }
 
 func jsonGetValueOnPath(v interface{}, path ...string) (interface{}, error) {
@@ -174,14 +174,18 @@ func (requestHandler *RequestHandler) getResource(w http.ResponseWriter, r *http
 	twin := r.URL.Query().Get(uri.TwinQueryKey)
 	onlyContent := r.URL.Query().Get(uri.OnlyContentQueryKey)
 	resourceInterface := r.URL.Query().Get(uri.ResourceInterfaceQueryKey)
-	rec, err := requestHandler.serveResourceRequest(r, deviceID, resourceHref, twin, resourceInterface)
+	rec, fromTwin, err := requestHandler.serveResourceRequest(r, deviceID, resourceHref, twin, resourceInterface)
 	if err != nil {
 		serverMux.WriteError(w, err)
 		return
 	}
 	allowEmptyContent := false
 	if parseBoolQuery(onlyContent) {
-		allowEmptyContent = requestHandler.filterOnlyContent(rec, "result", "data", "content")
+		filterPath := []string{"result", "data", "content"}
+		if !fromTwin {
+			filterPath = []string{"data", "content"}
+		}
+		allowEmptyContent = requestHandler.filterOnlyContent(rec, filterPath...)
 	}
 	toSimpleResponse(w, rec, allowEmptyContent, func(w http.ResponseWriter, err error) {
 		serverMux.WriteError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot get resource('%v/%v') from the device: %v", deviceID, resourceHref, err))

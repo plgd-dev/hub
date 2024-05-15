@@ -247,6 +247,7 @@ func TestRequestHandlerGetResourceWithOnlyContent(t *testing.T) {
 	type args struct {
 		deviceID     string
 		resourceHref string
+		twin         *bool
 	}
 	tests := []struct {
 		name     string
@@ -255,10 +256,20 @@ func TestRequestHandlerGetResourceWithOnlyContent(t *testing.T) {
 		wantCode int
 	}{
 		{
-			name: "json: get from resource twin",
+			name: "json: get resource from twin",
 			args: args{
 				deviceID:     deviceID,
 				resourceHref: test.TestResourceLightInstanceHref("1"),
+			},
+			want:     map[interface{}]interface{}{"name": "Light", "power": uint64(0x0), "state": false},
+			wantCode: http.StatusOK,
+		},
+		{
+			name: "json: get resource from device",
+			args: args{
+				deviceID:     deviceID,
+				resourceHref: test.TestResourceLightInstanceHref("1"),
+				twin:         newBool(false),
 			},
 			want:     map[interface{}]interface{}{"name": "Light", "power": uint64(0x0), "state": false},
 			wantCode: http.StatusOK,
@@ -278,6 +289,9 @@ func TestRequestHandlerGetResourceWithOnlyContent(t *testing.T) {
 			rb := httpgwTest.NewRequest(http.MethodGet, uri.AliasDeviceResource, nil).AuthToken(token)
 			rb.DeviceId(tt.args.deviceID).ResourceHref(tt.args.resourceHref)
 			rb.OnlyContent(true)
+			if tt.args.twin != nil {
+				rb.Twin(*tt.args.twin)
+			}
 			resp := httpgwTest.HTTPDo(t, rb.Build())
 			defer func() {
 				_ = resp.Body.Close()
