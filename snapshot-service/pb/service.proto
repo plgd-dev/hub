@@ -57,7 +57,7 @@ message Condition { // driven by resource change event
   repeated string device_id_filter = 6;
   repeated string resource_type_filter = 7;
   repeated string resource_href_filter = 8;
-  string yq_expression = 9;
+  string jq_expression_filter = 9;
   string api_access_token = 10; // token used to update resources in the configuration
   string owner = 11;
 }
