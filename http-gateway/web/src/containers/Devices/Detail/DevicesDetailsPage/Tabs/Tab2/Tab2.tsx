@@ -374,6 +374,7 @@ const Tab2: FC<Props> = (props) => {
                         onTtlHasError={setTtlHasError}
                         size='small'
                         ttlHasError={ttlHasError}
+                        unitMenuPortalTarget={document.body}
                     />
                 }
                 updateResource={updateResource}
