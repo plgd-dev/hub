@@ -1,0 +1,112 @@
+{
+  "result": {
+    "deviceId": "3aae0672-47f3-4498-78d4-b061e6105ccd",
+    "resources": [
+      {
+        "deviceId": "3aae0672-47f3-4498-78d4-b061e6105ccd",
+        "resourceTypes": [
+          "oic.wk.con"
+        ],
+        "interfaces": [
+          "oic.if.rw",
+          "oic.if.baseline"
+        ],
+        "policy": {
+          "bitFlags": 3
+        },
+        "href": "/oc/con",
+        "validUntil": "0"
+      },
+      {
+        "href": "/plgd/dps",
+        "resourceTypes": [
+          "x.plgd.dps.conf"
+        ],
+        "interfaces": [
+          "oic.if.r",
+          "oic.if.rw",
+          "oic.if.baseline"
+        ],
+        "deviceId": "3aae0672-47f3-4498-78d4-b061e6105ccd",
+        "validUntil": "0",
+        "policy": {
+          "bitFlags": 3
+        }
+      },
+      {
+        "href": "/oic/p",
+        "deviceId": "3aae0672-47f3-4498-78d4-b061e6105ccd",
+        "interfaces": [
+          "oic.if.r",
+          "oic.if.baseline"
+        ],
+        "resourceTypes": [
+          "oic.wk.p"
+        ],
+        "validUntil": "0",
+        "policy": {
+          "bitFlags": 3
+        }
+      },
+      {
+        "interfaces": [
+          "oic.if.r",
+          "oic.if.baseline"
+        ],
+        "validUntil": "0",
+        "href": "/oic/d",
+        "deviceId": "3aae0672-47f3-4498-78d4-b061e6105ccd",
+        "resourceTypes": [
+          "oic.d.cloudDevice",
+          "oic.wk.d"
+        ],
+        "policy": {
+          "bitFlags": 3
+        }
+      },
+      {
+        "href": "/light/1",
+        "deviceId": "3aae0672-47f3-4498-78d4-b061e6105ccd",
+        "validUntil": "0",
+        "policy": {
+          "bitFlags": 3
+        },
+        "resourceTypes": [
+          "core.light"
+        ],
+        "interfaces": [
+          "oic.if.rw",
+          "oic.if.baseline"
+        ]
+      },
+      {
+        "interfaces": [
+          "oic.if.ll",
+          "oic.if.create",
+          "oic.if.b",
+          "oic.if.baseline"
+        ],
+        "policy": {
+          "bitFlags": 3
+        },
+        "href": "/switches",
+        "resourceTypes": [
+          "oic.wk.col"
+        ],
+        "validUntil": "0",
+        "deviceId": "3aae0672-47f3-4498-78d4-b061e6105ccd"
+      }
+    ],
+    "auditContext": {
+      "userId": "820bbd01-f8be-4f99-bede-926c28a9e0b2",
+      "owner": "98120ad9-eefa-4b93-aa53-696420b639fd"
+    },
+    "eventMetadata": {
+      "version": "0",
+      "timestamp": "1715360635700322042",
+      "connectionId": "10.110.110.10:18364",
+      "sequence": "6",
+      "hubId": "1c10a3b6-287c-11ec-ac2d-13054959c274"
+    }
+  }
+}

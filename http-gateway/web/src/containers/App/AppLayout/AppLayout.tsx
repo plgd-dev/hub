@@ -241,6 +241,7 @@ const AppLayout: FC<Props> = (props) => {
                         }
                     />
                 }
+                mockApiMode={process.env[`REACT_APP_MOCK_API`] === 'true'}
             />
 
             <Prompt
