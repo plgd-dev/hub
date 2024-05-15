@@ -237,13 +237,11 @@ func TestRequestHandlerUpdateResourcesValuesWithOnlyContent(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	switchID := "1"
 	type args struct {
-		accept            string
-		contentType       string
-		deviceID          string
-		resourceHref      string
-		resourceInterface string
-		resourceData      interface{}
-		ttl               time.Duration
+		accept       string
+		contentType  string
+		deviceID     string
+		resourceHref string
+		resourceData interface{}
 	}
 	tests := []struct {
 		name         string
@@ -253,7 +251,7 @@ func TestRequestHandlerUpdateResourcesValuesWithOnlyContent(t *testing.T) {
 		wantHTTPCode int
 	}{
 		{
-			name: "valid - " + message.AppJSON.String(),
+			name: "valid - accept " + uri.ApplicationProtoJsonContentType,
 			args: args{
 				accept:       uri.ApplicationProtoJsonContentType,
 				contentType:  message.AppJSON.String(),
@@ -267,9 +265,8 @@ func TestRequestHandlerUpdateResourcesValuesWithOnlyContent(t *testing.T) {
 			wantHTTPCode: http.StatusOK,
 		},
 		{
-			name: "revert-update " + message.AppJSON.String(),
+			name: "revert-update - accept empty",
 			args: args{
-				accept:       uri.ApplicationProtoJsonContentType,
 				contentType:  message.AppJSON.String(),
 				deviceID:     deviceID,
 				resourceHref: test.TestResourceLightInstanceHref("1"),
@@ -317,8 +314,8 @@ func TestRequestHandlerUpdateResourcesValuesWithOnlyContent(t *testing.T) {
 			}, tt.args.contentType)
 			require.NoError(t, err)
 			rb := httpgwTest.NewRequest(http.MethodPut, uri.AliasDeviceResource, bytes.NewReader(data)).AuthToken(token).Accept(tt.args.accept)
-			rb.DeviceId(tt.args.deviceID).ResourceHref(tt.args.resourceHref).ResourceInterface(tt.args.resourceInterface).ContentType(tt.args.contentType)
-			rb.AddTimeToLive(tt.args.ttl).OnlyContent(true)
+			rb.DeviceId(tt.args.deviceID).ResourceHref(tt.args.resourceHref).ContentType(tt.args.contentType)
+			rb.OnlyContent(true)
 			resp := httpgwTest.HTTPDo(t, rb.Build())
 			defer func() {
 				_ = resp.Body.Close()

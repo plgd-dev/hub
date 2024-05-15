@@ -245,12 +245,8 @@ func TestRequestHandlerGetResourceWithOnlyContent(t *testing.T) {
 	defer shutdownDevSim()
 
 	type args struct {
-		deviceID          string
-		resourceHref      string
-		resourceInterface string
-		etag              []byte
-		etags             [][]byte
-		twin              *bool
+		deviceID     string
+		resourceHref string
 	}
 	tests := []struct {
 		name     string
@@ -280,11 +276,8 @@ func TestRequestHandlerGetResourceWithOnlyContent(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rb := httpgwTest.NewRequest(http.MethodGet, uri.AliasDeviceResource, nil).AuthToken(token)
-			rb.DeviceId(tt.args.deviceID).ResourceHref(tt.args.resourceHref).ResourceInterface(tt.args.resourceInterface).ETag(tt.args.etag).ETags(tt.args.etags)
+			rb.DeviceId(tt.args.deviceID).ResourceHref(tt.args.resourceHref)
 			rb.OnlyContent(true)
-			if tt.args.twin != nil {
-				rb.Twin(*tt.args.twin)
-			}
 			resp := httpgwTest.HTTPDo(t, rb.Build())
 			defer func() {
 				_ = resp.Body.Close()
