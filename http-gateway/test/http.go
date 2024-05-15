@@ -114,6 +114,11 @@ func (c *RequestBuilder) Accept(accept string) *RequestBuilder {
 	return c
 }
 
+func (c *RequestBuilder) OnlyContent(v bool) *RequestBuilder {
+	c.AddQuery(uri.OnlyContentQueryKey, strconv.FormatBool(v))
+	return c
+}
+
 func (c *RequestBuilder) ContentType(contentType string) *RequestBuilder {
 	if contentType == "" {
 		return c

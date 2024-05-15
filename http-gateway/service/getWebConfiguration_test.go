@@ -2,7 +2,6 @@ package service_test
 
 import (
 	"context"
-	"encoding/json"
 	"io"
 	"net/http"
 	"os"
@@ -17,19 +16,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
-
-func unmarshalWebConfiguration(code int, input io.Reader, v *httpgwService.WebConfiguration) error {
-	var data json.RawMessage
-	err := json.NewDecoder(input).Decode(&data)
-	if err != nil {
-		return err
-	}
-	if code != http.StatusOK {
-		return httpgwTest.UnmarshalError(data)
-	}
-	err = json.Unmarshal(data, v)
-	return err
-}
 
 func TestRegexpAPI(t *testing.T) {
 	tests := []struct {
@@ -104,7 +90,7 @@ func TestRequestHandlerGetWebConfiguration(t *testing.T) {
 			assert.Equal(t, tt.wantHTTPCode, resp.StatusCode)
 
 			var got httpgwService.WebConfiguration
-			err := unmarshalWebConfiguration(resp.StatusCode, resp.Body, &got)
+			err := httpgwTest.UnmarshalJson(resp.StatusCode, resp.Body, &got)
 			if tt.wantErr {
 				require.Error(t, err)
 				return

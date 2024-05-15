@@ -65,7 +65,10 @@ func writeSimpleResponse(w http.ResponseWriter, rec *httptest.ResponseRecorder, 
 	}
 }
 
-func toSimpleResponse(w http.ResponseWriter, rec *httptest.ResponseRecorder, writeError func(w http.ResponseWriter, err error), responseKeys ...string) {
+func getResponse(rec *httptest.ResponseRecorder, allowEmpty bool, responseKeys ...string) (interface{}, error) {
+	if len(rec.Body.Bytes()) == 0 && allowEmpty {
+		return nil, nil
+	}
 	iter := json.NewDecoder(bytes.NewReader(rec.Body.Bytes()))
 	datas := make([]interface{}, 0, 1)
 	for {
@@ -75,21 +78,17 @@ func toSimpleResponse(w http.ResponseWriter, rec *httptest.ResponseRecorder, wri
 			break
 		}
 		if err != nil {
-			writeError(w, err)
-			return
+			return nil, err
 		}
 		datas = append(datas, v)
 	}
 	if len(datas) == 0 {
-		writeError(w, kitNetGrpc.ForwardErrorf(codes.NotFound, "not found"))
-		return
+		return nil, kitNetGrpc.ForwardErrorf(codes.NotFound, "not found")
 	}
 	if len(datas) != 1 {
-		writeError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "invalid number of responses"))
-		return
+		return nil, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "invalid number of responses")
 	}
-	var result interface{}
-	result = datas[0]
+	result := datas[0]
 	for _, key := range responseKeys {
 		m, ok := result.(map[string]interface{})
 		if !ok {
@@ -101,6 +100,15 @@ func toSimpleResponse(w http.ResponseWriter, rec *httptest.ResponseRecorder, wri
 		} else {
 			break
 		}
+	}
+	return result, nil
+}
+
+func toSimpleResponse(w http.ResponseWriter, rec *httptest.ResponseRecorder, allowEmpty bool, writeError func(w http.ResponseWriter, err error), responseKeys ...string) {
+	result, err := getResponse(rec, allowEmpty, responseKeys...)
+	if err != nil {
+		writeError(w, err)
+		return
 	}
 	writeSimpleResponse(w, rec, result, writeError)
 }
@@ -131,7 +139,7 @@ func (requestHandler *RequestHandler) getDevice(w http.ResponseWriter, r *http.R
 		serverMux.WriteError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot get device('%v'): %v", deviceID, err))
 		return
 	}
-	toSimpleResponse(w, rec, func(w http.ResponseWriter, err error) {
+	toSimpleResponse(w, rec, false, func(w http.ResponseWriter, err error) {
 		serverMux.WriteError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot get device('%v'): %v", deviceID, err))
 	}, streamResponseKey)
 }

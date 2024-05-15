@@ -40,7 +40,7 @@ func (requestHandler *RequestHandler) getDeviceResourceLinks(w http.ResponseWrit
 	rec := httptest.NewRecorder()
 	requestHandler.mux.ServeHTTP(rec, r)
 
-	toSimpleResponse(w, rec, func(w http.ResponseWriter, err error) {
+	toSimpleResponse(w, rec, false, func(w http.ResponseWriter, err error) {
 		serverMux.WriteError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot get device('%v') resource links: %v", deviceID, err))
 	}, streamResponseKey)
 }

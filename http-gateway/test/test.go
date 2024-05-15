@@ -2,6 +2,9 @@ package test
 
 import (
 	"context"
+	"encoding/json"
+	"io"
+	"net/http"
 	"os"
 	"sync"
 	"time"
@@ -11,7 +14,7 @@ import (
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
-	"github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/test/config"
 	testHttp "github.com/plgd-dev/hub/v2/test/http"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
@@ -53,7 +56,7 @@ func MakeConfig(t require.TestingT, enableUI bool) service.Config {
 	cfg.APIs.HTTP.Server = config.MakeHttpServerConfig()
 
 	cfg.Clients.GrpcGateway.Connection = config.MakeGrpcClientConfig(config.GRPC_GW_HOST)
-	cfg.Clients.OpenTelemetryCollector = http.OpenTelemetryCollectorConfig{
+	cfg.Clients.OpenTelemetryCollector = pkgHttp.OpenTelemetryCollectorConfig{
 		Config: config.MakeOpenTelemetryCollectorClient(),
 	}
 
@@ -110,4 +113,17 @@ func GetContentData(content *pb.Content, desiredContentType string) ([]byte, err
 		return nil, err
 	}
 	return []byte(v), err
+}
+
+func UnmarshalJson(code int, input io.Reader, v any) error {
+	var data json.RawMessage
+	err := json.NewDecoder(input).Decode(&data)
+	if err != nil {
+		return err
+	}
+	if code != http.StatusOK {
+		return UnmarshalError(data)
+	}
+	err = json.Unmarshal(data, v)
+	return err
 }

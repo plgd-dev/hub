@@ -33,7 +33,17 @@ import (
 	"github.com/plgd-dev/hub/v2/test/sdk"
 )
 
+type Type int
+
+const (
+	OCF Type = iota
+	Bridged
+)
+
 type Device interface {
+	// GetType returns device type
+	GetType() Type
+
 	// GetID returns device ID
 	GetID() string
 
@@ -81,14 +91,9 @@ func (bd *BaseDevice) GetSDKClientOptions() []sdk.Option {
 	return nil
 }
 
-type Type int
+type GetResourceOpts func(*core.Device) deviceCoap.OptionFunc
 
-const (
-	OCF Type = iota
-	Bridged
-)
-
-func FindDeviceByName(ctx context.Context, name string, getResourceOpts func(*core.Device) deviceCoap.OptionFunc) (deviceID string, _ error) {
+func FindDeviceByName(ctx context.Context, name string, getResourceOpts ...GetResourceOpts) (deviceID string, _ error) {
 	client := core.NewClient()
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -115,7 +120,7 @@ type findDeviceIDByNameHandler struct {
 	id                 atomic.Value
 	name               string
 	cancel             context.CancelFunc
-	getResourceOptions func(*core.Device) deviceCoap.OptionFunc
+	getResourceOptions []GetResourceOpts
 }
 
 func (h *findDeviceIDByNameHandler) Handle(ctx context.Context, dev *core.Device) {
@@ -136,7 +141,9 @@ func (h *findDeviceIDByNameHandler) Handle(ctx context.Context, dev *core.Device
 	var d device.Device
 	var getResourceOpts []deviceCoap.OptionFunc
 	if h.getResourceOptions != nil {
-		getResourceOpts = append(getResourceOpts, h.getResourceOptions(dev))
+		for _, opts := range h.getResourceOptions {
+			getResourceOpts = append(getResourceOpts, opts(dev))
+		}
 	}
 	err = dev.GetResource(ctx, l, &d, getResourceOpts...)
 	if err != nil {
