@@ -383,7 +383,7 @@ func (requestHandler *RequestHandler) thingDescriptionResponse(ctx context.Conte
 func (requestHandler *RequestHandler) getThing(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	deviceID := vars[uri.DeviceIDKey]
-	rec, err := requestHandler.serveResourceRequest(r, deviceID, bridgeResourcesTD.ResourceURI, "", "")
+	rec, _, err := requestHandler.serveResourceRequest(r, deviceID, bridgeResourcesTD.ResourceURI, "", "")
 	if err != nil {
 		serverMux.WriteError(w, err)
 		return
