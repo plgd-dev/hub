@@ -74,22 +74,34 @@ const NewEnrollmentGroupsPage: FC<any> = () => {
     )
 
     const onSubmit = async () => {
-        const dataForSave = cloneDeep(formData)
+        try {
+            const dataForSave = cloneDeep(formData)
 
-        if (dataForSave.preSharedKey && dataForSave.preSharedKey !== '') {
-            dataForSave.preSharedKey = stringToPem(dataForSave.preSharedKey)
+            if (dataForSave.preSharedKey && dataForSave.preSharedKey !== '') {
+                dataForSave.preSharedKey = stringToPem(dataForSave.preSharedKey)
+            }
+
+            await createEnrollmentGroup(dataForSave)
+
+            setFormData(DEFAULT_FORM_DATA)
+
+            Notification.success(
+                { title: _(t.enrollmentGroupCreated), message: _(t.enrollmentGroupCreatedMessage) },
+                { notificationId: notificationId.HUB_DPS_ENROLLMENT_GROUP_LIST_PAGE_CREATED }
+            )
+
+            navigate(generatePath(pages.DPS.ENROLLMENT_GROUPS.LINK))
+        } catch (error: any) {
+            let e = error
+            if (!(error instanceof Error)) {
+                e = new Error(error)
+            }
+
+            Notification.error(
+                { title: _(t.enrollmentGroupsError), message: e.message },
+                { notificationId: notificationId.HUB_DPS_ENROLLMENT_GROUP_CREATE_PAGE_ERROR }
+            )
         }
-
-        await createEnrollmentGroup(dataForSave)
-
-        setFormData(DEFAULT_FORM_DATA)
-
-        Notification.success(
-            { title: _(t.enrollmentGroupCreated), message: _(t.enrollmentGroupCreatedMessage) },
-            { notificationId: notificationId.HUB_DPS_ENROLLMENT_GROUP_LIST_PAGE_CREATED }
-        )
-
-        navigate(generatePath(pages.DPS.ENROLLMENT_GROUPS.LINK))
     }
 
     const context = useMemo(

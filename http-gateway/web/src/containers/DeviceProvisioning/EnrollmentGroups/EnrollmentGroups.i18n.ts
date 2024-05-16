@@ -39,7 +39,7 @@ export const messages = defineMessages({
     },
     deviceAuthentication: {
         id: 'enrollmentGroups.deviceAuthentication',
-        defaultMessage: 'Device authentication',
+        defaultMessage: 'Device Authentication',
     },
     leadCertificate: {
         id: 'enrollmentGroups.leadCertificate',
@@ -92,17 +92,17 @@ export const messages = defineMessages({
     addEnrollmentGroupDescription: {
         id: 'enrollmentGroups.addEnrollmentGroupDescription',
         defaultMessage:
-            'The new enrollment group establishes parameters such as owner identification, attestation details, and configuration settings for provisioned devices.',
+            'An enrollment group is a configuration entry designed for a collection of devices that utilize a common attestation mechanism. It is particularly recommended for managing a large quantity of devices that either share similar initial settings or are allocated to the same tenant. Enrollment groups specifically support X.509 certificates as their attestation method.',
     },
     addEnrollmentGroupDeviceAuthenticationDescription: {
         id: 'enrollmentGroups.addEnrollmentGroupDeviceAuthenticationDescription',
         defaultMessage:
-            'By configuring the attestation certificate chain, the Device Provisioning Service identifies the enrollment group to which a device belongs by setting the lead certificate.',
+            'An enrollment group is a configuration entry designed for a collection of devices that utilize a common attestation mechanism. The Device Provisioning Service identifies the enrollment group for a device by matching its certificate with the configured attestation mechanism.',
     },
     addEnrollmentGroupDeviceCredentialsDescription: {
         id: 'enrollmentGroups.addEnrollmentGroupDeviceCredentialsDescription',
         defaultMessage:
-            'The credentials enable the configuration of a pre-shared key for the device owner, facilitating device management within a local area network through the plgd/client application.',
+            'Configured credentials, which typically include the identity certificate and optionally the pre-shared key, enable secure authentication and interaction with the device.',
     },
     enrollmentGroupsDeleted: {
         id: 'enrollmentGroups.provisioningRecordDeleted',

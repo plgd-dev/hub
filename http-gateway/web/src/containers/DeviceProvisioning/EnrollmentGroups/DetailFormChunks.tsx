@@ -1,7 +1,8 @@
-import React, { FC, useCallback, useContext, useMemo, useState } from 'react'
+import React, { FC, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { Control, Controller, FieldErrors, UseFormRegister, UseFormSetValue } from 'react-hook-form'
+import { Control, Controller, FieldErrors, UseFormRegister, UseFormSetValue, UseFormWatch } from 'react-hook-form'
 import get from 'lodash/get'
+import isFunction from 'lodash/isFunction'
 
 import Dropzone from '@shared-ui/components/Atomic/Dropzone'
 import Spacer from '@shared-ui/components/Atomic/Spacer'
@@ -20,29 +21,33 @@ import FormGroup from '@shared-ui/components/Atomic/FormGroup'
 import FormInput from '@shared-ui/components/Atomic/FormInput'
 import ShowAnimate from '@shared-ui/components/Atomic/ShowAnimate'
 import FormLabel from '@shared-ui/components/Atomic/FormLabel'
+import { FormContext } from '@shared-ui/common/context/FormContext'
 
 import { messages as t } from '@/containers/DeviceProvisioning/EnrollmentGroups/EnrollmentGroups.i18n'
 import { nameLengthValidator, stringToPem } from '@/containers/DeviceProvisioning/utils'
 import { messages as g } from '@/containers/Global.i18n'
 import { useCaI18n } from '@/containers/DeviceProvisioning/LinkedHubs/utils'
 import { Inputs } from './EnrollmentGroups.types'
-import { FormContext } from '@shared-ui/common/context/FormContext'
 
 type Chunk2Props = {
-    certificateChain?: string
     control: Control<Inputs, any>
     errorNotificationId?: string
     errors: FieldErrors<Inputs>
     isEditMode?: boolean
+    setError?: (error: boolean) => void
     setValue: UseFormSetValue<Inputs>
     updateField: (field: any, fieldValue: any) => void
+    watch: UseFormWatch<Inputs>
 }
 
 export const DetailFromChunk2: FC<Chunk2Props> = (props) => {
-    const { certificateChain, control, isEditMode, setValue, updateField, errors, errorNotificationId } = props
+    const { control, isEditMode, setError, setValue, updateField, errors, errorNotificationId, watch } = props
 
     const { formatMessage: _ } = useIntl()
     const i18nCert = useCaI18n()
+
+    const certificateChain = watch('attestationMechanism.x509.certificateChain')
+    const leadCertificateName = watch('attestationMechanism.x509.leadCertificateName')
 
     const [caModalData, setCaModalData] = useState<{ title: string; subTitle: string; data?: {}[] | string; dataChain: any }>({
         title: '',
@@ -80,10 +85,21 @@ export const DetailFromChunk2: FC<Chunk2Props> = (props) => {
         [certData]
     )
 
+    useEffect(() => {
+        if (isFunction(setError)) {
+            if (certData && certData[0] && certData[0].data?.length > 1 && !leadCertificateName) {
+                setError(true)
+            } else {
+                setError(false)
+            }
+        }
+    }, [certData, certificateChain, leadCertificateName, setError])
+
     const middleRows = [
         certificateChain && !certificateChain.startsWith('/') && certData && certData[0] && certData[0].data?.length > 1
             ? {
                   attribute: _(t.leadCertificate),
+                  required: true,
                   value: (
                       <FormGroup
                           {...commonFormGroupProps}
@@ -143,17 +159,24 @@ export const DetailFromChunk2: FC<Chunk2Props> = (props) => {
                 <>
                     <Dropzone
                         smallPadding
+                        accept={{
+                            'application/x-pem-file': ['.pem'],
+                            'certificate/x-x509-ca-cert': ['.crt', '.cer'],
+                        }}
                         customFileRenders={[{ format: 'pem', icon: 'icon-file-pem' }]}
                         description={_(t.uploadCertDescription)}
                         maxFiles={1}
                         onFilesDrop={(files) => {
-                            setTimeout(() => {
-                                setValue('attestationMechanism.x509.certificateChain', stringToPem(files[0]), {
-                                    shouldDirty: true,
-                                    shouldTouch: true,
-                                })
-                                updateField(`attestationMechanism.x509.certificateChain`, stringToPem(files[0]))
-                            }, 100)
+                            if (files.length > 0) {
+                                setTimeout(() => {
+                                    setValue('attestationMechanism.x509.certificateChain', stringToPem(files[0]), {
+                                        shouldDirty: true,
+                                        shouldTouch: true,
+                                        shouldValidate: true,
+                                    })
+                                    updateField(`attestationMechanism.x509.certificateChain`, stringToPem(files[0]))
+                                }, 100)
+                            }
                         }}
                         renderThumbs={false}
                         title={_(t.uploadCertTitle)}
@@ -167,8 +190,15 @@ export const DetailFromChunk2: FC<Chunk2Props> = (props) => {
                             largePadding
                             actions={{
                                 onDelete: () => {
-                                    setValue(`attestationMechanism.x509.certificateChain`, '', { shouldDirty: true, shouldTouch: true })
+                                    setValue(`attestationMechanism.x509.certificateChain`, '', { shouldDirty: true, shouldTouch: true, shouldValidate: true })
+                                    setValue(`attestationMechanism.x509.leadCertificateName`, '', {
+                                        shouldDirty: true,
+                                        shouldTouch: true,
+                                        shouldValidate: true,
+                                    })
                                     updateField(`attestationMechanism.x509.certificateChain`, '')
+                                    updateField(`attestationMechanism.x509.leadCertificateName`, '')
+                                    isFunction(setError) && setError(false)
                                 },
                                 onView: certificateChain?.startsWith('/') ? undefined : handleViewCa,
                             }}

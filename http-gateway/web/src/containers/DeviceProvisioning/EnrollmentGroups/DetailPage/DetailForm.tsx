@@ -126,8 +126,6 @@ const Tab1: FC<Props> = (props) => {
         [control, errors.hubIds, errors.name, errors.owner, linkedHubs, register, updateField]
     )
 
-    const certificateChain = watch('attestationMechanism.x509.certificateChain')
-
     return (
         <form>
             <Spacer type='mb-4'>
@@ -142,12 +140,12 @@ const Tab1: FC<Props> = (props) => {
 
             <DetailFromChunk2
                 isEditMode
-                certificateChain={certificateChain}
                 control={control}
                 errorNotificationId={notificationId.HUB_DPS_LINKED_HUBS_ADD_PAGE_CERT_PARSE_ERROR}
                 errors={errors}
                 setValue={setValue}
                 updateField={updateField}
+                watch={watch}
             />
 
             <Spacer type='mt-8 mb-4'>

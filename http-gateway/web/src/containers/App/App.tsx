@@ -25,6 +25,7 @@ import AppLayout from '@/containers/App/AppLayout/AppLayout'
 import { setTheme, setThemes } from './slice'
 import { CombinedStoreType } from '@/store/store'
 import { defaultMenu } from '@/routes'
+import FullPageLoader from '@shared-ui/components/Atomic/FullPageLoader'
 
 const App = (props: { mockApp: boolean }) => {
     const { formatMessage: _ } = useIntl()
@@ -100,10 +101,9 @@ const App = (props: { mockApp: boolean }) => {
     // Placeholder loader while waiting for the auth status
     if (!wellKnownConfig || !theme) {
         return (
-            <>
-                <PageLoader loading noOffset className='auth-loader' />
-                <div className='page-loading-text'>{`${_(g.loading)}...`}</div>
-            </>
+            <ThemeProvider theme={getThemeData(currentTheme)}>
+                <FullPageLoader i18n={{ loading: _(g.loading) }} />
+            </ThemeProvider>
         )
     }
 

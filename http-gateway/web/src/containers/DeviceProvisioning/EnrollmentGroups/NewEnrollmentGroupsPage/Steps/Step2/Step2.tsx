@@ -1,4 +1,4 @@
-import React, { FC, useContext } from 'react'
+import React, { FC, useContext, useEffect, useState } from 'react'
 import { useIntl } from 'react-intl'
 
 import { useForm } from '@shared-ui/common/hooks'
@@ -32,7 +32,7 @@ const Step2: FC<any> = (props) => {
         schema,
     })
 
-    const certificateChain = watch('attestationMechanism.x509.certificateChain')
+    const [error, setError] = useState(false)
 
     return (
         <form>
@@ -40,16 +40,17 @@ const Step2: FC<any> = (props) => {
             <FullPageWizard.Description>{_(t.addEnrollmentGroupDeviceAuthenticationDescription)}</FullPageWizard.Description>
 
             <DetailFromChunk2
-                certificateChain={certificateChain}
                 control={control}
                 errorNotificationId={notificationId.HUB_DPS_LINKED_HUBS_ADD_NEW_PAGE_CERT_PARSE_ERROR}
                 errors={errors}
+                setError={setError}
                 setValue={setValue}
                 updateField={updateField}
+                watch={watch}
             />
 
             <StepButtons
-                disableNext={!isValid}
+                disableNext={!isValid || error}
                 i18n={{
                     back: _(g.back),
                     continue: _(g.continue),

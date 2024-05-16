@@ -25,6 +25,7 @@ import FullPageLoader from '@shared-ui/components/Atomic/FullPageLoader'
 import { messages as t } from './containers/App/App.i18n'
 import { messages as g } from './containers/Global.i18n'
 import testId from '@/testId'
+import { useTheme } from '@emotion/react'
 
 // Devices
 const DevicesListPage = lazy(() => import('./containers/Devices/List/DevicesListPage'))
@@ -330,6 +331,8 @@ export const mather = (pathname: string, pattern: string) => matchPath(pattern, 
 
 const Loader = () => {
     const { formatMessage: _ } = useIntl()
+    const theme = useTheme()
+
     return <FullPageLoader i18n={{ loading: _(g.loading) }} />
 }
 
