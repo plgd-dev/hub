@@ -21,6 +21,7 @@ const (
 	TimestampFilterQueryKey      = "timestampFilter"
 	CorrelationIdFilterQueryKey  = "correlationIdFilter"
 	ETagQueryKey                 = "etag"
+	OnlyContentQueryKey          = "onlyContent"
 
 	AliasInterfaceQueryKey        = "interface"
 	AliasCommandFilterQueryKey    = "command"
@@ -34,11 +35,13 @@ const (
 	AcceptHeaderKey        = "Accept"
 	ETagHeaderKey          = "ETag"
 
+	DevicesPathKey                = "devices"
 	ResourcesPathKey              = "resources"
 	ResourceLinksPathKey          = "resource-links"
 	PendingCommandsPathKey        = "pending-commands"
 	PendingMetadataUpdatesPathKey = "pending-metadata-updates"
 	EventsPathKey                 = "events"
+	ThingsPathKey                 = "things"
 
 	ApplicationProtoJsonContentType = "application/protojson"
 
@@ -52,6 +55,11 @@ const (
 
 	// web configuration for ui
 	WebConfiguration = "/web_configuration.json"
+
+	// list devices with thing descriptions
+	Things = API + "/" + ThingsPathKey
+	// (HTTP ALIAS) GET /api/v1/things/{deviceId}
+	AliasDeviceThing = Things + "/{" + DeviceIDKey + "}"
 
 	// (GRPC + HTTP) GET /api/v1/devices -> rpc GetDevices
 	// (GRPC + HTTP) DELETE /api/v1/devices -> rpc DeleteDevices
@@ -133,4 +141,5 @@ var QueryCaseInsensitive = map[string]string{
 	strings.ToLower(TimestampFilterQueryKey):       TimestampFilterQueryKey,
 	strings.ToLower(TimeToLiveQueryKey):            TimeToLiveQueryKey,
 	strings.ToLower(CorrelationIdFilterQueryKey):   CorrelationIdFilterQueryKey,
+	strings.ToLower(OnlyContentQueryKey):           OnlyContentQueryKey,
 }

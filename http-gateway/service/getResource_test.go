@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/plgd-dev/device/v2/pkg/codec/json"
 	"github.com/plgd-dev/device/v2/schema/interfaces"
 	"github.com/plgd-dev/device/v2/test/resource/types"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
@@ -212,6 +213,97 @@ func TestRequestHandlerGetResource(t *testing.T) {
 			}
 			require.Len(t, values, 1)
 			pbTest.CmpResourceRetrieved(t, tt.want, values[0])
+		})
+	}
+}
+
+func TestRequestHandlerGetResourceWithOnlyContent(t *testing.T) {
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	defer cancel()
+
+	tearDown := service.SetUp(ctx, t)
+	defer tearDown()
+
+	shutdownHttp := httpgwTest.SetUp(t)
+	defer shutdownHttp()
+
+	token := oauthTest.GetDefaultAccessToken(t)
+	ctx = kitNetGrpc.CtxWithToken(ctx, token)
+
+	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
+	})))
+	require.NoError(t, err)
+	defer func() {
+		_ = conn.Close()
+	}()
+	c := pb.NewGrpcGatewayClient(conn)
+
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
+	defer shutdownDevSim()
+
+	type args struct {
+		deviceID     string
+		resourceHref string
+		twin         *bool
+	}
+	tests := []struct {
+		name     string
+		args     args
+		want     interface{}
+		wantCode int
+	}{
+		{
+			name: "json: get resource from twin",
+			args: args{
+				deviceID:     deviceID,
+				resourceHref: test.TestResourceLightInstanceHref("1"),
+			},
+			want:     map[interface{}]interface{}{"name": "Light", "power": uint64(0x0), "state": false},
+			wantCode: http.StatusOK,
+		},
+		{
+			name: "json: get resource from device",
+			args: args{
+				deviceID:     deviceID,
+				resourceHref: test.TestResourceLightInstanceHref("1"),
+				twin:         newBool(false),
+			},
+			want:     map[interface{}]interface{}{"name": "Light", "power": uint64(0x0), "state": false},
+			wantCode: http.StatusOK,
+		},
+		{
+			name: "json: not exists",
+			args: args{
+				deviceID:     deviceID,
+				resourceHref: "/not-exists",
+			},
+			wantCode: http.StatusNotFound,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rb := httpgwTest.NewRequest(http.MethodGet, uri.AliasDeviceResource, nil).AuthToken(token)
+			rb.DeviceId(tt.args.deviceID).ResourceHref(tt.args.resourceHref)
+			rb.OnlyContent(true)
+			if tt.args.twin != nil {
+				rb.Twin(*tt.args.twin)
+			}
+			resp := httpgwTest.HTTPDo(t, rb.Build())
+			defer func() {
+				_ = resp.Body.Close()
+			}()
+			require.Equal(t, tt.wantCode, resp.StatusCode)
+			if tt.wantCode != http.StatusOK {
+				return
+			}
+			var got interface{}
+			err := json.ReadFrom(resp.Body, &got)
+			require.NoError(t, err)
+			require.Equal(t, tt.want, got)
 		})
 	}
 }

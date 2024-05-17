@@ -14,7 +14,7 @@ func (requestHandler *RequestHandler) deleteDevice(w http.ResponseWriter, r *htt
 		serverMux.WriteError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot delete device('%v'): %v", deviceID, err))
 		return
 	}
-	toSimpleResponse(w, rec, func(w http.ResponseWriter, err error) {
+	toSimpleResponse(w, rec, false, func(w http.ResponseWriter, err error) {
 		serverMux.WriteError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot delete device('%v'): %v", deviceID, err))
 	}, streamResponseKey)
 }

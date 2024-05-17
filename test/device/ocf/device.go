@@ -119,6 +119,10 @@ func NewDevice(id, name string) *Device {
 	}
 }
 
+func (d *Device) GetType() device.Type {
+	return device.OCF
+}
+
 func (d *Device) GetRetryInterval(attempt int) time.Duration {
 	/* [2s, 4s, 8s, 16s, 32s, 64s] */
 	return time.Duration(math.Exp2(float64(attempt))) * time.Second

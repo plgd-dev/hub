@@ -21,6 +21,8 @@ package bridge
 import (
 	"time"
 
+	"github.com/plgd-dev/device/v2/bridge/resources/thingDescription"
+	bridgeDevice "github.com/plgd-dev/device/v2/cmd/bridge-device/device"
 	"github.com/plgd-dev/device/v2/schema"
 	schemaDevice "github.com/plgd-dev/device/v2/schema/device"
 	"github.com/plgd-dev/device/v2/schema/interfaces"
@@ -32,10 +34,10 @@ import (
 var TestResources = []schema.ResourceLink{
 	{
 		Href:          schemaDevice.ResourceURI,
-		ResourceTypes: []string{"oic.d.virtual", schemaDevice.ResourceType},
+		ResourceTypes: []string{bridgeDevice.DeviceResourceType, schemaDevice.ResourceType},
 		Interfaces:    []string{interfaces.OC_IF_BASELINE, interfaces.OC_IF_R},
 		Policy: &schema.Policy{
-			BitMask: 1,
+			BitMask: schema.Discoverable,
 		},
 	},
 	{
@@ -43,19 +45,27 @@ var TestResources = []schema.ResourceLink{
 		ResourceTypes: []string{maintenance.ResourceType},
 		Interfaces:    []string{interfaces.OC_IF_BASELINE, interfaces.OC_IF_RW},
 		Policy: &schema.Policy{
-			BitMask: 1,
+			BitMask: schema.Discoverable,
 		},
 	},
 }
 
 type Device struct {
 	device.BaseDevice
+	testResources int  // number of test resources
+	tdEnabled     bool // thingDescription resource enabled
 }
 
-func NewDevice(id, name string) *Device {
+func NewDevice(id, name string, testResources int, tdEnabled bool) *Device {
 	return &Device{
-		BaseDevice: device.MakeBaseDevice(id, name),
+		BaseDevice:    device.MakeBaseDevice(id, name),
+		testResources: testResources,
+		tdEnabled:     tdEnabled,
 	}
+}
+
+func (d *Device) GetType() device.Type {
+	return device.Bridged
 }
 
 func (d *Device) GetSDKClientOptions() []sdk.Option {
@@ -67,5 +77,26 @@ func (d *Device) GetRetryInterval(int) time.Duration {
 }
 
 func (d *Device) GetDefaultResources() schema.ResourceLinks {
-	return TestResources
+	testResources := TestResources
+	for i := 0; i < d.testResources; i++ {
+		testResources = append(testResources, schema.ResourceLink{
+			Href:          bridgeDevice.GetTestResourceHref(i),
+			ResourceTypes: []string{bridgeDevice.TestResourceType},
+			Interfaces:    []string{interfaces.OC_IF_BASELINE, interfaces.OC_IF_RW},
+			Policy: &schema.Policy{
+				BitMask: schema.Discoverable | schema.Observable,
+			},
+		})
+	}
+	if d.tdEnabled {
+		testResources = append(testResources, schema.ResourceLink{
+			Href:          thingDescription.ResourceURI,
+			ResourceTypes: []string{thingDescription.ResourceType},
+			Interfaces:    []string{interfaces.OC_IF_BASELINE, interfaces.OC_IF_R},
+			Policy: &schema.Policy{
+				BitMask: schema.Discoverable | schema.Observable,
+			},
+		})
+	}
+	return testResources
 }

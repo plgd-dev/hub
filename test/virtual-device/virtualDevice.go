@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/plgd-dev/device/v2/bridge/resources/thingDescription"
 	"github.com/plgd-dev/device/v2/schema"
 	"github.com/plgd-dev/device/v2/schema/device"
 	"github.com/plgd-dev/device/v2/schema/interfaces"
@@ -29,7 +30,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func CreateDeviceResourceLinks(deviceID string, numResources int) []*commands.Resource {
+func CreateDeviceResourceLinks(deviceID string, numResources int, tdEnabled bool) []*commands.Resource {
 	resources := make([]*commands.Resource, 0, numResources)
 	for i := 0; i < numResources; i++ {
 		resources = append(resources, &commands.Resource{
@@ -60,10 +61,23 @@ func CreateDeviceResourceLinks(deviceID string, numResources int) []*commands.Re
 			BitFlags: int32(schema.Observable | schema.Discoverable),
 		},
 	})
+
+	if tdEnabled {
+		resources = append(resources, &commands.Resource{
+			Href:          thingDescription.ResourceURI,
+			DeviceId:      deviceID,
+			ResourceTypes: []string{thingDescription.ResourceType},
+			Interfaces:    []string{interfaces.OC_IF_BASELINE, interfaces.OC_IF_R},
+			Policy: &commands.Policy{
+				BitFlags: int32(schema.Discoverable),
+			},
+		})
+	}
+
 	return resources
 }
 
-func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID string, numResources int, protocol commands.Connection_Protocol, isClient pb.IdentityStoreClient, raClient raPb.ResourceAggregateClient) {
+func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID string, numResources int, tdEnabled bool, protocol commands.Connection_Protocol, isClient pb.IdentityStoreClient, raClient raPb.ResourceAggregateClient) {
 	const connID = "conn-Id"
 	var conSeq uint64
 	incSeq := func() uint64 {
@@ -105,7 +119,7 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 		assert.NoError(t, err) //nolint:testifylint
 	}
 
-	resources := CreateDeviceResourceLinks(deviceID, numResources)
+	resources := CreateDeviceResourceLinks(deviceID, numResources, tdEnabled)
 	pub := commands.PublishResourceLinksRequest{
 		DeviceId:  deviceID,
 		Resources: resources,
@@ -223,7 +237,7 @@ func CreateDevices(ctx context.Context, t *testing.T, numDevices int, numResourc
 		err = sem.Acquire(ctx, 1)
 		require.NoError(t, err)
 		go func(i int) {
-			CreateDevice(ctx, t, fmt.Sprintf("dev-%v", i), uuid.NewString(), numResourcesPerDevice, protocol, isClient, raClient)
+			CreateDevice(ctx, t, fmt.Sprintf("dev-%v", i), uuid.NewString(), numResourcesPerDevice, false, protocol, isClient, raClient)
 			sem.Release(1)
 		}(i)
 	}

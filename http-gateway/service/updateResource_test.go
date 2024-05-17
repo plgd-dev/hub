@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/plgd-dev/device/v2/pkg/codec/json"
 	"github.com/plgd-dev/device/v2/schema/device"
 	"github.com/plgd-dev/device/v2/schema/interfaces"
 	"github.com/plgd-dev/go-coap/v3/message"
@@ -38,6 +39,7 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 		deviceID          string
 		resourceHref      string
 		resourceInterface string
+		onlyContent       bool
 		resourceData      interface{}
 		ttl               time.Duration
 	}
@@ -54,6 +56,7 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 				accept:       uri.ApplicationProtoJsonContentType,
 				deviceID:     deviceID,
 				resourceHref: "/unknown",
+				onlyContent:  true,
 			},
 			wantErr:      true,
 			wantHTTPCode: http.StatusNotFound,
@@ -211,7 +214,7 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 			require.NoError(t, err)
 			rb := httpgwTest.NewRequest(http.MethodPut, uri.AliasDeviceResource, bytes.NewReader(data)).AuthToken(token).Accept(tt.args.accept)
 			rb.DeviceId(tt.args.deviceID).ResourceHref(tt.args.resourceHref).ResourceInterface(tt.args.resourceInterface).ContentType(tt.args.contentType)
-			rb.AddTimeToLive(tt.args.ttl)
+			rb.AddTimeToLive(tt.args.ttl).OnlyContent(tt.args.onlyContent)
 			resp := httpgwTest.HTTPDo(t, rb.Build())
 			defer func() {
 				_ = resp.Body.Close()
@@ -226,6 +229,107 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 			}
 			require.NoError(t, err)
 			pbTest.CmpResourceUpdated(t, tt.want, got.GetData())
+		})
+	}
+}
+
+func TestRequestHandlerUpdateResourcesValuesWithOnlyContent(t *testing.T) {
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	switchID := "1"
+	type args struct {
+		accept       string
+		contentType  string
+		deviceID     string
+		resourceHref string
+		resourceData interface{}
+	}
+	tests := []struct {
+		name         string
+		args         args
+		want         interface{}
+		wantErr      bool
+		wantHTTPCode int
+	}{
+		{
+			name: "valid - accept " + uri.ApplicationProtoJsonContentType,
+			args: args{
+				accept:       uri.ApplicationProtoJsonContentType,
+				contentType:  message.AppJSON.String(),
+				deviceID:     deviceID,
+				resourceHref: test.TestResourceLightInstanceHref("1"),
+				resourceData: map[string]interface{}{
+					"power": 102,
+				},
+			},
+			want:         nil,
+			wantHTTPCode: http.StatusOK,
+		},
+		{
+			name: "revert-update - accept empty",
+			args: args{
+				contentType:  message.AppJSON.String(),
+				deviceID:     deviceID,
+				resourceHref: test.TestResourceLightInstanceHref("1"),
+				resourceData: map[string]interface{}{
+					"power": 0,
+				},
+			},
+			want:         nil,
+			wantHTTPCode: http.StatusOK,
+		},
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	defer cancel()
+
+	tearDown := service.SetUp(ctx, t)
+	defer tearDown()
+
+	shutdownHttp := httpgwTest.SetUp(t)
+	defer shutdownHttp()
+
+	token := oauthTest.GetDefaultAccessToken(t)
+	ctx = kitNetGrpc.CtxWithToken(ctx, token)
+
+	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
+	})))
+	require.NoError(t, err)
+	defer func() {
+		_ = conn.Close()
+	}()
+	c := pb.NewGrpcGatewayClient(conn)
+
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
+	defer shutdownDevSim()
+
+	test.AddDeviceSwitchResources(ctx, t, deviceID, c, switchID)
+	time.Sleep(200 * time.Millisecond)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			data, err := httpgwTest.GetContentData(&pb.Content{
+				Data:        test.EncodeToCbor(t, tt.args.resourceData),
+				ContentType: message.AppOcfCbor.String(),
+			}, tt.args.contentType)
+			require.NoError(t, err)
+			rb := httpgwTest.NewRequest(http.MethodPut, uri.AliasDeviceResource, bytes.NewReader(data)).AuthToken(token).Accept(tt.args.accept)
+			rb.DeviceId(tt.args.deviceID).ResourceHref(tt.args.resourceHref).ContentType(tt.args.contentType)
+			rb.OnlyContent(true)
+			resp := httpgwTest.HTTPDo(t, rb.Build())
+			defer func() {
+				_ = resp.Body.Close()
+			}()
+			assert.Equal(t, tt.wantHTTPCode, resp.StatusCode)
+
+			var got interface{}
+			err = json.ReadFrom(resp.Body, &got)
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }

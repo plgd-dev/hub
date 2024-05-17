@@ -98,6 +98,14 @@ jobs:
         with:
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
 
+      # login to ghcr.io so we can download device/bridge-device package
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Run a test
         run: |
           make ${{ matrix.cmd }} TEST_CHECK_RACE=${{ matrix.checkRace }} \
