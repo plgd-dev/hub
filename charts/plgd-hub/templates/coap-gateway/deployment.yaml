@@ -15,7 +15,7 @@ metadata:
   {{- . | toYaml | nindent 4 }}
   {{- end }}
 spec:
-  replicas: {{ .Values.coapgateway.replicas }}
+  replicas: {{ include "plgd-hub.replicas" (list $ .Values.coapgateway.replicas) }}
   selector:
     matchLabels:
       {{- include "plgd-hub.coapgateway.selectorLabels" . | nindent 6 }}

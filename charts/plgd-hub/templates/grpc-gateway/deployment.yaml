@@ -15,7 +15,7 @@ metadata:
   {{- . | toYaml | nindent 4 }}
   {{- end }}
 spec:
-  replicas: {{ .Values.grpcgateway.replicas }}
+  replicas: {{ include "plgd-hub.replicas" (list $ .Values.grpcgateway.replicas) }}
   selector:
     matchLabels:
       {{- include "plgd-hub.grpcgateway.selectorLabels" . | nindent 6 }}

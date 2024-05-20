@@ -15,7 +15,7 @@ metadata:
   {{- . | toYaml | nindent 4 }}
   {{- end }}
 spec:
-  replicas: {{ .Values.resourceaggregate.replicas }}
+  replicas: {{ include "plgd-hub.replicas" (list $ .Values.resourceaggregate.replicas) }}
   selector:
     matchLabels:
       {{- include "plgd-hub.resourceaggregate.selectorLabels" . | nindent 6 }}
@@ -51,7 +51,7 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           image: {{ include "plgd-hub.resourceaggregate.image" . | quote }}
-          imagePullPolicy: {{ .Values.resourcedirectory.image.pullPolicy }}
+          imagePullPolicy: {{ .Values.resourceaggregate.image.pullPolicy }}
           {{- if .Values.resourceaggregate.command }}
           command:
           {{- range .Values.resourceaggregate.command  }}
@@ -95,7 +95,7 @@ spec:
       {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.resourceaggregate.extraContainers "context" $ ) | nindent 8 }}
       {{- end }}
       volumes:
-        - name: {{ .Values.resourcedirectory.config.volume }}
+        - name: {{ .Values.resourceaggregate.config.volume }}
           configMap:
             name: {{ include "plgd-hub.resourceaggregate.configName" . }}
         {{- if ( include "plgd-hub.resourceaggregate.createServiceCertByCm" . ) }}

@@ -109,6 +109,9 @@ jobs:
           - name: cert-tool
             directory: tools/cert-tool
             file: tools/cert-tool/Dockerfile
+          - name: mongodb-standby-tool
+            directory: tools/mongodb-standby-tool
+            file: tools/mongodb-standby-tool/Dockerfile
     uses: ./.github/workflows/build-publish-cfg.yaml
     with:
       name: ${{ matrix.name }}

@@ -15,7 +15,7 @@ metadata:
   {{- . | toYaml | nindent 4 }}
   {{- end }}
 spec:
-  replicas: {{ .Values.httpgateway.replicas }}
+  replicas: {{ include "plgd-hub.replicas" (list $ .Values.httpgateway.replicas) }}
   selector:
     matchLabels:
       {{- include "plgd-hub.httpgateway.selectorLabels" . | nindent 6 }}

@@ -15,7 +15,7 @@ metadata:
   {{- . | toYaml | nindent 4 }}
   {{- end }}
 spec:
-  replicas: {{ .Values.identitystore.replicas }}
+  replicas: {{ include "plgd-hub.replicas" (list $ .Values.identitystore.replicas) }}
   selector:
     matchLabels:
       {{- include "plgd-hub.identitystore.selectorLabels" . | nindent 6 }}

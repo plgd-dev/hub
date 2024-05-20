@@ -18,6 +18,8 @@ global:
   audience: ""
   # -- Enable *.{{ global.domain }} for all external domain
   enableWildCartCert: true
+  # -- Sets cloud to standby mode
+  standby: false
   # -- Global OAuth configuration used by multiple services
   oauth:
    device: []
@@ -86,9 +88,95 @@ mongodb:
   auth:
     enabled: false
   image:
+    tag: 6.0.10-debian-11-r0
     debug: true
   tls:
     enabled: false
+  standbyTool:
+    # -- Create standby job
+    enabled: false
+    # -- Mode of standby job. Supported values: "set-active", "set-standby"
+    mode: set-standby
+    # -- Name of component. Used in label selectors
+    name: mongodb-standby-tool
+    # -- Standby members of replica set
+    replicaSet:
+      standby:
+        # List of the MongoDB members in the replica set which are used as backup members
+        members: []
+        # Set the delay for syncing the standby members with the secondary/primary members
+        delaysSeconds: 360
+      secondary:
+        # Used to configure the secondary members priority
+        priority: 10
+        # Set number of votes for the secondary members
+        votes: 1
+        # Set the delay for syncing the secondary members with the primary member
+        delaysSeconds: 0
+    # - TLS configuration for mongodb-standby-tool to connect to the MongoDB replica set
+    clients:
+      storage:
+        mongoDB:
+          tls:
+            # -- Path to the CA certificate file
+            caPool:
+            # -- The certFile and keyFile are the paths to the TLS certificate pair files
+            certFile:
+            # -- The keyFile are the paths to the TLS certificate pair files
+            keyFile:
+            # -- Path to the CA certificate file
+            useSystemCAPool: false
+    # -- Full name to override
+    fullnameOverride:
+    image:
+      # -- Image registry
+      registry: ghcr.io/
+      # -- Image repository
+      repository: plgd-dev/hub/mongodb-standby-tool
+      # -- Image tag.
+      tag:
+      # -- Image pull policy
+      pullPolicy: Always
+      # -- Image pull secrets
+      imagePullSecrets: {}
+      # -- RBAC configuration
+    rbac:
+      # Create RBAC config
+      enabled: false
+      # -- Name of mongodb-standby SA
+      serviceAccountName: mongodb-standby-tool
+      # -- template definition for Role/binding etc..
+      roleBindingDefitionTpl:
+    # -- Additional labels for mongodb-standby job
+    jobLabels: {}
+    # -- Additional annotations for mongodb-standby job
+    jobAnnotations: {}
+    # -- Annotations for mongodb-standby pod
+    podAnnotations: {}
+    # -- Pod security context
+    podSecurityContext: {}
+    # -- Security context for pod
+    securityContext: {}
+    # -- Resources limit
+    resources: {}
+    # -- Node selector
+    nodeSelector: {}
+    # -- Affinity definition
+    affinity: {}
+    # -- Toleration definition
+    tolerations: {}
+    # -- Optional extra volumes
+    extraVolumes: {}
+    # -- Optional extra volume mounts
+    extraVolumeMounts: {}
+    # -- Job configuration
+    config:
+      # -- Job configuration file
+      fileName: job.yaml
+      # -- Job configuration volume name
+      volume: config
+      # -- Configuration mount path
+      mountPath: /config
   extraEnvVars:
     - name: MONGODB_EXTRA_FLAGS
       value: "--tlsMode=requireTLS --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem"

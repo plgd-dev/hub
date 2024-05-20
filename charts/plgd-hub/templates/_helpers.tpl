@@ -417,3 +417,13 @@ openTelemetryCollector:
   {{- printf "mongoDB" }}
   {{- end }}
 {{- end }}
+
+{{- define "plgd-hub.replicas" -}}
+  {{- $ := index . 0 -}}
+  {{- $useReplicas := index . 1 }}
+  {{- if $.Values.global.standby -}}
+  0
+  {{- else -}}
+  {{- $useReplicas -}}
+  {{- end -}}
+{{- end -}}

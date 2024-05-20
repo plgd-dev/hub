@@ -20,6 +20,11 @@ spec:
     - "localhost"
     - "mongodb-headless.{{ .Release.Namespace }}.svc.{{ $.Values.cluster.dns }}"
     - "*.mongodb-headless.{{ .Release.Namespace }}.svc.{{ $.Values.cluster.dns }}"
+  {{- if and .Values.mongodb.enabled .Values.certmanager.enabled .Values.mongodb.externalAccess.enabled .Values.mongodb.externalAccess.service }}
+    {{- range .Values.mongodb.externalAccess.service.publicNames }}
+    - {{ . | quote }}
+    {{- end }}
+  {{- end }}
   duration: {{ .Values.certmanager.internal.cert.duration | default .Values.certmanager.default.cert.duration }}
   renewBefore: {{ .Values.certmanager.internal.cert.renewBefore | default .Values.certmanager.default.cert.renewBefore }}
   issuerRef:

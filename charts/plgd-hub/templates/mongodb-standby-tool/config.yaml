@@ -1,0 +1,34 @@
+{{- if (include  "plgd-hub.mongodb-standby-tool.enabled" .) }}
+{{- $certPath := "/certs" }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "plgd-hub.mongodb-standby-tool.configName" . }}
+  namespace: {{ .Release.Namespace }}
+data:
+  {{ .Values.mongodb.standbyTool.config.fileName }}: |
+    replicaSet:
+      standby:
+        # List of the MongoDB members in the replica set which are used as backup members
+        members:
+          {{- range .Values.mongodb.standbyTool.replicaSet.standby.members }}
+          - {{printf "%s" . }}
+          {{- end }}
+        # Set the delay for syncing the standby members with the secondary/primary members
+        delaysSeconds: {{- .Values.mongodb.standbyTool.replicaSet.standby.delaysSeconds }}
+      secondary:
+        # Used to configure the secondary members priority
+        priority: {{- .Values.mongodb.standbyTool.replicaSet.secondary.priority }}
+        # Set number of votes for the secondary members
+        votes: {{- .Values.mongodb.standbyTool.replicaSet.secondary.votes }}
+        # Set the delay for syncing the secondary members with the primary member
+        delaysSeconds: {{- .Values.mongodb.standbyTool.replicaSet.secondary.delaysSeconds }}
+    clients:
+      storage:
+        mongoDB:
+          tls:
+            # Enable or disable TLS
+            enabled: true
+            {{- $tls := .Values.mongodb.standbyTool.clients.storage.mongoDB.tls }}
+            {{- include "plgd-hub.certificateConfig" (list $ $tls $certPath) | indent 10 }}
+{{- end }}
