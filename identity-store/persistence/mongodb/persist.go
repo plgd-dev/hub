@@ -48,7 +48,7 @@ func (p *PersistenceTx) Retrieve(deviceID, userID string) (_ *persistence.Author
 
 	col := p.tx.Client().Database(p.dbname).Collection(userDevicesCName)
 	iter, err := col.Find(p.ctx, bson.M{deviceIDKey: deviceID, ownerKey: userID}, &options.FindOptions{
-		Hint: userDeviceQueryIndex,
+		Hint: userDeviceQueryIndex.Keys,
 	})
 
 	if errors.Is(err, mongo.ErrNilDocument) {
@@ -113,7 +113,7 @@ func (p *PersistenceTx) RetrieveByOwner(owner string) persistence.Iterator {
 
 	col := p.tx.Client().Database(p.dbname).Collection(userDevicesCName)
 	iter, err := col.Find(p.ctx, bson.M{ownerKey: owner}, &options.FindOptions{
-		Hint: userDevicesQueryIndex,
+		Hint: userDevicesQueryIndex.Keys,
 	})
 
 	if errors.Is(err, mongo.ErrNilDocument) {

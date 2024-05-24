@@ -252,11 +252,11 @@ func TestRequestHandlerRetrieveDevice(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rb := testHttp.NewHTTPRequest(http.MethodGet, tt.args.uri, nil).Accept(tt.args.accept).AuthToken(tt.args.token)
+			rb := testHttp.NewRequest(http.MethodGet, tt.args.uri, nil).Accept(tt.args.accept).AuthToken(tt.args.token)
 			if tt.args.contentQuery != "" {
 				rb.AddContentQuery(tt.args.contentQuery)
 			}
-			resp := testHttp.DoHTTPRequest(t, rb.Build(ctx, t))
+			resp := testHttp.Do(t, rb.Build(ctx, t))
 			assert.Equal(t, tt.wantCode, resp.StatusCode)
 			defer func() {
 				_ = resp.Body.Close()
@@ -265,7 +265,7 @@ func TestRequestHandlerRetrieveDevice(t *testing.T) {
 			var got interface{}
 			if _, ok := tt.want.(DevicesAllRepresentation); ok {
 				d := DevicesAllRepresentation{}
-				testHttp.ReadHTTPResponse(t, resp.Body, tt.wantContentType, &d)
+				testHttp.ReadResponse(t, resp.Body, tt.wantContentType, &d)
 				require.NotEmpty(t, d.Device.ProtocolIndependentID)
 				d.Device.ProtocolIndependentID = ""
 				d.Device.ManufacturerName = nil
@@ -276,14 +276,14 @@ func TestRequestHandlerRetrieveDevice(t *testing.T) {
 				got = d
 			} else if _, ok := tt.want.(DevicesBaseRepresentation); ok {
 				d := DevicesBaseRepresentation{}
-				testHttp.ReadHTTPResponse(t, resp.Body, tt.wantContentType, &d)
+				testHttp.ReadResponse(t, resp.Body, tt.wantContentType, &d)
 				require.NotEmpty(t, d.Device.ProtocolIndependentID)
 				d.Device.ProtocolIndependentID = ""
 				d.Device.ManufacturerName = nil
 				d.Links = d.Links.Sort()
 				got = d
 			} else {
-				testHttp.ReadHTTPResponse(t, resp.Body, tt.wantContentType, &got)
+				testHttp.ReadResponse(t, resp.Body, tt.wantContentType, &got)
 			}
 			if tt.wantContentType == textPlain {
 				require.Contains(t, got, tt.want)

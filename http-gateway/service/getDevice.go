@@ -13,7 +13,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
-	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"google.golang.org/grpc/codes"
 )
@@ -61,7 +61,7 @@ func writeSimpleResponse(w http.ResponseWriter, rec *httptest.ResponseRecorder, 
 	w.WriteHeader(rec.Code)
 	err := encoder.Encode(bodyForEncode)
 	if err != nil {
-		writeError(w, kitNetGrpc.ForwardErrorf(codes.Internal, "cannot encode response: %v", err))
+		writeError(w, pkgGrpc.ForwardErrorf(codes.Internal, "cannot encode response: %v", err))
 	}
 }
 
@@ -83,10 +83,10 @@ func getResponse(rec *httptest.ResponseRecorder, allowEmpty bool, responseKeys .
 		datas = append(datas, v)
 	}
 	if len(datas) == 0 {
-		return nil, kitNetGrpc.ForwardErrorf(codes.NotFound, "not found")
+		return nil, pkgGrpc.ForwardErrorf(codes.NotFound, "not found")
 	}
 	if len(datas) != 1 {
-		return nil, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "invalid number of responses")
+		return nil, pkgGrpc.ForwardErrorf(codes.InvalidArgument, "invalid number of responses")
 	}
 	result := datas[0]
 	for _, key := range responseKeys {
@@ -136,10 +136,10 @@ func (requestHandler *RequestHandler) serveDevicesRequest(r *http.Request) (stri
 func (requestHandler *RequestHandler) getDevice(w http.ResponseWriter, r *http.Request) {
 	deviceID, rec, err := requestHandler.serveDevicesRequest(r)
 	if err != nil {
-		serverMux.WriteError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot get device('%v'): %v", deviceID, err))
+		serverMux.WriteError(w, pkgGrpc.ForwardErrorf(codes.InvalidArgument, "cannot get device('%v'): %v", deviceID, err))
 		return
 	}
 	toSimpleResponse(w, rec, false, func(w http.ResponseWriter, err error) {
-		serverMux.WriteError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot get device('%v'): %v", deviceID, err))
+		serverMux.WriteError(w, pkgGrpc.ForwardErrorf(codes.InvalidArgument, "cannot get device('%v'): %v", deviceID, err))
 	}, streamResponseKey)
 }

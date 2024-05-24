@@ -76,7 +76,7 @@ func (s *Store) CreateSigningRecord(ctx context.Context, signingRecord *store.Si
 	if err != nil {
 		return err
 	}
-	applied, err := s.client.Session().Query(insertQuery).WithContext(ctx).ScanCAS(nil, nil, nil, nil, nil)
+	applied, err := s.Session().Query(insertQuery).WithContext(ctx).ScanCAS(nil, nil, nil, nil, nil)
 	if err != nil {
 		return err
 	}
@@ -95,7 +95,7 @@ func (s *Store) UpdateSigningRecord(ctx context.Context, signingRecord *store.Si
 		return err
 	}
 
-	return s.client.Session().Query(insertQuery).WithContext(ctx).Exec()
+	return s.Session().Query(insertQuery).WithContext(ctx).Exec()
 }
 
 func stringsToCQLSet(filter []string, str bool) string {
@@ -232,7 +232,7 @@ func (s *Store) readPrimaryKeys(ctx context.Context, where string) (primaryKeysV
 	b.WriteString(s.Table())
 	b.WriteString(" " + cqldb.WhereClause + " ")
 	b.WriteString(where)
-	iter := s.client.Session().Query(b.String()).WithContext(ctx).Iter()
+	iter := s.Session().Query(b.String()).WithContext(ctx).Iter()
 	defer iter.Close()
 	return readPrimaryKeys(iter)
 }
@@ -323,7 +323,7 @@ func (s *Store) DeleteSigningRecords(ctx context.Context, owner string, query *s
 	b.WriteString(" IF EXISTS")
 
 	var count int64
-	applied, err := s.client.Session().Query(b.String()).WithContext(ctx).ScanCAS(nil, nil, nil, nil, nil)
+	applied, err := s.Session().Query(b.String()).WithContext(ctx).ScanCAS(nil, nil, nil, nil, nil)
 	if err == nil {
 		if applied {
 			count++
@@ -377,7 +377,7 @@ func (i *SigningRecordsIterator) nextQuery() bool {
 	b.WriteString(i.s.Table())
 	b.WriteString(" " + cqldb.WhereClause + " ")
 	b.WriteString(i.queries[i.queriesIdx])
-	i.iter = i.s.client.Session().Query(b.String()).WithContext(i.ctx).Iter()
+	i.iter = i.s.Session().Query(b.String()).WithContext(i.ctx).Iter()
 	i.queriesIdx++
 	return true
 }

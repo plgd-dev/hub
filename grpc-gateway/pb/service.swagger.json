@@ -261,21 +261,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "type": "object",
-              "properties": {
-                "twinEnabled": {
-                  "type": "boolean"
-                },
-                "twinForceSynchronization": {
-                  "type": "boolean",
-                  "description": "force synchronization IoT hub with the device resources and set twin_enabled to true. Use to address potential synchronization issues and prevent operational discrepancies."
-                },
-                "timeToLive": {
-                  "type": "string",
-                  "format": "int64",
-                  "description": "command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms)."
-                }
-              }
+              "$ref": "#/definitions/GrpcGatewayUpdateDeviceMetadataBody"
             }
           }
         ],
@@ -896,7 +882,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/pbSubscribeToEvents"
+              "$ref": "#/definitions/grpcgatewaypbSubscribeToEvents"
             }
           }
         ],
@@ -1023,6 +1009,23 @@
         "DEVICE_METADATA_UPDATE"
       ],
       "default": "RESOURCE_CREATE"
+    },
+    "GrpcGatewayUpdateDeviceMetadataBody": {
+      "type": "object",
+      "properties": {
+        "twinEnabled": {
+          "type": "boolean"
+        },
+        "twinForceSynchronization": {
+          "type": "boolean",
+          "description": "force synchronization IoT hub with the device resources and set twin_enabled to true. Use to address potential synchronization issues and prevent operational discrepancies."
+        },
+        "timeToLive": {
+          "type": "string",
+          "format": "int64",
+          "description": "command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms)."
+        }
+      }
     },
     "OperationProcessedErrorStatus": {
       "type": "object",
@@ -1306,6 +1309,21 @@
         },
         "data": {
           "$ref": "#/definitions/pbResourceChanged"
+        }
+      }
+    },
+    "grpcgatewaypbSubscribeToEvents": {
+      "type": "object",
+      "properties": {
+        "createSubscription": {
+          "$ref": "#/definitions/SubscribeToEventsCreateSubscription"
+        },
+        "cancelSubscription": {
+          "$ref": "#/definitions/SubscribeToEventsCancelSubscription"
+        },
+        "correlationId": {
+          "type": "string",
+          "title": "for pairing request SubscribeToEvents with Event.OperationProcessed"
         }
       }
     },
@@ -2230,21 +2248,6 @@
             "type": "string"
           },
           "title": "Open telemetry data propagated to asynchronous events"
-        }
-      }
-    },
-    "pbSubscribeToEvents": {
-      "type": "object",
-      "properties": {
-        "createSubscription": {
-          "$ref": "#/definitions/SubscribeToEventsCreateSubscription"
-        },
-        "cancelSubscription": {
-          "$ref": "#/definitions/SubscribeToEventsCancelSubscription"
-        },
-        "correlationId": {
-          "type": "string",
-          "title": "for pairing request SubscribeToEvents with Event.OperationProcessed"
         }
       }
     },

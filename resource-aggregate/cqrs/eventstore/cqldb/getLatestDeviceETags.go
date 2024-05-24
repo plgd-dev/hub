@@ -49,7 +49,7 @@ func (s *EventStore) GetLatestDeviceETags(ctx context.Context, deviceID string, 
 	q.WriteString(" " + cqldb.WhereClause)
 	q.WriteString(" " + deviceIDKey + "=" + deviceID)
 
-	iter := s.client.Session().Query(q.String()).WithContext(ctx).Iter()
+	iter := s.Session().Query(q.String()).WithContext(ctx).Iter()
 	if iter == nil {
 		return nil, errors.New("cannot create iterator")
 	}

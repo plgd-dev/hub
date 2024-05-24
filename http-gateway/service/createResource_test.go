@@ -16,8 +16,10 @@ import (
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
+	httpTest "github.com/plgd-dev/hub/v2/test/http"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/plgd-dev/hub/v2/test/service"
@@ -56,8 +58,8 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 		{
 			name: "invalid Href",
 			args: args{
-				accept:      uri.ApplicationProtoJsonContentType,
-				contentType: uri.ApplicationProtoJsonContentType,
+				accept:      pkgHttp.ApplicationProtoJsonContentType,
+				contentType: pkgHttp.ApplicationProtoJsonContentType,
 				href:        "/unknown",
 				data:        map[string]interface{}{},
 			},
@@ -66,10 +68,10 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 			wantHTTPCode: http.StatusNotFound,
 		},
 		{
-			name: "/oic/d - PermissionDenied - " + uri.ApplicationProtoJsonContentType,
+			name: "/oic/d - PermissionDenied - " + pkgHttp.ApplicationProtoJsonContentType,
 			args: args{
-				accept:      uri.ApplicationProtoJsonContentType,
-				contentType: uri.ApplicationProtoJsonContentType,
+				accept:      pkgHttp.ApplicationProtoJsonContentType,
+				contentType: pkgHttp.ApplicationProtoJsonContentType,
 				href:        device.ResourceURI,
 				data:        map[string]interface{}{},
 			},
@@ -80,7 +82,7 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 		{
 			name: "/oic/d - PermissionDenied - " + message.AppJSON.String(),
 			args: args{
-				accept:      uri.ApplicationProtoJsonContentType,
+				accept:      pkgHttp.ApplicationProtoJsonContentType,
 				contentType: message.AppJSON.String(),
 				href:        device.ResourceURI,
 				data:        map[string]interface{}{},
@@ -92,7 +94,7 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 		{
 			name: "/oic/d - invalid timeToLive",
 			args: args{
-				accept:      uri.ApplicationProtoJsonContentType,
+				accept:      pkgHttp.ApplicationProtoJsonContentType,
 				contentType: message.AppJSON.String(),
 				href:        device.ResourceURI,
 				data:        map[string]interface{}{},
@@ -105,7 +107,7 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 		{
 			name: "missing if",
 			args: args{
-				accept:      uri.ApplicationProtoJsonContentType,
+				accept:      pkgHttp.ApplicationProtoJsonContentType,
 				contentType: message.AppJSON.String(),
 				href:        test.TestResourceSwitchesHref,
 				data: map[string]interface{}{
@@ -122,7 +124,7 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 		{
 			name: "missing rt",
 			args: args{
-				accept:      uri.ApplicationProtoJsonContentType,
+				accept:      pkgHttp.ApplicationProtoJsonContentType,
 				contentType: message.AppJSON.String(),
 				href:        test.TestResourceSwitchesHref,
 				data: map[string]interface{}{
@@ -139,7 +141,7 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 		{
 			name: "missing rep",
 			args: args{
-				accept:      uri.ApplicationProtoJsonContentType,
+				accept:      pkgHttp.ApplicationProtoJsonContentType,
 				contentType: message.AppJSON.String(),
 				href:        test.TestResourceSwitchesHref,
 				data: map[string]interface{}{
@@ -154,7 +156,7 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 		{
 			name: "create /switches/1",
 			args: args{
-				accept:      uri.ApplicationProtoJsonContentType,
+				accept:      pkgHttp.ApplicationProtoJsonContentType,
 				contentType: message.AppJSON.String(),
 				href:        test.TestResourceSwitchesHref,
 				data:        test.MakeSwitchResourceDefaultData(),
@@ -165,7 +167,7 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 		{
 			name: "create /switches/2",
 			args: args{
-				accept:      uri.ApplicationProtoJsonContentType,
+				accept:      pkgHttp.ApplicationProtoJsonContentType,
 				contentType: message.AppJSON.String(),
 				href:        test.TestResourceSwitchesHref,
 				data:        test.MakeSwitchResourceDefaultData(),
@@ -201,7 +203,7 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			data, err := httpgwTest.GetContentData(makeCreateResourceRequestContent(t, tt.args.data), tt.args.contentType)
+			data, err := httpTest.GetContentData(makeCreateResourceRequestContent(t, tt.args.data), tt.args.contentType)
 			require.NoError(t, err)
 			rb := httpgwTest.NewRequest(http.MethodPost, uri.DeviceResourceLink, bytes.NewReader(data)).AuthToken(token)
 			rb.Accept(tt.args.accept).ContentType(tt.args.contentType).DeviceId(deviceID).ResourceHref(tt.args.href).AddTimeToLive(tt.args.ttl)
@@ -212,7 +214,7 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 			assert.Equal(t, tt.wantHTTPCode, resp.StatusCode)
 
 			var got pb.CreateResourceResponse
-			err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &got)
+			err = httpTest.Unmarshal(resp.StatusCode, resp.Body, &got)
 			if tt.wantErr {
 				require.Error(t, err)
 				assert.Equal(t, tt.wantErrCode.String(), status.Convert(err).Code().String())

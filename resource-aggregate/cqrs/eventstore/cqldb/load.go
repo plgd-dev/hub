@@ -109,8 +109,8 @@ func (s *EventStore) loadEventsQuery(ctx context.Context, eh eventstore.Handler,
 		q.WriteString(" " + cqldb.WhereClause + " " + filter)
 	}
 	q.WriteString(";")
-	iter := s.client.Session().Query(q.String()).WithContext(ctx).Iter()
-	i := newIterator(iter, s.config.unmarshalerFunc)
+	iter := s.Session().Query(q.String()).WithContext(ctx).Iter()
+	i := newIterator(iter, s.unmarshalerFunc)
 	err := eh.Handle(ctx, i)
 	errClose := iter.Close()
 	if err == nil {

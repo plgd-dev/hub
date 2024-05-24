@@ -107,8 +107,8 @@ func TestRequestHandlerSubscribeToDevices(t *testing.T) {
 
 	data, err := json.Encode(sub)
 	require.NoError(t, err)
-	req := testHttp.NewHTTPRequest(http.MethodPost, uri, bytes.NewBuffer(data)).AuthToken(token).Accept(accept).Build(ctx, t)
-	resp := testHttp.DoHTTPRequest(t, req)
+	req := testHttp.NewRequest(http.MethodPost, uri, bytes.NewBuffer(data)).AuthToken(token).Accept(accept).Build(ctx, t)
+	resp := testHttp.Do(t, req)
 	require.Equal(t, wantCode, resp.StatusCode)
 	defer func() {
 		_ = resp.Body.Close()
@@ -200,8 +200,8 @@ func TestRequestHandlerSubscribeToDevicesOffline(t *testing.T) {
 
 	data, err := json.Encode(sub)
 	require.NoError(t, err)
-	req := testHttp.NewHTTPRequest(http.MethodPost, uri, bytes.NewBuffer(data)).AuthToken(oauthTest.GetDefaultAccessToken(t)).Accept(accept).Build(ctx, t)
-	resp := testHttp.DoHTTPRequest(t, req)
+	req := testHttp.NewRequest(http.MethodPost, uri, bytes.NewBuffer(data)).AuthToken(oauthTest.GetDefaultAccessToken(t)).Accept(accept).Build(ctx, t)
+	resp := testHttp.Do(t, req)
 	require.Equal(t, wantCode, resp.StatusCode)
 	defer func() {
 		_ = resp.Body.Close()

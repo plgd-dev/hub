@@ -16,10 +16,12 @@ import (
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
-	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
+	httpTest "github.com/plgd-dev/hub/v2/test/http"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/plgd-dev/hub/v2/test/service"
@@ -66,28 +68,28 @@ func TestRequestHandlerGetDevices(t *testing.T) {
 		{
 			name: "all devices",
 			args: args{
-				accept: uri.ApplicationProtoJsonContentType,
+				accept: pkgHttp.ApplicationProtoJsonContentType,
 			},
 			want: []*pb.Device{makeDefaultDevice(deviceID)},
 		},
 		{
 			name: "offline devices",
 			args: args{
-				accept:       uri.ApplicationProtoJsonContentType,
+				accept:       pkgHttp.ApplicationProtoJsonContentType,
 				statusFilter: []pb.GetDevicesRequest_Status{pb.GetDevicesRequest_OFFLINE},
 			},
 		},
 		{
 			name: "invalid device id",
 			args: args{
-				accept:         uri.ApplicationProtoJsonContentType,
+				accept:         pkgHttp.ApplicationProtoJsonContentType,
 				deviceIdFilter: []string{"invalid"},
 			},
 		},
 		{
 			name: "single device",
 			args: args{
-				accept:         uri.ApplicationProtoJsonContentType,
+				accept:         pkgHttp.ApplicationProtoJsonContentType,
 				deviceIdFilter: []string{deviceID},
 			},
 			want: []*pb.Device{makeDefaultDevice(deviceID)},
@@ -95,14 +97,14 @@ func TestRequestHandlerGetDevices(t *testing.T) {
 		{
 			name: "invalid device type",
 			args: args{
-				accept:     uri.ApplicationProtoJsonContentType,
+				accept:     pkgHttp.ApplicationProtoJsonContentType,
 				typeFilter: []string{"invalid"},
 			},
 		},
 		{
 			name: "cloud device type",
 			args: args{
-				accept:     uri.ApplicationProtoJsonContentType,
+				accept:     pkgHttp.ApplicationProtoJsonContentType,
 				typeFilter: []string{types.DEVICE_CLOUD},
 			},
 			want: []*pb.Device{makeDefaultDevice(deviceID)},
@@ -119,7 +121,7 @@ func TestRequestHandlerGetDevices(t *testing.T) {
 	defer shutdownHttp()
 
 	token := oauthTest.GetDefaultAccessToken(t)
-	ctx = kitNetGrpc.CtxWithToken(ctx, token)
+	ctx = pkgGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
@@ -153,7 +155,7 @@ func TestRequestHandlerGetDevices(t *testing.T) {
 			var devices []*pb.Device
 			for {
 				var dev pb.Device
-				err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &dev)
+				err = httpTest.Unmarshal(resp.StatusCode, resp.Body, &dev)
 				if errors.Is(err, io.EOF) {
 					break
 				}

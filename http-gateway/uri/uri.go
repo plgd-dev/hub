@@ -30,11 +30,6 @@ const (
 	AliasTypeFilterQueryKey       = "type"
 	AliasStatusFilterQueryKey     = "status"
 
-	CorrelationIDHeaderKey = "Correlation-Id"
-	ContentTypeHeaderKey   = "Content-Type"
-	AcceptHeaderKey        = "Accept"
-	ETagHeaderKey          = "ETag"
-
 	DevicesPathKey                = "devices"
 	ResourcesPathKey              = "resources"
 	ResourceLinksPathKey          = "resource-links"
@@ -42,8 +37,6 @@ const (
 	PendingMetadataUpdatesPathKey = "pending-metadata-updates"
 	EventsPathKey                 = "events"
 	ThingsPathKey                 = "things"
-
-	ApplicationProtoJsonContentType = "application/protojson"
 
 	API               string = "/api/v1"
 	APIWS             string = API + "/ws"

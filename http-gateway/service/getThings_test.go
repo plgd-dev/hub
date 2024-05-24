@@ -35,6 +35,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/plgd-dev/hub/v2/test/device/bridge"
+	httpTest "github.com/plgd-dev/hub/v2/test/http"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/plgd-dev/hub/v2/test/service"
 	vd "github.com/plgd-dev/hub/v2/test/virtual-device"
@@ -127,7 +128,7 @@ func TestRequestHandlerGetThings(t *testing.T) {
 	}()
 
 	var v httpgwService.GetThingsResponse
-	err := httpgwTest.UnmarshalJson(resp.StatusCode, resp.Body, &v)
+	err := httpTest.UnmarshalJson(resp.StatusCode, resp.Body, &v)
 	require.NoError(t, err)
 	require.Equal(t, httpgwCfg.UI.WebConfiguration.HTTPGatewayAddress+httpgwUri.Things, v.Base)
 	vdsWithTD := []virtualDevice{}
@@ -187,7 +188,7 @@ func TestBridgeDeviceGetThings(t *testing.T) {
 	}()
 
 	var v httpgwService.GetThingsResponse
-	err = httpgwTest.UnmarshalJson(resp.StatusCode, resp.Body, &v)
+	err = httpTest.UnmarshalJson(resp.StatusCode, resp.Body, &v)
 	require.NoError(t, err)
 	require.Equal(t, httpgwCfg.UI.WebConfiguration.HTTPGatewayAddress+httpgwUri.Things, v.Base)
 	require.Len(t, v.Links, bridgeDeviceCfg.NumGeneratedBridgedDevices)

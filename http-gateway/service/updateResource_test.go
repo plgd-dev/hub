@@ -16,10 +16,12 @@ import (
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
+	httpTest "github.com/plgd-dev/hub/v2/test/http"
 	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
@@ -53,7 +55,8 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 		{
 			name: "invalid href",
 			args: args{
-				accept:       uri.ApplicationProtoJsonContentType,
+				accept:       pkgHttp.ApplicationProtoJsonContentType,
+				contentType:  message.AppJSON.String(),
 				deviceID:     deviceID,
 				resourceHref: "/unknown",
 				onlyContent:  true,
@@ -64,7 +67,8 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 		{
 			name: "invalid timeToLive",
 			args: args{
-				accept:       uri.ApplicationProtoJsonContentType,
+				accept:       pkgHttp.ApplicationProtoJsonContentType,
+				contentType:  message.AppJSON.String(),
 				deviceID:     deviceID,
 				resourceHref: test.TestResourceLightInstanceHref("1"),
 				ttl:          99 * time.Millisecond,
@@ -75,7 +79,8 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 		{
 			name: "invalid update RO-resource",
 			args: args{
-				accept:       uri.ApplicationProtoJsonContentType,
+				accept:       pkgHttp.ApplicationProtoJsonContentType,
+				contentType:  message.AppJSON.String(),
 				deviceID:     deviceID,
 				resourceHref: device.ResourceURI,
 			},
@@ -85,7 +90,8 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 		{
 			name: "invalid update collection /switches",
 			args: args{
-				accept:       uri.ApplicationProtoJsonContentType,
+				accept:       pkgHttp.ApplicationProtoJsonContentType,
+				contentType:  message.AppJSON.String(),
 				deviceID:     deviceID,
 				resourceHref: test.TestResourceSwitchesHref,
 			},
@@ -93,10 +99,10 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 			wantHTTPCode: http.StatusForbidden,
 		},
 		{
-			name: "valid - " + uri.ApplicationProtoJsonContentType,
+			name: "valid - " + pkgHttp.ApplicationProtoJsonContentType,
 			args: args{
-				accept:       uri.ApplicationProtoJsonContentType,
-				contentType:  uri.ApplicationProtoJsonContentType,
+				accept:       pkgHttp.ApplicationProtoJsonContentType,
+				contentType:  pkgHttp.ApplicationProtoJsonContentType,
 				deviceID:     deviceID,
 				resourceHref: test.TestResourceLightInstanceHref("1"),
 				resourceData: map[string]interface{}{
@@ -109,7 +115,7 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 		{
 			name: "valid - " + message.AppJSON.String(),
 			args: args{
-				accept:       uri.ApplicationProtoJsonContentType,
+				accept:       pkgHttp.ApplicationProtoJsonContentType,
 				contentType:  message.AppJSON.String(),
 				deviceID:     deviceID,
 				resourceHref: test.TestResourceLightInstanceHref("1"),
@@ -123,7 +129,8 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 		{
 			name: "valid with interface",
 			args: args{
-				accept:       uri.ApplicationProtoJsonContentType,
+				accept:       pkgHttp.ApplicationProtoJsonContentType,
+				contentType:  message.AppJSON.String(),
 				deviceID:     deviceID,
 				resourceHref: test.TestResourceLightInstanceHref("1"),
 				resourceData: map[string]interface{}{
@@ -137,7 +144,8 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 		{
 			name: "revert update",
 			args: args{
-				accept:       uri.ApplicationProtoJsonContentType,
+				accept:       pkgHttp.ApplicationProtoJsonContentType,
+				contentType:  message.AppJSON.String(),
 				deviceID:     deviceID,
 				resourceHref: test.TestResourceLightInstanceHref("1"),
 				resourceData: map[string]interface{}{
@@ -151,7 +159,8 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 		{
 			name: "update /switches/1",
 			args: args{
-				accept:       uri.ApplicationProtoJsonContentType,
+				accept:       pkgHttp.ApplicationProtoJsonContentType,
+				contentType:  message.AppJSON.String(),
 				deviceID:     deviceID,
 				resourceHref: test.TestResourceSwitchesInstanceHref(switchID),
 				resourceData: map[string]interface{}{
@@ -207,7 +216,7 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			data, err := httpgwTest.GetContentData(&pb.Content{
+			data, err := httpTest.GetContentData(&pb.Content{
 				Data:        test.EncodeToCbor(t, tt.args.resourceData),
 				ContentType: message.AppOcfCbor.String(),
 			}, tt.args.contentType)
@@ -222,7 +231,7 @@ func TestRequestHandlerUpdateResourcesValues(t *testing.T) {
 			assert.Equal(t, tt.wantHTTPCode, resp.StatusCode)
 
 			var got pb.UpdateResourceResponse
-			err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &got)
+			err = httpTest.Unmarshal(resp.StatusCode, resp.Body, &got)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
@@ -251,9 +260,9 @@ func TestRequestHandlerUpdateResourcesValuesWithOnlyContent(t *testing.T) {
 		wantHTTPCode int
 	}{
 		{
-			name: "valid - accept " + uri.ApplicationProtoJsonContentType,
+			name: "valid - accept " + pkgHttp.ApplicationProtoJsonContentType,
 			args: args{
-				accept:       uri.ApplicationProtoJsonContentType,
+				accept:       pkgHttp.ApplicationProtoJsonContentType,
 				contentType:  message.AppJSON.String(),
 				deviceID:     deviceID,
 				resourceHref: test.TestResourceLightInstanceHref("1"),
@@ -308,7 +317,7 @@ func TestRequestHandlerUpdateResourcesValuesWithOnlyContent(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			data, err := httpgwTest.GetContentData(&pb.Content{
+			data, err := httpTest.GetContentData(&pb.Content{
 				Data:        test.EncodeToCbor(t, tt.args.resourceData),
 				ContentType: message.AppOcfCbor.String(),
 			}, tt.args.contentType)

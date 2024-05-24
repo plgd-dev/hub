@@ -20,6 +20,7 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	test "github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
+	httpTest "github.com/plgd-dev/hub/v2/test/http"
 	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
@@ -111,7 +112,7 @@ func TestRequestHandlerGetResourceLinks(t *testing.T) {
 			var links []*events.ResourceLinksPublished
 			for {
 				var v events.ResourceLinksPublished
-				err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &v)
+				err = httpTest.Unmarshal(resp.StatusCode, resp.Body, &v)
 				if errors.Is(err, io.EOF) {
 					break
 				}

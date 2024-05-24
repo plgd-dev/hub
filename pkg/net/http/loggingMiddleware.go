@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/plgd-dev/go-coap/v3/message"
-	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgJwt "github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"go.opentelemetry.io/otel/trace"
@@ -35,8 +34,8 @@ func (w *statusWriter) Write(b []byte) (int, error) {
 		w.status = 200
 	}
 	if w.status >= 400 && len(b) > 0 && w.err == nil {
-		switch w.ResponseWriter.Header().Get(uri.ContentTypeHeaderKey) {
-		case uri.ApplicationProtoJsonContentType:
+		switch w.ResponseWriter.Header().Get(ContentTypeHeaderKey) {
+		case ApplicationProtoJsonContentType:
 		case message.AppJSON.String():
 			var s rpcStatus.Status
 			if err := protojson.Unmarshal(b, &s); err == nil {

@@ -84,13 +84,13 @@ func eventsToCQLSetValue(event eventstore.Event, data []byte) string {
 }
 
 func (s *EventStore) saveEvent(ctx context.Context, events []eventstore.Event) (status eventstore.SaveStatus, err error) {
-	lastEvent, snapshotBinary, err := getLatestEventsSnapshot(events, s.config.marshalerFunc)
+	lastEvent, snapshotBinary, err := getLatestEventsSnapshot(events, s.marshalerFunc)
 	if err != nil {
 		return eventstore.Fail, err
 	}
 	setters := eventsToCQLSetValue(lastEvent, snapshotBinary)
-	q := "update " + s.client.Keyspace() + "." + s.config.Table + " set " + setters + " " + cqldb.WhereClause + " " + deviceIDKey + "=" + lastEvent.GroupID() + " and " + idKey + "=" + lastEvent.AggregateID() + " if " + versionKey + "=" + strconv.FormatUint(events[0].Version()-1, 10) + ";"
-	ok, err := s.client.Session().Query(q).WithContext(ctx).ScanCAS(nil)
+	q := "update " + s.Table() + " set " + setters + " " + cqldb.WhereClause + " " + deviceIDKey + "=" + lastEvent.GroupID() + " and " + idKey + "=" + lastEvent.AggregateID() + " if " + versionKey + "=" + strconv.FormatUint(events[0].Version()-1, 10) + ";"
+	ok, err := s.Session().Query(q).WithContext(ctx).ScanCAS(nil)
 	if err != nil {
 		return eventstore.Fail, fmt.Errorf("cannot update snapshot event('%v'): %w", events, err)
 	}
@@ -112,7 +112,7 @@ func (s *EventStore) Save(ctx context.Context, events ...eventstore.Event) (even
 	if events[0].Version() != 0 {
 		return s.saveEvent(ctx, events)
 	}
-	lastEvent, data, err := getLatestEventsSnapshot(events, s.config.marshalerFunc)
+	lastEvent, data, err := getLatestEventsSnapshot(events, s.marshalerFunc)
 	if err != nil {
 		return eventstore.Fail, err
 	}
@@ -121,7 +121,7 @@ func (s *EventStore) Save(ctx context.Context, events ...eventstore.Event) (even
 	values := kvs.Values()
 
 	q := "insert into " + s.Table() + " (" + strings.Join(keys, ",") + ") values (" + strings.Join(values, ",") + ") if not exists;"
-	ok, err := s.client.Session().Query(q).WithContext(ctx).ScanCAS(nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	ok, err := s.Session().Query(q).WithContext(ctx).ScanCAS(nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		if errors.Is(err, gocql.ErrNotFound) {
 			return eventstore.Ok, nil

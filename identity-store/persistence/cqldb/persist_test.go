@@ -314,7 +314,7 @@ func TestPersistenceTxPersist(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := p.TruncateTable(ctx)
+			err := p.ClearTable(ctx)
 			require.NoError(t, err)
 			if tt.actionBeforePersist != nil {
 				tt.actionBeforePersist(t, tx)
