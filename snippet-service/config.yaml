@@ -1,0 +1,106 @@
+hubID: ""
+log:
+  level: info
+  encoding: json
+  stacktrace:
+    enabled: false
+    level: warn
+  encoderConfig:
+    timeEncoder: rfc3339nano
+apis:
+  grpc:
+    address: "0.0.0.0:9100"
+    sendMsgSize: 4194304
+    recvMsgSize: 4194304
+    enforcementPolicy:
+      minTime: 5s
+      permitWithoutStream: true
+    keepAlive:
+      # 0s - means infinity
+      maxConnectionIdle: 0s
+      # 0s - means infinity
+      maxConnectionAge: 0s
+      # 0s - means infinity
+      maxConnectionAgeGrace: 0s
+      time: 2h
+      timeout: 20s
+    tls:
+      caPool: "/secrets/public/rootca.crt"
+      keyFile: "/secrets/private/cert.key"
+      certFile: "/secrets/private/cert.crt"
+      clientCertificateRequired: true
+    authorization:
+      ownerClaim: "sub"
+      authority: ""
+      audience: ""
+      http:
+        maxIdleConns: 16
+        maxConnsPerHost: 32
+        maxIdleConnsPerHost: 16
+        idleConnTimeout: "30s"
+        timeout: "10s"
+        tls:
+          caPool: "/secrets/public/rootca.crt"
+          keyFile: "/secrets/private/cert.key"
+          certFile: "/secrets/public/cert.crt"
+          useSystemCAPool: false
+  http:
+    address: "0.0.0.0:9101"
+    readTimeout: 8s
+    readHeaderTimeout: 4s
+    writeTimeout: 16s
+    idleTimeout: 30s
+clients:
+  storage:
+    use: mongoDB
+    mongoDB:
+      uri:
+      database: snippetService
+      maxPoolSize: 16
+      maxConnIdleTime: 4m0s
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false
+      bulkWrite:
+        timeout: 1m0s
+        throttleTime: 500ms
+        documentLimit: 1000
+    cqlDB:
+      table: "snippets"
+      hosts: []
+      port: 9142
+      numConnections: 16
+      connectTimeout: 10s
+      useHostnameResolution: true
+      reconnectionPolicy:
+        constant:
+          interval: 3s
+          maxRetries: 3
+      keyspace:
+        name: plgdhub
+        create: true
+        replication:
+          class: SimpleStrategy
+          replication_factor: 1
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false
+  openTelemetryCollector:
+    grpc:
+      enabled: false
+      address: ""
+      sendMsgSize: 4194304
+      recvMsgSize: 4194304
+      keepAlive:
+        time: 10s
+        timeout: 20s
+        permitWithoutStream: true
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false

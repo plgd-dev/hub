@@ -1,0 +1,273 @@
+// TODO overit ze pending command sa nezmaze na neexistujucom resource ak sa device pripoji a nepublishne hned resource
+// Overit correlation id - ak sa pouziva rovnake napriec viacerymi resourcami
+
+// scenare
+// - Uzivatel vie vytvorit config, automaticka (backend) inkrementacia verzie
+// - Uzivatel updatne config, verzia sa inkrementuje, Modal -> chces aplikovat na vsetky uz provisionnute devici? Informovat uzivatela, ze niektore devici mozu byt offline a command moze vyexpirovat.
+// - Uzivatel updatne config, verzia sa inkrementuje, informujeme uzivatela ze vsetky pending commandy z predoslej verzie budu cancelnute ako aj dalsie sekvencne updaty resourcov pre predoslu verziu
+
+syntax = "proto3";
+
+package snippetservice.pb;
+
+import "resource-aggregate/pb/resources.proto";
+import "resource-aggregate/pb/events.proto";
+
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "PLGD Rule Engine API";
+    version: "1.0";
+    description: "API for configuring rule engine in PLGD";
+    contact: {
+      name: "plgd.dev";
+      url: "https://github.com/plgd-dev/hub";
+      email: "info@plgd.dev";
+    };
+    license: {
+      name: "Apache License 2.0";
+      url: "https://github.com/plgd-dev/hub/blob/v2/LICENSE";
+    };
+  };
+  schemes: [HTTPS];
+  consumes: ["application/json", "application/protojson"];
+  produces: ["application/json", "application/protojson"];
+};
+
+option go_package = "github.com/plgd-dev/hub/v2/snippet-service/pb;pb";
+
+// TODO: /configurations/123?version=latest
+message IDFilter {
+  string id = 1; 
+  oneof version {
+    uint64 value = 2;
+    bool all = 3;
+    bool latest = 4;
+  }
+}
+
+message Condition { // driven by resource change event
+  // Condition ID
+  string id = 1; // @gotags: bson:"id"
+  uint64 version = 2; // @gotags: bson:"version"
+  string name = 3; // @gotags: bson:"name,omitempty"
+  bool enabled = 4; // @gotags: bson:"enabled,omitempty"
+  // ID of the configuration to be applied when the condition is satisfied
+  string configuration_id = 5; // @gotags: bson:"configurationId"
+  // list of device IDs to which the condition applies
+  repeated string device_id_filter = 6; // @gotags: bson:"deviceIdFilter,omitempty"
+  repeated string resource_type_filter = 7; // @gotags: bson:"resourceTypeFilter,omitempty"
+  // list of resource hrefs to which the condition applies
+  repeated string resource_href_filter = 8; // @gotags: bson:"resourceHrefFilter,omitempty"
+  string jq_expression_filter = 9; // @gotags: bson:"jqExpressionFilter,omitempty"
+  // Token used to update resources in the configuration
+  string api_access_token = 10; // @gotags: bson:"apiAccessToken,omitempty"
+  // Condition owner
+  string owner = 11; // @gotags: bson:"owner"
+  // Unix timestamp in ns when the condition has been created/updated
+  int64 timestamp = 12; // @gotags: bson:"timestamp"
+}
+
+message GetConditionsRequest { repeated IDFilter id_filter = 1; }
+message DeleteConditionsRequest { repeated IDFilter id_filter = 1; }
+message DeleteConditionsResponse { int64 count = 1; }
+
+message Configuration {
+  message Resource {
+    // href of the resource
+    string href = 1;
+    // content update of the resource
+    resourceaggregate.pb.Content content = 2;
+    // optional update command time to live, 0 is infinite
+    int64 time_to_live = 3;
+  }
+  // Configuration ID
+  string id = 1;
+  // Configuration version
+  uint64 version = 2;
+  // User-friendly configuration name
+  string name = 3; // @gotags: bson:"name,omitempty"
+  // List of resource updates to be applied
+  repeated Resource resources = 4;
+  // Configuration owner
+  string owner = 5;
+  // Unix timestamp in ns when the configuration has been created/updated
+  int64 timestamp = 6; // @gotags: bson:"timestamp"
+}
+
+message GetConfigurationsRequest {
+  repeated IDFilter id_filter = 1;
+  // Format: {id}/{version}, e.g., "ae424c58-e517-4494-6de7-583536c48213/all" or "ae424c58-e517-4494-6de7-583536c48213/latest" or "ae424c58-e517-4494-6de7-583536c48213/{version}"
+  repeated string http_id_filter = 2 [ deprecated = true ];
+}
+message DeleteConfigurationsRequest { repeated IDFilter id_filter = 1; }
+message DeleteConfigurationsResponse { int64 count = 1; }
+
+message AppliedDeviceConfiguration { //TODO naming 
+  message Resource {
+    resourceaggregate.pb.ResourceId resource_id = 1; // TODO Jozo href only?
+    string correlation_id = 2; // Reused from invoke command or generated. Can be used to retrieve corresponding pending command.
+    enum Status {
+      QUEUED = 0;
+      PENDING = 1;
+      DONE = 2; // If done look to resource_updated even update resource failed for resource aggregate.
+      TIMEOUT = 3;
+    };
+    Status status = 3;
+    resourceaggregate.pb.ResourceUpdated resource_updated = 4;
+  }
+  string id = 1;
+  string device_id = 2;
+  message RelationTo { //TODO naming
+    string id = 1;
+    uint64 version = 2;
+  }
+  RelationTo configuration_id = 3;
+  oneof executed_by {
+    bool on_demand = 4;
+    RelationTo condition_id = 5; //TODO Naming
+  }
+  repeated Resource resources = 6; //TODO naming
+  string owner = 7;
+  // Unix timestamp in ns when the applied device configuration has been created/updated
+  int64 timestamp = 8; // @gotags: bson:"timestamp"
+}
+
+message InvokeConfigurationRequest {
+  string configuration_id = 1; // applies latest configuration
+  string device_id = 2;
+  bool force = 3; // force update even if the configuration has already been applied to device
+  string correlation_id = 4; // propagated down to the resource update command
+}
+
+message GetAppliedDeviceConfigurationsRequest { //TODO Naming
+  repeated string id_filter = 1;
+  repeated IDFilter configuration_id_filter = 2;
+  repeated string device_id_filter = 3;
+  repeated IDFilter condition_id_filter = 4;
+}
+
+message DeleteAppliedDeviceConfigurationsRequest { repeated string id_filter = 1; }
+message DeleteAppliedDeviceConfigurationsResponse { int64 count = 1; }
+
+service SnippetService {
+  rpc CreateCondition(Condition) returns (Condition) {
+    option (google.api.http) = {
+      post: "/snippet-service/api/v1/conditions";
+      body: "*";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Conditions" ];
+    };
+  }
+
+  rpc GetConditions(GetConditionsRequest) returns (stream Condition) {
+    option (google.api.http) = {
+      get: "/snippet-service/api/v1/conditions";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Conditions" ];
+    };
+  }
+
+  rpc DeleteConditions(DeleteConditionsRequest) returns (DeleteConditionsResponse) {
+    option (google.api.http) = {
+      delete: "/snippet-service/api/v1/conditions";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Conditions" ];
+    };
+  }
+
+  rpc UpdateCondition(Condition) returns (Condition) {
+    option (google.api.http) = {
+      put: "/snippet-service/api/v1/conditions/{id}";
+      body: "*";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Conditions" ];
+    };
+  }
+
+  rpc CreateConfiguration(Configuration) returns (Configuration) {
+    option (google.api.http) = {
+      post: "/snippet-service/api/v1/configurations";
+      body: "*";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Configurations" ];
+    };
+  }
+
+  rpc GetConfigurations(GetConfigurationsRequest) returns (stream Configuration) {
+    option (google.api.http) = {
+      get: "/snippet-service/api/v1/configurations";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Configurations" ];
+    };
+  }
+
+  rpc DeleteConfigurations(DeleteConfigurationsRequest) returns (DeleteConfigurationsResponse) {
+    option (google.api.http) = {
+      delete: "/snippet-service/api/v1/configurations";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Configurations" ];
+    };
+  }
+
+  rpc UpdateConfiguration(Configuration) returns (Configuration) {
+    option (google.api.http) = {
+      put: "/snippet-service/api/v1/configurations/{id}";
+      body: "*";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Configurations" ];
+    };
+  }
+
+  // streaming process of update configuration to invoker
+  rpc InvokeConfiguration(InvokeConfigurationRequest) returns (stream AppliedDeviceConfiguration) {
+    option (google.api.http) = {
+      post: "/snippet-service/api/v1/configurations/{configuration_id}";
+      body: "*";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Configurations" ];
+    };
+  }
+ 
+  rpc GetAppliedConfigurations(GetAppliedDeviceConfigurationsRequest) returns (stream AppliedDeviceConfiguration) {
+    option (google.api.http) = {
+      get: "/snippet-service/api/v1/configurations/applied";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Configurations" ];
+    };
+  }
+
+  rpc DeleteAppliedConfigurations(DeleteAppliedDeviceConfigurationsRequest) returns (DeleteAppliedDeviceConfigurationsResponse) {
+    option (google.api.http) = {
+      delete: "/snippet-service/api/v1/configurations/applied";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Configurations" ];
+    };
+  }
+}
+
+// Trigger resource changed event from NATs.
+// 1. Check if condition is satisfied.
+// 2. Invoke configuration with ID.
+// 3. If the configuration has already been applied to the device, skip applying the configuration.
+// 4. Create applied configuration with ConfigurationId and for each resource with resourceId, QUEUED status, valid until the theoretical maximum timeout.
+// 5. Iterate over resources and
+// 6.   Set start time, valid until, and status to IN PROGRESS.
+// 7.   Register NATs for resource changed event.
+// 8.   If the resource has not been published yet (href, resource types not exist), set status to WAITING RESOURCE and wait for resource changed event until timeout.
+// 9.   If getting resource content fails or not found, set status to WAITING RESOURCE and wait for resource changed event until timeout.
+// 10.  If timeout occurs, set status to TIMEOUT.
+// 11.  Otherwise, set status to IN PROGRESS and update resource with new content. If the update fails, set status to FAIL; otherwise, set status to DONE.

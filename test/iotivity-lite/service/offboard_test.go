@@ -55,7 +55,7 @@ func TestOffboard(t *testing.T) {
 		require.Equal(t, 1, publishCount)
 		singOffCount, ok := h.CallCounter.Data[iotService.SignOffKey]
 		require.True(t, ok)
-		require.Positive(t, singOffCount, 0)
+		require.Positive(t, singOffCount)
 	}
 
 	coapShutdown := coapgwTest.SetUp(t, makeHandler, validateHandler)
@@ -337,7 +337,7 @@ func TestOffboardWithSignInByRefreshToken(t *testing.T) {
 		require.Greater(t, signInCount, 1)
 		refreshCount, ok := h.CallCounter.Data[iotService.RefreshTokenKey]
 		require.True(t, ok)
-		require.Positive(t, refreshCount, 0)
+		require.Positive(t, refreshCount)
 		signOffCount, ok := h.CallCounter.Data[iotService.SignOffKey]
 		require.True(t, ok)
 		require.Equal(t, 1, signOffCount)

@@ -102,6 +102,14 @@ func (c *RequestBuilder) DeviceId(deviceID string) *RequestBuilder {
 	return c
 }
 
+func (c *RequestBuilder) ID(id string) *RequestBuilder {
+	if id == "" {
+		return c
+	}
+	c.uriParams[IDKey] = id
+	return c
+}
+
 func (c *RequestBuilder) ResourceHref(resourceHref string) *RequestBuilder {
 	if resourceHref == "" {
 		return c
@@ -118,6 +126,14 @@ func (c *RequestBuilder) SubscriptionID(subscriptionID string) *RequestBuilder {
 		return c
 	}
 	c.uriParams[SubscriptionIDKey] = subscriptionID
+	return c
+}
+
+func (c *RequestBuilder) Version(version string) *RequestBuilder {
+	if version == "" {
+		return c
+	}
+	c.AddQuery(VersionKey, version)
 	return c
 }
 

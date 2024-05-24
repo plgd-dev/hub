@@ -45,7 +45,7 @@ func TestRepublishAfterRefresh(t *testing.T) {
 		require.Greater(t, signInCount, 1)
 		refreshCount, ok := h.CallCounter.Data[iotService.RefreshTokenKey]
 		require.True(t, ok)
-		require.Positive(t, refreshCount, 0)
+		require.Positive(t, refreshCount)
 		publishCount, ok := h.CallCounter.Data[iotService.PublishKey]
 		require.True(t, ok)
 		require.Equal(t, 1, publishCount)
