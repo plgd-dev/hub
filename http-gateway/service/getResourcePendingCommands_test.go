@@ -19,13 +19,15 @@ import (
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	idService "github.com/plgd-dev/hub/v2/identity-store/test"
-	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	raService "github.com/plgd-dev/hub/v2/resource-aggregate/test"
 	rdService "github.com/plgd-dev/hub/v2/resource-directory/test"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
+	httpTest "github.com/plgd-dev/hub/v2/test/http"
 	"github.com/plgd-dev/hub/v2/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
@@ -54,7 +56,7 @@ func TestRequestHandlerGetResourcePendingCommands(t *testing.T) {
 			args: args{
 				deviceID: deviceID,
 				href:     device.ResourceURI,
-				accept:   uri.ApplicationProtoJsonContentType,
+				accept:   pkgHttp.ApplicationProtoJsonContentType,
 			},
 			want: []*pb.PendingCommand{
 				{
@@ -85,7 +87,7 @@ func TestRequestHandlerGetResourcePendingCommands(t *testing.T) {
 				deviceID:      deviceID,
 				href:          device.ResourceURI,
 				commandFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_CREATE},
-				accept:        uri.ApplicationProtoJsonContentType,
+				accept:        pkgHttp.ApplicationProtoJsonContentType,
 			},
 			want: []*pb.PendingCommand{
 				{
@@ -104,7 +106,7 @@ func TestRequestHandlerGetResourcePendingCommands(t *testing.T) {
 				deviceID:      deviceID,
 				href:          device.ResourceURI,
 				commandFilter: []pb.GetPendingCommandsRequest_Command{pb.GetPendingCommandsRequest_RESOURCE_DELETE},
-				accept:        uri.ApplicationProtoJsonContentType,
+				accept:        pkgHttp.ApplicationProtoJsonContentType,
 			},
 			want: []*pb.PendingCommand{
 				{
@@ -146,7 +148,7 @@ func TestRequestHandlerGetResourcePendingCommands(t *testing.T) {
 	defer shutdownHttp()
 
 	token := oauthTest.GetDefaultAccessToken(t)
-	ctx = kitNetGrpc.CtxWithToken(ctx, token)
+	ctx = pkgGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
@@ -233,7 +235,7 @@ func TestRequestHandlerGetResourcePendingCommands(t *testing.T) {
 			var values []*pb.PendingCommand
 			for {
 				var v pb.PendingCommand
-				err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &v)
+				err = httpTest.Unmarshal(resp.StatusCode, resp.Body, &v)
 				if errors.Is(err, io.EOF) {
 					break
 				}

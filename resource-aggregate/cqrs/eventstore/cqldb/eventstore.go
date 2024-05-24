@@ -42,13 +42,9 @@ var indexes = []cqldb.Index{
 
 // EventStore implements an EventStore for cqldb.
 type EventStore struct {
-	client *cqldb.Client
-	config *Config
-	logger log.Logger
-}
-
-func (s *EventStore) AddCloseFunc(f func()) {
-	s.client.AddCloseFunc(f)
+	*cqldb.Store
+	marshalerFunc   MarshalerFunc
+	unmarshalerFunc UnmarshalerFunc
 }
 
 func New(ctx context.Context, config *Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, opts ...Option) (*EventStore, error) {
@@ -124,9 +120,9 @@ func newEventStoreWithClient(ctx context.Context, client *cqldb.Client, config *
 	}
 
 	return &EventStore{
-		client: client,
-		logger: logger,
-		config: config,
+		Store:           cqldb.NewStore(config.Table, client, logger),
+		marshalerFunc:   config.marshalerFunc,
+		unmarshalerFunc: config.unmarshalerFunc,
 	}, nil
 }
 
@@ -150,29 +146,4 @@ func getLatestEventsSnapshot(events []eventstore.Event, marshaler MarshalerFunc)
 		return nil, nil, fmt.Errorf("cannot marshal snapshot event: %w", err)
 	}
 	return lastEvent, snapshot, nil
-}
-
-// Clear clears the event storage.
-func (s *EventStore) Clear(ctx context.Context) error {
-	err := s.client.DropKeyspace(ctx)
-	if err != nil {
-		return fmt.Errorf("cannot clear: %w", err)
-	}
-
-	return nil
-}
-
-func (s *EventStore) Table() string {
-	return s.client.Keyspace() + "." + s.config.Table
-}
-
-// Clear documents in collections, but don't drop the database or the collections
-func (s *EventStore) ClearTable(ctx context.Context) error {
-	return s.client.Session().Query("truncate " + s.Table() + ";").WithContext(ctx).Exec()
-}
-
-// Close closes the database session.
-func (s *EventStore) Close(_ context.Context) error {
-	s.client.Close()
-	return nil
 }

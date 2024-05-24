@@ -52,5 +52,8 @@
     ],
     "files.watcherExclude": {
         "**/plgd-dev/hub/v2/**": true
+    },
+    "[proto3]": {
+        "editor.formatOnSave": false
     }
 }

@@ -16,7 +16,8 @@ import (
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/subscriber"
@@ -25,6 +26,7 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
+	httpTest "github.com/plgd-dev/hub/v2/test/http"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/require"
@@ -90,9 +92,9 @@ func (f *contentChangedFilter) WaitForDeviceMetadataUpdated(t time.Duration) *ev
 }
 
 func updateResource(t *testing.T, req *pb.UpdateResourceRequest, token string) error {
-	const accept = uri.ApplicationProtoJsonContentType
-	const contentType = uri.ApplicationProtoJsonContentType
-	data, err := httpgwTest.GetContentData(req.GetContent(), contentType)
+	const accept = pkgHttp.ApplicationProtoJsonContentType
+	const contentType = pkgHttp.ApplicationProtoJsonContentType
+	data, err := httpTest.GetContentData(req.GetContent(), contentType)
 	if err != nil {
 		return err
 	}
@@ -105,7 +107,7 @@ func updateResource(t *testing.T, req *pb.UpdateResourceRequest, token string) e
 	}()
 
 	var got pb.UpdateResourceResponse
-	err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &got)
+	err = httpTest.Unmarshal(resp.StatusCode, resp.Body, &got)
 	if err != nil {
 		return err
 	}
@@ -125,7 +127,7 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 	defer shutdownHttp()
 
 	token := oauthTest.GetDefaultAccessToken(t)
-	ctx = kitNetGrpc.CtxWithToken(ctx, token)
+	ctx = pkgGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
@@ -173,7 +175,7 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 		}(resp)
 
 		var got pb.UpdateDeviceMetadataResponse
-		errM = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &got)
+		errM = httpTest.Unmarshal(resp.StatusCode, resp.Body, &got)
 		return errM
 	}
 

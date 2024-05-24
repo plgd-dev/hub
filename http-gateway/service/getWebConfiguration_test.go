@@ -12,6 +12,7 @@ import (
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	"github.com/plgd-dev/hub/v2/test/config"
+	httpTest "github.com/plgd-dev/hub/v2/test/http"
 	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -90,7 +91,7 @@ func TestRequestHandlerGetWebConfiguration(t *testing.T) {
 			assert.Equal(t, tt.wantHTTPCode, resp.StatusCode)
 
 			var got httpgwService.WebConfiguration
-			err := httpgwTest.UnmarshalJson(resp.StatusCode, resp.Body, &got)
+			err := httpTest.UnmarshalJson(resp.StatusCode, resp.Body, &got)
 			if tt.wantErr {
 				require.Error(t, err)
 				return

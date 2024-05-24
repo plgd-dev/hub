@@ -14,12 +14,33 @@ import (
 
 	"github.com/jtacoma/uritemplates"
 	"github.com/plgd-dev/go-coap/v3/message"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
-type HTTPRequestBuilder struct {
+func GetContentData(content *pb.Content, desiredContentType string) ([]byte, error) {
+	if desiredContentType == pkgHttp.ApplicationProtoJsonContentType {
+		data, err := protojson.Marshal(content)
+		if err != nil {
+			return nil, err
+		}
+		return data, err
+	}
+	if desiredContentType == message.AppJSON.String() {
+		v, err := cbor.ToJSON(content.GetData())
+		if err != nil {
+			return nil, err
+		}
+		return []byte(v), err
+	}
+	return nil, errors.New("not supported")
+}
+
+type RequestBuilder struct {
 	method       string
 	body         io.Reader
 	uri          string
@@ -30,8 +51,8 @@ type HTTPRequestBuilder struct {
 	query        string
 }
 
-func NewHTTPRequest(method, url string, body io.Reader) *HTTPRequestBuilder {
-	b := HTTPRequestBuilder{
+func NewRequest(method, url string, body io.Reader) *RequestBuilder {
+	b := RequestBuilder{
 		method:      method,
 		body:        body,
 		uri:         url,
@@ -42,30 +63,38 @@ func NewHTTPRequest(method, url string, body io.Reader) *HTTPRequestBuilder {
 	return &b
 }
 
-func (c *HTTPRequestBuilder) AuthToken(token string) *HTTPRequestBuilder {
+func (c *RequestBuilder) AuthToken(token string) *RequestBuilder {
 	c.header["Authorization"] = "bearer " + token
 	return c
 }
 
-func (c *HTTPRequestBuilder) AddContentQuery(content string) *HTTPRequestBuilder {
+func (c *RequestBuilder) AddContentQuery(content string) *RequestBuilder {
 	c.AddQuery(ContentQueryKey, content)
 	return c
 }
 
-func (c *HTTPRequestBuilder) AddQuery(key string, value ...string) *HTTPRequestBuilder {
+func (c *RequestBuilder) AddQuery(key string, value ...string) *RequestBuilder {
 	c.queryParams[key] = append(c.queryParams[key], value...)
 	return c
 }
 
-func (c *HTTPRequestBuilder) Accept(accept string) *HTTPRequestBuilder {
+func (c *RequestBuilder) Accept(accept string) *RequestBuilder {
 	if accept == "" {
 		return c
 	}
-	c.header["Accept"] = accept
+	c.header[pkgHttp.AcceptHeaderKey] = accept
 	return c
 }
 
-func (c *HTTPRequestBuilder) DeviceId(deviceID string) *HTTPRequestBuilder {
+func (c *RequestBuilder) ContentType(contentType string) *RequestBuilder {
+	if contentType == "" {
+		return c
+	}
+	c.header[pkgHttp.ContentTypeHeaderKey] = contentType
+	return c
+}
+
+func (c *RequestBuilder) DeviceId(deviceID string) *RequestBuilder {
 	if deviceID == "" {
 		return c
 	}
@@ -73,7 +102,7 @@ func (c *HTTPRequestBuilder) DeviceId(deviceID string) *HTTPRequestBuilder {
 	return c
 }
 
-func (c *HTTPRequestBuilder) ResourceHref(resourceHref string) *HTTPRequestBuilder {
+func (c *RequestBuilder) ResourceHref(resourceHref string) *RequestBuilder {
 	if resourceHref == "" {
 		return c
 	}
@@ -84,7 +113,7 @@ func (c *HTTPRequestBuilder) ResourceHref(resourceHref string) *HTTPRequestBuild
 	return c
 }
 
-func (c *HTTPRequestBuilder) SubscriptionID(subscriptionID string) *HTTPRequestBuilder {
+func (c *RequestBuilder) SubscriptionID(subscriptionID string) *RequestBuilder {
 	if subscriptionID == "" {
 		return c
 	}
@@ -92,12 +121,12 @@ func (c *HTTPRequestBuilder) SubscriptionID(subscriptionID string) *HTTPRequestB
 	return c
 }
 
-func (c *HTTPRequestBuilder) SetQuery(value string) *HTTPRequestBuilder {
+func (c *RequestBuilder) SetQuery(value string) *RequestBuilder {
 	c.query = value
 	return c
 }
 
-func (c *HTTPRequestBuilder) Build(ctx context.Context, t *testing.T) *http.Request {
+func (c *RequestBuilder) Build(ctx context.Context, t *testing.T) *http.Request {
 	u := c.uri
 	if len(c.resourceHref) > 0 {
 		u = strings.ReplaceAll(c.uri, "{"+ResourceHrefKey+"}", c.resourceHref)
@@ -130,7 +159,7 @@ func (c *HTTPRequestBuilder) Build(ctx context.Context, t *testing.T) *http.Requ
 	return request
 }
 
-func DoHTTPRequest(t *testing.T, req *http.Request) *http.Response {
+func Do(t *testing.T, req *http.Request) *http.Response {
 	trans := http.DefaultTransport.(*http.Transport).Clone()
 	trans.TLSClientConfig = &tls.Config{
 		InsecureSkipVerify: true,
@@ -143,7 +172,7 @@ func DoHTTPRequest(t *testing.T, req *http.Request) *http.Response {
 	return resp
 }
 
-func ReadHTTPResponse(t *testing.T, w io.Reader, contentType string, data interface{}) {
+func ReadResponse(t *testing.T, w io.Reader, contentType string, data interface{}) {
 	readFrom := func(_ io.Reader, _ interface{}) error {
 		return errors.New("not supported")
 	}

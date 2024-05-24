@@ -16,10 +16,12 @@ import (
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
+	httpTest "github.com/plgd-dev/hub/v2/test/http"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/plgd-dev/hub/v2/test/service"
@@ -49,7 +51,7 @@ func TestRequestHandlerDeleteResource(t *testing.T) {
 		{
 			name: "/light/1 - MethodNotAllowed",
 			args: args{
-				accept: uri.ApplicationProtoJsonContentType,
+				accept: pkgHttp.ApplicationProtoJsonContentType,
 				href:   test.TestResourceLightInstanceHref("1"),
 			},
 			wantErr:      true,
@@ -59,7 +61,7 @@ func TestRequestHandlerDeleteResource(t *testing.T) {
 		{
 			name: "invalid Href",
 			args: args{
-				accept: uri.ApplicationProtoJsonContentType,
+				accept: pkgHttp.ApplicationProtoJsonContentType,
 				href:   "/unknown",
 			},
 			wantErr:      true,
@@ -69,7 +71,7 @@ func TestRequestHandlerDeleteResource(t *testing.T) {
 		{
 			name: "/oic/d - PermissionDenied",
 			args: args{
-				accept: uri.ApplicationProtoJsonContentType,
+				accept: pkgHttp.ApplicationProtoJsonContentType,
 				href:   device.ResourceURI,
 			},
 			wantErr:      true,
@@ -79,7 +81,7 @@ func TestRequestHandlerDeleteResource(t *testing.T) {
 		{
 			name: "invalid timeToLive",
 			args: args{
-				accept: uri.ApplicationProtoJsonContentType,
+				accept: pkgHttp.ApplicationProtoJsonContentType,
 				href:   test.TestResourceLightInstanceHref("1"),
 				ttl:    99 * time.Millisecond,
 			},
@@ -90,7 +92,7 @@ func TestRequestHandlerDeleteResource(t *testing.T) {
 		{
 			name: "not found - delete /switches/-1",
 			args: args{
-				accept: uri.ApplicationProtoJsonContentType,
+				accept: pkgHttp.ApplicationProtoJsonContentType,
 				href:   test.TestResourceSwitchesInstanceHref("-1"),
 			},
 			wantErr:      true,
@@ -100,7 +102,7 @@ func TestRequestHandlerDeleteResource(t *testing.T) {
 		{
 			name: "delete /switches/1",
 			args: args{
-				accept: uri.ApplicationProtoJsonContentType,
+				accept: pkgHttp.ApplicationProtoJsonContentType,
 				href:   test.TestResourceSwitchesInstanceHref("1"),
 			},
 			wantHTTPCode: http.StatusOK,
@@ -142,7 +144,7 @@ func TestRequestHandlerDeleteResource(t *testing.T) {
 			assert.Equal(t, tt.wantHTTPCode, resp.StatusCode)
 
 			var got pb.DeleteResourceResponse
-			err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &got)
+			err = httpTest.Unmarshal(resp.StatusCode, resp.Body, &got)
 			if tt.wantErr {
 				require.Error(t, err)
 				assert.Equal(t, tt.wantErrCode.String(), exCodes.Code(status.Convert(err).Code()).String())
@@ -174,7 +176,7 @@ func TestRequestHandlerBatchDeleteResource(t *testing.T) {
 		{
 			name: "/oic/res - Delete not supported",
 			args: args{
-				accept: uri.ApplicationProtoJsonContentType,
+				accept: pkgHttp.ApplicationProtoJsonContentType,
 				href:   resources.ResourceURI,
 			},
 			wantErr:      true,
@@ -184,7 +186,7 @@ func TestRequestHandlerBatchDeleteResource(t *testing.T) {
 		{
 			name: "/switches/1 - Batch delete not supported",
 			args: args{
-				accept: uri.ApplicationProtoJsonContentType,
+				accept: pkgHttp.ApplicationProtoJsonContentType,
 				href:   test.TestResourceSwitchesInstanceHref("1"),
 			},
 			wantErr:      true,
@@ -194,7 +196,7 @@ func TestRequestHandlerBatchDeleteResource(t *testing.T) {
 		{
 			name: "/switches",
 			args: args{
-				accept: uri.ApplicationProtoJsonContentType,
+				accept: pkgHttp.ApplicationProtoJsonContentType,
 				href:   test.TestResourceSwitchesHref,
 			},
 			want: func() *events.ResourceDeleted {
@@ -252,7 +254,7 @@ func TestRequestHandlerBatchDeleteResource(t *testing.T) {
 			assert.Equal(t, tt.wantHTTPCode, resp.StatusCode)
 
 			var got pb.DeleteResourceResponse
-			err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &got)
+			err = httpTest.Unmarshal(resp.StatusCode, resp.Body, &got)
 			if tt.wantErr {
 				require.Error(t, err)
 				assert.Equal(t, tt.wantErrCode.String(), exCodes.Code(status.Convert(err).Code()).String())

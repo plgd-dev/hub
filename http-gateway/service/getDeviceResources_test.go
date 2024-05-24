@@ -18,10 +18,12 @@ import (
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
+	httpTest "github.com/plgd-dev/hub/v2/test/http"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/plgd-dev/hub/v2/test/service"
@@ -110,7 +112,7 @@ func TestRequestHandlerGetDeviceResources(t *testing.T) {
 			name: "get resource of " + deviceID,
 			args: args{
 				deviceID: deviceID,
-				accept:   uri.ApplicationProtoJsonContentType,
+				accept:   pkgHttp.ApplicationProtoJsonContentType,
 			},
 			want: getResources(t, deviceID, test.TestDeviceName, switchID),
 		},
@@ -119,7 +121,7 @@ func TestRequestHandlerGetDeviceResources(t *testing.T) {
 			args: args{
 				deviceID:   deviceID,
 				typeFilter: []string{device.ResourceType, platform.ResourceType},
-				accept:     uri.ApplicationProtoJsonContentType,
+				accept:     pkgHttp.ApplicationProtoJsonContentType,
 			},
 			want: []*pb.Resource{
 				{
@@ -136,7 +138,7 @@ func TestRequestHandlerGetDeviceResources(t *testing.T) {
 			name: "not found",
 			args: args{
 				deviceID: "notFound",
-				accept:   uri.ApplicationProtoJsonContentType,
+				accept:   pkgHttp.ApplicationProtoJsonContentType,
 			},
 			wantErr: true,
 		},
@@ -180,7 +182,7 @@ func TestRequestHandlerGetDeviceResources(t *testing.T) {
 			values := make([]*pb.Resource, 0, 1)
 			for {
 				var value pb.Resource
-				err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &value)
+				err = httpTest.Unmarshal(resp.StatusCode, resp.Body, &value)
 				if errors.Is(err, io.EOF) {
 					break
 				}

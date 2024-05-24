@@ -33,5 +33,5 @@ func (s *EventStore) Delete(ctx context.Context, queries []eventstore.DeleteQuer
 		return errors.New("failed to delete documents: invalid query")
 	}
 
-	return s.client.Session().Query("delete from " + s.Table() + " " + cqldb.WhereClause + " " + deviceIDKey + " in (" + deviceIDFilter + ");").WithContext(ctx).Exec()
+	return s.Session().Query("delete from " + s.Table() + " " + cqldb.WhereClause + " " + deviceIDKey + " in (" + deviceIDFilter + ");").WithContext(ctx).Exec()
 }

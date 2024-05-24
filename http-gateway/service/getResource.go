@@ -14,7 +14,8 @@ import (
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
-	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -23,11 +24,11 @@ import (
 const errFmtFromTwin = "cannot get resource('%v') from twin: %w"
 
 func getHeaderETag(r *http.Request) string {
-	etagStr := r.Header.Get(uri.ETagHeaderKey)
+	etagStr := r.Header.Get(pkgHttp.ETagHeaderKey)
 	if etagStr != "" {
 		return etagStr
 	}
-	return r.Header.Get(strings.ToLower(uri.ETagHeaderKey))
+	return r.Header.Get(strings.ToLower(pkgHttp.ETagHeaderKey))
 }
 
 func getETags(r *http.Request) [][]byte {
@@ -87,7 +88,7 @@ func (requestHandler *RequestHandler) serveResourceRequest(r *http.Request, devi
 	if (twin == "" || parseBoolQuery(twin)) && resourceInterface == "" {
 		rec, err := requestHandler.getResourceFromTwin(r, &resourceID)
 		if err != nil {
-			return nil, false, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, errFmtFromTwin, &resourceID, err)
+			return nil, false, pkgGrpc.ForwardErrorf(codes.InvalidArgument, errFmtFromTwin, &resourceID, err)
 		}
 		return rec, true, nil
 	}
@@ -188,6 +189,6 @@ func (requestHandler *RequestHandler) getResource(w http.ResponseWriter, r *http
 		allowEmptyContent = requestHandler.filterOnlyContent(rec, filterPath...)
 	}
 	toSimpleResponse(w, rec, allowEmptyContent, func(w http.ResponseWriter, err error) {
-		serverMux.WriteError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot get resource('%v/%v') from the device: %v", deviceID, resourceHref, err))
+		serverMux.WriteError(w, pkgGrpc.ForwardErrorf(codes.InvalidArgument, "cannot get resource('%v/%v') from the device: %v", deviceID, resourceHref, err))
 	}, streamResponseKey)
 }

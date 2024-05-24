@@ -12,9 +12,11 @@ import (
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
-	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
+	httpTest "github.com/plgd-dev/hub/v2/test/http"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/plgd-dev/hub/v2/test/service"
@@ -54,7 +56,7 @@ func TestRequestHandlerGetEvents(t *testing.T) {
 	defer shutdownHttp()
 
 	token := oauthTest.GetDefaultAccessToken(t)
-	ctx = kitNetGrpc.CtxWithToken(ctx, token)
+	ctx = pkgGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
@@ -88,7 +90,7 @@ func TestRequestHandlerGetEvents(t *testing.T) {
 		{
 			name: "All events",
 			args: args{
-				accept: uri.ApplicationProtoJsonContentType,
+				accept: pkgHttp.ApplicationProtoJsonContentType,
 			},
 			wantLen:      len(allEvents),
 			wantHTTPCode: http.StatusOK,
@@ -96,7 +98,7 @@ func TestRequestHandlerGetEvents(t *testing.T) {
 		{
 			name: "Timestamp filter (No events)",
 			args: args{
-				accept:    uri.ApplicationProtoJsonContentType,
+				accept:    pkgHttp.ApplicationProtoJsonContentType,
 				timestamp: time.Now(),
 			},
 			wantHTTPCode: http.StatusOK,
@@ -104,7 +106,7 @@ func TestRequestHandlerGetEvents(t *testing.T) {
 		{
 			name: "Timestamp filter (All events)",
 			args: args{
-				accept:    uri.ApplicationProtoJsonContentType,
+				accept:    pkgHttp.ApplicationProtoJsonContentType,
 				timestamp: beforeOnBoard,
 			},
 			wantLen:      len(allEvents),
@@ -113,7 +115,7 @@ func TestRequestHandlerGetEvents(t *testing.T) {
 		{
 			name: "Device filter (Invalid device)",
 			args: args{
-				accept:   uri.ApplicationProtoJsonContentType,
+				accept:   pkgHttp.ApplicationProtoJsonContentType,
 				deviceID: "test",
 			},
 			wantHTTPCode: http.StatusOK,
@@ -121,7 +123,7 @@ func TestRequestHandlerGetEvents(t *testing.T) {
 		{
 			name: "Device filter (All devices)",
 			args: args{
-				accept:    uri.ApplicationProtoJsonContentType,
+				accept:    pkgHttp.ApplicationProtoJsonContentType,
 				deviceID:  deviceID,
 				timestamp: beforeOnBoard,
 			},
@@ -131,7 +133,7 @@ func TestRequestHandlerGetEvents(t *testing.T) {
 		{
 			name: "Resource filter (Invalid href)",
 			args: args{
-				accept:   uri.ApplicationProtoJsonContentType,
+				accept:   pkgHttp.ApplicationProtoJsonContentType,
 				deviceID: deviceID,
 				href:     "test",
 			},
@@ -140,7 +142,7 @@ func TestRequestHandlerGetEvents(t *testing.T) {
 		{
 			name: "Resource filter (First resource)",
 			args: args{
-				accept:   uri.ApplicationProtoJsonContentType,
+				accept:   pkgHttp.ApplicationProtoJsonContentType,
 				deviceID: deviceID,
 				href:     test.GetAllBackendResourceLinks()[0].Href,
 			},
@@ -172,7 +174,7 @@ func TestRequestHandlerGetEvents(t *testing.T) {
 			values := make([]*pb.GetEventsResponse, 0, 1)
 			for {
 				var value pb.GetEventsResponse
-				err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &value)
+				err = httpTest.Unmarshal(resp.StatusCode, resp.Body, &value)
 				if errors.Is(err, io.EOF) {
 					break
 				}

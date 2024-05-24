@@ -18,17 +18,17 @@ import (
 
 // https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.r.cloudapiforcloudservices.swagger.json
 const (
-	CorrelationIDKey  = "Correlation-ID"
-	SubscriptionIDKey = "Subscription-ID"
-	ContentTypeKey    = "Content-Type"
-	AcceptKey         = "Accept"
-	EventTypeKey      = "Event-Type"
-	SequenceNumberKey = "Sequence-Number"
-	EventTimestampKey = "Event-Timestamp"
-	EventSignatureKey = "Event-Signature"
-	AcceptEncodingKey = "Accept-Encoding"
+	CorrelationIDKey   = "Correlation-ID"
+	SubscriptionIDKey  = "Subscription-ID"
+	ContentTypeKey     = "Content-Type"
+	AcceptKey          = "Accept"
+	EventTypeKey       = "Event-Type"
+	SequenceNumberKey  = "Sequence-Number"
+	EventTimestampKey  = "Event-Timestamp"
+	EventSignatureKey  = "Event-Signature"
+	AcceptEncodingKey  = "Accept-Encoding"
+	ContentEncodingKey = "Content-Encoding"
 )
-const ContentEncodingKey = "Content-Encoding"
 
 var (
 	ContentType_JSON       = message.AppJSON.String()

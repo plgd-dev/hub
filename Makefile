@@ -115,6 +115,8 @@ scylla: scylla/clean
 		--entrypoint /bin/cp \
 		scylladb/scylla \
 		/etc/scylla/scylla.yaml /etc-scylla-tmp/scylla.yaml
+	sudo chown $(shell whoami) $(WORKING_DIRECTORY)/.tmp/scylla/etc/scylla.yaml
+
 	yq -i '.server_encryption_options.internode_encryption="all"' $(WORKING_DIRECTORY)/.tmp/scylla/etc/scylla.yaml
 	yq -i '.server_encryption_options.certificate="/certs/http.crt"' $(WORKING_DIRECTORY)/.tmp/scylla/etc/scylla.yaml
 	yq -i '.server_encryption_options.keyfile="/certs/http.key"' $(WORKING_DIRECTORY)/.tmp/scylla/etc/scylla.yaml
@@ -415,7 +417,7 @@ DIRECTORIES+=./test/iotivity-lite/
 
 test-targets := $(addprefix test-,$(patsubst ./%/,%,$(DIRECTORIES)))
 
-$(test-targets): %: env
+$(test-targets): %: env hub-test
 	@mkdir -p $(WORKING_DIRECTORY)/.tmp/home
 	@mkdir -p $(WORKING_DIRECTORY)/.tmp/home/certificate-authority
 	@mkdir -p $(WORKING_DIRECTORY)/.tmp/report
@@ -430,7 +432,7 @@ $(test-targets): %: env
 
 build: $(SUBDIRS)
 
-clean: simulators/clean
+clean: simulators/clean scylla/clean
 	docker rm -f mongo || true
 	docker rm -f nats || true
 	docker rm -f nats-cloud-connector || true

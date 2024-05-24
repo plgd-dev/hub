@@ -2,24 +2,17 @@ package test
 
 import (
 	"context"
-	"encoding/json"
-	"io"
-	"net/http"
 	"os"
 	"sync"
 	"time"
 
-	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/http-gateway/service"
-	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/test/config"
 	testHttp "github.com/plgd-dev/hub/v2/test/http"
-	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/encoding/protojson"
 )
 
 func MakeWebConfigurationConfig() service.WebConfiguration {
@@ -98,32 +91,4 @@ func New(t require.TestingT, cfg service.Config) func() {
 		err = fileWatcher.Close()
 		require.NoError(t, err)
 	}
-}
-
-func GetContentData(content *pb.Content, desiredContentType string) ([]byte, error) {
-	if desiredContentType == uri.ApplicationProtoJsonContentType {
-		data, err := protojson.Marshal(content)
-		if err != nil {
-			return nil, err
-		}
-		return data, err
-	}
-	v, err := cbor.ToJSON(content.GetData())
-	if err != nil {
-		return nil, err
-	}
-	return []byte(v), err
-}
-
-func UnmarshalJson(code int, input io.Reader, v any) error {
-	var data json.RawMessage
-	err := json.NewDecoder(input).Decode(&data)
-	if err != nil {
-		return err
-	}
-	if code != http.StatusOK {
-		return UnmarshalError(data)
-	}
-	err = json.Unmarshal(data, v)
-	return err
 }

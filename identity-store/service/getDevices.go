@@ -23,7 +23,7 @@ func hasMatchDeviceID(deviceID string, deviceIDFilter map[string]bool) bool {
 
 func sendDevices(request *pb.GetDevicesRequest, srv pb.IdentityStore_GetDevicesServer, createIter func() persistence.Iterator) error {
 	deviceIdFilter := make(map[string]bool)
-	for _, deviceID := range request.GetDeviceIdsFilter() {
+	for _, deviceID := range request.GetDeviceIdFilter() {
 		deviceIdFilter[deviceID] = true
 	}
 	ids := make([]string, 0, 16)

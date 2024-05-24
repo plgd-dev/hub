@@ -11,7 +11,8 @@ import (
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
-	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -41,15 +42,15 @@ func (requestHandler *RequestHandler) updateResource(w http.ResponseWriter, r *h
 	deviceID := vars[uri.DeviceIDKey]
 	href := vars[uri.ResourceHrefKey]
 
-	contentType := r.Header.Get(uri.ContentTypeHeaderKey)
-	if contentType == uri.ApplicationProtoJsonContentType {
+	contentType := r.Header.Get(pkgHttp.ContentTypeHeaderKey)
+	if contentType == pkgHttp.ApplicationProtoJsonContentType {
 		requestHandler.mux.ServeHTTP(w, r)
 		return
 	}
 
 	newBody, err := createContentBody(r.Body)
 	if err != nil {
-		serverMux.WriteError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot update resource('/%v%v'): %v", deviceID, href, err))
+		serverMux.WriteError(w, pkgGrpc.ForwardErrorf(codes.InvalidArgument, "cannot update resource('/%v%v'): %v", deviceID, href, err))
 		return
 	}
 
@@ -62,6 +63,6 @@ func (requestHandler *RequestHandler) updateResource(w http.ResponseWriter, r *h
 		allowEmptyContent = requestHandler.filterOnlyContent(rec, "data", "content")
 	}
 	toSimpleResponse(w, rec, allowEmptyContent, func(w http.ResponseWriter, err error) {
-		serverMux.WriteError(w, kitNetGrpc.ForwardErrorf(codes.InvalidArgument, "cannot update resource('/%v%v') from the device: %v", deviceID, href, err))
+		serverMux.WriteError(w, pkgGrpc.ForwardErrorf(codes.InvalidArgument, "cannot update resource('/%v%v') from the device: %v", deviceID, href, err))
 	}, streamResponseKey)
 }

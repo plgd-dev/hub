@@ -15,11 +15,13 @@ import (
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
-	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
+	httpTest "github.com/plgd-dev/hub/v2/test/http"
 	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
@@ -46,7 +48,7 @@ func TestRequestHandlerGetResource(t *testing.T) {
 	defer shutdownHttp()
 
 	token := oauthTest.GetDefaultAccessToken(t)
-	ctx = kitNetGrpc.CtxWithToken(ctx, token)
+	ctx = pkgGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
@@ -102,7 +104,7 @@ func TestRequestHandlerGetResource(t *testing.T) {
 		{
 			name: "jsonpb: get from resource twin",
 			args: args{
-				accept:       uri.ApplicationProtoJsonContentType,
+				accept:       pkgHttp.ApplicationProtoJsonContentType,
 				deviceID:     deviceID,
 				resourceHref: test.TestResourceLightInstanceHref("1"),
 			},
@@ -118,7 +120,7 @@ func TestRequestHandlerGetResource(t *testing.T) {
 		{
 			name: "jsonpb: get from resource twin with etag in header",
 			args: args{
-				accept:       uri.ApplicationProtoJsonContentType,
+				accept:       pkgHttp.ApplicationProtoJsonContentType,
 				deviceID:     deviceID,
 				resourceHref: test.TestResourceLightInstanceHref("1"),
 				etag:         lightResourceData.GetData().GetEtag(),
@@ -128,7 +130,7 @@ func TestRequestHandlerGetResource(t *testing.T) {
 		{
 			name: "jsonpb: get from resource twin with etag in queries",
 			args: args{
-				accept:       uri.ApplicationProtoJsonContentType,
+				accept:       pkgHttp.ApplicationProtoJsonContentType,
 				deviceID:     deviceID,
 				resourceHref: test.TestResourceLightInstanceHref("1"),
 				etags:        [][]byte{[]byte(base64.StdEncoding.EncodeToString([]byte("abc"))), lightResourceData.GetData().GetEtag()},
@@ -138,7 +140,7 @@ func TestRequestHandlerGetResource(t *testing.T) {
 		{
 			name: "jsonpb: get from resource twin with interface and etag",
 			args: args{
-				accept:            uri.ApplicationProtoJsonContentType,
+				accept:            pkgHttp.ApplicationProtoJsonContentType,
 				deviceID:          deviceID,
 				resourceHref:      test.TestResourceLightInstanceHref("1"),
 				resourceInterface: interfaces.OC_IF_BASELINE,
@@ -149,7 +151,7 @@ func TestRequestHandlerGetResource(t *testing.T) {
 		{
 			name: "jsonpb: get from device with interface",
 			args: args{
-				accept:            uri.ApplicationProtoJsonContentType,
+				accept:            pkgHttp.ApplicationProtoJsonContentType,
 				deviceID:          deviceID,
 				resourceHref:      test.TestResourceLightInstanceHref("1"),
 				resourceInterface: interfaces.OC_IF_BASELINE,
@@ -168,7 +170,7 @@ func TestRequestHandlerGetResource(t *testing.T) {
 		{
 			name: "jsonpb: get from device with disabled twin",
 			args: args{
-				accept:       uri.ApplicationProtoJsonContentType,
+				accept:       pkgHttp.ApplicationProtoJsonContentType,
 				deviceID:     deviceID,
 				resourceHref: test.TestResourceLightInstanceHref("1"),
 				twin:         newBool(false),
@@ -199,7 +201,7 @@ func TestRequestHandlerGetResource(t *testing.T) {
 			values := make([]*events.ResourceRetrieved, 0, 1)
 			for {
 				var value pb.GetResourceFromDeviceResponse
-				err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &value)
+				err = httpTest.Unmarshal(resp.StatusCode, resp.Body, &value)
 				if errors.Is(err, io.EOF) {
 					break
 				}
@@ -230,7 +232,7 @@ func TestRequestHandlerGetResourceWithOnlyContent(t *testing.T) {
 	defer shutdownHttp()
 
 	token := oauthTest.GetDefaultAccessToken(t)
-	ctx = kitNetGrpc.CtxWithToken(ctx, token)
+	ctx = pkgGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),

@@ -8,6 +8,7 @@ import (
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
+	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
@@ -41,7 +42,7 @@ func TestRequestHandlerCancelDeviceMetadataUpdate(t *testing.T) {
 			args: args{
 				deviceID:      devicePendings[0].DeviceID,
 				correlationID: devicePendings[0].CorrelationID,
-				accept:        uri.ApplicationProtoJsonContentType,
+				accept:        pkgHttp.ApplicationProtoJsonContentType,
 			},
 			want: &pb.CancelPendingCommandsResponse{
 				CorrelationIds: []string{devicePendings[0].CorrelationID},
@@ -53,7 +54,7 @@ func TestRequestHandlerCancelDeviceMetadataUpdate(t *testing.T) {
 			args: args{
 				deviceID:      devicePendings[0].DeviceID,
 				correlationID: devicePendings[0].CorrelationID,
-				accept:        uri.ApplicationProtoJsonContentType,
+				accept:        pkgHttp.ApplicationProtoJsonContentType,
 			},
 			wantErr:      true,
 			wantHTTPCode: http.StatusNotFound,

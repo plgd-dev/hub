@@ -21,7 +21,7 @@ func (s *EventStore) LoadDeviceMetadataByServiceIDs(ctx context.Context, service
 	}
 	serviceIDs = pkgStrings.Unique(serviceIDs)
 	q := cqldb.SelectCommand + " " + deviceIDKey + "," + serviceIDKey + " " + cqldb.FromClause + " " + s.Table() + " " + cqldb.WhereClause + " " + serviceIDKey + " in (" + strings.Join(serviceIDs, ",") + ") LIMIT " + strconv.FormatInt(limit, 10) + ";"
-	iter := s.client.Session().Query(q).WithContext(ctx).Iter()
+	iter := s.Session().Query(q).WithContext(ctx).Iter()
 	if iter == nil {
 		return nil, errors.New("cannot create iterator")
 	}
