@@ -5,13 +5,16 @@
   "main": "index.js",
   "scripts": {
     "start": "node ../scripts/start.js",
-    "text": "npx playwright test",
-    "testUi": "npx playwright test --ui"
+    "test": "npx playwright test",
+    "test:ui": "npx playwright test --ui",
+    "test:debug": "npx playwright test --debug",
+    "test:r": "npx playwright test devices/detail.spec.ts --debug --update-snapshots"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@playwright/test": "^1.37.0"
+    "axios": "^0.24.0",
+    "@playwright/test": "^1.44.0"
   }
 }

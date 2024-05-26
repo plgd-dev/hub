@@ -5,7 +5,6 @@ import { BrowserRouter } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { ThemeProvider } from '@emotion/react'
 
-import PageLoader from '@shared-ui/components/Atomic/PageLoader'
 import { security } from '@shared-ui/common/services/security'
 import { translate } from '@shared-ui/common/services/translate'
 import { openTelemetry } from '@shared-ui/common/services/opentelemetry'
@@ -15,6 +14,7 @@ import AppContext from '@shared-ui/app/share/AppContext'
 import { useAppTheme } from '@shared-ui/common/hooks/use-app-theme'
 import { getTheme } from '@shared-ui/app/clientApp/App/AppRest'
 import { defaultTheme } from '@shared-ui/components/Atomic/_theme'
+import FullPageLoader from '@shared-ui/components/Atomic/FullPageLoader'
 
 import './App.scss'
 import { messages as t } from './App.i18n'
@@ -25,7 +25,6 @@ import AppLayout from '@/containers/App/AppLayout/AppLayout'
 import { setTheme, setThemes } from './slice'
 import { CombinedStoreType } from '@/store/store'
 import { defaultMenu } from '@/routes'
-import FullPageLoader from '@shared-ui/components/Atomic/FullPageLoader'
 
 const App = (props: { mockApp: boolean }) => {
     const { formatMessage: _ } = useIntl()

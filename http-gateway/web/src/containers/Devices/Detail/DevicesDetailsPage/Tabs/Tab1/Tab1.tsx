@@ -74,9 +74,16 @@ const Tab1: FC<Props> = (props) => {
             }}
         >
             <TileToggleRow>
-                <TileToggle checked={isTwinEnabled} loading={twinSyncLoading} name={_(t.twinState)} onChange={() => setTwinSynchronization(!isTwinEnabled)} />
+                <TileToggle
+                    checked={isTwinEnabled}
+                    dataTestId={testId.devices.detail.information.twinToggle}
+                    loading={twinSyncLoading}
+                    name={_(t.twinState)}
+                    onChange={() => setTwinSynchronization(!isTwinEnabled)}
+                />
                 <TileToggle
                     checked={notificationsEnabled.current}
+                    dataTestId={testId.devices.detail.information.notificationsToggle}
                     name={_(t.notifications)}
                     onChange={(e) => {
                         if (e.target.checked) {
@@ -114,6 +121,7 @@ const Tab1: FC<Props> = (props) => {
                             attribute: _(t.types),
                             value: types ? (
                                 <TagGroup
+                                    dataTestId={testId.devices.detail.information.types}
                                     i18n={{
                                         more: _(app.more),
                                         modalHeadline: _(app.types),
@@ -171,6 +179,7 @@ const Tab1: FC<Props> = (props) => {
                             attribute: _(t.endpoints),
                             value: endpoints ? (
                                 <TagGroup
+                                    dataTestId={testId.devices.detail.information.endpoints}
                                     i18n={{
                                         more: _(app.more),
                                         modalHeadline: _(t.endpoints),

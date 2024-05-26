@@ -9,6 +9,7 @@ import { dpsApiEndpoints } from './constants'
 import { pemToString } from '@/containers/DeviceProvisioning/utils'
 
 const getConfig = () => security.getGeneralConfig() as SecurityConfig
+const getWellKnow = () => security.getWellKnowConfig()
 
 type EnrollmentGroupType = {
     attestationMechanism: any
@@ -20,6 +21,7 @@ type EnrollmentGroupType = {
 
 export const useProvisioningRecordsList = (): StreamApiPropsType => {
     const { telemetryWebTracer } = useContext(AppContext)
+    const url = getWellKnow()?.ui?.deviceProvisioningService || getConfig().httpGatewayAddress
 
     const [data, setData] = useState<any>(null)
 
@@ -28,7 +30,7 @@ export const useProvisioningRecordsList = (): StreamApiPropsType => {
         refresh: provisionRecordRefresh,
         loading: provisionRecordLoading,
         ...rest
-    }: StreamApiPropsType = useStreamApi(`${getConfig().httpGatewayAddress}${dpsApiEndpoints.PROVISIONING_RECORDS}`, {
+    }: StreamApiPropsType = useStreamApi(`${url}${dpsApiEndpoints.PROVISIONING_RECORDS}`, {
         telemetryWebTracer,
         telemetrySpan: 'get-provisioning-records',
     })
@@ -37,7 +39,7 @@ export const useProvisioningRecordsList = (): StreamApiPropsType => {
         data: enrollmentGroupsData,
         refresh: enrollmentGroupsRefresh,
         loading: enrollmentGroupsLoading,
-    }: StreamApiPropsType = useStreamApi(`${getConfig().httpGatewayAddress}${dpsApiEndpoints.ENROLLMENT_GROUPS}`, {
+    }: StreamApiPropsType = useStreamApi(`${url}${dpsApiEndpoints.ENROLLMENT_GROUPS}`, {
         telemetryWebTracer,
         telemetrySpan: 'get-enrollment-groups',
     })
@@ -65,6 +67,7 @@ export const useProvisioningRecordsList = (): StreamApiPropsType => {
 
 export const useProvisioningRecordsDetail = (provisioningRecordId?: string): StreamApiPropsType => {
     const { telemetryWebTracer } = useContext(AppContext)
+    const url = getWellKnow()?.ui?.deviceProvisioningService || getConfig().httpGatewayAddress
 
     const [data, setData] = useState<any>(null)
 
@@ -73,7 +76,7 @@ export const useProvisioningRecordsDetail = (provisioningRecordId?: string): Str
         refresh: provisioningRecordRefresh,
         loading: provisioningRecordLoading,
         ...rest
-    }: StreamApiPropsType = useStreamApi(`${getConfig().httpGatewayAddress}${dpsApiEndpoints.PROVISIONING_RECORDS}?idFilter=${provisioningRecordId}`, {
+    }: StreamApiPropsType = useStreamApi(`${url}${dpsApiEndpoints.PROVISIONING_RECORDS}?idFilter=${provisioningRecordId}`, {
         telemetryWebTracer,
         telemetrySpan: `get-provisioning-record-${provisioningRecordId}`,
         requestActive: !!provisioningRecordId,
@@ -85,7 +88,7 @@ export const useProvisioningRecordsDetail = (provisioningRecordId?: string): Str
         data: enrollmentGroupsData,
         refresh: refreshEnrollmentGroup,
         loading: enrollmentGroupsLoading,
-    }: StreamApiPropsType = useStreamApi(`${getConfig().httpGatewayAddress}${dpsApiEndpoints.ENROLLMENT_GROUPS}?idFilter=${enrollmentGroupId}`, {
+    }: StreamApiPropsType = useStreamApi(`${url}${dpsApiEndpoints.ENROLLMENT_GROUPS}?idFilter=${enrollmentGroupId}`, {
         telemetryWebTracer,
         requestActive: !!provisionRecordData && !provisioningRecordLoading,
         telemetrySpan: `get-enrollment-group-${enrollmentGroupId}`,
@@ -96,7 +99,7 @@ export const useProvisioningRecordsDetail = (provisioningRecordId?: string): Str
         data: hubsData,
         refresh: refreshHubs,
         loading: hubsLoading,
-    }: StreamApiPropsType = useStreamApi(`${getConfig().httpGatewayAddress}${dpsApiEndpoints.HUBS}?${idFilter}`, {
+    }: StreamApiPropsType = useStreamApi(`${url}${dpsApiEndpoints.HUBS}?${idFilter}`, {
         telemetryWebTracer,
         requestActive: !!enrollmentGroupsData && !enrollmentGroupsLoading && !provisioningRecordLoading,
         telemetrySpan: `get-hubs-${idFilter}`,
@@ -119,6 +122,7 @@ export const useProvisioningRecordsDetail = (provisioningRecordId?: string): Str
 
 export const useEnrollmentGroupDataList = (): StreamApiPropsType => {
     const { telemetryWebTracer } = useContext(AppContext)
+    const url = getWellKnow()?.ui?.deviceProvisioningService || getConfig().httpGatewayAddress
 
     const [data, setData] = useState<any>(null)
 
@@ -127,7 +131,7 @@ export const useEnrollmentGroupDataList = (): StreamApiPropsType => {
         refresh: refreshEnrollmentGroup,
         loading: enrollmentGroupsLoading,
         ...rest
-    }: StreamApiPropsType = useStreamApi(`${getConfig().httpGatewayAddress}${dpsApiEndpoints.ENROLLMENT_GROUPS}`, {
+    }: StreamApiPropsType = useStreamApi(`${url}${dpsApiEndpoints.ENROLLMENT_GROUPS}`, {
         telemetryWebTracer,
         telemetrySpan: 'get-enrollment-groups-data',
     })
@@ -136,7 +140,7 @@ export const useEnrollmentGroupDataList = (): StreamApiPropsType => {
         data: hubsData,
         refresh: refreshHubs,
         loading: hubsLoading,
-    }: StreamApiPropsType = useStreamApi(`${getConfig().httpGatewayAddress}${dpsApiEndpoints.HUBS}`, {
+    }: StreamApiPropsType = useStreamApi(`${url}${dpsApiEndpoints.HUBS}`, {
         telemetryWebTracer,
         telemetrySpan: `get-hubs`,
     })
@@ -162,6 +166,7 @@ export const useEnrollmentGroupDataList = (): StreamApiPropsType => {
 
 export const useEnrollmentGroupDetail = (enrollmentGroupId?: string): StreamApiPropsType => {
     const { telemetryWebTracer } = useContext(AppContext)
+    const url = getWellKnow()?.ui?.deviceProvisioningService || getConfig().httpGatewayAddress
 
     const [data, setData] = useState(null)
 
@@ -170,7 +175,7 @@ export const useEnrollmentGroupDetail = (enrollmentGroupId?: string): StreamApiP
         refresh: refreshEnrollmentGroup,
         loading: enrollmentGroupLoading,
         ...rest
-    }: StreamApiPropsType = useStreamApi(`${getConfig().httpGatewayAddress}${dpsApiEndpoints.ENROLLMENT_GROUPS}?idFilter=${enrollmentGroupId}`, {
+    }: StreamApiPropsType = useStreamApi(`${url}${dpsApiEndpoints.ENROLLMENT_GROUPS}?idFilter=${enrollmentGroupId}`, {
         telemetryWebTracer,
         telemetrySpan: `get-enrollment-group-${enrollmentGroupId}`,
     })
@@ -180,7 +185,7 @@ export const useEnrollmentGroupDetail = (enrollmentGroupId?: string): StreamApiP
         data: hubsData,
         refresh: refreshHubs,
         loading: hubsLoading,
-    }: StreamApiPropsType = useStreamApi(`${getConfig().httpGatewayAddress}${dpsApiEndpoints.HUBS}?${idFilter}`, {
+    }: StreamApiPropsType = useStreamApi(`${url}${dpsApiEndpoints.HUBS}?${idFilter}`, {
         telemetryWebTracer,
         requestActive: !!enrollmentGroupData && !enrollmentGroupLoading,
         telemetrySpan: `get-hubs-${idFilter}`,
@@ -218,8 +223,9 @@ export const useEnrollmentGroupDetail = (enrollmentGroupId?: string): StreamApiP
 
 export const useLinkedHubsList = (): StreamApiPropsType => {
     const { telemetryWebTracer } = useContext(AppContext)
+    const url = getWellKnow()?.ui?.deviceProvisioningService || getConfig().httpGatewayAddress
 
-    return useStreamApi(`${getConfig().httpGatewayAddress}${dpsApiEndpoints.HUBS}`, {
+    return useStreamApi(`${url}${dpsApiEndpoints.HUBS}`, {
         telemetryWebTracer,
         telemetrySpan: 'get-hubs',
     })
@@ -227,10 +233,11 @@ export const useLinkedHubsList = (): StreamApiPropsType => {
 
 export const useHubDetail = (hubId: string, requestActive = false): StreamApiPropsType => {
     const { telemetryWebTracer } = useContext(AppContext)
+    const url = getWellKnow()?.ui?.deviceProvisioningService || getConfig().httpGatewayAddress
 
     const [data, setData] = useState(null)
 
-    const { data: hubsData, ...rest }: StreamApiPropsType = useStreamApi(`${getConfig().httpGatewayAddress}${dpsApiEndpoints.HUBS}?idFilter=${hubId}`, {
+    const { data: hubsData, ...rest }: StreamApiPropsType = useStreamApi(`${url}${dpsApiEndpoints.HUBS}?idFilter=${hubId}`, {
         telemetryWebTracer,
         telemetrySpan: `get-hub-${hubId}`,
         requestActive,

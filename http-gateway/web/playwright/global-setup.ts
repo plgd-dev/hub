@@ -14,12 +14,15 @@ async function globalSetup(config: FullConfig) {
 
     await page.goto('http://localhost:3000/')
 
+    // keycloak login page
+    await expect(page).toHaveTitle(/Login | plgd.dev/, { timeout: 30000 })
+
+    await expect(page).toHaveURL(/auth.plgd.cloud/)
+
     // login data
     await page.locator('#email').fill(process.env.REACT_APP_TEST_LOGIN_USERNAME || '')
     await page.locator('#password').fill(process.env.REACT_APP_TEST_LOGIN_PASSWORD || '')
     await page.getByRole('button', { name: 'Sign In' }).click()
-
-    await expect(page).toHaveTitle(/Devices | plgd Dashboard/)
 
     await page.context().storageState({ path: 'storageState.json' })
     await browser.close()

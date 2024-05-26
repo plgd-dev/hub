@@ -35,6 +35,7 @@ import { deviceResourceUpdateListener } from '@/containers/Devices/websockets'
 import { createResourceNotificationId } from '@/containers/PendingCommands/utils'
 import notificationId from '@/notificationId'
 import { pages } from '@/routes'
+import testId from '@/testId'
 
 const Tab2: FC<Props> = (props) => {
     const { deviceStatus, deviceName, isOnline, isActiveTab, isUnregistered, loading, resourcesData, loadingResources, refreshResources } = props
@@ -71,6 +72,8 @@ const Tab2: FC<Props> = (props) => {
 
             return resourceData.data.content
         } catch (error) {
+            console.log('!ERROR')
+            console.log(error)
             if (error) {
                 Notification.error(
                     { title: _(t.resourceGetKnowConfErrorTitle), message: _(t.resourceGetKnowConfErrorMessage) },
@@ -322,10 +325,12 @@ const Tab2: FC<Props> = (props) => {
                 {...resourceModalData}
                 confirmDisabled={ttlHasError}
                 createResource={createResource}
+                dataTestId={testId.devices.detail.resources.updateModal}
                 deviceId={id}
                 deviceName={deviceName}
                 deviceResourceUpdateListener={deviceResourceUpdateListener}
                 fetchResource={openUpdateModal}
+                generatedResourcesForm={generatedResourcesForm}
                 i18n={{
                     advancedView: _(g.advancedView),
                     close: _(t.close),
@@ -380,6 +385,7 @@ const Tab2: FC<Props> = (props) => {
                 updateResource={updateResource}
             />
             <DeleteModal
+                dataTestId={testId.devices.detail.resources.deleteModal}
                 deleteInformation={[
                     {
                         label: _(t.commandTimeout),

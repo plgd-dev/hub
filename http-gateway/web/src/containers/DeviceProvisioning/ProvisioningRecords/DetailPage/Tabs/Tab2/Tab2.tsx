@@ -217,7 +217,6 @@ const Tab2: FC<any> = (props) => {
                                 desc: false,
                             },
                         ]}
-                        height={500}
                         i18n={{
                             search: _(g.search),
                         }}

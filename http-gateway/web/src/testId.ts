@@ -19,6 +19,19 @@ const testId = {
             deleteDeviceModal: 'hub-devices-detail-delete-device-modal',
             deleteDeviceButtonCancel: 'hub-devices-detail-delete-device-button-cancel',
             deleteDeviceButtonDelete: 'hub-devices-detail-delete-device-button-delete',
+            information: {
+                twinToggle: 'hub-devices-detail-information-twin-toggle',
+                notificationsToggle: 'hub-devices-detail-information-notifications-toggle',
+                endpoints: 'hub-devices-detail-information-endpoints',
+                types: 'hub-devices-detail-information-types',
+            },
+            resources: {
+                table: 'hub-devices-detail-resources-table',
+                tree: 'hub-devices-detail-resources-tree',
+                updateModal: 'hub-devices-detail-resources-update-modal',
+                viewSwitch: 'hub-devices-detail-resources-view-switch',
+                deleteModal: 'hub-devices-detail-resources-delete-modal',
+            },
         },
     },
     remoteClients: {

@@ -20,9 +20,11 @@ import { devicesStatuses, RESOURCE_TREE_DEPTH_SIZE } from '../../constants'
 import { messages as t } from '../../Devices.i18n'
 import { GetColumnsType, Props } from './DevicesResources.types'
 import { getLastPartOfAResourceHref } from '@/containers/Devices/utils'
+import testId from '@/testId'
 
-const getTableAction = ({ _, isUnregistered, loading, onCreate, cleanHref, interfaces, onUpdate, deviceId, onDelete }: any) => (
+const getTableAction = ({ _, isUnregistered, loading, onCreate, cleanHref, interfaces, onUpdate, deviceId, onDelete, rowId }: any) => (
     <TableActionButton
+        dataTestId={testId.devices.detail.resources.table?.concat(`-row-${rowId}-actions-toggle`)}
         disabled={isUnregistered || loading}
         items={[
             {
@@ -30,16 +32,19 @@ const getTableAction = ({ _, isUnregistered, loading, onCreate, cleanHref, inter
                 label: _(t.create),
                 icon: <IconPlus />,
                 hidden: !canCreateResource(interfaces),
+                dataTestId: testId.devices.detail.resources.table?.concat(`-row-${rowId}-action-create`),
             },
             {
                 onClick: () => onUpdate({ deviceId, href: cleanHref }),
                 label: _(t.update),
                 icon: <IconEdit />,
+                dataTestId: testId.devices.detail.resources.table?.concat(`-row-${rowId}-action-update`),
             },
             {
                 onClick: () => onDelete(cleanHref),
                 label: _(t.delete),
                 icon: <IconTrash />,
+                dataTestId: testId.devices.detail.resources.table?.concat(`-row-${rowId}-action-delete`),
             },
         ]}
     />
@@ -58,7 +63,11 @@ const getColumns = ({ _, onUpdate, loading, isUnregistered, onCreate, onDelete }
             }
             return (
                 <div className='tree-expander-container'>
-                    <span className='link reveal-icon-on-hover' onClick={() => onUpdate({ deviceId, href })}>
+                    <span
+                        className='link reveal-icon-on-hover'
+                        data-test-id={testId.devices.detail.resources.table?.concat(`-row-${row.id}-href`)}
+                        onClick={() => onUpdate({ deviceId, href })}
+                    >
                         {value}
                     </span>
                 </div>
@@ -90,6 +99,7 @@ const getColumns = ({ _, onUpdate, loading, isUnregistered, onCreate, onDelete }
                 onUpdate,
                 deviceId,
                 onDelete,
+                rowId: row.id,
             })
         },
         className: 'actions',
@@ -117,12 +127,17 @@ const getTreeColumns = ({ _, onUpdate, onCreate, onDelete, isUnregistered, loadi
                     <div className='tree-expander-container'>
                         <TreeExpander
                             {...row.getToggleRowExpandedProps({ title: null })}
+                            dataTestId={testId.devices.detail.resources.tree?.concat(`-row-${row.id}-expander`)}
                             expanded={row.isExpanded}
                             style={{
                                 marginLeft: `${row.depth * RESOURCE_TREE_DEPTH_SIZE}px`,
                             }}
                         />
-                        <span className={classNames(deviceId && 'link')} onClick={onLinkClick}>
+                        <span
+                            className={classNames(deviceId && 'link')}
+                            data-test-id={testId.devices.detail.resources.tree?.concat(`-row-${href}`)}
+                            onClick={onLinkClick}
+                        >
                             {`/${lastValue}/`}
                         </span>
                     </div>
@@ -144,7 +159,7 @@ const getTreeColumns = ({ _, onUpdate, onCreate, onDelete, isUnregistered, loadi
                             }}
                         ></span>
                     )}
-                    <span className='link' onClick={onLinkClick}>
+                    <span className='link' data-test-id={testId.devices.detail.resources.tree?.concat(`-row-${href}`)} onClick={onLinkClick}>
                         {`/${lastValue}`}
                     </span>
                 </div>
@@ -195,6 +210,7 @@ const getTreeColumns = ({ _, onUpdate, onCreate, onDelete, isUnregistered, loadi
                 onUpdate,
                 deviceId,
                 onDelete,
+                rowId: row.id,
             })
         },
     },
@@ -241,6 +257,7 @@ const DevicesResources: FC<Props> = memo((props) => {
                 <div className='d-flex justify-content-end align-items-center'>
                     <Switch
                         checked={treeViewActive}
+                        dataTestId={testId.devices.detail.resources.viewSwitch}
                         disabled={isUnregistered}
                         id='toggle-tree-view'
                         label={_(t.treeView)}
@@ -250,11 +267,12 @@ const DevicesResources: FC<Props> = memo((props) => {
             </div>
 
             {treeViewActive ? (
-                <DevicesResourcesTree columns={treeColumns} data={data} deviceStatus={deviceStatus} />
+                <DevicesResourcesTree columns={treeColumns} data={data} dataTestId={testId.devices.detail.resources.tree} deviceStatus={deviceStatus} />
             ) : (
                 <DevicesResourcesList
                     columns={columns}
                     data={data}
+                    dataTestId={testId.devices.detail.resources.table}
                     i18n={{
                         search: _(t.search),
                     }}

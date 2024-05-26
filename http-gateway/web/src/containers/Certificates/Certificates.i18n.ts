@@ -93,4 +93,8 @@ export const messages = defineMessages({
         id: 'certificates.certificatesDeleteError',
         defaultMessage: 'Certificates delete error',
     },
+    noCertificates: {
+        id: 'certificates.noCertificates',
+        defaultMessage: 'No certificates available',
+    },
 })

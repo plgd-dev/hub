@@ -8,11 +8,13 @@ import { SecurityConfig, StreamApiPropsType } from '@/containers/App/App.types'
 import { certificatesEndpoints } from './constants'
 
 const getConfig = () => security.getGeneralConfig() as SecurityConfig
+const getWellKnow = () => security.getWellKnowConfig()
 
 export const useCertificatesList = (): StreamApiPropsType => {
     const { telemetryWebTracer } = useContext(AppContext)
+    const url = getWellKnow()?.ui?.deviceProvisioningService || getConfig().httpGatewayAddress
 
-    return useStreamApi(`${getConfig().httpGatewayAddress}${certificatesEndpoints.CERTIFICATES}`, {
+    return useStreamApi(`${url}${certificatesEndpoints.CERTIFICATES}`, {
         telemetryWebTracer,
         telemetrySpan: 'get-certificates',
     })
@@ -20,8 +22,9 @@ export const useCertificatesList = (): StreamApiPropsType => {
 
 export const useCertificatesDetail = (id: string): StreamApiPropsType => {
     const { telemetryWebTracer } = useContext(AppContext)
+    const url = getWellKnow()?.ui?.deviceProvisioningService || getConfig().httpGatewayAddress
 
-    const { data, ...rest } = useStreamApi(`${getConfig().httpGatewayAddress}${certificatesEndpoints.CERTIFICATES}?idFilter=${id}`, {
+    const { data, ...rest } = useStreamApi(`${url}${certificatesEndpoints.CERTIFICATES}?idFilter=${id}`, {
         telemetryWebTracer,
         telemetrySpan: `get-certificate-${id}`,
     })

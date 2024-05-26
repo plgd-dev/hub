@@ -11,6 +11,7 @@ import { updateDevicesDataStatus, getResourceRegistrationNotificationKey } from 
 import { SecurityConfig, StreamApiPropsType } from '@/containers/App/App.types'
 
 const getConfig = () => security.getGeneralConfig() as SecurityConfig
+const getWellKnow = () => security.getWellKnowConfig()
 
 export const useDevicesList = () => {
     const { telemetryWebTracer } = useContext(AppContext)
@@ -120,7 +121,8 @@ export const useDevicePendingCommands = (deviceId: string): StreamApiPropsType =
 
 export const useDeviceCertificates = (deviceId: string): StreamApiPropsType => {
     const { telemetryWebTracer } = useContext(AppContext)
-    return useStreamApi(`${getConfig().httpGatewayAddress}/api/v1/signing/records?deviceIdFilter=${deviceId}`, {
+    const url = getWellKnow()?.ui?.deviceProvisioningService || getConfig().httpGatewayAddress
+    return useStreamApi(`${url}/api/v1/signing/records?deviceIdFilter=${deviceId}`, {
         telemetryWebTracer,
         telemetrySpan: `get-device-certificates-${deviceId}`,
     })
@@ -128,16 +130,14 @@ export const useDeviceCertificates = (deviceId: string): StreamApiPropsType => {
 
 export const useDeviceProvisioningRecord = (deviceId: string): StreamApiPropsType => {
     const { telemetryWebTracer } = useContext(AppContext)
+    const url = getWellKnow()?.ui?.deviceProvisioningService || getConfig().httpGatewayAddress
 
     const [data, setData] = useState(null)
 
-    const { data: provisioningRecordData, ...rest }: StreamApiPropsType = useStreamApi(
-        `${getConfig().httpGatewayAddress}/api/v1/provisioning-records?deviceIdFilter=${deviceId}`,
-        {
-            telemetryWebTracer,
-            telemetrySpan: `get-device-provisioning-record-${deviceId}`,
-        }
-    )
+    const { data: provisioningRecordData, ...rest }: StreamApiPropsType = useStreamApi(`${url}/api/v1/provisioning-records?deviceIdFilter=${deviceId}`, {
+        telemetryWebTracer,
+        telemetrySpan: `get-device-provisioning-record-${deviceId}`,
+    })
 
     useEffect(() => {
         if (provisioningRecordData && Array.isArray(provisioningRecordData)) {

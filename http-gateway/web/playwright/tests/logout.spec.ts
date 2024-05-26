@@ -6,7 +6,5 @@ test('logout action', async ({ page }) => {
 
     await page.getByTestId(testId.app.logout).click()
 
-    await page.getByTestId(testId.app.logoutBtn).click()
-
     await expect(page).toHaveTitle(/Login | plgd.dev/)
 })

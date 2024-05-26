@@ -19,7 +19,7 @@ import { Props } from './Tab1.types'
 import TileExpandEnhanced from '../../TileExpandEnhanced/TileExpandEnhanced'
 
 const Tab1: FC<Props> = (props) => {
-    const { data, isDeviceMode } = props
+    const { data, isDeviceMode, refs } = props
 
     const { formatMessage: _ } = useIntl()
     const useSpace = useMediaQuery({
@@ -64,7 +64,7 @@ const Tab1: FC<Props> = (props) => {
                 <Column xxl={isDeviceMode ? 12 : 5}>
                     <Spacer type={useSpace || isDeviceMode ? 'mt-4' : 'pb-2'}>
                         <Row>
-                            <Column xl={isDeviceMode ? 4 : 12}>
+                            <Column xxl={isDeviceMode ? 4 : 12}>
                                 {data?.cloud && (
                                     <TileExpandEnhanced
                                         data={data.cloud}
@@ -107,11 +107,12 @@ const Tab1: FC<Props> = (props) => {
                                                     : undefined,
                                             ].filter((i) => !!i) as Information[],
                                         }}
+                                        ref={refs?.cloud}
                                         title={_(t.cloud)}
                                     />
                                 )}
                             </Column>
-                            <Column xl={isDeviceMode ? 4 : 12}>
+                            <Column xxl={isDeviceMode ? 4 : 12}>
                                 {data?.ownership && (
                                     <TileExpandEnhanced
                                         data={data.ownership}
@@ -124,17 +125,19 @@ const Tab1: FC<Props> = (props) => {
                                                 },
                                             ],
                                         }}
+                                        ref={refs?.ownership}
                                         title={_(t.ownership)}
                                     />
                                 )}
                             </Column>
-                            <Column xl={isDeviceMode ? 4 : 12}>
+                            <Column xxl={isDeviceMode ? 4 : 12}>
                                 {data?.plgdTime && (
                                     <TileExpand
                                         hasExpand={false}
                                         i18n={{
                                             copy: _(g.copy),
                                         }}
+                                        ref={refs?.time}
                                         time={data.plgdTime.date ? <DateFormat value={data.plgdTime.date} /> : '-'}
                                         title={_(t.timeSynchronisation)}
                                     />

@@ -25,7 +25,6 @@ import FullPageLoader from '@shared-ui/components/Atomic/FullPageLoader'
 import { messages as t } from './containers/App/App.i18n'
 import { messages as g } from './containers/Global.i18n'
 import testId from '@/testId'
-import { useTheme } from '@emotion/react'
 
 // Devices
 const DevicesListPage = lazy(() => import('./containers/Devices/List/DevicesListPage'))
@@ -91,7 +90,7 @@ export const pages = {
         DETAIL: {
             LINK: '/devices/:id/:tab/:section',
             TABS: ['', 'resources', 'certificates', 'dps'],
-            SECTIONS: ['', 'credentials', 'acls'],
+            SECTIONS: ['', 'cloud', 'ownership', 'credentials', 'acls'],
         },
     },
     DPS: {
@@ -331,7 +330,6 @@ export const mather = (pathname: string, pattern: string) => matchPath(pattern, 
 
 const Loader = () => {
     const { formatMessage: _ } = useIntl()
-    const theme = useTheme()
 
     return <FullPageLoader i18n={{ loading: _(g.loading) }} />
 }
@@ -364,7 +362,7 @@ export const Routes = () => {
 
             {/* ***** REMOTE CLIENTS ***** */}
             <Route path='/remote-clients'>
-                <Route element={withSuspense(<RemoteClientDevicesDetailPage defaultActiveTab={1} />)} path=':id/devices/:deviceId/resources/:resource' />
+                <Route element={withSuspense(<RemoteClientDevicesDetailPage defaultActiveTab={1} />)} path=':id/devices/:deviceId/resources/*' />
                 <Route element={withSuspense(<RemoteClientDevicesDetailPage defaultActiveTab={1} />)} path=':id/devices/:deviceId/resources' />
                 <Route element={withSuspense(<RemoteClientDevicesDetailPage defaultActiveTab={0} />)} path=':id/devices/:deviceId' />
                 <Route element={withSuspense(<RemoteClientDetailPage defaultActiveTab={1} />)} path=':id/configuration' />

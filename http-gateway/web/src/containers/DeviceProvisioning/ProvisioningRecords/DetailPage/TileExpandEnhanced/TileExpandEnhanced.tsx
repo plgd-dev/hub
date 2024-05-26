@@ -1,4 +1,4 @@
-import React, { FC } from 'react'
+import React, { forwardRef } from 'react'
 import { useIntl } from 'react-intl'
 
 import TileExpand from '@shared-ui/components/Atomic/TileExpand/TileExpand'
@@ -11,11 +11,11 @@ import { messages as t } from '@/containers/DeviceProvisioning/ProvisioningRecor
 import { getStatusFromCode } from '@/containers/DeviceProvisioning/utils'
 import DateFormat from '@/containers/PendingCommands/DateFormat'
 
-const TileExpandEnhanced: FC<TileExpandEnhancedType> = (props) => {
+const TileExpandEnhanced = forwardRef<HTMLDivElement, TileExpandEnhancedType>((props, ref) => {
     const { formatMessage: _ } = useIntl()
     const { data, information, title } = props
     return (
-        <Spacer type='mb-2'>
+        <Spacer ref={ref} type='mb-2'>
             <TileExpand
                 error={
                     data.status.coapCode === 0 && data.status.errorMessage
@@ -36,7 +36,7 @@ const TileExpandEnhanced: FC<TileExpandEnhancedType> = (props) => {
             />
         </Spacer>
     )
-}
+})
 
 TileExpandEnhanced.displayName = 'TileExpandEnhanced'
 
