@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
+	"github.com/plgd-dev/hub/v2/snippet-service/store"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/stretchr/testify/require"
@@ -38,4 +39,18 @@ func CmpConfiguration(t *testing.T, want, got *pb.Configuration) {
 		got.Resources = nil
 	}
 	CmpJSON(t, want, got)
+}
+
+func ConfigurationContains(t *testing.T, storeConf store.Configuration, conf *pb.Configuration) {
+	require.Equal(t, storeConf.Id, conf.GetId())
+	require.Equal(t, storeConf.Owner, conf.GetOwner())
+	require.Equal(t, storeConf.Name, conf.GetName())
+	for _, v := range storeConf.Versions {
+		if v.Version != conf.GetVersion() {
+			continue
+		}
+		test.CheckProtobufs(t, v.Resources, conf.GetResources(), test.RequireToCheckFunc(require.Equal))
+		return
+	}
+	require.Fail(t, "version not found")
 }

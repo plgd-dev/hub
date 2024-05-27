@@ -76,17 +76,23 @@ func compareIdFilter(i, j *pb.IDFilter) int {
 	return cmp.Compare(i.GetValue(), j.GetValue())
 }
 
-func normalizeIdFilter(idfilter []*pb.IDFilter) []*pb.IDFilter {
+func checkEmptyIdFilter(idfilter []*pb.IDFilter) []*pb.IDFilter {
 	// if an empty query is provided, return all
 	if len(idfilter) == 0 {
 		return nil
 	}
-
 	slices.SortFunc(idfilter, compareIdFilter)
-
 	// if the first filter is All, we can ignore all other filters
 	first := idfilter[0]
 	if first.GetId() == "" && first.GetAll() {
+		return nil
+	}
+	return idfilter
+}
+
+func normalizeIdFilter(idfilter []*pb.IDFilter) []*pb.IDFilter {
+	idfilter = checkEmptyIdFilter(idfilter)
+	if len(idfilter) == 0 {
 		return nil
 	}
 
@@ -95,12 +101,6 @@ func normalizeIdFilter(idfilter []*pb.IDFilter) []*pb.IDFilter {
 	var idLatest bool
 	var idValue bool
 	var idValueVersion uint64
-	setNextInitial := func(idf *pb.IDFilter) {
-		idAll = idf.GetAll()
-		idLatest = idf.GetLatest()
-		idValue = !idAll && !idLatest
-		idValueVersion = idf.GetValue()
-	}
 	setNextLatest := func(idf *pb.IDFilter) {
 		// we already have the latest filter
 		if idLatest {
@@ -123,7 +123,10 @@ func normalizeIdFilter(idfilter []*pb.IDFilter) []*pb.IDFilter {
 	prevID := ""
 	for _, idf := range idfilter {
 		if idf.GetId() != prevID {
-			setNextInitial(idf)
+			idAll = idf.GetAll()
+			idLatest = idf.GetLatest()
+			idValue = !idAll && !idLatest
+			idValueVersion = idf.GetValue()
 			updatedFilter = append(updatedFilter, idf)
 		}
 

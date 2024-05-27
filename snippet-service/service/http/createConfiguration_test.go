@@ -57,7 +57,6 @@ func TestRequestHandlerCreateConfiguration(t *testing.T) {
 	tests := []struct {
 		name         string
 		args         args
-		wantData     map[string]interface{}
 		wantHTTPCode int
 		wantErr      bool
 	}{

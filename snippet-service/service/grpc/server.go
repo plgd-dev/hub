@@ -75,7 +75,7 @@ func (s *SnippetServiceServer) UpdateConfiguration(ctx context.Context, conf *pb
 func (s *SnippetServiceServer) GetConfigurations(req *pb.GetConfigurationsRequest, srv pb.SnippetService_GetConfigurationsServer) error {
 	owner, err := s.checkOwner(srv.Context(), "")
 	if err != nil {
-		return s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "cannot update configuration: %v", err))
+		return s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "cannot get configurations: %v", err))
 	}
 
 	err = s.store.GetConfigurations(srv.Context(), owner, req, func(ctx context.Context, iter store.Iterator[store.Configuration]) error {
