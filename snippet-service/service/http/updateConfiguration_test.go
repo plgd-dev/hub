@@ -3,14 +3,15 @@ package http_test
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"net/http"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
-	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	snippetPb "github.com/plgd-dev/hub/v2/snippet-service/pb"
 	snippetHttp "github.com/plgd-dev/hub/v2/snippet-service/service/http"
 	snippetTest "github.com/plgd-dev/hub/v2/snippet-service/test"
@@ -21,36 +22,44 @@ import (
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
-func makeTestResource(t *testing.T, href string, power int) *snippetPb.Configuration_Resource {
-	return &snippetPb.Configuration_Resource{
-		Href: href,
-		Content: &commands.Content{
-			Data:              test.EncodeToCbor(t, map[string]interface{}{"power": power}),
-			ContentType:       message.AppOcfCbor.String(),
-			CoapContentFormat: int32(message.AppOcfCbor),
-		},
-		TimeToLive: 60,
-	}
-}
-
-func TestRequestHandlerCreateConfiguration(t *testing.T) {
+func TestRequestHandlerUpdateConfiguration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	shutDown := service.SetUpServices(ctx, t, service.SetUpServicesOAuth)
+	shutDown := service.SetUpServices(context.Background(), t, service.SetUpServicesOAuth)
 	defer shutDown()
 
-	snippetCfg := snippetTest.MakeConfig(t)
-	shutdownHttp := snippetTest.New(t, snippetCfg)
+	shutdownHttp := snippetTest.SetUp(t)
 	defer shutdownHttp()
 
 	token := oauthTest.GetDefaultAccessToken(t)
-	confID1 := uuid.NewString()
+
+	conn, err := grpc.NewClient(config.SNIPPET_SERVICE_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
+	})))
+	require.NoError(t, err)
+	defer func() {
+		_ = conn.Close()
+	}()
+	c := snippetPb.NewSnippetServiceClient(conn)
+	conf := &snippetPb.Configuration{
+		Id:      uuid.NewString(),
+		Version: 0,
+		Name:    "configurationToUpdate",
+		Resources: []*snippetPb.Configuration_Resource{
+			makeTestResource(t, "/test/1", 1),
+		},
+	}
+	_, err = c.CreateConfiguration(pkgGrpc.CtxWithToken(ctx, token), conf)
+	require.NoError(t, err)
 
 	type args struct {
 		accept string
+		id     string
 		conf   *snippetPb.Configuration
 		token  string
 	}
@@ -62,14 +71,15 @@ func TestRequestHandlerCreateConfiguration(t *testing.T) {
 		wantErr      bool
 	}{
 		{
-			name: "create",
+			name: "update",
 			args: args{
 				accept: pkgHttp.ApplicationProtoJsonContentType,
+				id:     conf.GetId(),
 				conf: &snippetPb.Configuration{
-					Id:   confID1,
-					Name: "first",
+					Version: 1,
 					Resources: []*snippetPb.Configuration_Resource{
-						makeTestResource(t, "/test/1", 41),
+						makeTestResource(t, "/test/1", 42),
+						makeTestResource(t, "/test/2", 52),
 					},
 				},
 				token: token,
@@ -77,15 +87,15 @@ func TestRequestHandlerCreateConfiguration(t *testing.T) {
 			wantHTTPCode: http.StatusOK,
 		},
 		{
-			name: "create (with owner)",
+			name: "update (with owner)",
 			args: args{
 				accept: pkgHttp.ApplicationProtoJsonContentType,
+				id:     conf.GetId(),
 				conf: &snippetPb.Configuration{
-					Id:    uuid.New().String(),
-					Owner: oauthService.DeviceUserID,
-					Name:  "second",
+					Version: 2,
+					Owner:   oauthService.DeviceUserID,
 					Resources: []*snippetPb.Configuration_Resource{
-						makeTestResource(t, "/test/2", 42),
+						makeTestResource(t, "/test/3", 62),
 					},
 				},
 				token: token,
@@ -93,30 +103,31 @@ func TestRequestHandlerCreateConfiguration(t *testing.T) {
 			wantHTTPCode: http.StatusOK,
 		},
 		{
-			name: "non-matching owner",
+			name: "update (with overwritten ID)",
 			args: args{
 				accept: pkgHttp.ApplicationProtoJsonContentType,
+				id:     conf.GetId(),
 				conf: &snippetPb.Configuration{
-					Id:    uuid.New().String(),
-					Owner: "non-matching-owner",
-					Name:  "third",
+					Id:      uuid.NewString(), // this ID will get overwritten by the ID in the query
+					Version: 3,
 					Resources: []*snippetPb.Configuration_Resource{
-						makeTestResource(t, "/test/3", 43),
+						makeTestResource(t, "/test/4", 72),
+						makeTestResource(t, "/test/5", 82),
 					},
 				},
 				token: token,
 			},
-			wantHTTPCode: http.StatusForbidden,
-			wantErr:      true,
+			wantHTTPCode: http.StatusOK,
 		},
 		{
-			name: "missing id",
+			name: "invalid ID",
 			args: args{
 				accept: pkgHttp.ApplicationProtoJsonContentType,
+				id:     "invalid",
 				conf: &snippetPb.Configuration{
-					Name: "fourth",
+					Version: 42,
 					Resources: []*snippetPb.Configuration_Resource{
-						makeTestResource(t, "/test/4", 44),
+						makeTestResource(t, "/test/6", 92),
 					},
 				},
 				token: token,
@@ -125,14 +136,14 @@ func TestRequestHandlerCreateConfiguration(t *testing.T) {
 			wantErr:      true,
 		},
 		{
-			name: "duplicit ID",
+			name: "duplicit version",
 			args: args{
 				accept: pkgHttp.ApplicationProtoJsonContentType,
+				id:     conf.GetId(),
 				conf: &snippetPb.Configuration{
-					Id:   confID1,
-					Name: "fifth",
+					Version: 1,
 					Resources: []*snippetPb.Configuration_Resource{
-						makeTestResource(t, "/test/5", 45),
+						makeTestResource(t, "/test/7", 102),
 					},
 				},
 				token: token,
@@ -144,31 +155,13 @@ func TestRequestHandlerCreateConfiguration(t *testing.T) {
 			name: "missing resources",
 			args: args{
 				accept: pkgHttp.ApplicationProtoJsonContentType,
+				id:     conf.GetId(),
 				conf: &snippetPb.Configuration{
-					Id:   uuid.New().String(),
-					Name: "fifth",
+					Version: 42,
 				},
 				token: token,
 			},
 			wantHTTPCode: http.StatusInternalServerError,
-			wantErr:      true,
-		},
-		{
-			name: "missing owner in token",
-			args: args{
-				accept: pkgHttp.ApplicationProtoJsonContentType,
-				conf: &snippetPb.Configuration{
-					Id:   uuid.New().String(),
-					Name: "sixth",
-					Resources: []*snippetPb.Configuration_Resource{
-						makeTestResource(t, "/test/6", 46),
-					},
-				},
-				token: oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTest, map[string]interface{}{
-					snippetCfg.APIs.GRPC.Authorization.OwnerClaim: nil,
-				}),
-			},
-			wantHTTPCode: http.StatusForbidden,
 			wantErr:      true,
 		},
 	}
@@ -181,8 +174,8 @@ func TestRequestHandlerCreateConfiguration(t *testing.T) {
 			}, message.AppJSON.String())
 			require.NoError(t, err)
 
-			rb := httpTest.NewRequest(http.MethodPost, snippetTest.HTTPURI(snippetHttp.Configurations), bytes.NewReader(data)).AuthToken(tt.args.token)
-			rb.Accept(tt.args.accept).ContentType(message.AppJSON.String())
+			rb := httpTest.NewRequest(http.MethodPut, snippetTest.HTTPURI(snippetHttp.AliasConfiguration), bytes.NewReader(data)).AuthToken(tt.args.token)
+			rb.Accept(tt.args.accept).ContentType(message.AppJSON.String()).ID(tt.args.id)
 			resp := httpTest.Do(t, rb.Build(ctx, t))
 			defer func() {
 				_ = resp.Body.Close()
@@ -198,6 +191,7 @@ func TestRequestHandlerCreateConfiguration(t *testing.T) {
 			require.NoError(t, err)
 
 			want := tt.args.conf
+			want.Id = tt.args.id
 			want.Owner = oauthService.DeviceUserID
 			snippetTest.CmpConfiguration(t, want, &got)
 		})

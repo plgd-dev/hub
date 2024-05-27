@@ -10,14 +10,18 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/mongodb"
 	"github.com/plgd-dev/hub/v2/snippet-service/service"
-	"github.com/plgd-dev/hub/v2/snippet-service/store"
 	storeConfig "github.com/plgd-dev/hub/v2/snippet-service/store/config"
 	storeCqlDB "github.com/plgd-dev/hub/v2/snippet-service/store/cqldb"
 	storeMongo "github.com/plgd-dev/hub/v2/snippet-service/store/mongodb"
 	"github.com/plgd-dev/hub/v2/test/config"
+	httpTest "github.com/plgd-dev/hub/v2/test/http"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 )
+
+func HTTPURI(uri string) string {
+	return httpTest.HTTPS_SCHEME + config.SNIPPET_SERVICE_HTTP_HOST + uri
+}
 
 func MakeConfig(t require.TestingT) service.Config {
 	var cfg service.Config
@@ -72,7 +76,9 @@ func MakeStorageConfig() service.StorageConfig {
 	return service.StorageConfig{
 		CleanUpRecords: "0 1 * * *",
 		Embedded: storeConfig.Config{
-			Use: config.ACTIVE_DATABASE(),
+			// TODO: add cqldb support
+			// Use: config.ACTIVE_DATABASE(),
+			Use: database.MongoDB,
 			MongoDB: &storeMongo.Config{
 				Mongo: mongodb.Config{
 					MaxPoolSize:     16,
@@ -88,37 +94,6 @@ func MakeStorageConfig() service.StorageConfig {
 			},
 		},
 	}
-}
-
-func NewCQLStore(t require.TestingT) (*storeCqlDB.Store, func()) {
-	cfg := MakeConfig(t)
-	logger := log.NewLogger(cfg.Log)
-
-	fileWatcher, err := fsnotify.NewWatcher(logger)
-	require.NoError(t, err)
-
-	ctx := context.Background()
-	store, err := storeCqlDB.New(ctx, cfg.Clients.Storage.Embedded.CqlDB, fileWatcher, logger, noop.NewTracerProvider())
-	require.NoError(t, err)
-
-	cleanUp := func() {
-		err := store.Clear(ctx)
-		require.NoError(t, err)
-		_ = store.Close(ctx)
-
-		err = fileWatcher.Close()
-		require.NoError(t, err)
-	}
-
-	return store, cleanUp
-}
-
-func NewStore(t require.TestingT) (store.Store, func()) {
-	cfg := MakeConfig(t)
-	if cfg.Clients.Storage.Embedded.Use == database.CqlDB {
-		return NewCQLStore(t)
-	}
-	return NewMongoStore(t)
 }
 
 func NewMongoStore(t require.TestingT) (*storeMongo.Store, func()) {

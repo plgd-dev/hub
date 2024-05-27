@@ -3,9 +3,11 @@ package http
 const (
 	HTTPS_SCHEME = "https://"
 
-	DeviceIDKey       = "deviceID"
-	ResourceHrefKey   = "resourceHref"
-	SubscriptionIDKey = "subscriptionID"
+	IDKey              = "id"
+	DeviceIDKey        = "deviceID"
+	ResourceHrefKey    = "resourceHref"
+	SubscriptionIDKey  = "subscriptionID"
+	ConfigurationIDKey = "configurationId"
 
 	ContentQueryKey = "content"
 )

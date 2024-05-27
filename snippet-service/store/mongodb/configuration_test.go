@@ -587,22 +587,12 @@ func TestStoreGetConfigurations(t *testing.T) {
 				}
 			},
 		},
-		// {
-		// 	name: "owner0/version/{1, 49, latest}", args: args{
-		// 		owner: testConfigurationOwner(0),
-		// 		query: &pb.GetConfigurationsRequest{
-		// 			IdFilter: []*pb.IDFilter{
-
-		// 			},
-		// 		},
-		// 	},
-		// },
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var configurations []*store.Configuration
-			err := s.LoadConfigurations(ctx, tt.args.owner, tt.args.query, func(iterCtx context.Context, iter store.Iterator[store.Configuration]) error {
+			err := s.GetConfigurations(ctx, tt.args.owner, tt.args.query, func(iterCtx context.Context, iter store.Iterator[store.Configuration]) error {
 				var conf store.Configuration
 				for iter.Next(iterCtx, &conf) {
 					configurations = append(configurations, conf.Clone())

@@ -95,37 +95,48 @@ func normalizeIdFilter(idfilter []*pb.IDFilter) []*pb.IDFilter {
 	var idLatest bool
 	var idValue bool
 	var idValueVersion uint64
+	setNextInitial := func(idf *pb.IDFilter) {
+		idAll = idf.GetAll()
+		idLatest = idf.GetLatest()
+		idValue = !idAll && !idLatest
+		idValueVersion = idf.GetValue()
+	}
+	setNextLatest := func(idf *pb.IDFilter) {
+		// we already have the latest filter
+		if idLatest {
+			// skip
+			return
+		}
+		idLatest = true
+		updatedFilter = append(updatedFilter, idf)
+	}
+	setNextValue := func(idf *pb.IDFilter) {
+		value := idf.GetValue()
+		if idValue && value == idValueVersion {
+			// skip
+			return
+		}
+		idValue = true
+		idValueVersion = value
+		updatedFilter = append(updatedFilter, idf)
+	}
 	prevID := ""
 	for _, idf := range idfilter {
 		if idf.GetId() != prevID {
-			idAll = idf.GetAll()
-			idLatest = idf.GetLatest()
-			idValue = !idAll && !idLatest
-			idValueVersion = idf.GetValue()
+			setNextInitial(idf)
 			updatedFilter = append(updatedFilter, idf)
 		}
 
-		var value uint64
 		if idAll {
 			goto next
 		}
 
 		if idf.GetLatest() {
-			// we already have the latest filter
-			if idLatest {
-				goto next
-			}
-			idLatest = true
-			updatedFilter = append(updatedFilter, idf)
-		}
-
-		value = idf.GetValue()
-		if idValue && value == idValueVersion {
+			setNextLatest(idf)
 			goto next
 		}
-		idValue = true
-		idValueVersion = value
-		updatedFilter = append(updatedFilter, idf)
+
+		setNextValue(idf)
 
 	next:
 		prevID = idf.GetId()
@@ -138,8 +149,8 @@ type versionFilter struct {
 	versions []uint64
 }
 
-func partitionQuery(query *pb.GetConfigurationsRequest) ([]string, map[string]versionFilter) {
-	idFilter := normalizeIdFilter(query.GetIdFilter())
+func partitionQuery(idfilter []*pb.IDFilter) ([]string, map[string]versionFilter) {
+	idFilter := normalizeIdFilter(idfilter)
 	if len(idFilter) == 0 {
 		return nil, nil
 	}
@@ -198,7 +209,7 @@ func toIdFilterQuery(owner string, idfAlls []string) interface{} {
 	return bson.M{"$and": filters}
 }
 
-func processCursor(ctx context.Context, cr *mongo.Cursor, h store.LoadConfigurationsFunc) error {
+func processCursor(ctx context.Context, cr *mongo.Cursor, h store.GetConfigurationsFunc) error {
 	if h == nil {
 		return nil
 	}
@@ -213,7 +224,7 @@ func processCursor(ctx context.Context, cr *mongo.Cursor, h store.LoadConfigurat
 	return errors.ErrorOrNil()
 }
 
-func (s *Store) loadConfigurationsByFind(ctx context.Context, owner string, idfAlls []string, h store.LoadConfigurationsFunc) error {
+func (s *Store) getConfigurationsByFind(ctx context.Context, owner string, idfAlls []string, h store.GetConfigurationsFunc) error {
 	cur, err := s.Collection(configurationsCol).Find(ctx, toIdFilterQuery(owner, idfAlls))
 	if err != nil {
 		return err
@@ -221,7 +232,7 @@ func (s *Store) loadConfigurationsByFind(ctx context.Context, owner string, idfA
 	return processCursor(ctx, cur, h)
 }
 
-func (s *Store) loadConfigurationsByAggregation(ctx context.Context, id, owner string, vf versionFilter, h store.LoadConfigurationsFunc) error {
+func (s *Store) getConfigurationsByAggregation(ctx context.Context, id, owner string, vf versionFilter, h store.GetConfigurationsFunc) error {
 	match := bson.D{
 		{Key: store.VersionsKey + ".0", Value: bson.M{"$exists": true}},
 	}
@@ -281,18 +292,22 @@ func (s *Store) loadConfigurationsByAggregation(ctx context.Context, id, owner s
 	return processCursor(ctx, cur, h)
 }
 
-func (s *Store) LoadConfigurations(ctx context.Context, owner string, query *pb.GetConfigurationsRequest, h store.LoadConfigurationsFunc) error {
-	idVersionAll, idVersions := partitionQuery(query)
+func (s *Store) GetConfigurations(ctx context.Context, owner string, query *pb.GetConfigurationsRequest, h store.GetConfigurationsFunc) error {
+	idVersionAll, idVersions := partitionQuery(query.GetIdFilter())
 	var errors *multierror.Error
 	if len(idVersionAll) > 0 || len(idVersions) == 0 {
-		err := s.loadConfigurationsByFind(ctx, owner, idVersionAll, h)
+		err := s.getConfigurationsByFind(ctx, owner, idVersionAll, h)
 		errors = multierror.Append(errors, err)
 	}
 	if len(idVersions) > 0 {
 		for id, vf := range idVersions {
-			err := s.loadConfigurationsByAggregation(ctx, id, owner, vf, h)
+			err := s.getConfigurationsByAggregation(ctx, id, owner, vf, h)
 			errors = multierror.Append(errors, err)
 		}
 	}
 	return errors.ErrorOrNil()
+}
+
+func (s *Store) DeleteConfigurations(context.Context, string, *pb.DeleteConfigurationsRequest) (int64, error) {
+	return 0, store.ErrNotSupported
 }

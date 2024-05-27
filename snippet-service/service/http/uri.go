@@ -1,6 +1,9 @@
 package http
 
 const (
+	IDKey              = "id"
+	ConfigurationIDKey = "configurationId"
+
 	API string = "/api/v1"
 
 	// (GRPC + HTTP) GET /api/v1/conditions -> rpc GetConditions
@@ -12,4 +15,7 @@ const (
 	// (GRPC + HTTP) DELETE /api/v1/configurations -> rpc DeleteConfigurations
 	// (GRPC + HTTP) POST /api/v1/configurations -> rpc CreateConfiguration
 	Configurations = API + "/configurations"
+
+	// (GRPC + HTTP) PUT /api/v1/configurations/{id} -> rpc Update Configuration
+	AliasConfiguration = Configurations + "/{" + IDKey + "}"
 )

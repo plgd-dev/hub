@@ -236,7 +236,6 @@ service SnippetService {
     };
   }
  
-
   rpc GetAppliedConfigurations(GetAppliedDeviceConfigurationsRequest) returns (stream AppliedDeviceConfiguration) {
     option (google.api.http) = {
       get: "/api/v1/configurations/applied";

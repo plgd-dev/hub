@@ -2,6 +2,7 @@ package http
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
@@ -22,16 +23,15 @@ type Service struct {
 // New parses configuration and creates new Server with provided store and bus
 func New(serviceName string, config Config, snippetServiceServer *grpcService.SnippetServiceServer, validator *validator.Validator, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*Service, error) {
 	service, err := httpService.New(httpService.Config{
-		HTTPConnection: config.Connection,
-		HTTPServer:     config.Server,
-		ServiceName:    serviceName,
-		AuthRules:      kitNetHttp.NewDefaultAuthorizationRules(uri.API),
-		// WhiteEndpointList:      whiteList,
-		FileWatcher:   fileWatcher,
-		Logger:        logger,
-		TraceProvider: tracerProvider,
-		Validator:     validator,
-		// QueryCaseInsensitive: map[string]string{},
+		HTTPConnection:       config.Connection,
+		HTTPServer:           config.Server,
+		ServiceName:          serviceName,
+		AuthRules:            kitNetHttp.NewDefaultAuthorizationRules(uri.API),
+		FileWatcher:          fileWatcher,
+		Logger:               logger,
+		TraceProvider:        tracerProvider,
+		Validator:            validator,
+		QueryCaseInsensitive: queryCaseInsensitive,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("cannot create http service: %w", err)
@@ -47,4 +47,8 @@ func New(serviceName string, config Config, snippetServiceServer *grpcService.Sn
 		Service:        service,
 		requestHandler: requestHandler,
 	}, nil
+}
+
+var queryCaseInsensitive = map[string]string{
+	strings.ToLower(ConfigurationIDKey): "id",
 }

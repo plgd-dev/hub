@@ -33,12 +33,13 @@ type Iterator[T any] interface {
 
 type (
 	// LoadConditionsFunc     = func(ctx context.Context, iter Iterator[Condition]) (err error)
-	LoadConfigurationsFunc = func(ctx context.Context, iter Iterator[Configuration]) (err error)
+	GetConfigurationsFunc = func(ctx context.Context, iter Iterator[Configuration]) (err error)
 )
 
 var (
-	ErrNotSupported = errors.New("not supported")
-	ErrNotFound     = errors.New("not found")
+	ErrNotSupported    = errors.New("not supported")
+	ErrNotFound        = errors.New("not found")
+	ErrInvalidArgument = errors.New("invalid argument")
 )
 
 type MongoIterator[T any] struct {
@@ -69,10 +70,10 @@ type Store interface {
 	CreateConfiguration(ctx context.Context, conf *pb.Configuration) (*pb.Configuration, error)
 	// UpdateConfiguration updates an existing configuration in the database.
 	UpdateConfiguration(ctx context.Context, conf *pb.Configuration) (*pb.Configuration, error)
-	// LoadConfigurations loads a configuration from the database.
-	LoadConfigurations(ctx context.Context, owner string, query *pb.GetConfigurationsRequest, h LoadConfigurationsFunc) error
+	// GetConfigurations loads a configuration from the database.
+	GetConfigurations(ctx context.Context, owner string, query *pb.GetConfigurationsRequest, h GetConfigurationsFunc) error
 	// DeleteConfigurations deletes configurations from the database.
-	// DeleteConfigurations(ctx context.Context, owner string, query *DeleteConfigurationsQuery) (int64, error)
+	DeleteConfigurations(ctx context.Context, owner string, query *pb.DeleteConfigurationsRequest) (int64, error)
 
 	Close(ctx context.Context) error
 }
