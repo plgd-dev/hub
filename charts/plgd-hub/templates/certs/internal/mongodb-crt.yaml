@@ -25,6 +25,9 @@ spec:
     - {{ . | quote }}
     {{- end }}
   {{- end }}
+  {{- range .Values.mongodb.tls.extraDnsNames }}
+    - {{ . | quote }}
+  {{- end }}
   duration: {{ .Values.certmanager.internal.cert.duration | default .Values.certmanager.default.cert.duration }}
   renewBefore: {{ .Values.certmanager.internal.cert.renewBefore | default .Values.certmanager.default.cert.renewBefore }}
   issuerRef:
