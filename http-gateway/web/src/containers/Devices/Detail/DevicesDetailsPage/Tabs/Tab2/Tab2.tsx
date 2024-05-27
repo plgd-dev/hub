@@ -72,8 +72,7 @@ const Tab2: FC<Props> = (props) => {
 
             return resourceData.data.content
         } catch (error) {
-            console.log('!ERROR')
-            console.log(error)
+            console.error(error)
             if (error) {
                 Notification.error(
                     { title: _(t.resourceGetKnowConfErrorTitle), message: _(t.resourceGetKnowConfErrorMessage) },
