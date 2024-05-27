@@ -196,7 +196,7 @@ mongodb:
   initContainers:
     # workaround for https://github.com/bitnami/charts/issues/10264, https://jira.mongodb.org/browse/MONGOSH-1240
     - name: mongo-binary
-      image: docker.io/bitnami/mongodb:5.0.10-debian-11-r3
+      image: docker.io/bitnami/mongodb:7.0.9-debian-12-r4
       imagePullPolicy: "IfNotPresent"
       volumeMounts:
         - name: mongodb-crt
@@ -209,7 +209,6 @@ mongodb:
         - |
           /bin/bash <<'EOF'
           #!/bin/bash
-          cp /opt/bitnami/mongodb/bin/mongo /certs/mongo
           echo '
           INIT=0
           while [[ $# -gt 0 ]]; do
@@ -247,10 +246,10 @@ mongodb:
 
           if [ "${ROTATE_CERTIFICATES}" == "1" ]; then
             echo "Rotating certificates"
-            /certs/mongo --tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem --eval db.adminCommand\("{rotateCertificates: 1, message: \"Rotating certificates\"}"\)
+            mongosh --tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem --eval db.adminCommand\("{rotateCertificates: 1, message: \"Rotating certificates\"}"\)
           else
             echo "Ping database"
-            /certs/mongo --tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem --eval db.adminCommand\(\"ping\"\)
+            mongosh --tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem --eval db.adminCommand\(\"ping\"\)
           fi
           ' > /certs/livenessProbe.sh
           chmod u+x /certs/livenessProbe.sh
@@ -278,7 +277,7 @@ mongodb:
         - -ec
         - |
           TLS_OPTIONS='--tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem'
-          /certs/mongo $TLS_OPTIONS --eval 'db.hello().isWritablePrimary || db.hello().secondary' | grep -q 'true'
+          mongosh $TLS_OPTIONS --eval 'db.hello().isWritablePrimary || db.hello().secondary' | grep -q 'true'
     initialDelaySeconds: 10
     periodSeconds: 20
     timeoutSeconds: 10
