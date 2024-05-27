@@ -12,7 +12,7 @@ const getWellKnow = () => security.getWellKnowConfig()
 
 export const useCertificatesList = (): StreamApiPropsType => {
     const { telemetryWebTracer } = useContext(AppContext)
-    const url = getWellKnow()?.ui?.deviceProvisioningService || getConfig().httpGatewayAddress
+    const url = getWellKnow()?.certificateAuthority || getWellKnow()?.ui?.deviceProvisioningService || getConfig().httpGatewayAddress
 
     return useStreamApi(`${url}${certificatesEndpoints.CERTIFICATES}`, {
         telemetryWebTracer,
@@ -22,7 +22,7 @@ export const useCertificatesList = (): StreamApiPropsType => {
 
 export const useCertificatesDetail = (id: string): StreamApiPropsType => {
     const { telemetryWebTracer } = useContext(AppContext)
-    const url = getWellKnow()?.ui?.deviceProvisioningService || getConfig().httpGatewayAddress
+    const url = getWellKnow()?.certificateAuthority || getWellKnow()?.ui?.deviceProvisioningService || getConfig().httpGatewayAddress
 
     const { data, ...rest } = useStreamApi(`${url}${certificatesEndpoints.CERTIFICATES}?idFilter=${id}`, {
         telemetryWebTracer,

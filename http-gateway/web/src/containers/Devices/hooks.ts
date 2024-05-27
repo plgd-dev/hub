@@ -121,7 +121,7 @@ export const useDevicePendingCommands = (deviceId: string): StreamApiPropsType =
 
 export const useDeviceCertificates = (deviceId: string): StreamApiPropsType => {
     const { telemetryWebTracer } = useContext(AppContext)
-    const url = getWellKnow()?.ui?.deviceProvisioningService || getConfig().httpGatewayAddress
+    const url = getWellKnow()?.certificateAuthority || getWellKnow()?.ui?.deviceProvisioningService || getConfig().httpGatewayAddress
     return useStreamApi(`${url}/api/v1/signing/records?deviceIdFilter=${deviceId}`, {
         telemetryWebTracer,
         telemetrySpan: `get-device-certificates-${deviceId}`,

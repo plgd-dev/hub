@@ -7,17 +7,22 @@ import { DEVICE_DELETE_CHUNK_SIZE } from '@/containers/Devices/constants'
 import { SecurityConfig } from '@/containers/App/App.types'
 import { certificatesEndpoints } from '@/containers/Certificates/constants'
 
+const getConfig = () => security.getGeneralConfig() as SecurityConfig
+const getWellKnow = () => security.getWellKnowConfig()
+
 export const deleteCertificatesApi = (deviceIds: string[]) => {
     // We split the fetch into multiple chunks due to the URL being too long for the browser to handle
     const chunks = chunk(deviceIds, DEVICE_DELETE_CHUNK_SIZE)
-    const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
+    const { cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
+
+    const url = getWellKnow()?.certificateAuthority || getWellKnow()?.ui?.deviceProvisioningService || getConfig().httpGatewayAddress
 
     return Promise.all(
         chunks.map((ids) => {
             const idFilter = ids.map((id) => `idFilter=${id}`).join('&')
             return withTelemetry(
                 () =>
-                    fetchApi(`${httpGatewayAddress}${certificatesEndpoints.CERTIFICATES}?${idFilter}`, {
+                    fetchApi(`${url}${certificatesEndpoints.CERTIFICATES}?${idFilter}`, {
                         method: 'DELETE',
                         cancelRequestDeadlineTimeout,
                     }),
