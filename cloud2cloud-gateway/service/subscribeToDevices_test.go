@@ -78,16 +78,16 @@ func TestRequestHandlerSubscribeToDevices(t *testing.T) {
 		r.StrictSlash(true)
 		r.HandleFunc(eventsURI, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			h, err2 := events.ParseEventHeader(r)
-			assert.NoError(t, err2) //nolint:testifylint
+			assert.NoError(t, err2)
 			defer func() {
 				_ = r.Body.Close()
 			}()
 			assert.Equal(t, wantEventType, h.EventType)
 			buf, err2 := io.ReadAll(r.Body)
-			assert.NoError(t, err2) //nolint:testifylint
+			assert.NoError(t, err2)
 			var v interface{}
 			err2 = json.Decode(buf, &v)
-			assert.NoError(t, err2) //nolint:testifylint
+			assert.NoError(t, err2)
 			assert.Equal(t, wantEventContent, v)
 			w.WriteHeader(http.StatusOK)
 			err2 = eventsServer.Close()
@@ -171,16 +171,16 @@ func TestRequestHandlerSubscribeToDevicesOffline(t *testing.T) {
 		r.StrictSlash(true)
 		r.HandleFunc(eventsURI, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			h, err2 := events.ParseEventHeader(r)
-			assert.NoError(t, err2) //nolint:testifylint
+			assert.NoError(t, err2)
 			defer func() {
 				_ = r.Body.Close()
 			}()
 			assert.Equal(t, wantEventType, h.EventType)
 			buf, err2 := io.ReadAll(r.Body)
-			assert.NoError(t, err2) //nolint:testifylint
+			assert.NoError(t, err2)
 			var v interface{}
 			err2 = json.Decode(buf, &v)
-			assert.NoError(t, err2) //nolint:testifylint
+			assert.NoError(t, err2)
 			assert.Equal(t, wantEventContent, v)
 			w.WriteHeader(http.StatusOK)
 			err2 = eventsServer.Close()
