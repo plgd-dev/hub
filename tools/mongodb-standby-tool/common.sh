@@ -19,7 +19,7 @@ load_config() {
     while [[ $# -gt 0 ]]; do
     case $1 in
         -c|--config)
-        EXTENSION="$2"
+        CONFIG_FILE="$2"
         shift # past argument
         shift # past value
         ;;
