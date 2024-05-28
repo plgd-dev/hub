@@ -15,14 +15,14 @@ data:
           - {{printf "%s" . }}
           {{- end }}
         # Set the delay for syncing the standby members with the secondary/primary members
-        delaysSeconds: {{- .Values.mongodb.standbyTool.replicaSet.standby.delaysSeconds }}
+        delaysSeconds: {{ .Values.mongodb.standbyTool.replicaSet.standby.delaysSeconds }}
       secondary:
         # Used to configure the secondary members priority
-        priority: {{- .Values.mongodb.standbyTool.replicaSet.secondary.priority }}
+        priority: {{ .Values.mongodb.standbyTool.replicaSet.secondary.priority }}
         # Set number of votes for the secondary members
-        votes: {{- .Values.mongodb.standbyTool.replicaSet.secondary.votes }}
+        votes: {{ .Values.mongodb.standbyTool.replicaSet.secondary.votes }}
         # Set the delay for syncing the secondary members with the primary member
-        delaysSeconds: {{- .Values.mongodb.standbyTool.replicaSet.secondary.delaysSeconds }}
+        delaysSeconds: {{ .Values.mongodb.standbyTool.replicaSet.secondary.delaysSeconds }}
     clients:
       storage:
         mongoDB:
