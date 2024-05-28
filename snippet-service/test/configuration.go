@@ -55,11 +55,12 @@ func ConfigurationResources(t *testing.T, start, n int) []*pb.Configuration_Reso
 }
 
 type (
-	onCreateConfiguration = func(ctx context.Context, conf *pb.Configuration) (*pb.Configuration, error)
-	onUpdateConfiguration = func(ctx context.Context, conf *pb.Configuration) (*pb.Configuration, error)
+	onCreateConfiguration         = func(ctx context.Context, conf *pb.Configuration) (*pb.Configuration, error)
+	onUpdateConfiguration         = func(ctx context.Context, conf *pb.Configuration) (*pb.Configuration, error)
+	calculateVersionInitialNumber = func(iteration int) uint64
 )
 
-func addConfigurations(ctx context.Context, t *testing.T, n int, create onCreateConfiguration, update onUpdateConfiguration) map[string]store.Configuration {
+func addConfigurations(ctx context.Context, t *testing.T, n int, calcVersion calculateVersionInitialNumber, create onCreateConfiguration, update onUpdateConfiguration) map[string]store.Configuration {
 	const numConfigs = 10
 	const numOwners = 3
 	versions := make(map[int]uint64, numConfigs)
@@ -69,6 +70,9 @@ func addConfigurations(ctx context.Context, t *testing.T, n int, create onCreate
 		version, ok := versions[i%numConfigs]
 		if !ok {
 			version = 0
+			if calcVersion != nil {
+				version = calcVersion(i)
+			}
 			versions[i%numConfigs] = version
 		}
 		versions[i%numConfigs]++
@@ -112,11 +116,11 @@ func addConfigurations(ctx context.Context, t *testing.T, n int, create onCreate
 	return configurations
 }
 
-func AddConfigurationsToStore(ctx context.Context, t *testing.T, s store.Store, n int) map[string]store.Configuration {
-	return addConfigurations(ctx, t, n, s.CreateConfiguration, s.UpdateConfiguration)
+func AddConfigurationsToStore(ctx context.Context, t *testing.T, s store.Store, n int, calcVersion calculateVersionInitialNumber) map[string]store.Configuration {
+	return addConfigurations(ctx, t, n, calcVersion, s.CreateConfiguration, s.UpdateConfiguration)
 }
 
-func AddConfigurations(ctx context.Context, t *testing.T, ownerClaim string, c pb.SnippetServiceClient, n int) map[string]store.Configuration {
+func AddConfigurations(ctx context.Context, t *testing.T, ownerClaim string, c pb.SnippetServiceClient, n int, calcVersion calculateVersionInitialNumber) map[string]store.Configuration {
 	tokens := make(map[string]string)
 	getTokenWithOwnerClaim := func(owner string) string {
 		token, ok := tokens[owner]
@@ -130,7 +134,7 @@ func AddConfigurations(ctx context.Context, t *testing.T, ownerClaim string, c p
 		return token
 	}
 
-	return addConfigurations(ctx, t, n, func(ctx context.Context, conf *pb.Configuration) (*pb.Configuration, error) {
+	return addConfigurations(ctx, t, n, calcVersion, func(ctx context.Context, conf *pb.Configuration) (*pb.Configuration, error) {
 		ctxWithToken := pkgGrpc.CtxWithToken(ctx, getTokenWithOwnerClaim(conf.GetOwner()))
 		return c.CreateConfiguration(ctxWithToken, conf)
 	}, func(ctx context.Context, conf *pb.Configuration) (*pb.Configuration, error) {

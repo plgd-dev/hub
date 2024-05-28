@@ -42,7 +42,7 @@ func TestRequestHandlerGetConfigurations(t *testing.T) {
 		_ = conn.Close()
 	}()
 	c := pb.NewSnippetServiceClient(conn)
-	confs := test.AddConfigurations(ctx, t, snippetCfg.APIs.GRPC.Authorization.OwnerClaim, c, 30)
+	confs := test.AddConfigurations(ctx, t, snippetCfg.APIs.GRPC.Authorization.OwnerClaim, c, 30, nil)
 
 	type args struct {
 		accept string
@@ -56,7 +56,7 @@ func TestRequestHandlerGetConfigurations(t *testing.T) {
 		want         func(*testing.T, []*pb.Configuration)
 	}{
 		{
-			name: test.ConfigurationOwner(1) + "/all",
+			name: "owner1/all",
 			args: args{
 				accept: pkgHttp.ApplicationProtoJsonContentType,
 				token: oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTest, map[string]interface{}{

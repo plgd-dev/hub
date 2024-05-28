@@ -235,7 +235,7 @@ func (s *Store) getConfigurationsByFind(ctx context.Context, owner string, idfAl
 	return processCursor(ctx, cur, h)
 }
 
-func (s *Store) getConfigurationsByAggregation(ctx context.Context, id, owner string, vf versionFilter, h store.GetConfigurationsFunc) error {
+func addMatchCondition(owner, id string) bson.D {
 	match := bson.D{
 		{Key: store.VersionsKey + ".0", Value: bson.M{"$exists": true}},
 	}
@@ -245,49 +245,58 @@ func (s *Store) getConfigurationsByAggregation(ctx context.Context, id, owner st
 	if owner != "" {
 		match = append(match, bson.E{Key: store.OwnerKey, Value: owner})
 	}
-	pl := mongo.Pipeline{
-		bson.D{{Key: "$match", Value: match}},
-	}
+	return match
+}
 
+func addLatestVersionField() bson.D {
+	return bson.D{{Key: "$addFields", Value: bson.M{
+		"latestVersion": bson.M{"$reduce": bson.M{
+			"input":        "$versions",
+			"initialValue": bson.M{"version": 0},
+			"in": bson.M{
+				"$cond": bson.A{
+					bson.M{"$gte": bson.A{"$$this.version", "$$value.version"}},
+					"$$this.version",
+					"$$value.version",
+				},
+			},
+		}},
+	}}}
+}
+
+func getVersionsPipeline(pl mongo.Pipeline, vf versionFilter, exclude bool) mongo.Pipeline {
 	versions := make([]interface{}, 0, len(vf.versions)+1)
 	for _, version := range vf.versions {
 		versions = append(versions, version)
 	}
+
 	if vf.latest {
-		pl = append(pl,
-			bson.D{{Key: "$addFields", Value: bson.M{
-				"latestVersion": bson.M{"$reduce": bson.M{
-					"input":        "$versions",
-					"initialValue": bson.M{"version": 0},
-					"in": bson.M{
-						"$cond": bson.A{
-							bson.M{"$gte": bson.A{"$$this.version", "$$value.version"}},
-							"$$this.version",
-							"$$value.version",
-						},
-					},
-				}},
-			}}},
-		)
+		pl = append(pl, addLatestVersionField())
 		versions = append(versions, "$latestVersion")
 	}
 
 	if len(versions) > 0 {
-		pl = append(pl,
-			bson.D{{Key: "$addFields", Value: bson.M{
-				"versions": bson.M{
-					"$filter": bson.M{
-						"input": "$versions",
-						"as":    "version",
-						"cond": bson.M{
-							"$in": bson.A{"$$version.version", versions},
-						},
-					},
+		cond := bson.M{"$in": bson.A{"$$version.version", versions}}
+		if exclude {
+			cond = bson.M{"$not": cond}
+		}
+		pl = append(pl, bson.D{{Key: "$addFields", Value: bson.M{
+			"versions": bson.M{
+				"$filter": bson.M{
+					"input": "$versions",
+					"as":    "version",
+					"cond":  cond,
 				},
-			}}},
-		)
+			},
+		}}})
 	}
 
+	return pl
+}
+
+func (s *Store) getConfigurationsByAggregation(ctx context.Context, owner, id string, vf versionFilter, h store.GetConfigurationsFunc) error {
+	pl := mongo.Pipeline{bson.D{{Key: "$match", Value: addMatchCondition(owner, id)}}}
+	pl = getVersionsPipeline(pl, vf, false)
 	cur, err := s.Collection(configurationsCol).Aggregate(ctx, pl)
 	if err != nil {
 		return err
@@ -304,13 +313,53 @@ func (s *Store) GetConfigurations(ctx context.Context, owner string, query *pb.G
 	}
 	if len(idVersions) > 0 {
 		for id, vf := range idVersions {
-			err := s.getConfigurationsByAggregation(ctx, id, owner, vf, h)
+			err := s.getConfigurationsByAggregation(ctx, owner, id, vf, h)
 			errors = multierror.Append(errors, err)
 		}
 	}
 	return errors.ErrorOrNil()
 }
 
-func (s *Store) DeleteConfigurations(context.Context, string, *pb.DeleteConfigurationsRequest) (int64, error) {
-	return 0, store.ErrNotSupported
+func (s *Store) removeDocument(ctx context.Context, owner string, idfAlls []string) error {
+	_, err := s.Collection(configurationsCol).DeleteMany(ctx, toIdFilterQuery(owner, idfAlls))
+	return err
+}
+
+func (s *Store) removeVersion(ctx context.Context, owner string, id string, vf versionFilter) error {
+	pl := getVersionsPipeline(mongo.Pipeline{}, vf, true)
+	if vf.latest {
+		pl = append(pl, bson.D{{Key: "$unset", Value: "latestVersion"}})
+	}
+	_, err := s.Collection(configurationsCol).UpdateMany(ctx, addMatchCondition(owner, id), pl)
+	return err
+}
+
+func (s *Store) DeleteConfigurations(ctx context.Context, owner string, query *pb.DeleteConfigurationsRequest) (int64, error) {
+	success := false
+	idVersionAll, idVersions := partitionQuery(query.GetIdFilter())
+	var errors *multierror.Error
+	if len(idVersionAll) > 0 || len(idVersions) == 0 {
+		err := s.removeDocument(ctx, owner, idVersionAll)
+		if err == nil {
+			success = true
+		}
+		errors = multierror.Append(errors, err)
+	}
+	if len(idVersions) > 0 {
+		for id, vf := range idVersions {
+			err := s.removeVersion(ctx, owner, id, vf)
+			if err == nil {
+				success = true
+			}
+			errors = multierror.Append(errors, err)
+		}
+	}
+	err := errors.ErrorOrNil()
+	if err != nil {
+		if success {
+			return 2, err
+		}
+		return 0, err
+	}
+	return 1, nil
 }

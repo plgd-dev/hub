@@ -102,6 +102,20 @@ func (s *SnippetServiceServer) GetConfigurations(req *pb.GetConfigurationsReques
 	return nil
 }
 
+func (s *SnippetServiceServer) DeleteConfigurations(ctx context.Context, req *pb.DeleteConfigurationsRequest) (*pb.DeleteConfigurationsResponse, error) {
+	owner, err := s.checkOwner(ctx, "")
+	if err != nil {
+		return nil, s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "cannot delete configurations: %v", err))
+	}
+	count, err := s.store.DeleteConfigurations(ctx, owner, req)
+	if err != nil {
+		return nil, s.logger.LogAndReturnError(status.Errorf(codes.Internal, "cannot delete configurations: %v", err))
+	}
+	return &pb.DeleteConfigurationsResponse{
+		Count: count,
+	}, nil
+}
+
 func (s *SnippetServiceServer) Close(ctx context.Context) error {
 	return s.store.Close(ctx)
 }
