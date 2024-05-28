@@ -290,7 +290,6 @@ func getVersionsPipeline(pl mongo.Pipeline, vf versionFilter, exclude bool) mong
 			},
 		}}})
 	}
-
 	return pl
 }
 
@@ -331,6 +330,7 @@ func (s *Store) removeVersion(ctx context.Context, owner string, id string, vf v
 		pl = append(pl, bson.D{{Key: "$unset", Value: "latestVersion"}})
 	}
 	_, err := s.Collection(configurationsCol).UpdateMany(ctx, addMatchCondition(owner, id), pl)
+	// TODO: delete document if no versions remain in the array
 	return err
 }
 

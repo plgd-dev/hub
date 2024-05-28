@@ -54,3 +54,12 @@ func ConfigurationContains(t *testing.T, storeConf store.Configuration, conf *pb
 	}
 	require.Fail(t, "version not found")
 }
+
+func CmpStoredConfigurationMaps(t *testing.T, want, got map[string]store.Configuration) {
+	require.Len(t, got, len(want))
+	for _, v := range want {
+		gotV, ok := got[v.Id]
+		require.True(t, ok)
+		CmpJSON(t, v, gotV)
+	}
+}

@@ -152,7 +152,7 @@ func TestStoreGetConfigurations(t *testing.T) {
 			},
 		},
 		{
-			name: "owner1/latest - non-matching owner",
+			name: "owner2/id1/latest - non-matching owner",
 			args: args{
 				owner: test.ConfigurationOwner(2),
 				query: &pb.GetConfigurationsRequest{

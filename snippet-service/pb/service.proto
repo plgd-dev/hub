@@ -38,7 +38,7 @@ option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
 
 option go_package = "github.com/plgd-dev/hub/v2/snippet-service/pb;pb";
 
-// /configuration/123?version=latest :) Jozko spravi :)
+// TODO: /configuration/123?version=latest
 message IDFilter {
   string id = 1; 
   oneof version {

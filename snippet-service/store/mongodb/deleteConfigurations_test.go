@@ -192,6 +192,159 @@ func TestStoreDeleteConfigurations(t *testing.T) {
 				require.Equal(t, storedCount-len(storedLatest), count)
 			},
 		},
+		{
+			name: "owner1/latest",
+			args: args{
+				owner: test.ConfigurationOwner(1),
+				query: &pb.DeleteConfigurationsRequest{
+					IdFilter: []*pb.IDFilter{
+						{
+							Version: &pb.IDFilter_Latest{
+								Latest: true,
+							},
+						},
+						// duplicates should be ignored
+						{
+							Version: &pb.IDFilter_Latest{
+								Latest: true,
+							},
+						},
+						{
+							Version: &pb.IDFilter_Latest{
+								Latest: true,
+							},
+						},
+					},
+				},
+			},
+			want: func(t *testing.T, s *mongodb.Store, stored map[string]store.Configuration) {
+				storedLatest := make(map[string]store.ConfigurationVersion)
+				storedCount := 0
+				for _, conf := range stored {
+					storedLatest[conf.Id] = conf.Versions[len(conf.Versions)-1]
+					storedCount += len(conf.Versions)
+				}
+				confs := getConfigurations(t, s, "", nil)
+				require.NotEmpty(t, confs)
+				count := 0
+				removed := 0
+				for _, conf := range confs {
+					if conf.Owner == test.ConfigurationOwner(1) {
+						require.NotEqual(t, storedLatest[conf.Id], conf.Versions[len(conf.Versions)-1])
+						removed++
+					} else {
+						require.Equal(t, storedLatest[conf.Id], conf.Versions[len(conf.Versions)-1])
+					}
+					count += len(conf.Versions)
+				}
+				require.Equal(t, storedCount-removed, count)
+			},
+		},
+		{
+			name: "owner2/id1/latest - non-matching owner",
+			args: args{
+				owner: test.ConfigurationOwner(2),
+				query: &pb.DeleteConfigurationsRequest{
+					IdFilter: []*pb.IDFilter{
+						{
+							Id: test.ConfigurationID(1),
+							Version: &pb.IDFilter_Latest{
+								Latest: true,
+							},
+						},
+					},
+				},
+			},
+			want: func(t *testing.T, s *mongodb.Store, stored map[string]store.Configuration) {
+				confs := getConfigurations(t, s, "", nil)
+				confsMap := make(map[string]store.Configuration)
+				for _, conf := range confs {
+					confsMap[conf.Id] = *conf
+				}
+				test.CmpStoredConfigurationMaps(t, stored, confsMap)
+			},
+		},
+		{
+			name: "version/{42, 142, 242, 342, 442, 542}", args: args{
+				owner: "",
+				query: &pb.DeleteConfigurationsRequest{
+					IdFilter: []*pb.IDFilter{
+						{Version: &pb.IDFilter_Value{Value: 42}},
+						{Version: &pb.IDFilter_Value{Value: 142}},
+						{Version: &pb.IDFilter_Value{Value: 242}},
+						{Version: &pb.IDFilter_Value{Value: 342}},
+						{Version: &pb.IDFilter_Value{Value: 442}},
+						{Version: &pb.IDFilter_Value{Value: 542}},
+					},
+				},
+			},
+			want: func(t *testing.T, s *mongodb.Store, stored map[string]store.Configuration) {
+				confs := getConfigurations(t, s, "", nil)
+				confsMap := make(map[string]store.Configuration)
+				for _, conf := range confs {
+					confsMap[conf.Id] = *conf
+				}
+				for _, conf := range stored {
+					versions := make([]store.ConfigurationVersion, 0)
+					for _, version := range conf.Versions {
+						if version.Version == 42 ||
+							version.Version == 142 ||
+							version.Version == 242 ||
+							version.Version == 342 ||
+							version.Version == 442 ||
+							version.Version == 542 {
+							continue
+						}
+						versions = append(versions, version)
+					}
+					conf.Versions = versions
+					stored[conf.Id] = conf
+				}
+				test.CmpStoredConfigurationMaps(t, stored, confsMap)
+			},
+		},
+		{
+			name: "owner2/version/{213, 237, 242}", args: args{
+				owner: test.ConfigurationOwner(2),
+				query: &pb.DeleteConfigurationsRequest{
+					IdFilter: []*pb.IDFilter{
+						{Version: &pb.IDFilter_Value{Value: 213}},
+						{Version: &pb.IDFilter_Value{Value: 237}},
+						{Version: &pb.IDFilter_Value{Value: 242}},
+						// duplicates should be ignored
+						{Version: &pb.IDFilter_Value{Value: 237}},
+						// filter with Id should be ignored if there are filters without Id
+						{
+							Id:      test.ConfigurationID(2),
+							Version: &pb.IDFilter_Value{Value: 237},
+						},
+					},
+				},
+			},
+			want: func(t *testing.T, s *mongodb.Store, stored map[string]store.Configuration) {
+				confs := getConfigurations(t, s, "", nil)
+				confsMap := make(map[string]store.Configuration)
+				for _, conf := range confs {
+					confsMap[conf.Id] = *conf
+				}
+				for _, conf := range stored {
+					if conf.Owner == test.ConfigurationOwner(2) {
+						versions := make([]store.ConfigurationVersion, 0)
+						for _, version := range conf.Versions {
+							if version.Version == 213 ||
+								version.Version == 237 ||
+								version.Version == 242 {
+								continue
+							}
+							versions = append(versions, version)
+						}
+						conf.Versions = versions
+						stored[conf.Id] = conf
+					}
+				}
+				test.CmpStoredConfigurationMaps(t, stored, confsMap)
+			},
+		},
 	}
 
 	for _, tt := range tests {
