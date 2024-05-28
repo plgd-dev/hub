@@ -31,7 +31,7 @@
     "application/protojson"
   ],
   "paths": {
-    "/api/v1/conditions": {
+    "/snippet-service/api/v1/conditions": {
       "get": {
         "operationId": "SnippetService_GetConditions",
         "responses": {
@@ -112,7 +112,7 @@
         ]
       }
     },
-    "/api/v1/conditions/{id}": {
+    "/snippet-service/api/v1/conditions/{id}": {
       "put": {
         "operationId": "SnippetService_UpdateCondition",
         "responses": {
@@ -151,7 +151,7 @@
         ]
       }
     },
-    "/api/v1/configurations": {
+    "/snippet-service/api/v1/configurations": {
       "get": {
         "operationId": "SnippetService_GetConfigurations",
         "responses": {
@@ -232,7 +232,7 @@
         ]
       }
     },
-    "/api/v1/configurations/applied": {
+    "/snippet-service/api/v1/configurations/applied": {
       "get": {
         "operationId": "SnippetService_GetAppliedConfigurations",
         "responses": {
@@ -317,7 +317,7 @@
         ]
       }
     },
-    "/api/v1/configurations/{configurationId}": {
+    "/snippet-service/api/v1/configurations/{configurationId}": {
       "post": {
         "summary": "streaming process of update configuration to invoker",
         "operationId": "SnippetService_InvokeConfiguration",
@@ -366,7 +366,7 @@
         ]
       }
     },
-    "/api/v1/configurations/{id}": {
+    "/snippet-service/api/v1/configurations/{id}": {
       "put": {
         "operationId": "SnippetService_UpdateConfiguration",
         "responses": {

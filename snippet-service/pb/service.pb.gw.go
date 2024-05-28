@@ -447,7 +447,7 @@ func RegisterSnippetServiceHandlerServer(ctx context.Context, mux *runtime.Serve
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snippetservice.pb.SnippetService/CreateCondition", runtime.WithHTTPPathPattern("/api/v1/conditions"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snippetservice.pb.SnippetService/CreateCondition", runtime.WithHTTPPathPattern("/snippet-service/api/v1/conditions"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -479,7 +479,7 @@ func RegisterSnippetServiceHandlerServer(ctx context.Context, mux *runtime.Serve
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snippetservice.pb.SnippetService/DeleteConditions", runtime.WithHTTPPathPattern("/api/v1/conditions"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snippetservice.pb.SnippetService/DeleteConditions", runtime.WithHTTPPathPattern("/snippet-service/api/v1/conditions"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -504,7 +504,7 @@ func RegisterSnippetServiceHandlerServer(ctx context.Context, mux *runtime.Serve
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snippetservice.pb.SnippetService/UpdateCondition", runtime.WithHTTPPathPattern("/api/v1/conditions/{id}"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snippetservice.pb.SnippetService/UpdateCondition", runtime.WithHTTPPathPattern("/snippet-service/api/v1/conditions/{id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -529,7 +529,7 @@ func RegisterSnippetServiceHandlerServer(ctx context.Context, mux *runtime.Serve
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snippetservice.pb.SnippetService/CreateConfiguration", runtime.WithHTTPPathPattern("/api/v1/configurations"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snippetservice.pb.SnippetService/CreateConfiguration", runtime.WithHTTPPathPattern("/snippet-service/api/v1/configurations"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -561,7 +561,7 @@ func RegisterSnippetServiceHandlerServer(ctx context.Context, mux *runtime.Serve
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snippetservice.pb.SnippetService/DeleteConfigurations", runtime.WithHTTPPathPattern("/api/v1/configurations"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snippetservice.pb.SnippetService/DeleteConfigurations", runtime.WithHTTPPathPattern("/snippet-service/api/v1/configurations"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -586,7 +586,7 @@ func RegisterSnippetServiceHandlerServer(ctx context.Context, mux *runtime.Serve
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snippetservice.pb.SnippetService/UpdateConfiguration", runtime.WithHTTPPathPattern("/api/v1/configurations/{id}"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snippetservice.pb.SnippetService/UpdateConfiguration", runtime.WithHTTPPathPattern("/snippet-service/api/v1/configurations/{id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -625,7 +625,7 @@ func RegisterSnippetServiceHandlerServer(ctx context.Context, mux *runtime.Serve
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snippetservice.pb.SnippetService/DeleteAppliedConfigurations", runtime.WithHTTPPathPattern("/api/v1/configurations/applied"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snippetservice.pb.SnippetService/DeleteAppliedConfigurations", runtime.WithHTTPPathPattern("/snippet-service/api/v1/configurations/applied"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -648,21 +648,21 @@ func RegisterSnippetServiceHandlerServer(ctx context.Context, mux *runtime.Serve
 // RegisterSnippetServiceHandlerFromEndpoint is same as RegisterSnippetServiceHandler but
 // automatically dials to "endpoint" and closes the connection when "ctx" gets done.
 func RegisterSnippetServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
-	conn, err := grpc.NewClient(endpoint, opts...)
+	conn, err := grpc.DialContext(ctx, endpoint, opts...)
 	if err != nil {
 		return err
 	}
 	defer func() {
 		if err != nil {
 			if cerr := conn.Close(); cerr != nil {
-				grpclog.Errorf("Failed to close conn to %s: %v", endpoint, cerr)
+				grpclog.Infof("Failed to close conn to %s: %v", endpoint, cerr)
 			}
 			return
 		}
 		go func() {
 			<-ctx.Done()
 			if cerr := conn.Close(); cerr != nil {
-				grpclog.Errorf("Failed to close conn to %s: %v", endpoint, cerr)
+				grpclog.Infof("Failed to close conn to %s: %v", endpoint, cerr)
 			}
 		}()
 	}()
@@ -689,7 +689,7 @@ func RegisterSnippetServiceHandlerClient(ctx context.Context, mux *runtime.Serve
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snippetservice.pb.SnippetService/CreateCondition", runtime.WithHTTPPathPattern("/api/v1/conditions"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snippetservice.pb.SnippetService/CreateCondition", runtime.WithHTTPPathPattern("/snippet-service/api/v1/conditions"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -711,7 +711,7 @@ func RegisterSnippetServiceHandlerClient(ctx context.Context, mux *runtime.Serve
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snippetservice.pb.SnippetService/GetConditions", runtime.WithHTTPPathPattern("/api/v1/conditions"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snippetservice.pb.SnippetService/GetConditions", runtime.WithHTTPPathPattern("/snippet-service/api/v1/conditions"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -733,7 +733,7 @@ func RegisterSnippetServiceHandlerClient(ctx context.Context, mux *runtime.Serve
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snippetservice.pb.SnippetService/DeleteConditions", runtime.WithHTTPPathPattern("/api/v1/conditions"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snippetservice.pb.SnippetService/DeleteConditions", runtime.WithHTTPPathPattern("/snippet-service/api/v1/conditions"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -755,7 +755,7 @@ func RegisterSnippetServiceHandlerClient(ctx context.Context, mux *runtime.Serve
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snippetservice.pb.SnippetService/UpdateCondition", runtime.WithHTTPPathPattern("/api/v1/conditions/{id}"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snippetservice.pb.SnippetService/UpdateCondition", runtime.WithHTTPPathPattern("/snippet-service/api/v1/conditions/{id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -777,7 +777,7 @@ func RegisterSnippetServiceHandlerClient(ctx context.Context, mux *runtime.Serve
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snippetservice.pb.SnippetService/CreateConfiguration", runtime.WithHTTPPathPattern("/api/v1/configurations"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snippetservice.pb.SnippetService/CreateConfiguration", runtime.WithHTTPPathPattern("/snippet-service/api/v1/configurations"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -799,7 +799,7 @@ func RegisterSnippetServiceHandlerClient(ctx context.Context, mux *runtime.Serve
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snippetservice.pb.SnippetService/GetConfigurations", runtime.WithHTTPPathPattern("/api/v1/configurations"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snippetservice.pb.SnippetService/GetConfigurations", runtime.WithHTTPPathPattern("/snippet-service/api/v1/configurations"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -821,7 +821,7 @@ func RegisterSnippetServiceHandlerClient(ctx context.Context, mux *runtime.Serve
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snippetservice.pb.SnippetService/DeleteConfigurations", runtime.WithHTTPPathPattern("/api/v1/configurations"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snippetservice.pb.SnippetService/DeleteConfigurations", runtime.WithHTTPPathPattern("/snippet-service/api/v1/configurations"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -843,7 +843,7 @@ func RegisterSnippetServiceHandlerClient(ctx context.Context, mux *runtime.Serve
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snippetservice.pb.SnippetService/UpdateConfiguration", runtime.WithHTTPPathPattern("/api/v1/configurations/{id}"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snippetservice.pb.SnippetService/UpdateConfiguration", runtime.WithHTTPPathPattern("/snippet-service/api/v1/configurations/{id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -865,7 +865,7 @@ func RegisterSnippetServiceHandlerClient(ctx context.Context, mux *runtime.Serve
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snippetservice.pb.SnippetService/InvokeConfiguration", runtime.WithHTTPPathPattern("/api/v1/configurations/{configuration_id}"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snippetservice.pb.SnippetService/InvokeConfiguration", runtime.WithHTTPPathPattern("/snippet-service/api/v1/configurations/{configuration_id}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -887,7 +887,7 @@ func RegisterSnippetServiceHandlerClient(ctx context.Context, mux *runtime.Serve
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snippetservice.pb.SnippetService/GetAppliedConfigurations", runtime.WithHTTPPathPattern("/api/v1/configurations/applied"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snippetservice.pb.SnippetService/GetAppliedConfigurations", runtime.WithHTTPPathPattern("/snippet-service/api/v1/configurations/applied"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -909,7 +909,7 @@ func RegisterSnippetServiceHandlerClient(ctx context.Context, mux *runtime.Serve
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snippetservice.pb.SnippetService/DeleteAppliedConfigurations", runtime.WithHTTPPathPattern("/api/v1/configurations/applied"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/snippetservice.pb.SnippetService/DeleteAppliedConfigurations", runtime.WithHTTPPathPattern("/snippet-service/api/v1/configurations/applied"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -929,27 +929,27 @@ func RegisterSnippetServiceHandlerClient(ctx context.Context, mux *runtime.Serve
 }
 
 var (
-	pattern_SnippetService_CreateCondition_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "conditions"}, ""))
+	pattern_SnippetService_CreateCondition_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"snippet-service", "api", "v1", "conditions"}, ""))
 
-	pattern_SnippetService_GetConditions_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "conditions"}, ""))
+	pattern_SnippetService_GetConditions_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"snippet-service", "api", "v1", "conditions"}, ""))
 
-	pattern_SnippetService_DeleteConditions_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "conditions"}, ""))
+	pattern_SnippetService_DeleteConditions_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"snippet-service", "api", "v1", "conditions"}, ""))
 
-	pattern_SnippetService_UpdateCondition_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"api", "v1", "conditions", "id"}, ""))
+	pattern_SnippetService_UpdateCondition_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"snippet-service", "api", "v1", "conditions", "id"}, ""))
 
-	pattern_SnippetService_CreateConfiguration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "configurations"}, ""))
+	pattern_SnippetService_CreateConfiguration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"snippet-service", "api", "v1", "configurations"}, ""))
 
-	pattern_SnippetService_GetConfigurations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "configurations"}, ""))
+	pattern_SnippetService_GetConfigurations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"snippet-service", "api", "v1", "configurations"}, ""))
 
-	pattern_SnippetService_DeleteConfigurations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "v1", "configurations"}, ""))
+	pattern_SnippetService_DeleteConfigurations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"snippet-service", "api", "v1", "configurations"}, ""))
 
-	pattern_SnippetService_UpdateConfiguration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"api", "v1", "configurations", "id"}, ""))
+	pattern_SnippetService_UpdateConfiguration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"snippet-service", "api", "v1", "configurations", "id"}, ""))
 
-	pattern_SnippetService_InvokeConfiguration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"api", "v1", "configurations", "configuration_id"}, ""))
+	pattern_SnippetService_InvokeConfiguration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"snippet-service", "api", "v1", "configurations", "configuration_id"}, ""))
 
-	pattern_SnippetService_GetAppliedConfigurations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "configurations", "applied"}, ""))
+	pattern_SnippetService_GetAppliedConfigurations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4}, []string{"snippet-service", "api", "v1", "configurations", "applied"}, ""))
 
-	pattern_SnippetService_DeleteAppliedConfigurations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "configurations", "applied"}, ""))
+	pattern_SnippetService_DeleteAppliedConfigurations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4}, []string{"snippet-service", "api", "v1", "configurations", "applied"}, ""))
 )
 
 var (

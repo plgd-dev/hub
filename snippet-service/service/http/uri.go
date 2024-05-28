@@ -4,7 +4,7 @@ const (
 	IDKey              = "id"
 	ConfigurationIDKey = "configurationId"
 
-	API string = "/api/v1"
+	API string = "/snippet-service/api/v1"
 
 	// (GRPC + HTTP) GET /api/v1/conditions -> rpc GetConditions
 	// (GRPC + HTTP) DELETE /api/v1/conditions -> rpc DeleteConditions

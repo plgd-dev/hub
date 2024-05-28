@@ -151,7 +151,7 @@ message DeleteAppliedDeviceConfigurationsResponse { int64 count = 1; }
 service SnippetService {
   rpc CreateCondition(Condition) returns (Condition) {
     option (google.api.http) = {
-      post: "/api/v1/conditions";
+      post: "/snippet-service/api/v1/conditions";
       body: "*";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
@@ -161,7 +161,7 @@ service SnippetService {
 
   rpc GetConditions(GetConditionsRequest) returns (stream Condition) {
     option (google.api.http) = {
-      get: "/api/v1/conditions";
+      get: "/snippet-service/api/v1/conditions";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Conditions" ];
@@ -170,7 +170,7 @@ service SnippetService {
 
   rpc DeleteConditions(DeleteConditionsRequest) returns (DeleteConditionsResponse) {
     option (google.api.http) = {
-      delete: "/api/v1/conditions";
+      delete: "/snippet-service/api/v1/conditions";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Conditions" ];
@@ -179,7 +179,7 @@ service SnippetService {
 
   rpc UpdateCondition(Condition) returns (Condition) {
     option (google.api.http) = {
-      put: "/api/v1/conditions/{id}";
+      put: "/snippet-service/api/v1/conditions/{id}";
       body: "*";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
@@ -189,7 +189,7 @@ service SnippetService {
 
   rpc CreateConfiguration(Configuration) returns (Configuration) {
     option (google.api.http) = {
-      post: "/api/v1/configurations";
+      post: "/snippet-service/api/v1/configurations";
       body: "*";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
@@ -199,7 +199,7 @@ service SnippetService {
 
   rpc GetConfigurations(GetConfigurationsRequest) returns (stream Configuration) {
     option (google.api.http) = {
-      get: "/api/v1/configurations";
+      get: "/snippet-service/api/v1/configurations";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Configurations" ];
@@ -208,7 +208,7 @@ service SnippetService {
 
   rpc DeleteConfigurations(DeleteConfigurationsRequest) returns (DeleteConfigurationsResponse) {
     option (google.api.http) = {
-      delete: "/api/v1/configurations";
+      delete: "/snippet-service/api/v1/configurations";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Configurations" ];
@@ -217,7 +217,7 @@ service SnippetService {
 
   rpc UpdateConfiguration(Configuration) returns (Configuration) {
     option (google.api.http) = {
-      put: "/api/v1/configurations/{id}";
+      put: "/snippet-service/api/v1/configurations/{id}";
       body: "*";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
@@ -228,7 +228,7 @@ service SnippetService {
   // streaming process of update configuration to invoker
   rpc InvokeConfiguration(InvokeConfigurationRequest) returns (stream AppliedDeviceConfiguration) {
     option (google.api.http) = {
-      post: "/api/v1/configurations/{configuration_id}";
+      post: "/snippet-service/api/v1/configurations/{configuration_id}";
       body: "*";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
@@ -238,7 +238,7 @@ service SnippetService {
  
   rpc GetAppliedConfigurations(GetAppliedDeviceConfigurationsRequest) returns (stream AppliedDeviceConfiguration) {
     option (google.api.http) = {
-      get: "/api/v1/configurations/applied";
+      get: "/snippet-service/api/v1/configurations/applied";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Configurations" ];
@@ -247,7 +247,7 @@ service SnippetService {
 
   rpc DeleteAppliedConfigurations(DeleteAppliedDeviceConfigurationsRequest) returns (DeleteAppliedDeviceConfigurationsResponse) {
     option (google.api.http) = {
-      delete: "/api/v1/configurations/applied";
+      delete: "/snippet-service/api/v1/configurations/applied";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Configurations" ];
