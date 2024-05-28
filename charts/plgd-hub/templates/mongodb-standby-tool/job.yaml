@@ -15,9 +15,6 @@ metadata:
   {{- . | toYaml | nindent 4 }}
   {{- end }}
 spec:
-  selector:
-    matchLabels:
-      {{- include "plgd-hub.mongodb-standby-tool.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       {{- with .Values.mongodb.standbyTool.podAnnotations }}
