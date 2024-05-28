@@ -15,6 +15,8 @@ metadata:
   {{- . | toYaml | nindent 4 }}
   {{- end }}
 spec:
+  backoffLimit: 1
+  suspend: true
   template:
     metadata:
       {{- with .Values.mongodb.standbyTool.podAnnotations }}
@@ -24,7 +26,6 @@ spec:
       labels:
         {{- include "plgd-hub.mongodb-standby-tool.selectorLabels" . | nindent 8 }}
     spec:
-      suspend: true
       restartPolicy: Never
       {{- with .Values.mongodb.standbyTool.securityContext }}
       securityContext:
