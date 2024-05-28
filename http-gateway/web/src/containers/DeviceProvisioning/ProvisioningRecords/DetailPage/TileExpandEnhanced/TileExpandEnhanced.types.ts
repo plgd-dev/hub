@@ -8,4 +8,6 @@ export type TileExpandEnhancedType = {
             date?: string
         }
     }
+    noSpace?: boolean
+    divWrapper?: boolean
 } & Pick<TileExpandEnhancedProps, 'information' | 'title'>

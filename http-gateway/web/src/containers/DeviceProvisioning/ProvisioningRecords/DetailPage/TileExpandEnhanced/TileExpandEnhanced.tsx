@@ -10,13 +10,29 @@ import { messages as g } from '@/containers/Global.i18n'
 import { messages as t } from '@/containers/DeviceProvisioning/ProvisioningRecords/ProvisioningRecords.i18n'
 import { getStatusFromCode } from '@/containers/DeviceProvisioning/utils'
 import DateFormat from '@/containers/PendingCommands/DateFormat'
+import ConditionalWrapper from '@shared-ui/components/Atomic/ConditionalWrapper'
 
 const TileExpandEnhanced = forwardRef<HTMLDivElement, TileExpandEnhancedType>((props, ref) => {
     const { formatMessage: _ } = useIntl()
-    const { data, information, title } = props
+    const { data, divWrapper, information, noSpace, title, ...rest } = props
+
     return (
-        <Spacer ref={ref} type='mb-2'>
+        <ConditionalWrapper
+            condition={!!ref || !noSpace || divWrapper}
+            wrapper={(children) => {
+                if (divWrapper) {
+                    return <div>{children}</div>
+                } else {
+                    return (
+                        <Spacer ref={ref} type='mb-2'>
+                            {children}
+                        </Spacer>
+                    )
+                }
+            }}
+        >
             <TileExpand
+                {...rest}
                 error={
                     data.status.coapCode === 0 && data.status.errorMessage
                         ? {
@@ -26,6 +42,7 @@ const TileExpandEnhanced = forwardRef<HTMLDivElement, TileExpandEnhancedType>((p
                           }
                         : undefined
                 }
+                hasExpand={!!information}
                 i18n={{
                     copy: _(g.copy),
                 }}
@@ -34,7 +51,7 @@ const TileExpandEnhanced = forwardRef<HTMLDivElement, TileExpandEnhancedType>((p
                 time={data.status.date ? <DateFormat value={data.status.date} /> : '-'}
                 title={title}
             />
-        </Spacer>
+        </ConditionalWrapper>
     )
 })
 

@@ -55,7 +55,6 @@ const ProvisioningRecordsListPage = () => {
             headlineStatusTag={<StatusTag variant={isOnline ? 'success' : 'error'}>{isOnline ? _(g.online) : _(g.offline)}</StatusTag>}
             loading={loading}
             title={data?.enrollmentGroupData?.name || '-'}
-            xPadding={false}
         >
             <Loadable condition={!!data && !loading}>
                 <DetailPage currentTab={tab} onItemClick={handleTabChange} provisioningRecord={data} />
