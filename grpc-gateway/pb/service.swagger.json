@@ -2287,6 +2287,10 @@
         "deviceProvisioningService": {
           "type": "string",
           "title": "Address to device provisioning service HTTP API in format https://host:port"
+        },
+        "snippetService": {
+          "type": "string",
+          "title": "Address to snippet service HTTP API in format https://host:port"
         }
       },
       "title": "UI configuration"

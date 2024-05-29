@@ -1047,6 +1047,7 @@ UI configuration
 | ----- | ---- | ----- | ----------- |
 | visibility | [UIVisibility](#grpcgateway-pb-UIVisibility) |  |  |
 | device_provisioning_service | [string](#string) |  | Address to device provisioning service HTTP API in format https://host:port |
+| snippet_service | [string](#string) |  | Address to snippet service HTTP API in format https://host:port |
 
 
 
