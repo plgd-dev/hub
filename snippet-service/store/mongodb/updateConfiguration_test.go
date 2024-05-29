@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestUpdateConfiguration(t *testing.T) {
+func TestStoreUpdateConfiguration(t *testing.T) {
 	s, cleanUpStore := test.NewMongoStore(t)
 	defer cleanUpStore()
 
@@ -39,6 +39,7 @@ func TestUpdateConfiguration(t *testing.T) {
 		name    string
 		args    args
 		wantErr bool
+		want    func(*testing.T, *pb.Configuration)
 	}{
 		{
 			name: "non-matching owner",
@@ -87,17 +88,21 @@ func TestUpdateConfiguration(t *testing.T) {
 					},
 				},
 			},
+			want: func(*testing.T, *pb.Configuration) {
+				// TODO: check the updated configuration
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := s.UpdateConfiguration(ctx, tt.args.update)
+			conf, err := s.UpdateConfiguration(ctx, tt.args.update)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
 			}
 			require.NoError(t, err)
+			tt.want(t, conf)
 		})
 	}
 }

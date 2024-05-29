@@ -23,7 +23,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func TestRequestHandlerGetConfigurations(t *testing.T) {
+func TestRequestHandlerDeleteConditions(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
@@ -42,20 +42,17 @@ func TestRequestHandlerGetConfigurations(t *testing.T) {
 		_ = conn.Close()
 	}()
 	c := pb.NewSnippetServiceClient(conn)
-	confs := test.AddConfigurations(ctx, t, snippetCfg.APIs.GRPC.Authorization.OwnerClaim, c, 30, nil)
+	_ = test.AddConfigurations(ctx, t, snippetCfg.APIs.GRPC.Authorization.OwnerClaim, c, 30, nil)
 
 	type args struct {
-		token   string
-		uri     string
-		id      string
-		version string
+		token string
 	}
 	tests := []struct {
 		name         string
 		args         args
 		wantHTTPCode int
 		wantErr      bool
-		want         func(*testing.T, []*pb.Configuration)
+		want         func(*testing.T)
 	}{
 		{
 			name: "missing owner",
@@ -63,7 +60,6 @@ func TestRequestHandlerGetConfigurations(t *testing.T) {
 				token: oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTest, map[string]interface{}{
 					snippetCfg.APIs.GRPC.Authorization.OwnerClaim: nil,
 				}),
-				uri: test.HTTPURI(snippetHttp.Configurations),
 			},
 			wantHTTPCode: http.StatusForbidden,
 			wantErr:      true,
@@ -74,60 +70,42 @@ func TestRequestHandlerGetConfigurations(t *testing.T) {
 				token: oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTest, map[string]interface{}{
 					snippetCfg.APIs.GRPC.Authorization.OwnerClaim: test.Owner(1),
 				}),
-				uri: test.HTTPURI(snippetHttp.Configurations),
 			},
 			wantHTTPCode: http.StatusOK,
-			want: func(t *testing.T, values []*pb.Configuration) {
-				require.NotEmpty(t, values)
-				for _, v := range values {
-					conf, ok := confs[v.GetId()]
-					require.True(t, ok)
-					test.ConfigurationContains(t, conf, v)
+			want: func(t *testing.T) {
+				getClient, errG := c.GetConditions(ctx, &pb.GetConditionsRequest{})
+				require.NoError(t, errG)
+				defer func() {
+					_ = getClient.CloseSend()
+				}()
+				for {
+					cond, errR := getClient.Recv()
+					if errors.Is(errR, io.EOF) {
+						break
+					}
+					require.FailNow(t, "unexpected condition", "condition: %v", cond)
 				}
 			},
 		},
-		// {
-		// 	name: "owner0/id0?version=all",
-		// 	args: args{
-		// 		token: oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTest, map[string]interface{}{
-		// 			snippetCfg.APIs.GRPC.Authorization.OwnerClaim: test.Owner(0),
-		// 		}),
-		// 		uri:     test.HTTPURI(snippetHttp.AliasConfigurations),
-		// 		id:      test.ConfigurationID(0),
-		// 		version: "all",
-		// 	},
-		// 	wantHTTPCode: http.StatusOK,
-		// 	want: func(t *testing.T, values []*pb.Configuration) {
-		// 		require.NotEmpty(t, values)
-		// 	},
-		// },
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rb := httpTest.NewRequest(http.MethodGet, tt.args.uri, nil).AuthToken(tt.args.token)
-			rb = rb.Accept(pkgHttp.ApplicationProtoJsonContentType).ContentType(message.AppCBOR.String()).ID(tt.args.id).Version(tt.args.version)
+			rb := httpTest.NewRequest(http.MethodDelete, test.HTTPURI(snippetHttp.Conditions), nil).AuthToken(tt.args.token)
+			rb = rb.Accept(pkgHttp.ApplicationProtoJsonContentType).ContentType(message.AppCBOR.String())
 			resp := httpTest.Do(t, rb.Build(ctx, t))
 			defer func() {
 				_ = resp.Body.Close()
 			}()
 			require.Equal(t, tt.wantHTTPCode, resp.StatusCode)
 
-			values := make([]*pb.Configuration, 0, 1)
-			for {
-				var value pb.Configuration
-				err = httpTest.Unmarshal(resp.StatusCode, resp.Body, &value)
-				if errors.Is(err, io.EOF) {
-					break
-				}
-				if tt.wantErr {
-					require.Error(t, err)
-					return
-				}
-				require.NoError(t, err)
-				values = append(values, &value)
+			var deleteResp pb.DeleteConditionsResponse
+			err = httpTest.Unmarshal(resp.StatusCode, resp.Body, &deleteResp)
+			if tt.wantErr {
+				require.Error(t, err)
+				return
 			}
-			tt.want(t, values)
+			require.NoError(t, err)
 		})
 	}
 }

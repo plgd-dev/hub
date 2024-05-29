@@ -132,7 +132,7 @@
         "parameters": [
           {
             "name": "id",
-            "description": "Condition ID\n\n@gotags: bson:\"id\"",
+            "description": "Condition ID",
             "in": "path",
             "required": true,
             "type": "string"
@@ -466,19 +466,18 @@
         "version": {
           "type": "string",
           "format": "uint64",
-          "title": "@gotags: bson:\"version\""
+          "title": "Condition version"
         },
         "name": {
           "type": "string",
-          "title": "@gotags: bson:\"name,omitempty\""
+          "title": "User-friendly condition name"
         },
         "enabled": {
           "type": "boolean",
-          "title": "@gotags: bson:\"enabled,omitempty\""
+          "title": "Condition is enabled/disabled"
         },
         "configurationId": {
           "type": "string",
-          "description": "@gotags: bson:\"configurationId\"",
           "title": "ID of the configuration to be applied when the condition is satisfied"
         },
         "deviceIdFilter": {
@@ -486,42 +485,35 @@
           "items": {
             "type": "string"
           },
-          "description": "@gotags: bson:\"deviceIdFilter,omitempty\"",
           "title": "list of device IDs to which the condition applies"
         },
         "resourceTypeFilter": {
           "type": "array",
           "items": {
             "type": "string"
-          },
-          "title": "@gotags: bson:\"resourceTypeFilter,omitempty\""
+          }
         },
         "resourceHrefFilter": {
           "type": "array",
           "items": {
             "type": "string"
           },
-          "description": "@gotags: bson:\"resourceHrefFilter,omitempty\"",
           "title": "list of resource hrefs to which the condition applies"
         },
         "jqExpressionFilter": {
-          "type": "string",
-          "title": "@gotags: bson:\"jqExpressionFilter,omitempty\""
+          "type": "string"
         },
         "apiAccessToken": {
           "type": "string",
-          "description": "@gotags: bson:\"apiAccessToken,omitempty\"",
           "title": "Token used to update resources in the configuration"
         },
         "owner": {
           "type": "string",
-          "description": "@gotags: bson:\"owner\"",
           "title": "Condition owner"
         },
         "timestamp": {
           "type": "string",
           "format": "int64",
-          "description": "@gotags: bson:\"timestamp\"",
           "title": "Unix timestamp in ns when the condition has been created/updated"
         }
       },
@@ -537,7 +529,6 @@
         },
         "name": {
           "type": "string",
-          "description": "@gotags: bson:\"name,omitempty\"",
           "title": "User-friendly configuration name"
         },
         "resources": {
@@ -555,7 +546,6 @@
         "timestamp": {
           "type": "string",
           "format": "int64",
-          "description": "@gotags: bson:\"timestamp\"",
           "title": "Unix timestamp in ns when the configuration has been created/updated"
         }
       }
@@ -656,25 +646,23 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "@gotags: bson:\"id\"",
           "title": "Condition ID"
         },
         "version": {
           "type": "string",
           "format": "uint64",
-          "title": "@gotags: bson:\"version\""
+          "title": "Condition version"
         },
         "name": {
           "type": "string",
-          "title": "@gotags: bson:\"name,omitempty\""
+          "title": "User-friendly condition name"
         },
         "enabled": {
           "type": "boolean",
-          "title": "@gotags: bson:\"enabled,omitempty\""
+          "title": "Condition is enabled/disabled"
         },
         "configurationId": {
           "type": "string",
-          "description": "@gotags: bson:\"configurationId\"",
           "title": "ID of the configuration to be applied when the condition is satisfied"
         },
         "deviceIdFilter": {
@@ -682,42 +670,35 @@
           "items": {
             "type": "string"
           },
-          "description": "@gotags: bson:\"deviceIdFilter,omitempty\"",
           "title": "list of device IDs to which the condition applies"
         },
         "resourceTypeFilter": {
           "type": "array",
           "items": {
             "type": "string"
-          },
-          "title": "@gotags: bson:\"resourceTypeFilter,omitempty\""
+          }
         },
         "resourceHrefFilter": {
           "type": "array",
           "items": {
             "type": "string"
           },
-          "description": "@gotags: bson:\"resourceHrefFilter,omitempty\"",
           "title": "list of resource hrefs to which the condition applies"
         },
         "jqExpressionFilter": {
-          "type": "string",
-          "title": "@gotags: bson:\"jqExpressionFilter,omitempty\""
+          "type": "string"
         },
         "apiAccessToken": {
           "type": "string",
-          "description": "@gotags: bson:\"apiAccessToken,omitempty\"",
           "title": "Token used to update resources in the configuration"
         },
         "owner": {
           "type": "string",
-          "description": "@gotags: bson:\"owner\"",
           "title": "Condition owner"
         },
         "timestamp": {
           "type": "string",
           "format": "int64",
-          "description": "@gotags: bson:\"timestamp\"",
           "title": "Unix timestamp in ns when the condition has been created/updated"
         }
       },
@@ -737,7 +718,6 @@
         },
         "name": {
           "type": "string",
-          "description": "@gotags: bson:\"name,omitempty\"",
           "title": "User-friendly configuration name"
         },
         "resources": {
@@ -755,7 +735,6 @@
         "timestamp": {
           "type": "string",
           "format": "int64",
-          "description": "@gotags: bson:\"timestamp\"",
           "title": "Unix timestamp in ns when the configuration has been created/updated"
         }
       }

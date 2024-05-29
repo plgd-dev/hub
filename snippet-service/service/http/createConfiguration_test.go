@@ -50,9 +50,8 @@ func TestRequestHandlerCreateConfiguration(t *testing.T) {
 	confID1 := uuid.NewString()
 
 	type args struct {
-		accept string
-		conf   *snippetPb.Configuration
-		token  string
+		conf  *snippetPb.Configuration
+		token string
 	}
 	tests := []struct {
 		name         string
@@ -63,7 +62,6 @@ func TestRequestHandlerCreateConfiguration(t *testing.T) {
 		{
 			name: "create",
 			args: args{
-				accept: pkgHttp.ApplicationProtoJsonContentType,
 				conf: &snippetPb.Configuration{
 					Id:   confID1,
 					Name: "1st",
@@ -76,11 +74,10 @@ func TestRequestHandlerCreateConfiguration(t *testing.T) {
 			wantHTTPCode: http.StatusOK,
 		},
 		{
-			name: "create (with owner)",
+			name: "create - with owner",
 			args: args{
-				accept: pkgHttp.ApplicationProtoJsonContentType,
 				conf: &snippetPb.Configuration{
-					Id:    uuid.New().String(),
+					Id:    uuid.NewString(),
 					Owner: oauthService.DeviceUserID,
 					Name:  "2nd",
 					Resources: []*snippetPb.Configuration_Resource{
@@ -92,15 +89,27 @@ func TestRequestHandlerCreateConfiguration(t *testing.T) {
 			wantHTTPCode: http.StatusOK,
 		},
 		{
-			name: "non-matching owner",
+			name: "create - generate ID",
 			args: args{
-				accept: pkgHttp.ApplicationProtoJsonContentType,
 				conf: &snippetPb.Configuration{
-					Id:    uuid.New().String(),
-					Owner: "non-matching-owner",
-					Name:  "3rd",
+					Name: "3rd",
 					Resources: []*snippetPb.Configuration_Resource{
 						makeTestResource(t, "/test/3", 43),
+					},
+				},
+				token: token,
+			},
+			wantHTTPCode: http.StatusOK,
+		},
+		{
+			name: "non-matching owner",
+			args: args{
+				conf: &snippetPb.Configuration{
+					Id:    uuid.NewString(),
+					Owner: "non-matching-owner",
+					Name:  "4th",
+					Resources: []*snippetPb.Configuration_Resource{
+						makeTestResource(t, "/test/4", 44),
 					},
 				},
 				token: token,
@@ -109,24 +118,8 @@ func TestRequestHandlerCreateConfiguration(t *testing.T) {
 			wantErr:      true,
 		},
 		{
-			name: "missing id",
-			args: args{
-				accept: pkgHttp.ApplicationProtoJsonContentType,
-				conf: &snippetPb.Configuration{
-					Name: "4th",
-					Resources: []*snippetPb.Configuration_Resource{
-						makeTestResource(t, "/test/4", 44),
-					},
-				},
-				token: token,
-			},
-			wantHTTPCode: http.StatusBadRequest,
-			wantErr:      true,
-		},
-		{
 			name: "duplicit ID",
 			args: args{
-				accept: pkgHttp.ApplicationProtoJsonContentType,
 				conf: &snippetPb.Configuration{
 					Id:   confID1,
 					Name: "5th",
@@ -142,9 +135,8 @@ func TestRequestHandlerCreateConfiguration(t *testing.T) {
 		{
 			name: "missing resources",
 			args: args{
-				accept: pkgHttp.ApplicationProtoJsonContentType,
 				conf: &snippetPb.Configuration{
-					Id:   uuid.New().String(),
+					Id:   uuid.NewString(),
 					Name: "6th",
 				},
 				token: token,
@@ -155,9 +147,8 @@ func TestRequestHandlerCreateConfiguration(t *testing.T) {
 		{
 			name: "missing owner in token",
 			args: args{
-				accept: pkgHttp.ApplicationProtoJsonContentType,
 				conf: &snippetPb.Configuration{
-					Id:   uuid.New().String(),
+					Id:   uuid.NewString(),
 					Name: "7th",
 					Resources: []*snippetPb.Configuration_Resource{
 						makeTestResource(t, "/test/6", 46),
@@ -181,7 +172,7 @@ func TestRequestHandlerCreateConfiguration(t *testing.T) {
 			require.NoError(t, err)
 
 			rb := httpTest.NewRequest(http.MethodPost, snippetTest.HTTPURI(snippetHttp.Configurations), bytes.NewReader(data)).AuthToken(tt.args.token)
-			rb.Accept(tt.args.accept).ContentType(message.AppJSON.String())
+			rb.Accept(pkgHttp.ApplicationProtoJsonContentType).ContentType(message.AppJSON.String())
 			resp := httpTest.Do(t, rb.Build(ctx, t))
 			defer func() {
 				_ = resp.Body.Close()
@@ -198,7 +189,10 @@ func TestRequestHandlerCreateConfiguration(t *testing.T) {
 
 			want := tt.args.conf
 			want.Owner = oauthService.DeviceUserID
-			snippetTest.CmpConfiguration(t, want, &got)
+			if tt.args.conf.GetId() == "" {
+				want.Id = got.GetId()
+			}
+			snippetTest.CmpConfiguration(t, want, &got, true)
 		})
 	}
 }

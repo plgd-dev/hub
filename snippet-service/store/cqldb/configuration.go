@@ -15,7 +15,7 @@ func (s *Store) DeleteConfigurations(context.Context, string, *pb.DeleteConfigur
 	return 0, store.ErrNotSupported
 }
 
-func (s *Store) GetConfigurations(context.Context, string, *pb.GetConfigurationsRequest, store.GetConfigurationsFunc) error {
+func (s *Store) GetConfigurations(context.Context, string, *pb.GetConfigurationsRequest, store.ProcessConfigurations) error {
 	return store.ErrNotSupported
 }
 

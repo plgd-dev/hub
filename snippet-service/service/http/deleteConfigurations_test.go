@@ -42,11 +42,10 @@ func TestRequestHandlerDeleteConfigurations(t *testing.T) {
 		_ = conn.Close()
 	}()
 	c := pb.NewSnippetServiceClient(conn)
-	/*confs :*/ _ = test.AddConfigurations(ctx, t, snippetCfg.APIs.GRPC.Authorization.OwnerClaim, c, 30, nil)
+	_ = test.AddConfigurations(ctx, t, snippetCfg.APIs.GRPC.Authorization.OwnerClaim, c, 30, nil)
 
 	type args struct {
-		accept string
-		token  string
+		token string
 	}
 	tests := []struct {
 		name         string
@@ -58,7 +57,6 @@ func TestRequestHandlerDeleteConfigurations(t *testing.T) {
 		{
 			name: "missing owner",
 			args: args{
-				accept: pkgHttp.ApplicationProtoJsonContentType,
 				token: oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTest, map[string]interface{}{
 					snippetCfg.APIs.GRPC.Authorization.OwnerClaim: nil,
 				}),
@@ -69,9 +67,8 @@ func TestRequestHandlerDeleteConfigurations(t *testing.T) {
 		{
 			name: "owner1/all",
 			args: args{
-				accept: pkgHttp.ApplicationProtoJsonContentType,
 				token: oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTest, map[string]interface{}{
-					snippetCfg.APIs.GRPC.Authorization.OwnerClaim: test.ConfigurationOwner(1),
+					snippetCfg.APIs.GRPC.Authorization.OwnerClaim: test.Owner(1),
 				}),
 			},
 			wantHTTPCode: http.StatusOK,
@@ -86,8 +83,7 @@ func TestRequestHandlerDeleteConfigurations(t *testing.T) {
 					if errors.Is(errR, io.EOF) {
 						break
 					}
-					require.NoError(t, errR)
-					require.Equal(t, test.ConfigurationOwner(1), conf.GetOwner())
+					require.FailNow(t, "unexpected configuration", "configuration: %v", conf)
 				}
 			},
 		},
@@ -96,7 +92,7 @@ func TestRequestHandlerDeleteConfigurations(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rb := httpTest.NewRequest(http.MethodDelete, test.HTTPURI(snippetHttp.Configurations), nil).AuthToken(tt.args.token)
-			rb = rb.Accept(tt.args.accept).ContentType(message.AppCBOR.String())
+			rb = rb.Accept(pkgHttp.ApplicationProtoJsonContentType).ContentType(message.AppCBOR.String())
 			resp := httpTest.Do(t, rb.Build(ctx, t))
 			defer func() {
 				_ = resp.Body.Close()

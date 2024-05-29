@@ -58,10 +58,9 @@ func TestRequestHandlerUpdateConfiguration(t *testing.T) {
 	require.NoError(t, err)
 
 	type args struct {
-		accept string
-		id     string
-		conf   *snippetPb.Configuration
-		token  string
+		id    string
+		conf  *snippetPb.Configuration
+		token string
 	}
 	tests := []struct {
 		name         string
@@ -72,8 +71,7 @@ func TestRequestHandlerUpdateConfiguration(t *testing.T) {
 		{
 			name: "update",
 			args: args{
-				accept: pkgHttp.ApplicationProtoJsonContentType,
-				id:     conf.GetId(),
+				id: conf.GetId(),
 				conf: &snippetPb.Configuration{
 					Version: 1,
 					Resources: []*snippetPb.Configuration_Resource{
@@ -88,8 +86,7 @@ func TestRequestHandlerUpdateConfiguration(t *testing.T) {
 		{
 			name: "update (with owner)",
 			args: args{
-				accept: pkgHttp.ApplicationProtoJsonContentType,
-				id:     conf.GetId(),
+				id: conf.GetId(),
 				conf: &snippetPb.Configuration{
 					Version: 2,
 					Owner:   oauthService.DeviceUserID,
@@ -104,8 +101,7 @@ func TestRequestHandlerUpdateConfiguration(t *testing.T) {
 		{
 			name: "update (with overwritten ID)",
 			args: args{
-				accept: pkgHttp.ApplicationProtoJsonContentType,
-				id:     conf.GetId(),
+				id: conf.GetId(),
 				conf: &snippetPb.Configuration{
 					Id:      uuid.NewString(), // this ID will get overwritten by the ID in the query
 					Version: 3,
@@ -121,8 +117,7 @@ func TestRequestHandlerUpdateConfiguration(t *testing.T) {
 		{
 			name: "invalid ID",
 			args: args{
-				accept: pkgHttp.ApplicationProtoJsonContentType,
-				id:     "invalid",
+				id: "invalid",
 				conf: &snippetPb.Configuration{
 					Version: 42,
 					Resources: []*snippetPb.Configuration_Resource{
@@ -137,8 +132,7 @@ func TestRequestHandlerUpdateConfiguration(t *testing.T) {
 		{
 			name: "duplicit version",
 			args: args{
-				accept: pkgHttp.ApplicationProtoJsonContentType,
-				id:     conf.GetId(),
+				id: conf.GetId(),
 				conf: &snippetPb.Configuration{
 					Version: 1,
 					Resources: []*snippetPb.Configuration_Resource{
@@ -153,8 +147,7 @@ func TestRequestHandlerUpdateConfiguration(t *testing.T) {
 		{
 			name: "missing resources",
 			args: args{
-				accept: pkgHttp.ApplicationProtoJsonContentType,
-				id:     conf.GetId(),
+				id: conf.GetId(),
 				conf: &snippetPb.Configuration{
 					Version: 42,
 				},
@@ -174,7 +167,7 @@ func TestRequestHandlerUpdateConfiguration(t *testing.T) {
 			require.NoError(t, err)
 
 			rb := httpTest.NewRequest(http.MethodPut, snippetTest.HTTPURI(snippetHttp.AliasConfigurations), bytes.NewReader(data)).AuthToken(tt.args.token)
-			rb.Accept(tt.args.accept).ContentType(message.AppJSON.String()).ID(tt.args.id)
+			rb.Accept(pkgHttp.ApplicationProtoJsonContentType).ContentType(message.AppJSON.String()).ID(tt.args.id)
 			resp := httpTest.Do(t, rb.Build(ctx, t))
 			defer func() {
 				_ = resp.Body.Close()
@@ -192,7 +185,7 @@ func TestRequestHandlerUpdateConfiguration(t *testing.T) {
 			want := tt.args.conf
 			want.Id = tt.args.id
 			want.Owner = oauthService.DeviceUserID
-			snippetTest.CmpConfiguration(t, want, &got)
+			snippetTest.CmpConfiguration(t, want, &got, true)
 		})
 	}
 }

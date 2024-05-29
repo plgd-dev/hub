@@ -21,13 +21,13 @@ type Store struct {
 }
 
 const (
-	// conditionsCol     = "conditions"
+	conditionsCol     = "conditions"
 	configurationsCol = "configurations"
 )
 
-var configurationIdVersionUniqueIndex = mongo.IndexModel{
+var idVersionUniqueIndex = mongo.IndexModel{
 	Keys: bson.D{
-		{Key: "_id", Value: 1},
+		{Key: store.IDKey, Value: 1},
 		{Key: store.VersionsKey + "." + store.VersionKey, Value: 1},
 	},
 	Options: options.Index().SetUnique(true),
@@ -40,8 +40,8 @@ func New(ctx context.Context, cfg *Config, fileWatcher *fsnotify.Watcher, logger
 	}
 
 	m, err := pkgMongo.NewStoreWithCollections(ctx, &cfg.Mongo, certManager.GetTLSConfig(), tracerProvider, map[string][]mongo.IndexModel{
-		// conditionsCol:     {deviceIDFilterAndOwnerIndex},
-		configurationsCol: {configurationIdVersionUniqueIndex},
+		conditionsCol:     {idVersionUniqueIndex},
+		configurationsCol: {idVersionUniqueIndex},
 	})
 	if err != nil {
 		certManager.Close()
@@ -55,7 +55,7 @@ func New(ctx context.Context, cfg *Config, fileWatcher *fsnotify.Watcher, logger
 
 func (s *Store) clearDatabases(ctx context.Context) error {
 	var errors *multierror.Error
-	collections := []string{configurationsCol}
+	collections := []string{conditionsCol, configurationsCol}
 	for _, collection := range collections {
 		err := s.Collection(collection).Drop(ctx)
 		errors = multierror.Append(errors, err)

@@ -23,8 +23,8 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func TestRequestHandlerGetConfigurations(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+func TestRequestHandlerGetConditions(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT*100)
 	defer cancel()
 
 	shutDown := service.SetUpServices(context.Background(), t, service.SetUpServicesOAuth)
@@ -42,12 +42,10 @@ func TestRequestHandlerGetConfigurations(t *testing.T) {
 		_ = conn.Close()
 	}()
 	c := pb.NewSnippetServiceClient(conn)
-	confs := test.AddConfigurations(ctx, t, snippetCfg.APIs.GRPC.Authorization.OwnerClaim, c, 30, nil)
+	conds := test.AddConditions(ctx, t, snippetCfg.APIs.GRPC.Authorization.OwnerClaim, c, 30, nil)
 
 	type args struct {
 		token   string
-		uri     string
-		id      string
 		version string
 	}
 	tests := []struct {
@@ -55,7 +53,7 @@ func TestRequestHandlerGetConfigurations(t *testing.T) {
 		args         args
 		wantHTTPCode int
 		wantErr      bool
-		want         func(*testing.T, []*pb.Configuration)
+		want         func(*testing.T, []*pb.Condition)
 	}{
 		{
 			name: "missing owner",
@@ -63,7 +61,6 @@ func TestRequestHandlerGetConfigurations(t *testing.T) {
 				token: oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTest, map[string]interface{}{
 					snippetCfg.APIs.GRPC.Authorization.OwnerClaim: nil,
 				}),
-				uri: test.HTTPURI(snippetHttp.Configurations),
 			},
 			wantHTTPCode: http.StatusForbidden,
 			wantErr:      true,
@@ -74,48 +71,32 @@ func TestRequestHandlerGetConfigurations(t *testing.T) {
 				token: oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTest, map[string]interface{}{
 					snippetCfg.APIs.GRPC.Authorization.OwnerClaim: test.Owner(1),
 				}),
-				uri: test.HTTPURI(snippetHttp.Configurations),
 			},
 			wantHTTPCode: http.StatusOK,
-			want: func(t *testing.T, values []*pb.Configuration) {
+			want: func(t *testing.T, values []*pb.Condition) {
 				require.NotEmpty(t, values)
 				for _, v := range values {
-					conf, ok := confs[v.GetId()]
+					cond, ok := conds[v.GetId()]
 					require.True(t, ok)
-					test.ConfigurationContains(t, conf, v)
+					test.ConditionContains(t, cond, v)
 				}
 			},
 		},
-		// {
-		// 	name: "owner0/id0?version=all",
-		// 	args: args{
-		// 		token: oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTest, map[string]interface{}{
-		// 			snippetCfg.APIs.GRPC.Authorization.OwnerClaim: test.Owner(0),
-		// 		}),
-		// 		uri:     test.HTTPURI(snippetHttp.AliasConfigurations),
-		// 		id:      test.ConfigurationID(0),
-		// 		version: "all",
-		// 	},
-		// 	wantHTTPCode: http.StatusOK,
-		// 	want: func(t *testing.T, values []*pb.Configuration) {
-		// 		require.NotEmpty(t, values)
-		// 	},
-		// },
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rb := httpTest.NewRequest(http.MethodGet, tt.args.uri, nil).AuthToken(tt.args.token)
-			rb = rb.Accept(pkgHttp.ApplicationProtoJsonContentType).ContentType(message.AppCBOR.String()).ID(tt.args.id).Version(tt.args.version)
+			rb := httpTest.NewRequest(http.MethodGet, test.HTTPURI(snippetHttp.Conditions), nil).AuthToken(tt.args.token)
+			rb = rb.Accept(pkgHttp.ApplicationProtoJsonContentType).ContentType(message.AppCBOR.String()).Version(tt.args.version)
 			resp := httpTest.Do(t, rb.Build(ctx, t))
 			defer func() {
 				_ = resp.Body.Close()
 			}()
 			require.Equal(t, tt.wantHTTPCode, resp.StatusCode)
 
-			values := make([]*pb.Configuration, 0, 1)
+			values := make([]*pb.Condition, 0, 1)
 			for {
-				var value pb.Configuration
+				var value pb.Condition
 				err = httpTest.Unmarshal(resp.StatusCode, resp.Body, &value)
 				if errors.Is(err, io.EOF) {
 					break

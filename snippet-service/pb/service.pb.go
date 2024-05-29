@@ -194,24 +194,27 @@ type Condition struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Condition ID
-	Id      string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" bson:"id"`             
-	Version uint64 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty" bson:"version"`  
-	Name    string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" bson:"name,omitempty"`         
-	Enabled bool   `protobuf:"varint,4,opt,name=enabled,proto3" json:"enabled,omitempty" bson:"enabled,omitempty"`  
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Condition version
+	Version uint64 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
+	// User-friendly condition name
+	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	// Condition is enabled/disabled
+	Enabled bool `protobuf:"varint,4,opt,name=enabled,proto3" json:"enabled,omitempty"`
 	// ID of the configuration to be applied when the condition is satisfied
-	ConfigurationId string `protobuf:"bytes,5,opt,name=configuration_id,json=configurationId,proto3" json:"configuration_id,omitempty" bson:"configurationId"`  
+	ConfigurationId string `protobuf:"bytes,5,opt,name=configuration_id,json=configurationId,proto3" json:"configuration_id,omitempty"`
 	// list of device IDs to which the condition applies
-	DeviceIdFilter     []string `protobuf:"bytes,6,rep,name=device_id_filter,json=deviceIdFilter,proto3" json:"device_id_filter,omitempty" bson:"deviceIdFilter,omitempty"`              
-	ResourceTypeFilter []string `protobuf:"bytes,7,rep,name=resource_type_filter,json=resourceTypeFilter,proto3" json:"resource_type_filter,omitempty" bson:"resourceTypeFilter,omitempty"`  
+	DeviceIdFilter     []string `protobuf:"bytes,6,rep,name=device_id_filter,json=deviceIdFilter,proto3" json:"device_id_filter,omitempty"`
+	ResourceTypeFilter []string `protobuf:"bytes,7,rep,name=resource_type_filter,json=resourceTypeFilter,proto3" json:"resource_type_filter,omitempty"`
 	// list of resource hrefs to which the condition applies
-	ResourceHrefFilter []string `protobuf:"bytes,8,rep,name=resource_href_filter,json=resourceHrefFilter,proto3" json:"resource_href_filter,omitempty" bson:"resourceHrefFilter,omitempty"`  
-	JqExpressionFilter string   `protobuf:"bytes,9,opt,name=jq_expression_filter,json=jqExpressionFilter,proto3" json:"jq_expression_filter,omitempty" bson:"jqExpressionFilter,omitempty"`  
+	ResourceHrefFilter []string `protobuf:"bytes,8,rep,name=resource_href_filter,json=resourceHrefFilter,proto3" json:"resource_href_filter,omitempty"`
+	JqExpressionFilter string   `protobuf:"bytes,9,opt,name=jq_expression_filter,json=jqExpressionFilter,proto3" json:"jq_expression_filter,omitempty"`
 	// Token used to update resources in the configuration
-	ApiAccessToken string `protobuf:"bytes,10,opt,name=api_access_token,json=apiAccessToken,proto3" json:"api_access_token,omitempty" bson:"apiAccessToken,omitempty"`  
+	ApiAccessToken string `protobuf:"bytes,10,opt,name=api_access_token,json=apiAccessToken,proto3" json:"api_access_token,omitempty"`
 	// Condition owner
-	Owner string `protobuf:"bytes,11,opt,name=owner,proto3" json:"owner,omitempty" bson:"owner"`  
+	Owner string `protobuf:"bytes,11,opt,name=owner,proto3" json:"owner,omitempty"`
 	// Unix timestamp in ns when the condition has been created/updated
-	Timestamp int64 `protobuf:"varint,12,opt,name=timestamp,proto3" json:"timestamp,omitempty" bson:"timestamp"`  
+	Timestamp int64 `protobuf:"varint,12,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 }
 
 func (x *Condition) Reset() {
@@ -481,13 +484,13 @@ type Configuration struct {
 	// Configuration version
 	Version uint64 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
 	// User-friendly configuration name
-	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty" bson:"name,omitempty"`  
+	Name string `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
 	// List of resource updates to be applied
 	Resources []*Configuration_Resource `protobuf:"bytes,4,rep,name=resources,proto3" json:"resources,omitempty"`
 	// Configuration owner
 	Owner string `protobuf:"bytes,5,opt,name=owner,proto3" json:"owner,omitempty"`
 	// Unix timestamp in ns when the configuration has been created/updated
-	Timestamp int64 `protobuf:"varint,6,opt,name=timestamp,proto3" json:"timestamp,omitempty" bson:"timestamp"`  
+	Timestamp int64 `protobuf:"varint,6,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
 }
 
 func (x *Configuration) Reset() {
@@ -733,7 +736,7 @@ type AppliedDeviceConfiguration struct {
 	Resources  []*AppliedDeviceConfiguration_Resource  `protobuf:"bytes,6,rep,name=resources,proto3" json:"resources,omitempty"` //TODO naming
 	Owner      string                                  `protobuf:"bytes,7,opt,name=owner,proto3" json:"owner,omitempty"`
 	// Unix timestamp in ns when the applied device configuration has been created/updated
-	Timestamp int64 `protobuf:"varint,8,opt,name=timestamp,proto3" json:"timestamp,omitempty" bson:"timestamp"`  
+	Timestamp int64 `protobuf:"varint,8,opt,name=timestamp,proto3" json:"timestamp,omitempty" bson:"timestamp"`
 }
 
 func (x *AppliedDeviceConfiguration) Reset() {

@@ -1,5 +1,17 @@
 package commands
 
+func (c *Content) Clone() *Content {
+	if c == nil {
+		return nil
+	}
+
+	return &Content{
+		Data:              c.GetData(),
+		ContentType:       c.GetContentType(),
+		CoapContentFormat: c.GetCoapContentFormat(),
+	}
+}
+
 func (e *EndpointInformation) Clone() *EndpointInformation {
 	if e == nil {
 		return nil

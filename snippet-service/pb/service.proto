@@ -50,24 +50,27 @@ message IDFilter {
 
 message Condition { // driven by resource change event
   // Condition ID
-  string id = 1; // @gotags: bson:"id"
-  uint64 version = 2; // @gotags: bson:"version"
-  string name = 3; // @gotags: bson:"name,omitempty"
-  bool enabled = 4; // @gotags: bson:"enabled,omitempty"
+  string id = 1;
+  // Condition version
+  uint64 version = 2;
+  // User-friendly condition name
+  string name = 3;
+  // Condition is enabled/disabled
+  bool enabled = 4;
   // ID of the configuration to be applied when the condition is satisfied
-  string configuration_id = 5; // @gotags: bson:"configurationId"
+  string configuration_id = 5;
   // list of device IDs to which the condition applies
-  repeated string device_id_filter = 6; // @gotags: bson:"deviceIdFilter,omitempty"
-  repeated string resource_type_filter = 7; // @gotags: bson:"resourceTypeFilter,omitempty"
+  repeated string device_id_filter = 6;
+  repeated string resource_type_filter = 7;
   // list of resource hrefs to which the condition applies
-  repeated string resource_href_filter = 8; // @gotags: bson:"resourceHrefFilter,omitempty"
-  string jq_expression_filter = 9; // @gotags: bson:"jqExpressionFilter,omitempty"
+  repeated string resource_href_filter = 8;
+  string jq_expression_filter = 9;
   // Token used to update resources in the configuration
-  string api_access_token = 10; // @gotags: bson:"apiAccessToken,omitempty"
+  string api_access_token = 10;
   // Condition owner
-  string owner = 11; // @gotags: bson:"owner"
+  string owner = 11;
   // Unix timestamp in ns when the condition has been created/updated
-  int64 timestamp = 12; // @gotags: bson:"timestamp"
+  int64 timestamp = 12;
 }
 
 message GetConditionsRequest { repeated IDFilter id_filter = 1; }
@@ -88,13 +91,13 @@ message Configuration {
   // Configuration version
   uint64 version = 2;
   // User-friendly configuration name
-  string name = 3; // @gotags: bson:"name,omitempty"
+  string name = 3;
   // List of resource updates to be applied
   repeated Resource resources = 4;
   // Configuration owner
   string owner = 5;
   // Unix timestamp in ns when the configuration has been created/updated
-  int64 timestamp = 6; // @gotags: bson:"timestamp"
+  int64 timestamp = 6;
 }
 
 message GetConfigurationsRequest {

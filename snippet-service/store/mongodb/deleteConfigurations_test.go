@@ -41,10 +41,7 @@ func TestStoreDeleteConfigurations(t *testing.T) {
 	}{
 		{
 			name: "all",
-			args: args{
-				owner: "",
-				query: nil,
-			},
+			args: args{},
 			want: func(t *testing.T, s *mongodb.Store, _ map[string]store.Configuration) {
 				confs := getConfigurations(t, s, "", nil)
 				require.Empty(t, confs)
@@ -53,20 +50,19 @@ func TestStoreDeleteConfigurations(t *testing.T) {
 		{
 			name: "owner1",
 			args: args{
-				owner: test.ConfigurationOwner(1),
-				query: nil,
+				owner: test.Owner(1),
 			},
 			want: func(t *testing.T, s *mongodb.Store, stored map[string]store.Configuration) {
 				confs := getConfigurations(t, s, "", nil)
 				require.NotEmpty(t, confs)
 				newCount := 0
 				for _, conf := range confs {
-					require.NotEqual(t, test.ConfigurationOwner(1), conf.Owner)
+					require.NotEqual(t, test.Owner(1), conf.Owner)
 					newCount += len(conf.Versions)
 				}
 				storedCount := 0
 				for _, conf := range stored {
-					if conf.Owner != test.ConfigurationOwner(1) {
+					if conf.Owner != test.Owner(1) {
 						storedCount += len(conf.Versions)
 					}
 				}
@@ -76,7 +72,6 @@ func TestStoreDeleteConfigurations(t *testing.T) {
 		{
 			name: "id{1,3,4,5}",
 			args: args{
-				owner: "",
 				query: &pb.DeleteConfigurationsRequest{
 					IdFilter: []*pb.IDFilter{
 						{
@@ -125,7 +120,7 @@ func TestStoreDeleteConfigurations(t *testing.T) {
 		{
 			name: "owner2/id2",
 			args: args{
-				owner: test.ConfigurationOwner(2),
+				owner: test.Owner(2),
 				query: &pb.DeleteConfigurationsRequest{
 					IdFilter: []*pb.IDFilter{
 						{
@@ -195,7 +190,7 @@ func TestStoreDeleteConfigurations(t *testing.T) {
 		{
 			name: "owner1/latest",
 			args: args{
-				owner: test.ConfigurationOwner(1),
+				owner: test.Owner(1),
 				query: &pb.DeleteConfigurationsRequest{
 					IdFilter: []*pb.IDFilter{
 						{
@@ -229,7 +224,7 @@ func TestStoreDeleteConfigurations(t *testing.T) {
 				count := 0
 				removed := 0
 				for _, conf := range confs {
-					if conf.Owner == test.ConfigurationOwner(1) {
+					if conf.Owner == test.Owner(1) {
 						require.NotEqual(t, storedLatest[conf.Id], conf.Versions[len(conf.Versions)-1])
 						removed++
 					} else {
@@ -243,7 +238,7 @@ func TestStoreDeleteConfigurations(t *testing.T) {
 		{
 			name: "owner2/id1/latest - non-matching owner",
 			args: args{
-				owner: test.ConfigurationOwner(2),
+				owner: test.Owner(2),
 				query: &pb.DeleteConfigurationsRequest{
 					IdFilter: []*pb.IDFilter{
 						{
@@ -305,7 +300,7 @@ func TestStoreDeleteConfigurations(t *testing.T) {
 		},
 		{
 			name: "owner2/version/{213, 237, 242}", args: args{
-				owner: test.ConfigurationOwner(2),
+				owner: test.Owner(2),
 				query: &pb.DeleteConfigurationsRequest{
 					IdFilter: []*pb.IDFilter{
 						{Version: &pb.IDFilter_Value{Value: 213}},
@@ -328,7 +323,7 @@ func TestStoreDeleteConfigurations(t *testing.T) {
 					confsMap[conf.Id] = *conf
 				}
 				for _, conf := range stored {
-					if conf.Owner == test.ConfigurationOwner(2) {
+					if conf.Owner == test.Owner(2) {
 						versions := make([]store.ConfigurationVersion, 0)
 						for _, version := range conf.Versions {
 							if version.Version == 213 ||
