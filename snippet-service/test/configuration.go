@@ -12,19 +12,15 @@ import (
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
 	"github.com/plgd-dev/hub/v2/snippet-service/store"
 	hubTest "github.com/plgd-dev/hub/v2/test"
-	"github.com/plgd-dev/hub/v2/test/config"
-	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/stretchr/testify/require"
 )
 
-var testConfigurationIDs = make(map[int]string)
-
 func ConfigurationID(i int) string {
-	if id, ok := testConfigurationIDs[i]; ok {
+	if id, ok := RuntimeConfig.configurationIds[i]; ok {
 		return id
 	}
 	id := uuid.New().String()
-	testConfigurationIDs[i] = id
+	RuntimeConfig.configurationIds[i] = id
 	return id
 }
 
@@ -32,7 +28,7 @@ func ConfigurationName(i int) string {
 	return "cfg" + strconv.Itoa(i)
 }
 
-func ConfigurationOwner(i int) string {
+func Owner(i int) string {
 	return "owner" + strconv.Itoa(i)
 }
 
@@ -61,28 +57,26 @@ type (
 )
 
 func addConfigurations(ctx context.Context, t *testing.T, n int, calcVersion calculateInitialVersionNumber, create onCreateConfiguration, update onUpdateConfiguration) map[string]store.Configuration {
-	const numConfigs = 10
-	const numOwners = 3
-	versions := make(map[int]uint64, numConfigs)
-	owners := make(map[int]string, numConfigs)
+	versions := make(map[int]uint64, RuntimeConfig.NumConfigurations)
+	owners := make(map[int]string, RuntimeConfig.NumConfigurations)
 	configurations := make(map[string]store.Configuration)
 	for i := 0; i < n; i++ {
-		version, ok := versions[i%numConfigs]
+		version, ok := versions[i%RuntimeConfig.NumConfigurations]
 		if !ok {
 			version = 0
 			if calcVersion != nil {
 				version = calcVersion(i)
 			}
-			versions[i%numConfigs] = version
+			versions[i%RuntimeConfig.NumConfigurations] = version
 		}
-		versions[i%numConfigs]++
-		owner, ok := owners[i%numConfigs]
+		versions[i%RuntimeConfig.NumConfigurations]++
+		owner, ok := owners[i%RuntimeConfig.NumConfigurations]
 		if !ok {
-			owner = ConfigurationOwner(i % numOwners)
-			owners[i%numConfigs] = owner
+			owner = Owner(i % RuntimeConfig.numOwners)
+			owners[i%RuntimeConfig.NumConfigurations] = owner
 		}
 		confIn := &pb.Configuration{
-			Id:        ConfigurationID(i % numConfigs),
+			Id:        ConfigurationID(i % RuntimeConfig.NumConfigurations),
 			Version:   version,
 			Resources: ConfigurationResources(t, i%16, (i%5)+1),
 			Owner:     owner,
@@ -90,7 +84,7 @@ func addConfigurations(ctx context.Context, t *testing.T, n int, calcVersion cal
 		var conf *pb.Configuration
 		var err error
 		if !ok {
-			confIn.Name = ConfigurationName(i % numConfigs)
+			confIn.Name = ConfigurationName(i % RuntimeConfig.NumConfigurations)
 			conf, err = create(ctx, confIn)
 			require.NoError(t, err)
 		} else {
@@ -100,17 +94,18 @@ func addConfigurations(ctx context.Context, t *testing.T, n int, calcVersion cal
 
 		configuration, ok := configurations[conf.GetId()]
 		if !ok {
-			configuration = store.Configuration{
-				Id:    conf.GetId(),
-				Owner: conf.GetOwner(),
-				Name:  conf.GetName(),
-			}
+			configuration = store.MakeFirstConfiguration(conf)
 			configurations[conf.GetId()] = configuration
+			continue
 		}
-		configuration.Versions = append(configuration.Versions, store.ConfigurationVersion{
+		latest := store.ConfigurationVersion{
+			Name:      conf.GetName(),
 			Version:   conf.GetVersion(),
 			Resources: conf.GetResources(),
-		})
+			Timestamp: conf.GetTimestamp(),
+		}
+		configuration.Latest = &latest
+		configuration.Versions = append(configuration.Versions, latest)
 		configurations[conf.GetId()] = configuration
 	}
 	return configurations
@@ -121,25 +116,11 @@ func AddConfigurationsToStore(ctx context.Context, t *testing.T, s store.Store, 
 }
 
 func AddConfigurations(ctx context.Context, t *testing.T, ownerClaim string, c pb.SnippetServiceClient, n int, calcVersion calculateInitialVersionNumber) map[string]store.Configuration {
-	tokens := make(map[string]string)
-	getTokenWithOwnerClaim := func(owner string) string {
-		token, ok := tokens[owner]
-		if ok {
-			return token
-		}
-		token = oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTest, map[string]interface{}{
-			ownerClaim: owner,
-		})
-		tokens[owner] = token
-		return token
-	}
-
 	return addConfigurations(ctx, t, n, calcVersion, func(ctx context.Context, conf *pb.Configuration) (*pb.Configuration, error) {
-		ctxWithToken := pkgGrpc.CtxWithToken(ctx, getTokenWithOwnerClaim(conf.GetOwner()))
+		ctxWithToken := pkgGrpc.CtxWithToken(ctx, GetTokenWithOwnerClaim(t, conf.GetOwner(), ownerClaim))
 		return c.CreateConfiguration(ctxWithToken, conf)
 	}, func(ctx context.Context, conf *pb.Configuration) (*pb.Configuration, error) {
-		ctxWithToken := pkgGrpc.CtxWithToken(ctx, getTokenWithOwnerClaim(conf.GetOwner()))
+		ctxWithToken := pkgGrpc.CtxWithToken(ctx, GetTokenWithOwnerClaim(t, conf.GetOwner(), ownerClaim))
 		return c.UpdateConfiguration(ctxWithToken, conf)
-	},
-	)
+	})
 }

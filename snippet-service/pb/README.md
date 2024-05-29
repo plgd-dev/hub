@@ -103,32 +103,18 @@ driven by resource change event
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  | Condition ID
-
-@gotags: bson:&#34;id&#34; |
-| version | [uint64](#uint64) |  | @gotags: bson:&#34;version&#34; |
-| name | [string](#string) |  | @gotags: bson:&#34;name,omitempty&#34; |
-| enabled | [bool](#bool) |  | @gotags: bson:&#34;enabled,omitempty&#34; |
-| configuration_id | [string](#string) |  | ID of the configuration to be applied when the condition is satisfied
-
-@gotags: bson:&#34;configurationId&#34; |
-| device_id_filter | [string](#string) | repeated | list of device IDs to which the condition applies
-
-@gotags: bson:&#34;deviceIdFilter,omitempty&#34; |
-| resource_type_filter | [string](#string) | repeated | @gotags: bson:&#34;resourceTypeFilter,omitempty&#34; |
-| resource_href_filter | [string](#string) | repeated | list of resource hrefs to which the condition applies
-
-@gotags: bson:&#34;resourceHrefFilter,omitempty&#34; |
-| jq_expression_filter | [string](#string) |  | @gotags: bson:&#34;jqExpressionFilter,omitempty&#34; |
-| api_access_token | [string](#string) |  | Token used to update resources in the configuration
-
-@gotags: bson:&#34;apiAccessToken,omitempty&#34; |
-| owner | [string](#string) |  | Condition owner
-
-@gotags: bson:&#34;owner&#34; |
-| timestamp | [int64](#int64) |  | Unix timestamp in ns when the condition has been created/updated
-
-@gotags: bson:&#34;timestamp&#34; |
+| id | [string](#string) |  | Condition ID |
+| version | [uint64](#uint64) |  | Condition version |
+| name | [string](#string) |  | User-friendly condition name |
+| enabled | [bool](#bool) |  | Condition is enabled/disabled |
+| configuration_id | [string](#string) |  | ID of the configuration to be applied when the condition is satisfied |
+| device_id_filter | [string](#string) | repeated | list of device IDs to which the condition applies |
+| resource_type_filter | [string](#string) | repeated |  |
+| resource_href_filter | [string](#string) | repeated | list of resource hrefs to which the condition applies |
+| jq_expression_filter | [string](#string) |  |  |
+| api_access_token | [string](#string) |  | Token used to update resources in the configuration |
+| owner | [string](#string) |  | Condition owner |
+| timestamp | [int64](#int64) |  | Unix timestamp in ns when the condition has been created/updated |
 
 
 
@@ -145,14 +131,10 @@ driven by resource change event
 | ----- | ---- | ----- | ----------- |
 | id | [string](#string) |  | Configuration ID |
 | version | [uint64](#uint64) |  | Configuration version |
-| name | [string](#string) |  | User-friendly configuration name
-
-@gotags: bson:&#34;name,omitempty&#34; |
+| name | [string](#string) |  | User-friendly configuration name |
 | resources | [Configuration.Resource](#snippetservice-pb-Configuration-Resource) | repeated | List of resource updates to be applied |
 | owner | [string](#string) |  | Configuration owner |
-| timestamp | [int64](#int64) |  | Unix timestamp in ns when the configuration has been created/updated
-
-@gotags: bson:&#34;timestamp&#34; |
+| timestamp | [int64](#int64) |  | Unix timestamp in ns when the configuration has been created/updated |
 
 
 
@@ -293,6 +275,8 @@ TODO Naming
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id_filter | [IDFilter](#snippetservice-pb-IDFilter) | repeated |  |
+| configuration_id_filter | [string](#string) | repeated | returns latest conditions for given configurationId |
+| http_id_filter | [string](#string) | repeated | **Deprecated.** Format: {id}/{version}, e.g., &#34;ae424c58-e517-4494-6de7-583536c48213/all&#34; or &#34;ae424c58-e517-4494-6de7-583536c48213/latest&#34; or &#34;ae424c58-e517-4494-6de7-583536c48213/{version}&#34; |
 
 
 

@@ -29,38 +29,38 @@ func TestStoreGetConfigurations(t *testing.T) {
 		name    string
 		args    args
 		wantErr bool
-		want    func(t *testing.T, configurations []*store.Configuration)
+		want    func(t *testing.T, configurations map[string]*store.Configuration)
 	}{
 		{
 			name: "all",
-			args: args{
-				owner: "",
-				query: nil,
-			},
-			want: func(t *testing.T, configurations []*store.Configuration) {
+			args: args{},
+			want: func(t *testing.T, configurations map[string]*store.Configuration) {
 				require.Len(t, configurations, len(confs))
+				for _, c := range configurations {
+					conf, ok := confs[c.Id]
+					require.True(t, ok)
+					test.CmpStoredConfiguration(t, &conf, c, false, true)
+				}
 			},
 		},
 		{
 			name: "owner0",
 			args: args{
-				owner: test.ConfigurationOwner(0),
-				query: nil,
+				owner: test.Owner(0),
 			},
-			want: func(t *testing.T, configurations []*store.Configuration) {
+			want: func(t *testing.T, configurations map[string]*store.Configuration) {
 				require.NotEmpty(t, configurations)
 				for _, c := range configurations {
-					require.Equal(t, test.ConfigurationOwner(0), c.Owner)
+					require.Equal(t, test.Owner(0), c.Owner)
 					conf, ok := confs[c.Id]
 					require.True(t, ok)
-					test.CmpJSON(t, &conf, c)
+					test.CmpStoredConfiguration(t, &conf, c, false, true)
 				}
 			},
 		},
 		{
 			name: "id1/all",
 			args: args{
-				owner: "",
 				query: &pb.GetConfigurationsRequest{
 					IdFilter: []*pb.IDFilter{
 						{
@@ -72,18 +72,19 @@ func TestStoreGetConfigurations(t *testing.T) {
 					},
 				},
 			},
-			want: func(t *testing.T, configurations []*store.Configuration) {
+			want: func(t *testing.T, configurations map[string]*store.Configuration) {
 				require.Len(t, configurations, 1)
-				c := configurations[0]
+				c, ok := configurations[test.ConfigurationID(1)]
+				require.True(t, ok)
 				conf, ok := confs[c.Id]
 				require.True(t, ok)
-				test.CmpJSON(t, &conf, c)
+				test.CmpStoredConfiguration(t, &conf, c, false, true)
 			},
 		},
 		{
 			name: "owner2/id2/all",
 			args: args{
-				owner: test.ConfigurationOwner(2),
+				owner: test.Owner(2),
 				query: &pb.GetConfigurationsRequest{
 					IdFilter: []*pb.IDFilter{
 						{
@@ -95,14 +96,15 @@ func TestStoreGetConfigurations(t *testing.T) {
 					},
 				},
 			},
-			want: func(t *testing.T, configurations []*store.Configuration) {
+			want: func(t *testing.T, configurations map[string]*store.Configuration) {
 				require.Len(t, configurations, 1)
-				c := configurations[0]
+				c, ok := configurations[test.ConfigurationID(2)]
+				require.True(t, ok)
 				conf, ok := confs[c.Id]
 				require.True(t, ok)
 				require.Equal(t, test.ConfigurationID(2), conf.Id)
-				require.Equal(t, test.ConfigurationOwner(2), conf.Owner)
-				test.CmpJSON(t, &conf, c)
+				require.Equal(t, test.Owner(2), conf.Owner)
+				test.CmpStoredConfiguration(t, &conf, c, false, true)
 			},
 		},
 		{
@@ -118,19 +120,22 @@ func TestStoreGetConfigurations(t *testing.T) {
 					},
 				},
 			},
-			want: func(t *testing.T, configurations []*store.Configuration) {
-				require.Len(t, configurations, 10)
+			want: func(t *testing.T, configurations map[string]*store.Configuration) {
+				require.Len(t, configurations, test.RuntimeConfig.NumConfigurations)
 				for _, c := range configurations {
-					_, ok := confs[c.Id]
+					conf, ok := confs[c.Id]
 					require.True(t, ok)
-					require.Len(t, c.Versions, 1)
+					require.Equal(t, conf.Id, c.Id)
+					require.Equal(t, conf.Owner, c.Owner)
+					require.Empty(t, c.Versions)
+					test.CmpJSON(t, conf.Latest, c.Latest)
 				}
 			},
 		},
 		{
 			name: "owner1/latest",
 			args: args{
-				owner: test.ConfigurationOwner(1),
+				owner: test.Owner(1),
 				query: &pb.GetConfigurationsRequest{
 					IdFilter: []*pb.IDFilter{
 						{
@@ -141,20 +146,21 @@ func TestStoreGetConfigurations(t *testing.T) {
 					},
 				},
 			},
-			want: func(t *testing.T, configurations []*store.Configuration) {
+			want: func(t *testing.T, configurations map[string]*store.Configuration) {
 				require.Len(t, configurations, 3)
 				for _, c := range configurations {
 					conf, ok := confs[c.Id]
 					require.True(t, ok)
-					require.Equal(t, test.ConfigurationOwner(1), conf.Owner)
-					require.Len(t, c.Versions, 1)
+					require.Equal(t, test.Owner(1), conf.Owner)
+					require.Empty(t, c.Versions)
+					test.CmpJSON(t, conf.Latest, c.Latest)
 				}
 			},
 		},
 		{
 			name: "owner2/id1/latest - non-matching owner",
 			args: args{
-				owner: test.ConfigurationOwner(2),
+				owner: test.Owner(2),
 				query: &pb.GetConfigurationsRequest{
 					IdFilter: []*pb.IDFilter{
 						{
@@ -166,13 +172,13 @@ func TestStoreGetConfigurations(t *testing.T) {
 					},
 				},
 			},
-			want: func(t *testing.T, configurations []*store.Configuration) {
+			want: func(t *testing.T, configurations map[string]*store.Configuration) {
 				require.Empty(t, configurations)
 			},
 		},
 		{
-			name: "owner2{latest, id2/latest, id5/latest} - non-matching owner", args: args{
-				owner: test.ConfigurationOwner(2),
+			name: "owner2{latest, id2/latest, id5/latest}", args: args{
+				owner: test.Owner(2),
 				query: &pb.GetConfigurationsRequest{
 					IdFilter: []*pb.IDFilter{
 						{
@@ -195,18 +201,20 @@ func TestStoreGetConfigurations(t *testing.T) {
 					},
 				},
 			},
-			want: func(t *testing.T, configurations []*store.Configuration) {
+			want: func(t *testing.T, configurations map[string]*store.Configuration) {
 				require.Len(t, configurations, 3)
 				for _, c := range configurations {
 					conf, ok := confs[c.Id]
 					require.True(t, ok)
-					require.Equal(t, test.ConfigurationOwner(2), conf.Owner)
-					require.Len(t, c.Versions, 1)
+					require.Equal(t, test.Owner(2), conf.Owner)
+					require.Empty(t, c.Versions)
+					test.CmpJSON(t, conf.Latest, c.Latest)
 				}
 			},
 		},
 		{
-			name: "version/42", args: args{
+			name: "version/42",
+			args: args{
 				query: &pb.GetConfigurationsRequest{
 					IdFilter: []*pb.IDFilter{
 						{
@@ -217,7 +225,7 @@ func TestStoreGetConfigurations(t *testing.T) {
 					},
 				},
 			},
-			want: func(t *testing.T, configurations []*store.Configuration) {
+			want: func(t *testing.T, configurations map[string]*store.Configuration) {
 				require.Len(t, configurations, 10)
 				for _, c := range configurations {
 					_, ok := confs[c.Id]
@@ -229,7 +237,7 @@ func TestStoreGetConfigurations(t *testing.T) {
 		},
 		{
 			name: "owner2/version/{13, 37, 42}", args: args{
-				owner: test.ConfigurationOwner(2),
+				owner: test.Owner(2),
 				query: &pb.GetConfigurationsRequest{
 					IdFilter: []*pb.IDFilter{
 						{
@@ -263,7 +271,7 @@ func TestStoreGetConfigurations(t *testing.T) {
 					},
 				},
 			},
-			want: func(t *testing.T, configurations []*store.Configuration) {
+			want: func(t *testing.T, configurations map[string]*store.Configuration) {
 				require.Len(t, configurations, 3)
 				for _, c := range configurations {
 					_, ok := confs[c.Id]
@@ -278,17 +286,53 @@ func TestStoreGetConfigurations(t *testing.T) {
 				}
 			},
 		},
+		{
+			name: "id0/version/{1..max} + latest",
+			args: args{
+				query: &pb.GetConfigurationsRequest{
+					IdFilter: func() []*pb.IDFilter {
+						var idFilters []*pb.IDFilter
+						c := confs[test.ConfigurationID(0)]
+						for _, v := range c.Versions {
+							idFilters = append(idFilters, &pb.IDFilter{
+								Id: test.ConfigurationID(0),
+								Version: &pb.IDFilter_Value{
+									Value: v.Version,
+								},
+							})
+						}
+						idFilters = append(idFilters, &pb.IDFilter{
+							Id: test.ConfigurationID(0),
+							Version: &pb.IDFilter_Latest{
+								Latest: true,
+							},
+						})
+						return idFilters
+					}(),
+				},
+			},
+			want: func(t *testing.T, configurations map[string]*store.Configuration) {
+				require.Len(t, configurations, 1)
+				for _, c := range configurations {
+					conf, ok := confs[c.Id]
+					require.True(t, ok)
+					require.Equal(t, test.ConfigurationID(0), conf.Id)
+					test.CmpStoredConfiguration(t, &conf, c, true, false)
+				}
+			},
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var configurations []*store.Configuration
-			err := s.GetConfigurations(ctx, tt.args.owner, tt.args.query, func(iterCtx context.Context, iter store.Iterator[store.Configuration]) error {
-				var conf store.Configuration
-				for iter.Next(iterCtx, &conf) {
-					configurations = append(configurations, conf.Clone())
+			configurations := make(map[string]*store.Configuration)
+			err := s.GetConfigurations(ctx, tt.args.owner, tt.args.query, func(c *store.Configuration) error {
+				configuration, ok := configurations[c.Id]
+				if ok {
+					return test.MergeConfigurations(configuration, c)
 				}
-				return iter.Err()
+				configurations[c.Id] = c.Clone()
+				return nil
 			})
 			if tt.wantErr {
 				require.Error(t, err)

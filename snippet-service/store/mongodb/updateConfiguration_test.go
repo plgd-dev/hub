@@ -11,23 +11,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestUpdateConfiguration(t *testing.T) {
+func TestStoreUpdateConfiguration(t *testing.T) {
 	s, cleanUpStore := test.NewMongoStore(t)
 	defer cleanUpStore()
 
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	confID := uuid.New().String()
+	confID := uuid.NewString()
 	const owner = "owner1"
 	resources := []*pb.Configuration_Resource{
 		makeLightResourceConfiguration(t, "1", 1, 1337),
 	}
-	_, err := s.CreateConfiguration(ctx, &pb.Configuration{
+	conf, err := s.CreateConfiguration(ctx, &pb.Configuration{
 		Id:        confID,
 		Name:      "valid",
 		Owner:     owner,
-		Version:   0,
+		Version:   13,
 		Resources: resources,
 	})
 	require.NoError(t, err)
@@ -39,12 +39,13 @@ func TestUpdateConfiguration(t *testing.T) {
 		name    string
 		args    args
 		wantErr bool
+		want    func(*testing.T, *pb.Configuration)
 	}{
 		{
 			name: "non-matching owner",
 			args: args{
 				update: &pb.Configuration{
-					Id:        confID,
+					Id:        conf.GetId(),
 					Owner:     "invalid",
 					Version:   0,
 					Resources: resources,
@@ -56,9 +57,21 @@ func TestUpdateConfiguration(t *testing.T) {
 			name: "duplicit version",
 			args: args{
 				update: &pb.Configuration{
-					Id:        confID,
-					Owner:     owner,
-					Version:   0,
+					Id:        conf.GetId(),
+					Owner:     conf.GetOwner(),
+					Version:   13,
+					Resources: resources,
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid version",
+			args: args{
+				update: &pb.Configuration{
+					Id:        conf.GetId(),
+					Owner:     conf.GetOwner(),
+					Version:   conf.GetVersion() - 1, // version must be higher than the latest one
 					Resources: resources,
 				},
 			},
@@ -68,7 +81,7 @@ func TestUpdateConfiguration(t *testing.T) {
 			name: "missing ID",
 			args: args{
 				update: &pb.Configuration{
-					Owner:     owner,
+					Owner:     conf.GetOwner(),
 					Version:   1,
 					Resources: resources,
 				},
@@ -79,25 +92,30 @@ func TestUpdateConfiguration(t *testing.T) {
 			name: "valid",
 			args: args{
 				update: &pb.Configuration{
-					Id:      confID,
-					Owner:   owner,
-					Version: 1,
+					Id:    conf.GetId(),
+					Owner: conf.GetOwner(),
 					Resources: []*pb.Configuration_Resource{
 						makeLightResourceConfiguration(t, "2", 2, 42),
 					},
 				},
+			},
+			want: func(t *testing.T, updatedConf *pb.Configuration) {
+				require.Equal(t, conf.GetId(), updatedConf.GetId())
+				require.Equal(t, conf.GetOwner(), updatedConf.GetOwner())
+				require.Equal(t, conf.GetVersion()+1, updatedConf.GetVersion())
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := s.UpdateConfiguration(ctx, tt.args.update)
+			conf, err := s.UpdateConfiguration(ctx, tt.args.update)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
 			}
 			require.NoError(t, err)
+			tt.want(t, conf)
 		})
 	}
 }

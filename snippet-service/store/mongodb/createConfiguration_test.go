@@ -35,7 +35,7 @@ func TestStoreCreateConfiguration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	confID := uuid.New().String()
+	confID := uuid.NewString()
 	const owner = "owner1"
 	resources := []*pb.Configuration_Resource{
 		makeLightResourceConfiguration(t, "1", 1, 1337),
@@ -48,44 +48,8 @@ func TestStoreCreateConfiguration(t *testing.T) {
 		name    string
 		args    args
 		wantErr bool
+		want    func(*testing.T, *pb.Configuration)
 	}{
-		{
-			name: "valid",
-			args: args{
-				create: &pb.Configuration{
-					Id:        confID,
-					Name:      "valid",
-					Owner:     owner,
-					Version:   0,
-					Resources: resources,
-				},
-			},
-		},
-		{
-			name: "duplicit item (ID)",
-			args: args{
-				create: &pb.Configuration{
-					Id:        confID,
-					Name:      "duplicit ID",
-					Owner:     owner,
-					Resources: resources,
-					Version:   42,
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "missing ID",
-			args: args{
-				create: &pb.Configuration{
-					Name:      "missing ID",
-					Owner:     owner,
-					Version:   0,
-					Resources: resources,
-				},
-			},
-			wantErr: true,
-		},
 		{
 			name: "invalid ID",
 			args: args{
@@ -123,16 +87,71 @@ func TestStoreCreateConfiguration(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "valid",
+			args: args{
+				create: &pb.Configuration{
+					Id:        confID,
+					Name:      "valid",
+					Owner:     owner,
+					Resources: resources,
+				},
+			},
+			want: func(t *testing.T, got *pb.Configuration) {
+				wantCfg := &pb.Configuration{
+					Id:        confID,
+					Name:      "valid",
+					Owner:     owner,
+					Resources: resources,
+				}
+				test.CmpConfiguration(t, wantCfg, got, true)
+			},
+		},
+		{
+			name: "valid - generated ID",
+			args: args{
+				create: &pb.Configuration{
+					Name:      "valid",
+					Owner:     owner,
+					Version:   37,
+					Resources: resources,
+				},
+			},
+			want: func(t *testing.T, got *pb.Configuration) {
+				wantCfg := &pb.Configuration{
+					Id:        got.GetId(),
+					Name:      "valid",
+					Owner:     owner,
+					Version:   37,
+					Resources: resources,
+				}
+				test.CmpConfiguration(t, wantCfg, got, true)
+			},
+		},
+		{
+			name: "duplicit item (ID)",
+			args: args{
+				create: &pb.Configuration{
+					Id:        confID,
+					Name:      "duplicit ID",
+					Owner:     owner,
+					Resources: resources,
+					Version:   42,
+				},
+			},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := s.CreateConfiguration(ctx, tt.args.create)
+			got, err := s.CreateConfiguration(ctx, tt.args.create)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
 			}
 			require.NoError(t, err)
+			tt.want(t, got)
 		})
 	}
 }

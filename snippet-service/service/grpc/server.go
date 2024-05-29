@@ -88,46 +88,158 @@ func (s *SnippetServiceServer) UpdateConfiguration(ctx context.Context, conf *pb
 	return c, nil
 }
 
+func errCannotGetConfigurations(err error) error {
+	return fmt.Errorf("cannot get configurations: %w", err)
+}
+
+func sendConfiguration(srv pb.SnippetService_GetConfigurationsServer, c *store.Configuration) error {
+	var lastVersion *store.ConfigurationVersion
+	for i := range c.Versions {
+		err := srv.Send(c.GetConfiguration(i))
+		if err != nil {
+			return err
+		}
+		lastVersion = &c.Versions[i]
+	}
+	if c.Latest == nil {
+		return nil
+	}
+	latest, err := c.GetLatest()
+	if err != nil {
+		return err
+	}
+	if lastVersion != nil && lastVersion.Version == latest.GetVersion() {
+		// already sent when iterating over versions array
+		return nil
+	}
+	return srv.Send(latest)
+}
+
 func (s *SnippetServiceServer) GetConfigurations(req *pb.GetConfigurationsRequest, srv pb.SnippetService_GetConfigurationsServer) error {
 	owner, err := s.checkOwner(srv.Context(), "")
 	if err != nil {
-		return s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "cannot get configurations: %v", err))
+		return s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotGetConfigurations(err)))
 	}
 
-	err = s.store.GetConfigurations(srv.Context(), owner, req, func(ctx context.Context, iter store.Iterator[store.Configuration]) error {
-		storedCfg := store.Configuration{}
-		for iter.Next(ctx, &storedCfg) {
-			for _, version := range storedCfg.Versions {
-				errS := srv.Send(&pb.Configuration{
-					Id:        storedCfg.Id,
-					Owner:     storedCfg.Owner,
-					Name:      storedCfg.Name,
-					Version:   version.Version,
-					Resources: version.Resources,
-				})
-				if errS != nil {
-					return errS
-				}
-			}
-		}
-		return nil
+	err = s.store.GetConfigurations(srv.Context(), owner, req, func(c *store.Configuration) error {
+		return sendConfiguration(srv, c)
 	})
 	if err != nil {
-		return s.logger.LogAndReturnError(status.Errorf(codes.Internal, "cannot get configurations: %v", err))
+		return s.logger.LogAndReturnError(status.Errorf(codes.Internal, "%v", errCannotGetConfigurations(err)))
 	}
 	return nil
+}
+
+func errCannotDeleteConfigurations(err error) error {
+	return fmt.Errorf("cannot delete configurations: %w", err)
 }
 
 func (s *SnippetServiceServer) DeleteConfigurations(ctx context.Context, req *pb.DeleteConfigurationsRequest) (*pb.DeleteConfigurationsResponse, error) {
 	owner, err := s.checkOwner(ctx, "")
 	if err != nil {
-		return nil, s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "cannot delete configurations: %v", err))
+		return nil, s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotDeleteConfigurations(err)))
 	}
 	count, err := s.store.DeleteConfigurations(ctx, owner, req)
 	if err != nil {
-		return nil, s.logger.LogAndReturnError(status.Errorf(codes.Internal, "cannot delete configurations: %v", err))
+		return nil, s.logger.LogAndReturnError(status.Errorf(codes.Internal, "%v", errCannotDeleteConfigurations(err)))
 	}
 	return &pb.DeleteConfigurationsResponse{
+		Count: count,
+	}, nil
+}
+
+func errCannotCreateCondition(err error) error {
+	return fmt.Errorf("cannot create condition: %w", err)
+}
+
+func (s *SnippetServiceServer) CreateCondition(ctx context.Context, condition *pb.Condition) (*pb.Condition, error) {
+	owner, err := s.checkOwner(ctx, condition.GetOwner())
+	if err != nil {
+		return nil, s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotCreateCondition(err)))
+	}
+
+	condition.Owner = owner
+	c, err := s.store.CreateCondition(ctx, condition)
+	if err != nil {
+		return nil, s.logger.LogAndReturnError(status.Errorf(getGRPCErrorCode(err), "%v", errCannotCreateCondition(err)))
+	}
+	return c, nil
+}
+
+func errCannotUpdateCondition(err error) error {
+	return fmt.Errorf("cannot update condition: %w", err)
+}
+
+func (s *SnippetServiceServer) UpdateCondition(ctx context.Context, condition *pb.Condition) (*pb.Condition, error) {
+	owner, err := s.checkOwner(ctx, condition.GetOwner())
+	if err != nil {
+		return nil, s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotUpdateCondition(err)))
+	}
+
+	condition.Owner = owner
+	c, err := s.store.UpdateCondition(ctx, condition)
+	if err != nil {
+		return nil, s.logger.LogAndReturnError(status.Errorf(getGRPCErrorCode(err), "%v", errCannotUpdateCondition(err)))
+	}
+	return c, nil
+}
+
+func errCannotGetConditions(err error) error {
+	return fmt.Errorf("cannot get conditions: %w", err)
+}
+
+func sendCondition(srv pb.SnippetService_GetConditionsServer, c *store.Condition) error {
+	var lastVersion *store.ConditionVersion
+	for i := range c.Versions {
+		err := srv.Send(c.GetCondition(i))
+		if err != nil {
+			return err
+		}
+		lastVersion = &c.Versions[i]
+	}
+	if c.Latest == nil {
+		return nil
+	}
+	latest, err := c.GetLatest()
+	if err != nil {
+		return err
+	}
+	if lastVersion != nil && lastVersion.Version == latest.GetVersion() {
+		// already sent when iterating over versions array
+		return nil
+	}
+	return srv.Send(latest)
+}
+
+func (s *SnippetServiceServer) GetConditions(req *pb.GetConditionsRequest, srv pb.SnippetService_GetConditionsServer) error {
+	owner, err := s.checkOwner(srv.Context(), "")
+	if err != nil {
+		return s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotGetConditions(err)))
+	}
+
+	err = s.store.GetConditions(srv.Context(), owner, req, func(c *store.Condition) error {
+		return sendCondition(srv, c)
+	})
+	if err != nil {
+		return s.logger.LogAndReturnError(status.Errorf(codes.Internal, "%v", errCannotGetConditions(err)))
+	}
+	return nil
+}
+
+func errCannotDeleteConditions(err error) error {
+	return fmt.Errorf("cannot delete conditions: %w", err)
+}
+
+func (s *SnippetServiceServer) DeleteConditions(ctx context.Context, req *pb.DeleteConditionsRequest) (*pb.DeleteConditionsResponse, error) {
+	owner, err := s.checkOwner(ctx, "")
+	if err != nil {
+		return nil, s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotDeleteConditions(err)))
+	}
+	count, err := s.store.DeleteConditions(ctx, owner, req)
+	if err != nil {
+		return nil, s.logger.LogAndReturnError(status.Errorf(codes.Internal, "%v", errCannotDeleteConditions(err)))
+	}
+	return &pb.DeleteConditionsResponse{
 		Count: count,
 	}, nil
 }

@@ -1,371 +1,146 @@
 package mongodb
 
 import (
-	"cmp"
 	"context"
-	"slices"
-	"strings"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
 	"github.com/plgd-dev/hub/v2/snippet-service/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func (s *Store) CreateConfiguration(ctx context.Context, conf *pb.Configuration) (*pb.Configuration, error) {
-	if err := store.ValidateAndNormalize(conf); err != nil {
+	if err := store.ValidateAndNormalizeConfiguration(conf, false); err != nil {
 		return nil, err
 	}
-
-	_, err := s.Collection(configurationsCol).InsertOne(ctx, store.MakeConfiguration(conf))
+	newConf := conf.Clone()
+	if newConf.GetId() == "" {
+		newConf.Id = uuid.NewString()
+	}
+	newConf.Timestamp = time.Now().UnixNano()
+	storeConf := store.MakeFirstConfiguration(newConf)
+	_, err := s.Collection(configurationsCol).InsertOne(ctx, storeConf)
 	if err != nil {
 		return nil, err
 	}
-	return conf, nil
+	return storeConf.GetLatest()
+}
+
+func filterConfiguration(conf *pb.Configuration) bson.M {
+	filter := bson.M{
+		store.IDKey:    conf.GetId(),
+		store.OwnerKey: conf.GetOwner(),
+	}
+	if conf.GetVersion() != 0 {
+		// if is set -> it must be higher than the $latest.version
+		filter[store.LatestKey+"."+store.VersionKey] = bson.M{"$lt": conf.GetVersion()}
+	}
+	return filter
+}
+
+func latestConfiguration(conf *pb.Configuration) bson.M {
+	ts := time.Now().UnixNano()
+	latest := bson.M{
+		store.VersionKey:   conf.GetVersion(),
+		store.ResourcesKey: conf.GetResources(),
+		store.TimestampKey: ts,
+	}
+	if conf.GetName() != "" {
+		latest[store.NameKey] = conf.GetName()
+	}
+	if conf.GetVersion() == 0 {
+		// if version is not set -> set it to $latest.version + 1
+		latest[store.VersionKey] = incrementLatestVersion()
+	}
+	return latest
+}
+
+func updateConfiguration(conf *pb.Configuration) mongo.Pipeline {
+	setVersions := appendLatestToVersions([]string{store.NameKey, store.VersionKey, store.ResourcesKey, store.TimestampKey})
+	return mongo.Pipeline{
+		bson.D{{Key: "$set", Value: bson.M{
+			store.LatestKey: latestConfiguration(conf),
+		}}},
+		bson.D{{Key: "$set", Value: bson.M{
+			store.VersionsKey: setVersions,
+		}}},
+	}
 }
 
 func (s *Store) UpdateConfiguration(ctx context.Context, conf *pb.Configuration) (*pb.Configuration, error) {
-	if err := store.ValidateAndNormalize(conf); err != nil {
+	if err := store.ValidateAndNormalizeConfiguration(conf, true); err != nil {
 		return nil, err
 	}
-	upd, err := s.Collection(configurationsCol).UpdateOne(ctx,
-		bson.M{
-			"_id":          conf.GetId(),
-			store.OwnerKey: conf.GetOwner(),
-			store.VersionsKey + "." + store.VersionKey: bson.M{"$ne": conf.GetVersion()},
-		},
-		bson.M{"$push": bson.M{
-			"versions": store.ConfigurationVersion{
-				Version:   conf.GetVersion(),
-				Resources: conf.GetResources(),
-			},
-		}},
-	)
+
+	filter := filterConfiguration(conf)
+	update := updateConfiguration(conf)
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After).SetProjection(bson.M{store.VersionsKey: false})
+	result := s.Collection(configurationsCol).FindOneAndUpdate(ctx, filter, update, opts)
+	if result.Err() != nil {
+		return nil, result.Err()
+	}
+
+	updatedCfg := &store.Configuration{}
+	err := result.Decode(&updatedCfg)
 	if err != nil {
 		return nil, err
 	}
-	if upd.MatchedCount == 0 {
-		return nil, store.ErrNotFound
-	}
-	return conf, nil
+	return updatedCfg.GetLatest()
 }
 
-func compareIdFilter(i, j *pb.IDFilter) int {
-	if i.GetId() != j.GetId() {
-		return strings.Compare(i.GetId(), j.GetId())
-	}
-	if i.GetAll() {
-		if j.GetAll() {
-			return 0
-		}
-		return -1
-	}
-	if i.GetLatest() {
-		if j.GetLatest() {
-			return 0
-		}
-		if j.GetAll() {
-			return 1
-		}
-		return -1
-	}
-	if j.GetAll() || j.GetLatest() {
-		return 1
-	}
-	return cmp.Compare(i.GetValue(), j.GetValue())
-}
-
-func checkEmptyIdFilter(idfilter []*pb.IDFilter) []*pb.IDFilter {
-	// if an empty query is provided, return all
-	if len(idfilter) == 0 {
-		return nil
-	}
-	slices.SortFunc(idfilter, compareIdFilter)
-	// if the first filter is All, we can ignore all other filters
-	first := idfilter[0]
-	if first.GetId() == "" && first.GetAll() {
-		return nil
-	}
-	return idfilter
-}
-
-func normalizeIdFilter(idfilter []*pb.IDFilter) []*pb.IDFilter {
-	idfilter = checkEmptyIdFilter(idfilter)
-	if len(idfilter) == 0 {
-		return nil
-	}
-
-	updatedFilter := make([]*pb.IDFilter, 0)
-	var idAll bool
-	var idLatest bool
-	var idValue bool
-	var idValueVersion uint64
-	setNextLatest := func(idf *pb.IDFilter) {
-		// we already have the latest filter
-		if idLatest {
-			// skip
-			return
-		}
-		idLatest = true
-		updatedFilter = append(updatedFilter, idf)
-	}
-	setNextValue := func(idf *pb.IDFilter) {
-		value := idf.GetValue()
-		if idValue && value == idValueVersion {
-			// skip
-			return
-		}
-		idValue = true
-		idValueVersion = value
-		updatedFilter = append(updatedFilter, idf)
-	}
-	prevID := ""
-	for _, idf := range idfilter {
-		if idf.GetId() != prevID {
-			idAll = idf.GetAll()
-			idLatest = idf.GetLatest()
-			idValue = !idAll && !idLatest
-			idValueVersion = idf.GetValue()
-			updatedFilter = append(updatedFilter, idf)
-		}
-
-		if idAll {
-			goto next
-		}
-
-		if idf.GetLatest() {
-			setNextLatest(idf)
-			goto next
-		}
-
-		setNextValue(idf)
-
-	next:
-		prevID = idf.GetId()
-	}
-	return updatedFilter
-}
-
-type versionFilter struct {
-	latest   bool
-	versions []uint64
-}
-
-func partitionQuery(idfilter []*pb.IDFilter) ([]string, map[string]versionFilter) {
-	idFilter := normalizeIdFilter(idfilter)
-	if len(idFilter) == 0 {
-		return nil, nil
-	}
-	idVersionAll := make([]string, 0)
-	idVersions := make(map[string]versionFilter, 0)
-	hasAllIdsLatest := func() bool {
-		vf, ok := idVersions[""]
-		return ok && vf.latest
-	}
-	hasAllIdsVersion := func(version uint64) bool {
-		vf, ok := idVersions[""]
-		return ok && slices.Contains(vf.versions, version)
-	}
-	for _, idf := range idFilter {
-		if idf.GetAll() {
-			idVersionAll = append(idVersionAll, idf.GetId())
-			continue
-		}
-		vf := idVersions[idf.GetId()]
-		if idf.GetLatest() {
-			if hasAllIdsLatest() {
-				continue
-			}
-			vf.latest = true
-			idVersions[idf.GetId()] = vf
-			continue
-		}
-		version := idf.GetValue()
-		if hasAllIdsVersion(version) {
-			continue
-		}
-		vf.versions = append(vf.versions, version)
-		idVersions[idf.GetId()] = vf
-	}
-	return idVersionAll, idVersions
-}
-
-func toIdFilterQuery(owner string, idfAlls []string) interface{} {
-	filters := make([]interface{}, 0, 2)
-	if owner != "" {
-		filters = append(filters, bson.D{{Key: store.OwnerKey, Value: owner}})
-	}
-	if len(idfAlls) > 0 {
-		idfilter := make([]bson.D, 0, len(idfAlls))
-		for _, idfall := range idfAlls {
-			idfilter = append(idfilter, bson.D{{Key: "_id", Value: idfall}})
-		}
-		filters = append(filters, bson.M{"$or": idfilter})
-	}
-	if len(filters) == 0 {
-		return bson.D{}
-	}
-	if len(filters) == 1 {
-		return filters[0]
-	}
-	return bson.M{"$and": filters}
-}
-
-func processCursor(ctx context.Context, cr *mongo.Cursor, h store.GetConfigurationsFunc) error {
-	if h == nil {
-		return nil
-	}
-	var errors *multierror.Error
-	i := store.MongoIterator[store.Configuration]{
-		Cursor: cr,
-	}
-	err := h(ctx, &i)
-	errors = multierror.Append(errors, err)
-	errClose := cr.Close(ctx)
-	errors = multierror.Append(errors, errClose)
-	return errors.ErrorOrNil()
-}
-
-func (s *Store) getConfigurationsByFind(ctx context.Context, owner string, idfAlls []string, h store.GetConfigurationsFunc) error {
-	cur, err := s.Collection(configurationsCol).Find(ctx, toIdFilterQuery(owner, idfAlls))
+// getConfigurationsByID returns all configurations from documents matched by ID
+func (s *Store) getConfigurationsByID(ctx context.Context, owner string, ids []string, p store.ProcessConfigurations) error {
+	cur, err := s.Collection(configurationsCol).Find(ctx, toFilterQuery(owner, toIdQuery(ids), false))
 	if err != nil {
 		return err
 	}
-	return processCursor(ctx, cur, h)
+	return processCursor(ctx, cur, p)
 }
 
-func addMatchCondition(owner, id string) bson.D {
-	match := bson.D{
-		{Key: store.VersionsKey + ".0", Value: bson.M{"$exists": true}},
-	}
-	if id != "" {
-		match = append(match, bson.E{Key: "_id", Value: id})
-	}
-	if owner != "" {
-		match = append(match, bson.E{Key: store.OwnerKey, Value: owner})
-	}
-	return match
-}
-
-func addLatestVersionField() bson.D {
-	return bson.D{{Key: "$addFields", Value: bson.M{
-		"latestVersion": bson.M{"$reduce": bson.M{
-			"input":        "$versions",
-			"initialValue": bson.M{"version": 0},
-			"in": bson.M{
-				"$cond": bson.A{
-					bson.M{"$gte": bson.A{"$$this.version", "$$value.version"}},
-					"$$this.version",
-					"$$value.version",
-				},
-			},
-		}},
-	}}}
-}
-
-func getVersionsPipeline(pl mongo.Pipeline, vf versionFilter, exclude bool) mongo.Pipeline {
-	versions := make([]interface{}, 0, len(vf.versions)+1)
-	for _, version := range vf.versions {
-		versions = append(versions, version)
-	}
-
-	if vf.latest {
-		pl = append(pl, addLatestVersionField())
-		versions = append(versions, "$latestVersion")
-	}
-
-	if len(versions) > 0 {
-		cond := bson.M{"$in": bson.A{"$$version.version", versions}}
-		if exclude {
-			cond = bson.M{"$not": cond}
-		}
-		pl = append(pl, bson.D{{Key: "$addFields", Value: bson.M{
-			"versions": bson.M{
-				"$filter": bson.M{
-					"input": "$versions",
-					"as":    "version",
-					"cond":  cond,
-				},
-			},
-		}}})
-	}
-	return pl
-}
-
-func (s *Store) getConfigurationsByAggregation(ctx context.Context, owner, id string, vf versionFilter, h store.GetConfigurationsFunc) error {
-	pl := mongo.Pipeline{bson.D{{Key: "$match", Value: addMatchCondition(owner, id)}}}
-	pl = getVersionsPipeline(pl, vf, false)
-	cur, err := s.Collection(configurationsCol).Aggregate(ctx, pl)
+// getLatestConfigurationsByID returns the latest configuration from documents matched by ID
+func (s *Store) getLatestConfigurationsByID(ctx context.Context, owner string, ids []string, p store.ProcessConfigurations) error {
+	opt := options.Find().SetProjection(bson.M{store.VersionsKey: false})
+	cur, err := s.Collection(configurationsCol).Find(ctx, toFilterQuery(owner, toIdQuery(ids), false), opt)
 	if err != nil {
 		return err
 	}
-	return processCursor(ctx, cur, h)
+	return processCursor(ctx, cur, p)
 }
 
-func (s *Store) GetConfigurations(ctx context.Context, owner string, query *pb.GetConfigurationsRequest, h store.GetConfigurationsFunc) error {
-	idVersionAll, idVersions := partitionQuery(query.GetIdFilter())
+// getConfigurationsByAggregation returns conditions matched by ID and versions
+func (s *Store) getConfigurationsByAggregation(ctx context.Context, owner, id string, versions []uint64, p store.ProcessConfigurations) error {
+	cur, err := s.Collection(configurationsCol).Aggregate(ctx, getPipeline(owner, id, versions))
+	if err != nil {
+		return err
+	}
+	return processCursor(ctx, cur, p)
+}
+
+func (s *Store) GetConfigurations(ctx context.Context, owner string, query *pb.GetConfigurationsRequest, p store.Process[store.Configuration]) error {
+	vf := pb.PartitionIDFilter(query.GetIdFilter())
 	var errors *multierror.Error
-	if len(idVersionAll) > 0 || len(idVersions) == 0 {
-		err := s.getConfigurationsByFind(ctx, owner, idVersionAll, h)
+	if len(vf.All) > 0 || vf.IsEmpty() {
+		err := s.getConfigurationsByID(ctx, owner, vf.All, p)
 		errors = multierror.Append(errors, err)
 	}
-	if len(idVersions) > 0 {
-		for id, vf := range idVersions {
-			err := s.getConfigurationsByAggregation(ctx, owner, id, vf, h)
-			errors = multierror.Append(errors, err)
-		}
+
+	if len(vf.Latest) > 0 {
+		err := s.getLatestConfigurationsByID(ctx, owner, vf.Latest, p)
+		errors = multierror.Append(errors, err)
+	}
+
+	// TODO: check with Jozef if this acceptable, we can duplicates if we have the same version by number and as latest
+	for id, versions := range vf.Versions {
+		err := s.getConfigurationsByAggregation(ctx, owner, id, versions, p)
+		errors = multierror.Append(errors, err)
 	}
 	return errors.ErrorOrNil()
 }
-
-func (s *Store) removeDocument(ctx context.Context, owner string, idfAlls []string) error {
-	_, err := s.Collection(configurationsCol).DeleteMany(ctx, toIdFilterQuery(owner, idfAlls))
-	return err
-}
-
-func (s *Store) removeVersion(ctx context.Context, owner string, id string, vf versionFilter) error {
-	pl := getVersionsPipeline(mongo.Pipeline{}, vf, true)
-	if vf.latest {
-		pl = append(pl, bson.D{{Key: "$unset", Value: "latestVersion"}})
-	}
-	_, err := s.Collection(configurationsCol).UpdateMany(ctx, addMatchCondition(owner, id), pl)
-	// TODO: delete document if no versions remain in the array
-	return err
-}
-
-const (
-	DeleteConfigurationsFailed         = 0
-	DeleteConfigurationsSuccess        = 1
-	DeleteConfigurationsPartialSuccess = 2
-)
 
 func (s *Store) DeleteConfigurations(ctx context.Context, owner string, query *pb.DeleteConfigurationsRequest) (int64, error) {
-	success := false
-	idVersionAll, idVersions := partitionQuery(query.GetIdFilter())
-	var errors *multierror.Error
-	if len(idVersionAll) > 0 || len(idVersions) == 0 {
-		err := s.removeDocument(ctx, owner, idVersionAll)
-		if err == nil {
-			success = true
-		}
-		errors = multierror.Append(errors, err)
-	}
-	if len(idVersions) > 0 {
-		for id, vf := range idVersions {
-			err := s.removeVersion(ctx, owner, id, vf)
-			if err == nil {
-				success = true
-			}
-			errors = multierror.Append(errors, err)
-		}
-	}
-	err := errors.ErrorOrNil()
-	if err != nil {
-		if success {
-			return DeleteConfigurationsPartialSuccess, err
-		}
-		return DeleteConfigurationsFailed, err
-	}
-	return DeleteConfigurationsSuccess, nil
+	return s.delete(ctx, configurationsCol, owner, query.GetIdFilter())
 }
