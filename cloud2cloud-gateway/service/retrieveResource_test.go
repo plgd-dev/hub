@@ -155,16 +155,16 @@ func TestRequestHandlerRetrieveResource(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rb := testHttp.NewHTTPRequest(http.MethodGet, c2cTest.C2CURI(uri.ResourceValues), nil).Accept(tt.args.accept).AuthToken(tt.args.token)
+			rb := testHttp.NewRequest(http.MethodGet, c2cTest.C2CURI(uri.ResourceValues), nil).Accept(tt.args.accept).AuthToken(tt.args.token)
 			rb.DeviceId(deviceID).ResourceHref(tt.args.resourceHref)
-			resp := testHttp.DoHTTPRequest(t, rb.Build(ctx, t))
+			resp := testHttp.Do(t, rb.Build(ctx, t))
 			assert.Equal(t, tt.wantCode, resp.StatusCode)
 			defer func() {
 				_ = resp.Body.Close()
 			}()
 			require.Equal(t, tt.wantContentType, resp.Header.Get("Content-Type"))
 			var got interface{}
-			testHttp.ReadHTTPResponse(t, resp.Body, tt.wantContentType, &got)
+			testHttp.ReadResponse(t, resp.Body, tt.wantContentType, &got)
 			if tt.wantContentType == textPlain {
 				require.Contains(t, got, tt.want)
 				return

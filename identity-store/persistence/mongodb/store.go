@@ -9,18 +9,23 @@ import (
 	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.opentelemetry.io/otel/trace"
 )
 
 const userDevicesCName = "userdevices"
 
-var userDeviceQueryIndex = bson.D{
-	{Key: ownerKey, Value: 1},
-	{Key: deviceIDKey, Value: 1},
+var userDeviceQueryIndex = mongo.IndexModel{
+	Keys: bson.D{
+		{Key: ownerKey, Value: 1},
+		{Key: deviceIDKey, Value: 1},
+	},
 }
 
-var userDevicesQueryIndex = bson.D{
-	{Key: ownerKey, Value: 1},
+var userDevicesQueryIndex = mongo.IndexModel{
+	Keys: bson.D{
+		{Key: ownerKey, Value: 1},
+	},
 }
 
 type Store struct {

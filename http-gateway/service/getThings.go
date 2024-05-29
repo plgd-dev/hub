@@ -24,7 +24,7 @@ import (
 	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/pkg/security/openid"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	wotTD "github.com/web-of-things-open-source/thingdescription-go/thingDescription"
@@ -376,7 +376,7 @@ func (requestHandler *RequestHandler) thingDescriptionResponse(ctx context.Conte
 	w.WriteHeader(rec.Code)
 	_, err = w.Write(data)
 	if err != nil {
-		writeError(w, kitNetGrpc.ForwardErrorf(codes.Internal, "cannot encode response: %v", err))
+		writeError(w, pkgGrpc.ForwardErrorf(codes.Internal, "cannot encode response: %v", err))
 	}
 }
 

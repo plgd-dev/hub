@@ -8,7 +8,6 @@ import (
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/hub/v2/pkg/fn"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -59,24 +58,33 @@ func NewStore(ctx context.Context, cfg *Config, tls *tls.Config, tracerProvider 
 	return s, nil
 }
 
-func NewStoreWithCollection(ctx context.Context, cfg *Config, tls *tls.Config, tracerProvider trace.TracerProvider, collection string, indexes ...bson.D) (*Store, error) {
+func NewStoreWithCollection(ctx context.Context, cfg *Config, tls *tls.Config, tracerProvider trace.TracerProvider, collection string, indexes ...mongo.IndexModel) (*Store, error) {
+	return NewStoreWithCollections(ctx, cfg, tls, tracerProvider, map[string][]mongo.IndexModel{collection: indexes})
+}
+
+func NewStoreWithCollections(ctx context.Context, cfg *Config, tls *tls.Config, tracerProvider trace.TracerProvider, collections map[string][]mongo.IndexModel) (*Store, error) {
 	s, err := NewStore(ctx, cfg, tls, tracerProvider)
 	if err != nil {
 		return nil, err
 	}
-	err = s.EnsureIndex(ctx, collection, indexes...)
-	if err != nil {
-		var errors *multierror.Error
-		errors = multierror.Append(errors, err)
-		if err = s.client.Disconnect(ctx); err != nil {
-			errors = multierror.Append(errors, fmt.Errorf("failed to disconnect mongodb client: %w", err))
+	for collection, indexes := range collections {
+		err = s.EnsureIndex(ctx, collection, indexes...)
+		if err != nil {
+			var errors *multierror.Error
+			errors = multierror.Append(errors, err)
+			if err = s.client.Database(s.DBName()).Drop(ctx); err != nil {
+				errors = multierror.Append(errors, fmt.Errorf("failed to drop database: %w", err))
+			}
+			if err = s.client.Disconnect(ctx); err != nil {
+				errors = multierror.Append(errors, fmt.Errorf("failed to disconnect mongodb client: %w", err))
+			}
+			return nil, errors.ErrorOrNil()
 		}
-		return nil, errors.ErrorOrNil()
 	}
 	return s, nil
 }
 
-func (s *Store) EnsureIndex(ctx context.Context, collection string, indexes ...bson.D) error {
+func (s *Store) EnsureIndex(ctx context.Context, collection string, indexes ...mongo.IndexModel) error {
 	if len(indexes) == 0 {
 		return nil
 	}
@@ -87,13 +95,8 @@ func (s *Store) EnsureIndex(ctx context.Context, collection string, indexes ...b
 	return nil
 }
 
-func ensureIndex(ctx context.Context, col *mongo.Collection, indexes ...bson.D) error {
-	for _, keys := range indexes {
-		opts := &options.IndexOptions{}
-		index := mongo.IndexModel{
-			Keys:    keys,
-			Options: opts,
-		}
+func ensureIndex(ctx context.Context, col *mongo.Collection, indexes ...mongo.IndexModel) error {
+	for _, index := range indexes {
 		_, err := col.Indexes().CreateOne(ctx, index)
 		if err != nil {
 			if strings.HasPrefix(err.Error(), "(IndexKeySpecsConflict)") {

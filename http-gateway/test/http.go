@@ -15,6 +15,7 @@ import (
 	"github.com/jtacoma/uritemplates"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
+	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
 )
@@ -79,7 +80,7 @@ func (c *RequestBuilder) ETag(v []byte) *RequestBuilder {
 	if len(v) == 0 {
 		return c
 	}
-	c.header[uri.ETagHeaderKey] = base64.StdEncoding.EncodeToString(v)
+	c.header[pkgHttp.ETagHeaderKey] = base64.StdEncoding.EncodeToString(v)
 	return c
 }
 
@@ -123,7 +124,7 @@ func (c *RequestBuilder) ContentType(contentType string) *RequestBuilder {
 	if contentType == "" {
 		return c
 	}
-	c.header[uri.ContentTypeHeaderKey] = contentType
+	c.header[pkgHttp.ContentTypeHeaderKey] = contentType
 	return c
 }
 

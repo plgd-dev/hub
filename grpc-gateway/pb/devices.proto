@@ -6,7 +6,6 @@ import "resource-aggregate/pb/commands.proto";
 import "resource-aggregate/pb/events.proto";
 import "resource-aggregate/pb/resources.proto";
 import "identity-store/pb/events.proto";
-import "google/protobuf/struct.proto";
 
 option go_package = "github.com/plgd-dev/hub/v2/grpc-gateway/pb;pb";
 

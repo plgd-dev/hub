@@ -21,24 +21,32 @@ const (
 	initializedKey     = "initialized"
 )
 
-var typeQueryIndex = bson.D{
-	{Key: typeKey, Value: 1},
+var typeQueryIndex = mongo.IndexModel{
+	Keys: bson.D{
+		{Key: typeKey, Value: 1},
+	},
 }
 
-var typeDeviceIDQueryIndex = bson.D{
-	{Key: typeKey, Value: 1},
-	{Key: deviceIDKey, Value: 1},
+var typeDeviceIDQueryIndex = mongo.IndexModel{
+	Keys: bson.D{
+		{Key: typeKey, Value: 1},
+		{Key: deviceIDKey, Value: 1},
+	},
 }
 
-var typeResourceIDQueryIndex = bson.D{
-	{Key: typeKey, Value: 1},
-	{Key: deviceIDKey, Value: 1},
-	{Key: hrefKey, Value: 1},
+var typeResourceIDQueryIndex = mongo.IndexModel{
+	Keys: bson.D{
+		{Key: typeKey, Value: 1},
+		{Key: deviceIDKey, Value: 1},
+		{Key: hrefKey, Value: 1},
+	},
 }
 
-var typeInitializedIDQueryIndex = bson.D{
-	{Key: "_id", Value: 1},
-	{Key: initializedKey, Value: 1},
+var typeInitializedIDQueryIndex = mongo.IndexModel{
+	Keys: bson.D{
+		{Key: "_id", Value: 1},
+		{Key: initializedKey, Value: 1},
+	},
 }
 
 type DBSub struct {
@@ -160,7 +168,7 @@ func (s *Store) SetInitialized(ctx context.Context, subscriptionID string) error
 	}
 
 	opts := &options.UpdateOptions{}
-	opts.SetHint(typeInitializedIDQueryIndex)
+	opts.SetHint(typeInitializedIDQueryIndex.Keys)
 	_, err := col.UpdateOne(ctx, bson.D{{Key: "_id", Value: subscriptionID}, {Key: initializedKey, Value: false}}, bson.M{"$set": bson.M{initializedKey: true}}, opts)
 	if err != nil {
 		return fmt.Errorf("cannot set initialized for %v: %w", subscriptionID, err)
@@ -201,7 +209,7 @@ func (s *Store) LoadSubscriptions(ctx context.Context, query store.SubscriptionQ
 			hrefKey:     query.Href,
 		}
 		iter, err = col.Find(ctx, q, &options.FindOptions{
-			Hint: typeResourceIDQueryIndex,
+			Hint: typeResourceIDQueryIndex.Keys,
 		})
 	case query.DeviceID != "":
 		q := bson.M{
@@ -209,14 +217,14 @@ func (s *Store) LoadSubscriptions(ctx context.Context, query store.SubscriptionQ
 			deviceIDKey: query.DeviceID,
 		}
 		iter, err = col.Find(ctx, q, &options.FindOptions{
-			Hint: typeDeviceIDQueryIndex,
+			Hint: typeDeviceIDQueryIndex.Keys,
 		})
 	default:
 		q := bson.M{
 			typeKey: query.Type,
 		}
 		iter, err = col.Find(ctx, q, &options.FindOptions{
-			Hint: typeQueryIndex,
+			Hint: typeQueryIndex.Keys,
 		})
 	}
 	if errors.Is(err, mongo.ErrNilDocument) {

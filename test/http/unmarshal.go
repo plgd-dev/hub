@@ -1,4 +1,4 @@
-package test
+package http
 
 import (
 	"encoding/json"
@@ -68,4 +68,17 @@ func Unmarshal(code int, input io.Reader, v protoreflect.ProtoMessage) error {
 		return err
 	}
 	return nil
+}
+
+func UnmarshalJson(code int, input io.Reader, v any) error {
+	var data json.RawMessage
+	err := json.NewDecoder(input).Decode(&data)
+	if err != nil {
+		return err
+	}
+	if code != http.StatusOK {
+		return UnmarshalError(data)
+	}
+	err = json.Unmarshal(data, v)
+	return err
 }

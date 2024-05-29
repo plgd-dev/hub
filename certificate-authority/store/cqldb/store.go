@@ -33,11 +33,8 @@ type Index struct {
 // clustering key: deviceIDKey
 var primaryKey = []string{idKey, ownerKey, commonNameKey}
 
-// Store implements an Store for cqldb.
 type Store struct {
-	client *cqldb.Client
-	config *Config
-	logger log.Logger
+	*cqldb.Store
 }
 
 func New(ctx context.Context, config *Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*Store, error) {
@@ -92,36 +89,6 @@ func newEventStoreWithClient(ctx context.Context, client *cqldb.Client, config *
 	}
 
 	return &Store{
-		client: client,
-		logger: logger,
-		config: config,
+		Store: cqldb.NewStore(config.Table, client, logger),
 	}, nil
-}
-
-// Clear clears the event storage.
-func (s *Store) Clear(ctx context.Context) error {
-	err := s.client.DropKeyspace(ctx)
-	if err != nil {
-		return fmt.Errorf("cannot clear: %w", err)
-	}
-	return nil
-}
-
-func (s *Store) Table() string {
-	return s.client.Keyspace() + "." + s.config.Table
-}
-
-// Clear documents in collections, but don't drop the database or the collections
-func (s *Store) ClearTable(ctx context.Context) error {
-	return s.client.Session().Query("truncate " + s.Table() + ";").WithContext(ctx).Exec()
-}
-
-// Close closes the database session.
-func (s *Store) Close(_ context.Context) error {
-	s.client.Close()
-	return nil
-}
-
-func (s *Store) AddCloseFunc(f func()) {
-	s.client.AddCloseFunc(f)
 }

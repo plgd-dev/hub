@@ -63,11 +63,11 @@ func (c *C2CSubscriber) Subscribe(ctx context.Context, t *testing.T, token, devi
 	uri := c.subscriptionURI()
 	require.NotEmpty(t, uri)
 	accept := message.AppJSON.String()
-	rb := testHttp.NewHTTPRequest(http.MethodPost, uri, bytes.NewBuffer(reqData)).AuthToken(token).Accept(accept)
+	rb := testHttp.NewRequest(http.MethodPost, uri, bytes.NewBuffer(reqData)).AuthToken(token).Accept(accept)
 	rb.DeviceId(deviceID).ResourceHref(href)
 	req := rb.Build(ctx, t)
 	fmt.Printf("%v\n", req.URL.String())
-	resp := testHttp.DoHTTPRequest(t, req)
+	resp := testHttp.Do(t, req)
 	assert.Equal(t, http.StatusCreated, resp.StatusCode)
 	defer func() {
 		_ = resp.Body.Close()
@@ -104,11 +104,11 @@ func (c *C2CSubscriber) unsubscriptionURI() string {
 func (c *C2CSubscriber) Unsubscribe(ctx context.Context, t *testing.T, token, deviceID, href, subID string) {
 	uri := c.unsubscriptionURI()
 	require.NotEmpty(t, uri)
-	rb := testHttp.NewHTTPRequest(http.MethodDelete, uri, nil).AuthToken(token)
+	rb := testHttp.NewRequest(http.MethodDelete, uri, nil).AuthToken(token)
 	rb.DeviceId(deviceID).ResourceHref(href).SubscriptionID(subID)
 	req := rb.Build(ctx, t)
 	fmt.Printf("%v\n", req.URL.String())
-	resp := testHttp.DoHTTPRequest(t, req)
+	resp := testHttp.Do(t, req)
 	assert.Equal(t, http.StatusAccepted, resp.StatusCode)
 	defer func() {
 		_ = resp.Body.Close()

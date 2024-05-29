@@ -15,11 +15,13 @@ import (
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
-	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
+	httpTest "github.com/plgd-dev/hub/v2/test/http"
 	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
@@ -45,7 +47,7 @@ func TestRequestHandlerGetResources(t *testing.T) {
 	defer shutdownHttp()
 
 	token := oauthTest.GetDefaultAccessToken(t)
-	ctx = kitNetGrpc.CtxWithToken(ctx, token)
+	ctx = pkgGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
@@ -84,14 +86,14 @@ func TestRequestHandlerGetResources(t *testing.T) {
 		{
 			name: "invalid deviceIdFilter",
 			args: args{
-				accept:         uri.ApplicationProtoJsonContentType,
+				accept:         pkgHttp.ApplicationProtoJsonContentType,
 				deviceIdFilter: []string{"unknown"},
 			},
 		},
 		{
 			name: "invalid resourceIdFilter",
 			args: args{
-				accept: uri.ApplicationProtoJsonContentType,
+				accept: pkgHttp.ApplicationProtoJsonContentType,
 				resourceIdFilter: []*pb.ResourceIdFilter{
 					{
 						ResourceId: commands.NewResourceID("unknown", ""),
@@ -102,14 +104,14 @@ func TestRequestHandlerGetResources(t *testing.T) {
 		{
 			name: "invalid typeFilter",
 			args: args{
-				accept:     uri.ApplicationProtoJsonContentType,
+				accept:     pkgHttp.ApplicationProtoJsonContentType,
 				typeFilter: []string{"unknown"},
 			},
 		},
 		{
 			name: "valid deviceIdFilter",
 			args: args{
-				accept:         uri.ApplicationProtoJsonContentType,
+				accept:         pkgHttp.ApplicationProtoJsonContentType,
 				deviceIdFilter: []string{deviceID},
 			},
 			cmpFn: pbTest.CmpResourceValuesBasic,
@@ -118,7 +120,7 @@ func TestRequestHandlerGetResources(t *testing.T) {
 		{
 			name: "valid resourceIdFilter",
 			args: args{
-				accept: uri.ApplicationProtoJsonContentType,
+				accept: pkgHttp.ApplicationProtoJsonContentType,
 				resourceIdFilter: []*pb.ResourceIdFilter{
 					{
 						ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
@@ -141,7 +143,7 @@ func TestRequestHandlerGetResources(t *testing.T) {
 		{
 			name: "valid typeFilter",
 			args: args{
-				accept:     uri.ApplicationProtoJsonContentType,
+				accept:     pkgHttp.ApplicationProtoJsonContentType,
 				typeFilter: []string{types.BINARY_SWITCH},
 			},
 			want: []*pb.Resource{
@@ -158,7 +160,7 @@ func TestRequestHandlerGetResources(t *testing.T) {
 		{
 			name: "valid resourceIdFilter with ETag",
 			args: args{
-				accept: uri.ApplicationProtoJsonContentType,
+				accept: pkgHttp.ApplicationProtoJsonContentType,
 				resourceIdFilter: []*pb.ResourceIdFilter{
 					{
 						ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
@@ -187,7 +189,7 @@ func TestRequestHandlerGetResources(t *testing.T) {
 		{
 			name: "valid resourceIdFilter with multiple ETags",
 			args: args{
-				accept: uri.ApplicationProtoJsonContentType,
+				accept: pkgHttp.ApplicationProtoJsonContentType,
 				resourceIdFilter: []*pb.ResourceIdFilter{
 					{
 						ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
@@ -227,7 +229,7 @@ func TestRequestHandlerGetResources(t *testing.T) {
 			values := make([]*pb.Resource, 0, 1)
 			for {
 				var value pb.Resource
-				err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &value)
+				err = httpTest.Unmarshal(resp.StatusCode, resp.Body, &value)
 				if errors.Is(err, io.EOF) {
 					break
 				}

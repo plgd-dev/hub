@@ -12,16 +12,17 @@ import (
 	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
 func getAccept(r *http.Request) string {
-	accept := r.Header.Get(uri.AcceptHeaderKey)
+	accept := r.Header.Get(pkgHttp.AcceptHeaderKey)
 	if accept != "" {
 		return accept
 	}
-	accept = r.Header.Get(strings.ToLower(uri.AcceptHeaderKey))
+	accept = r.Header.Get(strings.ToLower(pkgHttp.AcceptHeaderKey))
 	if accept != "" {
 		return accept
 	}
@@ -74,9 +75,9 @@ func (requestHandler *RequestHandler) getHubConfiguration(w http.ResponseWriter,
 		Visibility:                requestHandler.config.UI.WebConfiguration.Visibility.ToProto(),
 		DeviceProvisioningService: requestHandler.config.UI.WebConfiguration.DeviceProvisioningService,
 	}
-	if accept == uri.ApplicationProtoJsonContentType {
+	if accept == pkgHttp.ApplicationProtoJsonContentType {
 		m := serverMux.NewJsonpbMarshaler()
-		w.Header().Set(contentTypeHeaderKey, uri.ApplicationProtoJsonContentType)
+		w.Header().Set(pkgHttp.ContentTypeHeaderKey, pkgHttp.ApplicationProtoJsonContentType)
 		w.WriteHeader(http.StatusOK)
 		if err = m.NewEncoder(w).Encode(resp); err != nil {
 			log.Errorf("failed to write response: %v", err)

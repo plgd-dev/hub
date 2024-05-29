@@ -13,13 +13,14 @@ import (
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
-	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	isEvents "github.com/plgd-dev/hub/v2/identity-store/events"
-	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
+	httpTest "github.com/plgd-dev/hub/v2/test/http"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/plgd-dev/hub/v2/test/service"
@@ -129,7 +130,7 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 	defer tearDown()
 
 	token := oauthTest.GetDefaultAccessToken(t)
-	ctx = kitNetGrpc.CtxWithToken(ctx, token)
+	ctx = pkgGrpc.CtxWithToken(ctx, token)
 
 	shutdownHttp := httpgwTest.SetUp(t)
 	defer shutdownHttp()
@@ -145,7 +146,7 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 
 	header := make(http.Header)
 	header.Set("Sec-Websocket-Protocol", "Bearer, "+token)
-	header.Set("Accept", uri.ApplicationProtoJsonContentType)
+	header.Set("Accept", pkgHttp.ApplicationProtoJsonContentType)
 	d := &websocket.Dialer{
 		Proxy:            http.ProxyFromEnvironment,
 		HandshakeTimeout: 45 * time.Second,
@@ -182,7 +183,7 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 			return nil, errM
 		}
 		var event pb.Event
-		errM = httpgwTest.Unmarshal(http.StatusOK, reader, &event)
+		errM = httpTest.Unmarshal(http.StatusOK, reader, &event)
 		return &event, errM
 	}
 	createResourceSub := &pb.SubscribeToEvents{

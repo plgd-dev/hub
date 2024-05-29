@@ -12,6 +12,7 @@ import (
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
+	httpTest "github.com/plgd-dev/hub/v2/test/http"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/assert"
@@ -91,7 +92,7 @@ func TestRequestHandlerDeleteDevices(t *testing.T) {
 			assert.Equal(t, tt.wantHTTPCode, resp.StatusCode)
 
 			var got pb.DeleteDevicesResponse
-			err = httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &got)
+			err = httpTest.Unmarshal(resp.StatusCode, resp.Body, &got)
 			require.NoError(t, err)
 			require.Equal(t, tt.want.GetDeviceIds(), got.GetDeviceIds())
 		})

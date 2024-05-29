@@ -226,14 +226,6 @@ github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINE
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/profile v1.7.0 h1:hnbDkaNWPCLMO9wGLdBFTIZvzDrDfBM2072E1S9gJkA=
 github.com/pkg/profile v1.7.0/go.mod h1:8Uer0jas47ZQMJ7VD+OHknK4YDY07LPUC6dEvqDjvNo=
-github.com/plgd-dev/device/v2 v2.5.1-0.20240510131130-e10f602b7f77 h1:bxo0wjO1xpTvEYMgWex2rdQLgSTw1yWbaWJg37R6tXc=
-github.com/plgd-dev/device/v2 v2.5.1-0.20240510131130-e10f602b7f77/go.mod h1:2mFPs55x2Li76zkrHdRNY3yOqVWSh59hiUw+6FYXA0k=
-github.com/plgd-dev/device/v2 v2.5.1-0.20240510134226-6cd2643faa0a h1:HXUPcCLl6eHqp9zIxFRgwC9GgmBJUb/CU53Ql0S//Js=
-github.com/plgd-dev/device/v2 v2.5.1-0.20240510134226-6cd2643faa0a/go.mod h1:2mFPs55x2Li76zkrHdRNY3yOqVWSh59hiUw+6FYXA0k=
-github.com/plgd-dev/device/v2 v2.5.1-0.20240510135039-6a9dce16a657 h1:/RhBj4mSkB3+KN5ra5xT84fwQhfSZZTOpKRYWw+zueY=
-github.com/plgd-dev/device/v2 v2.5.1-0.20240510135039-6a9dce16a657/go.mod h1:2mFPs55x2Li76zkrHdRNY3yOqVWSh59hiUw+6FYXA0k=
-github.com/plgd-dev/device/v2 v2.5.1-0.20240510135326-9604b2607b7f h1:G0kV13UqowsZoyIQ5y3q8ZlgzG/euaCf+p+9gryZtw4=
-github.com/plgd-dev/device/v2 v2.5.1-0.20240510135326-9604b2607b7f/go.mod h1:2mFPs55x2Li76zkrHdRNY3yOqVWSh59hiUw+6FYXA0k=
 github.com/plgd-dev/device/v2 v2.5.1-0.20240513064831-b553d1a87e1c h1:kNF2KvyCzA8IMERdHUrL/LMdsuZM/tXGjLVzEX2lcg4=
 github.com/plgd-dev/device/v2 v2.5.1-0.20240513064831-b553d1a87e1c/go.mod h1:2mFPs55x2Li76zkrHdRNY3yOqVWSh59hiUw+6FYXA0k=
 github.com/plgd-dev/go-coap/v2 v2.0.4-0.20200819112225-8eb712b901bc/go.mod h1:+tCi9Q78H/orWRtpVWyBgrr4vKFo2zYtbbxUllerBp4=

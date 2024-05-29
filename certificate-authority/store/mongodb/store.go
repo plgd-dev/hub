@@ -10,6 +10,7 @@ import (
 	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -18,18 +19,18 @@ type Store struct {
 	bulkWriter *bulkWriter
 }
 
-var DeviceIDKeyQueryIndex = bson.D{
-	{Key: store.DeviceIDKey, Value: 1},
-	{Key: store.OwnerKey, Value: 1},
+var deviceIDKeyQueryIndex = mongo.IndexModel{
+	Keys: bson.D{
+		{Key: store.DeviceIDKey, Value: 1},
+		{Key: store.OwnerKey, Value: 1},
+	},
 }
 
-var CommonNameKeyQueryIndex = bson.D{
-	{Key: store.CommonNameKey, Value: 1},
-	{Key: store.OwnerKey, Value: 1},
-}
-
-var PublicKeyQueryIndex = bson.D{
-	{Key: store.CommonNameKey, Value: 1},
+var commonNameKeyQueryIndex = mongo.IndexModel{
+	Keys: bson.D{
+		{Key: store.CommonNameKey, Value: 1},
+		{Key: store.OwnerKey, Value: 1},
+	},
 }
 
 func New(ctx context.Context, cfg *Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*Store, error) {
@@ -44,7 +45,7 @@ func New(ctx context.Context, cfg *Config, fileWatcher *fsnotify.Watcher, logger
 	}
 	bulkWriter := newBulkWriter(m.Collection(signingRecordsCol), cfg.BulkWrite.DocumentLimit, cfg.BulkWrite.ThrottleTime, cfg.BulkWrite.Timeout, logger)
 	s := Store{Store: m, bulkWriter: bulkWriter}
-	err = s.EnsureIndex(ctx, signingRecordsCol, CommonNameKeyQueryIndex, DeviceIDKeyQueryIndex)
+	err = s.EnsureIndex(ctx, signingRecordsCol, commonNameKeyQueryIndex, deviceIDKeyQueryIndex)
 	if err != nil {
 		certManager.Close()
 		return nil, err

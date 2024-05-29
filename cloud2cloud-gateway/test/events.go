@@ -140,15 +140,15 @@ func (s *EventsServer) Run(t *testing.T) EventChan {
 		r.StrictSlash(true)
 		r.HandleFunc(s.uri, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			h, err := events.ParseEventHeader(r)
-			assert.NoError(t, err) //nolint:testifylint
+			assert.NoError(t, err)
 			defer func() {
 				_ = r.Body.Close()
 			}()
 			buf, err := io.ReadAll(r.Body)
-			assert.NoError(t, err) //nolint:testifylint
+			assert.NoError(t, err)
 
 			data, err := decodeEvent(h.EventType, buf)
-			assert.NoError(t, err) //nolint:testifylint
+			assert.NoError(t, err)
 			dataChan <- Event{
 				header: h,
 				data:   data,

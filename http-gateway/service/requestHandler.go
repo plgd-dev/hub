@@ -15,7 +15,7 @@ import (
 	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/log"
-	kitHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/pkg/security/openid"
 	pkgStrings "github.com/plgd-dev/hub/v2/pkg/strings"
 )
@@ -33,7 +33,7 @@ func matchPrefixAndSplitURIPath(requestURI, prefix string) []string {
 	if len(requestURI) == 0 {
 		return nil
 	}
-	v := kitHttp.CanonicalHref(requestURI)
+	v := pkgHttp.CanonicalHref(requestURI)
 	p := strings.TrimPrefix(v, prefix) // remove core prefix
 	if p == v {
 		return nil
@@ -134,14 +134,14 @@ func wsRequestMutator(incoming, outgoing *http.Request) *http.Request {
 	outgoing.Method = http.MethodPost
 	accept := getAccept(incoming)
 	if accept != "" {
-		outgoing.Header.Set(uri.AcceptHeaderKey, accept)
+		outgoing.Header.Set(pkgHttp.AcceptHeaderKey, accept)
 	}
 	if incoming.RequestURI == uri.SubscribeToEvents {
-		contentType := incoming.Header.Get(uri.ContentTypeHeaderKey)
-		if contentType == uri.ApplicationProtoJsonContentType {
-			outgoing.Header.Set(uri.ContentTypeHeaderKey, ApplicationSubscribeToEventsProtoJsonContentType)
+		contentType := incoming.Header.Get(pkgHttp.ContentTypeHeaderKey)
+		if contentType == pkgHttp.ApplicationProtoJsonContentType {
+			outgoing.Header.Set(pkgHttp.ContentTypeHeaderKey, ApplicationSubscribeToEventsProtoJsonContentType)
 		} else {
-			outgoing.Header.Set(uri.ContentTypeHeaderKey, ApplicationSubscribeToEventsMIMEWildcard)
+			outgoing.Header.Set(pkgHttp.ContentTypeHeaderKey, ApplicationSubscribeToEventsMIMEWildcard)
 		}
 	}
 	return outgoing

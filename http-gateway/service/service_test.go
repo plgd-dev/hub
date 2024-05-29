@@ -7,6 +7,7 @@ import (
 
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
+	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/plgd-dev/hub/v2/test/service"
@@ -49,7 +50,7 @@ func TestHTTPMethodValidation(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rb := httpgwTest.NewRequest(tt.args.method, tt.args.uri, nil).Accept(uri.ApplicationProtoJsonContentType).AuthToken(token)
+			rb := httpgwTest.NewRequest(tt.args.method, tt.args.uri, nil).Accept(pkgHttp.ApplicationProtoJsonContentType).AuthToken(token)
 			resp := httpgwTest.HTTPDo(t, rb.Build())
 			defer func() {
 				_ = resp.Body.Close()

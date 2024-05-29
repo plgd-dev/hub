@@ -8,7 +8,9 @@ import (
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
+	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/test/config"
+	httpTest "github.com/plgd-dev/hub/v2/test/http"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/stretchr/testify/assert"
@@ -21,7 +23,7 @@ func doPendingCommand(t *testing.T, request *http.Request) (*pb.CancelPendingCom
 		_ = resp.Body.Close()
 	}()
 	var v pb.CancelPendingCommandsResponse
-	err := httpgwTest.Unmarshal(resp.StatusCode, resp.Body, &v)
+	err := httpTest.Unmarshal(resp.StatusCode, resp.Body, &v)
 	return &v, resp.StatusCode, err
 }
 
@@ -53,7 +55,7 @@ func TestRequestHandlerCancelPendingCommands(t *testing.T) {
 				deviceID:            resourcePendings[0].ResourceId.GetDeviceId(),
 				href:                resourcePendings[0].ResourceId.GetHref(),
 				correlationIdFilter: []string{resourcePendings[0].CorrelationID},
-				accept:              uri.ApplicationProtoJsonContentType,
+				accept:              pkgHttp.ApplicationProtoJsonContentType,
 			},
 			want: &pb.CancelPendingCommandsResponse{
 				CorrelationIds: []string{resourcePendings[0].CorrelationID},
@@ -66,7 +68,7 @@ func TestRequestHandlerCancelPendingCommands(t *testing.T) {
 				deviceID:            resourcePendings[0].ResourceId.GetDeviceId(),
 				href:                resourcePendings[0].ResourceId.GetHref(),
 				correlationIdFilter: []string{resourcePendings[0].CorrelationID},
-				accept:              uri.ApplicationProtoJsonContentType,
+				accept:              pkgHttp.ApplicationProtoJsonContentType,
 			},
 			wantErr:      true,
 			wantHTTPCode: http.StatusNotFound,
@@ -76,7 +78,7 @@ func TestRequestHandlerCancelPendingCommands(t *testing.T) {
 			args: args{
 				deviceID: resourcePendings[0].ResourceId.GetDeviceId(),
 				href:     resourcePendings[0].ResourceId.GetHref(),
-				accept:   uri.ApplicationProtoJsonContentType,
+				accept:   pkgHttp.ApplicationProtoJsonContentType,
 			},
 			want: &pb.CancelPendingCommandsResponse{
 				CorrelationIds: []string{resourcePendings[1].CorrelationID, resourcePendings[2].CorrelationID, resourcePendings[3].CorrelationID},
@@ -130,7 +132,7 @@ func TestRequestHandlerCancelResourceCommand(t *testing.T) {
 				deviceID:      resourcePendings[0].ResourceId.GetDeviceId(),
 				href:          resourcePendings[0].ResourceId.GetHref(),
 				correlationID: resourcePendings[0].CorrelationID,
-				accept:        uri.ApplicationProtoJsonContentType,
+				accept:        pkgHttp.ApplicationProtoJsonContentType,
 			},
 			want: &pb.CancelPendingCommandsResponse{
 				CorrelationIds: []string{resourcePendings[0].CorrelationID},
@@ -143,7 +145,7 @@ func TestRequestHandlerCancelResourceCommand(t *testing.T) {
 				deviceID:      resourcePendings[0].ResourceId.GetDeviceId(),
 				href:          resourcePendings[0].ResourceId.GetHref(),
 				correlationID: resourcePendings[0].CorrelationID,
-				accept:        uri.ApplicationProtoJsonContentType,
+				accept:        pkgHttp.ApplicationProtoJsonContentType,
 			},
 			wantErr:      true,
 			wantHTTPCode: http.StatusNotFound,

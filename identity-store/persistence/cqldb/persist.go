@@ -25,7 +25,7 @@ type PersistenceTx struct {
 //	tx := s.persistence.NewTransaction()
 //	defer tx.Close()
 func (s *Store) NewTransaction(ctx context.Context) persistence.PersistenceTx {
-	return &PersistenceTx{tx: s.client.Session(), table: s.Table(), err: nil, ctx: ctx}
+	return &PersistenceTx{tx: s.Session(), table: s.Table(), err: nil, ctx: ctx}
 }
 
 func (p *PersistenceTx) retrieveDeviceByQuery(whereCondition string) (_ *persistence.AuthorizedDevice, ok bool, err error) {
