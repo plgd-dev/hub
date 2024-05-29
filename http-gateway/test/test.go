@@ -20,6 +20,7 @@ func MakeWebConfigurationConfig() service.WebConfiguration {
 		Authority:                 testHttp.HTTPS_SCHEME + config.OAUTH_SERVER_HOST,
 		HTTPGatewayAddress:        testHttp.HTTPS_SCHEME + config.HTTP_GW_HOST,
 		DeviceProvisioningService: testHttp.HTTPS_SCHEME + config.HTTP_GW_HOST,
+		SnippetService:            testHttp.HTTPS_SCHEME + config.SNIPPET_SERVICE_HTTP_HOST,
 		WebOAuthClient: service.BasicOAuthClient{
 			ClientID: config.OAUTH_MANAGER_CLIENT_ID,
 			Audience: config.OAUTH_MANAGER_AUDIENCE,
