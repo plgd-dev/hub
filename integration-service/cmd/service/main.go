@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/plgd-dev/hub/v2/integration/service"
+	"github.com/plgd-dev/hub/v2/integration-service/service"
 	"github.com/plgd-dev/hub/v2/pkg/build"
 	"github.com/plgd-dev/hub/v2/pkg/config"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"

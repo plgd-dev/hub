@@ -1,0 +1,857 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "PLGD Rule Engine API",
+    "description": "API for configuring rule engine in PLGD",
+    "version": "1.0",
+    "contact": {
+      "name": "plgd.dev",
+      "url": "https://github.com/plgd-dev/hub",
+      "email": "info@plgd.dev"
+    },
+    "license": {
+      "name": "Apache License 2.0",
+      "url": "https://github.com/plgd-dev/hub/blob/v2/LICENSE"
+    }
+  },
+  "tags": [
+    {
+      "name": "IntegrationService"
+    }
+  ],
+  "schemes": [
+    "https"
+  ],
+  "consumes": [
+    "application/json",
+    "application/protojson"
+  ],
+  "produces": [
+    "application/json",
+    "application/protojson"
+  ],
+  "paths": {
+    "/api/v1/conditions": {
+      "get": {
+        "operationId": "IntegrationService_GetConditions",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/pbCondition"
+                },
+                "error": {
+                  "$ref": "#/definitions/googlerpcStatus"
+                }
+              },
+              "title": "Stream result of pbCondition"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Conditions"
+        ]
+      },
+      "delete": {
+        "operationId": "IntegrationService_DeleteConditions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbDeleteConditionsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Conditions"
+        ]
+      },
+      "post": {
+        "operationId": "IntegrationService_CreateCondition",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbCondition"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbCondition"
+            }
+          }
+        ],
+        "tags": [
+          "Conditions"
+        ]
+      }
+    },
+    "/api/v1/conditions/{id}": {
+      "put": {
+        "operationId": "IntegrationService_UpdateCondition",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbCondition"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/IntegrationServiceUpdateConditionBody"
+            }
+          }
+        ],
+        "tags": [
+          "Conditions"
+        ]
+      }
+    },
+    "/api/v1/configurations": {
+      "get": {
+        "operationId": "IntegrationService_GetConfigurations",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/pbConfiguration"
+                },
+                "error": {
+                  "$ref": "#/definitions/googlerpcStatus"
+                }
+              },
+              "title": "Stream result of pbConfiguration"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Configurations"
+        ]
+      },
+      "delete": {
+        "operationId": "IntegrationService_DeleteConfigurations",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbDeleteConfigurationsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "tags": [
+          "Configurations"
+        ]
+      },
+      "post": {
+        "operationId": "IntegrationService_CreateConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbConfiguration"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbConfiguration"
+            }
+          }
+        ],
+        "tags": [
+          "Configurations"
+        ]
+      }
+    },
+    "/api/v1/configurations/applied": {
+      "get": {
+        "operationId": "IntegrationService_GetAppliedConfigurations",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/pbAppliedConfiguration"
+                },
+                "error": {
+                  "$ref": "#/definitions/googlerpcStatus"
+                }
+              },
+              "title": "Stream result of pbAppliedConfiguration"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idFilter",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "deviceIdFilter",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "Configurations"
+        ]
+      },
+      "delete": {
+        "operationId": "IntegrationService_DeleteAppliedConfigurations",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbDeleteAppliedConfigurationsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idFilter",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "Configurations"
+        ]
+      }
+    },
+    "/api/v1/configurations/{id}": {
+      "post": {
+        "summary": "streaming process of update configuration to invoker",
+        "operationId": "IntegrationService_InvokeConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/pbAppliedConfiguration"
+                },
+                "error": {
+                  "$ref": "#/definitions/googlerpcStatus"
+                }
+              },
+              "title": "Stream result of pbAppliedConfiguration"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/IntegrationServiceInvokeConfigurationBody"
+            }
+          }
+        ],
+        "tags": [
+          "Configurations"
+        ]
+      },
+      "put": {
+        "operationId": "IntegrationService_UpdateConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbConfiguration"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/IntegrationServiceUpdateConfigurationBody"
+            }
+          }
+        ],
+        "tags": [
+          "Configurations"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "AppliedConfigurationRelationTo": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string",
+          "format": "uint64"
+        }
+      },
+      "title": "TODO naming"
+    },
+    "AppliedConfigurationResourceStatus": {
+      "type": "string",
+      "enum": [
+        "QUEUED",
+        "PENDING",
+        "DONE",
+        "TIMEOUT"
+      ],
+      "default": "QUEUED",
+      "description": " - DONE: If done look to resource_updated even update resource failed for resource aggregate."
+    },
+    "IntegrationServiceInvokeConfigurationBody": {
+      "type": "object",
+      "properties": {
+        "configurationId": {
+          "type": "string",
+          "title": "applies latest configuration"
+        },
+        "deviceId": {
+          "type": "string"
+        },
+        "force": {
+          "type": "boolean",
+          "title": "force update even if the configuration has already been applied to device"
+        },
+        "correlationId": {
+          "type": "string",
+          "title": "propagated down to the resource update command"
+        }
+      }
+    },
+    "IntegrationServiceUpdateConditionBody": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "configurationId": {
+          "type": "string"
+        },
+        "deviceIdFilter": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "resourceTypeFilter": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "resourceHrefFilter": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "jqExpressionFilter": {
+          "type": "string"
+        },
+        "apiAccessToken": {
+          "type": "string",
+          "title": "token used to update resources in the configuration"
+        },
+        "owner": {
+          "type": "string"
+        }
+      },
+      "title": "driven by resource change event"
+    },
+    "IntegrationServiceUpdateConfigurationBody": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "resources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/pbConfigurationResource"
+          }
+        },
+        "owner": {
+          "type": "string"
+        }
+      }
+    },
+    "googlerpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "pbAppliedConfiguration": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "deviceId": {
+          "type": "string"
+        },
+        "configurationId": {
+          "$ref": "#/definitions/AppliedConfigurationRelationTo"
+        },
+        "onDemand": {
+          "type": "boolean"
+        },
+        "conditionId": {
+          "$ref": "#/definitions/AppliedConfigurationRelationTo",
+          "title": "TODO Naming"
+        },
+        "resources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/pbAppliedConfigurationResource"
+          },
+          "title": "TODO naming"
+        },
+        "owner": {
+          "type": "string"
+        }
+      },
+      "title": "TODO naming"
+    },
+    "pbAppliedConfigurationResource": {
+      "type": "object",
+      "properties": {
+        "resourceId": {
+          "$ref": "#/definitions/pbResourceId",
+          "title": "TODO Jozo href only?"
+        },
+        "correlationId": {
+          "type": "string",
+          "description": "Reused from invoke command or generated. Can be used to retrieve corresponding pending command."
+        },
+        "status": {
+          "$ref": "#/definitions/AppliedConfigurationResourceStatus"
+        },
+        "resourceUpdated": {
+          "$ref": "#/definitions/pbResourceUpdated"
+        }
+      }
+    },
+    "pbAuditContext": {
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string"
+        },
+        "correlationId": {
+          "type": "string"
+        },
+        "owner": {
+          "type": "string"
+        }
+      }
+    },
+    "pbCondition": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "configurationId": {
+          "type": "string"
+        },
+        "deviceIdFilter": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "resourceTypeFilter": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "resourceHrefFilter": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "jqExpressionFilter": {
+          "type": "string"
+        },
+        "apiAccessToken": {
+          "type": "string",
+          "title": "token used to update resources in the configuration"
+        },
+        "owner": {
+          "type": "string"
+        }
+      },
+      "title": "driven by resource change event"
+    },
+    "pbConfiguration": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "name": {
+          "type": "string"
+        },
+        "resources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/pbConfigurationResource"
+          }
+        },
+        "owner": {
+          "type": "string"
+        }
+      }
+    },
+    "pbConfigurationResource": {
+      "type": "object",
+      "properties": {
+        "href": {
+          "type": "string"
+        },
+        "content": {
+          "$ref": "#/definitions/pbContent"
+        },
+        "timeToLive": {
+          "type": "string",
+          "format": "int64",
+          "title": "optional update command time to live, 0 is infinite"
+        }
+      }
+    },
+    "pbContent": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "string",
+          "format": "byte"
+        },
+        "contentType": {
+          "type": "string"
+        },
+        "coapContentFormat": {
+          "type": "integer",
+          "format": "int32",
+          "title": "-1 means content-format was not provided"
+        }
+      }
+    },
+    "pbDeleteAppliedConfigurationsResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "pbDeleteConditionsResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "pbDeleteConfigurationsResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "pbEventMetadata": {
+      "type": "object",
+      "properties": {
+        "version": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "int64"
+        },
+        "connectionId": {
+          "type": "string"
+        },
+        "sequence": {
+          "type": "string",
+          "format": "uint64",
+          "title": "sequence number within the same connection_id; the ResourceChanged event uses the value to skip old events, other event types might not fill the value"
+        },
+        "hubId": {
+          "type": "string",
+          "title": "the hub which sent the event"
+        }
+      }
+    },
+    "pbIDFilter": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "all": {
+          "type": "boolean"
+        },
+        "latest": {
+          "type": "boolean"
+        }
+      },
+      "title": "/configuration/123?version=latest :) Jozko spravi :)"
+    },
+    "pbResourceId": {
+      "type": "object",
+      "properties": {
+        "deviceId": {
+          "type": "string"
+        },
+        "href": {
+          "type": "string"
+        }
+      }
+    },
+    "pbResourceUpdated": {
+      "type": "object",
+      "properties": {
+        "resourceId": {
+          "$ref": "#/definitions/pbResourceId"
+        },
+        "status": {
+          "$ref": "#/definitions/resourceaggregatepbStatus"
+        },
+        "content": {
+          "$ref": "#/definitions/pbContent"
+        },
+        "auditContext": {
+          "$ref": "#/definitions/pbAuditContext"
+        },
+        "eventMetadata": {
+          "$ref": "#/definitions/pbEventMetadata"
+        },
+        "resourceTypes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "openTelemetryCarrier": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Open telemetry data propagated to asynchronous events"
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "resourceaggregatepbStatus": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "OK",
+        "BAD_REQUEST",
+        "UNAUTHORIZED",
+        "FORBIDDEN",
+        "NOT_FOUND",
+        "UNAVAILABLE",
+        "NOT_IMPLEMENTED",
+        "ACCEPTED",
+        "ERROR",
+        "METHOD_NOT_ALLOWED",
+        "CREATED",
+        "CANCELED",
+        "NOT_MODIFIED"
+      ],
+      "default": "UNKNOWN",
+      "description": " - CANCELED: Canceled indicates the operation was canceled (typically by the user).\n - NOT_MODIFIED: Valid indicates the content hasn't changed. (provided etag in GET request is same as the resource etag)."
+    }
+  }
+}

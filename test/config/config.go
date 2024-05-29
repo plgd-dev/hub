@@ -43,6 +43,8 @@ const (
 	RESOURCE_DIRECTORY_HOST         = "localhost:20004"
 	CERTIFICATE_AUTHORITY_HOST      = "localhost:20011"
 	CERTIFICATE_AUTHORITY_HTTP_HOST = "localhost:20012"
+	INTEGRATION_SERVICE_HOST        = "localhost:20013"
+	INTEGRATION_SERVICE_HTTP_HOST   = "localhost:20014"
 	GRPC_GW_HOST                    = "localhost:20005"
 	C2C_CONNECTOR_HOST              = "localhost:20006"
 	C2C_CONNECTOR_DB                = "cloud2cloudConnector"
