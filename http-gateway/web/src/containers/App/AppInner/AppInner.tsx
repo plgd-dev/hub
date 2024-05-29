@@ -2,7 +2,6 @@ import { useMemo } from 'react'
 import { BrowserRouter } from 'react-router-dom'
 import { useAuth } from 'oidc-react'
 import { Global } from '@emotion/react'
-import { RecoilRoot } from 'recoil'
 
 import { InitServices } from '@shared-ui/common/services/init-services'
 import { BrowserNotificationsContainer } from '@shared-ui/components/Atomic/Toast'
@@ -56,22 +55,20 @@ const AppInner = (props: Props) => {
     }
 
     return (
-        <RecoilRoot>
-            <AppContext.Provider value={contextValue}>
-                <InitServices deviceStatusListener={deviceStatusListener} />
-                <BrowserRouter>
-                    <AppLayout
-                        buildInformation={wellKnownConfig?.buildInfo}
-                        collapsed={collapsed}
-                        setCollapsed={setCollapsed}
-                        signOutRedirect={signOutRedirect}
-                        userData={userData}
-                    />
-                    <Global styles={globalStyle(toastNotifications)} />
-                    <BrowserNotificationsContainer />
-                </BrowserRouter>
-            </AppContext.Provider>
-        </RecoilRoot>
+        <AppContext.Provider value={contextValue}>
+            <InitServices deviceStatusListener={deviceStatusListener} />
+            <BrowserRouter>
+                <AppLayout
+                    buildInformation={wellKnownConfig?.buildInfo}
+                    collapsed={collapsed}
+                    setCollapsed={setCollapsed}
+                    signOutRedirect={signOutRedirect}
+                    userData={userData}
+                />
+                <Global styles={globalStyle(toastNotifications)} />
+                <BrowserNotificationsContainer />
+            </BrowserRouter>
+        </AppContext.Provider>
     )
 }
 

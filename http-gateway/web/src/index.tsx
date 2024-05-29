@@ -15,6 +15,7 @@ import appConfig from '@/config'
 import { CONFIGURATION_PAGE_FRAME, DEVICE_AUTH_CODE_SESSION_KEY } from './constants'
 import reportWebVitals from './reportWebVitals'
 import PreviewApp from '@/containers/Configuration/PreviewApp/PreviewApp'
+import { RecoilRoot } from 'recoil'
 
 let persistor = persistStore(store)
 
@@ -24,10 +25,12 @@ const BaseComponent = () => {
     // only set the code to the session storage, so that the caller can process it.
     const urlParams = new URLSearchParams(window.location.search)
     const code = urlParams.get('code')
+    const state = urlParams.get('state')
     const isMockApp = window.location.pathname === '/devices-code-redirect' && !!code
     const configurationPageFrame = window.location.pathname === `/${CONFIGURATION_PAGE_FRAME}`
 
-    if (window.location.pathname === '/devices' && code) {
+    // onboarding device
+    if (window.location.pathname === '/devices' && code && !state) {
         localStorage.setItem(DEVICE_AUTH_CODE_SESSION_KEY, code)
 
         window.location.hash = ''
@@ -37,6 +40,7 @@ const BaseComponent = () => {
     }
 
     if (isMockApp) {
+        console.log('plgd mock app is running...')
         window.addEventListener('load', function () {
             setInterval(() => {
                 if (localStorage.getItem(DEVICE_AUTH_CODE_SESSION_KEY)) {
@@ -48,11 +52,13 @@ const BaseComponent = () => {
 
     const ProviderWrapper = ({ children }: { children: any }) => (
         <Provider store={store}>
-            <PersistGate persistor={persistor}>
-                <IntlProvider defaultLanguage={appConfig.defaultLanguage} languages={languages}>
-                    {children}
-                </IntlProvider>
-            </PersistGate>
+            <RecoilRoot>
+                <PersistGate persistor={persistor}>
+                    <IntlProvider defaultLanguage={appConfig.defaultLanguage} languages={languages}>
+                        {children}
+                    </IntlProvider>
+                </PersistGate>
+            </RecoilRoot>
         </Provider>
     )
 
