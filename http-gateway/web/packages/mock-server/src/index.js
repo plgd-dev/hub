@@ -1,4 +1,5 @@
 const express = require('express')
+const { check, validationResult } = require('express-validator')
 const cors = require('cors')
 const path = require('path')
 const fs = require('fs')
@@ -8,6 +9,17 @@ const port = 8181
 
 let deletedDevice = false
 let resourceColorUpdatedValue = false
+
+const deviceIdCheck = [check('deviceId').isAlphanumeric().withMessage('Device ID must be alphanumeric')]
+
+const checkError = (req, res) => {
+    const errors = validationResult(req)
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() })
+    }
+
+    console.log(`${req.method}`, req.url)
+}
 
 app.use(
     cors({
@@ -44,40 +56,42 @@ app.get('/api/v1/devices/:deviceId', function (req, res) {
     loadResponseFromFile(path.join(__dirname, 'data', 'devices', 'detail', `${req.params['deviceId']}.json`), res)
 })
 
-app.get('/api/v1/devices/:deviceId/pending-commands', function (req, res) {
-    console.log(`${req.method}`, req.url)
+app.get('/api/v1/devices/:deviceId/pending-commands', deviceIdCheck, function (req, res) {
+    checkError(req, res)
     res.send()
 })
 
-app.get('/api/v1/devices/:deviceId/resources', function (req, res) {
-    console.log(`${req.method}`, req.url)
+app.get('/api/v1/devices/:deviceId/resources', deviceIdCheck, function (req, res) {
+    checkError(req, res)
     res.send()
 })
 
-app.put('/api/v1/devices/:deviceId/metadata', function (req, res) {
-    console.log(`${req.method}`, req.url)
+app.put('/api/v1/devices/:deviceId/metadata', deviceIdCheck, function (req, res) {
+    checkError(req, res)
     res.send()
 })
 
 // change device name
-app.put('/api/v1/devices/:deviceId/resources/oc/con', function (req, res) {
-    console.log(`${req.method}`, req.url)
+app.put('/api/v1/devices/:deviceId/resources/oc/con', deviceIdCheck, function (req, res) {
+    checkError(req, res)
     res.send({ n: 'New Device Name' })
 })
 
 // resource detail
-app.get('/api/v1/devices/:deviceId/resources/light/1', function (req, res) {
-    console.log(`${req.method}`, req.url)
+app.get('/api/v1/devices/:deviceId/resources/light/1', deviceIdCheck, function (req, res) {
+    checkError(req, res)
     loadResponseFromFile(path.join(__dirname, 'data', 'devices', 'detail', `${req.params['deviceId']}-resources-light-1.json`), res)
 })
 
 // resource detail
-app.get('/api/v1/devices/:deviceId/resources/.well-known/wot', function (req, res) {
-    console.log(`${req.method}`, req.url)
+app.get('/api/v1/devices/:deviceId/resources/.well-known/wot', deviceIdCheck, function (req, res) {
+    checkError(req, res)
     loadResponseFromFile(path.join(__dirname, 'data', 'devices', 'detail', `${req.params['deviceId']}-resources-well-known-wot.json`), res)
 })
 
-app.get('/api/v1/devices/:deviceId/resources/color', function (req, res) {
+app.get('/api/v1/devices/:deviceId/resources/color', deviceIdCheck, function (req, res) {
+    checkError(req, res)
+
     if (resourceColorUpdatedValue) {
         loadResponseFromFile(path.join(__dirname, 'data', 'devices', 'detail', `${req.params['deviceId']}-resources-color-update.json`), res)
     } else {
@@ -85,15 +99,15 @@ app.get('/api/v1/devices/:deviceId/resources/color', function (req, res) {
     }
 })
 
-app.put('/api/v1/devices/:deviceId/resources/color', function (req, res) {
-    console.log(`${req.method}`, req.url)
+app.put('/api/v1/devices/:deviceId/resources/color', deviceIdCheck, function (req, res) {
+    checkError(req, res)
     resourceColorUpdatedValue = true
     loadResponseFromFile(path.join(__dirname, 'data', 'devices', 'detail', `${req.params['deviceId']}-resources-color-update.json`), res)
 })
 
 // resource detail update
-app.put('/api/v1/devices/:deviceId/resources/light/1', function (req, res) {
-    console.log(`${req.method}`, req.url)
+app.put('/api/v1/devices/:deviceId/resources/light/1', deviceIdCheck, function (req, res) {
+    checkError(req, res)
     loadResponseFromFile(path.join(__dirname, 'data', 'devices', 'detail', `${req.params['deviceId']}-resources-light-1.json`), res)
 })
 
