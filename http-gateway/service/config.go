@@ -200,6 +200,7 @@ type WebConfiguration struct {
 	Authority                 string            `yaml:"-" json:"authority"`
 	HTTPGatewayAddress        string            `yaml:"httpGatewayAddress" json:"httpGatewayAddress"`
 	DeviceProvisioningService string            `yaml:"deviceProvisioningService" json:"deviceProvisioningService"`
+	SnippetService            string            `yaml:"snippetService" json:"snippetService"`
 	WebOAuthClient            BasicOAuthClient  `yaml:"webOAuthClient" json:"webOauthClient"`
 	DeviceOAuthClient         DeviceOAuthClient `yaml:"deviceOAuthClient" json:"deviceOauthClient"`
 	Visibility                VisibilityConfig  `yaml:"visibility" json:"visibility"`

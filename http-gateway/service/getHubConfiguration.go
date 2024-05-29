@@ -74,6 +74,7 @@ func (requestHandler *RequestHandler) getHubConfiguration(w http.ResponseWriter,
 	resp.Ui = &pb.UIConfiguration{
 		Visibility:                requestHandler.config.UI.WebConfiguration.Visibility.ToProto(),
 		DeviceProvisioningService: requestHandler.config.UI.WebConfiguration.DeviceProvisioningService,
+		SnippetService:            requestHandler.config.UI.WebConfiguration.SnippetService,
 	}
 	if accept == pkgHttp.ApplicationProtoJsonContentType {
 		m := serverMux.NewJsonpbMarshaler()

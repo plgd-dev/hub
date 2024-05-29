@@ -1499,6 +1499,7 @@ httpgateway:
     webConfiguration:
       httpGatewayAddress: ""
       deviceProvisioningService: ""
+      snippetService: ""
       webOAuthClient:
         clientID: ""
         audience: ""
