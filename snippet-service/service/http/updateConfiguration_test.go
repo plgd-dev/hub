@@ -131,7 +131,7 @@ func TestRequestHandlerUpdateConfiguration(t *testing.T) {
 				},
 				token: token,
 			},
-			wantHTTPCode: http.StatusInternalServerError,
+			wantHTTPCode: http.StatusBadRequest,
 			wantErr:      true,
 		},
 		{
@@ -160,7 +160,7 @@ func TestRequestHandlerUpdateConfiguration(t *testing.T) {
 				},
 				token: token,
 			},
-			wantHTTPCode: http.StatusInternalServerError,
+			wantHTTPCode: http.StatusBadRequest,
 			wantErr:      true,
 		},
 	}

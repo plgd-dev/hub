@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
@@ -44,30 +45,45 @@ func (s *SnippetServiceServer) checkOwner(ctx context.Context, owner string) (st
 	return ownerFromToken, nil
 }
 
+func getGRPCErrorCode(err error) codes.Code {
+	if errors.Is(err, store.ErrInvalidArgument) {
+		return codes.InvalidArgument
+	}
+	return codes.Internal
+}
+
+func errCannotCreateConfiguration(err error) error {
+	return fmt.Errorf("cannot get configuration: %w", err)
+}
+
 func (s *SnippetServiceServer) CreateConfiguration(ctx context.Context, conf *pb.Configuration) (*pb.Configuration, error) {
 	owner, err := s.checkOwner(ctx, conf.GetOwner())
 	if err != nil {
-		return nil, s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "cannot create configuration: %v", err))
+		return nil, s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotCreateConfiguration(err)))
 	}
 
 	conf.Owner = owner
 	c, err := s.store.CreateConfiguration(ctx, conf)
 	if err != nil {
-		return nil, s.logger.LogAndReturnError(status.Errorf(codes.Internal, "cannot create configuration: %v", err))
+		return nil, s.logger.LogAndReturnError(status.Errorf(getGRPCErrorCode(err), "%v", errCannotCreateConfiguration(err)))
 	}
 	return c, nil
+}
+
+func errCannotUpdateConfiguration(err error) error {
+	return fmt.Errorf("cannot update configuration: %w", err)
 }
 
 func (s *SnippetServiceServer) UpdateConfiguration(ctx context.Context, conf *pb.Configuration) (*pb.Configuration, error) {
 	owner, err := s.checkOwner(ctx, conf.GetOwner())
 	if err != nil {
-		return nil, s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "cannot update configuration: %v", err))
+		return nil, s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotUpdateConfiguration(err)))
 	}
 
 	conf.Owner = owner
 	c, err := s.store.UpdateConfiguration(ctx, conf)
 	if err != nil {
-		return nil, s.logger.LogAndReturnError(status.Errorf(codes.Internal, "cannot update configuration: %v", err))
+		return nil, s.logger.LogAndReturnError(status.Errorf(getGRPCErrorCode(err), "%v", errCannotUpdateConfiguration(err)))
 	}
 	return c, nil
 }

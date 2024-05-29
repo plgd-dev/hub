@@ -14,7 +14,7 @@ import (
 )
 
 func (s *Store) CreateConfiguration(ctx context.Context, conf *pb.Configuration) (*pb.Configuration, error) {
-	if err := conf.ValidateAndNormalize(); err != nil {
+	if err := store.ValidateAndNormalize(conf); err != nil {
 		return nil, err
 	}
 
@@ -26,7 +26,7 @@ func (s *Store) CreateConfiguration(ctx context.Context, conf *pb.Configuration)
 }
 
 func (s *Store) UpdateConfiguration(ctx context.Context, conf *pb.Configuration) (*pb.Configuration, error) {
-	if err := conf.ValidateAndNormalize(); err != nil {
+	if err := store.ValidateAndNormalize(conf); err != nil {
 		return nil, err
 	}
 	upd, err := s.Collection(configurationsCol).UpdateOne(ctx,
@@ -334,6 +334,12 @@ func (s *Store) removeVersion(ctx context.Context, owner string, id string, vf v
 	return err
 }
 
+const (
+	DeleteConfigurationsFailed         = 0
+	DeleteConfigurationsSuccess        = 1
+	DeleteConfigurationsPartialSuccess = 2
+)
+
 func (s *Store) DeleteConfigurations(ctx context.Context, owner string, query *pb.DeleteConfigurationsRequest) (int64, error) {
 	success := false
 	idVersionAll, idVersions := partitionQuery(query.GetIdFilter())
@@ -357,9 +363,9 @@ func (s *Store) DeleteConfigurations(ctx context.Context, owner string, query *p
 	err := errors.ErrorOrNil()
 	if err != nil {
 		if success {
-			return 2, err
+			return DeleteConfigurationsPartialSuccess, err
 		}
-		return 0, err
+		return DeleteConfigurationsFailed, err
 	}
-	return 1, nil
+	return DeleteConfigurationsSuccess, nil
 }

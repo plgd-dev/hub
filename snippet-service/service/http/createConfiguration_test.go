@@ -66,7 +66,7 @@ func TestRequestHandlerCreateConfiguration(t *testing.T) {
 				accept: pkgHttp.ApplicationProtoJsonContentType,
 				conf: &snippetPb.Configuration{
 					Id:   confID1,
-					Name: "first",
+					Name: "1st",
 					Resources: []*snippetPb.Configuration_Resource{
 						makeTestResource(t, "/test/1", 41),
 					},
@@ -82,7 +82,7 @@ func TestRequestHandlerCreateConfiguration(t *testing.T) {
 				conf: &snippetPb.Configuration{
 					Id:    uuid.New().String(),
 					Owner: oauthService.DeviceUserID,
-					Name:  "second",
+					Name:  "2nd",
 					Resources: []*snippetPb.Configuration_Resource{
 						makeTestResource(t, "/test/2", 42),
 					},
@@ -98,7 +98,7 @@ func TestRequestHandlerCreateConfiguration(t *testing.T) {
 				conf: &snippetPb.Configuration{
 					Id:    uuid.New().String(),
 					Owner: "non-matching-owner",
-					Name:  "third",
+					Name:  "3rd",
 					Resources: []*snippetPb.Configuration_Resource{
 						makeTestResource(t, "/test/3", 43),
 					},
@@ -113,14 +113,14 @@ func TestRequestHandlerCreateConfiguration(t *testing.T) {
 			args: args{
 				accept: pkgHttp.ApplicationProtoJsonContentType,
 				conf: &snippetPb.Configuration{
-					Name: "fourth",
+					Name: "4th",
 					Resources: []*snippetPb.Configuration_Resource{
 						makeTestResource(t, "/test/4", 44),
 					},
 				},
 				token: token,
 			},
-			wantHTTPCode: http.StatusInternalServerError,
+			wantHTTPCode: http.StatusBadRequest,
 			wantErr:      true,
 		},
 		{
@@ -129,7 +129,7 @@ func TestRequestHandlerCreateConfiguration(t *testing.T) {
 				accept: pkgHttp.ApplicationProtoJsonContentType,
 				conf: &snippetPb.Configuration{
 					Id:   confID1,
-					Name: "fifth",
+					Name: "5th",
 					Resources: []*snippetPb.Configuration_Resource{
 						makeTestResource(t, "/test/5", 45),
 					},
@@ -145,11 +145,11 @@ func TestRequestHandlerCreateConfiguration(t *testing.T) {
 				accept: pkgHttp.ApplicationProtoJsonContentType,
 				conf: &snippetPb.Configuration{
 					Id:   uuid.New().String(),
-					Name: "fifth",
+					Name: "6th",
 				},
 				token: token,
 			},
-			wantHTTPCode: http.StatusInternalServerError,
+			wantHTTPCode: http.StatusBadRequest,
 			wantErr:      true,
 		},
 		{
@@ -158,7 +158,7 @@ func TestRequestHandlerCreateConfiguration(t *testing.T) {
 				accept: pkgHttp.ApplicationProtoJsonContentType,
 				conf: &snippetPb.Configuration{
 					Id:   uuid.New().String(),
-					Name: "sixth",
+					Name: "7th",
 					Resources: []*snippetPb.Configuration_Resource{
 						makeTestResource(t, "/test/6", 46),
 					},

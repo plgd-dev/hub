@@ -15,27 +15,15 @@ import (
 	storeConfig "github.com/plgd-dev/hub/v2/snippet-service/store/config"
 )
 
-type Config struct {
-	HubID   string        `yaml:"hubID" json:"hubId"`
-	Log     log.Config    `yaml:"log" json:"log"`
-	APIs    APIsConfig    `yaml:"apis" json:"apis"`
-	Clients ClientsConfig `yaml:"clients" json:"clients"`
+type HTTPConfig struct {
+	Addr   string            `yaml:"address" json:"address"`
+	Server httpServer.Config `yaml:",inline" json:",inline"`
 }
 
-func (c *Config) Validate() error {
-	if err := c.Log.Validate(); err != nil {
-		return fmt.Errorf("log.%w", err)
+func (c *HTTPConfig) Validate() error {
+	if _, err := net.ResolveTCPAddr("tcp", c.Addr); err != nil {
+		return fmt.Errorf("address('%v') - %w", c.Addr, err)
 	}
-	if err := c.APIs.Validate(); err != nil {
-		return fmt.Errorf("apis.%w", err)
-	}
-	if err := c.Clients.Validate(); err != nil {
-		return fmt.Errorf("clients.%w", err)
-	}
-	if _, err := uuid.Parse(c.HubID); err != nil {
-		return fmt.Errorf("hubID('%v') - %w", c.HubID, err)
-	}
-
 	return nil
 }
 
@@ -51,18 +39,6 @@ func (c *APIsConfig) Validate() error {
 	}
 	if err := c.HTTP.Validate(); err != nil {
 		return fmt.Errorf("http.%w", err)
-	}
-	return nil
-}
-
-type HTTPConfig struct {
-	Addr   string            `yaml:"address" json:"address"`
-	Server httpServer.Config `yaml:",inline" json:",inline"`
-}
-
-func (c *HTTPConfig) Validate() error {
-	if _, err := net.ResolveTCPAddr("tcp", c.Addr); err != nil {
-		return fmt.Errorf("address('%v') - %w", c.Addr, err)
 	}
 	return nil
 }
@@ -111,6 +87,30 @@ func (c *ClientsConfig) Validate() error {
 	if err := c.OpenTelemetryCollector.Validate(); err != nil {
 		return fmt.Errorf("openTelemetryCollector.%w", err)
 	}
+	return nil
+}
+
+type Config struct {
+	HubID   string        `yaml:"hubID" json:"hubId"`
+	Log     log.Config    `yaml:"log" json:"log"`
+	APIs    APIsConfig    `yaml:"apis" json:"apis"`
+	Clients ClientsConfig `yaml:"clients" json:"clients"`
+}
+
+func (c *Config) Validate() error {
+	if err := c.Log.Validate(); err != nil {
+		return fmt.Errorf("log.%w", err)
+	}
+	if err := c.APIs.Validate(); err != nil {
+		return fmt.Errorf("apis.%w", err)
+	}
+	if err := c.Clients.Validate(); err != nil {
+		return fmt.Errorf("clients.%w", err)
+	}
+	if _, err := uuid.Parse(c.HubID); err != nil {
+		return fmt.Errorf("hubID('%v') - %w", c.HubID, err)
+	}
+
 	return nil
 }
 

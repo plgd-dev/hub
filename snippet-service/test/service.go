@@ -23,19 +23,61 @@ func HTTPURI(uri string) string {
 	return httpTest.HTTPS_SCHEME + config.SNIPPET_SERVICE_HTTP_HOST + uri
 }
 
+func MakeHTTPConfig() service.HTTPConfig {
+	return service.HTTPConfig{
+		Addr:   config.SNIPPET_SERVICE_HTTP_HOST,
+		Server: config.MakeHttpServerConfig(),
+	}
+}
+
+func MakeAPIsConfig() service.APIsConfig {
+	grpc := config.MakeGrpcServerConfig(config.SNIPPET_SERVICE_HOST)
+	grpc.TLS.ClientCertificateRequired = false
+	return service.APIsConfig{
+		GRPC: grpc,
+		HTTP: MakeHTTPConfig(),
+	}
+}
+
+func MakeClientsConfig() service.ClientsConfig {
+	return service.ClientsConfig{
+		OpenTelemetryCollector: config.MakeOpenTelemetryCollectorClient(),
+		Storage:                MakeStorageConfig(),
+	}
+}
+
+func MakeStorageConfig() service.StorageConfig {
+	return service.StorageConfig{
+		CleanUpRecords: "0 1 * * *",
+		Embedded: storeConfig.Config{
+			// TODO: add cqldb support
+			// Use: config.ACTIVE_DATABASE(),
+			Use: database.MongoDB,
+			MongoDB: &storeMongo.Config{
+				Mongo: mongodb.Config{
+					MaxPoolSize:     16,
+					MaxConnIdleTime: time.Minute * 4,
+					URI:             config.MONGODB_URI,
+					Database:        "snippetService",
+					TLS:             config.MakeTLSClientConfig(),
+				},
+			},
+			CqlDB: &storeCqlDB.Config{
+				Embedded: config.MakeCqlDBConfig(),
+				Table:    "snippets",
+			},
+		},
+	}
+}
+
 func MakeConfig(t require.TestingT) service.Config {
 	var cfg service.Config
 
 	cfg.HubID = config.HubID()
 	cfg.Log = log.MakeDefaultConfig()
 
-	cfg.APIs.GRPC = config.MakeGrpcServerConfig(config.SNIPPET_SERVICE_HOST)
-	cfg.APIs.HTTP.Addr = config.SNIPPET_SERVICE_HTTP_HOST
-	cfg.APIs.HTTP.Server = config.MakeHttpServerConfig()
-	cfg.APIs.GRPC.TLS.ClientCertificateRequired = false
-
-	cfg.Clients.OpenTelemetryCollector = config.MakeOpenTelemetryCollectorClient()
-	cfg.Clients.Storage = MakeStorageConfig()
+	cfg.APIs = MakeAPIsConfig()
+	cfg.Clients = MakeClientsConfig()
 
 	err := cfg.Validate()
 	require.NoError(t, err)
@@ -69,30 +111,6 @@ func New(t require.TestingT, cfg service.Config) func() {
 		wg.Wait()
 		err = fileWatcher.Close()
 		require.NoError(t, err)
-	}
-}
-
-func MakeStorageConfig() service.StorageConfig {
-	return service.StorageConfig{
-		CleanUpRecords: "0 1 * * *",
-		Embedded: storeConfig.Config{
-			// TODO: add cqldb support
-			// Use: config.ACTIVE_DATABASE(),
-			Use: database.MongoDB,
-			MongoDB: &storeMongo.Config{
-				Mongo: mongodb.Config{
-					MaxPoolSize:     16,
-					MaxConnIdleTime: time.Minute * 4,
-					URI:             config.MONGODB_URI,
-					Database:        "snippetService",
-					TLS:             config.MakeTLSClientConfig(),
-				},
-			},
-			CqlDB: &storeCqlDB.Config{
-				Embedded: config.MakeCqlDBConfig(),
-				Table:    "snippets",
-			},
-		},
 	}
 }
 
