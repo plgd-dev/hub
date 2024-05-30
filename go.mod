@@ -30,7 +30,7 @@ require (
 	github.com/panjf2000/ants/v2 v2.9.1
 	github.com/pion/dtls/v2 v2.2.8-0.20240501061905-2c36d63320a0
 	github.com/pion/logging v0.2.2
-	github.com/plgd-dev/device/v2 v2.5.1-0.20240513064831-b553d1a87e1c
+	github.com/plgd-dev/device/v2 v2.5.2-0.20240528123838-d8ca4ace7baf
 	github.com/plgd-dev/go-coap/v3 v3.3.4
 	github.com/plgd-dev/kit/v2 v2.0.0-20211006190727-057b33161b90
 	github.com/pseudomuto/protoc-gen-doc v1.5.1
@@ -40,7 +40,7 @@ require (
 	github.com/tidwall/sjson v1.2.5
 	github.com/ugorji/go/codec v1.2.12
 	github.com/vincent-petithory/dataurl v1.0.0
-	github.com/web-of-things-open-source/thingdescription-go v0.0.0-20240510130416-741fef736e1e
+	github.com/web-of-things-open-source/thingdescription-go v0.0.0-20240513190706-79b5f39190eb
 	go.mongodb.org/mongo-driver v1.15.0
 	go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo v0.49.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.49.0
@@ -56,7 +56,6 @@ require (
 	golang.org/x/net v0.24.0
 	golang.org/x/oauth2 v0.19.0
 	golang.org/x/sync v0.7.0
-	google.golang.org/genproto/googleapis/api v0.0.0-20240429193739-8cf5692501f6
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240429193739-8cf5692501f6
 	google.golang.org/grpc v1.63.2
 	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.3.0
@@ -119,6 +118,7 @@ require (
 	golang.org/x/crypto v0.22.0 // indirect
 	golang.org/x/sys v0.19.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240429193739-8cf5692501f6 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 )
 
