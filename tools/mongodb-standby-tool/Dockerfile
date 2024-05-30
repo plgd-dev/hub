@@ -44,7 +44,6 @@ COPY --from=security-provider /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 RUN mkdir /home/nonroot && chown nonroot:nonroot /home/nonroot
 USER nonroot
 COPY --chown=nonroot:nonroot ./tools/mongodb-standby-tool/common.sh /common.sh
-COPY --chown=nonroot:nonroot ./tools/mongodb-standby-tool/set_active.sh /set_active.sh
-COPY --chown=nonroot:nonroot ./tools/mongodb-standby-tool/set_standby.sh /set_standby.sh
+COPY --chown=nonroot:nonroot ./tools/mongodb-standby-tool/run.sh /run.sh
 COPY --chown=nonroot:nonroot ./tools/mongodb-standby-tool/config.yaml /config.yaml
 ENTRYPOINT [ "/bin/bash" ]

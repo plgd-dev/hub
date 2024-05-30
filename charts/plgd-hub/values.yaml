@@ -95,8 +95,8 @@ mongodb:
   standbyTool:
     # -- Create standby job
     enabled: false
-    # -- Mode of standby job. Supported values: "set-active", "set-standby"
-    mode: set-standby
+    # -- Mode of standby job. Supported values: "active", "standby"
+    mode: standby
     # -- Name of component. Used in label selectors
     name: mongodb-standby-tool
     # -- Standby members of replica set

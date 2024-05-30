@@ -7,6 +7,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
 data:
   {{ .Values.mongodb.standbyTool.config.fileName }}: |
+    mode: {{ required "mode need to be set to one of values: standby,active" .Values.mongodb.standbyTool.mode | quote }}
     replicaSet:
       standby:
         # List of the MongoDB members in the replica set which are used as backup members

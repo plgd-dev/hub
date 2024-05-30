@@ -4,6 +4,7 @@ set -e
 
 STANDBY_MEMBERS=()
 STANDBY_DELAY_SECS=10
+MODE="standby"
 
 SECONDARY_VOTES=1
 SECONDARY_PRIORITY=10
@@ -30,9 +31,16 @@ load_config() {
         *)
     esac
     done
-    echo "Loading config from $CONFIG_FILE"
+    echo "Loading config from \"$CONFIG_FILE\""
     if [ ! -f "$CONFIG_FILE" ]; then
-        echo "Config file $CONFIG_FILE not found"
+        echo "Config file \"$CONFIG_FILE\" not found"
+        exit 1
+    fi
+
+    echo "Loading MODE"
+    MODE=$(yq -e eval '.mode' "$CONFIG_FILE")
+    if [ "$MODE" != "standby" ] && [ "$MODE" != "active" ]; then
+        echo "Invalid .mode value \"$MODE\", mode must be either 'standby' or 'active'"
         exit 1
     fi
 
