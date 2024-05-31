@@ -8,7 +8,7 @@ import Breadcrumbs from '@shared-ui/components/Layout/Header/Breadcrumbs'
 import StatusTag from '@shared-ui/components/Atomic/StatusTag'
 import { TagTypeType } from '@shared-ui/components/Atomic/StatusTag/StatusTag.types'
 import TableActions from '@shared-ui/components/Atomic/TableNew/TableActions'
-import { IconTrash } from '@shared-ui/components/Atomic'
+import { IconTrash } from '@shared-ui/components/Atomic/Icon'
 import IconArrowRight from '@shared-ui/components/Atomic/Icon/components/IconArrowRight'
 import Footer from '@shared-ui/components/Layout/Footer'
 

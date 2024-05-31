@@ -1,0 +1,64 @@
+{
+  "types": [
+    "Thing",
+    "oic.wk.d"
+  ],
+  "name": "simulated Hotel Room",
+  "protocolIndependentId": "e61d18ea-533d-4c95-8ea0-c64e4dcc57ab",
+  "metadata": {
+    "connection": {
+      "status": "OFFLINE",
+      "id": "10.110.110.10:26672",
+      "connectedAt": "1715258265891752367",
+      "protocol": "COAPS_TCP"
+    },
+    "twinSynchronization": {
+      "state": "OUT_OF_SYNC",
+      "syncingAt": "1715258265931899749",
+      "inSyncAt": "1715258265968937030",
+      "commandMetadata": {
+        "sequence": "23814",
+        "connectionId": "10.110.110.10:26672"
+      },
+      "forceSynchronizationAt": "0"
+    },
+    "twinEnabled": true
+  },
+  "interfaces": [
+    "oic.if.baseline",
+    "oic.if.r"
+  ],
+  "data": {
+    "content": {
+      "n": "simulated Hotel Room",
+      "di": "9b95267d-fb80-56e4-a2af-001767c97299",
+      "piid": "e61d18ea-533d-4c95-8ea0-c64e4dcc57ab"
+    },
+    "status": "OK",
+    "auditContext": {
+      "userId": "98120ad9-eefa-4b93-aa53-696420b639fd",
+      "owner": "98120ad9-eefa-4b93-aa53-696420b639fd"
+    },
+    "eventMetadata": {
+      "sequence": "17",
+      "hubId": "1c10a3b6-287c-11ec-ac2d-13054959c274",
+      "version": "0",
+      "timestamp": "1715258265955977762",
+      "connectionId": "10.110.110.10:26672"
+    },
+    "etag": "F83SIor1HVE=",
+    "resourceTypes": [
+      "Thing",
+      "oic.wk.d"
+    ],
+    "openTelemetryCarrier": {
+      "traceparent": "00-5594982e9c50000bc628549afaa408e3-c1741a78ebc2b5d0-01"
+    },
+    "resourceId": {
+      "href": "/oic/d",
+      "deviceId": "9b95267d-fb80-56e4-a2af-001767c97299"
+    }
+  },
+  "ownershipStatus": "OWNED",
+  "id": "9b95267d-fb80-56e4-a2af-001767c97299"
+}

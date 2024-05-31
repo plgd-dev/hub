@@ -1,11 +1,15 @@
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { useNavigate } from 'react-router-dom'
+import { generatePath, useNavigate } from 'react-router-dom'
 
-import { DeleteModal, IconArrowDetail, IconTrash } from '@shared-ui/components/Atomic'
+import { IconArrowDetail, IconTrash } from '@shared-ui/components/Atomic/Icon'
+import DeleteModal from '@shared-ui/components/Atomic/Modal/components/DeleteModal'
 import TableActionButton from '@shared-ui/components/Organisms/TableActionButton'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
+import StatusTag from '@shared-ui/components/Atomic/StatusTag'
+import Loadable from '@shared-ui/components/Atomic/Loadable'
+import { TagTypeType } from '@shared-ui/components/Atomic/StatusTag/StatusTag.types'
 
 import { messages as g } from '../../../Global.i18n'
 import { messages as dpsT } from '../../DeviceProvisioning.i18n'
@@ -16,7 +20,9 @@ import DateFormat from '@/containers/PendingCommands/DateFormat'
 import notificationId from '@/notificationId'
 import PageLayout from '@/containers/Common/PageLayout'
 import TableList from '@/containers/Common/TableList/TableList'
-import StatusTag from '@shared-ui/components/Atomic/StatusTag'
+import { getStatusFromData, parseCerts } from '@/containers/DeviceProvisioning/utils'
+import { messages as certT } from '@/containers/Certificates/Certificates.i18n'
+import { pages } from '@/routes'
 
 const ProvisioningRecordsListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
@@ -25,9 +31,11 @@ const ProvisioningRecordsListPage: FC<any> = () => {
 
     const navigate = useNavigate()
 
+    const [displayData, setDisplayData] = useState<any>(undefined)
     const [selected, setSelected] = useState<string[]>([])
     const [unselectRowsToken, setUnselectRowsToken] = useState(1)
     const [deleting, setDeleting] = useState(false)
+    const [pageLoading, setPageLoading] = useState(false)
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const breadcrumbs = useMemo(() => [{ label: _(dpsT.deviceProvisioning), link: '/device-provisioning' }, { label: _(t.provisioningRecords) }], [])
@@ -35,11 +43,36 @@ const ProvisioningRecordsListPage: FC<any> = () => {
     useEffect(() => {
         error &&
             Notification.error(
-                { title: _(t.provisioningRecordsError), message: error },
+                { title: _(t.provisioningRecordsError), message: getApiErrorMessage(error) },
                 { notificationId: notificationId.HUB_DPS_PROVISIONING_RECORDS_LIST_PAGE_ERROR }
             )
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [error])
+
+    useEffect(() => {
+        const parseAll = async () => {
+            const parsed = data.map(async (record: any) => {
+                const parsedData = await parseCerts(record.credential.credentials, {
+                    errorTitle: _(certT.certificationParsingError),
+                    errorId: notificationId.HUB_DPS_PROVISIONING_RECORDS_LIST_CERT_PARSE_ERROR,
+                })
+                const merged = { ...record, parsedData: parsedData.filter((i) => !!i), status: '' }
+                const status = getStatusFromData(merged)
+                return { ...merged, status }
+            })
+
+            return await Promise.all(parsed)
+        }
+
+        if (data) {
+            setPageLoading(true)
+            parseAll().then((d) => {
+                setDisplayData(d)
+                setPageLoading(false)
+            })
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [data])
 
     const handleOpenDeleteModal = useCallback((_isAllSelected: boolean, selection: string[]) => {
         setSelected(selection)
@@ -55,17 +88,27 @@ const ProvisioningRecordsListPage: FC<any> = () => {
             {
                 Header: _(t.attestationID),
                 accessor: 'attestation.x509.commonName',
-                Cell: ({ value }: { value: string | number }) => <span className='no-wrap-text'>{value || '-'}</span>,
+                Cell: ({ value, row }: { row: any; value: string | number }) => (
+                    <a
+                        href={`/device-provisioning/provisioning-records/${row.original.id}`}
+                        onClick={(e) => {
+                            e.preventDefault()
+                            navigate(generatePath(pages.DPS.PROVISIONING_RECORDS.DETAIL, { recordId: row.original.id, tab: '' }))
+                        }}
+                    >
+                        <span className='no-wrap-text'>{value}</span>
+                    </a>
+                ),
             },
             {
                 Header: _(t.enrollmentGroup),
                 accessor: 'enrollmentGroupData.name',
                 Cell: ({ value, row }: { value: string | number; row: any }) => (
                     <a
-                        href={`/device-provisioning/provisioning-records/${row.original.id}`}
+                        href={`/device-provisioning/enrollment-groups/${row.original.enrollmentGroupId}`}
                         onClick={(e) => {
                             e.preventDefault()
-                            navigate(`/device-provisioning/provisioning-records/${row.original.id}`)
+                            navigate(generatePath(pages.DPS.ENROLLMENT_GROUPS.DETAIL, { enrollmentId: row.original.id, tab: '' }))
                         }}
                     >
                         <span className='no-wrap-text'>{value}</span>
@@ -80,7 +123,7 @@ const ProvisioningRecordsListPage: FC<any> = () => {
             {
                 Header: _(g.status),
                 accessor: 'status',
-                Cell: ({ value }: { value: string | number }) => <StatusTag variant='success'>TODO</StatusTag>,
+                Cell: ({ value }: { value: string }) => <StatusTag variant={value as TagTypeType}>{value}</StatusTag>,
             },
             {
                 Header: _(t.firstAttestation),
@@ -109,7 +152,7 @@ const ProvisioningRecordsListPage: FC<any> = () => {
                                     icon: <IconTrash />,
                                 },
                                 {
-                                    onClick: () => navigate(`/device-provisioning/provisioning-records/${id}`),
+                                    onClick: () => navigate(generatePath(pages.DPS.PROVISIONING_RECORDS.DETAIL, { recordId: row.original.id, tab: '' })),
                                     label: _(g.view),
                                     icon: <IconArrowDetail />,
                                 },
@@ -128,9 +171,17 @@ const ProvisioningRecordsListPage: FC<any> = () => {
         try {
             setDeleting(true)
             await deleteProvisioningRecordsApi(selected)
-
             handleCloseDeleteModal()
+
+            Notification.success(
+                { title: _(t.provisioningRecordDeleted), message: _(t.provisioningRecordDeletedMessage) },
+                { notificationId: notificationId.HUB_DPS_PROVISIONING_RECORDS_LIST_DELETED }
+            )
+
+            setSelected([])
+            setUnselectRowsToken((prevValue) => prevValue + 1)
             refresh()
+
             setDeleting(false)
         } catch (e) {
             setDeleting(false)
@@ -149,23 +200,25 @@ const ProvisioningRecordsListPage: FC<any> = () => {
     )
 
     return (
-        <PageLayout breadcrumbs={breadcrumbs} loading={loading || deleting} title={_(t.provisioningRecords)}>
-            <TableList
-                columns={columns}
-                data={data}
-                defaultSortBy={[
-                    {
-                        id: 'name',
-                        desc: false,
-                    },
-                ]}
-                i18n={{
-                    singleSelected: _(t.provisioningRecord),
-                    multiSelected: _(t.provisioningRecords),
-                }}
-                onDeleteClick={handleOpenDeleteModal}
-                unselectRowsToken={unselectRowsToken}
-            />
+        <PageLayout breadcrumbs={breadcrumbs} loading={loading || pageLoading || deleting} title={_(t.provisioningRecords)}>
+            <Loadable condition={!!displayData}>
+                <TableList
+                    columns={columns}
+                    data={displayData}
+                    defaultSortBy={[
+                        {
+                            id: 'attestation.x509.commonName',
+                            desc: false,
+                        },
+                    ]}
+                    i18n={{
+                        singleSelected: _(t.provisioningRecord),
+                        multiSelected: _(t.provisioningRecords),
+                    }}
+                    onDeleteClick={handleOpenDeleteModal}
+                    unselectRowsToken={unselectRowsToken}
+                />
+            </Loadable>
 
             <DeleteModal
                 deleteInformation={

@@ -1,6 +1,6 @@
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { useNavigate } from 'react-router-dom'
+import { generatePath, useNavigate } from 'react-router-dom'
 
 import { getApiErrorMessage } from '@shared-ui/common/utils'
 import { useIsMounted } from '@shared-ui/common/hooks'
@@ -11,7 +11,8 @@ import StatusPill from '@shared-ui/components/Atomic/StatusPill'
 import { states } from '@shared-ui/components/Atomic/StatusPill/constants'
 import TableActionButton from '@shared-ui/components/Organisms/TableActionButton'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
-import { IconArrowDetail, IconTrash, StatusTag } from '@shared-ui/components/Atomic'
+import { IconArrowDetail, IconTrash } from '@shared-ui/components/Atomic/Icon'
+import StatusTag from '@shared-ui/components/Atomic/StatusTag'
 import { clientAppSettings } from '@shared-ui/common/services'
 
 import { DEVICES_REGISTERED_UNREGISTERED_COUNT_EVENT_KEY, devicesStatuses, NO_DEVICE_NAME, RESET_COUNTER } from '../../constants'
@@ -25,6 +26,7 @@ import { messages as g } from '@/containers/Global.i18n'
 import notificationId from '@/notificationId'
 import PageLayout from '@/containers/Common/PageLayout'
 import TableList from '@/containers/Common/TableList/TableList'
+import { pages } from '@/routes'
 
 const { UNREGISTERED } = devicesStatuses
 
@@ -115,10 +117,10 @@ const DevicesListPage: FC<any> = () => {
                     return (
                         <a
                             data-test-id={`device-row-${row.id}`}
-                            href={`/devices/${row.original?.id}`}
+                            href={generatePath(pages.DEVICES.DETAIL.LINK, { id: row.original?.id, tab: '', section: '' })}
                             onClick={(e) => {
                                 e.preventDefault()
-                                navigate(`/devices/${row.original?.id}`)
+                                navigate(generatePath(pages.DEVICES.DETAIL.LINK, { id: row.original?.id, tab: '', section: '' }))
                             }}
                         >
                             <span className='no-wrap-text'>{deviceName}</span>
@@ -178,7 +180,7 @@ const DevicesListPage: FC<any> = () => {
                                     icon: <IconTrash />,
                                 },
                                 {
-                                    onClick: () => navigate(`/devices/${id}`),
+                                    onClick: () => navigate(generatePath(pages.DEVICES.DETAIL.LINK, { id, tab: '', section: '' })),
                                     label: _(t.view),
                                     icon: <IconArrowDetail />,
                                 },

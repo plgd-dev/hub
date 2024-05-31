@@ -1,0 +1,267 @@
+{
+  "result": {
+    "localEndpoints": [
+      "coap://10.110.110.12:44190",
+      "coaps://10.110.110.12:55727",
+      "coap+tcp://10.110.110.12:39037",
+      "coaps+tcp://10.110.110.12:46193"
+    ],
+    "owner": "98120ad9-eefa-4b93-aa53-696420b639fd",
+    "deviceId": "3aae0672-47f3-4498-78d4-b061e6105ccd",
+    "enrollmentGroupId": "75eacc2f-ac28-4a42-a155-164393970ba4",
+    "acl": {
+      "status": {
+        "date": "1715360632137980247",
+        "coapCode": 69
+      },
+      "accessControlList": [
+        {
+          "permissions": [
+            "CREATE",
+            "READ",
+            "WRITE",
+            "DELETE",
+            "NOTIFY"
+          ],
+          "resources": [
+            {
+              "href": "/CoapCloudConfResURI",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "href": "/oic/sec/sp",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "href": "/x.plgd.dev/time",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE",
+              "href": "/oc/con"
+            },
+            {
+              "href": "/oc/swu",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "href": "/oic/mnt",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "href": "/x.plgd.dev/time",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONCFG_ALL"
+            }
+          ],
+          "deviceSubject": {
+            "deviceId": "98120ad9-eefa-4b93-aa53-696420b639fd"
+          }
+        },
+        {
+          "connectionSubject": {
+            "type": "ANON_CLEAR"
+          },
+          "permissions": [
+            "READ"
+          ],
+          "resources": [
+            {
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE",
+              "href": "/oic/d"
+            },
+            {
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE",
+              "href": "/oic/p"
+            },
+            {
+              "href": "/oic/res",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "href": "/oic/sec/sdi",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "href": "/oic/sec/doxm",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            }
+          ]
+        },
+        {
+          "deviceSubject": {
+            "deviceId": "1c10a3b6-287c-11ec-ac2d-13054959c274"
+          },
+          "permissions": [
+            "CREATE",
+            "READ",
+            "WRITE",
+            "DELETE",
+            "NOTIFY"
+          ],
+          "resources": [
+            {
+              "href": "/oc/con",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "href": "/oc/swu",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "href": "/oic/mnt",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "href": "/x.plgd.dev/time",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONCFG_ALL"
+            }
+          ]
+        }
+      ]
+    },
+    "cloud": {
+      "status": {
+        "date": "1715360632164478304",
+        "coapCode": 68
+      },
+      "providerName": "plgd.dps",
+      "gateways": [
+        {
+          "uri": "coaps+tcp://try.plgd.cloud:5684",
+          "id": "1c10a3b6-287c-11ec-ac2d-13054959c274"
+        }
+      ],
+      "selectedGateway": 0
+    },
+    "plgdTime": {
+      "date": "1715360632020384312",
+      "coapCode": 69
+    },
+    "id": "4a0d78b2-9a21-557d-ab08-bb4eaccfcbb0",
+    "creationDate": "1711436476302088661",
+    "attestation": {
+      "date": "1715360632070045648",
+      "x509": {
+        "commonName": "MfgCert1",
+        "certificatePem": "-----BEGIN CERTIFICATE-----\nMIIBhTCCASugAwIBAgIRAJ+UC+MPMl6jc9FVeHZEgB4wCgYIKoZIzj0EAwIwFDES\nMBAGA1UEAxMJTWZnUm9vdENBMCAXDTIzMTIxMTEyNTIwMVoYDzIxMjMxMTE3MTI1\nMjAxWjATMREwDwYDVQQDEwhNZmdDZXJ0MTBZMBMGByqGSM49AgEGCCqGSM49AwEH\nA0IABFU2BHkqcNsiN68hGoFGzk+QtK78su3HpObu0U6Yhq5tnbGffQ4oTcel4Lhx\nlW5FHWUPI/l2LV9Ej/i3DSaurs6jXTBbMB8GA1UdIwQYMBaAFFyGFDlvMWlF0wb8\n0yDIfbRH7lTPMAwGA1UdEwQFMAMBAQAwCwYDVR0PBAQDAgOIMB0GA1UdJQQWMBQG\nCCsGAQUFBwMCBggrBgEFBQcDATAKBggqhkjOPQQDAgNIADBFAiBM31BMFp/ImqVt\nwH55aaqYSYp00pabSyIbKwFle6B+2wIhAMqXjZ3zoEECNU7zUo/hpYPTqanak2t6\ndPVwtlKcRlPx\n-----END CERTIFICATE-----\n"
+      }
+    },
+    "credential": {
+      "preSharedKey": {
+        "key": "0123456789abcdef",
+        "subjectId": "98120ad9-eefa-4b93-aa53-696420b639fd"
+      },
+      "credentials": [
+        {
+          "id": "0",
+          "type": [
+            "SYMMETRIC_PAIR_WISE"
+          ],
+          "usage": "NONE",
+          "subject": "98120ad9-eefa-4b93-aa53-696420b639fd",
+          "privateData": {
+            "data": "MDEyMzQ1Njc4OWFiY2RlZg==",
+            "encoding": "RAW",
+            "handle": "0"
+          }
+        },
+        {
+          "publicData": {
+            "data": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJvakNDQVVtZ0F3SUJBZ0lSQVBaZ3c0RTNKSXlXMW5zS3J2aE5FaWd3Q2dZSUtvWkl6ajBFQXdJd0VqRVEKTUE0R0ExVUVBeE1IY0d4blpDMWpZVEFlRncweU5EQTFNVEF4TmpBek5USmFGdzB6TkRBeU1EVXhOVFE1TURGYQpNRFF4TWpBd0JnTlZCQU1US1hWMWFXUTZNMkZoWlRBMk56SXRORGRtTXkwME5EazRMVGM0WkRRdFlqQTJNV1UyCk1UQTFZMk5rTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFaW92cW5ucUNsOFZ3cnRkTVhheVUKcDZwcUhyYTBFVGFDejVyaGJpV2RId1RKRDF3VlVMOTE1VEVkYzgrWG5NUlo5dDVlZ1VpdXRRT0xYVU1DZXoyUAp0Nk5lTUZ3d0RnWURWUjBQQVFIL0JBUURBZ09JTUNrR0ExVWRKUVFpTUNBR0NDc0dBUVVGQndNQ0JnZ3JCZ0VGCkJRY0RBUVlLS3dZQkJBR0MzbndCQmpBZkJnTlZIU01FR0RBV2dCVFVsSjJ1TFprWFhDdVJHSDhKVy93RG5HdkwKU0RBS0JnZ3Foa2pPUFFRREFnTkhBREJFQWlCbEtyeGtCT1RVOFljL0JvMDdKOXRzdnZxVjhIbDBRY1ZNblNabQpQNEFDVndJZ2FpZnlscndkeWhVN0U4VXhjU0xJSkI5YnE5RnNMb1J1QmtNYzQxWlVBRUk9Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0KLS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJrVENDQVRhZ0F3SUJBZ0lRSjVTQlhmK0Q1eTUyZ21MM09JVU5hVEFLQmdncWhrak9QUVFEQWpBZE1Sc3cKR1FZRFZRUURFeEp5YjI5MExtTmhMbkJzWjJRdVkyeHZkV1F3SGhjTk1qUXdNakE0TVRVME9UQXhXaGNOTXpRdwpNakExTVRVME9UQXhXakFTTVJBd0RnWURWUVFERXdkd2JHZGtMV05oTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJCnpqMERBUWNEUWdBRTNKK0lrZHZsZlVPbElQT3lJbVBIMlRqbjkwNzlRNHlRQzRsUVRqbE5FdVRqajRFQ01iQUIKWkZOL3Zya21DWWJ6VndTQVNvNFphUjBSNkpIQ1BtWkxMNk5qTUdFd0RnWURWUjBQQVFIL0JBUURBZ0dHTUE4RwpBMVVkRXdFQi93UUZNQU1CQWY4d0hRWURWUjBPQkJZRUZOU1VuYTR0bVJkY0s1RVlmd2xiL0FPY2E4dElNQjhHCkExVWRJd1FZTUJhQUZFTEswMUd0bXZ6OTlrVHZJTTVpZHpPTHhlcklNQW9HQ0NxR1NNNDlCQU1DQTBrQU1FWUMKSVFDemRjRDJpdlFjWFZieE5DaG9Uc3Zwc01UZzVWSll3Q25vaHZYNTJVWXZSUUloQUxrTlJHRnFkYXJNOW1iYgo2OU1JRWpjMDJSRUJWYnRRVVlvYjV3NHNzSUd0Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K",
+            "encoding": "PEM"
+          },
+          "type": [
+            "ASYMMETRIC_SIGNING_WITH_CERTIFICATE"
+          ],
+          "usage": "CERT",
+          "id": "0",
+          "subject": "3aae0672-47f3-4498-78d4-b061e6105ccd"
+        },
+        {
+          "id": "0",
+          "usage": "TRUST_CA",
+          "type": [
+            "ASYMMETRIC_SIGNING_WITH_CERTIFICATE"
+          ],
+          "subject": "98120ad9-eefa-4b93-aa53-696420b639fd",
+          "publicData": {
+            "data": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJmVENDQVNPZ0F3SUJBZ0lSQUlwR0Jrb0U2ZXdwdFJMT1FaMXZrb1V3Q2dZSUtvWkl6ajBFQXdJd0hURWIKTUJrR0ExVUVBeE1TY205dmRDNWpZUzV3Ykdka0xtTnNiM1ZrTUNBWERUSXpNVEF4T1RBNE5EZ3hOVm9ZRHpJeApNak13T1RJMU1EZzBPREUxV2pBZE1Sc3dHUVlEVlFRREV4SnliMjkwTG1OaExuQnNaMlF1WTJ4dmRXUXdXVEFUCkJnY3Foa2pPUFFJQkJnZ3Foa2pPUFFNQkJ3TkNBQVFtMHgrMTZCdWt2ditIV0FlcnkvMG8vVlFBTzhib3hzNHcKT2lhWFRybDBhbi9iUkR6REFwc1J2cDY5SHdJY2haS0FjZTVPQ3JkZFNpVVJOdDZRZWYwQ28wSXdRREFPQmdOVgpIUThCQWY4RUJBTUNBUVl3RHdZRFZSMFRBUUgvQkFVd0F3RUIvekFkQmdOVkhRNEVGZ1FVUXNyVFVhMmEvUDMyClJPOGd6bUozTTR2RjZzZ3dDZ1lJS29aSXpqMEVBd0lEU0FBd1JRSWdOMHBnS1N4d2RvUklkV1RxaTdUcDd0eVAKb05LNERxeElsWWJuRUlJb3BlZ0NJUURsd2FUMmg2RUtaM1R3SHFBcTU1UXl3TDM3RzJwdjVKOE03dDFFcVBnQQpZQT09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K",
+            "encoding": "PEM"
+          }
+        }
+      ],
+      "status": {
+        "date": "1715360632123220673",
+        "coapCode": 68
+      },
+      "identityCertificatePem": "-----BEGIN CERTIFICATE-----\nMIIBojCCAUmgAwIBAgIRAPZgw4E3JIyW1nsKrvhNEigwCgYIKoZIzj0EAwIwEjEQ\nMA4GA1UEAxMHcGxnZC1jYTAeFw0yNDA1MTAxNjAzNTJaFw0zNDAyMDUxNTQ5MDFa\nMDQxMjAwBgNVBAMTKXV1aWQ6M2FhZTA2NzItNDdmMy00NDk4LTc4ZDQtYjA2MWU2\nMTA1Y2NkMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEiovqnnqCl8VwrtdMXayU\np6pqHra0ETaCz5rhbiWdHwTJD1wVUL915TEdc8+XnMRZ9t5egUiutQOLXUMCez2P\nt6NeMFwwDgYDVR0PAQH/BAQDAgOIMCkGA1UdJQQiMCAGCCsGAQUFBwMCBggrBgEF\nBQcDAQYKKwYBBAGC3nwBBjAfBgNVHSMEGDAWgBTUlJ2uLZkXXCuRGH8JW/wDnGvL\nSDAKBggqhkjOPQQDAgNHADBEAiBlKrxkBOTU8Yc/Bo07J9tsvvqV8Hl0QcVMnSZm\nP4ACVwIgaifylrwdyhU7E8UxcSLIJB9bq9FsLoRuBkMc41ZUAEI=\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nMIIBkTCCATagAwIBAgIQJ5SBXf+D5y52gmL3OIUNaTAKBggqhkjOPQQDAjAdMRsw\nGQYDVQQDExJyb290LmNhLnBsZ2QuY2xvdWQwHhcNMjQwMjA4MTU0OTAxWhcNMzQw\nMjA1MTU0OTAxWjASMRAwDgYDVQQDEwdwbGdkLWNhMFkwEwYHKoZIzj0CAQYIKoZI\nzj0DAQcDQgAE3J+IkdvlfUOlIPOyImPH2Tjn9079Q4yQC4lQTjlNEuTjj4ECMbAB\nZFN/vrkmCYbzVwSASo4ZaR0R6JHCPmZLL6NjMGEwDgYDVR0PAQH/BAQDAgGGMA8G\nA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFNSUna4tmRdcK5EYfwlb/AOca8tIMB8G\nA1UdIwQYMBaAFELK01Gtmvz99kTvIM5idzOLxerIMAoGCCqGSM49BAMCA0kAMEYC\nIQCzdcD2ivQcXVbxNChoTsvpsMTg5VJYwCnohvX52UYvRQIhALkNRGFqdarM9mbb\n69MIEjc02REBVbtQUYob5w4ssIGt\n-----END CERTIFICATE-----\n"
+    },
+    "ownership": {
+      "status": {
+        "date": "1715360632083610705",
+        "coapCode": 69
+      },
+      "owner": "98120ad9-eefa-4b93-aa53-696420b639fd"
+    }
+  }
+}

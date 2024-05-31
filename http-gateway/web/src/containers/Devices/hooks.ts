@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useContext } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import debounce from 'lodash/debounce'
 
 import { useStreamApi, useEmitter } from '@shared-ui/common/hooks'
@@ -11,6 +11,7 @@ import { updateDevicesDataStatus, getResourceRegistrationNotificationKey } from 
 import { SecurityConfig, StreamApiPropsType } from '@/containers/App/App.types'
 
 const getConfig = () => security.getGeneralConfig() as SecurityConfig
+const getWellKnow = () => security.getWellKnowConfig()
 
 export const useDevicesList = () => {
     const { telemetryWebTracer } = useContext(AppContext)
@@ -114,22 +115,37 @@ export const useDevicePendingCommands = (deviceId: string): StreamApiPropsType =
     const { telemetryWebTracer } = useContext(AppContext)
     return useStreamApi(`${getConfig().httpGatewayAddress}${devicesApiEndpoints.DEVICES}/${deviceId}/pending-commands`, {
         telemetryWebTracer,
-        telemetrySpan: 'get-device-pending-commands',
+        telemetrySpan: `get-device-pending-commands-${deviceId}`,
     })
 }
 
 export const useDeviceCertificates = (deviceId: string): StreamApiPropsType => {
     const { telemetryWebTracer } = useContext(AppContext)
-    return useStreamApi(`${getConfig().httpGatewayAddress}/api/v1/signing/records?deviceIdFilter=${deviceId}`, {
+    const url = getWellKnow()?.certificateAuthority || getWellKnow()?.ui?.deviceProvisioningService || getConfig().httpGatewayAddress
+    return useStreamApi(`${url}/api/v1/signing/records?deviceIdFilter=${deviceId}`, {
         telemetryWebTracer,
-        telemetrySpan: 'get-device-certificates',
+        telemetrySpan: `get-device-certificates-${deviceId}`,
     })
 }
 
-export const useDeviceProvisioningRecords = (deviceId: string): StreamApiPropsType => {
+export const useDeviceProvisioningRecord = (deviceId: string): StreamApiPropsType => {
     const { telemetryWebTracer } = useContext(AppContext)
-    return useStreamApi(`${getConfig().httpGatewayAddress}/api/v1/provisioning-records?deviceIdFilter=${deviceId}`, {
+    const url = getWellKnow()?.ui?.deviceProvisioningService || getConfig().httpGatewayAddress
+
+    const [data, setData] = useState(null)
+
+    const { data: provisioningRecordData, ...rest }: StreamApiPropsType = useStreamApi(`${url}/api/v1/provisioning-records?deviceIdFilter=${deviceId}`, {
         telemetryWebTracer,
-        telemetrySpan: 'get-device-provisioning-records',
+        telemetrySpan: `get-device-provisioning-record-${deviceId}`,
     })
+
+    useEffect(() => {
+        if (provisioningRecordData && Array.isArray(provisioningRecordData)) {
+            setData({
+                ...provisioningRecordData[0],
+            })
+        }
+    }, [provisioningRecordData])
+
+    return { data, ...rest }
 }

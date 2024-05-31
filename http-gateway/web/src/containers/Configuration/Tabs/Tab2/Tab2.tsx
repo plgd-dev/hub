@@ -20,13 +20,13 @@ import FormInput, { inputAligns } from '@shared-ui/components/Atomic/FormInput'
 import { isValidHex, ThemeType } from '@shared-ui/components/Atomic/_theme'
 import { EditorRefType } from '@shared-ui/components/Atomic/Editor/Editor.types'
 import Switch from '@shared-ui/components/Atomic/Switch'
+import { getNumberFromPx } from '@shared-ui/components/Atomic/_utils/commonStyles'
 
 import { Props, Inputs } from './Tab2.types'
 import { messages as t } from '../../ConfigurationPage.i18n'
 import { messages as g } from '@/containers/Global.i18n'
 import { setPreviewTheme } from '@/containers/App/slice'
 import AppColorsPicker from './AppColorsPicker'
-import { getNumberFromPx } from '@shared-ui/components/Atomic/_utils/commonStyles'
 
 const Tab2: FC<Props> = (props) => {
     const { isTabActive, resetForm } = props
@@ -81,19 +81,25 @@ const Tab2: FC<Props> = (props) => {
 
     useEffect(() => {
         const values = getValues()
-        const { logo, colorPalette } = appStore.configuration.previewTheme
+        if (appStore.configuration.previewTheme) {
+            const { logo, colorPalette } = appStore.configuration.previewTheme
 
-        if (colorPalette) {
-            editorRef?.current?.setValue(colorPalette)
-            setValue('colorPalette', colorPalette)
-        }
+            if (colorPalette) {
+                editorRef?.current?.setValue(colorPalette)
+                setValue('colorPalette', colorPalette)
+            }
 
-        if (logo.height && logo.height !== values.logoHeight) {
-            setValue('logoHeight', typeof logo.height === 'string' ? getNumberFromPx(logo.height) : logo.height)
-        }
+            if (logo && logo.height && logo.height !== values.logoHeight) {
+                setValue('logoHeight', typeof logo.height === 'string' ? getNumberFromPx(logo.height) : logo.height)
+            }
 
-        if (logo.width && logo.width !== values.logoWidth) {
-            setValue('logoWidth', typeof logo.width === 'string' ? getNumberFromPx(logo.width) : logo.width)
+            if (logo && logo.width && logo.width !== values.logoWidth) {
+                setValue('logoWidth', typeof logo.width === 'string' ? getNumberFromPx(logo.width) : logo.width)
+            }
+
+            if (logo && logo.source && logo.source !== values.logoSource) {
+                setValue('logoSource', logo.source)
+            }
         }
     }, [appStore.configuration.previewTheme, getValues, setValue])
 

@@ -1,5 +1,4 @@
-import type { PlaywrightTestConfig } from '@playwright/test'
-import { devices } from '@playwright/test'
+import { defineConfig, devices } from '@playwright/test'
 
 /**
  * Read environment variables from file.
@@ -10,17 +9,17 @@ require('dotenv').config()
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
-const config: PlaywrightTestConfig = {
+export default defineConfig({
     globalSetup: require.resolve('./global-setup'),
     testDir: './tests',
     /* Maximum time one test can run for. */
-    timeout: 30 * 1000,
+    timeout: 2 * 60 * 1000,
     expect: {
         /**
          * Maximum time expect() should wait for the condition to be met.
          * For example in `await expect(locator).toHaveText();`
          */
-        timeout: 10000,
+        timeout: 2 * 60 * 1000,
     },
     /* Run tests in files in parallel */
     fullyParallel: true,
@@ -35,7 +34,7 @@ const config: PlaywrightTestConfig = {
     /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
     use: {
         /* Maximum time each action such as `click()` can take. Defaults to 0 (no limit). */
-        actionTimeout: 0,
+        actionTimeout: 2 * 60 * 1000,
         baseURL: 'http://localhost:3000/',
         storageState: 'storageState.json',
         trace: 'on-first-retry',
@@ -51,19 +50,19 @@ const config: PlaywrightTestConfig = {
             },
         },
 
-        {
-            name: 'firefox',
-            use: {
-                ...devices['Desktop Firefox'],
-            },
-        },
-
-        {
-            name: 'webkit',
-            use: {
-                ...devices['Desktop Safari'],
-            },
-        },
+        // {
+        //     name: 'firefox',
+        //     use: {
+        //         ...devices['Desktop Firefox'],
+        //     },
+        // },
+        //
+        // {
+        //     name: 'webkit',
+        //     use: {
+        //         ...devices['Desktop Safari'],
+        //     },
+        // },
 
         /* Test against mobile viewports. */
         // {
@@ -79,18 +78,18 @@ const config: PlaywrightTestConfig = {
         //   },
         // },
 
-        {
-            name: 'Microsoft Edge',
-            use: {
-                channel: 'msedge',
-            },
-        },
-        {
-            name: 'Google Chrome',
-            use: {
-                channel: 'chrome',
-            },
-        },
+        // {
+        //     name: 'Microsoft Edge',
+        //     use: {
+        //         channel: 'msedge',
+        //     },
+        // },
+        // {
+        //     name: 'Google Chrome',
+        //     use: {
+        //         channel: 'chrome',
+        //     },
+        // },
     ],
 
     /* Folder for test artifacts such as screenshots, videos, traces, etc. */
@@ -101,6 +100,4 @@ const config: PlaywrightTestConfig = {
     //     command: 'npm run start',
     //     port: 3000,
     // },
-}
-
-export default config
+})

@@ -1,0 +1,72 @@
+{
+  "interfaces": [
+    "oic.if.r",
+    "oic.if.baseline"
+  ],
+  "protocolIndependentId": "c11239eb-d9ec-4205-6a58-fd88baa600e3",
+  "ownershipStatus": "OWNED",
+  "id": "3aae0672-47f3-4498-78d4-b061e6105ccd",
+  "name": "dps-endpoint-is-set",
+  "metadata": {
+    "connection": {
+      "serviceId": "28da81bf-52c0-4a10-b057-a442dd469880",
+      "localEndpoints": [
+        "coap://10.110.110.12:44190",
+        "coaps://10.110.110.12:55727",
+        "coap+tcp://10.110.110.12:39037",
+        "coaps+tcp://10.110.110.12:46193"
+      ],
+      "status": "ONLINE",
+      "id": "10.110.110.10:53315",
+      "connectedAt": "1715678189870926190",
+      "protocol": "COAPS_TCP"
+    },
+    "twinSynchronization": {
+      "syncingAt": "1715678189886251932",
+      "inSyncAt": "1715678189906580363",
+      "commandMetadata": {
+        "connectionId": "10.110.110.10:53315",
+        "sequence": "8"
+      },
+      "forceSynchronizationAt": "0",
+      "state": "IN_SYNC"
+    },
+    "twinEnabled": true
+  },
+  "data": {
+    "status": "OK",
+    "auditContext": {
+      "userId": "820bbd01-f8be-4f99-bede-926c28a9e0b2",
+      "owner": "98120ad9-eefa-4b93-aa53-696420b639fd"
+    },
+    "eventMetadata": {
+      "sequence": "8",
+      "hubId": "1c10a3b6-287c-11ec-ac2d-13054959c274",
+      "version": "0",
+      "timestamp": "1715360635727782732",
+      "connectionId": "10.110.110.10:18364"
+    },
+    "resourceTypes": [
+      "oic.d.cloudDevice",
+      "oic.wk.d"
+    ],
+    "openTelemetryCarrier": {
+      "traceparent": "00-04422d3d1ea18c0b90872ce0a98e9dcd-4804ef9d2c5fce93-01"
+    },
+    "resourceId": {
+      "href": "/oic/d",
+      "deviceId": "3aae0672-47f3-4498-78d4-b061e6105ccd"
+    },
+    "content": {
+      "icv": "ocf.2.0.5",
+      "dmv": "ocf.res.1.3.0",
+      "di": "3aae0672-47f3-4498-78d4-b061e6105ccd",
+      "piid": "c11239eb-d9ec-4205-6a58-fd88baa600e3",
+      "n": "dps-endpoint-is-set"
+    }
+  },
+  "types": [
+    "oic.d.cloudDevice",
+    "oic.wk.d"
+  ]
+}

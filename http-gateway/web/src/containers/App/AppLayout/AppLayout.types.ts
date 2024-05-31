@@ -8,7 +8,7 @@ export type Props = {
     }
     collapsed: boolean
     mockApp?: boolean
-    setCollapsed: () => {}
+    setCollapsed: (c: boolean) => void
     signOutRedirect?: (data: any) => {}
     userData?: {
         profile?: {

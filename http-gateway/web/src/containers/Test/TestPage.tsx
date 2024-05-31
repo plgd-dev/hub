@@ -1,4 +1,5 @@
 import React from 'react'
+
 import Footer from '@shared-ui/components/Layout/Footer'
 import PageLayout from '@shared-ui/components/Atomic/PageLayout'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'

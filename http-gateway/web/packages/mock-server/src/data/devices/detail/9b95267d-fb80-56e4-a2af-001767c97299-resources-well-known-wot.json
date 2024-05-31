@@ -1,0 +1,198 @@
+{
+  "data": {
+    "auditContext": {
+      "owner": "98120ad9-eefa-4b93-aa53-696420b639fd",
+      "userId": "98120ad9-eefa-4b93-aa53-696420b639fd"
+    },
+    "eventMetadata": {
+      "sequence": "12",
+      "hubId": "1c10a3b6-287c-11ec-ac2d-13054959c274",
+      "version": "0",
+      "timestamp": "1715258265945759867",
+      "connectionId": "10.110.110.10:26672"
+    },
+    "etag": "F83SIor1EKY=",
+    "resourceTypes": [
+      "wot.thing"
+    ],
+    "openTelemetryCarrier": {
+      "traceparent": "00-def3075d839b3b317b638d025e2a6509-8c6fa5c58eb84924-01"
+    },
+    "resourceId": {
+      "deviceId": "9b95267d-fb80-56e4-a2af-001767c97299",
+      "href": "/.well-known/wot"
+    },
+    "content": {
+      "@context": "https://www.w3.org/2022/wot/td/v1.1",
+      "@type": "Thing",
+      "descriptions": {
+        "en": "A simulated hotel room with a light, air conditioning and a smoke detector"
+      },
+      "properties": {
+        "/brightness": {
+          "observable": true,
+          "title": "Light Brightness",
+          "type": "integer",
+          "@type": [
+            "x.wot.property.unknown"
+          ],
+          "description": "Light Brightness",
+          "forms": null,
+          "maximum": 100,
+          "minimum": 0
+        },
+        "/goalTemperature": {
+          "@type": [
+            "x.wot.property.unknown"
+          ],
+          "description": "Goal Temperature",
+          "minimum": 16,
+          "forms": null,
+          "maximum": 28,
+          "observable": true,
+          "type": "number",
+          "title": "Goal Temperature",
+          "unit": "C"
+        },
+        "/smoke": {
+          "observable": true,
+          "title": "Smoke Detector",
+          "type": "boolean",
+          "@type": [
+            "x.wot.property.unknown"
+          ],
+          "description": "Smoke Detector",
+          "forms": null
+        },
+        "/currentTemperature": {
+          "forms": null,
+          "observable": true,
+          "readOnly": true,
+          "title": "currentTemperature",
+          "type": "number",
+          "unit": "C",
+          "@type": [
+            "x.wot.property.unknown"
+          ],
+          "description": "currentTemperature"
+        },
+        "/oic/mnt": {
+          "forms": null,
+          "properties": {
+            "fr": {
+              "title": "Factory Reset",
+              "type": "boolean"
+            }
+          },
+          "title": "Maintenance",
+          "type": "object",
+          "@type": [
+            "oic.wk.mnt"
+          ]
+        },
+        "/roomnumber": {
+          "description": "Roomnumber",
+          "forms": null,
+          "observable": true,
+          "readOnly": true,
+          "title": "Roomnumber",
+          "type": "integer",
+          "@type": [
+            "x.wot.property.unknown"
+          ]
+        },
+        "/CoapCloudConfResURI": {
+          "forms": null,
+          "properties": {
+            "cps": {
+              "type": "string",
+              "enum": [
+                "uninitialized",
+                "readytoregister",
+                "registering",
+                "registered",
+                "failed"
+              ],
+              "title": "Provisioning status"
+            },
+            "sid": {
+              "format": "uuid",
+              "title": "Cloud ID",
+              "type": "string"
+            },
+            "apn": {
+              "title": "Authorization provider name",
+              "type": "string"
+            },
+            "at": {
+              "title": "Access token",
+              "type": "string",
+              "writeOnly": true
+            },
+            "cis": {
+              "type": "string",
+              "format": "uri",
+              "title": "Cloud interface server"
+            },
+            "clec": {
+              "title": "Last error code",
+              "type": "integer"
+            }
+          },
+          "title": "CoapCloudConfResURI",
+          "type": "object",
+          "@type": [
+            "oic.r.coapcloudconf"
+          ]
+        },
+        "/oic/d": {
+          "properties": {
+            "di": {
+              "format": "uuid",
+              "readOnly": true,
+              "title": "Device ID",
+              "type": "string"
+            },
+            "n": {
+              "readOnly": true,
+              "title": "Device Name",
+              "type": "string"
+            },
+            "piid": {
+              "format": "uuid",
+              "readOnly": true,
+              "title": "Protocol Interface ID",
+              "type": "string"
+            }
+          },
+          "readOnly": true,
+          "title": "Device Information",
+          "type": "object",
+          "@type": [
+            "Thing",
+            "oic.wk.d"
+          ],
+          "forms": null
+        },
+        "/color": {
+          "title": "Light Color",
+          "type": "string",
+          "@type": [
+            "x.wot.property.unknown"
+          ],
+          "description": "Light Color",
+          "forms": null,
+          "observable": true
+        }
+      },
+      "security": null,
+      "securityDefinitions": null,
+      "title": "simulated Hotel Room",
+      "id": "urn:uuid:9b95267d-fb80-56e4-a2af-001767c97299"
+    },
+    "status": "OK"
+  },
+  "types": [
+    "wot.thing"
+  ]
+}

@@ -5,7 +5,7 @@ import { useIntl } from 'react-intl'
 import StatusTag from '@shared-ui/components/Atomic/StatusTag'
 import { TagTypeType } from '@shared-ui/components/Atomic/StatusTag/StatusTag.types'
 import TableActions from '@shared-ui/components/Atomic/TableNew/TableActions'
-import { IconTrash } from '@shared-ui/components/Atomic'
+import { IconTrash } from '@shared-ui/components/Atomic/Icon'
 import AppContext from '@shared-ui/app/share/AppContext'
 
 import { Props } from './PendingCommandsExpandableList.types'

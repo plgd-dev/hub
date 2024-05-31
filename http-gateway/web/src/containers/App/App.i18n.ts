@@ -79,7 +79,7 @@ export const messages = defineMessages({
     },
     menuLinkedHubs: {
         id: 'app.menuLinkedHubs',
-        defaultMessage: 'Linked hubs',
+        defaultMessage: 'Linked Hubs',
     },
     menuCertificates: {
         id: 'app.menuCertificates',

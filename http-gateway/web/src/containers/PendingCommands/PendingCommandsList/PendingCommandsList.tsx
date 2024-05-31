@@ -43,12 +43,12 @@ const PendingCommandsList = forwardRef<PendingCommandsListRefType, Props>((props
         error &&
             Notification.error(
                 {
-                    title: t.error,
+                    title: _(t.error),
                     message: getApiErrorMessage(error),
                 },
                 { notificationId: notificationId.HUB_PENDING_COMMANDS_LIST_ERROR }
             )
-    }, [error])
+    }, [_, error])
 
     useEffect(() => {
         // WS for adding a new pending command to the list
@@ -80,14 +80,14 @@ const PendingCommandsList = forwardRef<PendingCommandsListRefType, Props>((props
                 ...deviceIdWsFilters,
             },
             UPDATE_PENDING_COMMANDS_WS_KEY,
-            handleEmitUpdatedCommandEvents
+            (eventData: any) => handleEmitUpdatedCommandEvents(eventData, _)
         )
 
         return () => {
             WebSocketEventClient.unsubscribe(NEW_PENDING_COMMAND_WS_KEY)
             WebSocketEventClient.unsubscribe(UPDATE_PENDING_COMMANDS_WS_KEY)
         }
-    }, [deviceIdWsFilters])
+    }, [_, deviceIdWsFilters])
 
     const onCloseViewModal = () => {
         setDetailsModalData(null)
@@ -111,7 +111,7 @@ const PendingCommandsList = forwardRef<PendingCommandsListRefType, Props>((props
 
             Notification.error(
                 {
-                    title: t.error,
+                    title: _(t.error),
                     message: getApiErrorMessage(error),
                 },
                 { notificationId: notificationId.HUB_PENDING_COMMANDS_LIST_CANCEL_COMMAND }

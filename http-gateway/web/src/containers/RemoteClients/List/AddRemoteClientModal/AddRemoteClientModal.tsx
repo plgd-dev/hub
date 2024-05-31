@@ -14,7 +14,8 @@ import * as styles from '@shared-ui/components/Atomic/Modal/components/Provision
 import { fetchApi } from '@shared-ui/common/services'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import CopyElement from '@shared-ui/components/Atomic/CopyElement'
-import { FormSelect, IconCopy } from '@shared-ui/components/Atomic'
+import { IconCopy } from '@shared-ui/components/Atomic/Icon'
+import FormSelect from '@shared-ui/components/Atomic/FormSelect'
 import { copyToClipboard } from '@shared-ui/common/utils'
 import Tooltip from '@shared-ui/components/Atomic/Tooltip'
 import { DEVICE_AUTH_MODE } from '@shared-ui/app/clientApp/constants'
@@ -335,6 +336,5 @@ const AddRemoteClientModal: FC<Props> = (props) => {
 }
 
 AddRemoteClientModal.displayName = 'AddRemoteClientModal'
-AddRemoteClientModal.defaultProps = defaultProps
 
 export default AddRemoteClientModal

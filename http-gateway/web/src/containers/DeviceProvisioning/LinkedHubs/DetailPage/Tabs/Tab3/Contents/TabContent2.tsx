@@ -1,28 +1,33 @@
 import React, { FC } from 'react'
 import { useIntl } from 'react-intl'
-import { useFormContext } from 'react-hook-form'
+import get from 'lodash/get'
 
 import Headline from '@shared-ui/components/Atomic/Headline'
 import Loadable from '@shared-ui/components/Atomic/Loadable'
 import Spacer from '@shared-ui/components/Atomic/Spacer'
 import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
 import FormGroup from '@shared-ui/components/Atomic/FormGroup'
-import FormInput, { inputAligns } from '@shared-ui/components/Atomic/FormInput'
+import FormInput from '@shared-ui/components/Atomic/FormInput'
+import { useForm } from '@shared-ui/common/hooks'
 
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
 import { messages as g } from '@/containers/Global.i18n'
-import { Props } from './TabContent2.types'
+import { Props, Inputs } from './TabContent2.types'
+import { useValidationsSchema } from '@/containers/DeviceProvisioning/LinkedHubs/validationSchema'
 
 const TabContent2: FC<Props> = (props) => {
-    const { loading } = props
+    const { defaultFormData, loading } = props
+
     const { formatMessage: _ } = useIntl()
+    const schema = useValidationsSchema('group3')
+
     const {
         formState: { errors },
         register,
-    } = useFormContext()
+    } = useForm<Inputs>({ defaultFormData, errorKey: 'tab3Content2', schema })
 
     return (
-        <div>
+        <form>
             <Headline type='h5'>{_(t.oAuthClient)}</Headline>
             <Spacer type='pt-4'>
                 <Loadable condition={!loading}>
@@ -32,89 +37,37 @@ const TabContent2: FC<Props> = (props) => {
                         rows={[
                             {
                                 attribute: _(g.name),
+                                required: true,
                                 value: (
-                                    <FormGroup
-                                        errorTooltip
-                                        fullSize
-                                        error={errors.name ? _(g.requiredField, { field: _(g.name) }) : undefined}
-                                        id='authorization.provider.name'
-                                        marginBottom={false}
-                                    >
-                                        <FormInput
-                                            inlineStyle
-                                            align={inputAligns.RIGHT}
-                                            placeholder={_(g.name)}
-                                            {...register('authorization.provider.name', {
-                                                required: true,
-                                                validate: (val) => val !== '',
-                                            })}
-                                        />
+                                    <FormGroup error={get(errors, 'authorization.provider.name.message')} id='authorization.provider.name'>
+                                        <FormInput {...register('authorization.provider.name')} placeholder={_(g.name)} />
                                     </FormGroup>
                                 ),
                             },
                             {
                                 attribute: _(t.clientId),
+                                required: true,
                                 value: (
-                                    <FormGroup
-                                        errorTooltip
-                                        fullSize
-                                        error={errors.name ? _(g.requiredField, { field: _(t.clientId) }) : undefined}
-                                        id='authorization.provider.clientId'
-                                        marginBottom={false}
-                                    >
-                                        <FormInput
-                                            inlineStyle
-                                            align={inputAligns.RIGHT}
-                                            placeholder={_(t.clientId)}
-                                            {...register('authorization.provider.clientId', {
-                                                required: true,
-                                                validate: (val) => val !== '',
-                                            })}
-                                        />
+                                    <FormGroup error={get(errors, 'authorization.provider.clientId.message')} id='authorization.provider.clientId'>
+                                        <FormInput {...register('authorization.provider.clientId')} placeholder={_(t.clientId)} />
                                     </FormGroup>
                                 ),
                             },
                             {
                                 attribute: _(t.clientSecret),
+                                required: true,
                                 value: (
-                                    <FormGroup
-                                        errorTooltip
-                                        fullSize
-                                        error={errors.name ? _(g.requiredField, { field: _(t.clientSecret) }) : undefined}
-                                        id='authorization.provider.clientSecret'
-                                        marginBottom={false}
-                                    >
-                                        <FormInput
-                                            inlineStyle
-                                            align={inputAligns.RIGHT}
-                                            placeholder={_(t.clientSecret)}
-                                            {...register('authorization.provider.clientSecret', {
-                                                required: true,
-                                                validate: (val) => val !== '',
-                                            })}
-                                        />
+                                    <FormGroup error={get(errors, 'authorization.provider.clientSecret.message')} id='authorization.provider.clientSecret'>
+                                        <FormInput {...register('authorization.provider.clientSecret')} placeholder={_(t.clientSecret)} />
                                     </FormGroup>
                                 ),
                             },
                             {
                                 attribute: _(t.authority),
+                                required: true,
                                 value: (
-                                    <FormGroup
-                                        errorTooltip
-                                        fullSize
-                                        error={errors.name ? _(g.requiredField, { field: _(t.authority) }) : undefined}
-                                        id='authorization.provider.authority'
-                                        marginBottom={false}
-                                    >
-                                        <FormInput
-                                            inlineStyle
-                                            align={inputAligns.RIGHT}
-                                            placeholder={_(t.authority)}
-                                            {...register('authorization.provider.authority', {
-                                                required: true,
-                                                validate: (val) => val !== '',
-                                            })}
-                                        />
+                                    <FormGroup error={get(errors, 'authorization.provider.authority.message')} id='authorization.provider.authority'>
+                                        <FormInput {...register('authorization.provider.authority')} placeholder={_(t.authority)} />
                                     </FormGroup>
                                 ),
                             },
@@ -122,7 +75,7 @@ const TabContent2: FC<Props> = (props) => {
                     />
                 </Loadable>
             </Spacer>
-        </div>
+        </form>
     )
 }
 

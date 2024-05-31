@@ -33,6 +33,8 @@ export const canCreateResource = (interfaces: string[]) => interfaces.includes(k
 // Returns true if a device has a resource oic.wk.con which holds the device name property
 export const canChangeDeviceName = (links: ResourcesType[]) => links.findIndex((link) => link.resourceTypes.includes(knownResourceTypes.OIC_WK_CON)) !== -1
 
+export const hasGeneratedResourcesForm = (links: ResourcesType[]) => links.findIndex((link) => link.resourceTypes.includes(knownResourceTypes.WOT_THING)) !== -1
+
 // Returns the href for the resource which can do a device name change
 export const getDeviceChangeResourceHref = (links: ResourcesType[]) => links.find((link) => link.resourceTypes.includes(knownResourceTypes.OIC_WK_CON))?.href
 

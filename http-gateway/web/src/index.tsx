@@ -3,11 +3,12 @@ import { createRoot } from 'react-dom/client'
 import { Provider } from 'react-redux'
 import { persistStore } from 'redux-persist'
 import { PersistGate } from 'redux-persist/integration/react'
+import { RecoilRoot } from 'recoil'
 
 import IntlProvider from '@shared-ui/components/Atomic/IntlProvider'
-import { App as AtomicApp } from '@shared-ui/components/Atomic'
+import App from '@shared-ui/components/Atomic/App'
 
-import { App } from '@/containers/App'
+import { App as MainApp } from '@/containers/App'
 import { store } from '@/store'
 // @ts-ignore
 import languages from './languages/languages.json'
@@ -24,10 +25,13 @@ const BaseComponent = () => {
     // only set the code to the session storage, so that the caller can process it.
     const urlParams = new URLSearchParams(window.location.search)
     const code = urlParams.get('code')
+    // state is present from auth request
+    const state = urlParams.get('state')
     const isMockApp = window.location.pathname === '/devices-code-redirect' && !!code
     const configurationPageFrame = window.location.pathname === `/${CONFIGURATION_PAGE_FRAME}`
 
-    if (window.location.pathname === '/devices' && code) {
+    // onboarding device
+    if (window.location.pathname === '/devices' && code && !state) {
         localStorage.setItem(DEVICE_AUTH_CODE_SESSION_KEY, code)
 
         window.location.hash = ''
@@ -37,6 +41,7 @@ const BaseComponent = () => {
     }
 
     if (isMockApp) {
+        console.log('plgd mock app is running...')
         window.addEventListener('load', function () {
             setInterval(() => {
                 if (localStorage.getItem(DEVICE_AUTH_CODE_SESSION_KEY)) {
@@ -48,27 +53,34 @@ const BaseComponent = () => {
 
     const ProviderWrapper = ({ children }: { children: any }) => (
         <Provider store={store}>
-            <PersistGate persistor={persistor}>
-                <IntlProvider defaultLanguage={appConfig.defaultLanguage} languages={languages}>
-                    {children}
-                </IntlProvider>
-            </PersistGate>
+            <RecoilRoot>
+                <PersistGate persistor={persistor}>
+                    <IntlProvider defaultLanguage={appConfig.defaultLanguage} languages={languages}>
+                        {children}
+                    </IntlProvider>
+                </PersistGate>
+            </RecoilRoot>
         </Provider>
     )
 
     if (configurationPageFrame) {
         return (
             <ProviderWrapper>
-                <AtomicApp toastContainerPortalTarget={document.getElementById('toast-root')}>
+                <App toastContainerPortalTarget={document.getElementById('toast-root')}>
                     <PreviewApp />
-                </AtomicApp>
+                </App>
             </ProviderWrapper>
         )
     }
 
+    // save the current pathname to the local storage before sign-out
+    if (!/devices-code-redirect/.test(window.location.pathname)) {
+        window.localStorage.setItem('storedPathname', window.location.pathname.toString())
+    }
+
     return (
         <ProviderWrapper>
-            <App mockApp={isMockApp} />
+            <MainApp mockApp={isMockApp} />
         </ProviderWrapper>
     )
 }

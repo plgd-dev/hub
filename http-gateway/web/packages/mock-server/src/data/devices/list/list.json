@@ -1,0 +1,293 @@
+{
+  "result": {
+    "interfaces": [
+      "oic.if.r",
+      "oic.if.baseline"
+    ],
+    "protocolIndependentId": "c11239eb-d9ec-4205-6a58-fd88baa600e3",
+    "types": [
+      "oic.d.cloudDevice",
+      "oic.wk.d"
+    ],
+    "name": "dps-endpoint-is-set",
+    "metadata": {
+      "connection": {
+        "status": "ONLINE",
+        "id": "10.110.110.10:53315",
+        "connectedAt": "1715678189870926190",
+        "protocol": "COAPS_TCP",
+        "serviceId": "28da81bf-52c0-4a10-b057-a442dd469880",
+        "localEndpoints": [
+          "coap://10.110.110.12:44190",
+          "coaps://10.110.110.12:55727",
+          "coap+tcp://10.110.110.12:39037",
+          "coaps+tcp://10.110.110.12:46193"
+        ]
+      },
+      "twinSynchronization": {
+        "state": "IN_SYNC",
+        "syncingAt": "1715678189886251932",
+        "inSyncAt": "1715678189906580363",
+        "commandMetadata": {
+          "connectionId": "10.110.110.10:53315",
+          "sequence": "8"
+        },
+        "forceSynchronizationAt": "0"
+      },
+      "twinEnabled": true
+    },
+    "ownershipStatus": "OWNED",
+    "id": "3aae0672-47f3-4498-78d4-b061e6105ccd",
+    "data": {
+      "content": {
+        "di": "3aae0672-47f3-4498-78d4-b061e6105ccd",
+        "piid": "c11239eb-d9ec-4205-6a58-fd88baa600e3",
+        "n": "dps-endpoint-is-set",
+        "icv": "ocf.2.0.5",
+        "dmv": "ocf.res.1.3.0"
+      },
+      "status": "OK",
+      "auditContext": {
+        "userId": "820bbd01-f8be-4f99-bede-926c28a9e0b2",
+        "owner": "98120ad9-eefa-4b93-aa53-696420b639fd"
+      },
+      "eventMetadata": {
+        "connectionId": "10.110.110.10:18364",
+        "sequence": "8",
+        "hubId": "1c10a3b6-287c-11ec-ac2d-13054959c274",
+        "version": "0",
+        "timestamp": "1715360635727782732"
+      },
+      "resourceTypes": [
+        "oic.d.cloudDevice",
+        "oic.wk.d"
+      ],
+      "openTelemetryCarrier": {
+        "traceparent": "00-04422d3d1ea18c0b90872ce0a98e9dcd-4804ef9d2c5fce93-01"
+      },
+      "resourceId": {
+        "deviceId": "3aae0672-47f3-4498-78d4-b061e6105ccd",
+        "href": "/oic/d"
+      }
+    }
+  }
+}
+
+{
+  "result": {
+    "interfaces": [
+      "oic.if.r",
+      "oic.if.baseline"
+    ],
+    "protocolIndependentId": "e34f501f-76c5-4702-72e8-feb1d3d13b3b",
+    "ownershipStatus": "OWNED",
+    "id": "4e00418f-b927-4a1c-4f49-cc86e87b52b2",
+    "metadata": {
+      "connection": {
+        "connectedAt": "1715311339745684234",
+        "protocol": "COAPS_TCP",
+        "localEndpoints": [
+          "coap://10.110.110.12:50143",
+          "coaps://10.110.110.12:35432",
+          "coap+tcp://10.110.110.12:59915",
+          "coaps+tcp://10.110.110.12:53295"
+        ],
+        "status": "OFFLINE",
+        "id": "10.110.110.10:15861"
+      },
+      "twinSynchronization": {
+        "state": "OUT_OF_SYNC",
+        "syncingAt": "1715311339780191439",
+        "inSyncAt": "1715311339807251016",
+        "commandMetadata": {
+          "connectionId": "10.110.110.10:15861",
+          "sequence": "4213"
+        },
+        "forceSynchronizationAt": "0"
+      },
+      "twinEnabled": true
+    },
+    "data": {
+      "status": "OK",
+      "auditContext": {
+        "userId": "820bbd01-f8be-4f99-bede-926c28a9e0b2",
+        "owner": "98120ad9-eefa-4b93-aa53-696420b639fd"
+      },
+      "eventMetadata": {
+        "connectionId": "10.110.110.10:65295",
+        "sequence": "8",
+        "hubId": "1c10a3b6-287c-11ec-ac2d-13054959c274",
+        "version": "0",
+        "timestamp": "1715257789529574552"
+      },
+      "resourceTypes": [
+        "oic.d.cloudDevice",
+        "oic.wk.d"
+      ],
+      "openTelemetryCarrier": {
+        "traceparent": "00-2b6ec394e83401f5cb4c20935a86e708-795085c68e7545c5-01"
+      },
+      "resourceId": {
+        "href": "/oic/d",
+        "deviceId": "4e00418f-b927-4a1c-4f49-cc86e87b52b2"
+      },
+      "content": {
+        "di": "4e00418f-b927-4a1c-4f49-cc86e87b52b2",
+        "piid": "e34f501f-76c5-4702-72e8-feb1d3d13b3b",
+        "n": "dps-endpoint-is-set",
+        "icv": "ocf.2.0.5",
+        "dmv": "ocf.res.1.3.0"
+      }
+    },
+    "types": [
+      "oic.d.cloudDevice",
+      "oic.wk.d"
+    ],
+    "name": "dps-endpoint-is-set"
+  }
+}
+
+{
+  "result": {
+    "protocolIndependentId": "219e5a01-ae94-4bd2-7b1d-fbd2ac275103",
+    "ownershipStatus": "OWNED",
+    "types": [
+      "oic.d.cloudDevice",
+      "oic.wk.d"
+    ],
+    "modelNumber": "CS-0",
+    "metadata": {
+      "connection": {
+        "connectedAt": "1714732612106266776",
+        "protocol": "COAPS_TCP",
+        "localEndpoints": [
+          "coap://10.110.110.12:45549",
+          "coaps://10.110.110.12:48890",
+          "coap+tcp://10.110.110.12:52107",
+          "coaps+tcp://10.110.110.12:47655"
+        ],
+        "status": "OFFLINE",
+        "id": "10.110.110.10:62666"
+      },
+      "twinSynchronization": {
+        "state": "OUT_OF_SYNC",
+        "syncingAt": "1714732612134825516",
+        "inSyncAt": "1714732612221917478",
+        "commandMetadata": {
+          "connectionId": "10.110.110.10:62666",
+          "sequence": "111"
+        },
+        "forceSynchronizationAt": "0"
+      },
+      "twinEnabled": true
+    },
+    "interfaces": [
+      "oic.if.r",
+      "oic.if.baseline"
+    ],
+    "data": {
+      "auditContext": {
+        "owner": "98120ad9-eefa-4b93-aa53-696420b639fd",
+        "userId": "98120ad9-eefa-4b93-aa53-696420b639fd"
+      },
+      "eventMetadata": {
+        "connectionId": "10.110.110.10:1036",
+        "sequence": "21",
+        "hubId": "1c10a3b6-287c-11ec-ac2d-13054959c274",
+        "version": "1",
+        "timestamp": "1714732294792362981"
+      },
+      "etag": "+s1QOYoXBgA=",
+      "resourceTypes": [
+        "oic.d.cloudDevice",
+        "oic.wk.d"
+      ],
+      "openTelemetryCarrier": {
+        "traceparent": "00-19b0dcf8feaf21580c7532b5d3aa7994-f3922c35a65b3a75-01"
+      },
+      "resourceId": {
+        "href": "/oic/d",
+        "deviceId": "3227c3b1-8312-4cdd-53ec-26373f0807e4"
+      },
+      "content": {
+        "di": "3227c3b1-8312-4cdd-53ec-26373f0807e4",
+        "piid": "219e5a01-ae94-4bd2-7b1d-fbd2ac275103",
+        "n": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel tLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel tLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel tLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel tLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel tLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel tLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel tLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel tLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel tLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel tLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel tLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel tLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel tLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel tLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel tLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel tLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel tLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel t",
+        "icv": "ocf.2.0.5",
+        "dmv": "ocf.res.1.3.0",
+        "dmno": "CS-0",
+        "sv": "1.0.1-rc1"
+      },
+      "status": "OK"
+    },
+    "id": "3227c3b1-8312-4cdd-53ec-26373f0807e4",
+    "name": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel tLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel tLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel tLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel tLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel tLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel tLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel tLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel tLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel tLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel tLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel tLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel tLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel tLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel tLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel tLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel tLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel tLorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Suspendisse potenti nullam ac tortor vitae purus faucibus. Amet facilisis magna etiam tempor orci. Quam pellentesque nec nam aliquam sem et tortor consequat id. In fermentum et sollicitudin ac orci phasellus egestas tellus. Enim tortor at auctor urna nunc. Diam maecenas ultricies mi eget mauris pharetra et ultrices. Mi in nulla posuere sollicitudin aliquam ultrices sagittis orci a. Nunc aliquet bibendum enim facilisis gravida neque convallis. Vel pretium lectus quam id leo in vitae turpis. Pharetra vel t"
+  }
+}
+
+{
+  "result": {
+    "ownershipStatus": "OWNED",
+    "metadata": {
+      "connection": {
+        "status": "OFFLINE",
+        "id": "10.110.110.10:26672",
+        "connectedAt": "1715258265891752367",
+        "protocol": "COAPS_TCP"
+      },
+      "twinSynchronization": {
+        "state": "OUT_OF_SYNC",
+        "syncingAt": "1715258265931899749",
+        "inSyncAt": "1715258265968937030",
+        "commandMetadata": {
+          "connectionId": "10.110.110.10:26672",
+          "sequence": "23814"
+        },
+        "forceSynchronizationAt": "0"
+      },
+      "twinEnabled": true
+    },
+    "types": [
+      "Thing",
+      "oic.wk.d"
+    ],
+    "name": "simulated Hotel Room",
+    "interfaces": [
+      "oic.if.baseline",
+      "oic.if.r"
+    ],
+    "protocolIndependentId": "e61d18ea-533d-4c95-8ea0-c64e4dcc57ab",
+    "data": {
+      "eventMetadata": {
+        "sequence": "17",
+        "hubId": "1c10a3b6-287c-11ec-ac2d-13054959c274",
+        "version": "0",
+        "timestamp": "1715258265955977762",
+        "connectionId": "10.110.110.10:26672"
+      },
+      "etag": "F83SIor1HVE=",
+      "resourceTypes": [
+        "Thing",
+        "oic.wk.d"
+      ],
+      "openTelemetryCarrier": {
+        "traceparent": "00-5594982e9c50000bc628549afaa408e3-c1741a78ebc2b5d0-01"
+      },
+      "resourceId": {
+        "deviceId": "9b95267d-fb80-56e4-a2af-001767c97299",
+        "href": "/oic/d"
+      },
+      "content": {
+        "di": "9b95267d-fb80-56e4-a2af-001767c97299",
+        "piid": "e61d18ea-533d-4c95-8ea0-c64e4dcc57ab",
+        "n": "simulated Hotel Room"
+      },
+      "status": "OK",
+      "auditContext": {
+        "userId": "98120ad9-eefa-4b93-aa53-696420b639fd",
+        "owner": "98120ad9-eefa-4b93-aa53-696420b639fd"
+      }
+    },
+    "id": "9b95267d-fb80-56e4-a2af-001767c97299"
+  }
+}

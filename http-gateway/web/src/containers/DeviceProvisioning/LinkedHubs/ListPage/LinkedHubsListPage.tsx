@@ -1,11 +1,16 @@
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { useNavigate } from 'react-router-dom'
+import { generatePath, useNavigate } from 'react-router-dom'
 
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import TableActionButton from '@shared-ui//components/Organisms/TableActionButton'
-import { DeleteModal, IconArrowDetail, IconTrash } from '@shared-ui/components/Atomic'
+import { IconArrowDetail, IconPlus, IconTrash } from '@shared-ui/components/Atomic/Icon'
+import DeleteModal from '@shared-ui/components/Atomic/Modal/components/DeleteModal'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
+import Button from '@shared-ui/components/Atomic/Button'
+import { messages as app } from '@shared-ui/app/clientApp/App/App.i18n'
+import Tag from '@shared-ui/components/Atomic/Tag'
+import TagGroup from '@shared-ui/components/Atomic/TagGroup'
 
 import { messages as dpsT } from '../../DeviceProvisioning.i18n'
 import { messages as t } from '../LinkedHubs.i18n'
@@ -15,15 +20,13 @@ import { messages as g } from '@/containers/Global.i18n'
 import notificationId from '@/notificationId'
 import TableList from '@/containers/Common/TableList/TableList'
 import { deleteLinkedHubsApi } from '@/containers/DeviceProvisioning/rest'
-import ListHeader from '@/containers/DeviceProvisioning/LinkedHubs/ListHeader'
+import { pages } from '@/routes'
 
 const LinkedHubsListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
 
     const { data, loading, error, refresh } = useLinkedHubsList()
     const navigate = useNavigate()
-
-    console.log(data)
 
     const [selected, setSelected] = useState<string[]>([])
     const [unselectRowsToken, setUnselectRowsToken] = useState(1)
@@ -33,7 +36,11 @@ const LinkedHubsListPage: FC<any> = () => {
     const breadcrumbs = useMemo(() => [{ label: _(dpsT.deviceProvisioning), link: '/device-provisioning' }, { label: _(t.linkedHubs) }], [])
 
     useEffect(() => {
-        error && Notification.error({ title: _(t.linkedHubsError), message: error }, { notificationId: notificationId.HUB_DPS_LINKED_HUBS_LIST_PAGE_ERROR })
+        error &&
+            Notification.error(
+                { title: _(t.linkedHubsError), message: getApiErrorMessage(error) },
+                { notificationId: notificationId.HUB_DPS_LINKED_HUBS_LIST_PAGE_ERROR }
+            )
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [error])
 
@@ -53,10 +60,10 @@ const LinkedHubsListPage: FC<any> = () => {
                 accessor: 'name',
                 Cell: ({ value, row }: { value: string | number; row: any }) => (
                     <a
-                        href={`/device-provisioning/linked-hubs/${row.original.id}`}
+                        href={generatePath(pages.DPS.LINKED_HUBS.DETAIL.LINK, { hubId: row.original.id, tab: '', section: '' })}
                         onClick={(e) => {
                             e.preventDefault()
-                            navigate(`/device-provisioning/linked-hubs/${row.original.id}`)
+                            navigate(generatePath(pages.DPS.LINKED_HUBS.DETAIL.LINK, { hubId: row.original.id, tab: '', section: '' }))
                         }}
                     >
                         <span className='no-wrap-text'>{value}</span>
@@ -69,9 +76,23 @@ const LinkedHubsListPage: FC<any> = () => {
                 Cell: ({ value }: { value: string | number }) => <span className='no-wrap-text'>{value}</span>,
             },
             {
-                Header: _(t.deviceGatewayAddress),
-                accessor: 'coapGateway',
-                Cell: ({ value }: { value: string | number }) => <span className='no-wrap-text'>{value}</span>,
+                Header: _(t.deviceGateways),
+                accessor: 'gateways',
+                Cell: ({ value }: { value: string[] }) =>
+                    value ? (
+                        <TagGroup
+                            i18n={{
+                                more: _(app.more),
+                                modalHeadline: _(t.deviceGateways),
+                            }}
+                        >
+                            {value.map((t) => (
+                                <Tag key={t}>{t}</Tag>
+                            ))}
+                        </TagGroup>
+                    ) : (
+                        '-'
+                    ),
             },
             {
                 Header: _(g.action),
@@ -90,7 +111,7 @@ const LinkedHubsListPage: FC<any> = () => {
                                     icon: <IconTrash />,
                                 },
                                 {
-                                    onClick: () => navigate(`/device-provisioning/provisioning-records/${id}`),
+                                    onClick: () => navigate(generatePath(pages.DPS.LINKED_HUBS.DETAIL.LINK, { hubId: id, tab: '', section: '' })),
                                     label: _(g.view),
                                     icon: <IconArrowDetail />,
                                 },
@@ -112,6 +133,15 @@ const LinkedHubsListPage: FC<any> = () => {
             await deleteLinkedHubsApi(selected)
 
             handleCloseDeleteModal()
+
+            Notification.success(
+                { title: _(t.linkedHubsDeleted), message: _(t.linkedHubsDeletedMessage) },
+                { notificationId: notificationId.HUB_DPS_LINKED_HUBS_DELETED }
+            )
+
+            setSelected([])
+            setUnselectRowsToken((prevValue) => prevValue + 1)
+
             refresh()
             setDeleting(false)
         } catch (e) {
@@ -131,7 +161,16 @@ const LinkedHubsListPage: FC<any> = () => {
     )
 
     return (
-        <PageLayout breadcrumbs={breadcrumbs} header={<ListHeader />} loading={loading || deleting} title={_(t.linkedHubs)}>
+        <PageLayout
+            breadcrumbs={breadcrumbs}
+            header={
+                <Button icon={<IconPlus />} onClick={() => navigate(generatePath(pages.DPS.LINKED_HUBS.ADD.LINK, { step: '' }))} variant='primary'>
+                    {_(t.linkedHub)}
+                </Button>
+            }
+            loading={loading || deleting}
+            title={_(t.linkedHubs)}
+        >
             <TableList
                 columns={columns}
                 data={data}

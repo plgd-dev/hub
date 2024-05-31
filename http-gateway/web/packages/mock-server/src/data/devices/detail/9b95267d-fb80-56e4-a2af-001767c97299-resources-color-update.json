@@ -1,0 +1,31 @@
+{
+  "types": [
+    "x.wot.property.unknown"
+  ],
+  "data": {
+    "resourceTypes": [
+      "x.wot.property.unknown"
+    ],
+    "openTelemetryCarrier": {
+      "traceparent": "00-7e155170ef7c9e47c82026c13d3de54e-58e1097063cf8e7a-01"
+    },
+    "resourceId": {
+      "deviceId": "9b95267d-fb80-56e4-a2af-001767c97299",
+      "href": "/color"
+    },
+    "content": "#000000",
+    "status": "OK",
+    "auditContext": {
+      "userId": "98120ad9-eefa-4b93-aa53-696420b639fd",
+      "owner": "98120ad9-eefa-4b93-aa53-696420b639fd"
+    },
+    "eventMetadata": {
+      "sequence": "20",
+      "hubId": "1c10a3b6-287c-11ec-ac2d-13054959c274",
+      "version": "1",
+      "timestamp": "1715258265968259597",
+      "connectionId": "10.110.110.10:26672"
+    },
+    "etag": "F83SIor1s9Q="
+  }
+}

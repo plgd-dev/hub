@@ -9,7 +9,7 @@ import Button from '@shared-ui/components/Atomic/Button'
 import StatusPill from '@shared-ui/components/Atomic/StatusPill'
 import { states } from '@shared-ui/components/Atomic/StatusPill/constants'
 import TableActionButton from '@shared-ui/components/Organisms/TableActionButton'
-import { IconTrash } from '@shared-ui/components/Atomic'
+import { IconTrash } from '@shared-ui/components/Atomic/Icon'
 import Breadcrumbs from '@shared-ui/components/Layout/Header/Breadcrumbs'
 import { remoteClientStatuses, RemoteClientStatusesType } from '@shared-ui/app/clientApp/RemoteClients/constants'
 import IconEdit from '@shared-ui/components/Atomic/Icon/components/IconEdit'
@@ -58,7 +58,7 @@ const RemoteClientsList: FC<Props> = (props) => {
     }, [])
 
     const handleResetClient = useCallback((clientUrl: string) => {
-        reset(clientUrl).then(() => console.log('done!'))
+        reset(clientUrl).then()
     }, [])
 
     const columns = useMemo(

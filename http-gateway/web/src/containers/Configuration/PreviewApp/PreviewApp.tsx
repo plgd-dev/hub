@@ -6,6 +6,7 @@ import ReactDOM from 'react-dom'
 import debounce from 'lodash/debounce'
 import { useDispatch, useSelector } from 'react-redux'
 import { RGBColor } from 'react-color'
+import isEqual from 'lodash/isEqual'
 
 import Row from '@shared-ui/components/Atomic/Grid/Row'
 import Column from '@shared-ui/components/Atomic/Grid/Column'
@@ -14,7 +15,8 @@ import ColorPicker from '@shared-ui/components/Atomic/ColorPicker'
 import VersionMark from '@shared-ui/components/Atomic/VersionMark'
 import { severities } from '@shared-ui/components/Atomic/VersionMark/constants'
 import LeftPanel from '@shared-ui/components/Layout/LeftPanel'
-import { IconDashboard, IconDevices, IconDeviceUpdate, IconLoader, IconNetwork } from '@shared-ui/components/Atomic'
+import { IconDashboard, IconDevices, IconDeviceUpdate, IconNetwork } from '@shared-ui/components/Atomic/Icon'
+import IconLoader from '@shared-ui/components/Atomic/Loader/IconLoader'
 import Logo from '@shared-ui/components/Atomic/Logo'
 import Layout from '@shared-ui/components/Layout'
 import Header from '@shared-ui/components/Layout/Header'
@@ -62,7 +64,7 @@ const PreviewApp = forwardRef<PreviewAppRefType, any>((props, ref) => {
     const [colorPalette, setColorPalette] = useState<any>(undefined)
     const [defaultColorPalette, setDefaultColorPalette] = useState<any>(undefined)
     const [activeTabItem, setActiveTabItem] = useState(0)
-    const [logoData, setLogoData] = useState(appStore.configuration.previewTheme.logo || defaultLogo)
+    const [logoData, setLogoData] = useState(appStore.configuration.previewTheme?.logo || defaultLogo)
 
     const isMounted = useIsMounted()
 
@@ -98,10 +100,18 @@ const PreviewApp = forwardRef<PreviewAppRefType, any>((props, ref) => {
     }, [colorPalette, appStore.configuration])
 
     useEffect(() => {
-        if (appStore.configuration.previewTheme?.colorPalette) {
-            setColorPalette(appStore.configuration.previewTheme?.colorPalette)
+        if (appStore.configuration.previewTheme) {
+            const { logo, colorPalette } = appStore.configuration.previewTheme
+
+            if (colorPalette) {
+                setColorPalette(colorPalette)
+            }
+
+            if (logo && !isEqual(logoData, logo)) {
+                setLogoData(logo)
+            }
         }
-    }, [appStore.configuration.previewTheme?.colorPalette])
+    }, [appStore.configuration.previewTheme, logoData])
 
     useImperativeHandle(ref, () => ({
         getThemeData: () => getThemeTemplate(colorPalette, logoData),

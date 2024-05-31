@@ -1,0 +1,154 @@
+{
+  "result": {
+    "eventMetadata": {
+      "version": "0",
+      "timestamp": "1715258265905949684",
+      "connectionId": "10.110.110.10:26672",
+      "sequence": "7",
+      "hubId": "1c10a3b6-287c-11ec-ac2d-13054959c274"
+    },
+    "deviceId": "9b95267d-fb80-56e4-a2af-001767c97299",
+    "resources": [
+      {
+        "href": "/currentTemperature",
+        "deviceId": "9b95267d-fb80-56e4-a2af-001767c97299",
+        "interfaces": [
+          "oic.if.baseline",
+          "oic.if.r"
+        ],
+        "resourceTypes": [
+          "x.wot.property.unknown"
+        ],
+        "validUntil": "0",
+        "policy": {
+          "bitFlags": 3
+        }
+      },
+      {
+        "validUntil": "0",
+        "resourceTypes": [
+          "wot.thing"
+        ],
+        "deviceId": "9b95267d-fb80-56e4-a2af-001767c97299",
+        "interfaces": [
+          "oic.if.baseline",
+          "oic.if.r"
+        ],
+        "policy": {
+          "bitFlags": 3
+        },
+        "href": "/.well-known/wot"
+      },
+      {
+        "validUntil": "0",
+        "policy": {
+          "bitFlags": 3
+        },
+        "resourceTypes": [
+          "x.wot.property.unknown"
+        ],
+        "deviceId": "9b95267d-fb80-56e4-a2af-001767c97299",
+        "interfaces": [
+          "oic.if.baseline",
+          "oic.if.rw"
+        ],
+        "href": "/brightness"
+      },
+      {
+        "deviceId": "9b95267d-fb80-56e4-a2af-001767c97299",
+        "resourceTypes": [
+          "Thing",
+          "oic.wk.d"
+        ],
+        "interfaces": [
+          "oic.if.baseline",
+          "oic.if.r"
+        ],
+        "validUntil": "0",
+        "policy": {
+          "bitFlags": 1
+        },
+        "href": "/oic/d"
+      },
+      {
+        "validUntil": "0",
+        "href": "/goalTemperature",
+        "resourceTypes": [
+          "x.wot.property.unknown"
+        ],
+        "interfaces": [
+          "oic.if.baseline",
+          "oic.if.rw"
+        ],
+        "deviceId": "9b95267d-fb80-56e4-a2af-001767c97299",
+        "policy": {
+          "bitFlags": 3
+        }
+      },
+      {
+        "resourceTypes": [
+          "oic.wk.mnt"
+        ],
+        "interfaces": [
+          "oic.if.baseline",
+          "oic.if.rw"
+        ],
+        "validUntil": "0",
+        "href": "/oic/mnt",
+        "deviceId": "9b95267d-fb80-56e4-a2af-001767c97299",
+        "policy": {
+          "bitFlags": 1
+        }
+      },
+      {
+        "policy": {
+          "bitFlags": 3
+        },
+        "href": "/smoke",
+        "deviceId": "9b95267d-fb80-56e4-a2af-001767c97299",
+        "validUntil": "0",
+        "resourceTypes": [
+          "x.wot.property.unknown"
+        ],
+        "interfaces": [
+          "oic.if.baseline",
+          "oic.if.rw"
+        ]
+      },
+      {
+        "validUntil": "0",
+        "href": "/color",
+        "interfaces": [
+          "oic.if.baseline",
+          "oic.if.rw"
+        ],
+        "policy": {
+          "bitFlags": 3
+        },
+        "deviceId": "9b95267d-fb80-56e4-a2af-001767c97299",
+        "resourceTypes": [
+          "x.wot.property.unknown"
+        ]
+      },
+      {
+        "interfaces": [
+          "oic.if.baseline",
+          "oic.if.r"
+        ],
+        "validUntil": "0",
+        "policy": {
+          "bitFlags": 3
+        },
+        "href": "/roomnumber",
+        "deviceId": "9b95267d-fb80-56e4-a2af-001767c97299",
+        "resourceTypes": [
+          "x.wot.property.unknown"
+        ]
+      }
+    ],
+    "auditContext": {
+      "userId": "98120ad9-eefa-4b93-aa53-696420b639fd",
+      "owner": "98120ad9-eefa-4b93-aa53-696420b639fd"
+    }
+  }
+}

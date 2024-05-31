@@ -5,8 +5,8 @@ import { BrowserRouter } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 import { ThemeProvider } from '@emotion/react'
 
-import PageLoader from '@shared-ui/components/Atomic/PageLoader'
 import { security } from '@shared-ui/common/services/security'
+import { translate } from '@shared-ui/common/services/translate'
 import { openTelemetry } from '@shared-ui/common/services/opentelemetry'
 import ConditionalWrapper from '@shared-ui/components/Atomic/ConditionalWrapper'
 import { useLocalStorage } from '@shared-ui/common/hooks'
@@ -14,6 +14,7 @@ import AppContext from '@shared-ui/app/share/AppContext'
 import { useAppTheme } from '@shared-ui/common/hooks/use-app-theme'
 import { getTheme } from '@shared-ui/app/clientApp/App/AppRest'
 import { defaultTheme } from '@shared-ui/components/Atomic/_theme'
+import FullPageLoader from '@shared-ui/components/Atomic/FullPageLoader'
 
 import './App.scss'
 import { messages as t } from './App.i18n'
@@ -78,6 +79,11 @@ const App = (props: { mockApp: boolean }) => {
         }
     }, [wellKnownConfig, wellKnownConfigFetched])
 
+    useEffect(() => {
+        // translate helper for non-component files ( functions etc )
+        translate.setTranslator(_)
+    }, [_])
+
     const [theme, themeError, getThemeData] = useAppTheme({
         getTheme,
         setTheme,
@@ -94,10 +100,9 @@ const App = (props: { mockApp: boolean }) => {
     // Placeholder loader while waiting for the auth status
     if (!wellKnownConfig || !theme) {
         return (
-            <>
-                <PageLoader loading noOffset className='auth-loader' />
-                <div className='page-loading-text'>{`${_(g.loading)}...`}</div>
-            </>
+            <ThemeProvider theme={getThemeData(currentTheme)}>
+                <FullPageLoader i18n={{ loading: _(g.loading) }} />
+            </ThemeProvider>
         )
     }
 
@@ -107,7 +112,8 @@ const App = (props: { mockApp: boolean }) => {
     }
 
     const onSignIn = async () => {
-        window.location.href = window.location.href.split('?')[0]
+        const storedPathname = window.localStorage.getItem('storedPathname')
+        window.location.href = storedPathname ?? window.location.href.split('?')[0]
     }
 
     const Wrapper = (child: any) => (

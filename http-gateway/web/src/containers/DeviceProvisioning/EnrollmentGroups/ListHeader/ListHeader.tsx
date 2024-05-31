@@ -1,52 +1,24 @@
-import React, { FC, useCallback, useState } from 'react'
+import React, { FC } from 'react'
 import { useIntl } from 'react-intl'
+import { generatePath, useNavigate } from 'react-router-dom'
 
-import { IconPlus } from '@shared-ui/components/Atomic'
+import { IconPlus } from '@shared-ui/components/Atomic/Icon'
 import Button from '@shared-ui/components/Atomic/Button'
-import Modal from '@shared-ui/components/Atomic/Modal'
 
 import { Props } from './ListHeader.types'
 import { messages as t } from '../EnrollmentGroups.i18n'
-import { messages as g } from '../../../Global.i18n'
+import { pages } from '@/routes'
 
 const ListHeader: FC<Props> = (props) => {
     const { formatMessage: _ } = useIntl()
-    const [addModal, setAddModal] = useState(false)
 
-    const handleAdd = useCallback(() => {
-        console.log('handleAdd')
-        setAddModal(false)
-    }, [])
-
-    const renderBody = () => <div>Body</div>
+    const navigate = useNavigate()
 
     return (
         <>
-            <Button icon={<IconPlus />} onClick={() => setAddModal(true)} variant='primary'>
+            <Button icon={<IconPlus />} onClick={() => navigate(generatePath(pages.DPS.ENROLLMENT_GROUPS.NEW.LINK, { step: '' }))} variant='primary'>
                 {_(t.enrollmentGroup)}
             </Button>
-            <Modal
-                appRoot={document.getElementById('root')}
-                footerActions={[
-                    {
-                        label: _(g.cancel),
-                        onClick: () => setAddModal(false),
-                        variant: 'tertiary',
-                    },
-                    {
-                        label: _(g.done),
-                        onClick: handleAdd,
-                        variant: 'primary',
-                        // disabled: Object.keys(errors).length > 0,
-                    },
-                ]}
-                maxWidth={600}
-                onClose={() => setAddModal(false)}
-                portalTarget={document.getElementById('modal-root')}
-                renderBody={renderBody}
-                show={addModal}
-                title={_(t.addEnrollmentGroup)}
-            />
         </>
     )
 }

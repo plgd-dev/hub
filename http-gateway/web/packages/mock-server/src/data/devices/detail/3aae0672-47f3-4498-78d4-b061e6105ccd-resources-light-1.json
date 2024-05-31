@@ -1,0 +1,34 @@
+{
+  "types": [
+    "core.light"
+  ],
+  "data": {
+    "status": "OK",
+    "auditContext": {
+      "userId": "820bbd01-f8be-4f99-bede-926c28a9e0b2",
+      "owner": "98120ad9-eefa-4b93-aa53-696420b639fd"
+    },
+    "eventMetadata": {
+      "connectionId": "10.110.110.10:20339",
+      "sequence": "8",
+      "hubId": "1c10a3b6-287c-11ec-ac2d-13054959c274",
+      "version": "0",
+      "timestamp": "1715360622377756712"
+    },
+    "resourceTypes": [
+      "core.light"
+    ],
+    "openTelemetryCarrier": {
+      "traceparent": "00-f1d9b4214098ed9068902b53ae6d2184-c4ddcaa69b76be7a-01"
+    },
+    "resourceId": {
+      "deviceId": "832faaaa-a531-465a-4033-dfed53e94284",
+      "href": "/light/1"
+    },
+    "content": {
+      "state": false,
+      "power": 0,
+      "name": "Light"
+    }
+  }
+}

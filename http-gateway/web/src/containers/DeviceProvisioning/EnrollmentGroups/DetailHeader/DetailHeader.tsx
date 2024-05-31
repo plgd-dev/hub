@@ -2,8 +2,8 @@ import React, { FC, useCallback, useState } from 'react'
 import { useIntl } from 'react-intl'
 
 import Button from '@shared-ui/components/Atomic/Button'
-import { DeleteModal, IconEdit, IconTrash } from '@shared-ui/components/Atomic'
-import EditNameModal from '@shared-ui/components/Organisms/EditNameModal'
+import { IconTrash } from '@shared-ui/components/Atomic/Icon'
+import DeleteModal from '@shared-ui/components/Atomic/Modal/components/DeleteModal'
 
 import { Props } from './DetailHeader.types'
 import * as styles from './DetailHeader.styles'
@@ -17,8 +17,6 @@ const DetailHeader: FC<Props> = (props) => {
 
     const [deleteModal, setDeleteModal] = useState(false)
     const [deleting, setDeleting] = useState(false)
-    const [editNameModal, setEditNameModal] = useState(false)
-    const [editing, setEditing] = useState(false)
 
     const handleDelete = useCallback(async () => {
         try {
@@ -38,26 +36,6 @@ const DetailHeader: FC<Props> = (props) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id])
 
-    const handleUpdateName = useCallback(
-        async (name: string) => {
-            try {
-                setEditing(true)
-
-                // UPDATE
-                console.log(name)
-
-                setEditing(false)
-                setEditNameModal(false)
-                refresh()
-            } catch (e: any) {
-                setEditing(false)
-                setEditNameModal(false)
-            }
-        },
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        []
-    )
-
     return (
         <div css={styles.list}>
             <Button
@@ -68,17 +46,6 @@ const DetailHeader: FC<Props> = (props) => {
                 variant='tertiary'
             >
                 {_(g.delete)}
-            </Button>
-
-            <Button
-                dataTestId={testId.dps.enrollmentGroups.detail.editNameButton}
-                disabled={loading}
-                icon={<IconEdit />}
-                onClick={() => setEditNameModal(true)}
-                style={{ marginLeft: 8 }}
-                variant='tertiary'
-            >
-                {_(g.editName)}
             </Button>
 
             <DeleteModal
@@ -106,24 +73,6 @@ const DetailHeader: FC<Props> = (props) => {
                 show={deleteModal}
                 subTitle={_(t.deleteEnrollmentGroupTitle)}
                 title={_(t.deleteEnrollmentGroupMessage)}
-            />
-
-            <EditNameModal
-                dataTestId={testId.dps.enrollmentGroups.detail.editNameModal}
-                handleClose={() => setEditNameModal(false)}
-                handleSubmit={handleUpdateName}
-                i18n={{
-                    close: _(g.close),
-                    namePlaceholder: 'TODO',
-                    edit: _(g.edit),
-                    name: _(g.name),
-                    reset: _(g.reset),
-                    saveChange: _(g.saveChange),
-                    savingChanges: _(g.savingChanges),
-                }}
-                loading={editing}
-                name={id}
-                show={editNameModal}
             />
         </div>
     )

@@ -5,7 +5,8 @@ import { useDispatch, useSelector } from 'react-redux'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { fetchApi } from '@shared-ui/common/services'
-import { DeleteModal, IconTrash } from '@shared-ui/components/Atomic'
+import { IconTrash } from '@shared-ui/components/Atomic/Icon'
+import DeleteModal from '@shared-ui/components/Atomic/Modal/components/DeleteModal'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import { RemoteClientType } from '@shared-ui/app/clientApp/RemoteClients/RemoteClients.types'
 import { remoteClientStatuses, RemoteClientStatusesType } from '@shared-ui/app/clientApp/RemoteClients/constants'
@@ -344,7 +345,7 @@ const RemoteClientsListPage: FC<any> = () => {
                 minWidth={440}
                 onClose={handleCloseDeleteModal}
                 show={selectedCount > 0}
-                subTitle={selectedCount === 1 && selectedRemoteClient ? selectedRemoteClient?.clientName : null}
+                subTitle={selectedCount === 1 && selectedRemoteClient ? selectedRemoteClient?.clientName : undefined}
                 title={selectedCount === 1 ? _(t.deleteClientMessage) : _(t.deleteClientsMessage, { count: selectedCount })}
             />
         </PageLayout>

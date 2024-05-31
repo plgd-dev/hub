@@ -50,6 +50,7 @@ export const deleteDevicesApi = (deviceIds: string[]) => {
  */
 export const getDevicesResourcesApi = ({ deviceId, href, currentInterface = '' }: { deviceId: string; href: string; currentInterface?: string }) => {
     const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
+
     return withTelemetry(
         () =>
             fetchApi(`${httpGatewayAddress}${devicesApiEndpoints.DEVICES}/${deviceId}/resources${href}${interfaceGetParam(currentInterface)}`, {

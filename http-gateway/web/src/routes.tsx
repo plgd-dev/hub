@@ -35,6 +35,25 @@ const RemoteClientsListPage = lazy(() => import('./containers/RemoteClients/List
 const RemoteClientDetailPage = lazy(() => import('./containers/RemoteClients/Detail/RemoteClientDetailPage'))
 const RemoteClientDevicesDetailPage = lazy(() => import('./containers/RemoteClients/Device/Detail/RemoteClientDevicesDetailPage'))
 
+// DPS
+// Provisioning Records
+const ProvisioningRecordsListPage = lazy(() => import('./containers/DeviceProvisioning/ProvisioningRecords/ListPage/ProvisioningRecordsListPage'))
+const ProvisioningRecordsDetailPage = lazy(() => import('@/containers/DeviceProvisioning/ProvisioningRecords/DetailPage/ProvisioningRecordsDetailPage'))
+
+// EnrollmentGroups
+const EnrollmentGroupsListPage = lazy(() => import('./containers/DeviceProvisioning/EnrollmentGroups/ListPage'))
+const EnrollmentGroupsDetailPage = lazy(() => import('./containers/DeviceProvisioning/EnrollmentGroups/DetailPage'))
+const NewEnrollmentGroupsPage = lazy(() => import('./containers/DeviceProvisioning/EnrollmentGroups/NewEnrollmentGroupsPage'))
+
+// Linked Hubs
+const LinkedHubsListPage = lazy(() => import('./containers/DeviceProvisioning/LinkedHubs'))
+const LinkedHubsDetailPage = lazy(() => import('./containers/DeviceProvisioning/LinkedHubs/DetailPage'))
+const LinkNewHubPage = lazy(() => import('./containers/DeviceProvisioning/LinkedHubs/LinkNewHubPage'))
+
+// Certificates
+const CertificatesListPage = lazy(() => import('./containers/Certificates'))
+const CertificatesDetailPage = lazy(() => import('@/containers/Certificates/DetailPage'))
+
 // Pending commands
 const PendingCommandsListPage = lazy(() => import('./containers/PendingCommands/PendingCommandsListPage'))
 
@@ -61,6 +80,52 @@ export const defaultMenu = {
     chatRoom: true,
 }
 
+export const pages = {
+    CONFIGURATION: {
+        LINK: '/configuration',
+        THEME_GENERATOR: '/configuration/theme-generator',
+    },
+    DEVICES: {
+        LINK: '/devices',
+        DETAIL: {
+            LINK: '/devices/:id/:tab/:section',
+            TABS: ['', 'resources', 'certificates', 'dps'],
+            SECTIONS: ['', 'cloud', 'ownership', 'credentials', 'acls'],
+        },
+    },
+    DPS: {
+        LINK: '/device-provisioning',
+        LINKED_HUBS: {
+            LINK: '/device-provisioning/linked-hubs',
+            DETAIL: {
+                LINK: '/device-provisioning/linked-hubs/:hubId/:tab/:section',
+                TABS: ['', 'certificate-authority', 'authorization'],
+            },
+            ADD: {
+                LINK: '/device-provisioning/linked-hubs/link-new-hub/:step',
+                TABS: ['', 'hub-detail', 'certificate-authority', 'authorization'],
+            },
+        },
+        PROVISIONING_RECORDS: {
+            LINK: '/device-provisioning/provisioning-records',
+            DETAIL: '/device-provisioning/provisioning-records/:recordId/:tab',
+            TABS: ['', 'credentials', 'acls'],
+        },
+        ENROLLMENT_GROUPS: {
+            LINK: '/device-provisioning/enrollment-groups',
+            NEW: {
+                LINK: '/device-provisioning/enrollment-groups/new-enrollment-group/:step',
+                TABS: ['', 'device-authentication', 'device-credentials'],
+            },
+            DETAIL: '/device-provisioning/enrollment-groups/:enrollmentId',
+        },
+    },
+    CERTIFICATES: {
+        LINK: '/certificates',
+        DETAIL: '/certificates/:certificateId',
+    },
+}
+
 export const getMenu = (menuConfig: any): MenuGroup[] => [
     {
         title: <MenuTranslate id='menuMainMenu' />,
@@ -79,7 +144,15 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                 id: '1',
                 title: <MenuTranslate id='menuDevices' />,
                 link: '/devices',
-                paths: ['/devices', '/devices/:id', '/devices/:id/resources', '/devices/:id/resources/:href', '/devices/:id/certificates', '/devices/:id/dps'],
+                paths: [
+                    '/devices',
+                    '/devices/:id',
+                    '/devices/:id/resources',
+                    '/devices/:id/resources/*',
+                    '/devices/:id/certificates',
+                    '/devices/:id/dps',
+                    '/devices/:id/dps/:section',
+                ],
                 exact: true,
                 dataTestId: testId.menu.devices,
                 visibility: menuConfig.devices,
@@ -122,10 +195,10 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                 icon: <IconCertificate />,
                 id: '5',
                 title: <MenuTranslate id='menuCertificates' />,
-                link: '/certificates',
-                paths: ['/certificates', '/certificates/:certificateId'],
+                link: pages.CERTIFICATES.LINK,
+                paths: [pages.CERTIFICATES.LINK, pages.CERTIFICATES.DETAIL],
                 exact: true,
-                visibility: 'disabled',
+                visibility: menuConfig.certificates,
             },
         ],
     },
@@ -136,34 +209,37 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                 icon: <IconNetwork />,
                 id: '10',
                 title: <MenuTranslate id='menuDeviceProvisioning' />,
-                link: '/device-provisioning',
-                paths: ['/device-provisioning'],
+                link: pages.DPS.LINK,
+                paths: [pages.DPS.LINK],
                 exact: true,
-                visibility: 'disabled',
+                visibility: menuConfig.deviceProvisioning,
                 children: [
                     {
                         id: '101',
-                        title: <MenuTranslate id='enrollmentGroups' />,
-                        link: '/enrollment-groups',
-                        paths: ['/device-provisioning/enrollment-groups', '/device-provisioning/enrollment-groups/:enrollmentId'],
-                    },
-                    {
-                        id: '102',
-                        title: <MenuTranslate id='provisioningRecords' />,
-                        link: '/provisioning-records',
-                        paths: ['/device-provisioning/provisioning-records', '/device-provisioning/provisioning-records/:recordId'],
-                    },
-                    {
-                        id: '103',
                         title: <MenuTranslate id='menuLinkedHubs' />,
                         link: '/linked-hubs',
                         paths: [
-                            '/device-provisioning/linked-hubs',
+                            pages.DPS.LINKED_HUBS.LINK,
                             '/device-provisioning/linked-hubs/:hubId',
-                            '/device-provisioning/linked-hubs/:hubId/certificate-authority',
-                            '/device-provisioning/linked-hubs/:hubId/certificate-authority/:section',
-                            '/device-provisioning/linked-hubs/:hubId/authorization',
-                            '/device-provisioning/linked-hubs/:hubId/authorization/:section',
+                            '/device-provisioning/linked-hubs/:hubId/:tab',
+                            pages.DPS.LINKED_HUBS.DETAIL.LINK,
+                            pages.DPS.LINKED_HUBS.ADD.LINK,
+                        ],
+                    },
+                    {
+                        id: '102',
+                        title: <MenuTranslate id='enrollmentGroups' />,
+                        link: '/enrollment-groups',
+                        paths: [pages.DPS.ENROLLMENT_GROUPS.LINK, pages.DPS.ENROLLMENT_GROUPS.DETAIL],
+                    },
+                    {
+                        id: '103',
+                        title: <MenuTranslate id='provisioningRecords' />,
+                        link: '/provisioning-records',
+                        paths: [
+                            pages.DPS.PROVISIONING_RECORDS.LINK,
+                            '/device-provisioning/provisioning-records/:recordId',
+                            pages.DPS.PROVISIONING_RECORDS.DETAIL,
                         ],
                     },
                 ],
@@ -215,8 +291,8 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                 icon: <IconSettings />,
                 id: '15',
                 title: <MenuTranslate id='menuConfiguration' />,
-                link: '/configuration',
-                paths: ['/configuration', '/configuration/theme-generator'],
+                link: pages.CONFIGURATION.LINK,
+                paths: [pages.CONFIGURATION.LINK, pages.CONFIGURATION.THEME_GENERATOR],
                 exact: true,
                 visibility: menuConfig.configuration,
             },
@@ -243,143 +319,92 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
     },
 ]
 
+export const noLayoutPages = [
+    '/device-provisioning/linked-hubs/link-new-hub',
+    '/device-provisioning/linked-hubs/link-new-hub/:step',
+    '/device-provisioning/enrollment-groups/new-enrollment-group',
+    '/device-provisioning/enrollment-groups/new-enrollment-group/:step',
+]
+
 export const mather = (pathname: string, pattern: string) => matchPath(pattern, pathname)
 
 const Loader = () => {
     const { formatMessage: _ } = useIntl()
+
     return <FullPageLoader i18n={{ loading: _(g.loading) }} />
 }
+
+export const NoLayoutRoutes = () => (
+    <RoutesGroup>
+        <Route element={withSuspense(<LinkNewHubPage />)} path='/device-provisioning/linked-hubs/link-new-hub' />
+        <Route element={withSuspense(<LinkNewHubPage />)} path='/device-provisioning/linked-hubs/link-new-hub/:step' />
+        <Route element={withSuspense(<NewEnrollmentGroupsPage />)} path='/device-provisioning/enrollment-groups/new-enrollment-group' />
+        <Route element={withSuspense(<NewEnrollmentGroupsPage />)} path='/device-provisioning/enrollment-groups/new-enrollment-group/:step' />
+    </RoutesGroup>
+)
+
+const withSuspense = (Component: any) => <Suspense fallback={<Loader />}>{Component}</Suspense>
 
 export const Routes = () => {
     const { formatMessage: _ } = useIntl()
     return (
         <RoutesGroup>
-            <Route
-                element={
-                    <Suspense fallback={<Loader />}>
-                        <DevicesListPage />
-                    </Suspense>
-                }
-                path='/devices'
-            />
+            {/* ***** DEVICES ***** */}
+            <Route path='/devices'>
+                <Route element={withSuspense(<DevicesDetailsPage defaultActiveTab={1} />)} path=':id/resources/*' />
+                <Route element={withSuspense(<DevicesDetailsPage defaultActiveTab={1} />)} path=':id/resources' />
+                <Route element={withSuspense(<DevicesDetailsPage defaultActiveTab={2} />)} path=':id/certificates' />
+                <Route element={withSuspense(<DevicesDetailsPage defaultActiveTab={3} />)} path=':id/dps' />
+                <Route element={withSuspense(<DevicesDetailsPage defaultActiveTab={3} />)} path=':id/dps/:section' />
+                <Route element={withSuspense(<DevicesDetailsPage defaultActiveTab={0} />)} path=':id' />
+                <Route element={withSuspense(<DevicesListPage />)} path='' />
+            </Route>
 
-            <Route
-                element={
-                    <Suspense fallback={<Loader />}>
-                        <DevicesDetailsPage defaultActiveTab={0} />
-                    </Suspense>
-                }
-                path='/devices/:id'
-            />
+            {/* ***** REMOTE CLIENTS ***** */}
+            <Route path='/remote-clients'>
+                <Route element={withSuspense(<RemoteClientDevicesDetailPage defaultActiveTab={1} />)} path=':id/devices/:deviceId/resources/*' />
+                <Route element={withSuspense(<RemoteClientDevicesDetailPage defaultActiveTab={1} />)} path=':id/devices/:deviceId/resources' />
+                <Route element={withSuspense(<RemoteClientDevicesDetailPage defaultActiveTab={0} />)} path=':id/devices/:deviceId' />
+                <Route element={withSuspense(<RemoteClientDetailPage defaultActiveTab={1} />)} path=':id/configuration' />
+                <Route element={withSuspense(<RemoteClientDetailPage defaultActiveTab={0} />)} path=':id' />
+                <Route element={withSuspense(<RemoteClientsListPage />)} path='' />
+            </Route>
 
-            <Route
-                element={
-                    <Suspense fallback={<Loader />}>
-                        <DevicesDetailsPage defaultActiveTab={1} />
-                    </Suspense>
-                }
-                path='/devices/:id/resources'
-            />
+            {/* ***** CERTIFICATES ***** */}
+            <Route path='/certificates'>
+                <Route element={withSuspense(<CertificatesDetailPage />)} path=':certificateId' />
+                <Route element={withSuspense(<CertificatesListPage />)} path='' />
+            </Route>
 
-            <Route
-                element={
-                    <Suspense fallback={<Loader />}>
-                        <DevicesDetailsPage defaultActiveTab={1} />
-                    </Suspense>
-                }
-                path='/devices/:id/resources/*'
-            />
+            {/* ***** LINKED HUBS ***** */}
+            <Route path='/device-provisioning/linked-hubs'>
+                <Route element={withSuspense(<LinkedHubsDetailPage />)} path=':hubId/:tab' />
+                <Route element={withSuspense(<LinkedHubsDetailPage />)} path=':hubId' />
+                <Route element={withSuspense(<LinkedHubsListPage />)} path='' />
+            </Route>
 
-            <Route
-                element={
-                    <Suspense fallback={<Loader />}>
-                        <RemoteClientsListPage />
-                    </Suspense>
-                }
-                path='/remote-clients'
-            />
+            {/* ***** ENROLLMENT GROUPS ***** */}
+            <Route path='/device-provisioning/enrollment-groups'>
+                <Route element={withSuspense(<EnrollmentGroupsDetailPage />)} path=':enrollmentId' />
+                <Route element={withSuspense(<EnrollmentGroupsListPage />)} path='' />
+            </Route>
 
-            <Route
-                element={
-                    <Suspense fallback={<Loader />}>
-                        <RemoteClientDetailPage />
-                    </Suspense>
-                }
-                path='/remote-clients/:id'
-            />
+            {/* ***** PROVISIONING RECORDS ***** */}
+            <Route path='/device-provisioning/provisioning-records'>
+                <Route element={withSuspense(<ProvisioningRecordsDetailPage />)} path=':recordId/:tab' />
+                <Route element={withSuspense(<ProvisioningRecordsDetailPage />)} path=':recordId' />
+                <Route element={withSuspense(<ProvisioningRecordsListPage />)} path='' />
+            </Route>
 
-            <Route
-                element={
-                    <Suspense fallback={<Loader />}>
-                        <RemoteClientDetailPage defaultActiveTab={1} />
-                    </Suspense>
-                }
-                path='/remote-clients/:id/configuration'
-            />
+            {/* ***** CONFIGURATION ***** */}
+            <Route path='/configuration'>
+                <Route element={withSuspense(<ConfigurationPage defaultActiveTab={1} />)} path='theme-generator' />
+                <Route element={withSuspense(<ConfigurationPage />)} path='' />
+            </Route>
 
-            <Route
-                element={
-                    <Suspense fallback={<Loader />}>
-                        <RemoteClientDevicesDetailPage defaultActiveTab={0} />
-                    </Suspense>
-                }
-                path='/remote-clients/:id/devices/:deviceId'
-            />
-
-            <Route
-                element={
-                    <Suspense fallback={<Loader />}>
-                        <RemoteClientDevicesDetailPage defaultActiveTab={1} />
-                    </Suspense>
-                }
-                path='/remote-clients/:id/devices/:deviceId/resources'
-            />
-
-            <Route
-                element={
-                    <Suspense fallback={<Loader />}>
-                        <RemoteClientDevicesDetailPage defaultActiveTab={1} />
-                    </Suspense>
-                }
-                path='/remote-clients/:id/devices/:deviceId/resources/*'
-            />
-
-            <Route
-                element={
-                    <Suspense fallback={<Loader />}>
-                        <PendingCommandsListPage />
-                    </Suspense>
-                }
-                path='/pending-commands'
-            />
-
-            <Route
-                element={
-                    <Suspense fallback={<Loader />}>
-                        <MockApp />
-                    </Suspense>
-                }
-                path='/devices-code-redirect/*'
-            />
-
-            <Route
-                element={
-                    <Suspense fallback={<Loader />}>
-                        <ConfigurationPage />
-                    </Suspense>
-                }
-                path='/configuration'
-            />
-
-            <Route
-                element={
-                    <Suspense fallback={<Loader />}>
-                        <ConfigurationPage defaultActiveTab={1} />
-                    </Suspense>
-                }
-                path='/configuration/theme-generator'
-            />
-
+            {/* ***** OTHERS ***** */}
+            <Route element={withSuspense(<PendingCommandsListPage />)} path='/pending-commands' />
+            <Route element={withSuspense(<MockApp />)} path='/devices-code-redirect/*' />
             <Route element={<NotFoundPage message={_(t.notFoundPageDefaultMessage)} title={_(t.pageTitle)} />} path='*' />
         </RoutesGroup>
     )

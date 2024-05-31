@@ -1,10 +1,12 @@
 import React, { FC, useEffect, useMemo, useState } from 'react'
+import { useIntl } from 'react-intl'
+
+import TableActionButton from '@shared-ui/components/Organisms/TableActionButton'
+import { IconArrowDetail, IconTrash } from '@shared-ui/components/Atomic/Icon'
+
 import { messages as t } from '@/containers/Devices/Devices.i18n'
 import TableList from '@/containers/Common/TableList/TableList'
-import { useIntl } from 'react-intl'
 import { messages as g } from '@/containers/Global.i18n'
-import TableActionButton from '@shared-ui/components/Organisms/TableActionButton'
-import { IconArrowDetail, IconTrash } from '@shared-ui/components/Atomic'
 
 const LIST_COLUMNS_COUNT = 5
 const LIST_ROWS_COUNT = 25

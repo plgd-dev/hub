@@ -1,11 +1,14 @@
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { useNavigate } from 'react-router-dom'
+import { generatePath, useNavigate } from 'react-router-dom'
 
 import TableActionButton from '@shared-ui/components/Organisms/TableActionButton'
-import { DeleteModal, IconArrowDetail, IconTrash } from '@shared-ui/components/Atomic'
+import { IconArrowDetail, IconTrash } from '@shared-ui/components/Atomic/Icon'
+import DeleteModal from '@shared-ui/components/Atomic/Modal/components/DeleteModal'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
+import Tag from '@shared-ui/components/Atomic/Tag'
+import TagGroup from '@shared-ui/components/Atomic/TagGroup'
 
 import PageLayout from '@/containers/Common/PageLayout'
 import TableList from '@/containers/Common/TableList/TableList'
@@ -16,14 +19,13 @@ import { messages as t } from '../EnrollmentGroups.i18n'
 import { deleteEnrollmentGroupsApi } from '@/containers/DeviceProvisioning/rest'
 import notificationId from '@/notificationId'
 import ListHeader from '../ListHeader'
+import { pages } from '@/routes'
 
 const EnrollmentGroupsListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
 
     const { data, loading, error, refresh } = useEnrollmentGroupDataList()
     const navigate = useNavigate()
-
-    console.log(data)
 
     const [selected, setSelected] = useState<string[]>([])
     const [unselectRowsToken, setUnselectRowsToken] = useState(1)
@@ -46,7 +48,16 @@ const EnrollmentGroupsListPage: FC<any> = () => {
             setDeleting(true)
             await deleteEnrollmentGroupsApi(selected)
             handleCloseDeleteModal()
+
+            Notification.success(
+                { title: _(t.enrollmentGroupsDeleted), message: _(t.enrollmentGroupsDeletedMessage) },
+                { notificationId: notificationId.HUB_DPS_ENROLLMENT_GROUP_LIST_PAGE_DELETE }
+            )
+
+            setSelected([])
+            setUnselectRowsToken((prevValue) => prevValue + 1)
             refresh()
+
             setDeleting(false)
         } catch (e: any) {
             setDeleting(false)
@@ -61,11 +72,10 @@ const EnrollmentGroupsListPage: FC<any> = () => {
     useEffect(() => {
         error &&
             Notification.error(
-                { title: _(t.enrollmentGroupsError), message: error },
+                { title: _(t.enrollmentGroupsError), message: getApiErrorMessage(error) },
                 { notificationId: notificationId.HUB_DPS_ENROLLMENT_GROUP_LIST_PAGE_ERROR }
             )
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [error])
+    }, [error, _])
 
     const columns = useMemo(
         () => [
@@ -75,10 +85,10 @@ const EnrollmentGroupsListPage: FC<any> = () => {
                 Cell: ({ value, row }: { value: string | number; row: any }) => (
                     <a
                         data-test-id={`enrollment-group-${row.id}`}
-                        href={`/device-provisioning/enrollment-groups/${row.original.id}`}
+                        href={generatePath(pages.DPS.ENROLLMENT_GROUPS.DETAIL, { enrollmentId: row.original.id })}
                         onClick={(e) => {
                             e.preventDefault()
-                            navigate(`/device-provisioning/enrollment-groups/${row.original.id}`)
+                            navigate(generatePath(pages.DPS.ENROLLMENT_GROUPS.DETAIL, { enrollmentId: row.original.id }))
                         }}
                     >
                         <span className='no-wrap-text'>{value}</span>
@@ -87,8 +97,25 @@ const EnrollmentGroupsListPage: FC<any> = () => {
             },
             {
                 Header: _(dpsT.linkedHub),
-                accessor: 'hubId',
-                Cell: ({ value }: { value: string | number }) => <span className='no-wrap-text'>{value}</span>,
+                accessor: 'hubsData',
+                Cell: ({ value, row }: { value: { name: string }[]; row: any }) =>
+                    value.length ? (
+                        <TagGroup
+                            i18n={{
+                                more: _(g.more),
+                                modalHeadline: _(dpsT.linkedHubs),
+                            }}
+                        >
+                            {value?.map?.((hub: { name: string }) => (
+                                <Tag className='tree-custom-tag' key={`${hub.name}-${row.id}`}>
+                                    {hub.name}
+                                </Tag>
+                            ))}
+                        </TagGroup>
+                    ) : (
+                        '-'
+                    ),
+                style: { width: '150px' },
             },
             {
                 Header: _(dpsT.ownerId),
@@ -112,7 +139,7 @@ const EnrollmentGroupsListPage: FC<any> = () => {
                                     icon: <IconTrash />,
                                 },
                                 {
-                                    onClick: () => navigate(`/device-provisioning/enrollment-groups/${id}`),
+                                    onClick: () => navigate(generatePath(pages.DPS.ENROLLMENT_GROUPS.DETAIL, { enrollmentId: id })),
                                     label: _(g.view),
                                     icon: <IconArrowDetail />,
                                 },

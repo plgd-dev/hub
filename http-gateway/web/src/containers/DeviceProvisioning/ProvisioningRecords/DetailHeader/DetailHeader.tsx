@@ -2,7 +2,8 @@ import React, { FC, useCallback, useState } from 'react'
 import { useIntl } from 'react-intl'
 
 import Button from '@shared-ui/components/Atomic/Button'
-import { DeleteModal, IconEdit, IconTrash } from '@shared-ui/components/Atomic'
+import { IconEdit, IconTrash } from '@shared-ui/components/Atomic/Icon'
+import DeleteModal from '@shared-ui/components/Atomic/Modal/components/DeleteModal'
 import EditNameModal from '@shared-ui/components/Organisms/EditNameModal'
 
 import { messages as g } from '@/containers/Global.i18n'

@@ -1,28 +1,32 @@
 import React, { FC } from 'react'
-import { useFormContext } from 'react-hook-form'
 import { useIntl } from 'react-intl'
+import get from 'lodash/get'
 
 import Headline from '@shared-ui/components/Atomic/Headline'
 import Loadable from '@shared-ui/components/Atomic/Loadable'
 import Spacer from '@shared-ui/components/Atomic/Spacer'
 import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
-import FormInput, { inputAligns } from '@shared-ui/components/Atomic/FormInput'
+import FormInput from '@shared-ui/components/Atomic/FormInput'
 import FormGroup from '@shared-ui/components/Atomic/FormGroup'
+import { useForm } from '@shared-ui/common/hooks'
 
 import { messages as t } from '@/containers/DeviceProvisioning/LinkedHubs/LinkedHubs.i18n'
-import { messages as g } from '@/containers/Global.i18n'
-import { Props } from './TabContent1.types'
+import { Props, Inputs } from './TabContent1.types'
+import { useValidationsSchema } from '@/containers/DeviceProvisioning/LinkedHubs/validationSchema'
 
 const TabContent1: FC<Props> = (props) => {
-    const { loading } = props
+    const { defaultFormData, loading } = props
+
     const { formatMessage: _ } = useIntl()
+    const schema = useValidationsSchema('group3')
+
     const {
         formState: { errors },
         register,
-    } = useFormContext()
+    } = useForm<Inputs>({ defaultFormData, errorKey: 'tab3Content1', schema })
 
     return (
-        <div>
+        <form>
             <Headline type='h5'>{_(t.general)}</Headline>
             <Spacer type='pt-4'>
                 <Loadable condition={!loading}>
@@ -30,20 +34,10 @@ const TabContent1: FC<Props> = (props) => {
                         rows={[
                             {
                                 attribute: _(t.ownerClaim),
+                                required: true,
                                 value: (
-                                    <FormGroup
-                                        errorTooltip
-                                        fullSize
-                                        error={errors.name ? _(g.requiredField, { field: _(t.ownerClaim) }) : undefined}
-                                        id='name'
-                                        marginBottom={false}
-                                    >
-                                        <FormInput
-                                            inlineStyle
-                                            align={inputAligns.RIGHT}
-                                            placeholder={_(t.ownerClaim)}
-                                            {...register('authorization.ownerClaim', { required: true, validate: (val) => val !== '' })}
-                                        />
+                                    <FormGroup error={get(errors, 'authorization.ownerClaim.message')} id='authorization?.ownerClaim'>
+                                        <FormInput {...register('authorization.ownerClaim')} placeholder={_(t.ownerClaim)} />
                                     </FormGroup>
                                 ),
                             },
@@ -51,7 +45,7 @@ const TabContent1: FC<Props> = (props) => {
                     />
                 </Loadable>
             </Spacer>
-        </div>
+        </form>
     )
 }
 
