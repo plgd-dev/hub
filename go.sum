@@ -226,8 +226,8 @@ github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINE
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/profile v1.7.0 h1:hnbDkaNWPCLMO9wGLdBFTIZvzDrDfBM2072E1S9gJkA=
 github.com/pkg/profile v1.7.0/go.mod h1:8Uer0jas47ZQMJ7VD+OHknK4YDY07LPUC6dEvqDjvNo=
-github.com/plgd-dev/device/v2 v2.5.1-0.20240513064831-b553d1a87e1c h1:kNF2KvyCzA8IMERdHUrL/LMdsuZM/tXGjLVzEX2lcg4=
-github.com/plgd-dev/device/v2 v2.5.1-0.20240513064831-b553d1a87e1c/go.mod h1:2mFPs55x2Li76zkrHdRNY3yOqVWSh59hiUw+6FYXA0k=
+github.com/plgd-dev/device/v2 v2.5.2-0.20240528123838-d8ca4ace7baf h1:fAmllEckbJW4kpOIUod9kL42X/UdANyzyMukIVL+jRA=
+github.com/plgd-dev/device/v2 v2.5.2-0.20240528123838-d8ca4ace7baf/go.mod h1:uplTm15S+2OBsGBpPdJ+YPUcnRnHdUbbRO87SHnnQA0=
 github.com/plgd-dev/go-coap/v2 v2.0.4-0.20200819112225-8eb712b901bc/go.mod h1:+tCi9Q78H/orWRtpVWyBgrr4vKFo2zYtbbxUllerBp4=
 github.com/plgd-dev/go-coap/v2 v2.4.1-0.20210517130748-95c37ac8e1fa/go.mod h1:rA7fc7ar+B/qa+Q0hRqv7yj/EMtIlmo1l7vkQGSrHPU=
 github.com/plgd-dev/go-coap/v3 v3.3.4 h1:clDLFOXXmXfhZqB0eSk6WJs2iYfjC2J22Ixwu5MHiO0=
@@ -288,8 +288,8 @@ github.com/valyala/fasthttp v1.12.0/go.mod h1:229t1eWu9UXTPmoUkbpN/fctKPBY4IJoFX
 github.com/valyala/tcplisten v0.0.0-20161114210144-ceec8f93295a/go.mod h1:v3UYOV9WzVtRmSR+PDvWpU/qWl4Wa5LApYYX4ZtKbio=
 github.com/vincent-petithory/dataurl v1.0.0 h1:cXw+kPto8NLuJtlMsI152irrVw9fRDX8AbShPRpg2CI=
 github.com/vincent-petithory/dataurl v1.0.0/go.mod h1:FHafX5vmDzyP+1CQATJn7WFKc9CvnvxyvZy6I1MrG/U=
-github.com/web-of-things-open-source/thingdescription-go v0.0.0-20240510130416-741fef736e1e h1:blQyU8WqqyRcBmaAPLiU5cTg9BSQu04CJZ/ffEzgI1s=
-github.com/web-of-things-open-source/thingdescription-go v0.0.0-20240510130416-741fef736e1e/go.mod h1:L/jWuWf+v7rmuFykpUP/runRXTnnA0QdGGgou8vzPrw=
+github.com/web-of-things-open-source/thingdescription-go v0.0.0-20240513190706-79b5f39190eb h1:6qIx0S8XOgCXkIMWew2dET+0Fcw2qTYZsDJ9LT8xQXg=
+github.com/web-of-things-open-source/thingdescription-go v0.0.0-20240513190706-79b5f39190eb/go.mod h1:L/jWuWf+v7rmuFykpUP/runRXTnnA0QdGGgou8vzPrw=
 github.com/x448/float16 v0.8.4 h1:qLwI1I70+NjRFUR3zs1JPUCgaCXSh3SW62uAKT1mSBM=
 github.com/x448/float16 v0.8.4/go.mod h1:14CWIYCyZA/cWjXOioeEpHeN/83MdbZDRQHoFcYsOfg=
 github.com/xdg-go/pbkdf2 v1.0.0 h1:Su7DPu48wXMwC3bs7MCNG+z4FhcyEuz5dlvchbq0B0c=
