@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { Provider } from 'react-redux'
 import { persistStore } from 'redux-persist'
 import { PersistGate } from 'redux-persist/integration/react'
+import { RecoilRoot } from 'recoil'
 
 import IntlProvider from '@shared-ui/components/Atomic/IntlProvider'
 import App from '@shared-ui/components/Atomic/App'
@@ -15,7 +16,6 @@ import appConfig from '@/config'
 import { CONFIGURATION_PAGE_FRAME, DEVICE_AUTH_CODE_SESSION_KEY } from './constants'
 import reportWebVitals from './reportWebVitals'
 import PreviewApp from '@/containers/Configuration/PreviewApp/PreviewApp'
-import { RecoilRoot } from 'recoil'
 
 let persistor = persistStore(store)
 
@@ -25,6 +25,7 @@ const BaseComponent = () => {
     // only set the code to the session storage, so that the caller can process it.
     const urlParams = new URLSearchParams(window.location.search)
     const code = urlParams.get('code')
+    // state is present from auth request
     const state = urlParams.get('state')
     const isMockApp = window.location.pathname === '/devices-code-redirect' && !!code
     const configurationPageFrame = window.location.pathname === `/${CONFIGURATION_PAGE_FRAME}`

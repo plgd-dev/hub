@@ -1,6 +1,5 @@
 import React, { FC } from 'react'
 import { useIntl } from 'react-intl'
-import { useMediaQuery } from 'react-responsive'
 
 import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
 import TagGroup, { justifyContent } from '@shared-ui/components/Atomic/TagGroup'
@@ -11,12 +10,9 @@ import DateFormat from '@/containers/PendingCommands/DateFormat'
 import { Props } from './Tab1.types'
 
 const Tab1: FC<Props> = (props) => {
-    const { data, isDeviceMode, refs } = props
+    const { data } = props
 
     const { formatMessage: _ } = useIntl()
-    const useSpace = useMediaQuery({
-        query: '(max-width: 1399px)',
-    })
 
     return (
         <div style={{ width: '100%', overflow: 'hidden' }}>

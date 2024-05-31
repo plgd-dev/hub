@@ -415,6 +415,14 @@ test('device-detail-tab-2-tree-open-update-modal-delete-icon', async ({ page }) 
     await expect(page.getByTestId(`${testId.devices.detail.resources.deleteModal}-modal`)).toBeVisible()
 })
 
+test('device-detail-tab-3', async ({ page }) => {
+    await openDevice(page)
+
+    page.setViewportSize({ width: 1400, height: 1400 })
+
+    await expect(page).toHaveScreenshot({ fullPage: true, omitBackground: true })
+})
+
 test('devices-detail-rest', async ({ page, request }) => {
     const resetRequest = await request.get(`/`)
     expect(resetRequest.ok()).toBeTruthy()

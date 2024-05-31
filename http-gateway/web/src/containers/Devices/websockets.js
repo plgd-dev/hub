@@ -27,34 +27,36 @@ const getEventType = (deviceUnregistered) => (deviceUnregistered ? UNREGISTERED 
 
 const showToast = async (currentDeviceNotificationsEnabled, deviceId, status) => {
     if (status !== UNREGISTERED) {
-        const { data: { name } = {} } = await getDeviceApi(deviceId)
+        try {
+            const { data: { name } = {} } = await getDeviceApi(deviceId)
 
-        const getToastMessage = () => {
-            switch (status) {
-                case OFFLINE:
-                    return translate.translate(t.deviceWentOffline, { name })
-                case REGISTERED:
-                    return translate.translate(t.deviceWasRegistered, { name })
-                case ONLINE:
-                default:
-                    return translate.translate(t.deviceWentOnline, { name })
+            const getToastMessage = () => {
+                switch (status) {
+                    case OFFLINE:
+                        return translate.translate(t.deviceWentOffline, { name })
+                    case REGISTERED:
+                        return translate.translate(t.deviceWasRegistered, { name })
+                    case ONLINE:
+                    default:
+                        return translate.translate(t.deviceWentOnline, { name })
+                }
             }
-        }
 
-        Notification.info(
-            {
-                title: translate.translate(t.devicestatusChange),
-                message: [ONLINE, ONLINE, REGISTERED].includes(status) ? getToastMessage() : `Device state: ${status}`,
-            },
-            {
-                variant: currentDeviceNotificationsEnabled ? 'toast' : 'notification',
-                onClick: () => {
-                    history.push(`/devices/${deviceId}`)
+            Notification.info(
+                {
+                    title: translate.translate(t.devicestatusChange),
+                    message: [ONLINE, OFFLINE, REGISTERED].includes(status) ? getToastMessage() : `Device state: ${status}`,
                 },
-                toastId: `${deviceId}|status|${status}`,
-                notificationId: notificationId.HUB_SHOW_TOAST,
-            }
-        )
+                {
+                    variant: currentDeviceNotificationsEnabled ? 'toast' : 'notification',
+                    onClick: () => {
+                        history.push(`/devices/${deviceId}`)
+                    },
+                    toastId: `${deviceId}|status|${status}`,
+                    notificationId: notificationId.HUB_SHOW_TOAST,
+                }
+            )
+        } catch (error) {} // ignore error
     }
 }
 
@@ -62,8 +64,6 @@ const showToast = async (currentDeviceNotificationsEnabled, deviceId, status) =>
 export const deviceStatusListener = async (props) => {
     const { deviceMetadataUpdated, deviceRegistered, deviceUnregistered } = props
     if (deviceMetadataUpdated || deviceRegistered || deviceUnregistered) {
-        // const notificationsEnabled = isNotificationActive(DEVICES_STATUS_WS_KEY)(store.getState())
-
         const { deviceId, connection: { status: deviceStatus } = {}, twinEnabled } = deviceMetadataUpdated || {}
         const eventType = getEventType(deviceUnregistered)
         const status = deviceStatus || eventType
