@@ -26,7 +26,8 @@ RUN \
     fi && \
     wget https://downloads.mongodb.com/compass/mongosh-2.2.6-linux-$ARCH.tgz -O /tmp/mongosh.tgz && \
     tar -xzf /tmp/mongosh.tgz -C /tmp && \
-    mv /tmp/mongosh-2.2.6-linux-$ARCH/bin/* /usr/bin/
+    mv /tmp/mongosh-2.2.6-linux-$ARCH/bin/mongosh /usr/bin/ && \
+    rm -rf /tmp/mongosh.tgz /tmp/mongosh-2.2.6-linux-$ARCH
 
 # Install yq
 RUN \
