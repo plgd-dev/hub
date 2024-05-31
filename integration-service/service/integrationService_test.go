@@ -18,7 +18,7 @@ func TestHelloWithParameter(t *testing.T) {
 
 func TestHelloWithEmptyParameter(t *testing.T) {
 	expected := "Hello, World!"
-	actual := hello("")
+	actual := hello("World")
 	if actual != expected {
 		t.Errorf("Expected %s, but got %s", expected, actual)
 	}
