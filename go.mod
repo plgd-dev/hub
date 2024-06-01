@@ -28,7 +28,7 @@ require (
 	github.com/lestrrat-go/jwx/v2 v2.0.21
 	github.com/nats-io/nats.go v1.34.1
 	github.com/panjf2000/ants/v2 v2.9.1
-	github.com/pion/dtls/v2 v2.2.8-0.20240501061905-2c36d63320a0
+	github.com/pion/dtls/v2 v2.2.11
 	github.com/pion/logging v0.2.2
 	github.com/plgd-dev/device/v2 v2.5.2-0.20240528123838-d8ca4ace7baf
 	github.com/plgd-dev/go-coap/v3 v3.3.4
@@ -125,7 +125,7 @@ require (
 replace (
 	// note: github.com/pion/dtls/v2/pkg/net package is not yet available in release branches,
 	// so we force to the use of the pinned master branch
-	github.com/pion/dtls/v2 => github.com/pion/dtls/v2 v2.2.8-0.20240501061905-2c36d63320a0
+	github.com/pion/dtls/v2 => github.com/pion/dtls/v2 v2.2.11
 	// later versions require go 1.22
 	github.com/youmark/pkcs8 => github.com/youmark/pkcs8 v0.0.0-20201027041543-1326539a0a0a
 	// later versions require go 1.21
