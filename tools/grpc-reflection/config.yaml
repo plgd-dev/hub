@@ -21,7 +21,7 @@ apis:
       time: 2h                      # Keep-alive time
       timeout: 20s                  # Keep-alive timeout
     tls:
-      caPool: "/home/luki/git/hub/.tmp/certs/root_ca.crt"
-      keyFile: "/home/luki/git/hub/.tmp/certs/http.key"
-      certFile: "/home/luki/git/hub/.tmp/certs/http.crt"
+          caPool: "/secrets/public/rootca.crt"
+          keyFile: "/secrets/private/cert.key"
+          certFile: "/secrets/public/cert.crt"
       clientCertificateRequired: false
