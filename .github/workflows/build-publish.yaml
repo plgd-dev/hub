@@ -109,6 +109,9 @@ jobs:
           - name: cert-tool
             directory: tools/cert-tool
             file: tools/cert-tool/Dockerfile
+          - name: grpc-reflection
+            directory: tools/grpc-reflection
+            file: tools/grpc-reflection/Dockerfile
     uses: ./.github/workflows/build-publish-cfg.yaml
     with:
       name: ${{ matrix.name }}

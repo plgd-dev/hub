@@ -75,7 +75,7 @@ func NewService(persistence Persistence, publisher *publisher.Publisher, ownerCl
 }
 
 func NewServer(ctx context.Context, cfg Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, publisher *publisher.Publisher, grpcOpts ...grpc.ServerOption) (*Server, error) {
-	grpcServer, err := server.New(cfg.APIs.GRPC, fileWatcher, logger, grpcOpts...)
+	grpcServer, err := server.New(cfg.APIs.GRPC.BaseConfig, fileWatcher, logger, grpcOpts...)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create grpc listener: %w", err)
 	}
