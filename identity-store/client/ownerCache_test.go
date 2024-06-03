@@ -52,7 +52,7 @@ func TestOwnerCacheSubscribe(t *testing.T) {
 		require.NoError(t, errC)
 	}()
 
-	conn, err := client.New(ctx, client.Config{
+	conn, err := client.New(client.Config{
 		Addr: cfg.APIs.GRPC.Addr,
 		TLS: clientCertManager.Config{
 			CAPool:   cfg.APIs.GRPC.TLS.CAPool,

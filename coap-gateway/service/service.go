@@ -117,8 +117,8 @@ func newExpirationClientCache(ctx context.Context, interval time.Duration) *cach
 	return expirationClientCache
 }
 
-func newResourceAggregateClient(ctx context.Context, config ResourceAggregateConfig, resourceSubscriber eventbus.Subscriber, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*raClient.Client, func(), error) {
-	raConn, err := grpcClient.New(ctx, config.Connection, fileWatcher, logger, tracerProvider)
+func newResourceAggregateClient(config ResourceAggregateConfig, resourceSubscriber eventbus.Subscriber, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*raClient.Client, func(), error) {
+	raConn, err := grpcClient.New(config.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create connection to resource-aggregate: %w", err)
 	}
@@ -134,8 +134,8 @@ func newResourceAggregateClient(ctx context.Context, config ResourceAggregateCon
 	return raClient, closeRaConn, nil
 }
 
-func newIdentityStoreClient(ctx context.Context, config IdentityStoreConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (pbIS.IdentityStoreClient, func(), error) {
-	isConn, err := grpcClient.New(ctx, config.Connection, fileWatcher, logger, tracerProvider)
+func newIdentityStoreClient(config IdentityStoreConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (pbIS.IdentityStoreClient, func(), error) {
+	isConn, err := grpcClient.New(config.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create connection to identity-store: %w", err)
 	}
@@ -151,8 +151,8 @@ func newIdentityStoreClient(ctx context.Context, config IdentityStoreConfig, fil
 	return isClient, closeIsConn, nil
 }
 
-func newResourceDirectoryClient(ctx context.Context, config GrpcServerConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*resourceDirectoryClient, func(), error) {
-	rdConn, err := grpcClient.New(ctx, config.Connection, fileWatcher, logger, tracerProvider)
+func newResourceDirectoryClient(config GrpcServerConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*resourceDirectoryClient, func(), error) {
+	rdConn, err := grpcClient.New(config.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create connection to resource-directory: %w", err)
 	}
@@ -171,8 +171,8 @@ func newResourceDirectoryClient(ctx context.Context, config GrpcServerConfig, fi
 	}, closeRdConn, nil
 }
 
-func newCertificateAuthorityClient(ctx context.Context, config GrpcServerConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (pbCA.CertificateAuthorityClient, func(), error) {
-	caConn, err := grpcClient.New(ctx, config.Connection, fileWatcher, logger, tracerProvider)
+func newCertificateAuthorityClient(config GrpcServerConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (pbCA.CertificateAuthorityClient, func(), error) {
+	caConn, err := grpcClient.New(config.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot connect to certificate-authority: %w", err)
 	}
@@ -255,28 +255,28 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	}
 	nats.AddCloseFunc(resourceSubscriber.Close)
 
-	raClient, closeRaClient, err := newResourceAggregateClient(ctx, config.Clients.ResourceAggregate, resourceSubscriber, fileWatcher, logger, tracerProvider)
+	raClient, closeRaClient, err := newResourceAggregateClient(config.Clients.ResourceAggregate, resourceSubscriber, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		nats.Close()
 		return nil, fmt.Errorf("cannot create resource-aggregate client: %w", err)
 	}
 	nats.AddCloseFunc(closeRaClient)
 
-	isClient, closeIsClient, err := newIdentityStoreClient(ctx, config.Clients.IdentityStore, fileWatcher, logger, tracerProvider)
+	isClient, closeIsClient, err := newIdentityStoreClient(config.Clients.IdentityStore, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		nats.Close()
 		return nil, fmt.Errorf("cannot create identity-store client: %w", err)
 	}
 	nats.AddCloseFunc(closeIsClient)
 
-	rdClient, closeRdClient, err := newResourceDirectoryClient(ctx, config.Clients.ResourceDirectory, fileWatcher, logger, tracerProvider)
+	rdClient, closeRdClient, err := newResourceDirectoryClient(config.Clients.ResourceDirectory, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		nats.Close()
 		return nil, fmt.Errorf("cannot create resource-directory client: %w", err)
 	}
 	nats.AddCloseFunc(closeRdClient)
 
-	certificateAuthorityClient, closeCertificateAuthorityClient, err := newCertificateAuthorityClient(ctx, config.Clients.CertificateAuthority, fileWatcher, logger, tracerProvider)
+	certificateAuthorityClient, closeCertificateAuthorityClient, err := newCertificateAuthorityClient(config.Clients.CertificateAuthority, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		nats.Close()
 		return nil, fmt.Errorf("cannot create certificate-authority client: %w", err)
