@@ -60,7 +60,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		v = append(v, opts...)
 	}
 
-	conn, err := grpc.DialContext(ctx, config.Addr, v...)
+	conn, err := grpc.DialContext(ctx, config.Addr, v...) //nolint:staticcheck
 	if err != nil {
 		return nil, fmt.Errorf("cannot dial: %w", err)
 	}
