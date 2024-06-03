@@ -11,13 +11,15 @@ import { updateDevicesDataStatus, getResourceRegistrationNotificationKey } from 
 import { SecurityConfig, StreamApiPropsType } from '@/containers/App/App.types'
 
 const getConfig = () => security.getGeneralConfig() as SecurityConfig
-const getWellKnow = () => security.getWellKnowConfig()
+const getWellKnow = () => security.getWellKnownConfig()
 
 export const useDevicesList = () => {
-    const { telemetryWebTracer } = useContext(AppContext)
+    const { telemetryWebTracer, unauthorizedCallback } = useContext(AppContext)
+
     const { data, updateData, setState, ...rest } = useStreamApi(`${getConfig().httpGatewayAddress}${devicesApiEndpoints.DEVICES}`, {
         telemetryWebTracer,
         telemetrySpan: 'get-devices',
+        unauthorizedCallback,
     })
 
     // Update the metadata when a WS event is emitted
@@ -33,11 +35,12 @@ export const useDevicesList = () => {
 }
 
 export const useDeviceDetails = (deviceId: string) => {
-    const { telemetryWebTracer } = useContext(AppContext)
+    const { telemetryWebTracer, unauthorizedCallback } = useContext(AppContext)
     const { data, updateData, ...rest }: StreamApiPropsType = useStreamApi(`${getConfig().httpGatewayAddress}${devicesApiEndpoints.DEVICES}/${deviceId}`, {
         streamApi: false,
         telemetryWebTracer,
         telemetrySpan: 'get-device-detail',
+        unauthorizedCallback,
     })
 
     // Update the metadata when a WS event is emitted
@@ -64,19 +67,20 @@ export const useDeviceDetails = (deviceId: string) => {
 }
 
 export const useDeviceSoftwareUpdateDetails = (deviceId: string): StreamApiPropsType => {
-    const { telemetryWebTracer } = useContext(AppContext)
+    const { telemetryWebTracer, unauthorizedCallback } = useContext(AppContext)
     return useStreamApi(`${getConfig().httpGatewayAddress}${devicesApiEndpoints.DEVICES}/${deviceId}/resources?type=oic.r.softwareupdate`, {
         streamApi: false,
         telemetryWebTracer,
         telemetrySpan: 'get-device-software-update-detail',
+        unauthorizedCallback,
     })
 }
 
 export const useDevicesResources = (deviceId: string): StreamApiPropsType => {
-    const { telemetryWebTracer } = useContext(AppContext)
+    const { telemetryWebTracer, unauthorizedCallback } = useContext(AppContext)
     const { data, updateData, ...rest }: StreamApiPropsType = useStreamApi(
         `${getConfig().httpGatewayAddress}${devicesApiEndpoints.DEVICES_RESOURCES}?device_id_filter=${deviceId}`,
-        { telemetryWebTracer, telemetrySpan: 'get-device-resources' }
+        { telemetryWebTracer, telemetrySpan: 'get-device-resources', unauthorizedCallback }
     )
 
     useEmitter(getResourceRegistrationNotificationKey(deviceId), ({ event, resources: updatedResources }) => {
@@ -112,24 +116,26 @@ export const useDevicesResources = (deviceId: string): StreamApiPropsType => {
 }
 
 export const useDevicePendingCommands = (deviceId: string): StreamApiPropsType => {
-    const { telemetryWebTracer } = useContext(AppContext)
+    const { telemetryWebTracer, unauthorizedCallback } = useContext(AppContext)
     return useStreamApi(`${getConfig().httpGatewayAddress}${devicesApiEndpoints.DEVICES}/${deviceId}/pending-commands`, {
         telemetryWebTracer,
         telemetrySpan: `get-device-pending-commands-${deviceId}`,
+        unauthorizedCallback,
     })
 }
 
 export const useDeviceCertificates = (deviceId: string): StreamApiPropsType => {
-    const { telemetryWebTracer } = useContext(AppContext)
+    const { telemetryWebTracer, unauthorizedCallback } = useContext(AppContext)
     const url = getWellKnow()?.certificateAuthority || getWellKnow()?.ui?.deviceProvisioningService || getConfig().httpGatewayAddress
     return useStreamApi(`${url}/api/v1/signing/records?deviceIdFilter=${deviceId}`, {
         telemetryWebTracer,
         telemetrySpan: `get-device-certificates-${deviceId}`,
+        unauthorizedCallback,
     })
 }
 
 export const useDeviceProvisioningRecord = (deviceId: string): StreamApiPropsType => {
-    const { telemetryWebTracer } = useContext(AppContext)
+    const { telemetryWebTracer, unauthorizedCallback } = useContext(AppContext)
     const url = getWellKnow()?.ui?.deviceProvisioningService || getConfig().httpGatewayAddress
 
     const [data, setData] = useState(null)
@@ -137,6 +143,7 @@ export const useDeviceProvisioningRecord = (deviceId: string): StreamApiPropsTyp
     const { data: provisioningRecordData, ...rest }: StreamApiPropsType = useStreamApi(`${url}/api/v1/provisioning-records?deviceIdFilter=${deviceId}`, {
         telemetryWebTracer,
         telemetrySpan: `get-device-provisioning-record-${deviceId}`,
+        unauthorizedCallback,
     })
 
     useEffect(() => {

@@ -55,7 +55,7 @@ const Tab2: FC<Props> = (props) => {
     const isMounted = useIsMounted()
     const navigate = useNavigate()
 
-    const wellKnownConfig = security.getWellKnowConfig() as WellKnownConfigType & {
+    const wellKnownConfig = security.getWellKnownConfig() as WellKnownConfigType & {
         defaultCommandTimeToLive: number
     }
     const [ttl, setTtl] = useState(wellKnownConfig?.defaultCommandTimeToLive || 0)

@@ -69,10 +69,7 @@ const DetailHeader: FC<Props> = (props) => {
             </Button>
 
             <DeleteModal
-                deleteInformation={[
-                    { label: _(g.name), value: 'TODO' },
-                    { label: _(g.id), value: id },
-                ]}
+                deleteInformation={[{ label: _(g.id), value: id }]}
                 footerActions={[
                     {
                         dataTestId: testId.dps.linkedHubs.detail.deleteButtonCancel,

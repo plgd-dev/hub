@@ -47,7 +47,7 @@ const AppLayout: FC<Props> = (props) => {
     const navigate = useNavigate()
     const configurationPageFrame = window.location.pathname === `/${CONFIGURATION_PAGE_FRAME}`
 
-    const wellKnownConfig = security.getWellKnowConfig() as WellKnownConfigType & {
+    const wellKnownConfig = security.getWellKnownConfig() as WellKnownConfigType & {
         defaultCommandTimeToLive: number
     }
 
