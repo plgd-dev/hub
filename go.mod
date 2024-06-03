@@ -127,7 +127,7 @@ replace (
 	// so we force to the use of the pinned master branch
 	github.com/pion/dtls/v2 => github.com/pion/dtls/v2 v2.2.8-0.20240501061905-2c36d63320a0
 	// later versions require go 1.22
-	github.com/youmark/pkcs8 => github.com/youmark/pkcs8 v0.0.0-20201027041543-1326539a0a0a
+	github.com/youmark/pkcs8 => github.com/youmark/pkcs8 v0.0.0-20240424034433-3c2c7870ae76
 	// later versions require go 1.21
 	go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo => go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo v0.49.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc => go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.49.0
