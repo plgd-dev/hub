@@ -37,7 +37,7 @@ const Tab2: FC<any> = (props) => {
 
     const i18n = useCaI18n()
 
-    const wellKnownConfig = security.getWellKnowConfig() as WellKnownConfigType & {
+    const wellKnownConfig = security.getWellKnownConfig() as WellKnownConfigType & {
         defaultCommandTimeToLive: number
     }
 

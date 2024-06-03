@@ -8,7 +8,7 @@ import { SecurityConfig } from '@/containers/App/App.types'
 import { certificatesEndpoints } from '@/containers/Certificates/constants'
 
 const getConfig = () => security.getGeneralConfig() as SecurityConfig
-const getWellKnow = () => security.getWellKnowConfig()
+const getWellKnow = () => security.getWellKnownConfig()
 
 export const deleteCertificatesApi = (deviceIds: string[]) => {
     // We split the fetch into multiple chunks due to the URL being too long for the browser to handle

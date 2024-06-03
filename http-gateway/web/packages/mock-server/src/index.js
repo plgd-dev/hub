@@ -37,6 +37,8 @@ const loadResponseFromFile = (file, res) => {
 app.get('/api/v1/devices', function (req, res) {
     console.log(`${req.method}`, req.url)
 
+    //res.status(401).send({ message: 'Unauthorized' })
+
     if (deletedDevice) {
         loadResponseFromFile(path.join('devices', 'list', 'list-deleted-state.json'), res)
     } else {

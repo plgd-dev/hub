@@ -8,25 +8,27 @@ import { SecurityConfig, StreamApiPropsType } from '@/containers/App/App.types'
 import { certificatesEndpoints } from './constants'
 
 const getConfig = () => security.getGeneralConfig() as SecurityConfig
-const getWellKnow = () => security.getWellKnowConfig()
+const getWellKnow = () => security.getWellKnownConfig()
 
 export const useCertificatesList = (): StreamApiPropsType => {
-    const { telemetryWebTracer } = useContext(AppContext)
+    const { telemetryWebTracer, unauthorizedCallback } = useContext(AppContext)
     const url = getWellKnow()?.certificateAuthority || getWellKnow()?.ui?.deviceProvisioningService || getConfig().httpGatewayAddress
 
     return useStreamApi(`${url}${certificatesEndpoints.CERTIFICATES}`, {
         telemetryWebTracer,
         telemetrySpan: 'get-certificates',
+        unauthorizedCallback,
     })
 }
 
 export const useCertificatesDetail = (id: string): StreamApiPropsType => {
-    const { telemetryWebTracer } = useContext(AppContext)
+    const { telemetryWebTracer, unauthorizedCallback } = useContext(AppContext)
     const url = getWellKnow()?.certificateAuthority || getWellKnow()?.ui?.deviceProvisioningService || getConfig().httpGatewayAddress
 
     const { data, ...rest } = useStreamApi(`${url}${certificatesEndpoints.CERTIFICATES}?idFilter=${id}`, {
         telemetryWebTracer,
         telemetrySpan: `get-certificate-${id}`,
+        unauthorizedCallback,
     })
 
     if (data && Array.isArray(data)) {

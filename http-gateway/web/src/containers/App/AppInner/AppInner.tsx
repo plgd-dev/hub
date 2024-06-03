@@ -1,11 +1,11 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { BrowserRouter } from 'react-router-dom'
 import { useAuth } from 'oidc-react'
 import { Global } from '@emotion/react'
 
 import { InitServices } from '@shared-ui/common/services/init-services'
 import { BrowserNotificationsContainer } from '@shared-ui/components/Atomic/Toast'
-import { useLocalStorage } from '@shared-ui/common/hooks'
+import { useLocalStorage, WellKnownConfigType } from '@shared-ui/common/hooks'
 import { clientAppSettings, security } from '@shared-ui/common/services'
 import { AppContextType } from '@shared-ui/app/share/AppContext.types'
 import AppContext from '@shared-ui/app/share/AppContext'
@@ -17,6 +17,7 @@ import { deviceStatusListener } from '../../Devices/websockets'
 import { globalStyle } from './AppInner.global.styles'
 import AppLayout from '@/containers/App/AppLayout/AppLayout'
 import appConfig from '@/config'
+import isFunction from 'lodash/isFunction'
 
 const AppInner = (props: Props) => {
     const { wellKnownConfig, openTelemetry, collapsed, setCollapsed } = props
@@ -25,6 +26,13 @@ const AppInner = (props: Props) => {
     const [footerExpanded, setFooterExpanded] = useLocalStorage('footerPanelExpanded', false)
 
     const toastNotifications = false
+
+    const unauthorizedCallback = useCallback(() => {
+        isFunction(signOutRedirect) &&
+            signOutRedirect({
+                post_logout_redirect_uri: window.location.origin,
+            })
+    }, [signOutRedirect])
 
     const contextValue: AppContextType = useMemo(
         () => ({
@@ -35,8 +43,9 @@ const AppInner = (props: Props) => {
             telemetryWebTracer: openTelemetry.getWebTracer(),
             buildInformation: wellKnownConfig?.buildInfo,
             isHub: true,
+            unauthorizedCallback,
         }),
-        [footerExpanded, collapsed, setCollapsed, setFooterExpanded, wellKnownConfig, openTelemetry]
+        [footerExpanded, collapsed, setCollapsed, setFooterExpanded, openTelemetry, wellKnownConfig?.buildInfo, unauthorizedCallback]
     )
 
     useDocumentTitle(appConfig.appName)
@@ -52,6 +61,12 @@ const AppInner = (props: Props) => {
         if (userManager) {
             security.setUserManager(userManager)
         }
+
+        const wellKnownConfig = security.getWellKnownConfig() as WellKnownConfigType & {
+            defaultCommandTimeToLive: number
+        }
+
+        security.setWellKnownConfig({ ...wellKnownConfig, unauthorizedCallback })
     }
 
     return (
