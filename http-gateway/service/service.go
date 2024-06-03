@@ -74,7 +74,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	s.AddCloseFunc(otelClient.Close)
 	s.AddCloseFunc(validator.Close)
 
-	grpcConn, err := grpcClient.New(ctx, config.Clients.GrpcGateway.Connection, fileWatcher, logger, tracerProvider)
+	grpcConn, err := grpcClient.New(config.Clients.GrpcGateway.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, fmt.Errorf("cannot connect to grpc-gateway: %w", err)
 	}

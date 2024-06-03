@@ -114,8 +114,8 @@ func newGrpcServer(ctx context.Context, config GRPCConfig, fileWatcher *fsnotify
 	return grpcServer, nil
 }
 
-func newIdentityStoreClient(ctx context.Context, config IdentityStoreConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (pbIS.IdentityStoreClient, func(), error) {
-	isConn, err := client.New(ctx, config.Connection, fileWatcher, logger, tracerProvider)
+func newIdentityStoreClient(config IdentityStoreConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (pbIS.IdentityStoreClient, func(), error) {
+	isConn, err := client.New(config.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot connect to identity-store: %w", err)
 	}
@@ -144,7 +144,7 @@ func NewService(ctx context.Context, config Config, fileWatcher *fsnotify.Watche
 		return errors.ErrorOrNil()
 	}
 
-	isClient, closeIsClient, err := newIdentityStoreClient(ctx, config.Clients.IdentityStore, fileWatcher, logger, tracerProvider)
+	isClient, closeIsClient, err := newIdentityStoreClient(config.Clients.IdentityStore, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, closeGrpcServerOnError(fmt.Errorf("cannot create identity-store client: %w", err))
 	}
