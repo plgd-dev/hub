@@ -1,4 +1,13 @@
+log:
+  level: info
+  encoding: json
+  stacktrace:
+    enabled: false
+    level: warn
+  encoderConfig:
+    timeEncoder: rfc3339nano
 mode: "standby"
+#mode: "active"
 replicaSet:
   standby:
     # List of the MongoDB members in the replica set which are used as backup members
@@ -17,11 +26,7 @@ clients:
     mongoDB:
       tls:
         # Enable or disable TLS
-        enabled: true
-        # Path to the CA certificate file
-        caPool: "/certs/ca.crt"
-        # The certFile and keyFile are the paths to the TLS certificate pair files
-        certFile: "/certs/tls.crt"
-        keyFile: "/certs/tls.key"
-        # Path to the CA certificate file
-        useSystemCAPool: false
+        enabled: true          
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"

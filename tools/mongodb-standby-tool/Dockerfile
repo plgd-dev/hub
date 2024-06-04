@@ -1,50 +1,34 @@
+FROM golang:1.22.3-alpine AS build
+ARG DIRECTORY
+ARG NAME
+ARG VERSION
+ARG COMMIT_DATE
+ARG SHORT_COMMIT
+ARG DATE
+ARG RELEASE_URL
+RUN apk add --no-cache curl git build-base
+WORKDIR $GOPATH/src/github.com/plgd-dev/hub
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+WORKDIR /usr/local/go
+RUN ( patch -p1 < "$GOPATH/src/github.com/plgd-dev/hub/tools/docker/patches/shrink_tls_conn.patch" )
+WORKDIR $GOPATH/src/github.com/plgd-dev/hub/tools/mongodb-standby-tool
+RUN CGO_ENABLED=0 go build \
+    -ldflags "-X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" \
+    -o /go/bin/mongodb-standby-tool \
+    ./
+
 FROM alpine:3.19 AS security-provider
-RUN apk add -U --no-cache ca-certificates
 RUN addgroup -S nonroot \
     && adduser -S nonroot -G nonroot
+RUN apk add -U --no-cache ca-certificates
 
-FROM ubuntu:22.04
-
-RUN apt-get update && apt-get install -y \
-    wget \
-    curl \
-    jq \
-    bash \
-    && rm -rf /var/lib/apt/lists/*
-
-RUN echo "ARCH: $(uname -m)"
-
-# Install mongosh
-RUN \
-    ARCH=$(uname -m) && \
-    if [ "$ARCH" = "x86_64" ]; then \
-        ARCH="x64"; \
-    elif [ "$ARCH" = "amd64" ]; then \
-        ARCH="x64"; \
-    elif [ "$ARCH" = "aarch64" ]; then \
-        ARCH="arm64"; \
-    fi && \
-    wget https://downloads.mongodb.com/compass/mongosh-2.2.6-linux-$ARCH.tgz -O /tmp/mongosh.tgz && \
-    tar -xzf /tmp/mongosh.tgz -C /tmp && \
-    mv /tmp/mongosh-2.2.6-linux-$ARCH/bin/mongosh /usr/bin/ && \
-    rm -rf /tmp/mongosh.tgz /tmp/mongosh-2.2.6-linux-$ARCH
-
-# Install yq
-RUN \
-    ARCH=$(uname -m) && \
-    if [ "$ARCH" = "x86_64" ]; then \
-        ARCH="amd64"; \
-    elif [ "$ARCH" = "aarch64" ]; then \
-        ARCH="arm64"; \
-    fi && \
-    wget https://github.com/mikefarah/yq/releases/download/v4.44.1/yq_linux_$ARCH -O /usr/bin/yq && chmod +x /usr/bin/yq
-
+FROM scratch AS service
 COPY --from=security-provider /etc/passwd /etc/passwd
 COPY --from=security-provider /etc/group /etc/group
 COPY --from=security-provider /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-RUN mkdir /home/nonroot && chown nonroot:nonroot /home/nonroot
+COPY --from=build /go/bin/mongodb-standby-tool /usr/local/bin/mongodb-standby-tool
 USER nonroot
-COPY --chown=nonroot:nonroot ./tools/mongodb-standby-tool/common.sh /common.sh
-COPY --chown=nonroot:nonroot ./tools/mongodb-standby-tool/run.sh /run.sh
-COPY --chown=nonroot:nonroot ./tools/mongodb-standby-tool/config.yaml /config.yaml
-ENTRYPOINT [ "/bin/bash" ]
+ENTRYPOINT [ "/usr/local/bin/mongodb-standby-tool" ]
+

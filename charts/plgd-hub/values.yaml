@@ -95,6 +95,22 @@ mongodb:
   standbyTool:
     # -- Create standby job
     enabled: false
+    # -- Log section
+    log:
+      # -- Logging enabled from level 
+      level: info
+      # -- Dump grpc messages
+      dumpBody: false
+      # -- The supported values are: "json", "console"
+      encoding: json
+      stacktrace:
+          # -- Log stacktrace
+          enabled: false
+          # -- Stacktrace from level
+          level: warn
+      encoderConfig:
+          # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
+          timeEncoder: rfc3339nano
     # -- Mode of standby job. Supported values: "active", "standby"
     mode: standby
     # -- Name of component. Used in label selectors
@@ -172,7 +188,7 @@ mongodb:
     # -- Job configuration
     config:
       # -- Job configuration file
-      fileName: job.yaml
+      fileName: config.yaml
       # -- Job configuration volume name
       volume: config
       # -- Configuration mount path

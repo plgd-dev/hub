@@ -47,7 +47,7 @@ spec:
           image: {{ include "plgd-hub.mongodb-standby-tool.image" . | quote }}
           imagePullPolicy: {{ .Values.mongodb.standbyTool.image.pullPolicy }}
           command:
-            - /run.sh
+            - /usr/local/bin/mongodb-standby-tool
           args:
             - "--config"
             - {{  printf "%s/%s" .Values.mongodb.standbyTool.config.mountPath .Values.mongodb.standbyTool.config.fileName | quote }}
