@@ -223,8 +223,8 @@ github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINE
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/pkg/profile v1.7.0 h1:hnbDkaNWPCLMO9wGLdBFTIZvzDrDfBM2072E1S9gJkA=
 github.com/pkg/profile v1.7.0/go.mod h1:8Uer0jas47ZQMJ7VD+OHknK4YDY07LPUC6dEvqDjvNo=
-github.com/plgd-dev/device/v2 v2.5.2-0.20240603131607-6c9b1dc14b00 h1:jyQlaKk36Fo9UbNNkh56RfQ86LT5jNAweD60isrCcjw=
-github.com/plgd-dev/device/v2 v2.5.2-0.20240603131607-6c9b1dc14b00/go.mod h1:qN99MOQQmcMDg+olk+TPI2XsLL64WAHRLuZtHUCV6TA=
+github.com/plgd-dev/device/v2 v2.5.1 h1:YssvgsDtrC6uVn8hFMOc48LU9ZXRwL/xLYSHMEDt7RU=
+github.com/plgd-dev/device/v2 v2.5.1/go.mod h1:uplTm15S+2OBsGBpPdJ+YPUcnRnHdUbbRO87SHnnQA0=
 github.com/plgd-dev/go-coap/v2 v2.0.4-0.20200819112225-8eb712b901bc/go.mod h1:+tCi9Q78H/orWRtpVWyBgrr4vKFo2zYtbbxUllerBp4=
 github.com/plgd-dev/go-coap/v2 v2.4.1-0.20210517130748-95c37ac8e1fa/go.mod h1:rA7fc7ar+B/qa+Q0hRqv7yj/EMtIlmo1l7vkQGSrHPU=
 github.com/plgd-dev/go-coap/v3 v3.3.5-0.20240603125124-ff2c47df37c4 h1:xu8YTmRsKKKWqN3kR4qyE6peDch3wR7iSfQm/rslxvE=
