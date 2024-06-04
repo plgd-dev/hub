@@ -27,5 +27,3 @@ COPY --from=security-provider /etc/passwd /etc/passwd
 COPY --from=build /go/bin/grpc-reflection /usr/local/bin/grpc-reflection
 USER nonroot
 ENTRYPOINT [ "/usr/local/bin/grpc-reflection" ]
-
-
