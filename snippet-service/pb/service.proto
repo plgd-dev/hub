@@ -73,7 +73,11 @@ message Condition { // driven by resource change event
   int64 timestamp = 12;
 }
 
-message GetConditionsRequest { repeated IDFilter id_filter = 1; }
+message GetConditionsRequest { 
+  repeated IDFilter id_filter = 1;
+  repeated string configuration_id_fitler = 2;
+}
+
 message DeleteConditionsRequest { repeated IDFilter id_filter = 1; }
 message DeleteConditionsResponse { int64 count = 1; }
 
