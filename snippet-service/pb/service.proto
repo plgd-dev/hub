@@ -151,9 +151,9 @@ message InvokeConfigurationRequest {
 
 message GetAppliedDeviceConfigurationsRequest { //TODO Naming
   repeated string id_filter = 1;
-  repeated IDFilter configuration_id_filter = 2;
+  repeated string configuration_id_filter = 2;
   repeated string device_id_filter = 3;
-  repeated IDFilter condition_id_filter = 4;
+  repeated string condition_id_filter = 4;
 }
 
 message DeleteAppliedDeviceConfigurationsRequest { repeated string id_filter = 1; }
