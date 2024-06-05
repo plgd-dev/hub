@@ -3,11 +3,16 @@ package mongodb
 import (
 	"context"
 	"fmt"
+	"time"
+
+	"github.com/plgd-dev/hub/v2/integration-service/store"
 
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -15,7 +20,7 @@ type Store struct {
 	*pkgMongo.Store
 }
 
-const integrationCol = "integrations"
+const integrationCol = "integrationRecords"
 
 func New(ctx context.Context, cfg *Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*Store, error) {
 	certManager, err := client.New(cfg.Mongo.TLS, fileWatcher, logger)
@@ -41,4 +46,27 @@ func (s *Store) clearDatabases(ctx context.Context) error {
 
 func (s *Store) Close(ctx context.Context) error {
 	return s.Store.Close(ctx)
+}
+
+func (s *Store) DeleteExpiredRecords(ctx context.Context, now time.Time) (int64, error) {
+	return 0, nil
+}
+
+func (s *Store) CreateRecord(ctx context.Context, r *store.ConfigurationRecord) error {
+
+	cl := s.Client()
+
+	col := cl.Database(s.DBName()).Collection(integrationCol)
+
+	var commonNameKeyQueryIndex = mongo.IndexModel{
+		Keys: bson.D{
+			{Key: "key", Value: 1},
+		},
+	}
+
+	col.Indexes().CreateOne(ctx, commonNameKeyQueryIndex)
+
+	col.InsertOne(ctx, r)
+
+	return nil
 }

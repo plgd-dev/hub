@@ -2,11 +2,11 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"time"
 
-	//"time"
-
-	//"github.com/go-co-op/gocron/v2"
+	"github.com/go-co-op/gocron/v2"
 	grpcService "github.com/plgd-dev/hub/v2/integration-service/service/grpc"
 	httpService "github.com/plgd-dev/hub/v2/integration-service/service/http"
 	"github.com/plgd-dev/hub/v2/integration-service/store"
@@ -60,33 +60,37 @@ func newStore(ctx context.Context, config StorageConfig, fileWatcher *fsnotify.W
 		return db, fl.ToFunction(), nil
 	}
 
-	// s := gocron.NewScheduler(time.Local)
-	// if config.ExtendCronParserBySeconds {
-	// 	s = s.CronWithSeconds(config.CleanUpRecords)
-	// } else {
-	// 	s = s.Cron(config.CleanUpRecords)
-	// }
-	// _, err = s.Do(func() {
-	// 	/*
-	// 		_, errDel := db.DeleteNonDeviceExpiredRecords(ctx, time.Now())
-	// 		if errDel != nil && !errors.Is(errDel, store.ErrNotSupported) {
-	// 			log.Errorf("failed to delete expired signing records: %w", errDel)
-	// 		}
-	// 	*/
-	// })
-	// if err != nil {
-	// 	fl.Execute()
-	// 	return nil, nil, fmt.Errorf("cannot create cron job: %w", err)
-	// }
-	// fl.AddFunc(s.Clear)
-	// fl.AddFunc(s.Stop)
-	// s.StartAsync()
+	s, err := gocron.NewScheduler(gocron.WithLocation(time.Local))
+	if err != nil {
+		fl.Execute()
+		return nil, nil, fmt.Errorf("cannot create cron job: %w", err)
+	}
+
+	_, err = s.NewJob(gocron.CronJob(config.CleanUpRecords, config.ExtendCronParserBySeconds), gocron.NewTask(func() {
+		_, errDel := db.DeleteExpiredRecords(ctx, time.Now())
+		if errDel != nil && !errors.Is(errDel, store.ErrNotSupported) {
+			log.Errorf("failed to delete expired integration records: %w", errDel)
+		}
+	}))
+
+	if err != nil {
+		fl.Execute()
+		return nil, nil, fmt.Errorf("cannot create cron job: %w", err)
+	}
+
+	fl.AddFunc(func() {
+		if errS := s.Shutdown(); errS != nil {
+			log.Errorf("failed to shutdown cron job: %w", errS)
+		}
+	})
+
+	s.Start()
 
 	return db, fl.ToFunction(), nil
 }
 
 func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*service.Service, error) {
-	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector, "certificate-authority", fileWatcher, logger)
+	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector, "integation-service", fileWatcher, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
 	}

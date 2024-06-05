@@ -4,6 +4,6 @@ import (
 	"net/http"
 )
 
-func (requestHandler *RequestHandler) getDevice(w http.ResponseWriter, r *http.Request) {
+func (requestHandler *RequestHandler) getConfig(w http.ResponseWriter, r *http.Request) {
 
 }

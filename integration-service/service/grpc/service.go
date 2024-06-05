@@ -8,7 +8,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
 
-	//"github.com/plgd-dev/hub/v2/integration-service/pb"
+	"github.com/plgd-dev/hub/v2/integration-service/pb"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -26,7 +26,7 @@ func New(config Config, snapshotServiceServer *IntegrationServiceServer, validat
 		return nil, err
 	}
 
-	//pb.RegisterSnapshotServiceServer(server.Server, snapshotServiceServer)
+	pb.RegisterIntegrationServiceServer(server.Server, snapshotServiceServer)
 
 	// CertificateAuthority needs to stop gracefully to ensure that all commands are processed.
 	server.SetGracefulStop(true)

@@ -8,6 +8,13 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
 )
 
+const (
+	API               string = "/api/v1"
+	IntegrationConfig        = API + "/config"
+	ConfigIDKey              = "configId"
+	AliasConfig              = IntegrationConfig + "/{" + ConfigIDKey + "}"
+)
+
 type Config struct {
 	Connection    listener.Config  `yaml:",inline" json:",inline"`
 	Authorization validator.Config `yaml:"authorization" json:"authorization"`

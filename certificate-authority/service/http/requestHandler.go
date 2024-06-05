@@ -28,10 +28,12 @@ func NewRequestHandler(config *Config, r *mux.Router, certificateAuthorityServer
 	ch := new(inprocgrpc.Channel)
 	pb.RegisterCertificateAuthorityServer(ch, certificateAuthorityServer)
 	grpcClient := pb.NewCertificateAuthorityClient(ch)
+
 	// register grpc-proxy handler
 	if err := pb.RegisterCertificateAuthorityHandlerClient(context.Background(), requestHandler.mux, grpcClient); err != nil {
 		return nil, fmt.Errorf("failed to register certificate-authority handler: %w", err)
 	}
+
 	r.PathPrefix("/").Handler(requestHandler.mux)
 
 	return requestHandler, nil

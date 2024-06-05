@@ -3,7 +3,9 @@ package service
 import (
 	"fmt"
 	"net"
+	"time"
 
+	"github.com/go-co-op/gocron/v2"
 	"github.com/google/uuid"
 	storeConfig "github.com/plgd-dev/hub/v2/integration-service/store/config"
 	"github.com/plgd-dev/hub/v2/pkg/config"
@@ -88,22 +90,21 @@ func (c *StorageConfig) Validate() error {
 		return nil
 	}
 
-	// s := gocron.NewScheduler(time.Local)
-	// if c.ExtendCronParserBySeconds {
-	// 	s = s.CronWithSeconds(c.CleanUpRecords)
-	// } else {
-	// 	s = s.Cron(c.CleanUpRecords)
-	// }
-	// _, err := s.Do(func() {
-	// 	// do nothing
-	// })
+	s, err := gocron.NewScheduler(gocron.WithLocation(time.Local))
+	if err != nil {
+		return err
+	}
 
-	// if err != nil {
-	// 	return fmt.Errorf("cleanUpRecords('%v') - %w", c.CleanUpRecords, err)
-	// }
+	_, err = s.NewJob(gocron.CronJob(c.CleanUpRecords, c.ExtendCronParserBySeconds), gocron.NewTask(func() {
+		// do nothing
+	}))
 
-	// s.Clear()
-	// s.Stop()
+	if err != nil {
+		return fmt.Errorf("cleanUpRecords('%v') - %w", c.CleanUpRecords, err)
+	}
+
+	s.Shutdown()
+
 	return nil
 }
 

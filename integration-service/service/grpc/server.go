@@ -1,13 +1,15 @@
 package grpc
 
 import (
-	"github.com/plgd-dev/hub/v2/pkg/log"
-	//"github.com/plgd-dev/hub/v2/integration-service/pb"
+	"github.com/plgd-dev/hub/v2/integration-service/pb"
 	"github.com/plgd-dev/hub/v2/integration-service/store"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 )
 
-// SnapshotServiceServer handles incoming requests.
+// IntegrationServiceServer handles incoming requests.
 type IntegrationServiceServer struct {
+	pb.UnimplementedIntegrationServiceServer
+
 	logger     log.Logger
 	ownerClaim string
 	store      store.Store

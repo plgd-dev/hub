@@ -26,7 +26,7 @@ func MakeConfig(t require.TestingT) service.Config {
 	cfg.Log = log.MakeDefaultConfig()
 
 	cfg.APIs.GRPC = config.MakeGrpcServerConfig(config.INTEGRATION_SERVICE_HOST)
-	cfg.APIs.HTTP.Addr = config.INTEGRATION_SERVICE_HOST
+	cfg.APIs.HTTP.Addr = config.INTEGRATION_SERVICE_HTTP_HOST
 	cfg.APIs.HTTP.Server = config.MakeHttpServerConfig()
 	cfg.APIs.GRPC.TLS.ClientCertificateRequired = false
 
@@ -39,8 +39,8 @@ func MakeConfig(t require.TestingT) service.Config {
 	return cfg
 }
 
-func SetUp(t require.TestingT) (tearDown func()) {
-	return New(t, MakeConfig(t))
+func SetUp(t require.TestingT, cfg service.Config) (tearDown func()) {
+	return New(t, cfg)
 }
 
 func New(t require.TestingT, cfg service.Config) func() {
@@ -78,13 +78,13 @@ func MakeStorageConfig() service.StorageConfig {
 					MaxPoolSize:     16,
 					MaxConnIdleTime: time.Minute * 4,
 					URI:             config.MONGODB_URI,
-					Database:        "snapshotService",
+					Database:        "integrationService",
 					TLS:             config.MakeTLSClientConfig(),
 				},
 			},
 			CqlDB: &storeCqlDB.Config{
 				Embedded: config.MakeCqlDBConfig(),
-				Table:    "snapshots",
+				Table:    "integrationService",
 			},
 		},
 	}
@@ -113,14 +113,6 @@ func NewCQLStore(t require.TestingT) (*storeCqlDB.Store, func()) {
 	return store, cleanUp
 }
 
-func NewStore(t require.TestingT) (store.Store, func()) {
-	cfg := MakeConfig(t)
-	if cfg.Clients.Storage.Embedded.Use == database.CqlDB {
-		return NewCQLStore(t)
-	}
-	return NewMongoStore(t)
-}
-
 func NewMongoStore(t require.TestingT) (*storeMongo.Store, func()) {
 	cfg := MakeConfig(t)
 	logger := log.NewLogger(cfg.Log)
@@ -142,4 +134,12 @@ func NewMongoStore(t require.TestingT) (*storeMongo.Store, func()) {
 	}
 
 	return store, cleanUp
+}
+
+func NewStore(t require.TestingT) (store.Store, func()) {
+	cfg := MakeConfig(t)
+	if cfg.Clients.Storage.Embedded.Use == database.CqlDB {
+		return NewCQLStore(t)
+	}
+	return NewMongoStore(t)
 }

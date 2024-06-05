@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
+	"github.com/plgd-dev/hub/v2/integration-service/store"
 	"github.com/plgd-dev/hub/v2/pkg/cqldb"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
@@ -83,7 +85,7 @@ func newEventStoreWithClient(ctx context.Context, client *cqldb.Client, config *
 	}
 
 	if config.Table == "" {
-		config.Table = "signedCertificateRecords"
+		config.Table = "integrations"
 	}
 
 	err := createEventsTable(ctx, client, config.Table)
@@ -124,4 +126,12 @@ func (s *Store) Close(_ context.Context) error {
 
 func (s *Store) AddCloseFunc(f func()) {
 	s.client.AddCloseFunc(f)
+}
+
+func (s *Store) DeleteExpiredRecords(ctx context.Context, now time.Time) (int64, error) {
+	return 0, nil
+}
+
+func (s *Store) CreateRecord(ctx context.Context, r *store.ConfigurationRecord) error {
+	return nil
 }

@@ -1,13 +1,15 @@
 package http
 
 import (
-	// "context"
-	// "fmt"
+	"context"
+	"fmt"
+	"net/http"
 
-	// "github.com/fullstorydev/grpchan/inprocgrpc"
+	"github.com/fullstorydev/grpchan/inprocgrpc"
 	"github.com/gorilla/mux"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
+	"github.com/plgd-dev/hub/v2/integration-service/pb"
 	grpcService "github.com/plgd-dev/hub/v2/integration-service/service/grpc"
 )
 
@@ -24,14 +26,16 @@ func NewRequestHandler(config *Config, r *mux.Router, integrationServiceServer *
 		mux:    serverMux.New(),
 	}
 
-	//ch := new(inprocgrpc.Channel)
-	// pb.RegisterIntegrationServiceServer(ch, integrationServiceServer)
-	// grpcClient := pb.NewIntegrationServiceClient(ch)
+	r.HandleFunc(AliasConfig, requestHandler.getConfig).Methods(http.MethodGet)
 
-	// // register grpc-proxy handler
-	// if err := pb.RegisterIntegrationServiceHandlerClient(context.Background(), requestHandler.mux, grpcClient); err != nil {
-	// 	return nil, fmt.Errorf("failed to register integration service handler: %w", err)
-	// }
+	ch := new(inprocgrpc.Channel)
+	pb.RegisterIntegrationServiceServer(ch, integrationServiceServer)
+	grpcClient := pb.NewIntegrationServiceClient(ch)
+
+	// register grpc-proxy handler
+	if err := pb.RegisterIntegrationServiceHandlerClient(context.Background(), requestHandler.mux, grpcClient); err != nil {
+		return nil, fmt.Errorf("failed to register integration service handler: %w", err)
+	}
 
 	r.PathPrefix("/").Handler(requestHandler.mux)
 
