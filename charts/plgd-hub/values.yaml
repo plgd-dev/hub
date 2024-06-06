@@ -273,10 +273,10 @@ mongodb:
 
           if [ "${ROTATE_CERTIFICATES}" == "1" ]; then
             echo "Rotating certificates"
-            /certs/mongodb-admin-tool --tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem --eval db.adminCommand\("{rotateCertificates: 1, message: \"Rotating certificates\"}"\)
+            /certs/mongodb-admin-tool --tls --directConnection --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem --eval db.adminCommand\("{rotateCertificates: 1, message: \"Rotating certificates\"}"\)
           else
             echo "Ping database"
-            /certs/mongodb-admin-tool --tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem --eval db.adminCommand\(\"ping\"\)
+            /certs/mongodb-admin-tool --tls --directConnection --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem --eval db.adminCommand\(\"ping\"\)
           fi
           ' > /certs/livenessProbe.sh
           chmod uga+x /certs/livenessProbe.sh

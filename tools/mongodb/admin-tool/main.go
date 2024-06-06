@@ -25,12 +25,14 @@ type MongoArgs struct {
 	Eval                  string
 	MongoURI              string
 	Timeout               time.Duration
+	DirectConnection      bool
 }
 
 func parseArgs() MongoArgs {
 	var args MongoArgs
 
 	flag.BoolVar(&args.TLS, "tls", false, "Enable TLS")
+	flag.BoolVar(&args.TLS, "directConnection", false, "Direct connection")
 	flag.StringVar(&args.TLSCertificateKeyFile, "tlsCertificateKeyFile", "", "Path to the TLS certificate key file")
 	flag.StringVar(&args.TLSCAFile, "tlsCAFile", "", "Path to the TLS CA file")
 	flag.StringVar(&args.Eval, "eval", "", "MongoDB eval command")
@@ -81,7 +83,7 @@ func parseEvalCommand(eval string) (interface{}, error) {
 }
 
 func prepareClientOpts(args MongoArgs) (*options.ClientOptions, error) {
-	clientOpts := options.Client().ApplyURI(args.MongoURI)
+	clientOpts := options.Client().ApplyURI(args.MongoURI).SetDirect(args.DirectConnection)
 
 	if !args.TLS {
 		return clientOpts, nil
