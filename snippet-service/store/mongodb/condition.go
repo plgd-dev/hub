@@ -193,7 +193,7 @@ func (s *Store) getConditionsByFind(ctx context.Context, owner string, idfAlls [
 
 func (s *Store) getConditionsByAggregation(ctx context.Context, owner, id string, vf pb.VersionFilter, p store.ProcessConditions) error {
 	pl := mongo.Pipeline{bson.D{{Key: "$match", Value: addMatchCondition(owner, id)}}}
-	pl = getVersionsPipeline(pl, vf, false)
+	pl = getVersionsPipelineObsolete(pl, vf, false)
 	cur, err := s.Collection(conditionsCol).Aggregate(ctx, pl)
 	if err != nil {
 		return err
@@ -218,5 +218,5 @@ func (s *Store) GetConditions(ctx context.Context, owner string, query *pb.GetCo
 }
 
 func (s *Store) DeleteConditions(ctx context.Context, owner string, query *pb.DeleteConditionsRequest) (int64, error) {
-	return s.delete(ctx, conditionsCol, owner, query.GetIdFilter())
+	return s.deleteObsolete(ctx, conditionsCol, owner, query.GetIdFilter())
 }

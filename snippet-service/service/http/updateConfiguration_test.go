@@ -74,6 +74,7 @@ func TestRequestHandlerUpdateConfiguration(t *testing.T) {
 				id: conf.GetId(),
 				conf: &snippetPb.Configuration{
 					Version: 1,
+					Name:    "updated1",
 					Resources: []*snippetPb.Configuration_Resource{
 						makeTestResource(t, "/test/1", 42),
 						makeTestResource(t, "/test/2", 52),
@@ -90,6 +91,7 @@ func TestRequestHandlerUpdateConfiguration(t *testing.T) {
 				conf: &snippetPb.Configuration{
 					Version: 2,
 					Owner:   oauthService.DeviceUserID,
+					Name:    "updated2",
 					Resources: []*snippetPb.Configuration_Resource{
 						makeTestResource(t, "/test/3", 62),
 					},
@@ -105,6 +107,7 @@ func TestRequestHandlerUpdateConfiguration(t *testing.T) {
 				conf: &snippetPb.Configuration{
 					Id:      uuid.NewString(), // this ID will get overwritten by the ID in the query
 					Version: 3,
+					Name:    "updated3",
 					Resources: []*snippetPb.Configuration_Resource{
 						makeTestResource(t, "/test/4", 72),
 						makeTestResource(t, "/test/5", 82),

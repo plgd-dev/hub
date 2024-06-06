@@ -11,11 +11,13 @@ import (
 
 const (
 	IDKey              = "_id"             // must match with Id field tag
+	OwnerKey           = "owner"           // must match with Owner field tag
+	LatestKey          = "latest"          // must match with Latest field tag
+	NameKey            = "name"            // must match with Name field tag
 	VersionKey         = "version"         // must match with Version field tag
 	VersionsKey        = "versions"        // must match with Versions field tag
-	OwnerKey           = "owner"           // must match with Owner field tag
+	ResourcesKey       = "resources"       // must match with Resources field tag
 	ConfigurationIDKey = "configurationId" // must match with ConfigurationId field tag
-	NameKey            = "name"            // must match with Name field tag
 	EnabledKey         = "enabled"         // must match with Enabled field tag
 	TimestampKey       = "timestamp"       // must match with Timestamp field tag
 	ApiAccessTokenKey  = "apiAccessToken"  // must match with ApiAccessToken field tag

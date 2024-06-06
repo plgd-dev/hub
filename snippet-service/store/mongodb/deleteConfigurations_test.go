@@ -3,17 +3,17 @@ package mongodb_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
 	"github.com/plgd-dev/hub/v2/snippet-service/store"
 	"github.com/plgd-dev/hub/v2/snippet-service/store/mongodb"
 	"github.com/plgd-dev/hub/v2/snippet-service/test"
-	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
 )
 
 func TestStoreDeleteConfigurations(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
 	getConfigurations := func(t *testing.T, s *mongodb.Store, owner string, query *pb.GetConfigurationsRequest) []*store.Configuration {
@@ -27,6 +27,15 @@ func TestStoreDeleteConfigurations(t *testing.T) {
 		})
 		require.NoError(t, err)
 		return configurations
+	}
+
+	getConfigurationsMap := func(t *testing.T, s *mongodb.Store, owner string, query *pb.GetConfigurationsRequest) map[string]store.Configuration {
+		confs := getConfigurations(t, s, owner, query)
+		confsMap := make(map[string]store.Configuration)
+		for _, conf := range confs {
+			confsMap[conf.Id] = *conf
+		}
+		return confsMap
 	}
 
 	type args struct {
@@ -171,20 +180,15 @@ func TestStoreDeleteConfigurations(t *testing.T) {
 				},
 			},
 			want: func(t *testing.T, s *mongodb.Store, stored map[string]store.Configuration) {
-				storedLatest := make(map[string]store.ConfigurationVersion)
-				storedCount := 0
-				for _, conf := range stored {
-					storedLatest[conf.Id] = conf.Versions[len(conf.Versions)-1]
-					storedCount += len(conf.Versions)
+				for id, conf := range stored {
+					conf.Versions = conf.Versions[:len(conf.Versions)-1]
+					latest := conf.Versions[len(conf.Versions)-1].Copy()
+					conf.Latest = &latest
+					stored[id] = conf
 				}
-				confs := getConfigurations(t, s, "", nil)
-				require.NotEmpty(t, confs)
-				count := 0
-				for _, conf := range confs {
-					require.NotEqual(t, storedLatest[conf.Id], conf.Versions[len(conf.Versions)-1])
-					count += len(conf.Versions)
-				}
-				require.Equal(t, storedCount-len(storedLatest), count)
+				confsMap := getConfigurationsMap(t, s, "", nil)
+				require.NotEmpty(t, confsMap)
+				test.CmpStoredConfigurationMaps(t, stored, confsMap)
 			},
 		},
 		{
@@ -213,26 +217,18 @@ func TestStoreDeleteConfigurations(t *testing.T) {
 				},
 			},
 			want: func(t *testing.T, s *mongodb.Store, stored map[string]store.Configuration) {
-				storedLatest := make(map[string]store.ConfigurationVersion)
-				storedCount := 0
-				for _, conf := range stored {
-					storedLatest[conf.Id] = conf.Versions[len(conf.Versions)-1]
-					storedCount += len(conf.Versions)
-				}
-				confs := getConfigurations(t, s, "", nil)
-				require.NotEmpty(t, confs)
-				count := 0
-				removed := 0
-				for _, conf := range confs {
-					if conf.Owner == test.Owner(1) {
-						require.NotEqual(t, storedLatest[conf.Id], conf.Versions[len(conf.Versions)-1])
-						removed++
-					} else {
-						require.Equal(t, storedLatest[conf.Id], conf.Versions[len(conf.Versions)-1])
+				for id, conf := range stored {
+					if conf.Owner != test.Owner(1) {
+						continue
 					}
-					count += len(conf.Versions)
+					conf.Versions = conf.Versions[:len(conf.Versions)-1]
+					latest := conf.Versions[len(conf.Versions)-1].Copy()
+					conf.Latest = &latest
+					stored[id] = conf
 				}
-				require.Equal(t, storedCount-removed, count)
+				confsMap := getConfigurationsMap(t, s, "", nil)
+				require.NotEmpty(t, confsMap)
+				test.CmpStoredConfigurationMaps(t, stored, confsMap)
 			},
 		},
 		{
@@ -251,11 +247,7 @@ func TestStoreDeleteConfigurations(t *testing.T) {
 				},
 			},
 			want: func(t *testing.T, s *mongodb.Store, stored map[string]store.Configuration) {
-				confs := getConfigurations(t, s, "", nil)
-				confsMap := make(map[string]store.Configuration)
-				for _, conf := range confs {
-					confsMap[conf.Id] = *conf
-				}
+				confsMap := getConfigurationsMap(t, s, "", nil)
 				test.CmpStoredConfigurationMaps(t, stored, confsMap)
 			},
 		},
@@ -274,11 +266,7 @@ func TestStoreDeleteConfigurations(t *testing.T) {
 				},
 			},
 			want: func(t *testing.T, s *mongodb.Store, stored map[string]store.Configuration) {
-				confs := getConfigurations(t, s, "", nil)
-				confsMap := make(map[string]store.Configuration)
-				for _, conf := range confs {
-					confsMap[conf.Id] = *conf
-				}
+				confsMap := getConfigurationsMap(t, s, "", nil)
 				for _, conf := range stored {
 					versions := make([]store.ConfigurationVersion, 0)
 					for _, version := range conf.Versions {
@@ -317,11 +305,7 @@ func TestStoreDeleteConfigurations(t *testing.T) {
 				},
 			},
 			want: func(t *testing.T, s *mongodb.Store, stored map[string]store.Configuration) {
-				confs := getConfigurations(t, s, "", nil)
-				confsMap := make(map[string]store.Configuration)
-				for _, conf := range confs {
-					confsMap[conf.Id] = *conf
-				}
+				confsMap := getConfigurationsMap(t, s, "", nil)
 				for _, conf := range stored {
 					if conf.Owner == test.Owner(2) {
 						versions := make([]store.ConfigurationVersion, 0)
@@ -349,7 +333,7 @@ func TestStoreDeleteConfigurations(t *testing.T) {
 			inserted := test.AddConfigurationsToStore(ctx, t, s, 500, func(iteration int) uint64 {
 				return uint64(iteration * 100)
 			})
-			_, err := s.DeleteConfigurations(ctx, tt.args.owner, tt.args.query)
+			_, err := s.DeleteConfigurations2(ctx, tt.args.owner, tt.args.query)
 			if tt.wantErr {
 				require.Error(t, err)
 				return

@@ -39,7 +39,7 @@ func addLatestVersionField() bson.D {
 	}}}
 }
 
-func getVersionsPipeline(pl mongo.Pipeline, vf pb.VersionFilter, exclude bool) mongo.Pipeline {
+func getVersionsPipelineObsolete(pl mongo.Pipeline, vf pb.VersionFilter, exclude bool) mongo.Pipeline {
 	versions := make([]interface{}, 0, len(vf.Versions())+1)
 	for _, version := range vf.Versions() {
 		versions = append(versions, version)
@@ -120,7 +120,7 @@ func toDeleteResult(err error, partialSuccess bool) (int64, error) {
 	return DeleteSuccess, nil
 }
 
-func (s *Store) deleteVersion(ctx context.Context, collection, owner string, id string, vf pb.VersionFilter) error {
+func (s *Store) deleteVersionObsolete(ctx context.Context, collection, owner string, id string, vf pb.VersionFilter) error {
 	pl := getVersionsPipeline(mongo.Pipeline{}, vf, true)
 	if vf.Latest() {
 		pl = append(pl, bson.D{{Key: "$unset", Value: "latestVersion"}})
@@ -130,17 +130,17 @@ func (s *Store) deleteVersion(ctx context.Context, collection, owner string, id 
 	return err
 }
 
-func (s *Store) deleteDocument(ctx context.Context, collection, owner string, idfAlls []string) error {
+func (s *Store) deleteDocumentObsolete(ctx context.Context, collection, owner string, idfAlls []string) error {
 	_, err := s.Collection(collection).DeleteMany(ctx, toIdFilterQuery(owner, idfAlls))
 	return err
 }
 
-func (s *Store) delete(ctx context.Context, collection, owner string, filter []*pb.IDFilter) (int64, error) {
+func (s *Store) deleteObsolete(ctx context.Context, collection, owner string, filter []*pb.IDFilter) (int64, error) {
 	success := false
 	idVersionAll, idVersions := pb.PartitionIDFilter(filter)
 	var errors *multierror.Error
 	if len(idVersionAll) > 0 || len(idVersions) == 0 {
-		err := s.deleteDocument(ctx, collection, owner, idVersionAll)
+		err := s.deleteDocumentObsolete(ctx, collection, owner, idVersionAll)
 		if err == nil {
 			success = true
 		}
@@ -148,7 +148,7 @@ func (s *Store) delete(ctx context.Context, collection, owner string, filter []*
 	}
 	if len(idVersions) > 0 {
 		for id, vf := range idVersions {
-			err := s.deleteVersion(ctx, collection, owner, id, vf)
+			err := s.deleteVersionObsolete(ctx, collection, owner, id, vf)
 			if err == nil {
 				success = true
 			}

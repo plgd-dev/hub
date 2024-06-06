@@ -32,7 +32,7 @@ func TestStoreCreateConfiguration(t *testing.T) {
 	s, cleanUpStore := test.NewMongoStore(t)
 	defer cleanUpStore()
 
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT*100)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
 	confID := uuid.NewString()
@@ -94,7 +94,6 @@ func TestStoreCreateConfiguration(t *testing.T) {
 					Id:        confID,
 					Name:      "valid",
 					Owner:     owner,
-					Version:   0,
 					Resources: resources,
 				},
 			},
@@ -103,7 +102,6 @@ func TestStoreCreateConfiguration(t *testing.T) {
 					Id:        confID,
 					Name:      "valid",
 					Owner:     owner,
-					Version:   0,
 					Resources: resources,
 				}
 				test.CmpConfiguration(t, wantCfg, got, true)
@@ -115,7 +113,7 @@ func TestStoreCreateConfiguration(t *testing.T) {
 				create: &pb.Configuration{
 					Name:      "valid",
 					Owner:     owner,
-					Version:   0,
+					Version:   37,
 					Resources: resources,
 				},
 			},
@@ -124,7 +122,7 @@ func TestStoreCreateConfiguration(t *testing.T) {
 					Id:        got.GetId(),
 					Name:      "valid",
 					Owner:     owner,
-					Version:   0,
+					Version:   37,
 					Resources: resources,
 				}
 				test.CmpConfiguration(t, wantCfg, got, true)

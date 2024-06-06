@@ -85,18 +85,9 @@ func CmpConfiguration(t *testing.T, want, got *pb.Configuration, ignoreTimestamp
 	CmpJSON(t, want, got)
 }
 
-func CmpStoredConfiguration(t *testing.T, want, got *store.Configuration, ignoreTimestamp bool) {
-	want = want.Clone()
-	if ignoreTimestamp {
-		want.Timestamp = got.Timestamp
-	}
-	CmpJSON(t, want, got)
-}
-
 func ConfigurationContains(t *testing.T, storeConf store.Configuration, conf *pb.Configuration) {
 	require.Equal(t, storeConf.Id, conf.GetId())
 	require.Equal(t, storeConf.Owner, conf.GetOwner())
-	require.Equal(t, storeConf.Name, conf.GetName())
 	for _, v := range storeConf.Versions {
 		if v.Version != conf.GetVersion() {
 			continue
@@ -107,12 +98,32 @@ func ConfigurationContains(t *testing.T, storeConf store.Configuration, conf *pb
 	require.Fail(t, "version not found")
 }
 
+func CmpStoredConfiguration(t *testing.T, want, got *store.Configuration, ignoreTimestamp, ignoreLatest bool) {
+	require.Len(t, got.Versions, len(want.Versions))
+	if ignoreTimestamp || ignoreLatest {
+		want = want.Clone()
+		got = got.Clone()
+	}
+	if ignoreTimestamp {
+		if want.Latest != nil && got.Latest != nil {
+			want.Latest.Timestamp = got.Latest.Timestamp
+		}
+		for i := range want.Versions {
+			want.Versions[i].Timestamp = got.Versions[i].Timestamp
+		}
+	}
+	if ignoreLatest {
+		want.Latest = got.Latest
+	}
+	CmpJSON(t, want, got)
+}
+
 func CmpStoredConfigurationMaps(t *testing.T, want, got map[string]store.Configuration) {
 	require.Len(t, got, len(want))
 	for _, v := range want {
 		gotV, ok := got[v.Id]
 		require.True(t, ok)
-		CmpStoredConfiguration(t, &v, &gotV, true)
+		CmpStoredConfiguration(t, &v, &gotV, true, false)
 	}
 }
 

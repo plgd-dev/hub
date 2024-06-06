@@ -95,10 +95,26 @@ func errCannotGetConfigurations(err error) error {
 func sendConfigurations(ctx context.Context, srv pb.SnippetService_GetConfigurationsServer, iter store.Iterator[store.Configuration]) error {
 	storedCfg := store.Configuration{}
 	for iter.Next(ctx, &storedCfg) {
+		var lastVersion *store.ConfigurationVersion
 		for i := range storedCfg.Versions {
-			errS := srv.Send(storedCfg.GetConfiguration(i))
-			if errS != nil {
-				return errS
+			err := srv.Send(storedCfg.GetConfiguration(i))
+			if err != nil {
+				return err
+			}
+			lastVersion = &storedCfg.Versions[i]
+		}
+		if storedCfg.Latest != nil {
+			latest, err := storedCfg.GetLatest()
+			if err != nil {
+				return err
+			}
+			if lastVersion != nil && lastVersion.Version == latest.GetVersion() {
+				// already sent when iterating over versions array
+				continue
+			}
+			err = srv.Send(latest)
+			if err != nil {
+				return err
 			}
 		}
 	}

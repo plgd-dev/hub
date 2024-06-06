@@ -22,7 +22,7 @@ type Store struct {
 
 const (
 	conditionsCol     = "conditions"
-	configurationsCol = "configurations"
+	configurationsCol = "configurations2"
 )
 
 var idVersionUniqueIndex = mongo.IndexModel{
@@ -41,7 +41,7 @@ func New(ctx context.Context, cfg *Config, fileWatcher *fsnotify.Watcher, logger
 
 	m, err := pkgMongo.NewStoreWithCollections(ctx, &cfg.Mongo, certManager.GetTLSConfig(), tracerProvider, map[string][]mongo.IndexModel{
 		conditionsCol:     {idVersionUniqueIndex},
-		configurationsCol: {idVersionUniqueIndex},
+		configurationsCol: nil,
 	})
 	if err != nil {
 		certManager.Close()

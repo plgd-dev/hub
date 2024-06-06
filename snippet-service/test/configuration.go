@@ -94,17 +94,18 @@ func addConfigurations(ctx context.Context, t *testing.T, n int, calcVersion cal
 
 		configuration, ok := configurations[conf.GetId()]
 		if !ok {
-			configuration = store.Configuration{
-				Id:    conf.GetId(),
-				Owner: conf.GetOwner(),
-				Name:  conf.GetName(),
-			}
+			configuration = store.MakeFirstConfiguration2(conf)
 			configurations[conf.GetId()] = configuration
+			continue
 		}
-		configuration.Versions = append(configuration.Versions, store.ConfigurationVersion{
+		latest := store.ConfigurationVersion{
+			Name:      conf.GetName(),
 			Version:   conf.GetVersion(),
 			Resources: conf.GetResources(),
-		})
+			Timestamp: conf.GetTimestamp(),
+		}
+		configuration.Latest = &latest
+		configuration.Versions = append(configuration.Versions, latest)
 		configurations[conf.GetId()] = configuration
 	}
 	return configurations

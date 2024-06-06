@@ -34,45 +34,93 @@ func ValidateAndNormalizeConfiguration(c *pb.Configuration, isUpdate bool) error
 }
 
 type ConfigurationVersion struct {
+	Name      string                       `bson:"name,omitempty"`
 	Version   uint64                       `bson:"version"`
 	Resources []*pb.Configuration_Resource `bson:"resources"`
+	Timestamp int64                        `bson:"timestamp"`
+}
+
+func (cv *ConfigurationVersion) Copy() ConfigurationVersion {
+	c := ConfigurationVersion{
+		Name:      cv.Name,
+		Version:   cv.Version,
+		Timestamp: cv.Timestamp,
+	}
+	for _, r := range cv.Resources {
+		c.Resources = append(c.Resources, r.Clone())
+	}
+	return c
+}
+
+func MakeConfigurationVersion2(c *pb.Configuration) ConfigurationVersion {
+	return ConfigurationVersion{
+		Name:      c.GetName(),
+		Version:   c.GetVersion(),
+		Resources: c.GetResources(),
+		Timestamp: c.GetTimestamp(),
+	}
 }
 
 type Configuration struct {
-	Id        string                 `bson:"_id"`
-	Name      string                 `bson:"name,omitempty"`
-	Owner     string                 `bson:"owner"`
-	Timestamp int64                  `bson:"timestamp"`
-	Versions  []ConfigurationVersion `bson:"versions,omitempty"`
+	Id       string                 `bson:"_id"`
+	Owner    string                 `bson:"owner"`
+	Latest   *ConfigurationVersion  `bson:"latest,omitempty"`
+	Versions []ConfigurationVersion `bson:"versions,omitempty"`
 }
 
-func MakeConfiguration(c *pb.Configuration) Configuration {
-	return Configuration{
-		Id:        c.GetId(),
+func MakeFirstConfiguration2(c *pb.Configuration) Configuration {
+	version := ConfigurationVersion{
 		Name:      c.GetName(),
-		Owner:     c.GetOwner(),
-		Timestamp: GetTimestampOrNow(c.GetTimestamp()),
-		Versions:  []ConfigurationVersion{{Version: c.GetVersion(), Resources: c.GetResources()}},
+		Version:   c.GetVersion(),
+		Resources: c.GetResources(),
+		Timestamp: c.GetTimestamp(),
+	}
+
+	return Configuration{
+		Id:       c.GetId(),
+		Owner:    c.GetOwner(),
+		Latest:   &version,
+		Versions: []ConfigurationVersion{version},
+	}
+}
+
+func (c *Configuration) GetLatest() (*pb.Configuration, error) {
+	if c.Latest == nil {
+		return nil, errors.New("latest configuration not set")
+	}
+	return &pb.Configuration{
+		Id:        c.Id,
+		Owner:     c.Owner,
+		Version:   c.Latest.Version,
+		Name:      c.Latest.Name,
+		Resources: c.Latest.Resources,
+		Timestamp: c.Latest.Timestamp,
+	}, nil
+}
+
+func (c *Configuration) GetConfiguration(index int) *pb.Configuration {
+	return &pb.Configuration{
+		Id:        c.Id,
+		Owner:     c.Owner,
+		Name:      c.Versions[index].Name,
+		Timestamp: c.Versions[index].Timestamp,
+		Version:   c.Versions[index].Version,
+		Resources: c.Versions[index].Resources,
 	}
 }
 
 func (c *Configuration) Clone() *Configuration {
-	return &Configuration{
-		Id:        c.Id,
-		Name:      c.Name,
-		Owner:     c.Owner,
-		Timestamp: c.Timestamp,
-		Versions:  slices.Clone(c.Versions),
+	c2 := &Configuration{
+		Id:    c.Id,
+		Owner: c.Owner,
 	}
-}
+	if c.Latest != nil {
+		latest := c.Latest.Copy()
+		c2.Latest = &latest
+	}
 
-func (c *Configuration) GetConfiguration(version int) *pb.Configuration {
-	return &pb.Configuration{
-		Id:        c.Id,
-		Name:      c.Name,
-		Owner:     c.Owner,
-		Timestamp: c.Timestamp,
-		Version:   c.Versions[version].Version,
-		Resources: c.Versions[version].Resources,
+	for _, v := range c.Versions {
+		c2.Versions = append(c2.Versions, v.Copy())
 	}
+	return c2
 }

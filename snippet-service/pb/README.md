@@ -257,9 +257,9 @@ TODO Naming
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id_filter | [string](#string) | repeated |  |
-| configuration_id_filter | [IDFilter](#snippetservice-pb-IDFilter) | repeated |  |
+| configuration_id_filter | [string](#string) | repeated |  |
 | device_id_filter | [string](#string) | repeated |  |
-| condition_id_filter | [IDFilter](#snippetservice-pb-IDFilter) | repeated |  |
+| condition_id_filter | [string](#string) | repeated |  |
 
 
 
@@ -275,6 +275,7 @@ TODO Naming
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id_filter | [IDFilter](#snippetservice-pb-IDFilter) | repeated |  |
+| configuration_id_fitler | [string](#string) | repeated |  |
 
 
 

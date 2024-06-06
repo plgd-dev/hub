@@ -39,6 +39,11 @@ func TestStoreGetConfigurations(t *testing.T) {
 			},
 			want: func(t *testing.T, configurations []*store.Configuration) {
 				require.Len(t, configurations, len(confs))
+				for _, c := range configurations {
+					conf, ok := confs[c.Id]
+					require.True(t, ok)
+					test.CmpStoredConfiguration(t, &conf, c, true, true)
+				}
 			},
 		},
 		{
@@ -53,7 +58,7 @@ func TestStoreGetConfigurations(t *testing.T) {
 					require.Equal(t, test.Owner(0), c.Owner)
 					conf, ok := confs[c.Id]
 					require.True(t, ok)
-					test.CmpStoredConfiguration(t, &conf, c, true)
+					test.CmpStoredConfiguration(t, &conf, c, true, true)
 				}
 			},
 		},
@@ -77,7 +82,7 @@ func TestStoreGetConfigurations(t *testing.T) {
 				c := configurations[0]
 				conf, ok := confs[c.Id]
 				require.True(t, ok)
-				test.CmpStoredConfiguration(t, &conf, c, true)
+				test.CmpStoredConfiguration(t, &conf, c, true, true)
 			},
 		},
 		{
@@ -102,7 +107,7 @@ func TestStoreGetConfigurations(t *testing.T) {
 				require.True(t, ok)
 				require.Equal(t, test.ConfigurationID(2), conf.Id)
 				require.Equal(t, test.Owner(2), conf.Owner)
-				test.CmpStoredConfiguration(t, &conf, c, true)
+				test.CmpStoredConfiguration(t, &conf, c, true, true)
 			},
 		},
 		{
@@ -121,9 +126,12 @@ func TestStoreGetConfigurations(t *testing.T) {
 			want: func(t *testing.T, configurations []*store.Configuration) {
 				require.Len(t, configurations, test.RuntimeConfig.NumConfigurations)
 				for _, c := range configurations {
-					_, ok := confs[c.Id]
+					conf, ok := confs[c.Id]
 					require.True(t, ok)
-					require.Len(t, c.Versions, 1)
+					require.Equal(t, conf.Id, c.Id)
+					require.Equal(t, conf.Owner, c.Owner)
+					require.Empty(t, c.Versions)
+					test.CmpJSON(t, conf.Latest, c.Latest)
 				}
 			},
 		},
@@ -147,7 +155,8 @@ func TestStoreGetConfigurations(t *testing.T) {
 					conf, ok := confs[c.Id]
 					require.True(t, ok)
 					require.Equal(t, test.Owner(1), conf.Owner)
-					require.Len(t, c.Versions, 1)
+					require.Empty(t, c.Versions)
+					test.CmpJSON(t, conf.Latest, c.Latest)
 				}
 			},
 		},
@@ -171,7 +180,7 @@ func TestStoreGetConfigurations(t *testing.T) {
 			},
 		},
 		{
-			name: "owner2{latest, id2/latest, id5/latest} - non-matching owner", args: args{
+			name: "owner2{latest, id2/latest, id5/latest}", args: args{
 				owner: test.Owner(2),
 				query: &pb.GetConfigurationsRequest{
 					IdFilter: []*pb.IDFilter{
@@ -201,12 +210,14 @@ func TestStoreGetConfigurations(t *testing.T) {
 					conf, ok := confs[c.Id]
 					require.True(t, ok)
 					require.Equal(t, test.Owner(2), conf.Owner)
-					require.Len(t, c.Versions, 1)
+					require.Empty(t, c.Versions)
+					test.CmpJSON(t, conf.Latest, c.Latest)
 				}
 			},
 		},
 		{
-			name: "version/42", args: args{
+			name: "version/42",
+			args: args{
 				query: &pb.GetConfigurationsRequest{
 					IdFilter: []*pb.IDFilter{
 						{
@@ -275,6 +286,41 @@ func TestStoreGetConfigurations(t *testing.T) {
 					require.Equal(t, uint64(13), c.Versions[0].Version)
 					require.Equal(t, uint64(37), c.Versions[1].Version)
 					require.Equal(t, uint64(42), c.Versions[2].Version)
+				}
+			},
+		},
+		{
+			name: "id0/version/{1..max} + latest",
+			args: args{
+				query: &pb.GetConfigurationsRequest{
+					IdFilter: func() []*pb.IDFilter {
+						var idFilters []*pb.IDFilter
+						c := confs[test.ConfigurationID(0)]
+						for _, v := range c.Versions {
+							idFilters = append(idFilters, &pb.IDFilter{
+								Id: test.ConfigurationID(0),
+								Version: &pb.IDFilter_Value{
+									Value: v.Version,
+								},
+							})
+						}
+						idFilters = append(idFilters, &pb.IDFilter{
+							Id: test.ConfigurationID(0),
+							Version: &pb.IDFilter_Latest{
+								Latest: true,
+							},
+						})
+						return idFilters
+					}(),
+				},
+			},
+			want: func(t *testing.T, configurations []*store.Configuration) {
+				require.Len(t, configurations, 1)
+				for _, c := range configurations {
+					conf, ok := confs[c.Id]
+					require.True(t, ok)
+					require.Equal(t, test.ConfigurationID(0), conf.Id)
+					test.CmpStoredConfiguration(t, &conf, c, true, false)
 				}
 			},
 		},
