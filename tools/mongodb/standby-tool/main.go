@@ -69,7 +69,7 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("log: %w", err)
 	}
 	if c.Clients.Storage.MongoDB.Timeout <= 0 {
-		c.Clients.Storage.MongoDB.Timeout = time.Second * 4
+		c.Clients.Storage.MongoDB.Timeout = time.Second * 20
 	}
 	if c.Clients.Storage.MongoDB.TLS.Enabled {
 		if err := c.Clients.Storage.MongoDB.TLS.TLS.Validate(); err != nil {

@@ -30,6 +30,7 @@ replicaSet:
 clients:
   storage:
     mongoDB:
+      timeout: 20s
       tls:
         # Enable or disable TLS
         enabled: true          

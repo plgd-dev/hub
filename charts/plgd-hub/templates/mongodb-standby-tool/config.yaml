@@ -39,6 +39,7 @@ data:
     clients:
       storage:
         mongoDB:
+          timeout: {{ $standbyTool.clients.storage.mongoDB.timeout }}
           tls:
             # Enable or disable TLS
             enabled: true

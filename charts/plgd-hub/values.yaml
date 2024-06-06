@@ -137,6 +137,8 @@ mongodb:
     clients:
       storage:
         mongoDB:
+          # -- Timeout for connection to MongoDB and read/write operations
+          timeout: 30s
           tls:
             # -- Path to the CA certificate file
             caPool:
