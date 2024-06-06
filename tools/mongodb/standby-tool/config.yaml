@@ -6,9 +6,15 @@ log:
     level: warn
   encoderConfig:
     timeEncoder: rfc3339nano
+# Set the running mode of the tool. Supported modes are "standby" and "active"
+# - standby: all members in the replica set are available and members in the standby list are set as hidden, without votes, priority and with a delay
+# - active: standby members are set as secondary members with votes, priority and without delay and other members are set as hidden, without votes, priority and with a delay
 mode: "standby"
-#mode: "active"
 replicaSet:
+  # Update the replica set configuration with force flag
+  forceUpdate: false
+  # Set the maximum number of retries for members to be ready
+  maxReadyWaits: 10
   standby:
     # List of the MongoDB members in the replica set which are used as backup members
     members: []

@@ -117,6 +117,10 @@ mongodb:
     name: mongodb-standby-tool
     # -- Standby members of replica set
     replicaSet:
+      # -- Update the replica set configuration with force flag
+      forceUpdate: false
+      # -- Set the maximum number of waits for becomes members ready.
+      maxWaitsForReady: 10
       standby:
         # List of the MongoDB members in the replica set which are used as backup members
         members: []
@@ -212,19 +216,24 @@ mongodb:
   initContainers:
     # workaround for https://github.com/bitnami/charts/issues/10264, https://jira.mongodb.org/browse/MONGOSH-1240
     - name: mongo-binary
-      image: docker.io/bitnami/mongodb:7.0.9-debian-12-r4
-      imagePullPolicy: "IfNotPresent"
+      image: ghcr.io/plgd-dev/hub/mongodb-admin-tool:vnext-pr1311
+      imagePullPolicy: "Always"
       volumeMounts:
         - name: mongodb-crt
           mountPath: "/certs"
         - name: mongodb-cm-crt
           mountPath: "/certs-original"
+      securityContext:
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
       command:
         - sh
         - "-c"
         - |
           /bin/bash <<'EOF'
           #!/bin/bash
+          cp /usr/local/bin/mongodb-admin-tool /certs
           echo '
           INIT=0
           while [[ $# -gt 0 ]]; do
@@ -262,13 +271,13 @@ mongodb:
 
           if [ "${ROTATE_CERTIFICATES}" == "1" ]; then
             echo "Rotating certificates"
-            mongosh --tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem --eval db.adminCommand\("{rotateCertificates: 1, message: \"Rotating certificates\"}"\)
+            /certs/mongodb-admin-tool --tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem --eval db.adminCommand\("{rotateCertificates: 1, message: \"Rotating certificates\"}"\)
           else
             echo "Ping database"
-            mongosh --tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem --eval db.adminCommand\(\"ping\"\)
+            /certs/mongodb-admin-tool --tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem --eval db.adminCommand\(\"ping\"\)
           fi
           ' > /certs/livenessProbe.sh
-          chmod u+x /certs/livenessProbe.sh
+          chmod uga+x /certs/livenessProbe.sh
           /certs/livenessProbe.sh --init
           EOF
   livenessProbe:

@@ -1,5 +1,5 @@
 SHELL = /bin/bash
-SERVICE_NAME = $(notdir $(CURDIR))
+SERVICE_NAME = mongodb-$(notdir $(CURDIR))
 LATEST_TAG ?= vnext
 VERSION_TAG ?= $(LATEST_TAG)-$(shell git rev-parse --short=7 --verify HEAD)
 GOPATH ?= $(shell go env GOPATH)
@@ -12,7 +12,7 @@ BUILD_VERSION ?= $(shell git tag --sort version:refname | tail -1 | sed -e "s/^v
 default: build
 
 define build-docker-image
-	cd ../.. && docker build \
+	cd ../../.. && docker build \
 		--network=host \
 		--tag plgd/$(SERVICE_NAME):$(VERSION_TAG) \
 		--tag plgd/$(SERVICE_NAME):$(LATEST_TAG) \
@@ -21,7 +21,7 @@ define build-docker-image
 		--build-arg DATE="$(BUILD_DATE)" \
 		--build-arg VERSION="$(BUILD_VERSION)" \
 		--target $(1) \
-		-f tools/mongodb-standby-tool/Dockerfile \
+		-f tools/mongodb/standby-tool/Dockerfile \
 		.
 endef
 

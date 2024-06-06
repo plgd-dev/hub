@@ -13,7 +13,7 @@ RUN go mod download
 COPY . .
 WORKDIR /usr/local/go
 RUN ( patch -p1 < "$GOPATH/src/github.com/plgd-dev/hub/tools/docker/patches/shrink_tls_conn.patch" )
-WORKDIR $GOPATH/src/github.com/plgd-dev/hub/tools/mongodb-standby-tool
+WORKDIR $GOPATH/src/github.com/plgd-dev/hub/tools/mongodb/standby-tool
 RUN CGO_ENABLED=0 go build \
     -ldflags "-X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" \
     -o /go/bin/mongodb-standby-tool \

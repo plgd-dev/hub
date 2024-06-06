@@ -19,6 +19,8 @@ data:
         timeEncoder: {{ $standbyTool.log.encoderConfig.timeEncoder }}
     mode: {{ required "mode need to be set to one of values: standby,active" $standbyTool.mode | quote }}
     replicaSet:
+      forceUpdate: {{ $standbyTool.replicaSet.forceUpdate }}
+      maxWaitsForReady: {{ $standbyTool.replicaSet.maxWaitsForReady }}
       standby:
         # List of the MongoDB members in the replica set which are used as backup members
         members:

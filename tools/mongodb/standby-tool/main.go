@@ -29,8 +29,10 @@ type SecondaryConfig struct {
 }
 
 type ReplicaSetConfig struct {
-	Standby   StandbyConfig   `yaml:"standby"`
-	Secondary SecondaryConfig `yaml:"secondary"`
+	ForceUpdate      bool            `yaml:"forceUpdate"`
+	MaxWaitsForReady int             `yaml:"maxWaitsForReady"`
+	Standby          StandbyConfig   `yaml:"standby"`
+	Secondary        SecondaryConfig `yaml:"secondary"`
 }
 
 type TLSConfig struct {
@@ -44,7 +46,8 @@ type Config struct {
 	Clients    struct {
 		Storage struct {
 			MongoDB struct {
-				TLS TLSConfig `yaml:"tls"`
+				Timeout time.Duration `yaml:"timeout" json:"timeout"`
+				TLS     TLSConfig     `yaml:"tls"`
 			} `yaml:"mongoDB"`
 		} `yaml:"storage"`
 	} `yaml:"clients"`
@@ -64,6 +67,9 @@ func (c *Config) Validate() error {
 	}
 	if err := c.Log.Validate(); err != nil {
 		return fmt.Errorf("log: %w", err)
+	}
+	if c.Clients.Storage.MongoDB.Timeout <= 0 {
+		c.Clients.Storage.MongoDB.Timeout = time.Second * 4
 	}
 	if c.Clients.Storage.MongoDB.TLS.Enabled {
 		if err := c.Clients.Storage.MongoDB.TLS.TLS.Validate(); err != nil {
@@ -109,6 +115,7 @@ func main() {
 			_ = fileWatcher.Close()
 		}()
 	}
+	ctx := context.Background()
 
 	app := &App{
 		Config:     cfg,
@@ -118,9 +125,9 @@ func main() {
 
 	switch app.Config.Mode {
 	case "active":
-		err = app.setActive()
+		err = app.setActive(ctx)
 	case "standby":
-		err = app.setStandby()
+		err = app.setStandby(ctx)
 	default:
 		logger.Fatalf("Invalid mode %s, must be active or standby", app.Config.Mode)
 	}
@@ -131,60 +138,82 @@ func main() {
 	logger.Info("Done")
 }
 
-func (app *App) setActive() error {
+func (app *App) needForceUpdate(ctx context.Context, member string, status primitive.M) bool {
+	members := status["members"].(primitive.A)
+	for _, m := range members {
+		memberMap := m.(primitive.M)
+		if memberMap["name"] == member {
+			if memberMap["health"] != float64(1) {
+				return true
+			}
+			c, err := app.connectMongo(ctx, member)
+			if err != nil {
+				return true
+			}
+			_ = c.Disconnect(ctx)
+		}
+	}
+	return false
+}
+
+func (app *App) setActive(ctx context.Context) error {
 	host := app.Config.ReplicaSet.Standby.Members[0]
-	client, err := app.connectMongo(host)
+	client, err := app.connectMongo(ctx, host)
 	if err != nil {
 		return fmt.Errorf("failed to connect to MongoDB: %w", err)
 	}
 	defer func() { _ = client.Disconnect(context.Background()) }()
-	primaryMember, err := app.getPrimaryMember(client)
+	primaryMember, err := app.getPrimaryMember(ctx, client)
 	if err != nil {
 		return fmt.Errorf("failed to get primary member: %w", err)
 	}
 	if primaryMember != "" {
-		app.logger.Infof("Primary member is %s", primaryMember)
-		host = primaryMember
-		client, err = app.connectMongo(host)
-		if err != nil {
-			return fmt.Errorf("failed to connect to MongoDB: %w", err)
+		primaryClient, err2 := app.connectMongo(ctx, primaryMember)
+		if err2 != nil {
+			log.Errorf("failed to connect to primary member %v: %w", primaryMember, err2)
+			primaryMember = ""
+		} else {
+			client = primaryClient
+			app.logger.Infof("Primary member is %s", primaryMember)
+			defer func() { _ = primaryClient.Disconnect(context.Background()) }()
 		}
-		defer func() { _ = client.Disconnect(context.Background()) }()
 	}
 
-	err = app.waitForStandbyMembers(client)
+	err = app.waitForMembers(ctx, client, app.Config.ReplicaSet.Standby.Members)
 	if err != nil {
 		return fmt.Errorf("failed to wait for standby members: %w", err)
 	}
-	force := true
-	if primaryMember != "" {
-		force = false
+	force := app.Config.ReplicaSet.ForceUpdate
+	if primaryMember == "" {
+		force = true
 	}
-	secondaryMembers, err := app.getSecondaryMembers(client, app.Config.ReplicaSet.Standby.Members)
+	secondaryMembers, err := app.getSecondaryMembers(ctx, client, app.Config.ReplicaSet.Standby.Members)
 	if err != nil {
 		return fmt.Errorf("failed to get secondary members: %w", err)
 	}
-	err = app.setSecondaryMembers(client, force, app.Config.ReplicaSet.Standby.Members)
+	err = app.setSecondaryMembers(ctx, client, force, app.Config.ReplicaSet.Standby.Members)
 	if err != nil {
 		return fmt.Errorf("failed to set secondary members: %w", err)
 	}
-
-	err = app.setHiddenMembers(client, force, primaryMember, secondaryMembers)
+	err = app.setHiddenMembers(ctx, client, force, primaryMember, secondaryMembers)
 	if err != nil {
 		return fmt.Errorf("failed to set hidden members: %w", err)
 	}
-	newPrimaryMember, err := app.movePrimary(client, secondaryMembers)
+	if force {
+		return nil
+	}
+	newPrimaryMember, err := app.movePrimary(ctx, client, secondaryMembers)
 	if err != nil {
 		return fmt.Errorf("failed to move primary: %w", err)
 	}
 	if newPrimaryMember != primaryMember {
 		app.logger.Infof("Setting old primary member %s as hidden", primaryMember)
-		client, err = app.connectMongo(newPrimaryMember)
+		client, err = app.connectMongo(ctx, newPrimaryMember)
 		if err != nil {
 			return fmt.Errorf("failed to connect to MongoDB: %w", err)
 		}
 		defer func() { _ = client.Disconnect(context.Background()) }()
-		err = app.setHiddenMembers(client, false, newPrimaryMember, []string{primaryMember})
+		err = app.setHiddenMembers(ctx, client, false, newPrimaryMember, []string{primaryMember})
 		if err != nil {
 			return fmt.Errorf("failed to set hidden members: %w", err)
 		}
@@ -192,54 +221,62 @@ func (app *App) setActive() error {
 	return nil
 }
 
-func (app *App) setStandby() error {
+func (app *App) setStandby(ctx context.Context) error {
 	host := app.Config.ReplicaSet.Standby.Members[0]
-	client, err := app.connectMongo(host)
+	client, err := app.connectMongo(ctx, host)
 	if err != nil {
 		return fmt.Errorf("failed to connect to MongoDB: %w", err)
 	}
 	defer func() { _ = client.Disconnect(context.Background()) }()
-	primaryMember, err := app.getPrimaryMember(client)
+	primaryMember, err := app.getPrimaryMember(ctx, client)
 	if err != nil {
 		return fmt.Errorf("failed to get primary member: %w", err)
 	}
 	if primaryMember == "" {
 		return errors.New("primary member not found")
 	}
+	if primaryMember != host {
+		primaryClient, err2 := app.connectMongo(ctx, primaryMember)
+		if err2 != nil {
+			return fmt.Errorf("failed to connect to MongoDB: %w", err2)
+		}
+		defer func() { _ = primaryClient.Disconnect(context.Background()) }()
+		client = primaryClient
+	}
 	app.logger.Infof("Primary member: %s", primaryMember)
-	err = app.waitForStandbyMembers(client)
+
+	err = app.waitForMembers(ctx, client, app.Config.ReplicaSet.Standby.Members)
 	if err != nil {
 		return fmt.Errorf("failed to wait for standby members: %w", err)
 	}
-	secondaryMembers, err := app.getSecondaryMembers(client, app.Config.ReplicaSet.Standby.Members)
+	secondaryMembers, err := app.getSecondaryMembers(ctx, client, app.Config.ReplicaSet.Standby.Members)
 	if err != nil {
 		return fmt.Errorf("failed to get secondary members: %w", err)
 	}
-	err = app.setSecondaryMembers(client, false, secondaryMembers)
+	err = app.setSecondaryMembers(ctx, client, app.Config.ReplicaSet.ForceUpdate, secondaryMembers)
 	if err != nil {
 		return fmt.Errorf("failed to set secondary members: %w", err)
 	}
-	client, err = app.connectMongo(primaryMember)
+	err = app.waitForMembers(ctx, client, secondaryMembers)
 	if err != nil {
-		return fmt.Errorf("failed to connect to MongoDB: %w", err)
+		return fmt.Errorf("failed to wait for secondary members: %w", err)
 	}
-	defer func() { _ = client.Disconnect(context.Background()) }()
-	err = app.setHiddenMembers(client, false, primaryMember, app.Config.ReplicaSet.Standby.Members)
+	err = app.setHiddenMembers(ctx, client, app.Config.ReplicaSet.ForceUpdate, primaryMember, app.Config.ReplicaSet.Standby.Members)
 	if err != nil {
 		return fmt.Errorf("failed to set hidden members: %w", err)
 	}
-	newPrimaryMember, err := app.movePrimary(client, app.Config.ReplicaSet.Standby.Members)
+	newPrimaryMember, err := app.movePrimary(ctx, client, app.Config.ReplicaSet.Standby.Members)
 	if err != nil {
 		return fmt.Errorf("failed to move primary: %w", err)
 	}
 	if newPrimaryMember != primaryMember {
 		app.logger.Infof("Setting old primary member %s to hidden", primaryMember)
-		client, err = app.connectMongo(newPrimaryMember)
-		if err != nil {
-			return fmt.Errorf("failed to connect to MongoDB: %w", err)
+		newPrimaryMemberClient, err2 := app.connectMongo(ctx, newPrimaryMember)
+		if err2 != nil {
+			return fmt.Errorf("failed to connect to MongoDB: %w", err2)
 		}
-		defer func() { _ = client.Disconnect(context.Background()) }()
-		err = app.setHiddenMembers(client, false, newPrimaryMember, []string{primaryMember})
+		defer func() { _ = newPrimaryMemberClient.Disconnect(context.Background()) }()
+		err = app.setHiddenMembers(ctx, newPrimaryMemberClient, app.Config.ReplicaSet.ForceUpdate, newPrimaryMember, []string{primaryMember})
 		if err != nil {
 			return fmt.Errorf("failed to set hidden members: %w", err)
 		}
@@ -247,44 +284,53 @@ func (app *App) setStandby() error {
 	return nil
 }
 
-func (app *App) connectMongo(host string) (*mongo.Client, error) {
+func (app *App) connectMongo(ctx context.Context, host string) (*mongo.Client, error) {
 	clientOptions := options.Client().ApplyURI("mongodb://" + host)
 	if app.certClient != nil {
 		tlsConfig := options.Client().SetTLSConfig(app.certClient.GetTLSConfig())
 		clientOptions = clientOptions.SetTLSConfig(tlsConfig.TLSConfig)
 	}
-	client, err := mongo.Connect(context.Background(), clientOptions)
+	clientOptions = clientOptions.SetDirect(true)
+	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to MongoDB: %w", err)
 	}
+	ctx2, cancel := context.WithTimeout(ctx, app.Config.Clients.Storage.MongoDB.Timeout)
+	defer cancel()
+	err = client.Ping(ctx2, nil)
+	if err != nil {
+		_ = client.Disconnect(ctx2)
+		return nil, fmt.Errorf("failed to ping MongoDB: %w", err)
+	}
+
 	return client, nil
 }
 
-func (app *App) getPrimaryMember(client *mongo.Client) (string, error) {
-	status, err := app.getStatus(client)
+func (app *App) getPrimaryMember(ctx context.Context, client *mongo.Client) (string, error) {
+	status, err := app.getStatus(ctx, client)
 	if err != nil {
 		return "", fmt.Errorf("failed to get replica set status: %w", err)
 	}
 	for _, member := range status["members"].(primitive.A) {
 		memberMap := member.(primitive.M)
-		if memberMap["stateStr"] == "PRIMARY" {
+		if memberMap["state"] == int32(1) && memberMap["health"] == float64(1) {
 			return memberMap["name"].(string), nil
 		}
 	}
 	return "", nil
 }
 
-func (app *App) waitForStandbyMembers(client *mongo.Client) error {
+func (app *App) waitForMembers(ctx context.Context, client *mongo.Client, members []string) error {
+	tried := 0
+	app.logger.Infof("Checking if members %v are ready", members)
 	for {
-		app.logger.Info("Checking if all standby members are ready")
-		config, err := app.getConfig(client)
+		config, err := app.getStatus(ctx, client)
 		if err != nil {
 			return fmt.Errorf("failed to get replica set config: %w", err)
 		}
-		standbyMembers := app.Config.ReplicaSet.Standby.Members
 		membersExist := true
-		for _, member := range standbyMembers {
-			if !app.memberExists(member, config) {
+		for _, member := range members {
+			if !app.memberIsReady(member, config) {
 				app.logger.Infof("Member %s is not ready", member)
 				membersExist = false
 				break
@@ -295,27 +341,32 @@ func (app *App) waitForStandbyMembers(client *mongo.Client) error {
 			break
 		}
 		time.Sleep(1 * time.Second)
+		tried++
+		if tried > app.Config.ReplicaSet.MaxWaitsForReady {
+			return fmt.Errorf("failed to wait for members: retries exceeded (%d)", app.Config.ReplicaSet.MaxWaitsForReady)
+		}
+		log.Debugf("Members not ready, retrying %v", tried)
 	}
 	return nil
 }
 
-func (app *App) memberExists(member string, config primitive.M) bool {
-	membersI, ok := getValue(config, "config", "members")
+func (app *App) memberIsReady(member string, config primitive.M) bool {
+	membersI, ok := getValue(config, "members")
 	if !ok {
 		return false
 	}
 	members := membersI.(primitive.A)
 	for _, m := range members {
 		memberMap := m.(primitive.M)
-		if memberMap["host"] == member {
-			return true
+		if memberMap["name"] == member {
+			return memberMap["health"] == float64(1)
 		}
 	}
 	return false
 }
 
-func (app *App) getSecondaryMembers(client *mongo.Client, standbyMembers []string) ([]string, error) {
-	config, err := app.getConfig(client)
+func (app *App) getSecondaryMembers(ctx context.Context, client *mongo.Client, standbyMembers []string) ([]string, error) {
+	config, err := app.getConfig(ctx, client)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get replica set config: %w", err)
 	}
@@ -344,24 +395,31 @@ func (app *App) isStandbyMember(host string, standbyMembers []string) bool {
 	return false
 }
 
-func (app *App) setSecondaryMembers(client *mongo.Client, force bool, secondaryMembers []string) error {
+func (app *App) setSecondaryMembers(ctx context.Context, client *mongo.Client, force bool, secondaryMembers []string) error {
 	app.logger.Infof("Setting secondary members %v", secondaryMembers)
 	for _, member := range secondaryMembers {
-		config, err := app.getConfig(client)
+		config, err := app.getConfig(ctx, client)
 		if err != nil {
 			return fmt.Errorf("failed to get replica set config: %w", err)
 		}
-		if !app.isSecondaryMemberConfigured(member, config) {
-			app.logger.Infof("Configuring secondary member %s", member)
-			newConfig, err := app.updateSecondaryMemberConfig(member, config)
-			if err != nil {
-				return fmt.Errorf("failed to update secondary member %s: %w", member, err)
-			}
-			if err := app.reconfigureRS(client, newConfig, force); err != nil {
-				return fmt.Errorf("failed to configure secondary member %s: %w", member, err)
-			}
-		} else {
+		if app.isSecondaryMemberConfigured(member, config) {
 			app.logger.Infof("Secondary member %s is correctly configured", member)
+			continue
+		}
+		app.logger.Infof("Configuring secondary member %s", member)
+		newConfig, err := app.updateSecondaryMemberConfig(member, config)
+		if err != nil {
+			return fmt.Errorf("failed to update secondary member %s: %w", member, err)
+		}
+		if !force {
+			status, err := app.getStatus(ctx, client)
+			if err != nil {
+				return fmt.Errorf("failed to get replica set status: %w", err)
+			}
+			force = app.needForceUpdate(ctx, member, status)
+		}
+		if err := app.reconfigureRS(ctx, client, newConfig, force); err != nil {
+			return fmt.Errorf("failed to configure secondary member %s: %w", member, err)
 		}
 	}
 	return nil
@@ -409,28 +467,35 @@ func (app *App) updateSecondaryMemberConfig(member string, config primitive.M) (
 	return config, nil
 }
 
-func (app *App) setHiddenMembers(client *mongo.Client, force bool, primaryMember string, standbyMembers []string) error {
+func (app *App) setHiddenMembers(ctx context.Context, client *mongo.Client, force bool, primaryMember string, standbyMembers []string) error {
 	app.logger.Infof("Setting hidden members %v", standbyMembers)
+	status, err := app.getStatus(ctx, client)
+	if err != nil {
+		return fmt.Errorf("failed to get replica set status: %w", err)
+	}
 	for _, member := range standbyMembers {
-		config, err := app.getConfig(client)
+		config, err := app.getConfig(ctx, client)
 		if err != nil {
 			return fmt.Errorf("failed to get replica set config: %w", err)
 		}
-		if !app.isHiddenMemberConfigured(member, config) {
-			if member == primaryMember {
-				app.logger.Infof("Primary member %s cannot be set as hidden, skipping", member)
-				continue
-			}
-			app.logger.Infof("Configuring hidden member %s", member)
-			newConfig, err := app.updateHiddenMemberConfig(member, config)
-			if err != nil {
-				return fmt.Errorf("failed to update hidden member %s: %w", member, err)
-			}
-			if err := app.reconfigureRS(client, newConfig, force); err != nil {
-				return fmt.Errorf("failed to configure hidden member %s: %w", member, err)
-			}
-		} else {
+		if app.isHiddenMemberConfigured(member, config) {
 			app.logger.Infof("Hidden member %s is correctly configured", member)
+			continue
+		}
+		if member == primaryMember {
+			app.logger.Infof("Primary member %s cannot be set as hidden, skipping", member)
+			continue
+		}
+		app.logger.Infof("Configuring hidden member %s", member)
+		newConfig, err := app.updateHiddenMemberConfig(member, config)
+		if err != nil {
+			return fmt.Errorf("failed to update hidden member %s: %w", member, err)
+		}
+		if !force {
+			force = app.needForceUpdate(ctx, member, status)
+		}
+		if err := app.reconfigureRS(ctx, client, newConfig, force); err != nil {
+			return fmt.Errorf("failed to configure hidden member %s: %w", member, err)
 		}
 	}
 	return nil
@@ -478,34 +543,39 @@ func (app *App) updateHiddenMemberConfig(member string, config primitive.M) (pri
 	return config, nil
 }
 
-func (app *App) movePrimary(client *mongo.Client, standbyMembers []string) (string, error) {
-	for numTries := 0; numTries < 60; numTries++ {
-		status, err := app.getStatus(client)
+func (app *App) movePrimary(ctx context.Context, client *mongo.Client, standbyMembers []string) (string, error) {
+	for tries := 0; tries < app.Config.ReplicaSet.MaxWaitsForReady; tries++ {
+		status, err := app.getStatus(ctx, client)
 		if err != nil {
 			return "", fmt.Errorf("failed to get replica set status: %w", err)
 		}
 		primaryMember := app.getPrimaryMemberFromStatus(status)
+		if primaryMember == "" {
+			time.Sleep(1 * time.Second)
+			log.Debug("Primary member not found, retrying")
+			continue
+		}
 		if !app.isStandbyMember(primaryMember, standbyMembers) {
 			return primaryMember, nil
 		}
 		// Decrease priority of current primary
-		if err2 := app.decreasePrimaryPriority(client, primaryMember); err2 != nil {
+		if err2 := app.decreasePrimaryPriority(ctx, client, primaryMember); err2 != nil {
 			return "", fmt.Errorf("failed to decrease priority of primary member %s: %w", primaryMember, err2)
 		}
 		// Initiate step down
-		if err2 := app.stepDownPrimary(client, primaryMember); err2 != nil {
+		if err2 := app.stepDownPrimary(ctx, client, primaryMember); err2 != nil {
 			return "", fmt.Errorf("failed to step down primary member %s: %w", primaryMember, err2)
 		}
-		if numTries > 0 {
+		if tries > 0 {
 			time.Sleep(1 * time.Second)
-			log.Info("Primary member not found, retrying")
+			log.Debugf("Primary member not found, retrying %v", tries)
 		}
 	}
-	return "", errors.New("primary member not found after 60 attempts")
+	return "", fmt.Errorf("primary member not found after %v attempts", app.Config.ReplicaSet.MaxWaitsForReady)
 }
 
-func (app *App) decreasePrimaryPriority(client *mongo.Client, primaryMember string) error {
-	config, err := app.getConfig(client)
+func (app *App) decreasePrimaryPriority(ctx context.Context, client *mongo.Client, primaryMember string) error {
+	config, err := app.getConfig(ctx, client)
 	if err != nil {
 		return fmt.Errorf("failed to get replica set config: %w", err)
 	}
@@ -513,7 +583,11 @@ func (app *App) decreasePrimaryPriority(client *mongo.Client, primaryMember stri
 	if err != nil {
 		return fmt.Errorf("failed to update primary member priority: %w", err)
 	}
-	return app.reconfigureRS(client, newConfig, false)
+	status, err := app.getStatus(ctx, client)
+	if err != nil {
+		return fmt.Errorf("failed to get replica set status: %w", err)
+	}
+	return app.reconfigureRS(ctx, client, newConfig, app.needForceUpdate(ctx, primaryMember, status))
 }
 
 func (app *App) updatePrimaryPriority(primaryMember string, config primitive.M) (primitive.M, error) {
@@ -537,25 +611,18 @@ func (app *App) updatePrimaryPriority(primaryMember string, config primitive.M) 
 	return config, nil
 }
 
-func (app *App) stepDownPrimary(client *mongo.Client, primaryMember string) error {
+func (app *App) stepDownPrimary(ctx context.Context, client *mongo.Client, primaryMember string) error {
 	command := bson.D{
-		{Key: "replSetStepDown", Value: 60}, // 60 seconds timeout
+		{Key: "replSetStepDown", Value: int(app.Config.Clients.Storage.MongoDB.Timeout.Seconds())},
 	}
 	var result primitive.M
-	err := client.Database("admin").RunCommand(context.Background(), command).Decode(&result)
+	ctx2, cancel := context.WithTimeout(ctx, app.Config.Clients.Storage.MongoDB.Timeout)
+	defer cancel()
+	err := client.Database("admin").RunCommand(ctx2, command).Decode(&result)
 	if err != nil {
 		return fmt.Errorf("failed to step down primary member %s: %w", primaryMember, err)
 	}
 	return nil
-}
-
-func (app *App) getStatus(client *mongo.Client) (primitive.M, error) {
-	var result primitive.M
-	err := client.Database("admin").RunCommand(context.Background(), bson.D{{Key: "replSetGetStatus", Value: 1}}).Decode(&result)
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
 }
 
 func getValue(v primitive.M, keys ...string) (interface{}, bool) {
@@ -573,26 +640,43 @@ func getValue(v primitive.M, keys ...string) (interface{}, bool) {
 	return getValue(sub, keys[1:]...)
 }
 
-func (app *App) getConfig(client *mongo.Client) (primitive.M, error) {
+func (app *App) getStatus(ctx context.Context, client *mongo.Client) (primitive.M, error) {
 	var result primitive.M
-	err := client.Database("admin").RunCommand(context.Background(), bson.D{{Key: "replSetGetConfig", Value: 1}}).Decode(&result)
+	ctx2, cancel := context.WithTimeout(ctx, app.Config.Clients.Storage.MongoDB.Timeout)
+	defer cancel()
+	err := client.Database("admin").RunCommand(ctx2, bson.D{{Key: "replSetGetStatus", Value: 1}}).Decode(&result)
 	if err != nil {
 		return nil, err
 	}
 	return result, nil
 }
 
-func (app *App) reconfigureRS(client *mongo.Client, newConfig primitive.M, force bool) error {
+func (app *App) getConfig(ctx context.Context, client *mongo.Client) (primitive.M, error) {
+	var result primitive.M
+	ctx2, cancel := context.WithTimeout(ctx, app.Config.Clients.Storage.MongoDB.Timeout)
+	defer cancel()
+	err := client.Database("admin").RunCommand(ctx2, bson.D{{Key: "replSetGetConfig", Value: 1}}).Decode(&result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (app *App) reconfigureRS(ctx context.Context, client *mongo.Client, newConfig primitive.M, force bool) error {
 	configI := newConfig["config"]
 	config := configI.(primitive.M)
 	config["version"] = config["version"].(int32) + 1
+
+	app.logger.Infof("Reconfiguring replica set with version(%v) and force flag(%v)", config["version"], force)
 
 	command := bson.D{
 		{Key: "replSetReconfig", Value: config},
 		{Key: "force", Value: force},
 	}
 	var result primitive.M
-	err := client.Database("admin").RunCommand(context.Background(), command).Decode(&result)
+	ctx2, cancel := context.WithTimeout(ctx, app.Config.Clients.Storage.MongoDB.Timeout)
+	defer cancel()
+	err := client.Database("admin").RunCommand(ctx2, command).Decode(&result)
 	if err != nil {
 		return fmt.Errorf("failed to reconfigure replica set: %w", err)
 	}
