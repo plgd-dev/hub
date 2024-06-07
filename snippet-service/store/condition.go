@@ -4,23 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"slices"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
 )
-
-func normalizeSlice(s []string) []string {
-	slices.Sort(s)
-	return slices.Compact(s)
-}
-
-func GetTimestampOrNow(ts int64) int64 {
-	if ts > 0 {
-		return ts
-	}
-	return time.Now().UnixNano()
-}
 
 func checkConfigurationId(c string, isUpdate bool) error {
 	if isUpdate && c == "" {
@@ -31,6 +18,11 @@ func checkConfigurationId(c string, isUpdate bool) error {
 		return errInvalidArgument(fmt.Errorf("invalid configuration ID(%v): %w", c, err))
 	}
 	return nil
+}
+
+func normalizeSlice(s []string) []string {
+	slices.Sort(s)
+	return slices.Compact(s)
 }
 
 func ValidateAndNormalizeCondition(c *pb.Condition, isUpdate bool) error {

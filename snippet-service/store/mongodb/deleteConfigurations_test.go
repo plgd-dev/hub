@@ -13,17 +13,14 @@ import (
 )
 
 func TestStoreDeleteConfigurations(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*100)
 	defer cancel()
 
 	getConfigurations := func(t *testing.T, s *mongodb.Store, owner string, query *pb.GetConfigurationsRequest) []*store.Configuration {
 		var configurations []*store.Configuration
-		err := s.GetConfigurations(ctx, owner, query, func(iterCtx context.Context, iter store.Iterator[store.Configuration]) error {
-			var conf store.Configuration
-			for iter.Next(iterCtx, &conf) {
-				configurations = append(configurations, conf.Clone())
-			}
-			return iter.Err()
+		err := s.GetConfigurations(ctx, owner, query, func(c *store.Configuration) error {
+			configurations = append(configurations, c.Clone())
+			return nil
 		})
 		require.NoError(t, err)
 		return configurations

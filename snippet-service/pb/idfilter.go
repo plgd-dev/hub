@@ -41,7 +41,6 @@ func checkEmptyIdFilter(idfilter []*IDFilter) []*IDFilter {
 	if len(idfilter) == 0 {
 		return nil
 	}
-	slices.SortFunc(idfilter, compareIdFilter)
 	// if the first filter is All, we can ignore all other filters
 	first := idfilter[0]
 	if first.GetId() == "" && first.GetAll() {
@@ -50,7 +49,16 @@ func checkEmptyIdFilter(idfilter []*IDFilter) []*IDFilter {
 	return idfilter
 }
 
+// Normalizing the IDFilter entails:
+// - ordering the filters:
+//   - primarily by ID
+//   - secondarily by type (All, Latest, Value)
+//   - tertiary for Value type by value
+//
+// - removing duplicates
+// - removing filters that are redundant due to other filters (eg if All is specified, no other filters are needed)
 func NormalizeIdFilter(idfilter []*IDFilter) []*IDFilter {
+	slices.SortFunc(idfilter, compareIdFilter)
 	idfilter = checkEmptyIdFilter(idfilter)
 	if len(idfilter) == 0 {
 		return nil
@@ -108,53 +116,61 @@ func NormalizeIdFilter(idfilter []*IDFilter) []*IDFilter {
 }
 
 type VersionFilter struct {
-	latest   bool
-	versions []uint64
+	// document IDs for which we want full documents
+	All []string
+	// document IDs for which we want the latest version
+	Latest []string
+	// map of document IDs and specific versions we want
+	Versions map[string][]uint64
 }
 
-func (vf *VersionFilter) Latest() bool {
-	return vf.latest
+func (vf *VersionFilter) IsEmpty() bool {
+	return len(vf.All) == 0 && len(vf.Latest) == 0 && len(vf.Versions) == 0
 }
 
-func (vf *VersionFilter) Versions() []uint64 {
-	return vf.versions
-}
-
-func PartitionIDFilter(idfilter []*IDFilter) ([]string, map[string]VersionFilter) {
+func PartitionIDFilter(idfilter []*IDFilter) VersionFilter {
 	idFilter := NormalizeIdFilter(idfilter)
 	if len(idFilter) == 0 {
-		return nil, nil
+		return VersionFilter{}
 	}
-	idVersionAll := make([]string, 0)
-	idVersions := make(map[string]VersionFilter, 0)
-	hasAllIdsLatest := func() bool {
-		vf, ok := idVersions[""]
-		return ok && vf.latest
+
+	vf := VersionFilter{
+		Versions: make(map[string][]uint64),
 	}
+
+	// empty ID ("") is interpreted as filtering by ID disabled, therefore we return all IDs
+	// if we requested latest for all ids then we can skip specific IDs requesting latest
+	hasAllIdsLatest := false
+	// if we requested a specific version for all IDs then we can skip specific IDs requesting that version
 	hasAllIdsVersion := func(version uint64) bool {
-		vf, ok := idVersions[""]
-		return ok && slices.Contains(vf.versions, version)
+		allVersions, ok := vf.Versions[""]
+		return ok && slices.Contains(allVersions, version)
 	}
+
 	for _, idf := range idFilter {
 		if idf.GetAll() {
-			idVersionAll = append(idVersionAll, idf.GetId())
+			vf.All = append(vf.All, idf.GetId())
 			continue
 		}
-		vf := idVersions[idf.GetId()]
+
 		if idf.GetLatest() {
-			if hasAllIdsLatest() {
+			if hasAllIdsLatest {
 				continue
 			}
-			vf.latest = true
-			idVersions[idf.GetId()] = vf
+			if idf.GetId() == "" {
+				hasAllIdsLatest = true
+			}
+			vf.Latest = append(vf.Latest, idf.GetId())
 			continue
 		}
+
 		version := idf.GetValue()
 		if hasAllIdsVersion(version) {
 			continue
 		}
-		vf.versions = append(vf.versions, version)
-		idVersions[idf.GetId()] = vf
+		idVersions := vf.Versions[idf.GetId()]
+		idVersions = append(idVersions, version)
+		vf.Versions[idf.GetId()] = idVersions
 	}
-	return idVersionAll, idVersions
+	return vf
 }

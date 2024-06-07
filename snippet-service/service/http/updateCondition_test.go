@@ -128,6 +128,16 @@ func TestRequestHandlerUpdateCondition(t *testing.T) {
 			wantErr:      true,
 		},
 		{
+			name: "non-matching owner",
+			args: args{
+				id:    cond.GetId(),
+				cond:  makeUpdateCondition(cond.GetId(), uuid.NewString(), "non-matching owner", 2),
+				token: token,
+			},
+			wantHTTPCode: http.StatusForbidden,
+			wantErr:      true,
+		},
+		{
 			name: "update",
 			args: args{
 				id:    cond.GetId(),

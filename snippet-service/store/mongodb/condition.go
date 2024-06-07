@@ -132,34 +132,51 @@ func (s *Store) UpdateCondition(ctx context.Context, cond *pb.Condition) (*pb.Co
 	return updatedCond.GetLatest()
 }
 
-func (s *Store) getConditionsByFind(ctx context.Context, owner string, idfAlls []string, p store.ProcessConditions) error {
-	cur, err := s.Collection(conditionsCol).Find(ctx, toIdFilterQuery(owner, idfAlls))
+// getConditionsByID returns full condition documents matched by ID
+func (s *Store) getConditionsByID(ctx context.Context, owner string, ids []string, p store.ProcessConditions) error {
+	cur, err := s.Collection(conditionsCol).Find(ctx, toIdFilterQuery(owner, ids, false))
 	if err != nil {
 		return err
 	}
 	return processCursor(ctx, cur, p)
 }
 
-func (s *Store) getConditionsByAggregation(ctx context.Context, owner, id string, vf pb.VersionFilter, p store.ProcessConditions) error {
-	cur, err := s.Collection(conditionsCol).Aggregate(ctx, getPipeline(owner, id, vf))
+// getLatestConditionsByID returns the latest condition from document matched by ID
+func (s *Store) getLatestConditionsByID(ctx context.Context, owner string, ids []string, p store.ProcessConditions) error {
+	opt := options.Find().SetProjection(bson.M{store.VersionsKey: false})
+	cur, err := s.Collection(conditionsCol).Find(ctx, toIdFilterQuery(owner, ids, false), opt)
 	if err != nil {
 		return err
 	}
 	return processCursor(ctx, cur, p)
 }
 
-func (s *Store) GetConditions(ctx context.Context, owner string, query *pb.GetConditionsRequest, p store.ProcessIterator[store.Condition]) error {
-	idVersionAll, idVersions := pb.PartitionIDFilter(query.GetIdFilter())
+// getConditionsByAggregation returns conditions matched by ID and versions
+func (s *Store) getConditionsByAggregation(ctx context.Context, owner, id string, versions []uint64, p store.ProcessConditions) error {
+	cur, err := s.Collection(conditionsCol).Aggregate(ctx, getPipeline(owner, id, versions))
+	if err != nil {
+		return err
+	}
+	return processCursor(ctx, cur, p)
+}
+
+func (s *Store) GetConditions(ctx context.Context, owner string, query *pb.GetConditionsRequest, p store.Process[store.Condition]) error {
+	vf := pb.PartitionIDFilter(query.GetIdFilter())
+	// confIdLatestFilter := normalizeSlice(query.GetConfigurationIdFilter())
 	var errors *multierror.Error
-	if len(idVersionAll) > 0 || len(idVersions) == 0 {
-		err := s.getConditionsByFind(ctx, owner, idVersionAll, p)
+	if len(vf.All) > 0 || vf.IsEmpty() {
+		err := s.getConditionsByID(ctx, owner, vf.All, p)
 		errors = multierror.Append(errors, err)
 	}
-	if len(idVersions) > 0 {
-		for id, vf := range idVersions {
-			err := s.getConditionsByAggregation(ctx, owner, id, vf, p)
-			errors = multierror.Append(errors, err)
-		}
+
+	if len(vf.Latest) > 0 {
+		err := s.getLatestConditionsByID(ctx, owner, vf.Latest, p)
+		errors = multierror.Append(errors, err)
+	}
+
+	for id, vf := range vf.Versions {
+		err := s.getConditionsByAggregation(ctx, owner, id, vf, p)
+		errors = multierror.Append(errors, err)
 	}
 	return errors.ErrorOrNil()
 }

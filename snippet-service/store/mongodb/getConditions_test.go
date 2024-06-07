@@ -29,12 +29,12 @@ func TestStoreGetConditions(t *testing.T) {
 		name    string
 		args    args
 		wantErr bool
-		want    func(t *testing.T, conditions []*store.Condition)
+		want    func(t *testing.T, conditions map[string]*store.Condition)
 	}{
 		{
 			name: "all",
 			args: args{},
-			want: func(t *testing.T, conditions []*store.Condition) {
+			want: func(t *testing.T, conditions map[string]*store.Condition) {
 				require.Len(t, conditions, len(conds))
 				for _, c := range conditions {
 					cond, ok := conds[c.Id]
@@ -48,7 +48,7 @@ func TestStoreGetConditions(t *testing.T) {
 			args: args{
 				owner: test.Owner(0),
 			},
-			want: func(t *testing.T, conditions []*store.Condition) {
+			want: func(t *testing.T, conditions map[string]*store.Condition) {
 				require.NotEmpty(t, conditions)
 				for _, c := range conditions {
 					require.Equal(t, test.Owner(0), c.Owner)
@@ -72,9 +72,10 @@ func TestStoreGetConditions(t *testing.T) {
 					},
 				},
 			},
-			want: func(t *testing.T, conditions []*store.Condition) {
+			want: func(t *testing.T, conditions map[string]*store.Condition) {
 				require.Len(t, conditions, 1)
-				c := conditions[0]
+				c, ok := conditions[test.ConditionID(1)]
+				require.True(t, ok)
 				cond, ok := conds[c.Id]
 				require.True(t, ok)
 				test.CmpStoredCondition(t, &cond, c, false, true)
@@ -95,9 +96,10 @@ func TestStoreGetConditions(t *testing.T) {
 					},
 				},
 			},
-			want: func(t *testing.T, conditions []*store.Condition) {
+			want: func(t *testing.T, conditions map[string]*store.Condition) {
 				require.Len(t, conditions, 1)
-				c := conditions[0]
+				c, ok := conditions[test.ConditionID(2)]
+				require.True(t, ok)
 				cond, ok := conds[c.Id]
 				require.True(t, ok)
 				require.Equal(t, test.ConditionID(2), cond.Id)
@@ -118,7 +120,7 @@ func TestStoreGetConditions(t *testing.T) {
 					},
 				},
 			},
-			want: func(t *testing.T, conditions []*store.Condition) {
+			want: func(t *testing.T, conditions map[string]*store.Condition) {
 				require.Len(t, conditions, test.RuntimeConfig.NumConditions)
 				for _, c := range conditions {
 					cond, ok := conds[c.Id]
@@ -145,7 +147,7 @@ func TestStoreGetConditions(t *testing.T) {
 					},
 				},
 			},
-			want: func(t *testing.T, conditions []*store.Condition) {
+			want: func(t *testing.T, conditions map[string]*store.Condition) {
 				require.Len(t, conditions, 7)
 				for _, c := range conditions {
 					cond, ok := conds[c.Id]
@@ -171,7 +173,7 @@ func TestStoreGetConditions(t *testing.T) {
 					},
 				},
 			},
-			want: func(t *testing.T, conditions []*store.Condition) {
+			want: func(t *testing.T, conditions map[string]*store.Condition) {
 				require.Empty(t, conditions)
 			},
 		},
@@ -201,7 +203,7 @@ func TestStoreGetConditions(t *testing.T) {
 					},
 				},
 			},
-			want: func(t *testing.T, conditions []*store.Condition) {
+			want: func(t *testing.T, conditions map[string]*store.Condition) {
 				require.Len(t, conditions, 6)
 				for _, c := range conditions {
 					cond, ok := conds[c.Id]
@@ -224,7 +226,7 @@ func TestStoreGetConditions(t *testing.T) {
 					},
 				},
 			},
-			want: func(t *testing.T, conditions []*store.Condition) {
+			want: func(t *testing.T, conditions map[string]*store.Condition) {
 				require.Len(t, conditions, test.RuntimeConfig.NumConditions)
 				for _, c := range conditions {
 					_, ok := conds[c.Id]
@@ -270,7 +272,7 @@ func TestStoreGetConditions(t *testing.T) {
 					},
 				},
 			},
-			want: func(t *testing.T, conditions []*store.Condition) {
+			want: func(t *testing.T, conditions map[string]*store.Condition) {
 				require.Len(t, conditions, 6)
 				for _, c := range conditions {
 					_, ok := conds[c.Id]
@@ -291,17 +293,17 @@ func TestStoreGetConditions(t *testing.T) {
 				query: &pb.GetConditionsRequest{
 					IdFilter: func() []*pb.IDFilter {
 						var idFilters []*pb.IDFilter
-						c := conds[test.ConfigurationID(0)]
+						c := conds[test.ConditionID(0)]
 						for _, v := range c.Versions {
 							idFilters = append(idFilters, &pb.IDFilter{
-								Id: test.ConfigurationID(0),
+								Id: test.ConditionID(0),
 								Version: &pb.IDFilter_Value{
 									Value: v.Version,
 								},
 							})
 						}
 						idFilters = append(idFilters, &pb.IDFilter{
-							Id: test.ConfigurationID(0),
+							Id: test.ConditionID(0),
 							Version: &pb.IDFilter_Latest{
 								Latest: true,
 							},
@@ -310,12 +312,12 @@ func TestStoreGetConditions(t *testing.T) {
 					}(),
 				},
 			},
-			want: func(t *testing.T, conditions []*store.Condition) {
+			want: func(t *testing.T, conditions map[string]*store.Condition) {
 				require.Len(t, conditions, 1)
 				for _, c := range conditions {
 					cond, ok := conds[c.Id]
 					require.True(t, ok)
-					require.Equal(t, test.ConfigurationID(0), cond.Id)
+					require.Equal(t, test.ConditionID(0), cond.Id)
 					test.CmpStoredCondition(t, &cond, c, true, false)
 				}
 			},
@@ -324,13 +326,14 @@ func TestStoreGetConditions(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var conditions []*store.Condition
-			err := s.GetConditions(ctx, tt.args.owner, tt.args.query, func(iterCtx context.Context, iter store.Iterator[store.Condition]) error {
-				var cond store.Condition
-				for iter.Next(iterCtx, &cond) {
-					conditions = append(conditions, cond.Clone())
+			conditions := make(map[string]*store.Condition)
+			err := s.GetConditions(ctx, tt.args.owner, tt.args.query, func(c *store.Condition) error {
+				condition, ok := conditions[c.Id]
+				if ok {
+					return test.MergeConditions(condition, c)
 				}
-				return iter.Err()
+				conditions[c.Id] = c.Clone()
+				return nil
 			})
 			if tt.wantErr {
 				require.Error(t, err)

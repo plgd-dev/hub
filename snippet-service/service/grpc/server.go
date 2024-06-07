@@ -92,33 +92,27 @@ func errCannotGetConfigurations(err error) error {
 	return fmt.Errorf("cannot get configurations: %w", err)
 }
 
-func sendConfigurations(ctx context.Context, srv pb.SnippetService_GetConfigurationsServer, iter store.Iterator[store.Configuration]) error {
-	storedCfg := store.Configuration{}
-	for iter.Next(ctx, &storedCfg) {
-		var lastVersion *store.ConfigurationVersion
-		for i := range storedCfg.Versions {
-			err := srv.Send(storedCfg.GetConfiguration(i))
-			if err != nil {
-				return err
-			}
-			lastVersion = &storedCfg.Versions[i]
+func sendConfiguration(srv pb.SnippetService_GetConfigurationsServer, c *store.Configuration) error {
+	var lastVersion *store.ConfigurationVersion
+	for i := range c.Versions {
+		err := srv.Send(c.GetConfiguration(i))
+		if err != nil {
+			return err
 		}
-		if storedCfg.Latest != nil {
-			latest, err := storedCfg.GetLatest()
-			if err != nil {
-				return err
-			}
-			if lastVersion != nil && lastVersion.Version == latest.GetVersion() {
-				// already sent when iterating over versions array
-				continue
-			}
-			err = srv.Send(latest)
-			if err != nil {
-				return err
-			}
-		}
+		lastVersion = &c.Versions[i]
 	}
-	return nil
+	if c.Latest == nil {
+		return nil
+	}
+	latest, err := c.GetLatest()
+	if err != nil {
+		return err
+	}
+	if lastVersion != nil && lastVersion.Version == latest.GetVersion() {
+		// already sent when iterating over versions array
+		return nil
+	}
+	return srv.Send(latest)
 }
 
 func (s *SnippetServiceServer) GetConfigurations(req *pb.GetConfigurationsRequest, srv pb.SnippetService_GetConfigurationsServer) error {
@@ -127,8 +121,8 @@ func (s *SnippetServiceServer) GetConfigurations(req *pb.GetConfigurationsReques
 		return s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotGetConfigurations(err)))
 	}
 
-	err = s.store.GetConfigurations(srv.Context(), owner, req, func(ctx context.Context, iter store.Iterator[store.Configuration]) error {
-		return sendConfigurations(ctx, srv, iter)
+	err = s.store.GetConfigurations(srv.Context(), owner, req, func(c *store.Configuration) error {
+		return sendConfiguration(srv, c)
 	})
 	if err != nil {
 		return s.logger.LogAndReturnError(status.Errorf(codes.Internal, "%v", errCannotGetConfigurations(err)))
@@ -194,17 +188,27 @@ func errCannotGetConditions(err error) error {
 	return fmt.Errorf("cannot get conditions: %w", err)
 }
 
-func sendConditions(ctx context.Context, srv pb.SnippetService_GetConditionsServer, iter store.Iterator[store.Condition]) error {
-	storedCond := store.Condition{}
-	for iter.Next(ctx, &storedCond) {
-		for i := range storedCond.Versions {
-			errS := srv.Send(storedCond.GetCondition(i))
-			if errS != nil {
-				return errS
-			}
+func sendCondition(srv pb.SnippetService_GetConditionsServer, c *store.Condition) error {
+	var lastVersion *store.ConditionVersion
+	for i := range c.Versions {
+		err := srv.Send(c.GetCondition(i))
+		if err != nil {
+			return err
 		}
+		lastVersion = &c.Versions[i]
 	}
-	return nil
+	if c.Latest == nil {
+		return nil
+	}
+	latest, err := c.GetLatest()
+	if err != nil {
+		return err
+	}
+	if lastVersion != nil && lastVersion.Version == latest.GetVersion() {
+		// already sent when iterating over versions array
+		return nil
+	}
+	return srv.Send(latest)
 }
 
 func (s *SnippetServiceServer) GetConditions(req *pb.GetConditionsRequest, srv pb.SnippetService_GetConditionsServer) error {
@@ -213,8 +217,8 @@ func (s *SnippetServiceServer) GetConditions(req *pb.GetConditionsRequest, srv p
 		return s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotGetConditions(err)))
 	}
 
-	err = s.store.GetConditions(srv.Context(), owner, req, func(ctx context.Context, iter store.Iterator[store.Condition]) error {
-		return sendConditions(ctx, srv, iter)
+	err = s.store.GetConditions(srv.Context(), owner, req, func(c *store.Condition) error {
+		return sendCondition(srv, c)
 	})
 	if err != nil {
 		return s.logger.LogAndReturnError(status.Errorf(codes.Internal, "%v", errCannotGetConditions(err)))

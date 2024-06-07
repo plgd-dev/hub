@@ -18,12 +18,9 @@ func TestStoreDeleteConditions(t *testing.T) {
 
 	getConditions := func(t *testing.T, s *mongodb.Store, owner string, query *pb.GetConditionsRequest) []*store.Condition {
 		var conditions []*store.Condition
-		err := s.GetConditions(ctx, owner, query, func(iterCtx context.Context, iter store.Iterator[store.Condition]) error {
-			var cond store.Condition
-			for iter.Next(iterCtx, &cond) {
-				conditions = append(conditions, cond.Clone())
-			}
-			return iter.Err()
+		err := s.GetConditions(ctx, owner, query, func(c *store.Condition) error {
+			conditions = append(conditions, c.Clone())
+			return nil
 		})
 		require.NoError(t, err)
 		return conditions

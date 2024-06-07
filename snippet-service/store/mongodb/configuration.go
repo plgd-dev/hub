@@ -92,34 +92,51 @@ func (s *Store) UpdateConfiguration(ctx context.Context, conf *pb.Configuration)
 	return updatedCfg.GetLatest()
 }
 
-func (s *Store) getConfigurationsByFind(ctx context.Context, owner string, idfAlls []string, p store.ProcessConfigurations) error {
-	cur, err := s.Collection(configurationsCol).Find(ctx, toIdFilterQuery(owner, idfAlls))
+// getConfigurationsByID returns all configurations from documents matched by ID
+func (s *Store) getConfigurationsByID(ctx context.Context, owner string, ids []string, p store.ProcessConfigurations) error {
+	cur, err := s.Collection(configurationsCol).Find(ctx, toIdFilterQuery(owner, ids, false))
 	if err != nil {
 		return err
 	}
 	return processCursor(ctx, cur, p)
 }
 
-func (s *Store) getConfigurationsByAggregation(ctx context.Context, owner, id string, vf pb.VersionFilter, p store.ProcessConfigurations) error {
-	cur, err := s.Collection(configurationsCol).Aggregate(ctx, getPipeline(owner, id, vf))
+// getLatestConfigurationsByID returns the latest configuration from documents matched by ID
+func (s *Store) getLatestConfigurationsByID(ctx context.Context, owner string, ids []string, p store.ProcessConfigurations) error {
+	opt := options.Find().SetProjection(bson.M{store.VersionsKey: false})
+	cur, err := s.Collection(configurationsCol).Find(ctx, toIdFilterQuery(owner, ids, false), opt)
 	if err != nil {
 		return err
 	}
 	return processCursor(ctx, cur, p)
 }
 
-func (s *Store) GetConfigurations(ctx context.Context, owner string, query *pb.GetConfigurationsRequest, p store.ProcessConfigurations) error {
-	idVersionAll, idVersions := pb.PartitionIDFilter(query.GetIdFilter())
+// getConfigurationsByAggregation returns conditions matched by ID and versions
+func (s *Store) getConfigurationsByAggregation(ctx context.Context, owner, id string, versions []uint64, p store.ProcessConfigurations) error {
+	cur, err := s.Collection(configurationsCol).Aggregate(ctx, getPipeline(owner, id, versions))
+	if err != nil {
+		return err
+	}
+	return processCursor(ctx, cur, p)
+}
+
+func (s *Store) GetConfigurations(ctx context.Context, owner string, query *pb.GetConfigurationsRequest, p store.Process[store.Configuration]) error {
+	vf := pb.PartitionIDFilter(query.GetIdFilter())
 	var errors *multierror.Error
-	if len(idVersionAll) > 0 || len(idVersions) == 0 {
-		err := s.getConfigurationsByFind(ctx, owner, idVersionAll, p)
+	if len(vf.All) > 0 || vf.IsEmpty() {
+		err := s.getConfigurationsByID(ctx, owner, vf.All, p)
 		errors = multierror.Append(errors, err)
 	}
-	if len(idVersions) > 0 {
-		for id, vf := range idVersions {
-			err := s.getConfigurationsByAggregation(ctx, owner, id, vf, p)
-			errors = multierror.Append(errors, err)
-		}
+
+	if len(vf.Latest) > 0 {
+		err := s.getLatestConfigurationsByID(ctx, owner, vf.Latest, p)
+		errors = multierror.Append(errors, err)
+	}
+
+	// TODO: check with Jozef if this acceptable, we can duplicates if we have the same version by number and as latest
+	for id, versions := range vf.Versions {
+		err := s.getConfigurationsByAggregation(ctx, owner, id, versions, p)
+		errors = multierror.Append(errors, err)
 	}
 	return errors.ErrorOrNil()
 }

@@ -159,6 +159,22 @@ func TestRequestHandlerUpdateConfiguration(t *testing.T) {
 			wantHTTPCode: http.StatusBadRequest,
 			wantErr:      true,
 		},
+		{
+			name: "non-matching owner",
+			args: args{
+				id: conf.GetId(),
+				conf: &snippetPb.Configuration{
+					Version: 42,
+					Owner:   "non-matching owner",
+					Resources: []*snippetPb.Configuration_Resource{
+						makeTestResource(t, "/test/8", 112),
+					},
+				},
+				token: token,
+			},
+			wantHTTPCode: http.StatusForbidden,
+			wantErr:      true,
+		},
 	}
 
 	for _, tt := range tests {

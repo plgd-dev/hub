@@ -10,7 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func addMatchCondition(owner, id string, notEmpty bool) bson.D {
+func addMatchCondition(owner string, id string, notEmpty bool) bson.D {
 	match := bson.D{
 		{Key: store.VersionsKey + ".0", Value: bson.M{"$exists": notEmpty}},
 	}
@@ -26,13 +26,13 @@ func addMatchCondition(owner, id string, notEmpty bool) bson.D {
 func appendLatestToVersions(fields []string) bson.M {
 	latest := bson.M{}
 	for _, field := range fields {
-		latest[field] = "$latest." + field
+		latest[field] = "$" + store.LatestKey + "." + field
 	}
 	return bson.M{
 		"$concatArrays": bson.A{
 			bson.M{
 				"$ifNull": bson.A{
-					"$versions",
+					"$" + store.VersionsKey,
 					bson.A{},
 				},
 			},
@@ -50,39 +50,25 @@ func incrementLatestVersion() bson.M {
 	}
 }
 
-func getPipeline(owner, id string, vf pb.VersionFilter) mongo.Pipeline {
-	pl := mongo.Pipeline{bson.D{{Key: "$match", Value: addMatchCondition(owner, id, true)}}}
-	project := bson.M{}
-	if len(vf.Versions()) == 0 {
-		project[store.VersionsKey] = false
-	} else {
-		pl = getVersionsPipeline(pl, vf, false)
+func getVersionsPipeline(pl mongo.Pipeline, versions []uint64, latest, exclude bool) mongo.Pipeline {
+	vfilter := make([]interface{}, 0, len(versions)+1)
+	for _, version := range versions {
+		vfilter = append(vfilter, version)
 	}
-	if !vf.Latest() {
-		project[store.LatestKey] = false
+	if latest {
+		vfilter = append(vfilter, "$"+store.LatestKey+"."+store.VersionKey)
 	}
-	if len(project) > 0 {
-		pl = append(pl, bson.D{{Key: "$project", Value: project}})
+	if len(vfilter) == 0 {
+		return pl
 	}
-	return pl
-}
-
-func getVersionsPipeline(pl mongo.Pipeline, vf pb.VersionFilter, exclude bool) mongo.Pipeline {
-	versions := make([]interface{}, 0, len(vf.Versions())+1)
-	for _, version := range vf.Versions() {
-		versions = append(versions, version)
-	}
-	if vf.Latest() {
-		versions = append(versions, "$latest.version")
-	}
-	cond := bson.M{"$in": bson.A{"$$version.version", versions}}
+	cond := bson.M{"$in": bson.A{"$$version." + store.VersionKey, vfilter}}
 	if exclude {
 		cond = bson.M{"$not": cond}
 	}
 	pl = append(pl, bson.D{{Key: "$addFields", Value: bson.M{
-		"versions": bson.M{
+		store.VersionsKey: bson.M{
 			"$filter": bson.M{
-				"input": "$versions",
+				"input": "$" + store.VersionsKey,
 				"as":    "version",
 				"cond":  cond,
 			},
@@ -91,17 +77,35 @@ func getVersionsPipeline(pl mongo.Pipeline, vf pb.VersionFilter, exclude bool) m
 	return pl
 }
 
-func toIdFilterQuery(owner string, idfAlls []string) interface{} {
-	filters := make([]interface{}, 0, 2)
+func getPipeline(owner, id string, versions []uint64) mongo.Pipeline {
+	pl := mongo.Pipeline{bson.D{{Key: "$match", Value: addMatchCondition(owner, id, true)}}}
+	project := bson.M{
+		store.LatestKey: false,
+	}
+	pl = getVersionsPipeline(pl, versions, false, false)
+	pl = append(pl, bson.D{{Key: "$project", Value: project}})
+	return pl
+}
+
+func toIdFilterQuery(owner string, ids []string, empty bool) interface{} {
+	filters := make([]interface{}, 0, 3)
 	if owner != "" {
 		filters = append(filters, bson.D{{Key: store.OwnerKey, Value: owner}})
 	}
-	if len(idfAlls) > 0 {
-		idfilter := make([]bson.D, 0, len(idfAlls))
-		for _, idfall := range idfAlls {
-			idfilter = append(idfilter, bson.D{{Key: "_id", Value: idfall}})
+	if len(ids) > 0 {
+		idfilter := make([]bson.D, 0, len(ids))
+		for _, id := range ids {
+			if id == "" {
+				continue
+			}
+			idfilter = append(idfilter, bson.D{{Key: store.IDKey, Value: id}})
 		}
-		filters = append(filters, bson.M{"$or": idfilter})
+		if len(idfilter) > 0 {
+			filters = append(filters, bson.M{"$or": idfilter})
+		}
+	}
+	if empty {
+		filters = append(filters, bson.D{{Key: store.VersionsKey + ".0", Value: bson.M{"$exists": false}}})
 	}
 	if len(filters) == 0 {
 		return bson.D{}
@@ -112,16 +116,20 @@ func toIdFilterQuery(owner string, idfAlls []string) interface{} {
 	return bson.M{"$and": filters}
 }
 
-func processCursor[T any](ctx context.Context, cr *mongo.Cursor, p store.ProcessIterator[T]) error {
-	if p == nil {
-		return nil
-	}
+func processCursor[T any](ctx context.Context, cr *mongo.Cursor, process store.Process[T]) error {
 	var errors *multierror.Error
-	i := store.MongoIterator[T]{
+	iter := store.MongoIterator[T]{
 		Cursor: cr,
 	}
-	err := p(ctx, &i)
-	errors = multierror.Append(errors, err)
+	var stored T
+	for iter.Next(ctx, &stored) {
+		err := process(&stored)
+		if err != nil {
+			errors = multierror.Append(errors, err)
+			break
+		}
+	}
+	errors = multierror.Append(errors, iter.Err())
 	errClose := cr.Close(ctx)
 	errors = multierror.Append(errors, errClose)
 	return errors.ErrorOrNil()
@@ -143,49 +151,56 @@ func toDeleteResult(err error, partialSuccess bool) (int64, error) {
 	return DeleteSuccess, nil
 }
 
-func (s *Store) deleteVersion(ctx context.Context, collection, owner string, id string, vf pb.VersionFilter) error {
-	pl := getVersionsPipeline(mongo.Pipeline{}, vf, true)
-	// unset latest
-	pl = append(pl, bson.D{{Key: "$unset", Value: store.LatestKey}})
+func (s *Store) deleteVersion(ctx context.Context, collection, owner string, id string, versions []uint64) error {
+	pl := getVersionsPipeline(mongo.Pipeline{}, versions, false, true)
 	// take last element from versions array as latest (if it exists)
 	pl = append(pl, bson.D{{Key: "$set", Value: bson.M{
-		store.LatestKey: bson.D{{
-			Key:   "$arrayElemAt",
-			Value: bson.A{"$versions", -1},
-		}},
+		store.LatestKey: bson.D{{Key: "$arrayElemAt", Value: bson.A{"$" + store.VersionsKey, -1}}},
 	}}})
-	_, err := s.Collection(collection).UpdateMany(ctx, addMatchCondition(owner, id, true), pl)
-	if err != nil {
-		return err
-	}
-	_, err = s.Collection(collection).DeleteMany(ctx, addMatchCondition(owner, id, false))
+	_, err := s.Collection(collection).UpdateMany(ctx, toIdFilterQuery(owner, []string{id}, false), pl)
 	return err
 }
 
-func (s *Store) deleteDocument(ctx context.Context, collection, owner string, idfAlls []string) error {
-	_, err := s.Collection(collection).DeleteMany(ctx, toIdFilterQuery(owner, idfAlls))
+func (s *Store) deleteLatestVersion(ctx context.Context, collection, owner string, ids []string) error {
+	pl := getVersionsPipeline(mongo.Pipeline{}, nil, true, true)
+	// take last element from versions array as latest (if it exists)
+	pl = append(pl, bson.D{{Key: "$set", Value: bson.M{
+		store.LatestKey: bson.D{{Key: "$arrayElemAt", Value: bson.A{"$" + store.VersionsKey, -1}}},
+	}}})
+	_, err := s.Collection(collection).UpdateMany(ctx, toIdFilterQuery(owner, ids, false), pl)
 	return err
 }
 
-func (s *Store) delete(ctx context.Context, collection, owner string, filter []*pb.IDFilter) (int64, error) {
+func (s *Store) deleteDocument(ctx context.Context, collection, owner string, ids []string) error {
+	_, err := s.Collection(collection).DeleteMany(ctx, toIdFilterQuery(owner, ids, false))
+	return err
+}
+
+func (s *Store) delete(ctx context.Context, collection, owner string, idfilter []*pb.IDFilter) (int64, error) {
 	success := false
-	idVersionAll, idVersions := pb.PartitionIDFilter(filter)
+	vf := pb.PartitionIDFilter(idfilter)
 	var errors *multierror.Error
-	if len(idVersionAll) > 0 || len(idVersions) == 0 {
-		err := s.deleteDocument(ctx, collection, owner, idVersionAll)
-		if err == nil {
-			success = true
-		}
+	if len(vf.All) > 0 || vf.IsEmpty() {
+		err := s.deleteDocument(ctx, collection, owner, vf.All)
+		success = success || err == nil
 		errors = multierror.Append(errors, err)
 	}
-	if len(idVersions) > 0 {
-		for id, vf := range idVersions {
-			err := s.deleteVersion(ctx, collection, owner, id, vf)
-			if err == nil {
-				success = true
-			}
-			errors = multierror.Append(errors, err)
-		}
+
+	if len(vf.Latest) > 0 {
+		err := s.deleteLatestVersion(ctx, collection, owner, vf.Latest)
+		success = success || err == nil
+		errors = multierror.Append(errors, err)
+	}
+
+	for id, versions := range vf.Versions {
+		err := s.deleteVersion(ctx, collection, owner, id, versions)
+		success = success || err == nil
+		errors = multierror.Append(errors, err)
+	}
+
+	if len(vf.Latest) > 0 || len(vf.Versions) > 0 {
+		_, err := s.Collection(collection).DeleteMany(ctx, toIdFilterQuery(owner, nil, true))
+		errors = multierror.Append(errors, err)
 	}
 	return toDeleteResult(errors.ErrorOrNil(), success)
 }

@@ -42,9 +42,9 @@ type Iterator[T any] interface {
 }
 
 type (
-	ProcessIterator[T any] func(ctx context.Context, iter Iterator[T]) (err error)
-	ProcessConditions      = ProcessIterator[Condition]
-	ProcessConfigurations  = ProcessIterator[Configuration]
+	Process[T any]        func(v *T) error
+	ProcessConfigurations = Process[Configuration]
+	ProcessConditions     = Process[Condition]
 )
 
 var (

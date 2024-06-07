@@ -29,17 +29,17 @@ func TestStoreGetConfigurations(t *testing.T) {
 		name    string
 		args    args
 		wantErr bool
-		want    func(t *testing.T, configurations []*store.Configuration)
+		want    func(t *testing.T, configurations map[string]*store.Configuration)
 	}{
 		{
 			name: "all",
 			args: args{},
-			want: func(t *testing.T, configurations []*store.Configuration) {
+			want: func(t *testing.T, configurations map[string]*store.Configuration) {
 				require.Len(t, configurations, len(confs))
 				for _, c := range configurations {
 					conf, ok := confs[c.Id]
 					require.True(t, ok)
-					test.CmpStoredConfiguration(t, &conf, c, true, true)
+					test.CmpStoredConfiguration(t, &conf, c, false, true)
 				}
 			},
 		},
@@ -48,13 +48,13 @@ func TestStoreGetConfigurations(t *testing.T) {
 			args: args{
 				owner: test.Owner(0),
 			},
-			want: func(t *testing.T, configurations []*store.Configuration) {
+			want: func(t *testing.T, configurations map[string]*store.Configuration) {
 				require.NotEmpty(t, configurations)
 				for _, c := range configurations {
 					require.Equal(t, test.Owner(0), c.Owner)
 					conf, ok := confs[c.Id]
 					require.True(t, ok)
-					test.CmpStoredConfiguration(t, &conf, c, true, true)
+					test.CmpStoredConfiguration(t, &conf, c, false, true)
 				}
 			},
 		},
@@ -72,12 +72,13 @@ func TestStoreGetConfigurations(t *testing.T) {
 					},
 				},
 			},
-			want: func(t *testing.T, configurations []*store.Configuration) {
+			want: func(t *testing.T, configurations map[string]*store.Configuration) {
 				require.Len(t, configurations, 1)
-				c := configurations[0]
+				c, ok := configurations[test.ConfigurationID(1)]
+				require.True(t, ok)
 				conf, ok := confs[c.Id]
 				require.True(t, ok)
-				test.CmpStoredConfiguration(t, &conf, c, true, true)
+				test.CmpStoredConfiguration(t, &conf, c, false, true)
 			},
 		},
 		{
@@ -95,14 +96,15 @@ func TestStoreGetConfigurations(t *testing.T) {
 					},
 				},
 			},
-			want: func(t *testing.T, configurations []*store.Configuration) {
+			want: func(t *testing.T, configurations map[string]*store.Configuration) {
 				require.Len(t, configurations, 1)
-				c := configurations[0]
+				c, ok := configurations[test.ConfigurationID(2)]
+				require.True(t, ok)
 				conf, ok := confs[c.Id]
 				require.True(t, ok)
 				require.Equal(t, test.ConfigurationID(2), conf.Id)
 				require.Equal(t, test.Owner(2), conf.Owner)
-				test.CmpStoredConfiguration(t, &conf, c, true, true)
+				test.CmpStoredConfiguration(t, &conf, c, false, true)
 			},
 		},
 		{
@@ -118,7 +120,7 @@ func TestStoreGetConfigurations(t *testing.T) {
 					},
 				},
 			},
-			want: func(t *testing.T, configurations []*store.Configuration) {
+			want: func(t *testing.T, configurations map[string]*store.Configuration) {
 				require.Len(t, configurations, test.RuntimeConfig.NumConfigurations)
 				for _, c := range configurations {
 					conf, ok := confs[c.Id]
@@ -144,7 +146,7 @@ func TestStoreGetConfigurations(t *testing.T) {
 					},
 				},
 			},
-			want: func(t *testing.T, configurations []*store.Configuration) {
+			want: func(t *testing.T, configurations map[string]*store.Configuration) {
 				require.Len(t, configurations, 3)
 				for _, c := range configurations {
 					conf, ok := confs[c.Id]
@@ -170,7 +172,7 @@ func TestStoreGetConfigurations(t *testing.T) {
 					},
 				},
 			},
-			want: func(t *testing.T, configurations []*store.Configuration) {
+			want: func(t *testing.T, configurations map[string]*store.Configuration) {
 				require.Empty(t, configurations)
 			},
 		},
@@ -199,7 +201,7 @@ func TestStoreGetConfigurations(t *testing.T) {
 					},
 				},
 			},
-			want: func(t *testing.T, configurations []*store.Configuration) {
+			want: func(t *testing.T, configurations map[string]*store.Configuration) {
 				require.Len(t, configurations, 3)
 				for _, c := range configurations {
 					conf, ok := confs[c.Id]
@@ -223,7 +225,7 @@ func TestStoreGetConfigurations(t *testing.T) {
 					},
 				},
 			},
-			want: func(t *testing.T, configurations []*store.Configuration) {
+			want: func(t *testing.T, configurations map[string]*store.Configuration) {
 				require.Len(t, configurations, 10)
 				for _, c := range configurations {
 					_, ok := confs[c.Id]
@@ -269,7 +271,7 @@ func TestStoreGetConfigurations(t *testing.T) {
 					},
 				},
 			},
-			want: func(t *testing.T, configurations []*store.Configuration) {
+			want: func(t *testing.T, configurations map[string]*store.Configuration) {
 				require.Len(t, configurations, 3)
 				for _, c := range configurations {
 					_, ok := confs[c.Id]
@@ -309,7 +311,7 @@ func TestStoreGetConfigurations(t *testing.T) {
 					}(),
 				},
 			},
-			want: func(t *testing.T, configurations []*store.Configuration) {
+			want: func(t *testing.T, configurations map[string]*store.Configuration) {
 				require.Len(t, configurations, 1)
 				for _, c := range configurations {
 					conf, ok := confs[c.Id]
@@ -323,13 +325,14 @@ func TestStoreGetConfigurations(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var configurations []*store.Configuration
-			err := s.GetConfigurations(ctx, tt.args.owner, tt.args.query, func(iterCtx context.Context, iter store.Iterator[store.Configuration]) error {
-				var conf store.Configuration
-				for iter.Next(iterCtx, &conf) {
-					configurations = append(configurations, conf.Clone())
+			configurations := make(map[string]*store.Configuration)
+			err := s.GetConfigurations(ctx, tt.args.owner, tt.args.query, func(c *store.Configuration) error {
+				configuration, ok := configurations[c.Id]
+				if ok {
+					return test.MergeConfigurations(configuration, c)
 				}
-				return iter.Err()
+				configurations[c.Id] = c.Clone()
+				return nil
 			})
 			if tt.wantErr {
 				require.Error(t, err)

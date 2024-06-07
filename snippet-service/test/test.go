@@ -1,6 +1,9 @@
 package test
 
 import (
+	"cmp"
+	"errors"
+	"slices"
 	"testing"
 
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
@@ -71,6 +74,36 @@ func cmpConfigurationResources(t *testing.T, want, got []*pb.Configuration_Resou
 	CmpJSON(t, want, got)
 }
 
+func MergeConfigurations(c1, c2 *store.Configuration) error {
+	if c1.Id != c2.Id || c1.Owner != c2.Owner {
+		return errors.New("conditions to merge must have the same ID and owner")
+	}
+
+	if c2.Latest != nil {
+		latest := c2.Latest.Copy()
+		c1.Latest = &latest
+	}
+	c1.Versions = append(c1.Versions, c2.Versions...)
+	slices.SortFunc(c1.Versions, func(i, j store.ConfigurationVersion) int {
+		return cmp.Compare(i.Version, j.Version)
+	})
+	c1.Versions = slices.CompactFunc(c1.Versions, func(i, j store.ConfigurationVersion) bool {
+		return i.Version == j.Version
+	})
+
+	if c1.Latest != nil {
+		if !slices.ContainsFunc(c1.Versions, func(cv store.ConfigurationVersion) bool {
+			return cv.Version == c1.Latest.Version
+		}) {
+			c1.Versions = append(c1.Versions, c1.Latest.Copy())
+		}
+	} else if len(c1.Versions) > 0 {
+		latest := c1.Versions[len(c1.Versions)-1].Copy()
+		c1.Latest = &latest
+	}
+	return nil
+}
+
 func CmpConfiguration(t *testing.T, want, got *pb.Configuration, ignoreTimestamp bool) {
 	want = want.Clone()
 	got = got.Clone()
@@ -125,6 +158,36 @@ func CmpStoredConfigurationMaps(t *testing.T, want, got map[string]store.Configu
 		require.True(t, ok)
 		CmpStoredConfiguration(t, &v, &gotV, true, false)
 	}
+}
+
+func MergeConditions(c1, c2 *store.Condition) error {
+	if c1.Id != c2.Id || c1.Owner != c2.Owner || c1.ConfigurationId != c2.ConfigurationId {
+		return errors.New("conditions to merge must have the same ID, owner and configuration ID")
+	}
+
+	if c2.Latest != nil {
+		latest := c2.Latest.Copy()
+		c1.Latest = &latest
+	}
+	c1.Versions = append(c1.Versions, c2.Versions...)
+	slices.SortFunc(c1.Versions, func(i, j store.ConditionVersion) int {
+		return cmp.Compare(i.Version, j.Version)
+	})
+	c1.Versions = slices.CompactFunc(c1.Versions, func(i, j store.ConditionVersion) bool {
+		return i.Version == j.Version
+	})
+
+	if c1.Latest != nil {
+		if !slices.ContainsFunc(c1.Versions, func(cv store.ConditionVersion) bool {
+			return cv.Version == c1.Latest.Version
+		}) {
+			c1.Versions = append(c1.Versions, c1.Latest.Copy())
+		}
+	} else if len(c1.Versions) > 0 {
+		latest := c1.Versions[len(c1.Versions)-1].Copy()
+		c1.Latest = &latest
+	}
+	return nil
 }
 
 func CmpCondition(t *testing.T, want, got *pb.Condition, ignoreTimestamp bool) {
