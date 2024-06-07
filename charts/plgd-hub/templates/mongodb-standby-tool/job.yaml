@@ -26,6 +26,9 @@ spec:
       labels:
         {{- include "plgd-hub.mongodb-standby-tool.selectorLabels" . | nindent 8 }}
     spec:
+      manualSelector: true
+      matchLabels:
+        {{- include "plgd-hub.mongodb-standby-tool.selectorLabels" . | nindent 8 }}
       restartPolicy: Never
       {{- with .Values.mongodb.standbyTool.securityContext }}
       securityContext:
