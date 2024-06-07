@@ -12,13 +12,13 @@ metadata:
     {{- end }}
   annotations:
     checksum/config: {{ printf "%s" .Values.mongodb.standbyTool | sha256sum }}
-    {{- with .Values.mongodb.standbyTool.jobAnnotations }}
+  {{- with .Values.mongodb.standbyTool.jobAnnotations }}
     {{- . | toYaml | nindent 4 }}
-    {{- end }}
+  {{- end }}
 spec:
   backoffLimit: 1
   suspend: true
-  template:
+  template:        
     metadata:
       {{- with .Values.mongodb.standbyTool.podAnnotations }}
       annotations:

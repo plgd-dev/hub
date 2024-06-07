@@ -15,6 +15,7 @@
 {{- define "plgd-hub.mongodb-standby-tool.selectorLabels" -}}
 app.kubernetes.io/name: {{ .Values.mongodb.standbyTool.name }}
 app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/configmap-ref: {{ include "plgd-hub.mongodb-standby-tool.configName" . }}
 {{- end }}
 
 {{- define  "plgd-hub.mongodb-standby-tool.image" -}}
