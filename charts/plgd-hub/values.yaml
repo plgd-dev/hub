@@ -444,6 +444,31 @@ certmanager:
         algorithm:
         # -- Certificate key size
         size:
+  storage:
+    # -- Storage issuer. In case you want to create your own issuer for storage certs (mongodb, scylla). In case if it is not set, the internal or default issuer will be used.
+    issuer:
+      # -- Labels
+      labels: {}
+      # -- Annotations
+      annotations: {}
+      # -- Name
+      name:
+      # -- Kind of internal issuer
+      kind:
+      # -- Group of internal issuer
+      group:
+      # -- cert-manager issuer spec
+      spec:
+    cert:
+      # -- Certificate duration
+      duration:
+      # -- Certificate renew before
+      renewBefore:
+      key:
+        # -- Certificate key algorithm
+        algorithm:
+        # -- Certificate key size
+        size:
   coap:
     issuer:
       # -- Labels
