@@ -102,23 +102,23 @@ func addConditions(ctx context.Context, t *testing.T, n int, calcVersion calcula
 
 		condition, ok := conditions[cond.GetId()]
 		if !ok {
-			condition = store.Condition{
-				Id:              cond.GetId(),
-				ConfigurationId: cond.GetConfigurationId(),
-				Owner:           cond.GetOwner(),
-				Name:            cond.GetName(),
-			}
+			condition = store.MakeFirstCondition(cond)
+			conditions[cond.GetId()] = condition
+			continue
 		}
-		condition.Enabled = cond.GetEnabled()
-		condition.Timestamp = cond.GetTimestamp()
-		condition.ApiAccessToken = cond.GetApiAccessToken()
-		condition.Versions = append(condition.Versions, store.ConditionVersion{
+		latest := store.ConditionVersion{
+			Name:               cond.GetName(),
 			Version:            cond.GetVersion(),
+			Enabled:            cond.GetEnabled(),
+			Timestamp:          cond.GetTimestamp(),
 			DeviceIdFilter:     cond.GetDeviceIdFilter(),
 			ResourceTypeFilter: cond.GetResourceTypeFilter(),
 			ResourceHrefFilter: cond.GetResourceHrefFilter(),
 			JqExpressionFilter: cond.GetJqExpressionFilter(),
-		})
+			ApiAccessToken:     cond.GetApiAccessToken(),
+		}
+		condition.Latest = &latest
+		condition.Versions = append(condition.Versions, latest)
 		conditions[cond.GetId()] = condition
 	}
 	return conditions

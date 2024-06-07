@@ -59,7 +59,19 @@
         },
         "parameters": [
           {
-            "name": "configurationIdFitler",
+            "name": "configurationIdFilter",
+            "description": "returns latest conditions for given configurationId",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "httpIdFilter",
+            "description": "Format: {id}/{version}, e.g., \"ae424c58-e517-4494-6de7-583536c48213/all\" or \"ae424c58-e517-4494-6de7-583536c48213/latest\" or \"ae424c58-e517-4494-6de7-583536c48213/{version}\"",
             "in": "query",
             "required": false,
             "type": "array",

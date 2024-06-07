@@ -18,37 +18,30 @@ func TestStoreUpdateCondition(t *testing.T) {
 	s, cleanUpStore := test.NewMongoStore(t)
 	defer cleanUpStore()
 
-	condID := uuid.NewString()
-	confID := uuid.NewString()
-	const owner = "owner1"
-
-	create := func() {
-		_, err := s.CreateCondition(ctx, &pb.Condition{
-			Id:              condID,
-			Name:            "update",
-			Enabled:         true,
-			ConfigurationId: confID,
-			Owner:           owner,
-		})
-		require.NoError(t, err)
-	}
-	create()
+	cond, err := s.CreateCondition(ctx, &pb.Condition{
+		Id:              uuid.NewString(),
+		Name:            "update",
+		Enabled:         true,
+		ConfigurationId: uuid.NewString(),
+		Owner:           "owner1",
+		Version:         42,
+	})
+	require.NoError(t, err)
 
 	type args struct {
 		update *pb.Condition
-		reset  bool
 	}
 	tests := []struct {
 		name    string
 		args    args
-		want    func(*testing.T, *pb.Condition)
+		want    func(*pb.Condition)
 		wantErr bool
 	}{
 		{
 			name: "missing Id",
 			args: args{
 				update: &pb.Condition{
-					Owner:           owner,
+					Owner:           cond.GetOwner(),
 					ConfigurationId: uuid.NewString(),
 					Version:         1,
 				},
@@ -60,20 +53,8 @@ func TestStoreUpdateCondition(t *testing.T) {
 			args: args{
 				update: &pb.Condition{
 					Id:      uuid.NewString(),
-					Owner:   owner,
+					Owner:   cond.GetOwner(),
 					Version: 1,
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "duplicit version",
-			args: args{
-				update: &pb.Condition{
-					Id:              condID,
-					Owner:           owner,
-					ConfigurationId: uuid.NewString(),
-					Version:         0,
 				},
 			},
 			wantErr: true,
@@ -82,10 +63,34 @@ func TestStoreUpdateCondition(t *testing.T) {
 			name: "non-matching owner",
 			args: args{
 				update: &pb.Condition{
-					Id:              condID,
+					Id:              cond.GetId(),
 					Owner:           "invalid",
-					ConfigurationId: confID,
+					ConfigurationId: cond.GetConfigurationId(),
 					Version:         1,
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "duplicit version",
+			args: args{
+				update: &pb.Condition{
+					Id:              cond.GetId(),
+					Owner:           cond.GetOwner(),
+					ConfigurationId: cond.GetConfigurationId(),
+					Version:         cond.GetVersion(),
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid version",
+			args: args{
+				update: &pb.Condition{
+					Id:              cond.GetId(),
+					Owner:           cond.GetOwner(),
+					ConfigurationId: cond.GetConfigurationId(),
+					Version:         cond.GetVersion() - 1, // version must be higher than the latest one
 				},
 			},
 			wantErr: true,
@@ -94,10 +99,10 @@ func TestStoreUpdateCondition(t *testing.T) {
 			name: "update",
 			args: args{
 				update: &pb.Condition{
-					Id:                 condID,
-					ConfigurationId:    confID,
-					Owner:              owner,
-					Version:            1,
+					Id:                 cond.GetId(),
+					ConfigurationId:    cond.GetConfigurationId(),
+					Owner:              cond.GetOwner(),
+					Version:            43,
 					Name:               "updated name",
 					Enabled:            false,
 					ApiAccessToken:     "updated token",
@@ -107,27 +112,27 @@ func TestStoreUpdateCondition(t *testing.T) {
 					JqExpressionFilter: "{}",
 				},
 			},
-			want: func(*testing.T, *pb.Condition) {
-				// TODO: check that the values are updated in the DB
+			want: func(updated *pb.Condition) {
+				require.Equal(t, "updated name", updated.GetName())
+				require.False(t, updated.GetEnabled())
+				require.Equal(t, "updated token", updated.GetApiAccessToken())
+				require.ElementsMatch(t, []string{"device1", "device2"}, updated.GetDeviceIdFilter())
+				require.ElementsMatch(t, []string{"plgd.test"}, updated.GetResourceTypeFilter())
+				require.ElementsMatch(t, []string{"/test/1", "/test/2"}, updated.GetResourceHrefFilter())
+				require.Equal(t, "{}", updated.GetJqExpressionFilter())
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.args.reset {
-				err := s.Clear(ctx)
-				require.NoError(t, err)
-				create()
-			}
-
 			cond, err := s.UpdateCondition(ctx, tt.args.update)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
 			}
 			require.NoError(t, err)
-			tt.want(t, cond)
+			tt.want(cond)
 		})
 	}
 }

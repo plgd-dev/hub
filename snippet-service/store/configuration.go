@@ -52,7 +52,7 @@ func (cv *ConfigurationVersion) Copy() ConfigurationVersion {
 	return c
 }
 
-func MakeConfigurationVersion2(c *pb.Configuration) ConfigurationVersion {
+func MakeConfigurationVersion(c *pb.Configuration) ConfigurationVersion {
 	return ConfigurationVersion{
 		Name:      c.GetName(),
 		Version:   c.GetVersion(),
@@ -68,14 +68,8 @@ type Configuration struct {
 	Versions []ConfigurationVersion `bson:"versions,omitempty"`
 }
 
-func MakeFirstConfiguration2(c *pb.Configuration) Configuration {
-	version := ConfigurationVersion{
-		Name:      c.GetName(),
-		Version:   c.GetVersion(),
-		Resources: c.GetResources(),
-		Timestamp: c.GetTimestamp(),
-	}
-
+func MakeFirstConfiguration(c *pb.Configuration) Configuration {
+	version := MakeConfigurationVersion(c)
 	return Configuration{
 		Id:       c.GetId(),
 		Owner:    c.GetOwner(),

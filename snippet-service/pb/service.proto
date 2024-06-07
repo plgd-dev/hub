@@ -75,7 +75,9 @@ message Condition { // driven by resource change event
 
 message GetConditionsRequest { 
   repeated IDFilter id_filter = 1;
-  repeated string configuration_id_fitler = 2;
+  repeated string configuration_id_filter = 2; // returns latest conditions for given configurationId
+    // Format: {id}/{version}, e.g., "ae424c58-e517-4494-6de7-583536c48213/all" or "ae424c58-e517-4494-6de7-583536c48213/latest" or "ae424c58-e517-4494-6de7-583536c48213/{version}"
+    repeated string http_id_filter = 3 [ deprecated = true ];
 }
 
 message DeleteConditionsRequest { repeated IDFilter id_filter = 1; }

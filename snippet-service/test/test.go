@@ -135,40 +135,53 @@ func CmpCondition(t *testing.T, want, got *pb.Condition, ignoreTimestamp bool) {
 	CmpJSON(t, want, got)
 }
 
-func CmpStoredCondition(t *testing.T, want, got *store.Condition, ignoreTimestamp bool) {
-	want = want.Clone()
-	if ignoreTimestamp {
-		want.Timestamp = got.Timestamp
-	}
-	CmpJSON(t, want, got)
-}
-
 func ConditionContains(t *testing.T, storeCond store.Condition, cond *pb.Condition) {
 	require.Equal(t, storeCond.Id, cond.GetId())
-	require.Equal(t, storeCond.Name, cond.GetName())
 	require.Equal(t, storeCond.Owner, cond.GetOwner())
-	require.Equal(t, storeCond.Enabled, cond.GetEnabled())
 	require.Equal(t, storeCond.ConfigurationId, cond.GetConfigurationId())
-	require.Equal(t, storeCond.ApiAccessToken, cond.GetApiAccessToken())
-	require.Equal(t, storeCond.Timestamp, cond.GetTimestamp())
 	for _, v := range storeCond.Versions {
 		if v.Version != cond.GetVersion() {
 			continue
 		}
+		require.Equal(t, v.Name, cond.GetName())
+		require.Equal(t, v.Version, cond.GetVersion())
+		require.Equal(t, v.Enabled, cond.GetEnabled())
+		require.Equal(t, v.Timestamp, cond.GetTimestamp())
 		require.Equal(t, v.DeviceIdFilter, cond.GetDeviceIdFilter())
 		require.Equal(t, v.ResourceTypeFilter, cond.GetResourceTypeFilter())
 		require.Equal(t, v.ResourceHrefFilter, cond.GetResourceHrefFilter())
 		require.Equal(t, v.JqExpressionFilter, cond.GetJqExpressionFilter())
+		require.Equal(t, v.ApiAccessToken, cond.GetApiAccessToken())
 		return
 	}
 	require.Fail(t, "version not found")
 }
 
-func CmpStoredConditionsMaps(t *testing.T, want, got map[string]store.Condition) {
+func CmpStoredCondition(t *testing.T, want, got *store.Condition, ignoreTimestamp, ignoreLatest bool) {
+	require.Len(t, got.Versions, len(want.Versions))
+	if ignoreTimestamp || ignoreLatest {
+		want = want.Clone()
+		got = got.Clone()
+	}
+	if ignoreTimestamp {
+		if want.Latest != nil && got.Latest != nil {
+			want.Latest.Timestamp = got.Latest.Timestamp
+		}
+		for i := range want.Versions {
+			want.Versions[i].Timestamp = got.Versions[i].Timestamp
+		}
+	}
+	if ignoreLatest {
+		want.Latest = got.Latest
+	}
+	CmpJSON(t, want, got)
+}
+
+func CmpStoredConditionMaps(t *testing.T, want, got map[string]store.Condition) {
 	require.Len(t, got, len(want))
 	for _, v := range want {
 		gotV, ok := got[v.Id]
 		require.True(t, ok)
-		CmpJSON(t, v, gotV)
+		CmpStoredCondition(t, &v, &gotV, true, false)
 	}
 }

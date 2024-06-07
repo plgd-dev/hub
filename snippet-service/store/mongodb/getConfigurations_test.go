@@ -33,10 +33,7 @@ func TestStoreGetConfigurations(t *testing.T) {
 	}{
 		{
 			name: "all",
-			args: args{
-				owner: "",
-				query: nil,
-			},
+			args: args{},
 			want: func(t *testing.T, configurations []*store.Configuration) {
 				require.Len(t, configurations, len(confs))
 				for _, c := range configurations {
@@ -50,7 +47,6 @@ func TestStoreGetConfigurations(t *testing.T) {
 			name: "owner0",
 			args: args{
 				owner: test.Owner(0),
-				query: nil,
 			},
 			want: func(t *testing.T, configurations []*store.Configuration) {
 				require.NotEmpty(t, configurations)
@@ -65,7 +61,6 @@ func TestStoreGetConfigurations(t *testing.T) {
 		{
 			name: "id1/all",
 			args: args{
-				owner: "",
 				query: &pb.GetConfigurationsRequest{
 					IdFilter: []*pb.IDFilter{
 						{

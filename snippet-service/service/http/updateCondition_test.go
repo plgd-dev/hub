@@ -63,7 +63,7 @@ func TestRequestHandlerUpdateCondition(t *testing.T) {
 	}()
 	c := snippetPb.NewSnippetServiceClient(conn)
 
-	cond := makeUpdateCondition(uuid.NewString(), uuid.NewString(), oauthService.DeviceUserID, 0)
+	cond := makeUpdateCondition(uuid.NewString(), uuid.NewString(), oauthService.DeviceUserID, 1)
 	_, err = c.CreateCondition(pkgGrpc.CtxWithToken(ctx, token), cond)
 	require.NoError(t, err)
 
@@ -75,6 +75,7 @@ func TestRequestHandlerUpdateCondition(t *testing.T) {
 	tests := []struct {
 		name         string
 		args         args
+		want         *snippetPb.Condition
 		wantHTTPCode int
 		wantErr      bool
 	}{
@@ -83,7 +84,7 @@ func TestRequestHandlerUpdateCondition(t *testing.T) {
 			args: args{
 				id: "invalid",
 				cond: func() *snippetPb.Condition {
-					c := makeUpdateCondition(cond.GetId(), cond.GetConfigurationId(), cond.GetOwner(), 1)
+					c := makeUpdateCondition(cond.GetId(), cond.GetConfigurationId(), cond.GetOwner(), 2)
 					c.Id = "invalid"
 					return c
 				}(),
@@ -97,7 +98,7 @@ func TestRequestHandlerUpdateCondition(t *testing.T) {
 			args: args{
 				id: cond.GetId(),
 				cond: func() *snippetPb.Condition {
-					c := makeUpdateCondition(cond.GetId(), cond.GetConfigurationId(), cond.GetOwner(), 1)
+					c := makeUpdateCondition(cond.GetId(), cond.GetConfigurationId(), cond.GetOwner(), 2)
 					c.ConfigurationId = "invalid"
 					return c
 				}(),
@@ -110,7 +111,7 @@ func TestRequestHandlerUpdateCondition(t *testing.T) {
 			name: "duplicit version",
 			args: args{
 				id:    cond.GetId(),
-				cond:  makeUpdateCondition(cond.GetId(), cond.GetConfigurationId(), oauthService.DeviceUserID, 0),
+				cond:  makeUpdateCondition(cond.GetId(), cond.GetConfigurationId(), oauthService.DeviceUserID, 1),
 				token: token,
 			},
 			wantHTTPCode: http.StatusInternalServerError,
@@ -120,7 +121,7 @@ func TestRequestHandlerUpdateCondition(t *testing.T) {
 			name: "configurationID mismatch",
 			args: args{
 				id:    cond.GetId(),
-				cond:  makeUpdateCondition(cond.GetId(), uuid.NewString(), oauthService.DeviceUserID, 1),
+				cond:  makeUpdateCondition(cond.GetId(), uuid.NewString(), oauthService.DeviceUserID, 2),
 				token: token,
 			},
 			wantHTTPCode: http.StatusInternalServerError,
@@ -130,29 +131,32 @@ func TestRequestHandlerUpdateCondition(t *testing.T) {
 			name: "update",
 			args: args{
 				id:    cond.GetId(),
-				cond:  makeUpdateCondition(cond.GetId(), "", "", 1),
+				cond:  makeUpdateCondition(cond.GetId(), "", "", 2),
 				token: token,
 			},
 			wantHTTPCode: http.StatusOK,
+			want:         makeUpdateCondition(cond.GetId(), cond.GetConfigurationId(), oauthService.DeviceUserID, 2),
 		},
 		{
 			name: "update (with owner)",
 			args: args{
 				id:    cond.GetId(),
-				cond:  makeUpdateCondition(cond.GetId(), "", oauthService.DeviceUserID, 2),
+				cond:  makeUpdateCondition(cond.GetId(), cond.GetConfigurationId(), oauthService.DeviceUserID, 3),
 				token: token,
 			},
 			wantHTTPCode: http.StatusOK,
+			want:         makeUpdateCondition(cond.GetId(), cond.GetConfigurationId(), oauthService.DeviceUserID, 3),
 		},
 		{
 			name: "update (with overwritten ID)",
 			args: args{
 				id: cond.GetId(),
 				// the ID will get overwritten by the ID in the query
-				cond:  makeUpdateCondition(uuid.NewString(), "", oauthService.DeviceUserID, 3),
+				cond:  makeUpdateCondition(uuid.NewString(), "", oauthService.DeviceUserID, 4),
 				token: token,
 			},
 			wantHTTPCode: http.StatusOK,
+			want:         makeUpdateCondition(cond.GetId(), cond.GetConfigurationId(), oauthService.DeviceUserID, 4),
 		},
 	}
 
@@ -180,10 +184,7 @@ func TestRequestHandlerUpdateCondition(t *testing.T) {
 			}
 			require.NoError(t, err)
 
-			want := tt.args.cond
-			want.Id = tt.args.id
-			want.Owner = oauthService.DeviceUserID
-			snippetTest.CmpCondition(t, want, &got, true)
+			snippetTest.CmpCondition(t, tt.want, &got, true)
 		})
 	}
 }

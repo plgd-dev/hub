@@ -9,10 +9,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
-	"github.com/plgd-dev/hub/v2/snippet-service/store"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -22,16 +19,8 @@ type Store struct {
 
 const (
 	conditionsCol     = "conditions"
-	configurationsCol = "configurations2"
+	configurationsCol = "configurations"
 )
-
-var idVersionUniqueIndex = mongo.IndexModel{
-	Keys: bson.D{
-		{Key: store.IDKey, Value: 1},
-		{Key: store.VersionsKey + "." + store.VersionKey, Value: 1},
-	},
-	Options: options.Index().SetUnique(true),
-}
 
 func New(ctx context.Context, cfg *Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*Store, error) {
 	certManager, err := client.New(cfg.Mongo.TLS, fileWatcher, logger)
@@ -40,7 +29,7 @@ func New(ctx context.Context, cfg *Config, fileWatcher *fsnotify.Watcher, logger
 	}
 
 	m, err := pkgMongo.NewStoreWithCollections(ctx, &cfg.Mongo, certManager.GetTLSConfig(), tracerProvider, map[string][]mongo.IndexModel{
-		conditionsCol:     {idVersionUniqueIndex},
+		conditionsCol:     nil,
 		configurationsCol: nil,
 	})
 	if err != nil {

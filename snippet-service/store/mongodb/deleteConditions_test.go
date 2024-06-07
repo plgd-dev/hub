@@ -3,17 +3,17 @@ package mongodb_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
 	"github.com/plgd-dev/hub/v2/snippet-service/store"
 	"github.com/plgd-dev/hub/v2/snippet-service/store/mongodb"
 	"github.com/plgd-dev/hub/v2/snippet-service/test"
-	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
 )
 
 func TestStoreDeleteConditions(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
 	getConditions := func(t *testing.T, s *mongodb.Store, owner string, query *pb.GetConditionsRequest) []*store.Condition {
@@ -29,9 +29,19 @@ func TestStoreDeleteConditions(t *testing.T) {
 		return conditions
 	}
 
+	getConditionsMap := func(t *testing.T, s *mongodb.Store, owner string, query *pb.GetConditionsRequest) map[string]store.Condition {
+		conds := getConditions(t, s, owner, query)
+		condsMap := make(map[string]store.Condition)
+		for _, cond := range conds {
+			condsMap[cond.Id] = *cond
+		}
+		return condsMap
+	}
+
 	type args struct {
-		owner string
-		query *pb.DeleteConditionsRequest
+		owner     string
+		query     *pb.DeleteConditionsRequest
+		makeQuery func(stored map[string]store.Condition) *pb.DeleteConditionsRequest
 	}
 	tests := []struct {
 		name    string
@@ -53,20 +63,16 @@ func TestStoreDeleteConditions(t *testing.T) {
 				owner: test.Owner(1),
 			},
 			want: func(t *testing.T, s *mongodb.Store, stored map[string]store.Condition) {
-				conds := getConditions(t, s, "", nil)
-				require.NotEmpty(t, conds)
-				newCount := 0
-				for _, cond := range conds {
-					require.NotEqual(t, test.Owner(1), cond.Owner)
-					newCount += len(cond.Versions)
-				}
-				storedCount := 0
+				condsMap := getConditionsMap(t, s, "", nil)
+				require.NotEmpty(t, condsMap)
+				newStored := make(map[string]store.Condition)
 				for _, cond := range stored {
-					if cond.Owner != test.Owner(1) {
-						storedCount += len(cond.Versions)
+					if cond.Owner == test.Owner(1) {
+						continue
 					}
+					newStored[cond.Id] = cond
 				}
-				require.Equal(t, storedCount, newCount)
+				test.CmpStoredConditionMaps(t, newStored, condsMap)
 			},
 		},
 		{
@@ -94,17 +100,9 @@ func TestStoreDeleteConditions(t *testing.T) {
 				},
 			},
 			want: func(t *testing.T, s *mongodb.Store, stored map[string]store.Condition) {
-				conds := getConditions(t, s, "", nil)
-				require.NotEmpty(t, conds)
-				newCount := 0
-				for _, cond := range conds {
-					require.NotEqual(t, test.ConditionID(1), cond.Id)
-					require.NotEqual(t, test.ConditionID(3), cond.Id)
-					require.NotEqual(t, test.ConditionID(4), cond.Id)
-					require.NotEqual(t, test.ConditionID(5), cond.Id)
-					newCount += len(cond.Versions)
-				}
-				storedCount := 0
+				condsMap := getConditionsMap(t, s, "", nil)
+				require.NotEmpty(t, condsMap)
+				newStored := make(map[string]store.Condition)
 				for _, cond := range stored {
 					if cond.Id == test.ConditionID(1) ||
 						cond.Id == test.ConditionID(3) ||
@@ -112,9 +110,9 @@ func TestStoreDeleteConditions(t *testing.T) {
 						cond.Id == test.ConditionID(5) {
 						continue
 					}
-					storedCount += len(cond.Versions)
+					newStored[cond.Id] = cond
 				}
-				require.Equal(t, storedCount, newCount)
+				test.CmpStoredConditionMaps(t, newStored, condsMap)
 			},
 		},
 		{
@@ -140,21 +138,16 @@ func TestStoreDeleteConditions(t *testing.T) {
 				},
 			},
 			want: func(t *testing.T, s *mongodb.Store, stored map[string]store.Condition) {
-				conds := getConditions(t, s, "", nil)
-				require.NotEmpty(t, conds)
-				newCount := 0
-				for _, cond := range conds {
-					require.NotEqual(t, test.ConditionID(2), cond.Id)
-					newCount += len(cond.Versions)
-				}
-				storedCount := 0
+				condsMap := getConditionsMap(t, s, "", nil)
+				require.NotEmpty(t, condsMap)
+				newStored := make(map[string]store.Condition)
 				for _, cond := range stored {
 					if cond.Id == test.ConditionID(2) {
 						continue
 					}
-					storedCount += len(cond.Versions)
+					newStored[cond.Id] = cond
 				}
-				require.Equal(t, storedCount, newCount)
+				test.CmpStoredConditionMaps(t, newStored, condsMap)
 			},
 		},
 		{
@@ -171,20 +164,15 @@ func TestStoreDeleteConditions(t *testing.T) {
 				},
 			},
 			want: func(t *testing.T, s *mongodb.Store, stored map[string]store.Condition) {
-				storedLatest := make(map[string]store.ConditionVersion)
-				storedCount := 0
-				for _, cond := range stored {
-					storedLatest[cond.Id] = cond.Versions[len(cond.Versions)-1]
-					storedCount += len(cond.Versions)
+				for id, cond := range stored {
+					cond.Versions = cond.Versions[:len(cond.Versions)-1]
+					latest := cond.Versions[len(cond.Versions)-1].Copy()
+					cond.Latest = &latest
+					stored[id] = cond
 				}
-				conds := getConditions(t, s, "", nil)
-				require.NotEmpty(t, conds)
-				count := 0
-				for _, cond := range conds {
-					require.NotEqual(t, storedLatest[cond.Id], cond.Versions[len(cond.Versions)-1])
-					count += len(cond.Versions)
-				}
-				require.Equal(t, storedCount-len(storedLatest), count)
+				confsMap := getConditionsMap(t, s, "", nil)
+				require.NotEmpty(t, confsMap)
+				test.CmpStoredConditionMaps(t, stored, confsMap)
 			},
 		},
 		{
@@ -213,26 +201,18 @@ func TestStoreDeleteConditions(t *testing.T) {
 				},
 			},
 			want: func(t *testing.T, s *mongodb.Store, stored map[string]store.Condition) {
-				storedLatest := make(map[string]store.ConditionVersion)
-				storedCount := 0
-				for _, cond := range stored {
-					storedLatest[cond.Id] = cond.Versions[len(cond.Versions)-1]
-					storedCount += len(cond.Versions)
-				}
-				conds := getConditions(t, s, "", nil)
-				require.NotEmpty(t, conds)
-				count := 0
-				removed := 0
-				for _, cond := range conds {
-					if cond.Owner == test.Owner(1) {
-						require.NotEqual(t, storedLatest[cond.Id], cond.Versions[len(cond.Versions)-1])
-						removed++
-					} else {
-						require.Equal(t, storedLatest[cond.Id], cond.Versions[len(cond.Versions)-1])
+				for id, cond := range stored {
+					if cond.Owner != test.Owner(1) {
+						continue
 					}
-					count += len(cond.Versions)
+					cond.Versions = cond.Versions[:len(cond.Versions)-1]
+					latest := cond.Versions[len(cond.Versions)-1].Copy()
+					cond.Latest = &latest
+					stored[id] = cond
 				}
-				require.Equal(t, storedCount-removed, count)
+				condsMap := getConditionsMap(t, s, "", nil)
+				require.NotEmpty(t, condsMap)
+				test.CmpStoredConditionMaps(t, stored, condsMap)
 			},
 		},
 		{
@@ -251,12 +231,8 @@ func TestStoreDeleteConditions(t *testing.T) {
 				},
 			},
 			want: func(t *testing.T, s *mongodb.Store, stored map[string]store.Condition) {
-				conds := getConditions(t, s, "", nil)
-				condsMap := make(map[string]store.Condition)
-				for _, cond := range conds {
-					condsMap[cond.Id] = *cond
-				}
-				test.CmpStoredConditionsMaps(t, stored, condsMap)
+				condsMap := getConditionsMap(t, s, "", nil)
+				test.CmpStoredConditionMaps(t, stored, condsMap)
 			},
 		},
 		{
@@ -274,11 +250,7 @@ func TestStoreDeleteConditions(t *testing.T) {
 				},
 			},
 			want: func(t *testing.T, s *mongodb.Store, stored map[string]store.Condition) {
-				conds := getConditions(t, s, "", nil)
-				condsMap := make(map[string]store.Condition)
-				for _, cond := range conds {
-					condsMap[cond.Id] = *cond
-				}
+				condsMap := getConditionsMap(t, s, "", nil)
 				for _, cond := range stored {
 					versions := make([]store.ConditionVersion, 0)
 					for _, version := range cond.Versions {
@@ -295,7 +267,7 @@ func TestStoreDeleteConditions(t *testing.T) {
 					cond.Versions = versions
 					stored[cond.Id] = cond
 				}
-				test.CmpStoredConditionsMaps(t, stored, condsMap)
+				test.CmpStoredConditionMaps(t, stored, condsMap)
 			},
 		},
 		{
@@ -317,11 +289,7 @@ func TestStoreDeleteConditions(t *testing.T) {
 				},
 			},
 			want: func(t *testing.T, s *mongodb.Store, stored map[string]store.Condition) {
-				conds := getConditions(t, s, "", nil)
-				condsMap := make(map[string]store.Condition)
-				for _, cond := range conds {
-					condsMap[cond.Id] = *cond
-				}
+				condsMap := getConditionsMap(t, s, "", nil)
 				for _, cond := range stored {
 					if cond.Owner == test.Owner(2) {
 						versions := make([]store.ConditionVersion, 0)
@@ -337,7 +305,34 @@ func TestStoreDeleteConditions(t *testing.T) {
 						stored[cond.Id] = cond
 					}
 				}
-				test.CmpStoredConditionsMaps(t, stored, condsMap)
+				test.CmpStoredConditionMaps(t, stored, condsMap)
+			},
+		},
+		{
+			name: "id7/version/{$(all)}",
+			args: args{
+				makeQuery: func(stored map[string]store.Condition) *pb.DeleteConditionsRequest {
+					r := &pb.DeleteConditionsRequest{}
+					id7, ok := stored[test.ConditionID(7)]
+					require.True(t, ok)
+					for _, version := range id7.Versions {
+						r.IdFilter = append(r.IdFilter, &pb.IDFilter{
+							Id:      test.ConditionID(7),
+							Version: &pb.IDFilter_Value{Value: version.Version},
+						})
+					}
+					return r
+				},
+			},
+			want: func(t *testing.T, s *mongodb.Store, _ map[string]store.Condition) {
+				conds := getConditionsMap(t, s, "", &pb.GetConditionsRequest{
+					IdFilter: []*pb.IDFilter{
+						{
+							Id: test.ConditionID(7),
+						},
+					},
+				})
+				require.Empty(t, conds)
 			},
 		},
 	}
@@ -349,7 +344,11 @@ func TestStoreDeleteConditions(t *testing.T) {
 			inserted := test.AddConditionsToStore(ctx, t, s, 500, func(iteration int) uint64 {
 				return uint64(iteration * 100)
 			})
-			_, err := s.DeleteConditions(ctx, tt.args.owner, tt.args.query)
+			query := tt.args.query
+			if tt.args.makeQuery != nil {
+				query = tt.args.makeQuery(inserted)
+			}
+			_, err := s.DeleteConditions(ctx, tt.args.owner, query)
 			if tt.wantErr {
 				require.Error(t, err)
 				return

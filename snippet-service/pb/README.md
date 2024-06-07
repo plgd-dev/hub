@@ -275,7 +275,8 @@ TODO Naming
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id_filter | [IDFilter](#snippetservice-pb-IDFilter) | repeated |  |
-| configuration_id_fitler | [string](#string) | repeated |  |
+| configuration_id_filter | [string](#string) | repeated | returns latest conditions for given configurationId |
+| http_id_filter | [string](#string) | repeated | **Deprecated.** Format: {id}/{version}, e.g., &#34;ae424c58-e517-4494-6de7-583536c48213/all&#34; or &#34;ae424c58-e517-4494-6de7-583536c48213/latest&#34; or &#34;ae424c58-e517-4494-6de7-583536c48213/{version}&#34; |
 
 
 

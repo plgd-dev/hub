@@ -53,75 +53,114 @@ func ValidateAndNormalizeCondition(c *pb.Condition, isUpdate bool) error {
 }
 
 type ConditionVersion struct {
+	Name               string   `bson:"name,omitempty"`
 	Version            uint64   `bson:"version"`
+	Enabled            bool     `bson:"enabled"`
+	Timestamp          int64    `bson:"timestamp"`
 	DeviceIdFilter     []string `bson:"deviceIdFilter,omitempty"`
 	ResourceTypeFilter []string `bson:"resourceTypeFilter,omitempty"`
 	ResourceHrefFilter []string `bson:"resourceHrefFilter,omitempty"`
 	JqExpressionFilter string   `bson:"jqExpressionFilter,omitempty"`
+	ApiAccessToken     string   `bson:"apiAccessToken,omitempty"`
+}
+
+func (cv *ConditionVersion) Copy() ConditionVersion {
+	return ConditionVersion{
+		Name:               cv.Name,
+		Version:            cv.Version,
+		Enabled:            cv.Enabled,
+		Timestamp:          cv.Timestamp,
+		DeviceIdFilter:     slices.Clone(cv.DeviceIdFilter),
+		ResourceTypeFilter: slices.Clone(cv.ResourceTypeFilter),
+		ResourceHrefFilter: slices.Clone(cv.ResourceHrefFilter),
+		JqExpressionFilter: cv.JqExpressionFilter,
+		ApiAccessToken:     cv.ApiAccessToken,
+	}
+}
+
+func MakeConditionVersion(c *pb.Condition) ConditionVersion {
+	return ConditionVersion{
+		Name:               c.GetName(),
+		Version:            c.GetVersion(),
+		Enabled:            c.GetEnabled(),
+		Timestamp:          c.GetTimestamp(),
+		DeviceIdFilter:     c.GetDeviceIdFilter(),
+		ResourceTypeFilter: c.GetResourceTypeFilter(),
+		ResourceHrefFilter: c.GetResourceHrefFilter(),
+		JqExpressionFilter: c.GetJqExpressionFilter(),
+		ApiAccessToken:     c.GetApiAccessToken(),
+	}
 }
 
 type Condition struct {
 	Id              string             `bson:"_id"`
-	Name            string             `bson:"name,omitempty"`
-	Enabled         bool               `bson:"enabled"`
 	Owner           string             `bson:"owner"`
 	ConfigurationId string             `bson:"configurationId"`
-	ApiAccessToken  string             `bson:"apiAccessToken,omitempty"`
-	Timestamp       int64              `bson:"timestamp"`
+	Latest          *ConditionVersion  `bson:"latest,omitempty"`
 	Versions        []ConditionVersion `bson:"versions,omitempty"`
 }
 
-func MakeCondition(c *pb.Condition) Condition {
+func MakeFirstCondition(c *pb.Condition) Condition {
+	version := MakeConditionVersion(c)
 	return Condition{
 		Id:              c.GetId(),
-		Name:            c.GetName(),
-		Enabled:         c.GetEnabled(),
 		Owner:           c.GetOwner(),
 		ConfigurationId: c.GetConfigurationId(),
-		ApiAccessToken:  c.GetApiAccessToken(),
-		Timestamp:       GetTimestampOrNow(c.GetTimestamp()),
-		Versions: []ConditionVersion{
-			{
-				Version:            c.GetVersion(),
-				DeviceIdFilter:     c.GetDeviceIdFilter(),
-				ResourceTypeFilter: c.GetResourceTypeFilter(),
-				ResourceHrefFilter: c.GetResourceHrefFilter(),
-				JqExpressionFilter: c.GetJqExpressionFilter(),
-			},
-		},
+		Latest:          &version,
+		Versions:        []ConditionVersion{version},
+	}
+}
+
+func (c *Condition) GetLatest() (*pb.Condition, error) {
+	if c.Latest == nil {
+		return nil, errors.New("latest condition not set")
+	}
+	return &pb.Condition{
+		Id:                 c.Id,
+		Owner:              c.Owner,
+		ConfigurationId:    c.ConfigurationId,
+		Name:               c.Latest.Name,
+		Enabled:            c.Latest.Enabled,
+		Version:            c.Latest.Version,
+		Timestamp:          c.Latest.Timestamp,
+		DeviceIdFilter:     c.Latest.DeviceIdFilter,
+		ResourceTypeFilter: c.Latest.ResourceTypeFilter,
+		ResourceHrefFilter: c.Latest.ResourceHrefFilter,
+		JqExpressionFilter: c.Latest.JqExpressionFilter,
+		ApiAccessToken:     c.Latest.ApiAccessToken,
+	}, nil
+}
+
+func (c *Condition) GetCondition(index int) *pb.Condition {
+	return &pb.Condition{
+		Id:                 c.Id,
+		Owner:              c.Owner,
+		ConfigurationId:    c.ConfigurationId,
+		Name:               c.Versions[index].Name,
+		Enabled:            c.Versions[index].Enabled,
+		Version:            c.Versions[index].Version,
+		Timestamp:          c.Versions[index].Timestamp,
+		DeviceIdFilter:     c.Versions[index].DeviceIdFilter,
+		ResourceTypeFilter: c.Versions[index].ResourceTypeFilter,
+		ResourceHrefFilter: c.Versions[index].ResourceHrefFilter,
+		JqExpressionFilter: c.Versions[index].JqExpressionFilter,
+		ApiAccessToken:     c.Versions[index].ApiAccessToken,
 	}
 }
 
 func (c *Condition) Clone() *Condition {
-	return &Condition{
+	c2 := &Condition{
 		Id:              c.Id,
-		Name:            c.Name,
-		Enabled:         c.Enabled,
 		Owner:           c.Owner,
 		ConfigurationId: c.ConfigurationId,
-		ApiAccessToken:  c.ApiAccessToken,
-		Timestamp:       c.Timestamp,
-		Versions:        slices.Clone(c.Versions),
 	}
-}
-
-func (c *Condition) GetCondition(version int) *pb.Condition {
-	return &pb.Condition{
-		Id:                 c.Id,
-		Name:               c.Name,
-		Enabled:            c.Enabled,
-		Owner:              c.Owner,
-		ConfigurationId:    c.ConfigurationId,
-		ApiAccessToken:     c.ApiAccessToken,
-		Timestamp:          c.Timestamp,
-		Version:            c.Versions[version].Version,
-		DeviceIdFilter:     c.Versions[version].DeviceIdFilter,
-		ResourceTypeFilter: c.Versions[version].ResourceTypeFilter,
-		ResourceHrefFilter: c.Versions[version].ResourceHrefFilter,
-		JqExpressionFilter: c.Versions[version].JqExpressionFilter,
+	if c.Latest != nil {
+		latest := c.Latest.Copy()
+		c2.Latest = &latest
 	}
-}
 
-func (c *Condition) Time() time.Time {
-	return time.Unix(0, c.Timestamp)
+	for _, v := range c.Versions {
+		c2.Versions = append(c2.Versions, v.Copy())
+	}
+	return c2
 }

@@ -94,7 +94,7 @@ func addConfigurations(ctx context.Context, t *testing.T, n int, calcVersion cal
 
 		configuration, ok := configurations[conf.GetId()]
 		if !ok {
-			configuration = store.MakeFirstConfiguration2(conf)
+			configuration = store.MakeFirstConfiguration(conf)
 			configurations[conf.GetId()] = configuration
 			continue
 		}

@@ -10,9 +10,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func addMatchCondition(owner, id string) bson.D {
+func addMatchCondition(owner, id string, notEmpty bool) bson.D {
 	match := bson.D{
-		{Key: store.VersionsKey + ".0", Value: bson.M{"$exists": true}},
+		{Key: store.VersionsKey + ".0", Value: bson.M{"$exists": notEmpty}},
 	}
 	if id != "" {
 		match = append(match, bson.E{Key: store.IDKey, Value: id})
@@ -23,48 +23,71 @@ func addMatchCondition(owner, id string) bson.D {
 	return match
 }
 
-func addLatestVersionField() bson.D {
-	return bson.D{{Key: "$addFields", Value: bson.M{
-		"latestVersion": bson.M{"$reduce": bson.M{
-			"input":        "$versions",
-			"initialValue": bson.M{"version": 0},
-			"in": bson.M{
-				"$cond": bson.A{
-					bson.M{"$gte": bson.A{"$$this.version", "$$value.version"}},
-					"$$this.version",
-					"$$value.version",
+func appendLatestToVersions(fields []string) bson.M {
+	latest := bson.M{}
+	for _, field := range fields {
+		latest[field] = "$latest." + field
+	}
+	return bson.M{
+		"$concatArrays": bson.A{
+			bson.M{
+				"$ifNull": bson.A{
+					"$versions",
+					bson.A{},
 				},
 			},
-		}},
-	}}}
+			bson.A{latest},
+		},
+	}
 }
 
-func getVersionsPipelineObsolete(pl mongo.Pipeline, vf pb.VersionFilter, exclude bool) mongo.Pipeline {
+func incrementLatestVersion() bson.M {
+	return bson.M{
+		"$add": bson.A{
+			bson.M{"$ifNull": bson.A{"$" + store.LatestKey + "." + store.VersionKey, 0}},
+			1,
+		},
+	}
+}
+
+func getPipeline(owner, id string, vf pb.VersionFilter) mongo.Pipeline {
+	pl := mongo.Pipeline{bson.D{{Key: "$match", Value: addMatchCondition(owner, id, true)}}}
+	project := bson.M{}
+	if len(vf.Versions()) == 0 {
+		project[store.VersionsKey] = false
+	} else {
+		pl = getVersionsPipeline(pl, vf, false)
+	}
+	if !vf.Latest() {
+		project[store.LatestKey] = false
+	}
+	if len(project) > 0 {
+		pl = append(pl, bson.D{{Key: "$project", Value: project}})
+	}
+	return pl
+}
+
+func getVersionsPipeline(pl mongo.Pipeline, vf pb.VersionFilter, exclude bool) mongo.Pipeline {
 	versions := make([]interface{}, 0, len(vf.Versions())+1)
 	for _, version := range vf.Versions() {
 		versions = append(versions, version)
 	}
-
 	if vf.Latest() {
-		pl = append(pl, addLatestVersionField())
-		versions = append(versions, "$latestVersion")
+		versions = append(versions, "$latest.version")
 	}
-
-	if len(versions) > 0 {
-		cond := bson.M{"$in": bson.A{"$$version.version", versions}}
-		if exclude {
-			cond = bson.M{"$not": cond}
-		}
-		pl = append(pl, bson.D{{Key: "$addFields", Value: bson.M{
-			"versions": bson.M{
-				"$filter": bson.M{
-					"input": "$versions",
-					"as":    "version",
-					"cond":  cond,
-				},
+	cond := bson.M{"$in": bson.A{"$$version.version", versions}}
+	if exclude {
+		cond = bson.M{"$not": cond}
+	}
+	pl = append(pl, bson.D{{Key: "$addFields", Value: bson.M{
+		"versions": bson.M{
+			"$filter": bson.M{
+				"input": "$versions",
+				"as":    "version",
+				"cond":  cond,
 			},
-		}}})
-	}
+		},
+	}}})
 	return pl
 }
 
@@ -120,27 +143,36 @@ func toDeleteResult(err error, partialSuccess bool) (int64, error) {
 	return DeleteSuccess, nil
 }
 
-func (s *Store) deleteVersionObsolete(ctx context.Context, collection, owner string, id string, vf pb.VersionFilter) error {
+func (s *Store) deleteVersion(ctx context.Context, collection, owner string, id string, vf pb.VersionFilter) error {
 	pl := getVersionsPipeline(mongo.Pipeline{}, vf, true)
-	if vf.Latest() {
-		pl = append(pl, bson.D{{Key: "$unset", Value: "latestVersion"}})
+	// unset latest
+	pl = append(pl, bson.D{{Key: "$unset", Value: store.LatestKey}})
+	// take last element from versions array as latest (if it exists)
+	pl = append(pl, bson.D{{Key: "$set", Value: bson.M{
+		store.LatestKey: bson.D{{
+			Key:   "$arrayElemAt",
+			Value: bson.A{"$versions", -1},
+		}},
+	}}})
+	_, err := s.Collection(collection).UpdateMany(ctx, addMatchCondition(owner, id, true), pl)
+	if err != nil {
+		return err
 	}
-	_, err := s.Collection(collection).UpdateMany(ctx, addMatchCondition(owner, id), pl)
-	// TODO: delete document if no versions remain in the array
+	_, err = s.Collection(collection).DeleteMany(ctx, addMatchCondition(owner, id, false))
 	return err
 }
 
-func (s *Store) deleteDocumentObsolete(ctx context.Context, collection, owner string, idfAlls []string) error {
+func (s *Store) deleteDocument(ctx context.Context, collection, owner string, idfAlls []string) error {
 	_, err := s.Collection(collection).DeleteMany(ctx, toIdFilterQuery(owner, idfAlls))
 	return err
 }
 
-func (s *Store) deleteObsolete(ctx context.Context, collection, owner string, filter []*pb.IDFilter) (int64, error) {
+func (s *Store) delete(ctx context.Context, collection, owner string, filter []*pb.IDFilter) (int64, error) {
 	success := false
 	idVersionAll, idVersions := pb.PartitionIDFilter(filter)
 	var errors *multierror.Error
 	if len(idVersionAll) > 0 || len(idVersions) == 0 {
-		err := s.deleteDocumentObsolete(ctx, collection, owner, idVersionAll)
+		err := s.deleteDocument(ctx, collection, owner, idVersionAll)
 		if err == nil {
 			success = true
 		}
@@ -148,7 +180,7 @@ func (s *Store) deleteObsolete(ctx context.Context, collection, owner string, fi
 	}
 	if len(idVersions) > 0 {
 		for id, vf := range idVersions {
-			err := s.deleteVersionObsolete(ctx, collection, owner, id, vf)
+			err := s.deleteVersion(ctx, collection, owner, id, vf)
 			if err == nil {
 				success = true
 			}
