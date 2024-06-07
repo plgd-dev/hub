@@ -350,4 +350,80 @@ export const messages = defineMessages({
         id: 'global.invalidNumber',
         defaultMessage: 'Invalid number',
     },
+    undoneAction: {
+        id: 'global.undoneAction',
+        defaultMessage: 'This action cannot be undone.',
+    },
+    general: {
+        id: 'global.general',
+        defaultMessage: 'General',
+    },
+    listOfResources: {
+        id: 'global.listOfResources',
+        defaultMessage: 'List of Resources',
+    },
+    href: {
+        id: 'global.href',
+        defaultMessage: 'Href',
+    },
+    timeToLive: {
+        id: 'global.timeToLive',
+        defaultMessage: 'Time to live',
+    },
+    second: {
+        id: 'global.second',
+        defaultMessage: 'second',
+    },
+    fullView: {
+        id: 'global.fullView',
+        defaultMessage: 'Full View',
+    },
+    compactView: {
+        id: 'global.compactView',
+        defaultMessage: 'Compact View',
+    },
+    deleteResource: {
+        id: 'global.deleteResource',
+        defaultMessage: 'Delete Resource',
+    },
+    lastModified: {
+        id: 'global.lastModified',
+        defaultMessage: 'Last Modified',
+    },
+    link: {
+        id: 'global.link',
+        defaultMessage: 'Link',
+    },
+    enabled: {
+        id: 'global.enabled',
+        defaultMessage: 'Enabled',
+    },
+    disabled: {
+        id: 'global.disabled',
+        defaultMessage: 'Disabled',
+    },
+    filters: {
+        id: 'global.filters',
+        defaultMessage: 'Filters',
+    },
+    deviceId: {
+        id: 'global.deviceId',
+        defaultMessage: 'Device ID',
+    },
+    selectOrCreate: {
+        id: 'global.selectOrCreate',
+        defaultMessage: 'Select or type to create',
+    },
+    setUp: {
+        id: 'global.setUp',
+        defaultMessage: 'Set Up',
+    },
+    notSet: {
+        id: 'global.notSet',
+        defaultMessage: 'Not Set',
+    },
+    deviceName: {
+        id: 'global.deviceName',
+        defaultMessage: 'Device name',
+    },
 })

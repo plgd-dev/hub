@@ -38,7 +38,7 @@ const DetailHeader: FC<Props> = (props) => {
 
                 Notification.success(
                     { title: _(t.linkedHubDeleted), message: _(t.linkedHubDeletedMessage) },
-                    { notificationId: notificationId.HUB_DPS_LINKED_HUBS_UPDATED }
+                    { notificationId: notificationId.HUB_DPS_LINKED_HUBS_DELETED_SUCCESS }
                 )
 
                 navigate(generatePath(pages.DPS.LINKED_HUBS.LINK))
@@ -69,10 +69,7 @@ const DetailHeader: FC<Props> = (props) => {
             </Button>
 
             <DeleteModal
-                deleteInformation={[
-                    { label: _(g.name), value: 'TODO' },
-                    { label: _(g.id), value: id },
-                ]}
+                deleteInformation={[{ label: _(g.id), value: id }]}
                 footerActions={[
                     {
                         dataTestId: testId.dps.linkedHubs.detail.deleteButtonCancel,

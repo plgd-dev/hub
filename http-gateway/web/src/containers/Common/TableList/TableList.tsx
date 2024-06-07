@@ -21,8 +21,10 @@ const TableList: FC<Props> = (props) => {
         data,
         defaultPageSize,
         defaultSortBy,
+        globalSearch,
         i18n,
         iframeMode,
+        loading,
         paginationPortalTargetId,
         primaryAttribute,
         onDeleteClick,
@@ -64,10 +66,13 @@ const TableList: FC<Props> = (props) => {
                 data={validData(data)}
                 defaultPageSize={defaultPageSize ?? DEFAULT_PAGE_SIZE}
                 defaultSortBy={defaultSortBy}
+                globalSearch={globalSearch}
                 height={height}
                 i18n={{
                     search: _(g.search),
+                    placeholder: i18n.tablePlaceholder,
                 }}
+                loading={loading}
                 onRowsSelect={(isAllRowsSelected, selection) => {
                     isAllRowsSelected !== isAllSelected && setIsAllSelected && setIsAllSelected(isAllRowsSelected)
                     setSelected(selection)
@@ -85,6 +90,11 @@ const TableList: FC<Props> = (props) => {
                         actionPrimary={
                             <Button onClick={() => onDeleteClick(isAllSelected, selected)} variant='primary'>
                                 {_(g.delete)}
+                            </Button>
+                        }
+                        actionSecondary={
+                            <Button onClick={() => setSelected([])} variant='tertiary'>
+                                {_(g.cancel)}
                             </Button>
                         }
                         i18n={{

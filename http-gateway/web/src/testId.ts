@@ -88,6 +88,18 @@ const testId = {
             },
         },
     },
+    snippetService: {
+        resourcesConfig: {
+            detail: {
+                deleteButton: 'hub-snippet-service-resources-config-detail-delete-button',
+                deleteButtonConfirm: 'hub-snippet-service-resources-config-detail-delete-button-confirm',
+                deleteButtonCancel: 'hub-snippet-service-resources-config-detail-delete-button-cancel',
+                tabGeneral: 'hub-snippet-service-resources-config-detail-tab-general',
+                tabConditions: 'hub-snippet-service-resources-config-detail-tab-conditions',
+                tabDeviceAppliedConfiguration: 'hub-snippet-service-resources-config-detail-tab-device-applied-configuration',
+            },
+        },
+    },
 }
 
 export default testId

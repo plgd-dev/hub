@@ -78,7 +78,8 @@ const DetailPage: FC<Props> = (props) => {
                             />
                         </Spacer>
                     </Column>
-                    <Column style={{ height: '100%' }} xl={9}>
+                    <Column style={{ height: '100%' }} xl={1}></Column>
+                    <Column style={{ height: '100%' }} xl={8}>
                         <Loadable condition={!!provisioningRecord}>
                             <ContentSwitch activeItem={parseInt(activeItem, 10)}>
                                 <Tab1

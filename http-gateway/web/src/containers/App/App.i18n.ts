@@ -121,4 +121,16 @@ export const messages = defineMessages({
         id: 'app.menuConfiguration',
         defaultMessage: 'Configuration',
     },
+    menuConditions: {
+        id: 'app.menuConditions',
+        defaultMessage: 'Conditions',
+    },
+    menuResourcesConfig: {
+        id: 'app.menuResourcesConfig',
+        defaultMessage: 'Resources config',
+    },
+    menuAppliedDeviceConfig: {
+        id: 'app.menuAppliedDeviceConfig',
+        defaultMessage: 'Applied Device Config',
+    },
 })
