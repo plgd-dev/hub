@@ -10,10 +10,11 @@ metadata:
     {{- with .Values.mongodb.standbyTool.jobLabels }}
     {{- . | toYaml | nindent 4 }}
     {{- end }}
-  {{- with .Values.mongodb.standbyTool.jobAnnotations }}
   annotations:
-  {{- . | toYaml | nindent 4 }}
-  {{- end }}
+    checksum/config: {{ printf "%s" .Values.mongodb.standbyTool | sha256sum }}
+    {{- with .Values.mongodb.standbyTool.jobAnnotations }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
 spec:
   backoffLimit: 1
   suspend: true
@@ -26,9 +27,6 @@ spec:
       labels:
         {{- include "plgd-hub.mongodb-standby-tool.selectorLabels" . | nindent 8 }}
     spec:
-      manualSelector: true
-      matchLabels:
-        {{- include "plgd-hub.mongodb-standby-tool.selectorLabels" . | nindent 8 }}
       restartPolicy: Never
       {{- with .Values.mongodb.standbyTool.securityContext }}
       securityContext:
