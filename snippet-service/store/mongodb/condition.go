@@ -2,6 +2,7 @@ package mongodb
 
 import (
 	"context"
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -134,17 +135,36 @@ func (s *Store) UpdateCondition(ctx context.Context, cond *pb.Condition) (*pb.Co
 
 // getConditionsByID returns full condition documents matched by ID
 func (s *Store) getConditionsByID(ctx context.Context, owner string, ids []string, p store.ProcessConditions) error {
-	cur, err := s.Collection(conditionsCol).Find(ctx, toIdFilterQuery(owner, ids, false))
+	cur, err := s.Collection(conditionsCol).Find(ctx, toFilterQuery(owner, toIdQuery(ids), false))
 	if err != nil {
 		return err
 	}
 	return processCursor(ctx, cur, p)
 }
 
-// getLatestConditionsByID returns the latest condition from document matched by ID
-func (s *Store) getLatestConditionsByID(ctx context.Context, owner string, ids []string, p store.ProcessConditions) error {
+func toIdOrConfIdQuery(ids, confIds []string) bson.M {
+	filter := make([]bson.M, 0, 2)
+	idFilter := inArrayQuery(store.IDKey, ids)
+	if len(idFilter) > 0 {
+		filter = append(filter, idFilter)
+	}
+	confIdFilter := inArrayQuery(store.ConfigurationIDKey, confIds)
+	if len(confIdFilter) > 0 {
+		filter = append(filter, confIdFilter)
+	}
+	if len(filter) == 0 {
+		return nil
+	}
+	if len(filter) == 1 {
+		return filter[0]
+	}
+	return bson.M{"$or": filter}
+}
+
+// getLatestConditions returns the latest condition from document matched by condition ID or configuration ID
+func (s *Store) getLatestConditions(ctx context.Context, owner string, ids, confIds []string, p store.ProcessConditions) error {
 	opt := options.Find().SetProjection(bson.M{store.VersionsKey: false})
-	cur, err := s.Collection(conditionsCol).Find(ctx, toIdFilterQuery(owner, ids, false), opt)
+	cur, err := s.Collection(conditionsCol).Find(ctx, toFilterQuery(owner, toIdOrConfIdQuery(ids, confIds), false), opt)
 	if err != nil {
 		return err
 	}
@@ -160,17 +180,22 @@ func (s *Store) getConditionsByAggregation(ctx context.Context, owner, id string
 	return processCursor(ctx, cur, p)
 }
 
+func normalizeSlice(s []string) []string {
+	slices.Sort(s)
+	return slices.Compact(s)
+}
+
 func (s *Store) GetConditions(ctx context.Context, owner string, query *pb.GetConditionsRequest, p store.Process[store.Condition]) error {
 	vf := pb.PartitionIDFilter(query.GetIdFilter())
-	// confIdLatestFilter := normalizeSlice(query.GetConfigurationIdFilter())
+	confIdLatestFilter := normalizeSlice(query.GetConfigurationIdFilter())
 	var errors *multierror.Error
-	if len(vf.All) > 0 || vf.IsEmpty() {
+	if len(vf.All) > 0 || vf.IsEmpty() && len(confIdLatestFilter) == 0 {
 		err := s.getConditionsByID(ctx, owner, vf.All, p)
 		errors = multierror.Append(errors, err)
 	}
 
-	if len(vf.Latest) > 0 {
-		err := s.getLatestConditionsByID(ctx, owner, vf.Latest, p)
+	if len(vf.Latest) > 0 || len(confIdLatestFilter) > 0 {
+		err := s.getLatestConditions(ctx, owner, vf.Latest, query.GetConfigurationIdFilter(), p)
 		errors = multierror.Append(errors, err)
 	}
 

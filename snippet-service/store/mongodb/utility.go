@@ -87,24 +87,33 @@ func getPipeline(owner, id string, versions []uint64) mongo.Pipeline {
 	return pl
 }
 
-func toIdFilterQuery(owner string, ids []string, empty bool) interface{} {
+func inArrayQuery(key string, values []string) bson.M {
+	filter := bson.A{}
+	for _, v := range values {
+		if v == "" {
+			continue
+		}
+		filter = append(filter, v)
+	}
+	if len(filter) == 0 {
+		return nil
+	}
+	return bson.M{key: bson.D{{Key: "$in", Value: filter}}}
+}
+
+func toIdQuery(ids []string) bson.M {
+	return inArrayQuery(store.IDKey, ids)
+}
+
+func toFilterQuery(owner string, idfilter bson.M, emptyVersions bool) interface{} {
 	filters := make([]interface{}, 0, 3)
 	if owner != "" {
 		filters = append(filters, bson.D{{Key: store.OwnerKey, Value: owner}})
 	}
-	if len(ids) > 0 {
-		idfilter := make([]bson.D, 0, len(ids))
-		for _, id := range ids {
-			if id == "" {
-				continue
-			}
-			idfilter = append(idfilter, bson.D{{Key: store.IDKey, Value: id}})
-		}
-		if len(idfilter) > 0 {
-			filters = append(filters, bson.M{"$or": idfilter})
-		}
+	if idfilter != nil {
+		filters = append(filters, idfilter)
 	}
-	if empty {
+	if emptyVersions {
 		filters = append(filters, bson.D{{Key: store.VersionsKey + ".0", Value: bson.M{"$exists": false}}})
 	}
 	if len(filters) == 0 {
@@ -157,7 +166,7 @@ func (s *Store) deleteVersion(ctx context.Context, collection, owner string, id 
 	pl = append(pl, bson.D{{Key: "$set", Value: bson.M{
 		store.LatestKey: bson.D{{Key: "$arrayElemAt", Value: bson.A{"$" + store.VersionsKey, -1}}},
 	}}})
-	_, err := s.Collection(collection).UpdateMany(ctx, toIdFilterQuery(owner, []string{id}, false), pl)
+	_, err := s.Collection(collection).UpdateMany(ctx, toFilterQuery(owner, toIdQuery([]string{id}), false), pl)
 	return err
 }
 
@@ -167,12 +176,12 @@ func (s *Store) deleteLatestVersion(ctx context.Context, collection, owner strin
 	pl = append(pl, bson.D{{Key: "$set", Value: bson.M{
 		store.LatestKey: bson.D{{Key: "$arrayElemAt", Value: bson.A{"$" + store.VersionsKey, -1}}},
 	}}})
-	_, err := s.Collection(collection).UpdateMany(ctx, toIdFilterQuery(owner, ids, false), pl)
+	_, err := s.Collection(collection).UpdateMany(ctx, toFilterQuery(owner, toIdQuery(ids), false), pl)
 	return err
 }
 
 func (s *Store) deleteDocument(ctx context.Context, collection, owner string, ids []string) error {
-	_, err := s.Collection(collection).DeleteMany(ctx, toIdFilterQuery(owner, ids, false))
+	_, err := s.Collection(collection).DeleteMany(ctx, toFilterQuery(owner, toIdQuery(ids), false))
 	return err
 }
 
@@ -199,7 +208,7 @@ func (s *Store) delete(ctx context.Context, collection, owner string, idfilter [
 	}
 
 	if len(vf.Latest) > 0 || len(vf.Versions) > 0 {
-		_, err := s.Collection(collection).DeleteMany(ctx, toIdFilterQuery(owner, nil, true))
+		_, err := s.Collection(collection).DeleteMany(ctx, toFilterQuery(owner, nil, true))
 		errors = multierror.Append(errors, err)
 	}
 	return toDeleteResult(errors.ErrorOrNil(), success)

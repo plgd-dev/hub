@@ -13,11 +13,11 @@ import (
 )
 
 func ConditionID(i int) string {
-	if id, ok := RuntimeConfig.configurationIds[i]; ok {
+	if id, ok := RuntimeConfig.conditionIds[i]; ok {
 		return id
 	}
 	id := uuid.NewString()
-	RuntimeConfig.configurationIds[i] = id
+	RuntimeConfig.conditionIds[i] = id
 	return id
 }
 
@@ -125,6 +125,7 @@ func addConditions(ctx context.Context, t *testing.T, n int, calcVersion calcula
 }
 
 func AddConditionsToStore(ctx context.Context, t *testing.T, s store.Store, n int, calcVersion calculateInitialVersionNumber) map[string]store.Condition {
+	// TODO: speed up the test by using batch operations
 	return addConditions(ctx, t, n, calcVersion, s.CreateCondition, s.UpdateCondition)
 }
 

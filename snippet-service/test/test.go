@@ -32,6 +32,7 @@ var (
 
 func init() {
 	RuntimeConfig.configurationIds = make(map[int]string)
+	RuntimeConfig.conditionIds = make(map[int]string)
 	RuntimeConfig.numOwners = 3
 	RuntimeConfig.numDevices = 5
 	RuntimeConfig.numResources = 5
@@ -245,6 +246,6 @@ func CmpStoredConditionMaps(t *testing.T, want, got map[string]store.Condition) 
 	for _, v := range want {
 		gotV, ok := got[v.Id]
 		require.True(t, ok)
-		CmpStoredCondition(t, &v, &gotV, true, false)
+		CmpStoredCondition(t, &v, &gotV, false, false)
 	}
 }
