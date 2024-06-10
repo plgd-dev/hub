@@ -1,5 +1,6 @@
 {{- if .Values.coapgateway.enabled }}
 {{- $rdServiceCert := "/certs" }}
+{{- $rdClientCert := "/certs/client" }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -91,6 +92,8 @@ spec:
             - name: service-crt
               mountPath: {{ $rdServiceCert }}
             {{- end }}
+            - name: client-crt
+              mountPath: {{ $rdClientCert }}
             {{- if .Values.global.authorizationCAPool }}
             - name: {{ .Values.extraAuthorizationCAPool.name }}
               mountPath: {{ .Values.extraAuthorizationCAPool.mountPath }}
@@ -120,6 +123,9 @@ spec:
           secret:
             secretName: {{ include "plgd-hub.coapgateway.serviceCertName" . }}
         {{- end }}
+        - name: client-crt
+          secret:
+            secretName: {{ include "plgd-hub.coapgateway.clientCertName" . }}
         {{- if .Values.global.authorizationCAPool }}
         - name: {{ .Values.extraAuthorizationCAPool.name }}
           secret:

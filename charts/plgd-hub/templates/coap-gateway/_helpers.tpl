@@ -37,6 +37,11 @@
   {{- printf "%s-crt" $fullName -}}
 {{- end }}
 
+{{- define "plgd-hub.coapgateway.clientCertName" -}}
+  {{- $fullName := include "plgd-hub.coapgateway.fullname" . -}}
+  {{- printf "%s-client-crt" $fullName -}}
+{{- end }}
+
 {{- define "plgd-hub.coapgateway.selectorLabels" -}}
 app.kubernetes.io/name: {{ .Values.coapgateway.name }}
 app.kubernetes.io/instance: {{ .Release.Name }}
