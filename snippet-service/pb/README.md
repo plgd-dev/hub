@@ -45,16 +45,14 @@ TODO naming
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
-| device_id | [string](#string) |  |  |
-| configuration_id | [AppliedDeviceConfiguration.RelationTo](#snippetservice-pb-AppliedDeviceConfiguration-RelationTo) |  |  |
+| id | [string](#string) |  | @gotags: bson:&#34;_id&#34; |
+| device_id | [string](#string) |  | @gotags: bson:&#34;deviceId&#34; |
+| configuration_id | [AppliedDeviceConfiguration.RelationTo](#snippetservice-pb-AppliedDeviceConfiguration-RelationTo) |  | @gotags: bson:&#34;configurationId&#34; |
 | on_demand | [bool](#bool) |  |  |
-| condition_id | [AppliedDeviceConfiguration.RelationTo](#snippetservice-pb-AppliedDeviceConfiguration-RelationTo) |  | TODO Naming |
-| resources | [AppliedDeviceConfiguration.Resource](#snippetservice-pb-AppliedDeviceConfiguration-Resource) | repeated | TODO naming |
+| condition_id | [AppliedDeviceConfiguration.RelationTo](#snippetservice-pb-AppliedDeviceConfiguration-RelationTo) |  | @gotags: bson:&#34;conditionId&#34; //TODO Naming |
+| resources | [AppliedDeviceConfiguration.Resource](#snippetservice-pb-AppliedDeviceConfiguration-Resource) | repeated | @gotags: bson:&#34;resources,omitempty&#34; //TODO naming |
 | owner | [string](#string) |  |  |
-| timestamp | [int64](#int64) |  | Unix timestamp in ns when the applied device configuration has been created/updated
-
-@gotags: bson:&#34;timestamp&#34; |
+| timestamp | [int64](#int64) |  | Unix timestamp in ns when the applied device configuration has been created/updated |
 
 
 
@@ -85,10 +83,12 @@ TODO naming
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| resource_id | [resourceaggregate.pb.ResourceId](#resourceaggregate-pb-ResourceId) |  | TODO Jozo href only? |
-| correlation_id | [string](#string) |  | Reused from invoke command or generated. Can be used to retrieve corresponding pending command. |
+| href | [string](#string) |  |  |
+| correlation_id | [string](#string) |  | Reused from invoke command or generated. Can be used to retrieve corresponding pending command.
+
+@gotags: bson:&#34;correlationId&#34; |
 | status | [AppliedDeviceConfiguration.Resource.Status](#snippetservice-pb-AppliedDeviceConfiguration-Resource-Status) |  |  |
-| resource_updated | [resourceaggregate.pb.ResourceUpdated](#resourceaggregate-pb-ResourceUpdated) |  |  |
+| resource_updated | [resourceaggregate.pb.ResourceUpdated](#resourceaggregate-pb-ResourceUpdated) |  | @gotags: bson:&#34;resourceUpdated,omitempty&#34; |
 
 
 
@@ -257,9 +257,9 @@ TODO Naming
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id_filter | [string](#string) | repeated |  |
-| configuration_id_filter | [IDFilter](#snippetservice-pb-IDFilter) | repeated |  |
+| configuration_id_filter | [string](#string) | repeated |  |
 | device_id_filter | [string](#string) | repeated |  |
-| condition_id_filter | [IDFilter](#snippetservice-pb-IDFilter) | repeated |  |
+| condition_id_filter | [string](#string) | repeated |  |
 
 
 
@@ -346,7 +346,7 @@ TODO: /configurations/123?version=latest
 | ---- | ------ | ----------- |
 | QUEUED | 0 |  |
 | PENDING | 1 |  |
-| DONE | 2 | If done look to resource_updated even update resource failed for resource aggregate. |
+| DONE | 2 | If done look to resource_updated if update resource failed for resource aggregate. |
 | TIMEOUT | 3 |  |
 
 

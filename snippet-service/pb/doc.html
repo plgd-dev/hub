@@ -286,21 +286,21 @@
                   <td>id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>@gotags: bson:&#34;_id&#34; </p></td>
                 </tr>
               
                 <tr>
                   <td>device_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>@gotags: bson:&#34;deviceId&#34; </p></td>
                 </tr>
               
                 <tr>
                   <td>configuration_id</td>
                   <td><a href="#snippetservice.pb.AppliedDeviceConfiguration.RelationTo">AppliedDeviceConfiguration.RelationTo</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>@gotags: bson:&#34;configurationId&#34; </p></td>
                 </tr>
               
                 <tr>
@@ -314,14 +314,14 @@
                   <td>condition_id</td>
                   <td><a href="#snippetservice.pb.AppliedDeviceConfiguration.RelationTo">AppliedDeviceConfiguration.RelationTo</a></td>
                   <td></td>
-                  <td><p>TODO Naming </p></td>
+                  <td><p>@gotags: bson:&#34;conditionId&#34; //TODO Naming </p></td>
                 </tr>
               
                 <tr>
                   <td>resources</td>
                   <td><a href="#snippetservice.pb.AppliedDeviceConfiguration.Resource">AppliedDeviceConfiguration.Resource</a></td>
                   <td>repeated</td>
-                  <td><p>TODO naming </p></td>
+                  <td><p>@gotags: bson:&#34;resources,omitempty&#34; //TODO naming </p></td>
                 </tr>
               
                 <tr>
@@ -335,9 +335,7 @@
                   <td>timestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>Unix timestamp in ns when the applied device configuration has been created/updated
-
-@gotags: bson:&#34;timestamp&#34; </p></td>
+                  <td><p>Unix timestamp in ns when the applied device configuration has been created/updated </p></td>
                 </tr>
               
             </tbody>
@@ -389,17 +387,19 @@
             <tbody>
               
                 <tr>
-                  <td>resource_id</td>
-                  <td><a href="#resourceaggregate.pb.ResourceId">resourceaggregate.pb.ResourceId</a></td>
+                  <td>href</td>
+                  <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>TODO Jozo href only? </p></td>
+                  <td><p> </p></td>
                 </tr>
               
                 <tr>
                   <td>correlation_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>Reused from invoke command or generated. Can be used to retrieve corresponding pending command. </p></td>
+                  <td><p>Reused from invoke command or generated. Can be used to retrieve corresponding pending command.
+
+@gotags: bson:&#34;correlationId&#34; </p></td>
                 </tr>
               
                 <tr>
@@ -413,7 +413,7 @@
                   <td>resource_updated</td>
                   <td><a href="#resourceaggregate.pb.ResourceUpdated">resourceaggregate.pb.ResourceUpdated</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>@gotags: bson:&#34;resourceUpdated,omitempty&#34; </p></td>
                 </tr>
               
             </tbody>
@@ -784,7 +784,7 @@
               
                 <tr>
                   <td>configuration_id_filter</td>
-                  <td><a href="#snippetservice.pb.IDFilter">IDFilter</a></td>
+                  <td><a href="#string">string</a></td>
                   <td>repeated</td>
                   <td><p> </p></td>
                 </tr>
@@ -798,7 +798,7 @@
               
                 <tr>
                   <td>condition_id_filter</td>
-                  <td><a href="#snippetservice.pb.IDFilter">IDFilter</a></td>
+                  <td><a href="#string">string</a></td>
                   <td>repeated</td>
                   <td><p> </p></td>
                 </tr>
@@ -1036,7 +1036,7 @@
               <tr>
                 <td>DONE</td>
                 <td>2</td>
-                <td><p>If done look to resource_updated even update resource failed for resource aggregate.</p></td>
+                <td><p>If done look to resource_updated if update resource failed for resource aggregate.</p></td>
               </tr>
             
               <tr>

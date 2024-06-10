@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"slices"
 	"sort"
 	"strings"
 	"testing"
@@ -34,7 +35,6 @@ import (
 	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	isEvents "github.com/plgd-dev/hub/v2/identity-store/events"
-	pkgStrings "github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/hub/v2/test/config"
@@ -941,7 +941,7 @@ func DeviceIsBatchObservable(ctx context.Context, t *testing.T, deviceID string)
 	require.NoError(t, err)
 	require.Len(t, links, 1)
 	return links[0].Policy.BitMask.Has(schema.Observable) &&
-		pkgStrings.Contains(links[0].Interfaces, interfaces.OC_IF_B)
+		slices.Contains(links[0].Interfaces, interfaces.OC_IF_B)
 }
 
 func GetAllBackendResourceLinks() schema.ResourceLinks {

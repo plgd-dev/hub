@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"sync/atomic"
 
 	"github.com/gorilla/mux"
 	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
@@ -18,6 +19,7 @@ type Service struct {
 	config   *Config
 	listener *listener.Server
 	router   *mux.Router
+	serving  atomic.Bool
 }
 
 // New parses configuration and creates new http service
@@ -52,6 +54,9 @@ func New(config Config) (*Service, error) {
 
 // Serve starts the service's HTTP server and blocks
 func (s *Service) Serve() error {
+	if !s.serving.CompareAndSwap(false, true) {
+		return errors.New("service is already serving")
+	}
 	err := s.server.Serve(s.listener)
 	if errors.Is(err, http.ErrServerClosed) {
 		return nil
@@ -61,6 +66,9 @@ func (s *Service) Serve() error {
 
 // Close ends serving
 func (s *Service) Close() error {
+	if !s.serving.Load() {
+		return s.listener.Close()
+	}
 	return s.server.Shutdown(context.Background())
 }
 

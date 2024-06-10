@@ -23,15 +23,13 @@ type SnippetServiceServer struct {
 	hubID      string
 }
 
-func NewSnippetServiceServer(ownerClaim string, hubID string, store store.Store, logger log.Logger) (*SnippetServiceServer, error) {
-	s := &SnippetServiceServer{
+func NewSnippetServiceServer(ownerClaim string, hubID string, store store.Store, logger log.Logger) *SnippetServiceServer {
+	return &SnippetServiceServer{
 		logger:     logger,
 		ownerClaim: ownerClaim,
 		store:      store,
 		hubID:      hubID,
 	}
-
-	return s, nil
 }
 
 func (s *SnippetServiceServer) checkOwner(ctx context.Context, owner string) (string, error) {
@@ -218,6 +216,21 @@ func (s *SnippetServiceServer) GetConditions(req *pb.GetConditionsRequest, srv p
 	}
 
 	err = s.store.GetConditions(srv.Context(), owner, req, func(c *store.Condition) error {
+		return sendCondition(srv, c)
+	})
+	if err != nil {
+		return s.logger.LogAndReturnError(status.Errorf(codes.Internal, "%v", errCannotGetConditions(err)))
+	}
+	return nil
+}
+
+func (s *SnippetServiceServer) GetLatestEnabledConditions(req *store.GetLatestConditionsQuery, srv pb.SnippetService_GetConditionsServer) error {
+	owner, err := s.checkOwner(srv.Context(), "")
+	if err != nil {
+		return s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotGetConditions(err)))
+	}
+
+	err = s.store.GetLatestEnabledConditions(srv.Context(), owner, req, func(c *store.Condition) error {
 		return sendCondition(srv, c)
 	})
 	if err != nil {

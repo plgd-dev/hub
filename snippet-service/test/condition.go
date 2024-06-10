@@ -4,9 +4,11 @@ import (
 	"context"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
 	"github.com/plgd-dev/hub/v2/snippet-service/store"
 	"github.com/stretchr/testify/require"
@@ -34,15 +36,15 @@ func stringSlice(prefix string, start, n int) []string {
 }
 
 func ConditionDeviceIdFilter(start, n int) []string {
-	return stringSlice("device", start, n)
+	return strings.Unique(stringSlice("device", start, n))
 }
 
 func ConditionResourceTypeFilter(start, n int) []string {
-	return stringSlice("rt", start, n)
+	return strings.Unique(stringSlice("rt", start, n))
 }
 
 func ConditionResourceHrefFilter(start, n int) []string {
-	return stringSlice("/href/", start, n)
+	return strings.Unique(stringSlice("/href/", start, n))
 }
 
 func ConditionJqExpressionFilter(i int) string {
@@ -53,12 +55,7 @@ func ConditionApiAccessToken(i int) string {
 	return "token" + strconv.Itoa(i)
 }
 
-type (
-	onCreateCondition = func(ctx context.Context, conf *pb.Condition) (*pb.Condition, error)
-	onUpdateCondition = func(ctx context.Context, conf *pb.Condition) (*pb.Condition, error)
-)
-
-func addConditions(ctx context.Context, t *testing.T, n int, calcVersion calculateInitialVersionNumber, create onCreateCondition, update onUpdateCondition) map[string]store.Condition {
+func getConditions(n int, calcVersion calculateInitialVersionNumber) map[string]store.Condition {
 	versions := make(map[int]uint64, RuntimeConfig.NumConditions)
 	owners := make(map[int]string, RuntimeConfig.NumConditions)
 	conditions := make(map[string]store.Condition)
@@ -77,7 +74,7 @@ func addConditions(ctx context.Context, t *testing.T, n int, calcVersion calcula
 			owner = Owner(i % RuntimeConfig.numOwners)
 			owners[i%RuntimeConfig.NumConditions] = owner
 		}
-		condIn := &pb.Condition{
+		cond := &pb.Condition{
 			Id:                 ConditionID(i % RuntimeConfig.NumConditions),
 			ConfigurationId:    ConfigurationID(i % RuntimeConfig.NumConfigurations),
 			Enabled:            i%2 == 0,
@@ -88,24 +85,17 @@ func addConditions(ctx context.Context, t *testing.T, n int, calcVersion calcula
 			ResourceHrefFilter: ConditionResourceHrefFilter(i%RuntimeConfig.numResources, RuntimeConfig.numResources),
 			JqExpressionFilter: ConditionJqExpressionFilter(i),
 			ApiAccessToken:     ConditionApiAccessToken(i % RuntimeConfig.NumConditions),
+			Timestamp:          time.Now().UnixNano(),
 		}
-		var cond *pb.Condition
-		var err error
-		if !ok {
-			condIn.Name = ConditionName(i % RuntimeConfig.NumConditions)
-			cond, err = create(ctx, condIn)
-			require.NoError(t, err)
-		} else {
-			cond, err = update(ctx, condIn)
-			require.NoError(t, err)
-		}
-
 		condition, ok := conditions[cond.GetId()]
 		if !ok {
+			cond.Name = ConditionName(i % RuntimeConfig.NumConditions)
 			condition = store.MakeFirstCondition(cond)
 			conditions[cond.GetId()] = condition
 			continue
 		}
+
+		cond.Name = condition.Latest.Name
 		latest := store.ConditionVersion{
 			Name:               cond.GetName(),
 			Version:            cond.GetVersion(),
@@ -125,16 +115,35 @@ func addConditions(ctx context.Context, t *testing.T, n int, calcVersion calcula
 }
 
 func AddConditionsToStore(ctx context.Context, t *testing.T, s store.Store, n int, calcVersion calculateInitialVersionNumber) map[string]store.Condition {
-	// TODO: speed up the test by using batch operations
-	return addConditions(ctx, t, n, calcVersion, s.CreateCondition, s.UpdateCondition)
+	conditions := getConditions(n, calcVersion)
+	conditionsToInsert := make([]*store.Condition, 0, len(conditions))
+	for _, condition := range conditions {
+		conditionToInsert := &condition
+		conditionsToInsert = append(conditionsToInsert, conditionToInsert)
+	}
+	err := s.InsertConditions(ctx, conditionsToInsert...)
+	require.NoError(t, err)
+	return conditions
 }
 
-func AddConditions(ctx context.Context, t *testing.T, ownerClaim string, c pb.SnippetServiceClient, n int, calcVersion calculateInitialVersionNumber) map[string]store.Condition {
-	return addConditions(ctx, t, n, calcVersion, func(ctx context.Context, cond *pb.Condition) (*pb.Condition, error) {
-		ctxWithToken := pkgGrpc.CtxWithToken(ctx, GetTokenWithOwnerClaim(t, cond.GetOwner(), ownerClaim))
-		return c.CreateCondition(ctxWithToken, cond)
-	}, func(ctx context.Context, cond *pb.Condition) (*pb.Condition, error) {
-		ctxWithToken := pkgGrpc.CtxWithToken(ctx, GetTokenWithOwnerClaim(t, cond.GetOwner(), ownerClaim))
-		return c.UpdateCondition(ctxWithToken, cond)
-	})
+func AddConditions(ctx context.Context, t *testing.T, ownerClaim string, ssc pb.SnippetServiceClient, n int, calcVersion calculateInitialVersionNumber) map[string]store.Condition {
+	conditions := getConditions(n, calcVersion)
+	for _, c := range conditions {
+		ctxWithToken := pkgGrpc.CtxWithToken(ctx, GetTokenWithOwnerClaim(t, c.Owner, ownerClaim))
+		for i := range c.Versions {
+			cond := c.GetCondition(i)
+			if i == 0 {
+				createdCond, err := ssc.CreateCondition(ctxWithToken, cond)
+				require.NoError(t, err)
+				c.Latest.Timestamp = createdCond.GetTimestamp()
+				c.Versions[i].Timestamp = createdCond.GetTimestamp()
+				continue
+			}
+			updatedCond, err := ssc.UpdateCondition(ctxWithToken, cond)
+			require.NoError(t, err)
+			c.Versions[i].Timestamp = updatedCond.GetTimestamp()
+		}
+		conditions[c.Id] = c
+	}
+	return conditions
 }

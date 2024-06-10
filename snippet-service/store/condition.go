@@ -2,46 +2,19 @@ package store
 
 import (
 	"errors"
-	"fmt"
 	"slices"
 
-	"github.com/google/uuid"
+	"github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
 )
 
-func checkConfigurationId(c string, isUpdate bool) error {
-	if isUpdate && c == "" {
-		// in this case the update will keep the configuration ID already in the database
-		return nil
+func ValidateAndNormalizeCondition(c *pb.Condition, isUpdate bool) (*pb.Condition, error) {
+	if err := c.Validate(isUpdate); err != nil {
+		return nil, errInvalidArgument(err)
 	}
-	if _, err := uuid.Parse(c); err != nil {
-		return errInvalidArgument(fmt.Errorf("invalid configuration ID(%v): %w", c, err))
-	}
-	return nil
-}
-
-func normalizeSlice(s []string) []string {
-	slices.Sort(s)
-	return slices.Compact(s)
-}
-
-func ValidateAndNormalizeCondition(c *pb.Condition, isUpdate bool) error {
-	if isUpdate || c.GetId() != "" {
-		if _, err := uuid.Parse(c.GetId()); err != nil {
-			return errInvalidArgument(fmt.Errorf("invalid ID(%v): %w", c.GetId(), err))
-		}
-	}
-	if err := checkConfigurationId(c.GetConfigurationId(), isUpdate); err != nil {
-		return errInvalidArgument(fmt.Errorf("invalid configuration ID(%v): %w", c.GetConfigurationId(), err))
-	}
-	if c.GetOwner() == "" {
-		return errInvalidArgument(errors.New("missing owner"))
-	}
-	// ensure that filter arrays are sorted and compacted, so we can query for exact match instead of other more expensive queries
-	c.DeviceIdFilter = normalizeSlice(c.GetDeviceIdFilter())
-	c.ResourceTypeFilter = normalizeSlice(c.GetResourceTypeFilter())
-	c.ResourceHrefFilter = normalizeSlice(c.GetResourceHrefFilter())
-	return nil
+	c2 := c.Clone()
+	c2.Normalize()
+	return c2, nil
 }
 
 type ConditionVersion struct {
@@ -155,4 +128,12 @@ func (c *Condition) Clone() *Condition {
 		c2.Versions = append(c2.Versions, v.Copy())
 	}
 	return c2
+}
+
+func ValidateAndNormalizeConditionsQuery(q *GetLatestConditionsQuery) error {
+	if q.DeviceID == "" && q.ResourceHref == "" && len(q.ResourceTypeFilter) == 0 {
+		return errInvalidArgument(errors.New("at least one condition filter must be set"))
+	}
+	q.ResourceTypeFilter = strings.Unique(q.ResourceTypeFilter)
+	return nil
 }

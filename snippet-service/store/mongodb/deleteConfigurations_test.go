@@ -13,7 +13,7 @@ import (
 )
 
 func TestStoreDeleteConfigurations(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*100)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
 	getConfigurations := func(t *testing.T, s *mongodb.Store, owner string, query *pb.GetConfigurationsRequest) []*store.Configuration {

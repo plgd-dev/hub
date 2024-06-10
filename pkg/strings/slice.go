@@ -1,6 +1,9 @@
 package strings
 
-import "errors"
+import (
+	"errors"
+	"slices"
+)
 
 var ErrInvalidType = errors.New("invalid type")
 
@@ -51,27 +54,8 @@ func Unique(s []string) []string {
 		return nil
 	}
 
-	set := make(map[string]struct{})
-	for _, v := range s {
-		set[v] = struct{}{}
-	}
-
-	keys := make([]string, len(set))
-	i := 0
-	for k := range set {
-		keys[i] = k
-		i++
-	}
-	return keys
-}
-
-func Contains(slice []string, s string) bool {
-	for _, v := range slice {
-		if v == s {
-			return true
-		}
-	}
-	return false
+	slices.Sort(s)
+	return slices.Compact(s)
 }
 
 // ToSlice converts a string or a []string.

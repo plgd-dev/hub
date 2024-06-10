@@ -42,7 +42,7 @@ func MakeConfig(t require.TestingT, enableUI bool) service.Config {
 
 	cfg.Log = log.MakeDefaultConfig()
 
-	cfg.APIs.HTTP.Authorization = config.MakeAuthorizationConfig()
+	cfg.APIs.HTTP.Authorization = config.MakeValidatorConfig()
 	cfg.APIs.HTTP.Connection = config.MakeListenerConfig(config.HTTP_GW_HOST)
 	cfg.APIs.HTTP.Connection.TLS.ClientCertificateRequired = false
 	cfg.APIs.HTTP.WebSocket.StreamBodyLimit = 256 * 1024

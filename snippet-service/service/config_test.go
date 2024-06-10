@@ -6,6 +6,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	grpcServer "github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
 	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
+	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/hub/v2/snippet-service/service"
 	storeConfig "github.com/plgd-dev/hub/v2/snippet-service/store/config"
 	"github.com/plgd-dev/hub/v2/snippet-service/test"
@@ -161,13 +162,24 @@ func TestClientsConfig(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "invalid - invalid open telemetry",
+			name: "invalid open telemetry",
 			cfg: func() service.ClientsConfig {
 				cfg := test.MakeClientsConfig()
 				cfg.OpenTelemetryCollector = otelClient.Config{
 					GRPC: otelClient.GRPCConfig{
 						Enabled: true,
 					},
+				}
+				return cfg
+			}(),
+			wantErr: true,
+		},
+		{
+			name: "invalid NATS",
+			cfg: func() service.ClientsConfig {
+				cfg := test.MakeClientsConfig()
+				cfg.NATS = natsClient.Config{
+					URL: "bad",
 				}
 				return cfg
 			}(),

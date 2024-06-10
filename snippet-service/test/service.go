@@ -24,6 +24,8 @@ func HTTPURI(uri string) string {
 }
 
 func MakeHTTPConfig() service.HTTPConfig {
+	tls := config.MakeTLSServerConfig()
+	tls.ClientCertificateRequired = false
 	return service.HTTPConfig{
 		Addr:   config.SNIPPET_SERVICE_HTTP_HOST,
 		Server: config.MakeHttpServerConfig(),
@@ -41,8 +43,12 @@ func MakeAPIsConfig() service.APIsConfig {
 
 func MakeClientsConfig() service.ClientsConfig {
 	return service.ClientsConfig{
-		OpenTelemetryCollector: config.MakeOpenTelemetryCollectorClient(),
 		Storage:                MakeStorageConfig(),
+		OpenTelemetryCollector: config.MakeOpenTelemetryCollectorClient(),
+		NATS:                   config.MakeSubscriberConfig(),
+		ResourceAggregate: service.ResourceAggregateConfig{
+			Connection: config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST),
+		},
 	}
 }
 

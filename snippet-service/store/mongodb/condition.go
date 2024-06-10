@@ -2,11 +2,11 @@ package mongodb
 
 import (
 	"context"
-	"slices"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
+	"github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
 	"github.com/plgd-dev/hub/v2/snippet-service/store"
 	"go.mongodb.org/mongo-driver/bson"
@@ -14,39 +14,26 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-/*
-Condition -> podmienka za akych okolnosti sa aplikuje
-	- id (identifikator) (user nevie menit)
-	- verzia (pri update sa verzia inkremente)
-		- pri ukladani checknem v DB ze predchadzajuca verzia je o 1 mensie
-			- t.j. check nenastala mi medzi tym zmena
-	- name - user-friendly meno
-	- enabled
-	- configuration id
-	- device_id_filter - OR - pride event a chcecknem ci device_id_filter obsahuje ID device
-		- ak je prazdny tak vsetko pustit
-	- resource_type_filter - AND - ked mam viac musia sa vsetky matchnut
-			- ak je prazdny tak vsetko pustit
-	- resource_href_filer - OR - musim matchnut aspon jeden href
-			- ak je prazdny tak vsetko pustit- resource_href_filter
-        - jq_expression - expression pustim nad obsahom ResourceChanged eventom, mal by vratit true/false (ci hodnota existuje)
-          - dalsia podmienka
-          https://github.com/itchyny/gojq
-        - api_access_token - TODO, zatial nechame otvorene; ked sa ide aplikovat konfiguraciu tak potrebujes token na autorizaciu
-        - owner -> musi sediet s tym co je v DB
-*/
+func (s *Store) InsertConditions(ctx context.Context, conds ...*store.Condition) error {
+	documents := make([]interface{}, 0, len(conds))
+	for _, cond := range conds {
+		documents = append(documents, cond)
+	}
+	_, err := s.Collection(conditionsCol).InsertMany(ctx, documents)
+	return err
+}
 
 func (s *Store) CreateCondition(ctx context.Context, cond *pb.Condition) (*pb.Condition, error) {
-	if err := store.ValidateAndNormalizeCondition(cond, false); err != nil {
+	newCond, err := store.ValidateAndNormalizeCondition(cond, false)
+	if err != nil {
 		return nil, err
 	}
-	newCond := cond.Clone()
 	if newCond.GetId() == "" {
 		newCond.Id = uuid.NewString()
 	}
 	newCond.Timestamp = time.Now().UnixNano()
 	storeCond := store.MakeFirstCondition(newCond)
-	_, err := s.Collection(conditionsCol).InsertOne(ctx, storeCond)
+	_, err = s.Collection(conditionsCol).InsertOne(ctx, storeCond)
 	if err != nil {
 		return nil, err
 	}
@@ -113,12 +100,13 @@ func updateCondition(cond *pb.Condition) mongo.Pipeline {
 }
 
 func (s *Store) UpdateCondition(ctx context.Context, cond *pb.Condition) (*pb.Condition, error) {
-	if err := store.ValidateAndNormalizeCondition(cond, true); err != nil {
+	newCond, err := store.ValidateAndNormalizeCondition(cond, true)
+	if err != nil {
 		return nil, err
 	}
 
-	filter := filterCondition(cond)
-	update := updateCondition(cond)
+	filter := filterCondition(newCond)
+	update := updateCondition(newCond)
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After).SetProjection(bson.M{store.VersionsKey: false})
 	result := s.Collection(conditionsCol).FindOneAndUpdate(ctx, filter, update, opts)
 	if result.Err() != nil {
@@ -126,7 +114,7 @@ func (s *Store) UpdateCondition(ctx context.Context, cond *pb.Condition) (*pb.Co
 	}
 
 	updatedCond := &store.Condition{}
-	err := result.Decode(&updatedCond)
+	err = result.Decode(&updatedCond)
 	if err != nil {
 		return nil, err
 	}
@@ -180,14 +168,9 @@ func (s *Store) getConditionsByAggregation(ctx context.Context, owner, id string
 	return processCursor(ctx, cur, p)
 }
 
-func normalizeSlice(s []string) []string {
-	slices.Sort(s)
-	return slices.Compact(s)
-}
-
 func (s *Store) GetConditions(ctx context.Context, owner string, query *pb.GetConditionsRequest, p store.Process[store.Condition]) error {
 	vf := pb.PartitionIDFilter(query.GetIdFilter())
-	confIdLatestFilter := normalizeSlice(query.GetConfigurationIdFilter())
+	confIdLatestFilter := strings.Unique(query.GetConfigurationIdFilter())
 	var errors *multierror.Error
 	if len(vf.All) > 0 || vf.IsEmpty() && len(confIdLatestFilter) == 0 {
 		err := s.getConditionsByID(ctx, owner, vf.All, p)
@@ -208,4 +191,69 @@ func (s *Store) GetConditions(ctx context.Context, owner string, query *pb.GetCo
 
 func (s *Store) DeleteConditions(ctx context.Context, owner string, query *pb.DeleteConditionsRequest) (int64, error) {
 	return s.delete(ctx, conditionsCol, owner, query.GetIdFilter())
+}
+
+func toLatestEnabledQueryFilter() bson.D {
+	key := store.LatestKey + "." + store.EnabledKey
+	return bson.D{{Key: key, Value: true}}
+}
+
+func toLatestDeviceIDQueryFilter(deviceID string) bson.M {
+	key := store.LatestKey + "." + store.DeviceIDFilterKey
+	return bson.M{"$or": bson.A{
+		bson.M{key: bson.M{"$exists": false}},
+		bson.M{key: deviceID},
+	}}
+}
+
+func toLatestResourceHrefQueryFilter(resourceHref string) bson.M {
+	key := store.LatestKey + "." + store.ResourceHrefFilterKey
+	return bson.M{"$or": bson.A{
+		bson.M{key: bson.M{"$exists": false}},
+		bson.M{key: resourceHref},
+	}}
+}
+
+func toLatestResouceTypeQueryFilter(resourceTypeFilter []string) bson.M {
+	key := store.LatestKey + "." + store.ResourceTypeFilterKey
+	return bson.M{"$or": bson.A{
+		bson.M{key: bson.M{"$exists": false}},
+		bson.M{key: bson.M{"$all": resourceTypeFilter}},
+	}}
+}
+
+func toLatestConditionsQueryFilter(owner string, queries *store.GetLatestConditionsQuery) interface{} {
+	filter := make([]interface{}, 0, 5)
+	filter = append(filter, toLatestEnabledQueryFilter())
+	if owner != "" {
+		filter = append(filter, bson.D{{Key: store.OwnerKey, Value: owner}})
+	}
+	if queries.DeviceID != "" {
+		filter = append(filter, toLatestDeviceIDQueryFilter(queries.DeviceID))
+	}
+	if queries.ResourceHref != "" {
+		filter = append(filter, toLatestResourceHrefQueryFilter(queries.ResourceHref))
+	}
+	if len(queries.ResourceTypeFilter) > 0 {
+		filter = append(filter, toLatestResouceTypeQueryFilter(queries.ResourceTypeFilter))
+	}
+	if len(filter) == 0 {
+		return bson.D{}
+	}
+	if len(filter) == 1 {
+		return filter[0]
+	}
+	return bson.M{"$and": filter}
+}
+
+func (s *Store) GetLatestEnabledConditions(ctx context.Context, owner string, query *store.GetLatestConditionsQuery, p store.ProcessConditions) error {
+	if err := store.ValidateAndNormalizeConditionsQuery(query); err != nil {
+		return err
+	}
+	opt := options.Find().SetProjection(bson.M{store.VersionsKey: false})
+	cur, err := s.Collection(conditionsCol).Find(ctx, toLatestConditionsQueryFilter(owner, query), opt)
+	if err != nil {
+		return err
+	}
+	return processCursor(ctx, cur, p)
 }
