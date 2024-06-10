@@ -108,7 +108,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	ca, err := grpcService.NewIntegrationServiceServer(config.APIs.GRPC.Authorization.OwnerClaim, config.HubID, dbStorage, logger)
 	if err != nil {
 		closerFn.Execute()
-		return nil, fmt.Errorf("cannot create grpc certificate authority server: %w", err)
+		return nil, fmt.Errorf("cannot create grpc integration server: %w", err)
 	}
 	closerFn.AddFunc(ca.Close)
 

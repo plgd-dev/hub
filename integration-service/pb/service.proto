@@ -119,6 +119,8 @@ message InvokeConfigurationRequest {
   string id = 5;
 }
 
+message GetConfigurationRequest { string id = 1; }
+
 message GetAppliedConfigurationsRequest { //TODO Naming
   repeated string id_filter = 1;
   repeated IDFilter configuration_id_filter = 2;
@@ -217,6 +219,14 @@ service IntegrationService {
     };
   }
 
+  rpc GetConfiguration(GetConfigurationRequest) returns (stream Configuration) {
+    option (google.api.http) = {
+      get: "/api/v1/configuration/{id}"; 
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Configurations" ];
+    };
+  }
 
   rpc GetAppliedConfigurations(GetAppliedConfigurationsRequest) returns (stream AppliedConfiguration) {
     option (google.api.http) = {

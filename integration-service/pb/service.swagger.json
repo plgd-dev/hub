@@ -150,6 +150,45 @@
         ]
       }
     },
+    "/api/v1/configuration/{id}": {
+      "get": {
+        "operationId": "IntegrationService_GetConfiguration",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/pbConfiguration"
+                },
+                "error": {
+                  "$ref": "#/definitions/googlerpcStatus"
+                }
+              },
+              "title": "Stream result of pbConfiguration"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/googlerpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Configurations"
+        ]
+      }
+    },
     "/api/v1/configurations": {
       "get": {
         "operationId": "IntegrationService_GetConfigurations",

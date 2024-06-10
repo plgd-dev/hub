@@ -18,6 +18,7 @@
     - [DeleteConfigurationsResponse](#integrationservice-pb-DeleteConfigurationsResponse)
     - [GetAppliedConfigurationsRequest](#integrationservice-pb-GetAppliedConfigurationsRequest)
     - [GetConditionsRequest](#integrationservice-pb-GetConditionsRequest)
+    - [GetConfigurationRequest](#integrationservice-pb-GetConfigurationRequest)
     - [GetConfigurationsRequest](#integrationservice-pb-GetConfigurationsRequest)
     - [IDFilter](#integrationservice-pb-IDFilter)
     - [InvokeConfigurationRequest](#integrationservice-pb-InvokeConfigurationRequest)
@@ -276,6 +277,21 @@ TODO Naming
 
 
 
+<a name="integrationservice-pb-GetConfigurationRequest"></a>
+
+### GetConfigurationRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  |  |
+
+
+
+
+
+
 <a name="integrationservice-pb-GetConfigurationsRequest"></a>
 
 ### GetConfigurationsRequest
@@ -364,6 +380,7 @@ configuration/123?version=latest :) Jozko spravi :)
 | DeleteConfigurations | [DeleteConfigurationsRequest](#integrationservice-pb-DeleteConfigurationsRequest) | [DeleteConfigurationsResponse](#integrationservice-pb-DeleteConfigurationsResponse) |  |
 | UpdateConfiguration | [Configuration](#integrationservice-pb-Configuration) | [Configuration](#integrationservice-pb-Configuration) |  |
 | InvokeConfiguration | [InvokeConfigurationRequest](#integrationservice-pb-InvokeConfigurationRequest) | [AppliedConfiguration](#integrationservice-pb-AppliedConfiguration) stream | streaming process of update configuration to invoker |
+| GetConfiguration | [GetConfigurationRequest](#integrationservice-pb-GetConfigurationRequest) | [Configuration](#integrationservice-pb-Configuration) stream |  |
 | GetAppliedConfigurations | [GetAppliedConfigurationsRequest](#integrationservice-pb-GetAppliedConfigurationsRequest) | [AppliedConfiguration](#integrationservice-pb-AppliedConfiguration) stream |  |
 | DeleteAppliedConfigurations | [DeleteAppliedConfigurationsRequest](#integrationservice-pb-DeleteAppliedConfigurationsRequest) | [DeleteAppliedConfigurationsResponse](#integrationservice-pb-DeleteAppliedConfigurationsResponse) |  |
 

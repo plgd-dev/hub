@@ -10,7 +10,7 @@ import (
 
 const (
 	API               string = "/api/v1"
-	IntegrationConfig        = API + "/config"
+	IntegrationConfig        = API + "/configuration"
 	ConfigIDKey              = "configId"
 	AliasConfig              = IntegrationConfig + "/{" + ConfigIDKey + "}"
 )

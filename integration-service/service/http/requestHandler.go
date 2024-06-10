@@ -3,7 +3,6 @@ package http
 import (
 	"context"
 	"fmt"
-	"net/http"
 
 	"github.com/fullstorydev/grpchan/inprocgrpc"
 	"github.com/gorilla/mux"
@@ -26,7 +25,7 @@ func NewRequestHandler(config *Config, r *mux.Router, integrationServiceServer *
 		mux:    serverMux.New(),
 	}
 
-	r.HandleFunc(AliasConfig, requestHandler.getConfig).Methods(http.MethodGet)
+	//r.HandleFunc(AliasConfig, requestHandler.getConfig).Methods(http.MethodGet)
 
 	ch := new(inprocgrpc.Channel)
 	pb.RegisterIntegrationServiceServer(ch, integrationServiceServer)

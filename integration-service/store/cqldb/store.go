@@ -85,7 +85,7 @@ func newEventStoreWithClient(ctx context.Context, client *cqldb.Client, config *
 	}
 
 	if config.Table == "" {
-		config.Table = "integrations"
+		config.Table = "integrationRecords"
 	}
 
 	err := createEventsTable(ctx, client, config.Table)
@@ -133,5 +133,8 @@ func (s *Store) DeleteExpiredRecords(ctx context.Context, now time.Time) (int64,
 }
 
 func (s *Store) CreateRecord(ctx context.Context, r *store.ConfigurationRecord) error {
+	return nil
+}
+func (s *Store) GetRecord(ctx context.Context, confID string, query *store.GetConfigurationRequest, rec *store.ConfigurationRecord) error {
 	return nil
 }

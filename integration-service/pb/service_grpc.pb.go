@@ -36,6 +36,7 @@ const (
 	IntegrationService_DeleteConfigurations_FullMethodName        = "/integrationservice.pb.IntegrationService/DeleteConfigurations"
 	IntegrationService_UpdateConfiguration_FullMethodName         = "/integrationservice.pb.IntegrationService/UpdateConfiguration"
 	IntegrationService_InvokeConfiguration_FullMethodName         = "/integrationservice.pb.IntegrationService/InvokeConfiguration"
+	IntegrationService_GetConfiguration_FullMethodName            = "/integrationservice.pb.IntegrationService/GetConfiguration"
 	IntegrationService_GetAppliedConfigurations_FullMethodName    = "/integrationservice.pb.IntegrationService/GetAppliedConfigurations"
 	IntegrationService_DeleteAppliedConfigurations_FullMethodName = "/integrationservice.pb.IntegrationService/DeleteAppliedConfigurations"
 )
@@ -54,6 +55,7 @@ type IntegrationServiceClient interface {
 	UpdateConfiguration(ctx context.Context, in *Configuration, opts ...grpc.CallOption) (*Configuration, error)
 	// streaming process of update configuration to invoker
 	InvokeConfiguration(ctx context.Context, in *InvokeConfigurationRequest, opts ...grpc.CallOption) (IntegrationService_InvokeConfigurationClient, error)
+	GetConfiguration(ctx context.Context, in *GetConfigurationRequest, opts ...grpc.CallOption) (IntegrationService_GetConfigurationClient, error)
 	GetAppliedConfigurations(ctx context.Context, in *GetAppliedConfigurationsRequest, opts ...grpc.CallOption) (IntegrationService_GetAppliedConfigurationsClient, error)
 	DeleteAppliedConfigurations(ctx context.Context, in *DeleteAppliedConfigurationsRequest, opts ...grpc.CallOption) (*DeleteAppliedConfigurationsResponse, error)
 }
@@ -216,8 +218,40 @@ func (x *integrationServiceInvokeConfigurationClient) Recv() (*AppliedConfigurat
 	return m, nil
 }
 
+func (c *integrationServiceClient) GetConfiguration(ctx context.Context, in *GetConfigurationRequest, opts ...grpc.CallOption) (IntegrationService_GetConfigurationClient, error) {
+	stream, err := c.cc.NewStream(ctx, &IntegrationService_ServiceDesc.Streams[3], IntegrationService_GetConfiguration_FullMethodName, opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &integrationServiceGetConfigurationClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type IntegrationService_GetConfigurationClient interface {
+	Recv() (*Configuration, error)
+	grpc.ClientStream
+}
+
+type integrationServiceGetConfigurationClient struct {
+	grpc.ClientStream
+}
+
+func (x *integrationServiceGetConfigurationClient) Recv() (*Configuration, error) {
+	m := new(Configuration)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func (c *integrationServiceClient) GetAppliedConfigurations(ctx context.Context, in *GetAppliedConfigurationsRequest, opts ...grpc.CallOption) (IntegrationService_GetAppliedConfigurationsClient, error) {
-	stream, err := c.cc.NewStream(ctx, &IntegrationService_ServiceDesc.Streams[3], IntegrationService_GetAppliedConfigurations_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &IntegrationService_ServiceDesc.Streams[4], IntegrationService_GetAppliedConfigurations_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -271,6 +305,7 @@ type IntegrationServiceServer interface {
 	UpdateConfiguration(context.Context, *Configuration) (*Configuration, error)
 	// streaming process of update configuration to invoker
 	InvokeConfiguration(*InvokeConfigurationRequest, IntegrationService_InvokeConfigurationServer) error
+	GetConfiguration(*GetConfigurationRequest, IntegrationService_GetConfigurationServer) error
 	GetAppliedConfigurations(*GetAppliedConfigurationsRequest, IntegrationService_GetAppliedConfigurationsServer) error
 	DeleteAppliedConfigurations(context.Context, *DeleteAppliedConfigurationsRequest) (*DeleteAppliedConfigurationsResponse, error)
 	mustEmbedUnimplementedIntegrationServiceServer()
@@ -306,6 +341,9 @@ func (UnimplementedIntegrationServiceServer) UpdateConfiguration(context.Context
 }
 func (UnimplementedIntegrationServiceServer) InvokeConfiguration(*InvokeConfigurationRequest, IntegrationService_InvokeConfigurationServer) error {
 	return status.Errorf(codes.Unimplemented, "method InvokeConfiguration not implemented")
+}
+func (UnimplementedIntegrationServiceServer) GetConfiguration(*GetConfigurationRequest, IntegrationService_GetConfigurationServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetConfiguration not implemented")
 }
 func (UnimplementedIntegrationServiceServer) GetAppliedConfigurations(*GetAppliedConfigurationsRequest, IntegrationService_GetAppliedConfigurationsServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetAppliedConfigurations not implemented")
@@ -497,6 +535,27 @@ func (x *integrationServiceInvokeConfigurationServer) Send(m *AppliedConfigurati
 	return x.ServerStream.SendMsg(m)
 }
 
+func _IntegrationService_GetConfiguration_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetConfigurationRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(IntegrationServiceServer).GetConfiguration(m, &integrationServiceGetConfigurationServer{stream})
+}
+
+type IntegrationService_GetConfigurationServer interface {
+	Send(*Configuration) error
+	grpc.ServerStream
+}
+
+type integrationServiceGetConfigurationServer struct {
+	grpc.ServerStream
+}
+
+func (x *integrationServiceGetConfigurationServer) Send(m *Configuration) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 func _IntegrationService_GetAppliedConfigurations_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(GetAppliedConfigurationsRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -586,6 +645,11 @@ var IntegrationService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "InvokeConfiguration",
 			Handler:       _IntegrationService_InvokeConfiguration_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "GetConfiguration",
+			Handler:       _IntegrationService_GetConfiguration_Handler,
 			ServerStreams: true,
 		},
 		{

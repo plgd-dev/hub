@@ -235,6 +235,10 @@
                 </li>
               
                 <li>
+                  <a href="#integrationservice.pb.GetConfigurationRequest"><span class="badge">M</span>GetConfigurationRequest</a>
+                </li>
+              
+                <li>
                   <a href="#integrationservice.pb.GetConfigurationsRequest"><span class="badge">M</span>GetConfigurationsRequest</a>
                 </li>
               
@@ -811,6 +815,30 @@
 
         
       
+        <h3 id="integrationservice.pb.GetConfigurationRequest">GetConfigurationRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
         <h3 id="integrationservice.pb.GetConfigurationsRequest">GetConfigurationsRequest</h3>
         <p></p>
 
@@ -1045,6 +1073,13 @@
               </tr>
             
               <tr>
+                <td>GetConfiguration</td>
+                <td><a href="#integrationservice.pb.GetConfigurationRequest">GetConfigurationRequest</a></td>
+                <td><a href="#integrationservice.pb.Configuration">Configuration</a> stream</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
                 <td>GetAppliedConfigurations</td>
                 <td><a href="#integrationservice.pb.GetAppliedConfigurationsRequest">GetAppliedConfigurationsRequest</a></td>
                 <td><a href="#integrationservice.pb.AppliedConfiguration">AppliedConfiguration</a> stream</td>
@@ -1163,6 +1198,16 @@
                 <td>POST</td>
                 <td>/api/v1/configurations/{id}</td>
                 <td>*</td>
+              </tr>
+              
+            
+              
+              
+              <tr>
+                <td>GetConfiguration</td>
+                <td>GET</td>
+                <td>/api/v1/configuration/{id}</td>
+                <td></td>
               </tr>
               
             

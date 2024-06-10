@@ -369,6 +369,40 @@ func request_IntegrationService_InvokeConfiguration_0(ctx context.Context, marsh
 
 }
 
+func request_IntegrationService_GetConfiguration_0(ctx context.Context, marshaler runtime.Marshaler, client IntegrationServiceClient, req *http.Request, pathParams map[string]string) (IntegrationService_GetConfigurationClient, runtime.ServerMetadata, error) {
+	var protoReq GetConfigurationRequest
+	var metadata runtime.ServerMetadata
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "id")
+	}
+
+	protoReq.Id, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "id", err)
+	}
+
+	stream, err := client.GetConfiguration(ctx, &protoReq)
+	if err != nil {
+		return nil, metadata, err
+	}
+	header, err := stream.Header()
+	if err != nil {
+		return nil, metadata, err
+	}
+	metadata.HeaderMD = header
+	return stream, metadata, nil
+
+}
+
 var (
 	filter_IntegrationService_GetAppliedConfigurations_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 )
@@ -604,6 +638,13 @@ func RegisterIntegrationServiceHandlerServer(ctx context.Context, mux *runtime.S
 	})
 
 	mux.Handle("POST", pattern_IntegrationService_InvokeConfiguration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
+		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+		return
+	})
+
+	mux.Handle("GET", pattern_IntegrationService_GetConfiguration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
 		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
@@ -881,6 +922,28 @@ func RegisterIntegrationServiceHandlerClient(ctx context.Context, mux *runtime.S
 
 	})
 
+	mux.Handle("GET", pattern_IntegrationService_GetConfiguration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		var err error
+		var annotatedContext context.Context
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/integrationservice.pb.IntegrationService/GetConfiguration", runtime.WithHTTPPathPattern("/api/v1/configuration/{id}"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_IntegrationService_GetConfiguration_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_IntegrationService_GetConfiguration_0(annotatedContext, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
+
+	})
+
 	mux.Handle("GET", pattern_IntegrationService_GetAppliedConfigurations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
@@ -947,6 +1010,8 @@ var (
 
 	pattern_IntegrationService_InvokeConfiguration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"api", "v1", "configurations", "id"}, ""))
 
+	pattern_IntegrationService_GetConfiguration_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"api", "v1", "configuration", "id"}, ""))
+
 	pattern_IntegrationService_GetAppliedConfigurations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "configurations", "applied"}, ""))
 
 	pattern_IntegrationService_DeleteAppliedConfigurations_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "v1", "configurations", "applied"}, ""))
@@ -970,6 +1035,8 @@ var (
 	forward_IntegrationService_UpdateConfiguration_0 = runtime.ForwardResponseMessage
 
 	forward_IntegrationService_InvokeConfiguration_0 = runtime.ForwardResponseStream
+
+	forward_IntegrationService_GetConfiguration_0 = runtime.ForwardResponseStream
 
 	forward_IntegrationService_GetAppliedConfigurations_0 = runtime.ForwardResponseStream
 

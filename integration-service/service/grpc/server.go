@@ -1,6 +1,8 @@
 package grpc
 
 import (
+	"context"
+
 	"github.com/plgd-dev/hub/v2/integration-service/pb"
 	"github.com/plgd-dev/hub/v2/integration-service/store"
 	"github.com/plgd-dev/hub/v2/pkg/log"
@@ -28,4 +30,19 @@ func NewIntegrationServiceServer(ownerClaim string, hubID string, store store.St
 }
 
 func (s *IntegrationServiceServer) Close() {
+}
+
+func (s *IntegrationServiceServer) GetConfiguration(req *pb.GetConfigurationRequest, srv pb.IntegrationService_GetConfigurationServer) error {
+
+	var sub pb.Configuration
+
+	s.store.GetRecord(context.Background(), req.GetId(), &store.GetConfigurationRequest{
+		Id: req.GetId(),
+	}, &sub)
+
+	if err := srv.Send(&sub); err != nil {
+		return err
+	}
+
+	return nil
 }

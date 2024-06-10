@@ -60,7 +60,7 @@ func (s *Store) CreateRecord(ctx context.Context, r *store.ConfigurationRecord) 
 
 	var commonNameKeyQueryIndex = mongo.IndexModel{
 		Keys: bson.D{
-			{Key: "key", Value: 1},
+			{Key: "id", Value: 1},
 		},
 	}
 
@@ -69,4 +69,29 @@ func (s *Store) CreateRecord(ctx context.Context, r *store.ConfigurationRecord) 
 	col.InsertOne(ctx, r)
 
 	return nil
+}
+
+func (s *Store) GetRecord(ctx context.Context, confID string, query *store.GetConfigurationRequest, rec *store.ConfigurationRecord) error {
+
+	col := s.Collection(integrationCol)
+
+	filter := bson.D{
+		{Key: "id", Value: query.Id},
+	}
+
+	iter, err := col.Find(ctx, filter)
+	defer iter.Close(context.TODO())
+
+	//send only firts item for now
+	for iter.Next(ctx) {
+		if err := iter.Decode(&rec); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	if err := iter.Err(); err != nil {
+		log.Fatal(err)
+	}
+
+	return err
 }

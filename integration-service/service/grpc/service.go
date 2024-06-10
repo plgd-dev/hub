@@ -16,7 +16,7 @@ type Service struct {
 	*server.Server
 }
 
-func New(config Config, snapshotServiceServer *IntegrationServiceServer, validator *validator.Validator, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*Service, error) {
+func New(config Config, integrationServiceServer *IntegrationServiceServer, validator *validator.Validator, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*Service, error) {
 	opts, err := server.MakeDefaultOptions(server.NewAuth(validator), logger, tracerProvider)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create grpc server options: %w", err)
@@ -26,9 +26,9 @@ func New(config Config, snapshotServiceServer *IntegrationServiceServer, validat
 		return nil, err
 	}
 
-	pb.RegisterIntegrationServiceServer(server.Server, snapshotServiceServer)
+	pb.RegisterIntegrationServiceServer(server.Server, integrationServiceServer)
 
-	// CertificateAuthority needs to stop gracefully to ensure that all commands are processed.
+	// Integration needs to stop gracefully to ensure that all commands are processed.
 	server.SetGracefulStop(true)
 
 	return &Service{
