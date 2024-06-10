@@ -11,6 +11,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	httpServer "github.com/plgd-dev/hub/v2/pkg/net/http/server"
 	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
+	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 	grpcService "github.com/plgd-dev/hub/v2/snippet-service/service/grpc"
 	storeConfig "github.com/plgd-dev/hub/v2/snippet-service/store/config"
 )
@@ -78,6 +79,7 @@ func (c *StorageConfig) Validate() error {
 type ClientsConfig struct {
 	Storage                StorageConfig     `yaml:"storage" json:"storage"`
 	OpenTelemetryCollector otelClient.Config `yaml:"openTelemetryCollector" json:"openTelemetryCollector"`
+	NATS                   natsClient.Config `yaml:"nats" json:"nats"`
 }
 
 func (c *ClientsConfig) Validate() error {
@@ -86,6 +88,9 @@ func (c *ClientsConfig) Validate() error {
 	}
 	if err := c.OpenTelemetryCollector.Validate(); err != nil {
 		return fmt.Errorf("openTelemetryCollector.%w", err)
+	}
+	if err := c.NATS.Validate(); err != nil {
+		return fmt.Errorf("nats.%w", err)
 	}
 	return nil
 }

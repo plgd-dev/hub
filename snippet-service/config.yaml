@@ -104,3 +104,13 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+  nats:
+    url: ""
+    pendingLimits:
+      msgLimit: 524288
+      bytesLimit: 67108864
+    tls:
+      caPool: "/secrets/public/rootca.crt"
+      keyFile: "/secrets/private/cert.key"
+      certFile: "/secrets/public/cert.crt"
+      useSystemCAPool: false

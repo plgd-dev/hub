@@ -41,8 +41,9 @@ func MakeAPIsConfig() service.APIsConfig {
 
 func MakeClientsConfig() service.ClientsConfig {
 	return service.ClientsConfig{
-		OpenTelemetryCollector: config.MakeOpenTelemetryCollectorClient(),
 		Storage:                MakeStorageConfig(),
+		OpenTelemetryCollector: config.MakeOpenTelemetryCollectorClient(),
+		NATS:                   config.MakeSubscriberConfig(),
 	}
 }
 

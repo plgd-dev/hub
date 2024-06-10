@@ -14,6 +14,8 @@ import (
 	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
 	"github.com/plgd-dev/hub/v2/pkg/service"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	grpcService "github.com/plgd-dev/hub/v2/snippet-service/service/grpc"
 	httpService "github.com/plgd-dev/hub/v2/snippet-service/service/http"
 	"github.com/plgd-dev/hub/v2/snippet-service/store"
@@ -24,6 +26,31 @@ import (
 )
 
 const serviceName = "snippet-service"
+
+type Service struct {
+	*service.Service
+
+	resourceSubscriber *ResourceSubscriber
+}
+
+type changeHandler struct{}
+
+func (h *changeHandler) Handle(ctx context.Context, iter eventbus.Iter) (err error) {
+	for {
+		ev, ok := iter.Next(ctx)
+		if !ok {
+			return iter.Err()
+		}
+		var s events.ResourceChanged
+		if ev.EventType() != s.EventType() {
+			continue
+		}
+		if err := ev.Unmarshal(&s); err != nil {
+			return err
+		}
+		// TODO: handle resource changed event
+	}
+}
 
 func createStore(ctx context.Context, config storeConfig.Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (store.Store, error) {
 	switch config.Use {
@@ -84,7 +111,7 @@ func newStore(ctx context.Context, config StorageConfig, fileWatcher *fsnotify.W
 	return db, fl.ToFunction(), nil
 }
 
-func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*service.Service, error) {
+func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Service, error) {
 	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector, serviceName, fileWatcher, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
@@ -111,6 +138,19 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 			log.Errorf("failed to close grpc %s server: %w", serviceName, errC)
 		}
 	})
+
+	resourceSubscriber, err := NewResourceSubscriber(ctx, config, fileWatcher, logger, &changeHandler{})
+	if err != nil {
+		closerFn.Execute()
+		return nil, fmt.Errorf("cannot create resource subscriber: %w", err)
+	}
+	closerFn.AddFunc(func() {
+		errC := resourceSubscriber.Close()
+		if errC != nil {
+			log.Errorf("failed to close resource subscriber: %w", errC)
+		}
+	})
+
 	httpValidator, err := validator.New(ctx, config.APIs.GRPC.Authorization.Config, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		closerFn.Execute()
@@ -143,5 +183,8 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	}
 	s := service.New(httpService, grpcService)
 	s.AddCloseFunc(closerFn.Execute)
-	return s, nil
+	return &Service{
+		Service:            s,
+		resourceSubscriber: resourceSubscriber,
+	}, nil
 }
