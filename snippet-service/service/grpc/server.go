@@ -23,15 +23,13 @@ type SnippetServiceServer struct {
 	hubID      string
 }
 
-func NewSnippetServiceServer(ownerClaim string, hubID string, store store.Store, logger log.Logger) (*SnippetServiceServer, error) {
-	s := &SnippetServiceServer{
+func NewSnippetServiceServer(ownerClaim string, hubID string, store store.Store, logger log.Logger) *SnippetServiceServer {
+	return &SnippetServiceServer{
 		logger:     logger,
 		ownerClaim: ownerClaim,
 		store:      store,
 		hubID:      hubID,
 	}
-
-	return s, nil
 }
 
 func (s *SnippetServiceServer) checkOwner(ctx context.Context, owner string) (string, error) {

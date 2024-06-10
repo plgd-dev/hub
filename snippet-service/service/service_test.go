@@ -20,19 +20,162 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
+	"github.com/plgd-dev/hub/v2/pkg/config/database"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
+	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/mongodb"
+	httpClient "github.com/plgd-dev/hub/v2/pkg/net/http/client"
+	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
+	"github.com/plgd-dev/hub/v2/snippet-service/service"
+	storeConfig "github.com/plgd-dev/hub/v2/snippet-service/store/config"
+	storeCqlDB "github.com/plgd-dev/hub/v2/snippet-service/store/cqldb"
+	storeMongo "github.com/plgd-dev/hub/v2/snippet-service/store/mongodb"
 	"github.com/plgd-dev/hub/v2/snippet-service/test"
-	testService "github.com/plgd-dev/hub/v2/test/service"
+	"github.com/plgd-dev/hub/v2/test/config"
+	hubTestService "github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/require"
 )
 
-func TestServiceServe(t *testing.T) {
-	fmt.Printf("%v\n\n", test.MakeConfig(t))
+func TestServiceNew(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	defer cancel()
 
-	shutDown := testService.SetUpServices(context.Background(), t, testService.SetUpServicesCertificateAuthority|testService.SetUpServicesOAuth)
-	defer shutDown()
+	logger := log.NewLogger(log.MakeDefaultConfig())
+	fileWatcher, err := fsnotify.NewWatcher(logger)
+	require.NoError(t, err)
 
-	cfg := test.MakeConfig(t)
-	cfg.Clients.Storage.CleanUpRecords = "/2 * * * *"
-	require.Error(t, cfg.Validate())
+	const services = hubTestService.SetUpServicesOAuth
+	tearDown := hubTestService.SetUpServices(ctx, t, services)
+	defer tearDown()
+
+	tests := []struct {
+		name    string
+		cfg     service.Config
+		wantErr bool
+	}{
+		{
+			name: "invalid open telemetry config",
+			cfg: service.Config{
+				Clients: service.ClientsConfig{
+					OpenTelemetryCollector: otelClient.Config{
+						GRPC: otelClient.GRPCConfig{
+							Enabled: true,
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid DB",
+			cfg: service.Config{
+				Clients: service.ClientsConfig{
+					Storage: service.StorageConfig{
+						Embedded: storeConfig.Config{
+							Use: "invalid",
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid mongoDB config",
+			cfg: service.Config{
+				Clients: service.ClientsConfig{
+					Storage: service.StorageConfig{
+						Embedded: storeConfig.Config{
+							Use: database.MongoDB,
+							MongoDB: &storeMongo.Config{
+								Mongo: mongodb.Config{
+									URI: "invalid",
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid cqlDB config",
+			cfg: service.Config{
+				Clients: service.ClientsConfig{
+					Storage: service.StorageConfig{
+						Embedded: storeConfig.Config{
+							Use:   database.CqlDB,
+							CqlDB: &storeCqlDB.Config{},
+						},
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid CronJob config",
+			cfg: func() service.Config {
+				cfg := test.MakeConfig(t)
+				cfg.Clients.Storage.CleanUpRecords = "invalid"
+				return cfg
+			}(),
+			wantErr: true,
+		},
+		{
+			name: "invalid HTTP validator config",
+			cfg: func() service.Config {
+				cfg := test.MakeConfig(t)
+				cfg.APIs.HTTP.Authorization.Config.HTTP = httpClient.Config{}
+				return cfg
+			}(),
+			wantErr: true,
+		},
+		{
+			name: "invalid HTTP config",
+			cfg: func() service.Config {
+				cfg := test.MakeConfig(t)
+				cfg.APIs.HTTP.Addr = "invalid"
+				return cfg
+			}(),
+			wantErr: true,
+		},
+		{
+			name: "invalid GRPC validator config",
+			cfg: func() service.Config {
+				cfg := test.MakeConfig(t)
+				cfg.APIs.GRPC.Authorization.Config.HTTP = httpClient.Config{}
+				return cfg
+			}(),
+			wantErr: true,
+		},
+		{
+			name: "invalid GRPC config",
+			cfg: func() service.Config {
+				cfg := test.MakeConfig(t)
+				cfg.APIs.GRPC.Addr = "invalid"
+				return cfg
+			}(),
+			wantErr: true,
+		},
+		{
+			name: "valid",
+			cfg:  test.MakeConfig(t),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s, err := service.New(ctx, tt.cfg, fileWatcher, logger)
+			if tt.wantErr {
+				require.Error(t, err)
+				time.Sleep(time.Millisecond * 200) // wait for close
+				return
+			}
+			fmt.Printf("cfg: %v\n", tt.cfg)
+			require.NoError(t, err)
+			_ = s.Close()
+			time.Sleep(time.Millisecond * 200) // wait for close
+		})
+	}
 }

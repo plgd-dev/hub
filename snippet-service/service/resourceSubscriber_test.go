@@ -46,7 +46,7 @@ func (h *testHandler) Handle(ctx context.Context, iter eventbus.Iter) (err error
 
 func TestResourceSubscriber(t *testing.T) {
 	deviceID := hubTest.MustFindDeviceByName(hubTest.TestDeviceName)
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT*100)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
 	tearDown := hubTestService.SetUp(ctx, t)

@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/plgd-dev/hub/v2/pkg/config"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	grpcServer "github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
 	httpServer "github.com/plgd-dev/hub/v2/pkg/net/http/server"
 	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
@@ -17,13 +18,17 @@ import (
 )
 
 type HTTPConfig struct {
-	Addr   string            `yaml:"address" json:"address"`
-	Server httpServer.Config `yaml:",inline" json:",inline"`
+	Addr          string                         `yaml:"address" json:"address"`
+	Server        httpServer.Config              `yaml:",inline" json:",inline"`
+	Authorization grpcServer.AuthorizationConfig `yaml:"authorization" json:"authorization"`
 }
 
 func (c *HTTPConfig) Validate() error {
 	if _, err := net.ResolveTCPAddr("tcp", c.Addr); err != nil {
 		return fmt.Errorf("address('%v') - %w", c.Addr, err)
+	}
+	if err := c.Authorization.Validate(); err != nil {
+		return fmt.Errorf("authorization.%w", err)
 	}
 	return nil
 }

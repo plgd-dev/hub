@@ -20,7 +20,7 @@ func checkConfigurationId(c string, isUpdate bool) error {
 	return nil
 }
 
-func normalizeSlice(s []string) []string {
+func NormalizeSlice(s []string) []string {
 	slices.Sort(s)
 	return slices.Compact(s)
 }
@@ -38,9 +38,9 @@ func ValidateAndNormalizeCondition(c *pb.Condition, isUpdate bool) error {
 		return errInvalidArgument(errors.New("missing owner"))
 	}
 	// ensure that filter arrays are sorted and compacted, so we can query for exact match instead of other more expensive queries
-	c.DeviceIdFilter = normalizeSlice(c.GetDeviceIdFilter())
-	c.ResourceTypeFilter = normalizeSlice(c.GetResourceTypeFilter())
-	c.ResourceHrefFilter = normalizeSlice(c.GetResourceHrefFilter())
+	c.DeviceIdFilter = NormalizeSlice(c.GetDeviceIdFilter())
+	c.ResourceTypeFilter = NormalizeSlice(c.GetResourceTypeFilter())
+	c.ResourceHrefFilter = NormalizeSlice(c.GetResourceHrefFilter())
 	return nil
 }
 
@@ -155,4 +155,12 @@ func (c *Condition) Clone() *Condition {
 		c2.Versions = append(c2.Versions, v.Copy())
 	}
 	return c2
+}
+
+func ValidateAndNormalizeConditionsQuery(q *GetLatestConditionsQuery) error {
+	if q.DeviceID == "" && q.ResourceHref == "" && len(q.ResourceTypeFilter) == 0 {
+		return errInvalidArgument(errors.New("at least one condition filter must be set"))
+	}
+	q.ResourceTypeFilter = NormalizeSlice(q.ResourceTypeFilter)
+	return nil
 }

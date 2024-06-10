@@ -28,13 +28,13 @@ const (
 
 )
 
-// type (
-//	ConditionsQuery struct {
-//		DeviceID           string
-//		ResourceHref       string
-//		ResourceTypeFilter []string
-//	}
-// )
+type (
+	GetLatestConditionsQuery struct {
+		DeviceID           string
+		ResourceHref       string
+		ResourceTypeFilter []string
+	}
+)
 
 type Iterator[T any] interface {
 	Next(ctx context.Context, v *T) bool
@@ -82,6 +82,11 @@ type Store interface {
 	GetConditions(ctx context.Context, owner string, query *pb.GetConditionsRequest, p ProcessConditions) error
 	// DeleteConditions deletes conditions from the database.
 	DeleteConditions(ctx context.Context, owner string, query *pb.DeleteConditionsRequest) (int64, error)
+
+	// InsertConditions inserts conditions into the database.
+	InsertConditions(ctx context.Context, conditions ...*Condition) error
+	// GetLatestConditions finds latest conditions that match the query.
+	GetLatestConditions(ctx context.Context, owner string, query *GetLatestConditionsQuery, p ProcessConditions) error
 
 	// CreateConfiguration creates a new configuration in the database.
 	CreateConfiguration(ctx context.Context, conf *pb.Configuration) (*pb.Configuration, error)

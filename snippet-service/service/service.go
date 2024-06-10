@@ -127,11 +127,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	}
 	closerFn.AddFunc(closeStore)
 
-	ca, err := grpcService.NewSnippetServiceServer(config.APIs.GRPC.Authorization.OwnerClaim, config.HubID, dbStorage, logger)
-	if err != nil {
-		closerFn.Execute()
-		return nil, fmt.Errorf("cannot create grpc %s server: %w", serviceName, err)
-	}
+	ca := grpcService.NewSnippetServiceServer(config.APIs.GRPC.Authorization.OwnerClaim, config.HubID, dbStorage, logger)
 	closerFn.AddFunc(func() {
 		errC := ca.Close(ctx)
 		if errC != nil {
@@ -151,7 +147,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		}
 	})
 
-	httpValidator, err := validator.New(ctx, config.APIs.GRPC.Authorization.Config, fileWatcher, logger, tracerProvider)
+	httpValidator, err := validator.New(ctx, config.APIs.HTTP.Authorization.Config, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		closerFn.Execute()
 		return nil, fmt.Errorf("cannot create http validator: %w", err)
@@ -175,6 +171,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		_ = httpService.Close()
 		return nil, fmt.Errorf("cannot create grpc validator: %w", err)
 	}
+	closerFn.AddFunc(grpcValidator.Close)
 	grpcService, err := grpcService.New(config.APIs.GRPC, ca, grpcValidator, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		closerFn.Execute()

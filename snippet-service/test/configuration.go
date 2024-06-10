@@ -112,6 +112,7 @@ func addConfigurations(ctx context.Context, t *testing.T, n int, calcVersion cal
 }
 
 func AddConfigurationsToStore(ctx context.Context, t *testing.T, s store.Store, n int, calcVersion calculateInitialVersionNumber) map[string]store.Configuration {
+	// TODO: speed up the test by using batch operations
 	return addConfigurations(ctx, t, n, calcVersion, s.CreateConfiguration, s.UpdateConfiguration)
 }
 

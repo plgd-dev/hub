@@ -36,6 +36,15 @@ Condition -> podmienka za akych okolnosti sa aplikuje
         - owner -> musi sediet s tym co je v DB
 */
 
+func (s *Store) InsertConditions(ctx context.Context, conds ...*store.Condition) error {
+	documents := make([]interface{}, 0, len(conds))
+	for _, cond := range conds {
+		documents = append(documents, cond)
+	}
+	_, err := s.Collection(conditionsCol).InsertMany(ctx, documents)
+	return err
+}
+
 func (s *Store) CreateCondition(ctx context.Context, cond *pb.Condition) (*pb.Condition, error) {
 	if err := store.ValidateAndNormalizeCondition(cond, false); err != nil {
 		return nil, err
@@ -208,4 +217,47 @@ func (s *Store) GetConditions(ctx context.Context, owner string, query *pb.GetCo
 
 func (s *Store) DeleteConditions(ctx context.Context, owner string, query *pb.DeleteConditionsRequest) (int64, error) {
 	return s.delete(ctx, conditionsCol, owner, query.GetIdFilter())
+}
+
+func toLatestDeviceIDQueryFilter(deviceID string) bson.M {
+	key := store.LatestKey + "." + store.DeviceIDFilterKey
+	return bson.M{"$or": bson.A{
+		bson.M{key: bson.M{"$exists": false}},
+		bson.M{key: deviceID},
+	}}
+}
+
+func toLatestConditionsQueryFilter(owner string, queries *store.GetLatestConditionsQuery) interface{} {
+	filter := make([]interface{}, 0, 4)
+	if owner != "" {
+		filter = append(filter, bson.D{{Key: store.OwnerKey, Value: owner}})
+	}
+	if queries.DeviceID != "" {
+		filter = append(filter, toLatestDeviceIDQueryFilter(queries.DeviceID))
+	}
+	// if queries.ResourceHref != "" {
+	// 	filter = append(filter, toResourceHrefQueryFilter(queries.ResourceHref))
+	// }
+	// if len(queries.ResourceTypeFilter) > 0 {
+	// 	filter = append(filter, toResouceTypeQueryFilter(queries.ResourceTypeFilter))
+	// }
+	if len(filter) == 0 {
+		return bson.D{}
+	}
+	if len(filter) == 1 {
+		return filter[0]
+	}
+	return bson.M{"$and": filter}
+}
+
+func (s *Store) GetLatestConditions(ctx context.Context, owner string, query *store.GetLatestConditionsQuery, p store.ProcessConditions) error {
+	if err := store.ValidateAndNormalizeConditionsQuery(query); err != nil {
+		return err
+	}
+	col := s.Collection(conditionsCol)
+	cur, err := col.Find(ctx, toLatestConditionsQueryFilter(owner, query))
+	if err != nil {
+		return err
+	}
+	return processCursor(ctx, cur, p)
 }

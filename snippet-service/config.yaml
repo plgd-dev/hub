@@ -50,6 +50,21 @@ apis:
     readHeaderTimeout: 4s
     writeTimeout: 16s
     idleTimeout: 30s
+    authorization:
+      ownerClaim: "sub"
+      authority: ""
+      audience: ""
+      http:
+        maxIdleConns: 16
+        maxConnsPerHost: 32
+        maxIdleConnsPerHost: 16
+        idleConnTimeout: "30s"
+        timeout: "10s"
+        tls:
+          caPool: "/secrets/public/rootca.crt"
+          keyFile: "/secrets/private/cert.key"
+          certFile: "/secrets/public/cert.crt"
+          useSystemCAPool: false
 clients:
   storage:
     use: mongoDB

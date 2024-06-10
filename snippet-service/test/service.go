@@ -25,8 +25,9 @@ func HTTPURI(uri string) string {
 
 func MakeHTTPConfig() service.HTTPConfig {
 	return service.HTTPConfig{
-		Addr:   config.SNIPPET_SERVICE_HTTP_HOST,
-		Server: config.MakeHttpServerConfig(),
+		Addr:          config.SNIPPET_SERVICE_HTTP_HOST,
+		Server:        config.MakeHttpServerConfig(),
+		Authorization: config.MakeAuthorizationConfig(),
 	}
 }
 
