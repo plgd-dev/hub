@@ -178,35 +178,35 @@ func TestStoreFindConditions(t *testing.T) {
 			},
 			want: []*pb.Condition{cond5, cond6},
 		},
-		// {
-		// 	name: "href1",
-		// 	args: args{
-		// 		query: &store.ConditionsQuery{
-		// 			ResourceHref: href1,
-		// 		},
-		// 	},
-		// 	want: pb.Conditions{cond1, cond2, cond4, cond5},
-		// },
-		// {
-		// 	name: "deviceID1/href3",
-		// 	args: args{
-		// 		query: &store.ConditionsQuery{
-		// 			DeviceID:     deviceID1,
-		// 			ResourceHref: href3,
-		// 		},
-		// 	},
-		// 	want: pb.Conditions{cond1, cond2},
-		// },
-		// {
-		// 	name: "owner2/href2",
-		// 	args: args{
-		// 		query: &store.ConditionsQuery{
-		// 			ResourceHref: href2,
-		// 		},
-		// 		owner: owner2,
-		// 	},
-		// 	want: pb.Conditions{cond5, cond6},
-		// },
+		{
+			name: "href1",
+			args: args{
+				query: &store.GetLatestConditionsQuery{
+					ResourceHref: href1,
+				},
+			},
+			want: []*pb.Condition{cond1, cond2, cond4, cond5},
+		},
+		{
+			name: "deviceID1/href3",
+			args: args{
+				query: &store.GetLatestConditionsQuery{
+					DeviceID:     deviceID1,
+					ResourceHref: href3,
+				},
+			},
+			want: []*pb.Condition{cond1, cond2},
+		},
+		{
+			name: "owner2/href2",
+			args: args{
+				query: &store.GetLatestConditionsQuery{
+					ResourceHref: href2,
+				},
+				owner: owner2,
+			},
+			want: []*pb.Condition{cond5, cond6},
+		},
 		// {
 		// 	name: "[type2]",
 		// 	args: args{
@@ -252,13 +252,13 @@ func TestStoreFindConditions(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			conditions := make(map[string]store.Condition)
+			conditions := make(map[string]*pb.Condition)
 			err := s.GetLatestConditions(ctx, tt.args.owner, tt.args.query, func(c *store.Condition) error {
-				condition, ok := conditions[c.Id]
-				if ok {
-					return test.MergeConditions(&condition, c)
+				condition, errG := c.GetLatest()
+				if errG != nil {
+					return errG
 				}
-				conditions[c.Id] = *c.Clone()
+				conditions[c.Id] = condition.Clone()
 				return nil
 			})
 			if tt.wantErr {
@@ -269,10 +269,8 @@ func TestStoreFindConditions(t *testing.T) {
 
 			require.Len(t, conditions, len(tt.want))
 			for _, c := range tt.want {
-				stored, ok := conditions[c.GetId()]
+				latest, ok := conditions[c.GetId()]
 				require.True(t, ok)
-				latest, err := stored.GetLatest()
-				require.NoError(t, err)
 				test.CmpJSON(t, latest, c)
 			}
 		})

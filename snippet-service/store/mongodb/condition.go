@@ -227,6 +227,14 @@ func toLatestDeviceIDQueryFilter(deviceID string) bson.M {
 	}}
 }
 
+func toLatestResourceHrefQueryFilter(resourceHref string) bson.M {
+	key := store.LatestKey + "." + store.ResourceHrefFilterKey
+	return bson.M{"$or": bson.A{
+		bson.M{key: bson.M{"$exists": false}},
+		bson.M{key: resourceHref},
+	}}
+}
+
 func toLatestConditionsQueryFilter(owner string, queries *store.GetLatestConditionsQuery) interface{} {
 	filter := make([]interface{}, 0, 4)
 	if owner != "" {
@@ -235,9 +243,9 @@ func toLatestConditionsQueryFilter(owner string, queries *store.GetLatestConditi
 	if queries.DeviceID != "" {
 		filter = append(filter, toLatestDeviceIDQueryFilter(queries.DeviceID))
 	}
-	// if queries.ResourceHref != "" {
-	// 	filter = append(filter, toResourceHrefQueryFilter(queries.ResourceHref))
-	// }
+	if queries.ResourceHref != "" {
+		filter = append(filter, toLatestResourceHrefQueryFilter(queries.ResourceHref))
+	}
 	// if len(queries.ResourceTypeFilter) > 0 {
 	// 	filter = append(filter, toResouceTypeQueryFilter(queries.ResourceTypeFilter))
 	// }
@@ -254,8 +262,8 @@ func (s *Store) GetLatestConditions(ctx context.Context, owner string, query *st
 	if err := store.ValidateAndNormalizeConditionsQuery(query); err != nil {
 		return err
 	}
-	col := s.Collection(conditionsCol)
-	cur, err := col.Find(ctx, toLatestConditionsQueryFilter(owner, query))
+	opt := options.Find().SetProjection(bson.M{store.VersionsKey: false})
+	cur, err := s.Collection(conditionsCol).Find(ctx, toLatestConditionsQueryFilter(owner, query), opt)
 	if err != nil {
 		return err
 	}

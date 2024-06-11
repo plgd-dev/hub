@@ -29,14 +29,14 @@ func WithAllDevicesAndResources() func(values map[string]string) {
 	}
 }
 
-func NewResourceSubscriber(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, handler eventbus.Handler) (*ResourceSubscriber, error) {
-	nats, err := natsClient.New(config.Clients.NATS, fileWatcher, logger)
+func NewResourceSubscriber(ctx context.Context, config natsClient.Config, fileWatcher *fsnotify.Watcher, logger log.Logger, handler eventbus.Handler) (*ResourceSubscriber, error) {
+	nats, err := natsClient.New(config, fileWatcher, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create nats client: %w", err)
 	}
 
 	subscriber, err := subscriber.New(nats.GetConn(),
-		config.Clients.NATS.PendingLimits,
+		config.PendingLimits,
 		logger,
 		subscriber.WithUnmarshaler(utils.Unmarshal))
 	if err != nil {

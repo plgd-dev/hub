@@ -1,5 +1,7 @@
 package pb
 
+import "slices"
+
 func (c *Condition) Clone() *Condition {
 	return &Condition{
 		Id:                 c.GetId(),
@@ -10,9 +12,9 @@ func (c *Condition) Clone() *Condition {
 		ApiAccessToken:     c.GetApiAccessToken(),
 		Timestamp:          c.GetTimestamp(),
 		Version:            c.GetVersion(),
-		DeviceIdFilter:     c.GetDeviceIdFilter(),
-		ResourceTypeFilter: c.GetResourceTypeFilter(),
-		ResourceHrefFilter: c.GetResourceHrefFilter(),
+		DeviceIdFilter:     slices.Clone(c.GetDeviceIdFilter()),
+		ResourceTypeFilter: slices.Clone(c.GetResourceTypeFilter()),
+		ResourceHrefFilter: slices.Clone(c.GetResourceHrefFilter()),
 		JqExpressionFilter: c.GetJqExpressionFilter(),
 	}
 }

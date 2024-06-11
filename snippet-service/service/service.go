@@ -135,7 +135,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		}
 	})
 
-	resourceSubscriber, err := NewResourceSubscriber(ctx, config, fileWatcher, logger, &changeHandler{})
+	resourceSubscriber, err := NewResourceSubscriber(ctx, config.Clients.NATS, fileWatcher, logger, &changeHandler{})
 	if err != nil {
 		closerFn.Execute()
 		return nil, fmt.Errorf("cannot create resource subscriber: %w", err)
@@ -167,15 +167,15 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	}
 	grpcValidator, err := validator.New(ctx, config.APIs.GRPC.Authorization.Config, fileWatcher, logger, tracerProvider)
 	if err != nil {
-		closerFn.Execute()
 		_ = httpService.Close()
+		closerFn.Execute()
 		return nil, fmt.Errorf("cannot create grpc validator: %w", err)
 	}
 	closerFn.AddFunc(grpcValidator.Close)
 	grpcService, err := grpcService.New(config.APIs.GRPC, ca, grpcValidator, fileWatcher, logger, tracerProvider)
 	if err != nil {
-		closerFn.Execute()
 		_ = httpService.Close()
+		closerFn.Execute()
 		return nil, fmt.Errorf("cannot create grpc service: %w", err)
 	}
 	s := service.New(httpService, grpcService)

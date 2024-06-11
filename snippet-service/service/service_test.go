@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/plgd-dev/hub/v2/pkg/config/database"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
@@ -169,13 +168,11 @@ func TestServiceNew(t *testing.T) {
 			s, err := service.New(ctx, tt.cfg, fileWatcher, logger)
 			if tt.wantErr {
 				require.Error(t, err)
-				time.Sleep(time.Millisecond * 200) // wait for close
 				return
 			}
 			fmt.Printf("cfg: %v\n", tt.cfg)
 			require.NoError(t, err)
 			_ = s.Close()
-			time.Sleep(time.Millisecond * 200) // wait for close
 		})
 	}
 }
