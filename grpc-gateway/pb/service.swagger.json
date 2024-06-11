@@ -356,6 +356,20 @@
             "in": "query",
             "required": false,
             "type": "string"
+          },
+          {
+            "name": "force",
+            "description": "if true, the command will be executed even if the resource does not exist",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "async",
+            "description": "if true, the command will finish immediately after pending event is created",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -408,6 +422,20 @@
             "required": false,
             "type": "string",
             "format": "int64"
+          },
+          {
+            "name": "force",
+            "description": "if true, the command will be executed even if the resource does not exist",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "async",
+            "description": "if true, the command will finish immediately after pending event is created",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -530,6 +558,20 @@
             "required": false,
             "type": "string",
             "format": "int64"
+          },
+          {
+            "name": "force",
+            "description": "if true, the command will be executed even if the resource does not exist",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "async",
+            "description": "if true, the command will finish immediately after pending event is created",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -674,6 +716,12 @@
               "type": "string"
             },
             "collectionFormat": "multi"
+          },
+          {
+            "name": "includeNonexistentResources",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [

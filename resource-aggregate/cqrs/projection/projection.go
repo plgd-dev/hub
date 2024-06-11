@@ -121,6 +121,14 @@ func (p *Projection) Models(onModel func(eventstore.Model) (wantNext bool), reso
 	p.cqrsProjection.Models(q, onModel)
 }
 
+func (p *Projection) GroupsModels(onModel func(eventstore.Model) (wantNext bool), groups ...string) {
+	q := make([]eventstore.SnapshotQuery, 0, len(groups))
+	for _, group := range groups {
+		q = append(q, eventstore.SnapshotQuery{GroupID: group})
+	}
+	p.cqrsProjection.Models(q, onModel)
+}
+
 // ForceUpdate invokes update registered resource model from evenstore.
 func (p *Projection) ForceUpdate(ctx context.Context, resourceID *commands.ResourceId) error {
 	v, ok := p.refCountMap.LoadWithFunc(resourceID.GetDeviceId(), func(v interface{}) interface{} {

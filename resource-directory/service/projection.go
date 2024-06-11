@@ -168,6 +168,43 @@ func (p *Projection) wantToReloadDevice(rl *resourceLinksProjection, hrefFilter 
 	return finalReload
 }
 
+func (p *Projection) loadAllDeviceResources(deviceID string, hrefFilter map[string]bool, typeFilter strings.Set, onResource func(*Resource) error) error {
+	isMatchingResource := func(resourceID *commands.ResourceId, resourceTypes []string) bool {
+		if len(hrefFilter) > 0 && !hrefFilter[resourceID.GetHref()] {
+			return false
+		}
+		if !hasMatchingType(resourceTypes, typeFilter) {
+			return false
+		}
+		return true
+	}
+	err := p.ForceUpdate(context.Background(), commands.NewResourceID(deviceID, ""))
+	if err != nil {
+		return err
+	}
+	p.GroupsModels(func(model eventstore.Model) (wantNext bool) {
+		rp, ok := model.(*resourceProjection)
+		if !ok {
+			return true
+		}
+		resourceID, resourceTypes := rp.GetMatchingData()
+		if !isMatchingResource(resourceID, resourceTypes) {
+			return true
+		}
+		err := onResource(&Resource{
+			projection: rp,
+			Resource: &commands.Resource{
+				Href:          resourceID.GetHref(),
+				ResourceTypes: resourceTypes,
+				Anchor:        "ocf://" + resourceID.GetDeviceId(),
+				DeviceId:      resourceID.GetDeviceId(),
+			},
+		})
+		return err == nil
+	}, deviceID)
+	return nil
+}
+
 func (p *Projection) loadResourceWithLinks(deviceID string, hrefFilter map[string]bool, typeFilter strings.Set, toReloadDevices strings.Set, onResource func(*Resource) error) error {
 	isMatchingResource := func(res *commands.Resource) bool {
 		if len(hrefFilter) > 0 && !hrefFilter[res.GetHref()] {
@@ -220,9 +257,16 @@ func (p *Projection) loadResourceWithLinks(deviceID string, hrefFilter map[strin
 	})
 }
 
-func (p *Projection) LoadResourcesWithLinks(resourceIDFilter []*commands.ResourceId, typeFilter strings.Set, toReloadDevices strings.Set, onResource func(*Resource) error) error {
+func (p *Projection) LoadResources(resourceIDFilter []*commands.ResourceId, typeFilter strings.Set, includeNonexistentResources bool, toReloadDevices strings.Set, onResource func(*Resource) error) error {
 	resourceIDMapFilter := getResourceIDMapFilter(resourceIDFilter)
 	for deviceID, hrefFilter := range resourceIDMapFilter { // filter duplicit load
+		if includeNonexistentResources {
+			err := p.loadAllDeviceResources(deviceID, hrefFilter, typeFilter, onResource)
+			if err != nil {
+				return err
+			}
+			continue
+		}
 		err := p.loadResourceWithLinks(deviceID, hrefFilter, typeFilter, toReloadDevices, onResource)
 		if err != nil {
 			return err
