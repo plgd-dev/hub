@@ -15,6 +15,8 @@ import (
 	"github.com/plgd-dev/go-coap/v3/message"
 	coapTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	isPb "github.com/plgd-dev/hub/v2/identity-store/pb"
+	isTest "github.com/plgd-dev/hub/v2/identity-store/test"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
@@ -411,4 +413,183 @@ func TestRequestHandlerRunMultipleParallelUpdateResource(t *testing.T) {
 		}()
 	}
 	wg.Wait()
+}
+
+func TestUpdateCreateOnNotExistingResource(t *testing.T) {
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	switchID := "1"
+
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	defer cancel()
+
+	isCfg := isTest.MakeConfig(t)
+	isCfg.APIs.GRPC.TLS.ClientCertificateRequired = false
+	tearDown := service.SetUp(ctx, t, service.WithISConfig(isCfg))
+	defer tearDown()
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
+
+	// associate device with owner
+	isConn, err := grpc.NewClient(config.IDENTITY_STORE_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
+	})))
+	require.NoError(t, err)
+	defer func() {
+		_ = isConn.Close()
+	}()
+	isClient := isPb.NewIdentityStoreClient(isConn)
+	_, err = isClient.AddDevice(ctx, &isPb.AddDeviceRequest{
+		DeviceId: deviceID,
+	})
+	require.NoError(t, err)
+
+	// update/create resources of the registered device
+	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
+	})))
+	require.NoError(t, err)
+	defer func() {
+		_ = conn.Close()
+	}()
+	c := pb.NewGrpcGatewayClient(conn)
+
+	createResourceSub := &pb.SubscribeToEvents{
+		CorrelationId: "testToken",
+		Action: &pb.SubscribeToEvents_CreateSubscription_{
+			CreateSubscription: &pb.SubscribeToEvents_CreateSubscription{
+				EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+					pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
+					pb.SubscribeToEvents_CreateSubscription_RESOURCE_UPDATED,
+					pb.SubscribeToEvents_CreateSubscription_RESOURCE_CREATED,
+					pb.SubscribeToEvents_CreateSubscription_RESOURCE_UPDATE_PENDING,
+					pb.SubscribeToEvents_CreateSubscription_RESOURCE_CREATE_PENDING,
+				},
+			},
+		},
+	}
+	subClient, err := c.SubscribeToEvents(ctx)
+	require.NoError(t, err)
+	defer func() {
+		err2 := subClient.CloseSend()
+		require.NoError(t, err2)
+	}()
+	err = subClient.Send(createResourceSub)
+	require.NoError(t, err)
+
+	ev, err := subClient.Recv()
+	require.NoError(t, err)
+	expectedEvent := &pb.Event{
+		SubscriptionId: ev.GetSubscriptionId(),
+		Type: &pb.Event_OperationProcessed_{
+			OperationProcessed: &pb.Event_OperationProcessed{
+				ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
+					Code: pb.Event_OperationProcessed_ErrorStatus_OK,
+				},
+			},
+		},
+		CorrelationId: "testToken",
+	}
+	pbTest.CmpEvent(t, expectedEvent, ev, "")
+
+	powerTest := 654321
+	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
+		ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
+		Content: &pb.Content{
+			ContentType: message.AppOcfCbor.String(),
+			Data: test.EncodeToCbor(t, map[string]interface{}{
+				"power": powerTest,
+			}),
+		},
+		Force: true,
+		Async: true,
+	})
+	require.NoError(t, err)
+	ev, err = subClient.Recv()
+	require.NoError(t, err)
+	require.NotNil(t, ev.GetResourceUpdatePending())
+
+	_, err = c.CreateResource(ctx, &pb.CreateResourceRequest{
+		ResourceId: commands.NewResourceID(deviceID, test.TestResourceSwitchesHref),
+		Content: &pb.Content{
+			ContentType: message.AppOcfCbor.String(),
+			Data:        test.EncodeToCbor(t, test.MakeSwitchResourceDefaultData()),
+		},
+		Force: true,
+		Async: true,
+	})
+	require.NoError(t, err)
+	ev, err = subClient.Recv()
+	require.NoError(t, err)
+	require.NotNil(t, ev.GetResourceCreatePending())
+
+	pendingCommandsClient, err := c.GetPendingCommands(ctx, &pb.GetPendingCommandsRequest{
+		DeviceIdFilter:         []string{deviceID},
+		IncludeHiddenResources: true,
+	})
+	require.NoError(t, err)
+	numPendingCommands := 0
+	for {
+		ev, err2 := pendingCommandsClient.Recv()
+		if errors.Is(err2, io.EOF) {
+			break
+		}
+		require.NoError(t, err2)
+		if ev.GetResourceCreatePending() != nil {
+			require.Equal(t, deviceID, ev.GetResourceCreatePending().GetResourceId().GetDeviceId())
+			require.Equal(t, test.TestResourceSwitchesHref, ev.GetResourceCreatePending().GetResourceId().GetHref())
+			numPendingCommands++
+		}
+		if ev.GetResourceUpdatePending() != nil {
+			require.Equal(t, deviceID, ev.GetResourceUpdatePending().GetResourceId().GetDeviceId())
+			require.Equal(t, test.TestResourceLightInstanceHref("1"), ev.GetResourceUpdatePending().GetResourceId().GetHref())
+			numPendingCommands++
+		}
+	}
+	require.Equal(t, 2, numPendingCommands)
+
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, nil)
+	defer shutdownDevSim()
+
+	var lightChanged *events.ResourceChanged
+	var switchChanged *events.ResourceChanged
+	var lightUpdated *events.ResourceUpdated
+	var switchCreated *events.ResourceCreated
+	for {
+		ev, err2 := subClient.Recv()
+		require.NoError(t, err2)
+		if ch := ev.GetResourceChanged(); ch != nil {
+			if ch.GetResourceId().GetHref() == test.TestResourceLightInstanceHref("1") {
+				d := test.DecodeCbor(t, ch.GetContent().GetData())
+				if m, ok := d.(map[interface{}]interface{}); ok && m["power"] == uint64(powerTest) {
+					lightChanged = ch
+				}
+			}
+			if ch.GetResourceId().GetHref() == test.TestResourceSwitchesInstanceHref(switchID) {
+				switchChanged = ch
+			}
+		}
+		if updated := ev.GetResourceUpdated(); updated != nil {
+			if updated.GetResourceId().GetHref() == test.TestResourceLightInstanceHref("1") {
+				lightUpdated = updated
+			}
+		}
+		if created := ev.GetResourceCreated(); created != nil {
+			if created.GetResourceId().GetHref() == test.TestResourceSwitchesHref {
+				switchCreated = created
+			}
+		}
+		if lightChanged != nil && switchChanged != nil && lightUpdated != nil && switchCreated != nil {
+			break
+		}
+	}
+
+	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
+		ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
+		Content: &pb.Content{
+			ContentType: message.AppOcfCbor.String(),
+			Data: test.EncodeToCbor(t, map[string]interface{}{
+				"power": 0,
+			}),
+		},
+	})
+	require.NoError(t, err)
 }

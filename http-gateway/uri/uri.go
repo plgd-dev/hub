@@ -7,21 +7,23 @@ const (
 	ResourceHrefKey  = "resourceHref"
 	CorrelationIDKey = "correlationId"
 
-	ResourceInterfaceQueryKey    = "resourceInterface"
-	TwinQueryKey                 = "twin"
-	CommandFilterQueryKey        = "commandFilter"
-	TypeFilterQueryKey           = "typeFilter"
-	StatusFilterQueryKey         = "statusFilter"
-	DeviceIdFilterQueryKey       = "deviceIdFilter"
-	TimeToLiveQueryKey           = "timeToLive"
-	ResourceIdFilterQueryKey     = "resourceIdFilter"
-	HttpResourceIdFilterQueryKey = "httpResourceIdFilter"
-	AcceptQueryKey               = "accept" // for websocket
-	CorrelationIDQueryKey        = "correlationId"
-	TimestampFilterQueryKey      = "timestampFilter"
-	CorrelationIdFilterQueryKey  = "correlationIdFilter"
-	ETagQueryKey                 = "etag"
-	OnlyContentQueryKey          = "onlyContent"
+	ResourceInterfaceQueryKey      = "resourceInterface"
+	TwinQueryKey                   = "twin"
+	CommandFilterQueryKey          = "commandFilter"
+	TypeFilterQueryKey             = "typeFilter"
+	StatusFilterQueryKey           = "statusFilter"
+	DeviceIdFilterQueryKey         = "deviceIdFilter"
+	TimeToLiveQueryKey             = "timeToLive"
+	ResourceIdFilterQueryKey       = "resourceIdFilter"
+	HttpResourceIdFilterQueryKey   = "httpResourceIdFilter"
+	AcceptQueryKey                 = "accept" // for websocket
+	CorrelationIDQueryKey          = "correlationId"
+	TimestampFilterQueryKey        = "timestampFilter"
+	CorrelationIdFilterQueryKey    = "correlationIdFilter"
+	ETagQueryKey                   = "etag"
+	OnlyContentQueryKey            = "onlyContent"
+	IncludeHiddenResourcesQueryKey = "includeHiddenResources"
+	ForceQueryKey                  = "force"
 
 	AliasInterfaceQueryKey        = "interface"
 	AliasCommandFilterQueryKey    = "command"
@@ -116,23 +118,25 @@ const (
 )
 
 var QueryCaseInsensitive = map[string]string{
-	strings.ToLower(AliasInterfaceQueryKey):        ResourceInterfaceQueryKey,
-	strings.ToLower(CommandFilterQueryKey):         CommandFilterQueryKey,
-	strings.ToLower(DeviceIdFilterQueryKey):        DeviceIdFilterQueryKey,
-	strings.ToLower(ResourceIdFilterQueryKey):      HttpResourceIdFilterQueryKey,
-	strings.ToLower(ResourceInterfaceQueryKey):     ResourceInterfaceQueryKey,
-	strings.ToLower(TwinQueryKey):                  TwinQueryKey,
-	strings.ToLower(TypeFilterQueryKey):            TypeFilterQueryKey,
-	strings.ToLower(AliasCommandFilterQueryKey):    CommandFilterQueryKey,
-	strings.ToLower(AliasDeviceIdFilterQueryKey):   DeviceIdFilterQueryKey,
-	strings.ToLower(AliasResourceIdFilterQueryKey): HttpResourceIdFilterQueryKey,
-	strings.ToLower(AliasTypeFilterQueryKey):       TypeFilterQueryKey,
-	strings.ToLower(AcceptQueryKey):                AcceptQueryKey,
-	strings.ToLower(StatusFilterQueryKey):          StatusFilterQueryKey,
-	strings.ToLower(AliasStatusFilterQueryKey):     StatusFilterQueryKey,
-	strings.ToLower(CorrelationIDQueryKey):         CorrelationIDQueryKey,
-	strings.ToLower(TimestampFilterQueryKey):       TimestampFilterQueryKey,
-	strings.ToLower(TimeToLiveQueryKey):            TimeToLiveQueryKey,
-	strings.ToLower(CorrelationIdFilterQueryKey):   CorrelationIdFilterQueryKey,
-	strings.ToLower(OnlyContentQueryKey):           OnlyContentQueryKey,
+	strings.ToLower(AliasInterfaceQueryKey):         ResourceInterfaceQueryKey,
+	strings.ToLower(CommandFilterQueryKey):          CommandFilterQueryKey,
+	strings.ToLower(DeviceIdFilterQueryKey):         DeviceIdFilterQueryKey,
+	strings.ToLower(ResourceIdFilterQueryKey):       HttpResourceIdFilterQueryKey,
+	strings.ToLower(ResourceInterfaceQueryKey):      ResourceInterfaceQueryKey,
+	strings.ToLower(TwinQueryKey):                   TwinQueryKey,
+	strings.ToLower(TypeFilterQueryKey):             TypeFilterQueryKey,
+	strings.ToLower(AliasCommandFilterQueryKey):     CommandFilterQueryKey,
+	strings.ToLower(AliasDeviceIdFilterQueryKey):    DeviceIdFilterQueryKey,
+	strings.ToLower(AliasResourceIdFilterQueryKey):  HttpResourceIdFilterQueryKey,
+	strings.ToLower(AliasTypeFilterQueryKey):        TypeFilterQueryKey,
+	strings.ToLower(AcceptQueryKey):                 AcceptQueryKey,
+	strings.ToLower(StatusFilterQueryKey):           StatusFilterQueryKey,
+	strings.ToLower(AliasStatusFilterQueryKey):      StatusFilterQueryKey,
+	strings.ToLower(CorrelationIDQueryKey):          CorrelationIDQueryKey,
+	strings.ToLower(TimestampFilterQueryKey):        TimestampFilterQueryKey,
+	strings.ToLower(TimeToLiveQueryKey):             TimeToLiveQueryKey,
+	strings.ToLower(CorrelationIdFilterQueryKey):    CorrelationIdFilterQueryKey,
+	strings.ToLower(OnlyContentQueryKey):            OnlyContentQueryKey,
+	strings.ToLower(IncludeHiddenResourcesQueryKey): IncludeHiddenResourcesQueryKey,
+	strings.ToLower(ForceQueryKey):                  ForceQueryKey,
 }

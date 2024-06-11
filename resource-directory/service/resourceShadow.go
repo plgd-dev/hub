@@ -61,10 +61,10 @@ func (rd *ResourceTwin) convertToResourceIDs(resourceIDsFilter []*pb.ResourceIdF
 	return internalResourceIDsFilter
 }
 
-func (rd *ResourceTwin) filterResources(resourceIDsFilter []*commands.ResourceId, typeFilter []string, toReloadDevices strings.Set, onResource func(*Resource) error) error {
+func (rd *ResourceTwin) filterResources(resourceIDsFilter []*commands.ResourceId, typeFilter []string, includeHiddenResources bool, toReloadDevices strings.Set, onResource func(*Resource) error) error {
 	mapTypeFilter := make(strings.Set)
 	mapTypeFilter.Add(typeFilter...)
-	return rd.projection.LoadResourcesWithLinks(resourceIDsFilter, mapTypeFilter, toReloadDevices, onResource)
+	return rd.projection.LoadResources(resourceIDsFilter, mapTypeFilter, includeHiddenResources, toReloadDevices, onResource)
 }
 
 func resourceIdFilterToSimple(r []*pb.ResourceIdFilter) []*commands.ResourceId {
@@ -112,7 +112,7 @@ func updateContentIfETagMatched(resourceIDsFilter []*pb.ResourceIdFilter, val *p
 }
 
 func (rd *ResourceTwin) getResources(resourceIDsFilter []*pb.ResourceIdFilter, typeFilter []string, srv pb.GrpcGateway_GetResourcesServer, toReloadDevices strings.Set) error {
-	return rd.filterResources(resourceIdFilterToSimple(resourceIDsFilter), typeFilter, toReloadDevices, func(resource *Resource) error {
+	return rd.filterResources(resourceIdFilterToSimple(resourceIDsFilter), typeFilter, false, toReloadDevices, func(resource *Resource) error {
 		val := toResourceValue(resource)
 		updateContentIfETagMatched(resourceIDsFilter, val)
 		err := srv.Send(val)
@@ -153,8 +153,8 @@ func toPendingCommands(resource *Resource, commandFilter subscription.FilterBitm
 	return resource.projection.ToPendingCommands(commandFilter, now)
 }
 
-func (rd *ResourceTwin) sendPendingCommands(srv pb.GrpcGateway_GetPendingCommandsServer, resourceIDsFilter []*pb.ResourceIdFilter, typeFilter []string, filterCmds subscription.FilterBitmask, now time.Time, toReloadDevices strings.Set) error {
-	return rd.filterResources(resourceIdFilterToSimple(resourceIDsFilter), typeFilter, toReloadDevices, func(resource *Resource) error {
+func (rd *ResourceTwin) sendPendingCommands(srv pb.GrpcGateway_GetPendingCommandsServer, resourceIDsFilter []*pb.ResourceIdFilter, typeFilter []string, filterCmds subscription.FilterBitmask, includeHiddenResources bool, now time.Time, toReloadDevices strings.Set) error {
+	return rd.filterResources(resourceIdFilterToSimple(resourceIDsFilter), typeFilter, includeHiddenResources, toReloadDevices, func(resource *Resource) error {
 		for _, pendingCmd := range toPendingCommands(resource, filterCmds, now) {
 			err := srv.Send(pendingCmd)
 			if err != nil {
@@ -211,7 +211,7 @@ func (rd *ResourceTwin) GetPendingCommands(req *pb.GetPendingCommandsRequest, sr
 
 	resourceIDsFilter := rd.convertToResourceIDs(req.GetResourceIdFilter(), req.GetDeviceIdFilter())
 	toReloadDevices := make(strings.Set)
-	err = rd.sendPendingCommands(srv, resourceIDsFilter, req.GetTypeFilter(), filterCmds, now, toReloadDevices)
+	err = rd.sendPendingCommands(srv, resourceIDsFilter, req.GetTypeFilter(), filterCmds, req.GetIncludeHiddenResources(), now, toReloadDevices)
 	if err != nil {
 		return err
 	}
@@ -223,7 +223,7 @@ func (rd *ResourceTwin) GetPendingCommands(req *pb.GetPendingCommandsRequest, sr
 				newResourceIDsFilter = append(newResourceIDsFilter, resourceIDsFilter[i])
 			}
 		}
-		return rd.sendPendingCommands(srv, newResourceIDsFilter, req.GetTypeFilter(), filterCmds, now, nil)
+		return rd.sendPendingCommands(srv, newResourceIDsFilter, req.GetTypeFilter(), filterCmds, req.GetIncludeHiddenResources(), now, nil)
 	}
 	return nil
 }
