@@ -173,49 +173,6 @@ func TestUnique(t *testing.T) {
 	}
 }
 
-func TestContains(t *testing.T) {
-	type args struct {
-		slice []string
-		s     string
-	}
-	tests := []struct {
-		name string
-		args args
-		want bool
-	}{
-		{
-			name: "Empty",
-			args: args{
-				slice: nil,
-				s:     "a",
-			},
-			want: false,
-		},
-		{
-			name: "Not found",
-			args: args{
-				slice: []string{"a", "bb", "ccc"},
-				s:     "b",
-			},
-			want: false,
-		},
-		{
-			name: "Found",
-			args: args{
-				slice: []string{"a", "bb", "ccc"},
-				s:     "bb",
-			},
-			want: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := Contains(tt.args.slice, tt.args.s)
-			require.Equal(t, tt.want, got)
-		})
-	}
-}
-
 func TestToSlice(t *testing.T) {
 	s, err := ToSlice(nil)
 	require.NoError(t, err)

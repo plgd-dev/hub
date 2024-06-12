@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"net"
+	"slices"
 	"sync"
 	"testing"
 	"time"
@@ -15,7 +16,6 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/mongodb"
 	"github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
-	pkgStrings "github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/hub/v2/test/config"
 	testHttp "github.com/plgd-dev/hub/v2/test/http"
 	"github.com/stretchr/testify/require"
@@ -98,7 +98,7 @@ func C2CURI(uri string) string {
 func GetUniqueSubscriptionID(subIDS ...string) string {
 	id := uuid.NewString()
 	for {
-		if !pkgStrings.Contains(subIDS, id) {
+		if !slices.Contains(subIDS, id) {
 			break
 		}
 		id = uuid.NewString()

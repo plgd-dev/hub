@@ -2,39 +2,17 @@ package mongodb
 
 import (
 	"context"
-	"slices"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
+	"github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
 	"github.com/plgd-dev/hub/v2/snippet-service/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
-
-/*
-Condition -> podmienka za akych okolnosti sa aplikuje
-	- id (identifikator) (user nevie menit)
-	- verzia (pri update sa verzia inkremente)
-		- pri ukladani checknem v DB ze predchadzajuca verzia je o 1 mensie
-			- t.j. check nenastala mi medzi tym zmena
-	- name - user-friendly meno
-	- enabled
-	- configuration id
-	- device_id_filter - OR - pride event a chcecknem ci device_id_filter obsahuje ID device
-		- ak je prazdny tak vsetko pustit
-	- resource_type_filter - AND - ked mam viac musia sa vsetky matchnut
-			- ak je prazdny tak vsetko pustit
-	- resource_href_filer - OR - musim matchnut aspon jeden href
-			- ak je prazdny tak vsetko pustit- resource_href_filter
-        - jq_expression - expression pustim nad obsahom ResourceChanged eventom, mal by vratit true/false (ci hodnota existuje)
-          - dalsia podmienka
-          https://github.com/itchyny/gojq
-        - api_access_token - TODO, zatial nechame otvorene; ked sa ide aplikovat konfiguraciu tak potrebujes token na autorizaciu
-        - owner -> musi sediet s tym co je v DB
-*/
 
 func (s *Store) InsertConditions(ctx context.Context, conds ...*store.Condition) error {
 	documents := make([]interface{}, 0, len(conds))
@@ -189,14 +167,9 @@ func (s *Store) getConditionsByAggregation(ctx context.Context, owner, id string
 	return processCursor(ctx, cur, p)
 }
 
-func normalizeSlice(s []string) []string {
-	slices.Sort(s)
-	return slices.Compact(s)
-}
-
 func (s *Store) GetConditions(ctx context.Context, owner string, query *pb.GetConditionsRequest, p store.Process[store.Condition]) error {
 	vf := pb.PartitionIDFilter(query.GetIdFilter())
-	confIdLatestFilter := normalizeSlice(query.GetConfigurationIdFilter())
+	confIdLatestFilter := strings.Unique(query.GetConfigurationIdFilter())
 	var errors *multierror.Error
 	if len(vf.All) > 0 || vf.IsEmpty() && len(confIdLatestFilter) == 0 {
 		err := s.getConditionsByID(ctx, owner, vf.All, p)
@@ -219,6 +192,11 @@ func (s *Store) DeleteConditions(ctx context.Context, owner string, query *pb.De
 	return s.delete(ctx, conditionsCol, owner, query.GetIdFilter())
 }
 
+func toLatestEnabledQueryFilter() bson.D {
+	key := store.LatestKey + "." + store.EnabledKey
+	return bson.D{{Key: key, Value: true}}
+}
+
 func toLatestDeviceIDQueryFilter(deviceID string) bson.M {
 	key := store.LatestKey + "." + store.DeviceIDFilterKey
 	return bson.M{"$or": bson.A{
@@ -235,8 +213,17 @@ func toLatestResourceHrefQueryFilter(resourceHref string) bson.M {
 	}}
 }
 
+func toLatestResouceTypeQueryFilter(resourceTypeFilter []string) bson.M {
+	key := store.LatestKey + "." + store.ResourceTypeFilterKey
+	return bson.M{"$or": bson.A{
+		bson.M{key: bson.M{"$exists": false}},
+		bson.M{key: bson.M{"$all": resourceTypeFilter}},
+	}}
+}
+
 func toLatestConditionsQueryFilter(owner string, queries *store.GetLatestConditionsQuery) interface{} {
-	filter := make([]interface{}, 0, 4)
+	filter := make([]interface{}, 0, 5)
+	filter = append(filter, toLatestEnabledQueryFilter())
 	if owner != "" {
 		filter = append(filter, bson.D{{Key: store.OwnerKey, Value: owner}})
 	}
@@ -246,9 +233,9 @@ func toLatestConditionsQueryFilter(owner string, queries *store.GetLatestConditi
 	if queries.ResourceHref != "" {
 		filter = append(filter, toLatestResourceHrefQueryFilter(queries.ResourceHref))
 	}
-	// if len(queries.ResourceTypeFilter) > 0 {
-	// 	filter = append(filter, toResouceTypeQueryFilter(queries.ResourceTypeFilter))
-	// }
+	if len(queries.ResourceTypeFilter) > 0 {
+		filter = append(filter, toLatestResouceTypeQueryFilter(queries.ResourceTypeFilter))
+	}
 	if len(filter) == 0 {
 		return bson.D{}
 	}

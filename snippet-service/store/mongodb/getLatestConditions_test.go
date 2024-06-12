@@ -12,11 +12,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestStoreFindConditions(t *testing.T) {
+func TestStoreGetLatestConditions(t *testing.T) {
 	s, cleanUpStore := test.NewMongoStore(t)
 	defer cleanUpStore()
 
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT*100)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
 	const deviceID1 = "deviceID1"
@@ -35,6 +35,7 @@ func TestStoreFindConditions(t *testing.T) {
 	cond1In := &pb.Condition{
 		Id:              uuid.NewString(),
 		Name:            "c1",
+		Enabled:         true,
 		ConfigurationId: uuid.NewString(),
 		Owner:           owner1,
 	}
@@ -44,6 +45,7 @@ func TestStoreFindConditions(t *testing.T) {
 	cond2In := &pb.Condition{
 		Id:                 uuid.NewString(),
 		Name:               "c2",
+		Enabled:            true,
 		ConfigurationId:    uuid.NewString(),
 		DeviceIdFilter:     []string{deviceID1},
 		ResourceHrefFilter: []string{href1, href2, href3},
@@ -56,6 +58,7 @@ func TestStoreFindConditions(t *testing.T) {
 	cond3In := &pb.Condition{
 		Id:                 uuid.NewString(),
 		Name:               "c3",
+		Enabled:            true,
 		ConfigurationId:    uuid.NewString(),
 		DeviceIdFilter:     []string{deviceID2},
 		ResourceHrefFilter: []string{href3, href4, href5},
@@ -68,6 +71,7 @@ func TestStoreFindConditions(t *testing.T) {
 	cond4In := &pb.Condition{
 		Id:                 uuid.NewString(),
 		Name:               "c4",
+		Enabled:            true,
 		ConfigurationId:    uuid.NewString(),
 		DeviceIdFilter:     []string{deviceID1, deviceID3},
 		ResourceHrefFilter: []string{href1, href5},
@@ -80,6 +84,7 @@ func TestStoreFindConditions(t *testing.T) {
 	cond5In := &pb.Condition{
 		Id:                 uuid.NewString(),
 		Name:               "c5",
+		Enabled:            true,
 		ConfigurationId:    uuid.NewString(),
 		DeviceIdFilter:     []string{deviceID3},
 		ResourceHrefFilter: []string{href1, href2},
@@ -90,15 +95,29 @@ func TestStoreFindConditions(t *testing.T) {
 	require.NoError(t, err)
 
 	cond6In := &pb.Condition{
-		Id:                 uuid.New().String(),
+		Id:                 uuid.NewString(),
 		Name:               "c6",
-		ConfigurationId:    uuid.New().String(),
+		Enabled:            true,
+		ConfigurationId:    uuid.NewString(),
 		DeviceIdFilter:     []string{deviceID2, deviceID3},
 		ResourceHrefFilter: []string{href2, href3, href4},
 		ResourceTypeFilter: []string{type1, type2, type3},
 		Owner:              owner2,
 	}
 	cond6, err := s.CreateCondition(ctx, cond6In)
+	require.NoError(t, err)
+
+	cond7In := &pb.Condition{
+		Id:                 uuid.NewString(),
+		Name:               "c7 - disabled",
+		Enabled:            false,
+		ConfigurationId:    uuid.NewString(),
+		DeviceIdFilter:     []string{deviceID2, deviceID3},
+		ResourceHrefFilter: []string{href2, href3, href4},
+		ResourceTypeFilter: []string{type1, type2, type3},
+		Owner:              owner2,
+	}
+	_, err = s.CreateCondition(ctx, cond7In)
 	require.NoError(t, err)
 
 	type args struct {
@@ -207,47 +226,47 @@ func TestStoreFindConditions(t *testing.T) {
 			},
 			want: []*pb.Condition{cond5, cond6},
 		},
-		// {
-		// 	name: "[type2]",
-		// 	args: args{
-		// 		query: &store.ConditionsQuery{
-		// 			ResourceTypeFilter: []string{type2},
-		// 		},
-		// 	},
-		// 	want: pb.Conditions{cond1, cond5},
-		// },
-		// {
-		// 	name: "deviceID2/[type3]",
-		// 	args: args{
-		// 		query: &store.ConditionsQuery{
-		// 			DeviceID:           deviceID2,
-		// 			ResourceTypeFilter: []string{type3},
-		// 		},
-		// 	},
-		// 	want: pb.Conditions{cond1, cond3},
-		// },
-		// {
-		// 	name: "owner2/[type1,type2,type3}",
-		// 	args: args{
-		// 		query: &store.ConditionsQuery{
-		// 			// order should not matter
-		// 			ResourceTypeFilter: []string{type2, type1, type3},
-		// 		},
-		// 		owner: owner2,
-		// 	},
-		// 	want: pb.Conditions{cond6},
-		// },
-		// {
-		// 	name: "deviceID1/href5/[type3]",
-		// 	args: args{
-		// 		query: &store.ConditionsQuery{
-		// 			DeviceID:           deviceID1,
-		// 			ResourceHref:       href5,
-		// 			ResourceTypeFilter: []string{type3},
-		// 		},
-		// 	},
-		// 	want: pb.Conditions{cond1, cond4},
-		// },
+		{
+			name: "[type2]",
+			args: args{
+				query: &store.GetLatestConditionsQuery{
+					ResourceTypeFilter: []string{type2},
+				},
+			},
+			want: []*pb.Condition{cond1, cond2, cond5, cond6},
+		},
+		{
+			name: "deviceID2/[type3]",
+			args: args{
+				query: &store.GetLatestConditionsQuery{
+					DeviceID:           deviceID2,
+					ResourceTypeFilter: []string{type3},
+				},
+			},
+			want: []*pb.Condition{cond1, cond3, cond6},
+		},
+		{
+			name: "owner2/[type1,type2,type3}",
+			args: args{
+				query: &store.GetLatestConditionsQuery{
+					// order should not matter
+					ResourceTypeFilter: []string{type2, type1, type3},
+				},
+				owner: owner2,
+			},
+			want: []*pb.Condition{cond6},
+		},
+		{
+			name: "deviceID1/href5/[type3]",
+			args: args{
+				query: &store.GetLatestConditionsQuery{
+					DeviceID:           deviceID1,
+					ResourceHref:       href5,
+					ResourceTypeFilter: []string{type3},
+				},
+			},
+			want: []*pb.Condition{cond1, cond4},
+		},
 	}
 
 	for _, tt := range tests {

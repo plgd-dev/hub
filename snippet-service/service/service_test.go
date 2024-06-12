@@ -18,23 +18,35 @@ package service_test
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"testing"
 
+	"github.com/plgd-dev/go-coap/v3/message"
+	grpcgwTest "github.com/plgd-dev/hub/v2/grpc-gateway/test"
 	"github.com/plgd-dev/hub/v2/pkg/config/database"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/mongodb"
+	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	httpClient "github.com/plgd-dev/hub/v2/pkg/net/http/client"
 	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
+	"github.com/plgd-dev/hub/v2/snippet-service/pb"
 	"github.com/plgd-dev/hub/v2/snippet-service/service"
 	storeConfig "github.com/plgd-dev/hub/v2/snippet-service/store/config"
 	storeCqlDB "github.com/plgd-dev/hub/v2/snippet-service/store/cqldb"
 	storeMongo "github.com/plgd-dev/hub/v2/snippet-service/store/mongodb"
 	"github.com/plgd-dev/hub/v2/snippet-service/test"
+	hubTest "github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
+	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/service"
+	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	hubTestService "github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 func TestServiceNew(t *testing.T) {
@@ -122,6 +134,24 @@ func TestServiceNew(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "invalid resource subscriber config",
+			cfg: func() service.Config {
+				cfg := test.MakeConfig(t)
+				cfg.Clients.NATS = natsClient.Config{}
+				return cfg
+			}(),
+			wantErr: true,
+		},
+		{
+			name: "invalid resource aggregate client config",
+			cfg: func() service.Config {
+				cfg := test.MakeConfig(t)
+				cfg.Clients.ResourceAggregate = service.ResourceAggregateConfig{}
+				return cfg
+			}(),
+			wantErr: true,
+		},
+		{
 			name: "invalid HTTP validator config",
 			cfg: func() service.Config {
 				cfg := test.MakeConfig(t)
@@ -175,4 +205,94 @@ func TestServiceNew(t *testing.T) {
 			_ = s.Close()
 		})
 	}
+}
+
+func TestService(t *testing.T) {
+	deviceID := hubTest.MustFindDeviceByName(hubTest.TestDeviceName)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT*100)
+	defer cancel()
+
+	logCfg := log.MakeDefaultConfig()
+	logCfg.Level = log.DebugLevel
+	log.Setup(logCfg)
+	tearDown := hubTestService.SetUp(ctx, t)
+	defer tearDown()
+
+	snippetCfg := test.MakeConfig(t)
+	shutdownSnippetService := test.New(t, snippetCfg)
+	// defer shutdownSnippetService()
+
+	snippetClientConn, err := grpc.NewClient(config.SNIPPET_SERVICE_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: hubTest.GetRootCertificatePool(t),
+	})))
+	require.NoError(t, err)
+	defer func() {
+		_ = snippetClientConn.Close()
+	}()
+	snippetClient := pb.NewSnippetServiceClient(snippetClientConn)
+
+	token := oauthTest.GetDefaultAccessToken(t)
+	ctx = pkgGrpc.CtxWithToken(ctx, token)
+
+	// configuration -> /light/1 -> { state: on, power: 42 }
+	conf, err := snippetClient.CreateConfiguration(ctx, &pb.Configuration{
+		Name:  "update light",
+		Owner: oauthService.DeviceUserID,
+		Resources: []*pb.Configuration_Resource{
+			{
+				Href: hubTest.TestResourceLightInstanceHref("1"),
+				Content: &commands.Content{
+					ContentType: message.AppOcfCbor.String(),
+					Data: hubTest.EncodeToCbor(t, map[string]interface{}{
+						"state": true,
+						"power": 42,
+					}),
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+	require.NotEmpty(t, conf.GetId())
+
+	// condition for /light/1
+	_, err = snippetClient.CreateCondition(ctx, &pb.Condition{
+		Name:               "apply update light",
+		Owner:              oauthService.DeviceUserID,
+		Enabled:            true,
+		ConfigurationId:    conf.GetId(),
+		DeviceIdFilter:     []string{deviceID},
+		ResourceHrefFilter: []string{hubTest.TestResourceLightInstanceHref("1")},
+		ApiAccessToken:     token,
+	})
+	require.NoError(t, err)
+
+	grpcClient := grpcgwTest.NewTestClient(t)
+	defer func() {
+		err = grpcClient.Close()
+		require.NoError(t, err)
+	}()
+
+	resources := hubTest.GetAllBackendResourceLinks()
+	_, shutdownDevSim := hubTest.OnboardDevSim(ctx, t, grpcClient.GrpcGatewayClient(), deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, resources)
+	defer shutdownDevSim()
+
+	var got map[interface{}]interface{}
+	err = grpcClient.GetResource(ctx, deviceID, hubTest.TestResourceLightInstanceHref("1"), &got)
+	require.NoError(t, err)
+
+	require.Equal(t, map[interface{}]interface{}{
+		"state": true,
+		"power": uint64(42),
+		"name":  "Light",
+	}, got)
+
+	// TODO: use defer after AppliedConfiguration is implemented
+	shutdownSnippetService()
+
+	// restore state
+	err = grpcClient.UpdateResource(ctx, deviceID, hubTest.TestResourceLightInstanceHref("1"), map[string]interface{}{
+		"state": false,
+		"power": uint64(0),
+	}, nil)
+	require.NoError(t, err)
 }

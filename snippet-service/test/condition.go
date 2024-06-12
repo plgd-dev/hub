@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
 	"github.com/plgd-dev/hub/v2/snippet-service/store"
 	"github.com/stretchr/testify/require"
@@ -35,15 +36,15 @@ func stringSlice(prefix string, start, n int) []string {
 }
 
 func ConditionDeviceIdFilter(start, n int) []string {
-	return store.NormalizeSlice(stringSlice("device", start, n))
+	return strings.Unique(stringSlice("device", start, n))
 }
 
 func ConditionResourceTypeFilter(start, n int) []string {
-	return store.NormalizeSlice(stringSlice("rt", start, n))
+	return strings.Unique(stringSlice("rt", start, n))
 }
 
 func ConditionResourceHrefFilter(start, n int) []string {
-	return store.NormalizeSlice(stringSlice("/href/", start, n))
+	return strings.Unique(stringSlice("/href/", start, n))
 }
 
 func ConditionJqExpressionFilter(i int) string {

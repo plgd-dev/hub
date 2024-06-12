@@ -9,9 +9,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/plgd-dev/hub/v2/pkg/config"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
 	grpcServer "github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
 	httpServer "github.com/plgd-dev/hub/v2/pkg/net/http/server"
 	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
+	certManagerServer "github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
 	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 	grpcService "github.com/plgd-dev/hub/v2/snippet-service/service/grpc"
 	storeConfig "github.com/plgd-dev/hub/v2/snippet-service/store/config"
@@ -20,12 +22,16 @@ import (
 type HTTPConfig struct {
 	Addr          string                         `yaml:"address" json:"address"`
 	Server        httpServer.Config              `yaml:",inline" json:",inline"`
+	TLS           certManagerServer.Config       `yaml:"tls" json:"tls"`
 	Authorization grpcServer.AuthorizationConfig `yaml:"authorization" json:"authorization"`
 }
 
 func (c *HTTPConfig) Validate() error {
 	if _, err := net.ResolveTCPAddr("tcp", c.Addr); err != nil {
 		return fmt.Errorf("address('%v') - %w", c.Addr, err)
+	}
+	if err := c.TLS.Validate(); err != nil {
+		return fmt.Errorf("tls.%w", err)
 	}
 	if err := c.Authorization.Validate(); err != nil {
 		return fmt.Errorf("authorization.%w", err)
@@ -81,10 +87,22 @@ func (c *StorageConfig) Validate() error {
 	return nil
 }
 
+type ResourceAggregateConfig struct {
+	Connection grpcClient.Config `yaml:"grpc" json:"grpc"`
+}
+
+func (c *ResourceAggregateConfig) Validate() error {
+	if err := c.Connection.Validate(); err != nil {
+		return fmt.Errorf("grpc.%w", err)
+	}
+	return nil
+}
+
 type ClientsConfig struct {
-	Storage                StorageConfig     `yaml:"storage" json:"storage"`
-	OpenTelemetryCollector otelClient.Config `yaml:"openTelemetryCollector" json:"openTelemetryCollector"`
-	NATS                   natsClient.Config `yaml:"nats" json:"nats"`
+	Storage                StorageConfig           `yaml:"storage" json:"storage"`
+	OpenTelemetryCollector otelClient.Config       `yaml:"openTelemetryCollector" json:"openTelemetryCollector"`
+	NATS                   natsClient.Config       `yaml:"nats" json:"nats"`
+	ResourceAggregate      ResourceAggregateConfig `yaml:"resourceAggregate" json:"resourceAggregate"`
 }
 
 func (c *ClientsConfig) Validate() error {
@@ -96,6 +114,9 @@ func (c *ClientsConfig) Validate() error {
 	}
 	if err := c.NATS.Validate(); err != nil {
 		return fmt.Errorf("nats.%w", err)
+	}
+	if err := c.ResourceAggregate.Validate(); err != nil {
+		return fmt.Errorf("resourceAggregate.%w", err)
 	}
 	return nil
 }

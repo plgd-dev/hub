@@ -6,6 +6,7 @@ import (
 	"slices"
 
 	"github.com/google/uuid"
+	"github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
 )
 
@@ -18,11 +19,6 @@ func checkConfigurationId(c string, isUpdate bool) error {
 		return errInvalidArgument(fmt.Errorf("invalid configuration ID(%v): %w", c, err))
 	}
 	return nil
-}
-
-func NormalizeSlice(s []string) []string {
-	slices.Sort(s)
-	return slices.Compact(s)
 }
 
 func ValidateAndNormalizeCondition(c *pb.Condition, isUpdate bool) error {
@@ -38,9 +34,9 @@ func ValidateAndNormalizeCondition(c *pb.Condition, isUpdate bool) error {
 		return errInvalidArgument(errors.New("missing owner"))
 	}
 	// ensure that filter arrays are sorted and compacted, so we can query for exact match instead of other more expensive queries
-	c.DeviceIdFilter = NormalizeSlice(c.GetDeviceIdFilter())
-	c.ResourceTypeFilter = NormalizeSlice(c.GetResourceTypeFilter())
-	c.ResourceHrefFilter = NormalizeSlice(c.GetResourceHrefFilter())
+	c.DeviceIdFilter = strings.Unique(c.GetDeviceIdFilter())
+	c.ResourceTypeFilter = strings.Unique(c.GetResourceTypeFilter())
+	c.ResourceHrefFilter = strings.Unique(c.GetResourceHrefFilter())
 	return nil
 }
 
@@ -161,6 +157,6 @@ func ValidateAndNormalizeConditionsQuery(q *GetLatestConditionsQuery) error {
 	if q.DeviceID == "" && q.ResourceHref == "" && len(q.ResourceTypeFilter) == 0 {
 		return errInvalidArgument(errors.New("at least one condition filter must be set"))
 	}
-	q.ResourceTypeFilter = NormalizeSlice(q.ResourceTypeFilter)
+	q.ResourceTypeFilter = strings.Unique(q.ResourceTypeFilter)
 	return nil
 }

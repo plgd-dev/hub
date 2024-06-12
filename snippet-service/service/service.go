@@ -14,8 +14,6 @@ import (
 	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
 	"github.com/plgd-dev/hub/v2/pkg/service"
-	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
-	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	grpcService "github.com/plgd-dev/hub/v2/snippet-service/service/grpc"
 	httpService "github.com/plgd-dev/hub/v2/snippet-service/service/http"
 	"github.com/plgd-dev/hub/v2/snippet-service/store"
@@ -30,26 +28,9 @@ const serviceName = "snippet-service"
 type Service struct {
 	*service.Service
 
-	resourceSubscriber *ResourceSubscriber
-}
-
-type changeHandler struct{}
-
-func (h *changeHandler) Handle(ctx context.Context, iter eventbus.Iter) (err error) {
-	for {
-		ev, ok := iter.Next(ctx)
-		if !ok {
-			return iter.Err()
-		}
-		var s events.ResourceChanged
-		if ev.EventType() != s.EventType() {
-			continue
-		}
-		if err := ev.Unmarshal(&s); err != nil {
-			return err
-		}
-		// TODO: handle resource changed event
-	}
+	snippetService        *grpcService.SnippetServiceServer
+	resourceChangeHandler *resourceChangedHandler
+	resourceSubscriber    *ResourceSubscriber
 }
 
 func createStore(ctx context.Context, config storeConfig.Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (store.Store, error) {
@@ -85,6 +66,7 @@ func newStore(ctx context.Context, config StorageConfig, fileWatcher *fsnotify.W
 	if config.CleanUpRecords == "" {
 		return db, fl.ToFunction(), nil
 	}
+	// TODO: do we need a cron job?
 	s, err := gocron.NewScheduler(gocron.WithLocation(time.Local)) //nolint:gosmopolitan
 	if err != nil {
 		fl.Execute()
@@ -111,6 +93,39 @@ func newStore(ctx context.Context, config StorageConfig, fileWatcher *fsnotify.W
 	return db, fl.ToFunction(), nil
 }
 
+func newHttpService(ctx context.Context, config HTTPConfig, ss *grpcService.SnippetServiceServer, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*httpService.Service, func(), error) {
+	httpValidator, err := validator.New(ctx, config.Authorization.Config, fileWatcher, logger, tracerProvider)
+	if err != nil {
+		return nil, nil, fmt.Errorf("cannot create http validator: %w", err)
+	}
+	httpService, err := httpService.New(serviceName, httpService.Config{
+		Connection: listener.Config{
+			Addr: config.Addr,
+			TLS:  config.TLS,
+		},
+		Authorization: config.Authorization.Config,
+		Server:        config.Server,
+	}, ss, httpValidator, fileWatcher, logger, tracerProvider)
+	if err != nil {
+		httpValidator.Close()
+		return nil, nil, fmt.Errorf("cannot create http service: %w", err)
+	}
+	return httpService, httpValidator.Close, nil
+}
+
+func newGrpcService(ctx context.Context, config grpcService.Config, ss *grpcService.SnippetServiceServer, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*grpcService.Service, func(), error) {
+	grpcValidator, err := validator.New(ctx, config.Authorization.Config, fileWatcher, logger, tracerProvider)
+	if err != nil {
+		return nil, nil, fmt.Errorf("cannot create grpc validator: %w", err)
+	}
+	grpcService, err := grpcService.New(config, ss, grpcValidator, fileWatcher, logger, tracerProvider)
+	if err != nil {
+		grpcValidator.Close()
+		return nil, nil, fmt.Errorf("cannot create grpc service: %w", err)
+	}
+	return grpcService, grpcValidator.Close, nil
+}
+
 func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Service, error) {
 	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector, serviceName, fileWatcher, logger)
 	if err != nil {
@@ -127,15 +142,27 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	}
 	closerFn.AddFunc(closeStore)
 
-	ca := grpcService.NewSnippetServiceServer(config.APIs.GRPC.Authorization.OwnerClaim, config.HubID, dbStorage, logger)
+	snippetService := grpcService.NewSnippetServiceServer(config.APIs.GRPC.Authorization.OwnerClaim, config.HubID, dbStorage, logger)
 	closerFn.AddFunc(func() {
-		errC := ca.Close(ctx)
+		errC := snippetService.Close(ctx)
 		if errC != nil {
 			log.Errorf("failed to close grpc %s server: %w", serviceName, errC)
 		}
 	})
 
-	resourceSubscriber, err := NewResourceSubscriber(ctx, config.Clients.NATS, fileWatcher, logger, &changeHandler{})
+	resourceChangeHandler, err := newResourceChangedHandler(config.Clients.ResourceAggregate, dbStorage, fileWatcher, logger, tracerProvider)
+	if err != nil {
+		closerFn.Execute()
+		return nil, fmt.Errorf("cannot create resource change handler: %w", err)
+	}
+	closerFn.AddFunc(func() {
+		errC := resourceChangeHandler.Close()
+		if errC != nil {
+			log.Errorf("failed to close resource change handler: %w", errC)
+		}
+	})
+
+	resourceSubscriber, err := NewResourceSubscriber(ctx, config.Clients.NATS, fileWatcher, logger, resourceChangeHandler)
 	if err != nil {
 		closerFn.Execute()
 		return nil, fmt.Errorf("cannot create resource subscriber: %w", err)
@@ -147,41 +174,27 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		}
 	})
 
-	httpValidator, err := validator.New(ctx, config.APIs.HTTP.Authorization.Config, fileWatcher, logger, tracerProvider)
+	httpService, httpServiceClose, err := newHttpService(ctx, config.APIs.HTTP, snippetService, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		closerFn.Execute()
-		return nil, fmt.Errorf("cannot create http validator: %w", err)
+		return nil, err
 	}
-	closerFn.AddFunc(httpValidator.Close)
-	httpService, err := httpService.New(serviceName, httpService.Config{
-		Connection: listener.Config{
-			Addr: config.APIs.HTTP.Addr,
-			TLS:  config.APIs.GRPC.TLS,
-		},
-		Authorization: config.APIs.GRPC.Authorization.Config,
-		Server:        config.APIs.HTTP.Server,
-	}, ca, httpValidator, fileWatcher, logger, tracerProvider)
+	closerFn.AddFunc(httpServiceClose)
+
+	grpcService, grpcServiceClose, err := newGrpcService(ctx, config.APIs.GRPC, snippetService, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		closerFn.Execute()
-		return nil, fmt.Errorf("cannot create http service: %w", err)
+		return nil, err
 	}
-	grpcValidator, err := validator.New(ctx, config.APIs.GRPC.Authorization.Config, fileWatcher, logger, tracerProvider)
-	if err != nil {
-		_ = httpService.Close()
-		closerFn.Execute()
-		return nil, fmt.Errorf("cannot create grpc validator: %w", err)
-	}
-	closerFn.AddFunc(grpcValidator.Close)
-	grpcService, err := grpcService.New(config.APIs.GRPC, ca, grpcValidator, fileWatcher, logger, tracerProvider)
-	if err != nil {
-		_ = httpService.Close()
-		closerFn.Execute()
-		return nil, fmt.Errorf("cannot create grpc service: %w", err)
-	}
+	closerFn.AddFunc(grpcServiceClose)
+
 	s := service.New(httpService, grpcService)
 	s.AddCloseFunc(closerFn.Execute)
 	return &Service{
-		Service:            s,
-		resourceSubscriber: resourceSubscriber,
+		Service: s,
+
+		snippetService:        snippetService,
+		resourceChangeHandler: resourceChangeHandler,
+		resourceSubscriber:    resourceSubscriber,
 	}, nil
 }

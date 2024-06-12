@@ -224,6 +224,21 @@ func (s *SnippetServiceServer) GetConditions(req *pb.GetConditionsRequest, srv p
 	return nil
 }
 
+func (s *SnippetServiceServer) GetLatestConditions(req *store.GetLatestConditionsQuery, srv pb.SnippetService_GetConditionsServer) error {
+	owner, err := s.checkOwner(srv.Context(), "")
+	if err != nil {
+		return s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotGetConditions(err)))
+	}
+
+	err = s.store.GetLatestConditions(srv.Context(), owner, req, func(c *store.Condition) error {
+		return sendCondition(srv, c)
+	})
+	if err != nil {
+		return s.logger.LogAndReturnError(status.Errorf(codes.Internal, "%v", errCannotGetConditions(err)))
+	}
+	return nil
+}
+
 func errCannotDeleteConditions(err error) error {
 	return fmt.Errorf("cannot delete conditions: %w", err)
 }

@@ -50,6 +50,11 @@ apis:
     readHeaderTimeout: 4s
     writeTimeout: 16s
     idleTimeout: 30s
+    tls:
+      caPool: "/secrets/public/rootca.crt"
+      keyFile: "/secrets/private/cert.key"
+      certFile: "/secrets/private/cert.crt"
+      clientCertificateRequired: true
     authorization:
       ownerClaim: "sub"
       authority: ""
@@ -129,3 +134,17 @@ clients:
       keyFile: "/secrets/private/cert.key"
       certFile: "/secrets/public/cert.crt"
       useSystemCAPool: false
+  resourceAggregate:
+    grpc:
+      address: ""
+      sendMsgSize: 4194304
+      recvMsgSize: 4194304
+      keepAlive:
+        time: 10s
+        timeout: 20s
+        permitWithoutStream: true
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false
