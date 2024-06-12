@@ -13,6 +13,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
+	"github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
 	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
@@ -121,14 +122,14 @@ func (h *resourceChangedHandler) getConfigurationsWithTokens(ctx context.Context
 
 	confsWithTokens := make(map[string]configurationWithTokens)
 	for _, c := range configurations {
-		tokens := confTokens[c.GetId()]
+		tokens := strings.Unique(confTokens[c.GetId()])
 		if len(tokens) == 0 {
 			h.logger.Errorf("no tokens found for configuration(id:%v)", c.GetId())
 			continue
 		}
 		confsWithTokens[c.GetId()] = configurationWithTokens{
 			configuration: c,
-			tokens:        confTokens[c.GetId()],
+			tokens:        tokens,
 		}
 	}
 
@@ -152,7 +153,7 @@ func (h *resourceChangedHandler) applyConfigurations(ctx context.Context, rc *ev
 		return err
 	}
 
-	// get configurations
+	// get configurations with tokens
 	confsWithTokens, err := h.getConfigurationsWithTokens(ctx, owner, conditions)
 	if err != nil {
 		return err

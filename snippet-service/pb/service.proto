@@ -116,12 +116,12 @@ message DeleteConfigurationsResponse { int64 count = 1; }
 
 message AppliedDeviceConfiguration { //TODO naming 
   message Resource {
-    resourceaggregate.pb.ResourceId resource_id = 1; // TODO Jozo href only?
+    string href = 1;
     string correlation_id = 2; // Reused from invoke command or generated. Can be used to retrieve corresponding pending command.
     enum Status {
       QUEUED = 0;
       PENDING = 1;
-      DONE = 2; // If done look to resource_updated even update resource failed for resource aggregate.
+      DONE = 2; // If done look to resource_updated if update resource failed for resource aggregate.
       TIMEOUT = 3;
     };
     Status status = 3;
@@ -141,7 +141,7 @@ message AppliedDeviceConfiguration { //TODO naming
   repeated Resource resources = 6; //TODO naming
   string owner = 7;
   // Unix timestamp in ns when the applied device configuration has been created/updated
-  int64 timestamp = 8; // @gotags: bson:"timestamp"
+  int64 timestamp = 8;
 }
 
 message InvokeConfigurationRequest {

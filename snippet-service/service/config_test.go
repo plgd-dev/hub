@@ -6,7 +6,6 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	grpcServer "github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
 	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
-	certManagerServer "github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
 	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/hub/v2/snippet-service/service"
 	storeConfig "github.com/plgd-dev/hub/v2/snippet-service/store/config"
@@ -74,24 +73,6 @@ func TestHTTPConfig(t *testing.T) {
 			cfg: func() service.HTTPConfig {
 				cfg := test.MakeHTTPConfig()
 				cfg.Addr = "bad"
-				return cfg
-			}(),
-			wantErr: true,
-		},
-		{
-			name: "invalid - bad TLS",
-			cfg: func() service.HTTPConfig {
-				cfg := test.MakeHTTPConfig()
-				cfg.TLS = certManagerServer.Config{}
-				return cfg
-			}(),
-			wantErr: true,
-		},
-		{
-			name: "invalid - bad authorization",
-			cfg: func() service.HTTPConfig {
-				cfg := test.MakeHTTPConfig()
-				cfg.Authorization = grpcServer.AuthorizationConfig{}
 				return cfg
 			}(),
 			wantErr: true,

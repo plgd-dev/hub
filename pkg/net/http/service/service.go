@@ -15,11 +15,11 @@ import (
 
 // Service handle HTTP request
 type Service struct {
-	server    *http.Server
-	config    *Config
-	listener  *listener.Server
-	router    *mux.Router
-	isServing atomic.Bool
+	server   *http.Server
+	config   *Config
+	listener *listener.Server
+	router   *mux.Router
+	serving  atomic.Bool
 }
 
 // New parses configuration and creates new http service
@@ -54,7 +54,7 @@ func New(config Config) (*Service, error) {
 
 // Serve starts the service's HTTP server and blocks
 func (s *Service) Serve() error {
-	if !s.isServing.CompareAndSwap(false, true) {
+	if !s.serving.CompareAndSwap(false, true) {
 		return errors.New("service is already serving")
 	}
 	err := s.server.Serve(s.listener)
@@ -66,7 +66,7 @@ func (s *Service) Serve() error {
 
 // Close ends serving
 func (s *Service) Close() error {
-	if !s.isServing.Load() {
+	if !s.serving.Load() {
 		return s.listener.Close()
 	}
 	return s.server.Shutdown(context.Background())

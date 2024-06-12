@@ -10,31 +10,21 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/config"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
-	grpcServer "github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
 	httpServer "github.com/plgd-dev/hub/v2/pkg/net/http/server"
 	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
-	certManagerServer "github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
 	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 	grpcService "github.com/plgd-dev/hub/v2/snippet-service/service/grpc"
 	storeConfig "github.com/plgd-dev/hub/v2/snippet-service/store/config"
 )
 
 type HTTPConfig struct {
-	Addr          string                         `yaml:"address" json:"address"`
-	Server        httpServer.Config              `yaml:",inline" json:",inline"`
-	TLS           certManagerServer.Config       `yaml:"tls" json:"tls"`
-	Authorization grpcServer.AuthorizationConfig `yaml:"authorization" json:"authorization"`
+	Addr   string            `yaml:"address" json:"address"`
+	Server httpServer.Config `yaml:",inline" json:",inline"`
 }
 
 func (c *HTTPConfig) Validate() error {
 	if _, err := net.ResolveTCPAddr("tcp", c.Addr); err != nil {
 		return fmt.Errorf("address('%v') - %w", c.Addr, err)
-	}
-	if err := c.TLS.Validate(); err != nil {
-		return fmt.Errorf("tls.%w", err)
-	}
-	if err := c.Authorization.Validate(); err != nil {
-		return fmt.Errorf("authorization.%w", err)
 	}
 	return nil
 }

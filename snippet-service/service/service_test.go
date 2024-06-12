@@ -152,24 +152,6 @@ func TestServiceNew(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "invalid HTTP validator config",
-			cfg: func() service.Config {
-				cfg := test.MakeConfig(t)
-				cfg.APIs.HTTP.Authorization.Config.HTTP = httpClient.Config{}
-				return cfg
-			}(),
-			wantErr: true,
-		},
-		{
-			name: "invalid HTTP config",
-			cfg: func() service.Config {
-				cfg := test.MakeConfig(t)
-				cfg.APIs.HTTP.Addr = "invalid"
-				return cfg
-			}(),
-			wantErr: true,
-		},
-		{
 			name: "invalid GRPC validator config",
 			cfg: func() service.Config {
 				cfg := test.MakeConfig(t)
@@ -183,6 +165,15 @@ func TestServiceNew(t *testing.T) {
 			cfg: func() service.Config {
 				cfg := test.MakeConfig(t)
 				cfg.APIs.GRPC.Addr = "invalid"
+				return cfg
+			}(),
+			wantErr: true,
+		},
+		{
+			name: "invalid HTTP config",
+			cfg: func() service.Config {
+				cfg := test.MakeConfig(t)
+				cfg.APIs.HTTP.Addr = "invalid"
 				return cfg
 			}(),
 			wantErr: true,

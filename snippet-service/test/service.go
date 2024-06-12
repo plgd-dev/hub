@@ -27,10 +27,8 @@ func MakeHTTPConfig() service.HTTPConfig {
 	tls := config.MakeTLSServerConfig()
 	tls.ClientCertificateRequired = false
 	return service.HTTPConfig{
-		Addr:          config.SNIPPET_SERVICE_HTTP_HOST,
-		Server:        config.MakeHttpServerConfig(),
-		TLS:           tls,
-		Authorization: config.MakeAuthorizationConfig(),
+		Addr:   config.SNIPPET_SERVICE_HTTP_HOST,
+		Server: config.MakeHttpServerConfig(),
 	}
 }
 
