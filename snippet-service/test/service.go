@@ -45,7 +45,9 @@ func MakeClientsConfig() service.ClientsConfig {
 	return service.ClientsConfig{
 		Storage:                MakeStorageConfig(),
 		OpenTelemetryCollector: config.MakeOpenTelemetryCollectorClient(),
-		NATS:                   config.MakeSubscriberConfig(),
+		EventBus: service.EventBusConfig{
+			NATS: config.MakeSubscriberConfig(),
+		},
 		ResourceAggregate: service.ResourceAggregateConfig{
 			Connection: config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST),
 		},

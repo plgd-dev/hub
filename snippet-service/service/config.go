@@ -88,10 +88,21 @@ func (c *ResourceAggregateConfig) Validate() error {
 	return nil
 }
 
+type EventBusConfig struct {
+	NATS natsClient.Config `yaml:"nats" json:"nats"`
+}
+
+func (c *EventBusConfig) Validate() error {
+	if err := c.NATS.Validate(); err != nil {
+		return fmt.Errorf("nats.%w", err)
+	}
+	return nil
+}
+
 type ClientsConfig struct {
 	Storage                StorageConfig           `yaml:"storage" json:"storage"`
 	OpenTelemetryCollector otelClient.Config       `yaml:"openTelemetryCollector" json:"openTelemetryCollector"`
-	NATS                   natsClient.Config       `yaml:"nats" json:"nats"`
+	EventBus               EventBusConfig          `yaml:"eventBus" json:"eventBus"`
 	ResourceAggregate      ResourceAggregateConfig `yaml:"resourceAggregate" json:"resourceAggregate"`
 }
 
@@ -102,8 +113,8 @@ func (c *ClientsConfig) Validate() error {
 	if err := c.OpenTelemetryCollector.Validate(); err != nil {
 		return fmt.Errorf("openTelemetryCollector.%w", err)
 	}
-	if err := c.NATS.Validate(); err != nil {
-		return fmt.Errorf("nats.%w", err)
+	if err := c.EventBus.Validate(); err != nil {
+		return fmt.Errorf("eventBus.%w", err)
 	}
 	if err := c.ResourceAggregate.Validate(); err != nil {
 		return fmt.Errorf("resourceAggregate.%w", err)

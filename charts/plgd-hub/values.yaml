@@ -2251,6 +2251,17 @@ snippetservice:
       writeTimeout: 16s
       idleTimeout: 30s
   clients:
+    eventBus:
+      nats:
+        url: ""
+        pendingLimits:
+          msgLimit: "524288"
+          bytesLimit: "67108864"
+        tls:
+          caPool:
+          keyFile:
+          certFile:
+          useSystemCAPool: false
     storage:
       use: mongoDB
       mongoDB:
@@ -2289,6 +2300,20 @@ snippetservice:
           replication:
             class: SimpleStrategy
             replication_factor: 1
+        tls:
+          caPool:
+          keyFile:
+          certFile:
+          useSystemCAPool: false
+    resourceAggregate:
+      grpc:
+        address: ""
+        sendMsgSize: 4194304
+        recvMsgSize: 4194304
+        keepAlive:
+          time: 10s
+          timeout: 20s
+          permitWithoutStream: true
         tls:
           caPool:
           keyFile:

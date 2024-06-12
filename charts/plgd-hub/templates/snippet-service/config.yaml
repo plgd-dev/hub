@@ -59,6 +59,16 @@ data:
         writeTimeout: {{ .apis.http.writeTimeout }}
         idleTimeout: {{ .apis.http.idleTimeout }}
     clients:
+      eventBus:
+        nats:
+          url: {{ printf " " }}{{- include "plgd-hub.natsUri" (list $ .clients.eventBus.nats.url) | quote }}
+          pendingLimits:
+            msgLimit: {{ .clients.eventBus.nats.pendingLimits.msgLimit }}
+            bytesLimit: {{ printf "%v" .clients.eventBus.nats.pendingLimits.bytesLimit }}
+          tls:
+            {{- $natsTls := .clients.eventBus.nats.tls }}
+            {{- include "plgd-hub.certificateConfig" (list $ $natsTls $cert ) | indent 10 }}
+            useSystemCAPool: {{ .clients.eventBus.nats.tls.useSystemCAPool }}
       storage:
         use: {{ include "plgd-hub.useDatabase" (list $ . .clients.storage.use)  | quote }}
         mongoDB:
@@ -91,6 +101,20 @@ data:
             {{- $cqlDbTls := .clients.storage.cqlDB.tls }}
             {{- include "plgd-hub.certificateConfig" (list $ $cqlDbTls $cert ) | indent 10 }}
             useSystemCAPool: {{ .clients.storage.cqlDB.tls.useSystemCAPool }}
+      resourceAggregate:
+        grpc:
+          {{- $resourceAggregate := .clients.resourceAggregate.grpc.address }}
+          address:{{ printf " " }}{{- include "plgd-hub.resourceAggregateAddress" (list $ $resourceAggregate ) | quote }}
+          sendMsgSize: {{ int64 .clients.resourceAggregate.grpc.sendMsgSize | default 4194304 }}
+          recvMsgSize: {{ int64 .clients.resourceAggregate.grpc.recvMsgSize | default 4194304 }}
+          keepAlive:
+            time: {{ .clients.resourceAggregate.grpc.keepAlive.time }}
+            timeout: {{ .clients.resourceAggregate.grpc.keepAlive.timeout }}
+            permitWithoutStream: {{ .clients.resourceAggregate.grpc.keepAlive.permitWithoutStream }}
+          tls:
+            {{- $raClientTls := .clients.resourceAggregate.grpc.tls }}
+            {{- include "plgd-hub.certificateConfig" (list $ $raClientTls $cert) | indent 10 }}
+            useSystemCAPool: {{ .clients.resourceAggregate.grpc.tls.useSystemCAPool }}
       {{- include "plgd-hub.openTelemetryExporterConfig" (list $ $cert ) | nindent 6 }}
   {{- end }}
 {{- end }}
