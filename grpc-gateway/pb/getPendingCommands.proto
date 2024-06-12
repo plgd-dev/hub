@@ -20,7 +20,7 @@ message GetPendingCommandsRequest {
     repeated string device_id_filter = 3;
     repeated string type_filter = 4;
     repeated ResourceIdFilter resource_id_filter = 5; // New resource ID filter. For HTTP requests, use it multiple times as a query parameter like "resourceIdFilter={deviceID}{href}".
-    bool include_nonexistent_resources = 6;
+    bool include_hidden_resources = 6; // Get all pending commands for all resources, even if the resource is not published.
 }
 
 message PendingCommand {

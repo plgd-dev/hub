@@ -11,7 +11,7 @@ import { SecurityConfig, StreamApiPropsType } from '@/containers/App/App.types'
 const getConfig = () => security.getGeneralConfig() as SecurityConfig
 
 export const usePendingCommandsList = (deviceId?: string) => {
-    const filter = deviceId ? `?deviceIdFilter=${deviceId}&includeNonexistentResources=true` : `?includeNonexistentResources=true`
+    const filter = deviceId ? `?deviceIdFilter=${deviceId}&includeHiddenResources=true` : `?includeHiddenResources=true`
     const { telemetryWebTracer, unauthorizedCallback } = useContext(AppContext)
     const { data, updateData, ...rest }: StreamApiPropsType = useStreamApi(
         `${getConfig().httpGatewayAddress}${pendingCommandsApiEndpoints.PENDING_COMMANDS}${filter}`,

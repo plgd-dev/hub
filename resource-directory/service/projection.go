@@ -257,10 +257,10 @@ func (p *Projection) loadResourceWithLinks(deviceID string, hrefFilter map[strin
 	})
 }
 
-func (p *Projection) LoadResources(resourceIDFilter []*commands.ResourceId, typeFilter strings.Set, includeNonexistentResources bool, toReloadDevices strings.Set, onResource func(*Resource) error) error {
+func (p *Projection) LoadResources(resourceIDFilter []*commands.ResourceId, typeFilter strings.Set, includeHiddenResources bool, toReloadDevices strings.Set, onResource func(*Resource) error) error {
 	resourceIDMapFilter := getResourceIDMapFilter(resourceIDFilter)
 	for deviceID, hrefFilter := range resourceIDMapFilter { // filter duplicit load
-		if includeNonexistentResources {
+		if includeHiddenResources {
 			err := p.loadAllDeviceResources(deviceID, hrefFilter, typeFilter, onResource)
 			if err != nil {
 				return err

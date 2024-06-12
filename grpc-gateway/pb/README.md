@@ -912,7 +912,7 @@ Certain filters perform a logical &#34;or&#34; operation among the elements of t
 | device_id_filter | [string](#string) | repeated |  |
 | type_filter | [string](#string) | repeated |  |
 | resource_id_filter | [ResourceIdFilter](#grpcgateway-pb-ResourceIdFilter) | repeated | New resource ID filter. For HTTP requests, use it multiple times as a query parameter like &#34;resourceIdFilter={deviceID}{href}&#34;. |
-| include_nonexistent_resources | [bool](#bool) |  |  |
+| include_hidden_resources | [bool](#bool) |  | Get all pending commands for all resources, even if the resource is not published. |
 
 
 

@@ -522,8 +522,8 @@ func TestUpdateCreateOnNotExistingResource(t *testing.T) {
 	require.NotNil(t, ev.GetResourceCreatePending())
 
 	pendingCommandsClient, err := c.GetPendingCommands(ctx, &pb.GetPendingCommandsRequest{
-		DeviceIdFilter:              []string{deviceID},
-		IncludeNonexistentResources: true,
+		DeviceIdFilter:         []string{deviceID},
+		IncludeHiddenResources: true,
 	})
 	require.NoError(t, err)
 	numPendingCommands := 0

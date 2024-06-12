@@ -718,7 +718,8 @@
             "collectionFormat": "multi"
           },
           {
-            "name": "includeNonexistentResources",
+            "name": "includeHiddenResources",
+            "description": "Get all pending commands for all resources, even if the resource is not published.",
             "in": "query",
             "required": false,
             "type": "boolean"
