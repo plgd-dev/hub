@@ -163,7 +163,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		}
 	})
 
-	resourceSubscriber, err := NewResourceSubscriber(ctx, config.Clients.NATS, fileWatcher, logger, resourceChangeHandler)
+	resourceSubscriber, err := NewResourceSubscriber(ctx, config.Clients.EventBus.NATS, fileWatcher, logger, resourceChangeHandler)
 	if err != nil {
 		closerFn.Execute()
 		return nil, fmt.Errorf("cannot create resource subscriber: %w", err)
