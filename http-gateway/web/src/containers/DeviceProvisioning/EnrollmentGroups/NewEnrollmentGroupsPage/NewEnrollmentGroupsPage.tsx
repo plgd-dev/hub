@@ -52,7 +52,7 @@ const NewEnrollmentGroupsPage: FC<any> = () => {
         []
     )
 
-    const wellKnownConfig = security.getWellKnowConfig() as WellKnownConfigType & {
+    const wellKnownConfig = security.getWellKnownConfig() as WellKnownConfigType & {
         defaultCommandTimeToLive: number
     }
 

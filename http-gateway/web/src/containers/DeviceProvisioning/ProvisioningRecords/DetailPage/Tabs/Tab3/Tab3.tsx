@@ -21,7 +21,7 @@ const Tab3: FC<Props> = (props) => {
     const { formatMessage: _ } = useIntl()
     const [displayData, setDisplayData] = useState<any>(undefined)
 
-    const wellKnownConfig = security.getWellKnowConfig() as WellKnownConfigType & {
+    const wellKnownConfig = security.getWellKnownConfig() as WellKnownConfigType & {
         defaultCommandTimeToLive: number
     }
 

@@ -59,7 +59,7 @@ const ProvisionNewDeviceCore = () => {
         setDeviceId(null)
     }
 
-    const { coapGateway: deviceEndpoint, id: hubId, certificateAuthorities } = security.getWellKnowConfig() || {}
+    const { coapGateway: deviceEndpoint, id: hubId, certificateAuthorities } = security.getWellKnownConfig() || {}
     const { providerName } = (security.getDeviceOAuthConfig() as any) || {}
 
     return (

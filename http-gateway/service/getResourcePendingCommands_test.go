@@ -125,7 +125,7 @@ func TestRequestHandlerGetResourcePendingCommands(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
 	testService.ClearDB(ctx, t)

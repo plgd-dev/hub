@@ -57,7 +57,7 @@ const DevicesDetailsPage: FC<Props> = (props) => {
     const { data: certificates, loading: certificatesLoading, refresh: certificateRefresh } = useDeviceCertificates(id)
     const { data: provisioningRecords, loading: provisioningRecordsLoading } = useDeviceProvisioningRecord(id)
 
-    const wellKnownConfig = security.getWellKnowConfig() as WellKnownConfigType & {
+    const wellKnownConfig = security.getWellKnownConfig() as WellKnownConfigType & {
         defaultCommandTimeToLive: number
     }
     const [ttl] = useState(wellKnownConfig?.defaultCommandTimeToLive || 0)

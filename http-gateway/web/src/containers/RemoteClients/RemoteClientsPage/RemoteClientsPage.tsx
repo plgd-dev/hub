@@ -26,7 +26,7 @@ const RemoteClientsPage: FC<Props> = (props) => {
     const { children } = props
     const { formatMessage: _ } = useIntl()
 
-    const hubWellKnownConfig = security.getWellKnowConfig()
+    const hubWellKnownConfig = security.getWellKnownConfig()
     const dispatch = useDispatch()
     const parentalContext = useContext(AppContext)
 
@@ -149,7 +149,7 @@ const RemoteClientsPage: FC<Props> = (props) => {
     if (!wellKnownConfig || !clientData) {
         return <FullPageLoader i18n={{ loading: _(g.loading) }} />
     } else {
-        clientAppSettings.setWellKnowConfig(wellKnownConfig)
+        clientAppSettings.setWellKnownConfig(wellKnownConfig)
         clientAppSettings.setClientData(clientData)
 
         if (wellKnownConfig.remoteProvisioning) {

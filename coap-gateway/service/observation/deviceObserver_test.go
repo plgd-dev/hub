@@ -397,7 +397,7 @@ func runTestDeviceObserverRegister(ctx context.Context, t *testing.T, deviceID s
 		require.NoError(t, err)
 	}()
 
-	rdConn, err := grpcClient.New(ctx, config.MakeGrpcClientConfig(config.GRPC_GW_HOST), fileWatcher, log.Get(), noop.NewTracerProvider())
+	rdConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.GRPC_GW_HOST), fileWatcher, log.Get(), noop.NewTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = rdConn.Close()
@@ -409,7 +409,7 @@ func runTestDeviceObserverRegister(ctx context.Context, t *testing.T, deviceID s
 		ResourceDirectoryClient: rdC,
 	}
 
-	raConn, err := grpcClient.New(ctx, config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST), fileWatcher, log.Get(), noop.NewTracerProvider())
+	raConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST), fileWatcher, log.Get(), noop.NewTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = raConn.Close()

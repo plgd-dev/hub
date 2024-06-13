@@ -837,7 +837,7 @@ func TestRequestHandlerIssue270(t *testing.T) {
 		require.NoError(t, errC)
 	}()
 
-	rdConn, err := grpcClient.New(ctx, config.MakeGrpcClientConfig(config.GRPC_GW_HOST), fileWatcher, log.Get(), noop.NewTracerProvider())
+	rdConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.GRPC_GW_HOST), fileWatcher, log.Get(), noop.NewTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = rdConn.Close()
@@ -1016,7 +1016,7 @@ func TestCoAPGatewayServiceHeartbeat(t *testing.T) {
 		require.NoError(t, errC)
 	}()
 
-	rdConn, err := grpcClient.New(ctx, config.MakeGrpcClientConfig(config.GRPC_GW_HOST), fileWatcher, log.Get(), noop.NewTracerProvider())
+	rdConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.GRPC_GW_HOST), fileWatcher, log.Get(), noop.NewTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		_ = rdConn.Close()

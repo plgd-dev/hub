@@ -14,6 +14,7 @@ import (
 	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"google.golang.org/grpc/codes"
 )
@@ -53,9 +54,13 @@ func writeSimpleResponse(w http.ResponseWriter, rec *httptest.ResponseRecorder, 
 	}
 
 	encoder := jsoniter.NewEncoder(w)
-	// copy everything from response recorder
-	// to actual response writer
+	// copy everything from response recorder to actual response writer
 	for k, v := range rec.Header() {
+		if k == pkgHttp.ContentLengthHeaderKey {
+			// jsoniter.Encode writes extra '\n' at the end of the response
+			// which breaks a Content-Length check when the response is written
+			continue
+		}
 		w.Header()[k] = v
 	}
 	w.WriteHeader(rec.Code)

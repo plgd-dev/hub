@@ -64,7 +64,7 @@ const App = (props: { mockApp: boolean }) => {
                         security.setGeneralConfig(generalConfig)
                         security.setWebOAuthConfig(webOauthClient)
                         security.setDeviceOAuthConfig(deviceOauthClient)
-                        security.setWellKnowConfig(wellKnown)
+                        security.setWellKnownConfig(wellKnown)
 
                         setWellKnownConfigFetched(true)
                         setWellKnownConfig(wellKnown)
