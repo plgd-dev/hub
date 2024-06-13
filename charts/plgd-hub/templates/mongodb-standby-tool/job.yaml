@@ -63,6 +63,7 @@ spec:
             - name: job-crt
               mountPath: {{ $rdServiceCert }}
             {{- end }}
+            {{- include "plgd-hub.extraCAPoolMount" (list . .Values.extraCAPool.storage) | nindent 12 }}
             {{- with .Values.mongodb.standbyTool.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -78,6 +79,7 @@ spec:
           secret:
             secretName: {{ include "plgd-hub.mongodb-standby-tool.jobCertName" . }}
         {{- end }}
+        {{- include "plgd-hub.extraCAPoolVolume" (list . .Values.extraCAPool.storage) | nindent 8 }}
         {{- with .Values.mongodb.standbyTool.extraVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}

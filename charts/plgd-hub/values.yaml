@@ -32,8 +32,27 @@ global:
    web:
     clientID:
     scopes: [ "openid" ]
-  # -- Custom CA certificate for authorization endpoint in PEM format
-  authorizationCAPool:
+  
+  authorizationCAPool: |
+    -----BEGIN CERTIFICATE-----
+    MIIBYzCCAQmgAwIBAgIRANlBKhThY7VFbD48DtdtcA8wCgYIKoZIzj0EAwIwETEP
+    MA0GA1UEAxMGUm9vdENBMB4XDTI0MDYxMTExMDYyMVoXDTI1MDYxMTExMDYyMVow
+    ETEPMA0GA1UEAxMGUm9vdENBMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE6MGV
+    A8IIsgoW3VovdYKl7bjEGF1Ig1BAQ187x6ZyP4l1XwEnP57sIzqHDw9pv97+CIX0
+    igidfbC0+lIsyHT3QKNCMEAwDgYDVR0PAQH/BAQDAgEGMA8GA1UdEwEB/wQFMAMB
+    Af8wHQYDVR0OBBYEFKBBVAYdncB74490+ii3APJmlArrMAoGCCqGSM49BAMCA0gA
+    MEUCIQDp9GoW48DAcuaNIlVng4ZEfxGKNY3WlF7E7eXGy1toGgIgMSPChtlMYLTM
+    dOIkxphb6VrtdLC0KzO0+kjDsh422aY=
+    -----END CERTIFICATE-----
+  extraCAPool:
+    # -- Custom CA certificate for authorization endpoint in PEM format 
+    authorization: "{{ include \"plgd-hub.oldGlobalAuthorizationCAPool\" . }}"
+    # -- Custom CA certificate for internal endpoints in PEM format
+    internal:
+    # -- Custom CA certificate for storage(database) endpoints in PEM format
+    storage:
+    # -- Custom CA certificate for coap endpoints in PEM format
+    coap:
   # -- Global Open Telemetry exporter configuration
   openTelemetryExporter:
       # -- Enable OTLP gRPC exporter
@@ -215,6 +234,9 @@ mongodb:
     - name: mongodb-cm-crt
       secret:
         secretName: mongodb-cm-crt
+    - name: mongodb-extra-ca-pool
+      secret:
+        secretName: mongodb-extra-ca-pool  
   initContainers:
     # workaround for https://github.com/bitnami/charts/issues/10264, https://jira.mongodb.org/browse/MONGOSH-1240
     - name: mongo-binary
@@ -225,6 +247,8 @@ mongodb:
           mountPath: "/certs"
         - name: mongodb-cm-crt
           mountPath: "/certs-original"
+        - name: mongodb-extra-ca-pool
+          mountPath: "/certs/extra/storage"
       securityContext:
         runAsUser: 1001
         runAsGroup: 1001
@@ -250,7 +274,9 @@ mongodb:
           CERT_CRT=/certs-original/tls.crt
           CERT_SHA256=/certs/cert.sha256.$(sha256sum -z ${CERT_CRT} | cut -d " " -f 1)
           CA=/certs-original/ca.crt
-          CA_SHA256=/certs/ca.sha256.$(sha256sum -z ${CA} | cut -d " " -f 1)
+          EXTRA_CA=/certs/extra/storage/ca.crt
+          CA_SHA256=$(cat ${CA} ${EXTRA_CA} | sha256sum -z | cut -d " " -f 1)
+          CA_FILE_SHA256=/certs/ca.sha256.$CA_SHA256
           ROTATE_CERTIFICATES=0
           if [ ! -f ${CERT_SHA256} ]; then
             rm -f /certs/cert.sha256.*
@@ -260,10 +286,10 @@ mongodb:
             ROTATE_CERTIFICATES=1
           fi
 
-          if [ ! -f ${CA_SHA256} ]; then
+          if [ ! -f ${CA_FILE_SHA256} ]; then
             rm -f /certs/ca.sha256.*
-            cp ${CA} /certs/ca.pem
-            touch ${CA_SHA256}
+            cat ${CA} ${EXTRA_CA} > /certs/ca.pem
+            touch ${CA_FILE_SHA256}
             ROTATE_CERTIFICATES=1
           fi
 
@@ -518,16 +544,64 @@ certmanager:
         # -- Certificate key size
         size:
 
-# -- Configuration parameters for authorizationCaPool
-extraAuthorizationCAPool:
-  # -- Name of secret for storing custom auth ca pool
-  name: authorization-ca-pool
-  # -- Mount path for custom auth ca pool
-  mountPath: /certs/extra
-  # -- Name of file for custom auth ca pool
-  fileName: ca.crt
-
-
+# -- Configuration parameters for extraCAPool used by services and clients
+extraCAPool:
+  # -- Authorization CAPool section to verify the OAuth service certificate.
+  authorization:
+    # -- Enable extra authorization ca pool
+    enabled: "{{ include \"plgd-hub.extraCAPoolAuthorizationEnabled\" . }}"
+    # -- Volume and Mount name
+    name: authorization-ca-pool
+    # -- Mount path for custom auth ca pool
+    mountPath: /certs/extra/authorization
+    # set configMapName in order to mount an existing configMap to dir
+    configMapName:
+    # set secretName in order to mount an existing secretName to dir
+    secretName: "{{ include \"plgd-hub.oldExtraCAPoolAuthorizationSecretName\" . }}"
+    # key in the configMap or secret that contains the CA Certificate or Bundle
+    key: "{{ include \"plgd-hub.oldExtraCAPoolAuthorizationFileName\" . }}"
+  # -- Internal CAPool section to verify internal and storage services certificates by plgd services
+  internal:
+    # -- Enable extra internal ca pool
+    enabled: "{{ include \"plgd-hub.extraCAPoolInternalEnabled\" . }}"
+    # -- Volume and Mount name
+    name: internal-ca-pool
+    # -- Mount path for custom internal ca pool
+    mountPath: /certs/extra/internal
+    # set configMapName in order to mount an existing configMap to dir
+    configMapName:
+    # set secretName in order to mount an existing secretName to dir
+    secretName: internal-ca-pool
+    # key in the configMap or secret that contains the CA Certificate or Bundle
+    key: ca.crt
+  # -- Storage CAPool section to verify internal and storage services certificates by storage services
+  storage:
+    # -- Enable extra storage ca pool
+    enabled: "{{ include \"plgd-hub.extraCAPoolStorageEnabled\" . }}"
+    # -- Volume and Mount name
+    name: storage-ca-pool
+    # -- Mount path for custom storage ca pool
+    mountPath: /certs/extra/storage
+    # set configMapName in order to mount an existing configMap to dir
+    configMapName:
+    # set secretName in order to mount an existing secretName to dir
+    secretName: storage-ca-pool
+    # key in the configMap or secret that contains the CA Certificate or Bundle
+    key: ca.crt
+  # -- CoAP CAPool section to verify device certificate by coap-gateway
+  coap:
+    # -- Enable extra coap ca pool
+    enabled: "{{ include \"plgd-hub.extraCAPoolCoapEnabled\" . }}"
+    # -- Volume and Mount name
+    name: coap-ca-pool
+    # -- Mount path for custom coap ca pool
+    mountPath: /certs/extra/coap
+    # set configMapName in order to mount an existing configMap to dir
+    configMapName:
+    # set secretName in order to mount an existing secretName to dir
+    secretName: coap-ca-pool
+    # key in the configMap or secret that contains the CA Certificate or Bundle
+    key: ca.crt
 
 resourcedirectory:
   # -- Enable resource-directory service

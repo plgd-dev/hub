@@ -44,5 +44,5 @@ data:
             # Enable or disable TLS
             enabled: true
             {{- $tls := $standbyTool.clients.storage.mongoDB.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $tls $certPath) | indent 10 }}
+            {{- include "plgd-hub.storageCertificateConfig" (list $ $tls $certPath) | indent 10 }}
 {{- end }}
