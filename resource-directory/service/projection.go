@@ -168,17 +168,24 @@ func (p *Projection) wantToReloadDevice(rl *resourceLinksProjection, hrefFilter 
 	return finalReload
 }
 
-func (p *Projection) loadAllDeviceResources(deviceID string, hrefFilter map[string]bool, typeFilter strings.Set, onResource func(*Resource) error) error {
-	isMatchingResource := func(resourceID *commands.ResourceId, resourceTypes []string) bool {
-		if len(hrefFilter) > 0 && !hrefFilter[resourceID.GetHref()] {
-			return false
-		}
-		if !hasMatchingType(resourceTypes, typeFilter) {
-			return false
-		}
-		return true
+type resourceFilter struct {
+	hrefFilter map[string]bool
+	typeFilter strings.Set
+}
+
+func (rf *resourceFilter) isMatchingResource(href string, resourceTypes []string) bool {
+	if len(rf.hrefFilter) > 0 && !rf.hrefFilter[href] {
+		return false
 	}
-	err := p.ForceUpdate(context.Background(), commands.NewResourceID(deviceID, ""))
+	if !hasMatchingType(resourceTypes, rf.typeFilter) {
+		return false
+	}
+	return true
+}
+
+func (p *Projection) loadAllDeviceResources(ctx context.Context, deviceID string, hrefFilter map[string]bool, typeFilter strings.Set, onResource func(*Resource) error) error {
+	rf := resourceFilter{hrefFilter: hrefFilter, typeFilter: typeFilter}
+	err := p.ForceUpdate(ctx, commands.NewResourceID(deviceID, ""))
 	if err != nil {
 		return err
 	}
@@ -188,7 +195,7 @@ func (p *Projection) loadAllDeviceResources(deviceID string, hrefFilter map[stri
 			return true
 		}
 		resourceID, resourceTypes := rp.GetMatchingData()
-		if !isMatchingResource(resourceID, resourceTypes) {
+		if !rf.isMatchingResource(resourceID.GetHref(), resourceTypes) {
 			return true
 		}
 		err := onResource(&Resource{
@@ -206,15 +213,7 @@ func (p *Projection) loadAllDeviceResources(deviceID string, hrefFilter map[stri
 }
 
 func (p *Projection) loadResourceWithLinks(deviceID string, hrefFilter map[string]bool, typeFilter strings.Set, toReloadDevices strings.Set, onResource func(*Resource) error) error {
-	isMatchingResource := func(res *commands.Resource) bool {
-		if len(hrefFilter) > 0 && !hrefFilter[res.GetHref()] {
-			return false
-		}
-		if !hasMatchingType(res.GetResourceTypes(), typeFilter) {
-			return false
-		}
-		return true
-	}
+	rf := resourceFilter{hrefFilter: hrefFilter, typeFilter: typeFilter}
 	isSnapShotEvent := func(model eventstore.Model) bool {
 		e, ok := model.(interface{ EventType() string })
 		if !ok {
@@ -228,7 +227,7 @@ func (p *Projection) loadResourceWithLinks(deviceID string, hrefFilter map[strin
 	iterateResources := func(rl *resourceLinksProjection) error {
 		var err error
 		rl.IterateOverResources(func(res *commands.Resource) (wantNext bool) {
-			if !isMatchingResource(res) {
+			if !rf.isMatchingResource(res.GetHref(), res.GetResourceTypes()) {
 				return true
 			}
 			p.Models(func(model eventstore.Model) (wantNext bool) {
@@ -257,11 +256,11 @@ func (p *Projection) loadResourceWithLinks(deviceID string, hrefFilter map[strin
 	})
 }
 
-func (p *Projection) LoadResources(resourceIDFilter []*commands.ResourceId, typeFilter strings.Set, includeHiddenResources bool, toReloadDevices strings.Set, onResource func(*Resource) error) error {
+func (p *Projection) LoadResources(ctx context.Context, resourceIDFilter []*commands.ResourceId, typeFilter strings.Set, includeHiddenResources bool, toReloadDevices strings.Set, onResource func(*Resource) error) error {
 	resourceIDMapFilter := getResourceIDMapFilter(resourceIDFilter)
 	for deviceID, hrefFilter := range resourceIDMapFilter { // filter duplicit load
 		if includeHiddenResources {
-			err := p.loadAllDeviceResources(deviceID, hrefFilter, typeFilter, onResource)
+			err := p.loadAllDeviceResources(ctx, deviceID, hrefFilter, typeFilter, onResource)
 			if err != nil {
 				return err
 			}

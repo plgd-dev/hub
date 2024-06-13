@@ -61,8 +61,11 @@ func (r *AppliedDeviceConfiguration_Resource) Clone() *AppliedDeviceConfiguratio
 	if r == nil {
 		return nil
 	}
-	ru := &events.ResourceUpdated{}
-	ru.CopyData(r.GetResourceUpdated())
+	var ru *events.ResourceUpdated
+	if r.GetResourceUpdated() != nil {
+		ru = &events.ResourceUpdated{}
+		ru.CopyData(r.GetResourceUpdated())
+	}
 	return &AppliedDeviceConfiguration_Resource{
 		Href:            r.GetHref(),
 		CorrelationId:   r.GetCorrelationId(),

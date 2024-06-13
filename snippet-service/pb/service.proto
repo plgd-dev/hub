@@ -139,7 +139,7 @@ message AppliedDeviceConfiguration { //TODO naming
     bool on_demand = 4;
     RelationTo condition_id = 5; // @gotags: bson:"conditionId" //TODO Naming
   }
-  repeated Resource resources = 6; // @gotags: bson:"resources,omitempty" //TODO naming
+  repeated Resource resources = 6; //TODO naming
   string owner = 7;
   // Unix timestamp in ns when the applied device configuration has been created/updated
   int64 timestamp = 8;

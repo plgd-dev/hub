@@ -50,7 +50,7 @@ TODO naming
 | configuration_id | [AppliedDeviceConfiguration.RelationTo](#snippetservice-pb-AppliedDeviceConfiguration-RelationTo) |  | @gotags: bson:&#34;configurationId&#34; |
 | on_demand | [bool](#bool) |  |  |
 | condition_id | [AppliedDeviceConfiguration.RelationTo](#snippetservice-pb-AppliedDeviceConfiguration-RelationTo) |  | @gotags: bson:&#34;conditionId&#34; //TODO Naming |
-| resources | [AppliedDeviceConfiguration.Resource](#snippetservice-pb-AppliedDeviceConfiguration-Resource) | repeated | @gotags: bson:&#34;resources,omitempty&#34; //TODO naming |
+| resources | [AppliedDeviceConfiguration.Resource](#snippetservice-pb-AppliedDeviceConfiguration-Resource) | repeated | TODO naming |
 | owner | [string](#string) |  |  |
 | timestamp | [int64](#int64) |  | Unix timestamp in ns when the applied device configuration has been created/updated |
 

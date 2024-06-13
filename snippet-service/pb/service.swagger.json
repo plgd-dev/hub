@@ -641,7 +641,7 @@
             "type": "object",
             "$ref": "#/definitions/pbAppliedDeviceConfigurationResource"
           },
-          "title": "@gotags: bson:\"resources,omitempty\" //TODO naming"
+          "title": "TODO naming"
         },
         "owner": {
           "type": "string"

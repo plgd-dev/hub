@@ -10,10 +10,11 @@ import (
 )
 
 func (s *Store) CreateAppliedDeviceConfiguration(ctx context.Context, adc *pb.AppliedDeviceConfiguration) (*pb.AppliedDeviceConfiguration, error) {
-	newAdc, err := store.ValidateAndNormalizeAppliedConfiguration(adc, false)
+	err := store.ValidateAppliedConfiguration(adc, false)
 	if err != nil {
 		return nil, err
 	}
+	newAdc := adc.Clone()
 	if newAdc.GetId() == "" {
 		newAdc.Id = uuid.NewString()
 	}

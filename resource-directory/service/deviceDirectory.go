@@ -139,7 +139,7 @@ func (dd *DeviceDirectory) sendDevices(deviceIDs strings.Set, req *pb.GetDevices
 			return nil
 		}
 		resourceIdFilter := []*commands.ResourceId{commands.NewResourceID(m.GetDeviceID(), device.ResourceURI)}
-		return dd.projection.LoadResources(resourceIdFilter, typeFilter, false, toReloadDevices, func(resource *Resource) error {
+		return dd.projection.LoadResources(srv.Context(), resourceIdFilter, typeFilter, false, toReloadDevices, func(resource *Resource) error {
 			var device Device
 			err = updateDevice(&device, resource)
 			if err != nil {

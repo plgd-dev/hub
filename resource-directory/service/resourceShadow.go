@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"context"
 	"time"
 
 	"github.com/plgd-dev/device/v2/schema/device"
@@ -61,10 +62,10 @@ func (rd *ResourceTwin) convertToResourceIDs(resourceIDsFilter []*pb.ResourceIdF
 	return internalResourceIDsFilter
 }
 
-func (rd *ResourceTwin) filterResources(resourceIDsFilter []*commands.ResourceId, typeFilter []string, includeHiddenResources bool, toReloadDevices strings.Set, onResource func(*Resource) error) error {
+func (rd *ResourceTwin) filterResources(ctx context.Context, resourceIDsFilter []*commands.ResourceId, typeFilter []string, includeHiddenResources bool, toReloadDevices strings.Set, onResource func(*Resource) error) error {
 	mapTypeFilter := make(strings.Set)
 	mapTypeFilter.Add(typeFilter...)
-	return rd.projection.LoadResources(resourceIDsFilter, mapTypeFilter, includeHiddenResources, toReloadDevices, onResource)
+	return rd.projection.LoadResources(ctx, resourceIDsFilter, mapTypeFilter, includeHiddenResources, toReloadDevices, onResource)
 }
 
 func resourceIdFilterToSimple(r []*pb.ResourceIdFilter) []*commands.ResourceId {
@@ -112,7 +113,7 @@ func updateContentIfETagMatched(resourceIDsFilter []*pb.ResourceIdFilter, val *p
 }
 
 func (rd *ResourceTwin) getResources(resourceIDsFilter []*pb.ResourceIdFilter, typeFilter []string, srv pb.GrpcGateway_GetResourcesServer, toReloadDevices strings.Set) error {
-	return rd.filterResources(resourceIdFilterToSimple(resourceIDsFilter), typeFilter, false, toReloadDevices, func(resource *Resource) error {
+	return rd.filterResources(srv.Context(), resourceIdFilterToSimple(resourceIDsFilter), typeFilter, false, toReloadDevices, func(resource *Resource) error {
 		val := toResourceValue(resource)
 		updateContentIfETagMatched(resourceIDsFilter, val)
 		err := srv.Send(val)
@@ -154,7 +155,7 @@ func toPendingCommands(resource *Resource, commandFilter subscription.FilterBitm
 }
 
 func (rd *ResourceTwin) sendPendingCommands(srv pb.GrpcGateway_GetPendingCommandsServer, resourceIDsFilter []*pb.ResourceIdFilter, typeFilter []string, filterCmds subscription.FilterBitmask, includeHiddenResources bool, now time.Time, toReloadDevices strings.Set) error {
-	return rd.filterResources(resourceIdFilterToSimple(resourceIDsFilter), typeFilter, includeHiddenResources, toReloadDevices, func(resource *Resource) error {
+	return rd.filterResources(srv.Context(), resourceIdFilterToSimple(resourceIDsFilter), typeFilter, includeHiddenResources, toReloadDevices, func(resource *Resource) error {
 		for _, pendingCmd := range toPendingCommands(resource, filterCmds, now) {
 			err := srv.Send(pendingCmd)
 			if err != nil {

@@ -753,7 +753,7 @@ type AppliedDeviceConfiguration struct {
 	//	*AppliedDeviceConfiguration_OnDemand
 	//	*AppliedDeviceConfiguration_ConditionId
 	ExecutedBy isAppliedDeviceConfiguration_ExecutedBy `protobuf_oneof:"executed_by"`
-	Resources  []*AppliedDeviceConfiguration_Resource  `protobuf:"bytes,6,rep,name=resources,proto3" json:"resources,omitempty" bson:"resources,omitempty"`
+	Resources  []*AppliedDeviceConfiguration_Resource  `protobuf:"bytes,6,rep,name=resources,proto3" json:"resources,omitempty"` //TODO naming
 	Owner      string                                  `protobuf:"bytes,7,opt,name=owner,proto3" json:"owner,omitempty"`
 	// Unix timestamp in ns when the applied device configuration has been created/updated
 	Timestamp int64 `protobuf:"varint,8,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
