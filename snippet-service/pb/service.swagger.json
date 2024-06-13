@@ -486,7 +486,7 @@
         "TIMEOUT"
       ],
       "default": "QUEUED",
-      "description": " - DONE: If done look to resource_updated even update resource failed for resource aggregate."
+      "description": " - DONE: If done look to resource_updated if update resource failed for resource aggregate."
     },
     "SnippetServiceInvokeConfigurationBody": {
       "type": "object",
@@ -617,20 +617,23 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: bson:\"_id\""
         },
         "deviceId": {
-          "type": "string"
+          "type": "string",
+          "title": "@gotags: bson:\"deviceId\""
         },
         "configurationId": {
-          "$ref": "#/definitions/AppliedDeviceConfigurationRelationTo"
+          "$ref": "#/definitions/AppliedDeviceConfigurationRelationTo",
+          "title": "@gotags: bson:\"configurationId\""
         },
         "onDemand": {
           "type": "boolean"
         },
         "conditionId": {
           "$ref": "#/definitions/AppliedDeviceConfigurationRelationTo",
-          "title": "TODO Naming"
+          "title": "@gotags: bson:\"conditionId\" //TODO Naming"
         },
         "resources": {
           "type": "array",
@@ -638,7 +641,7 @@
             "type": "object",
             "$ref": "#/definitions/pbAppliedDeviceConfigurationResource"
           },
-          "title": "TODO naming"
+          "title": "@gotags: bson:\"resources,omitempty\" //TODO naming"
         },
         "owner": {
           "type": "string"
@@ -646,7 +649,6 @@
         "timestamp": {
           "type": "string",
           "format": "int64",
-          "description": "@gotags: bson:\"timestamp\"",
           "title": "Unix timestamp in ns when the applied device configuration has been created/updated"
         }
       },
@@ -655,19 +657,19 @@
     "pbAppliedDeviceConfigurationResource": {
       "type": "object",
       "properties": {
-        "resourceId": {
-          "$ref": "#/definitions/pbResourceId",
-          "title": "TODO Jozo href only?"
+        "href": {
+          "type": "string"
         },
         "correlationId": {
           "type": "string",
-          "description": "Reused from invoke command or generated. Can be used to retrieve corresponding pending command."
+          "description": "Reused from invoke command or generated. Can be used to retrieve corresponding pending command.\n\n@gotags: bson:\"correlationId\""
         },
         "status": {
           "$ref": "#/definitions/AppliedDeviceConfigurationResourceStatus"
         },
         "resourceUpdated": {
-          "$ref": "#/definitions/pbResourceUpdated"
+          "$ref": "#/definitions/pbResourceUpdated",
+          "title": "@gotags: bson:\"resourceUpdated,omitempty\""
         }
       }
     },

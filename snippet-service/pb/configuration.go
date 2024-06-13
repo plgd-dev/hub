@@ -1,5 +1,14 @@
 package pb
 
+import (
+	"errors"
+	"fmt"
+	"slices"
+	"strings"
+
+	"github.com/google/uuid"
+)
+
 func (cr *Configuration_Resource) Clone() *Configuration_Resource {
 	if cr == nil {
 		return nil
@@ -9,6 +18,32 @@ func (cr *Configuration_Resource) Clone() *Configuration_Resource {
 		Content:    cr.GetContent().Clone(),
 		TimeToLive: cr.GetTimeToLive(),
 	}
+}
+
+func (c *Configuration) Validate(isUpdate bool) error {
+	if isUpdate || c.GetId() != "" {
+		if _, err := uuid.Parse(c.GetId()); err != nil {
+			return fmt.Errorf("invalid ID(%v): %w", c.GetId(), err)
+		}
+	}
+	if c.GetOwner() == "" {
+		return errors.New("missing owner")
+	}
+	if len(c.GetResources()) == 0 {
+		return errors.New("missing resources")
+	}
+	return nil
+}
+
+func (c *Configuration) Normalize() {
+	resources := c.GetResources()
+	slices.SortFunc(resources, func(i, j *Configuration_Resource) int {
+		return strings.Compare(i.GetHref(), j.GetHref())
+	})
+	resources = slices.CompactFunc(resources, func(i, j *Configuration_Resource) bool {
+		return i.GetHref() == j.GetHref()
+	})
+	c.Resources = resources
 }
 
 func (c *Configuration) Clone() *Configuration {

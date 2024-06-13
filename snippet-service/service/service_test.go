@@ -211,7 +211,7 @@ func TestService(t *testing.T) {
 
 	snippetCfg := test.MakeConfig(t)
 	shutdownSnippetService := test.New(t, snippetCfg)
-	// defer shutdownSnippetService()
+	defer shutdownSnippetService()
 
 	snippetClientConn, err := grpc.NewClient(config.SNIPPET_SERVICE_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: hubTest.GetRootCertificatePool(t),
@@ -276,9 +276,6 @@ func TestService(t *testing.T) {
 		"power": uint64(42),
 		"name":  "Light",
 	}, got)
-
-	// TODO: use defer after AppliedConfiguration is implemented
-	shutdownSnippetService()
 
 	// restore state
 	err = grpcClient.UpdateResource(ctx, deviceID, hubTest.TestResourceLightInstanceHref("1"), map[string]interface{}{

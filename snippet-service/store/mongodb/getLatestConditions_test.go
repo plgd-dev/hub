@@ -272,7 +272,7 @@ func TestStoreGetLatestConditions(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			conditions := make(map[string]*pb.Condition)
-			err := s.GetLatestConditions(ctx, tt.args.owner, tt.args.query, func(c *store.Condition) error {
+			err := s.GetLatestEnabledConditions(ctx, tt.args.owner, tt.args.query, func(c *store.Condition) error {
 				condition, errG := c.GetLatest()
 				if errG != nil {
 					return errG

@@ -117,7 +117,8 @@ message DeleteConfigurationsResponse { int64 count = 1; }
 message AppliedDeviceConfiguration { //TODO naming 
   message Resource {
     string href = 1;
-    string correlation_id = 2; // Reused from invoke command or generated. Can be used to retrieve corresponding pending command.
+    // Reused from invoke command or generated. Can be used to retrieve corresponding pending command.
+    string correlation_id = 2; // @gotags: bson:"correlationId"
     enum Status {
       QUEUED = 0;
       PENDING = 1;
@@ -125,20 +126,20 @@ message AppliedDeviceConfiguration { //TODO naming
       TIMEOUT = 3;
     };
     Status status = 3;
-    resourceaggregate.pb.ResourceUpdated resource_updated = 4;
+    resourceaggregate.pb.ResourceUpdated resource_updated = 4; // @gotags: bson:"resourceUpdated,omitempty"
   }
-  string id = 1;
-  string device_id = 2;
+  string id = 1; // @gotags: bson:"_id"
+  string device_id = 2; // @gotags: bson:"deviceId"
   message RelationTo { //TODO naming
     string id = 1;
     uint64 version = 2;
   }
-  RelationTo configuration_id = 3;
+  RelationTo configuration_id = 3; // @gotags: bson:"configurationId"
   oneof executed_by {
     bool on_demand = 4;
-    RelationTo condition_id = 5; //TODO Naming
+    RelationTo condition_id = 5; // @gotags: bson:"conditionId" //TODO Naming
   }
-  repeated Resource resources = 6; //TODO naming
+  repeated Resource resources = 6; // @gotags: bson:"resources,omitempty" //TODO naming
   string owner = 7;
   // Unix timestamp in ns when the applied device configuration has been created/updated
   int64 timestamp = 8;

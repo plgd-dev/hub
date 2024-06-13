@@ -2,42 +2,19 @@ package store
 
 import (
 	"errors"
-	"fmt"
 	"slices"
 
-	"github.com/google/uuid"
 	"github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
 )
 
-func checkConfigurationId(c string, isUpdate bool) error {
-	if isUpdate && c == "" {
-		// in this case the update will keep the configuration ID already in the database
-		return nil
+func ValidateAndNormalizeCondition(c *pb.Condition, isUpdate bool) (*pb.Condition, error) {
+	if err := c.Validate(isUpdate); err != nil {
+		return nil, errInvalidArgument(err)
 	}
-	if _, err := uuid.Parse(c); err != nil {
-		return errInvalidArgument(fmt.Errorf("invalid configuration ID(%v): %w", c, err))
-	}
-	return nil
-}
-
-func ValidateAndNormalizeCondition(c *pb.Condition, isUpdate bool) error {
-	if isUpdate || c.GetId() != "" {
-		if _, err := uuid.Parse(c.GetId()); err != nil {
-			return errInvalidArgument(fmt.Errorf("invalid ID(%v): %w", c.GetId(), err))
-		}
-	}
-	if err := checkConfigurationId(c.GetConfigurationId(), isUpdate); err != nil {
-		return errInvalidArgument(fmt.Errorf("invalid configuration ID(%v): %w", c.GetConfigurationId(), err))
-	}
-	if c.GetOwner() == "" {
-		return errInvalidArgument(errors.New("missing owner"))
-	}
-	// ensure that filter arrays are sorted and compacted, so we can query for exact match instead of other more expensive queries
-	c.DeviceIdFilter = strings.Unique(c.GetDeviceIdFilter())
-	c.ResourceTypeFilter = strings.Unique(c.GetResourceTypeFilter())
-	c.ResourceHrefFilter = strings.Unique(c.GetResourceHrefFilter())
-	return nil
+	c2 := c.Clone()
+	c2.Normalize()
+	return c2, nil
 }
 
 type ConditionVersion struct {

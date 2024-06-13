@@ -27,6 +27,6 @@ func (s *Store) InsertConditions(context.Context, ...*store.Condition) error {
 	return store.ErrNotSupported
 }
 
-func (s *Store) GetLatestConditions(context.Context, string, *store.GetLatestConditionsQuery, store.ProcessConditions) error {
+func (s *Store) GetLatestEnabledConditions(context.Context, string, *store.GetLatestConditionsQuery, store.ProcessConditions) error {
 	return store.ErrNotSupported
 }

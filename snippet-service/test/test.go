@@ -249,3 +249,12 @@ func CmpStoredConditionMaps(t *testing.T, want, got map[string]store.Condition) 
 		CmpStoredCondition(t, &v, &gotV, false, false)
 	}
 }
+
+func CmpAppliedDeviceConfiguration(t *testing.T, want, got *pb.AppliedDeviceConfiguration, ignoreTimestamp bool) {
+	want = want.Clone()
+	got = got.Clone()
+	if ignoreTimestamp {
+		want.Timestamp = got.GetTimestamp()
+	}
+	CmpJSON(t, want, got)
+}

@@ -2,35 +2,17 @@ package store
 
 import (
 	"errors"
-	"fmt"
-	"slices"
-	"strings"
 
-	"github.com/google/uuid"
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
 )
 
-func ValidateAndNormalizeConfiguration(c *pb.Configuration, isUpdate bool) error {
-	if isUpdate || c.GetId() != "" {
-		if _, err := uuid.Parse(c.GetId()); err != nil {
-			return errInvalidArgument(fmt.Errorf("invalid ID(%v): %w", c.GetId(), err))
-		}
+func ValidateAndNormalizeConfiguration(c *pb.Configuration, isUpdate bool) (*pb.Configuration, error) {
+	if err := c.Validate(isUpdate); err != nil {
+		return nil, errInvalidArgument(err)
 	}
-	if c.GetOwner() == "" {
-		return errInvalidArgument(errors.New("missing owner"))
-	}
-	if len(c.GetResources()) == 0 {
-		return errInvalidArgument(errors.New("missing resources"))
-	}
-	resources := slices.Clone(c.GetResources())
-	slices.SortFunc(resources, func(i, j *pb.Configuration_Resource) int {
-		return strings.Compare(i.GetHref(), j.GetHref())
-	})
-	resources = slices.CompactFunc(resources, func(i, j *pb.Configuration_Resource) bool {
-		return i.GetHref() == j.GetHref()
-	})
-	c.Resources = resources
-	return nil
+	c2 := c.Clone()
+	c2.Normalize()
+	return c2, nil
 }
 
 type ConfigurationVersion struct {

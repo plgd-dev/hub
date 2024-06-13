@@ -14,16 +14,16 @@ import (
 )
 
 func (s *Store) CreateConfiguration(ctx context.Context, conf *pb.Configuration) (*pb.Configuration, error) {
-	if err := store.ValidateAndNormalizeConfiguration(conf, false); err != nil {
+	newConf, err := store.ValidateAndNormalizeConfiguration(conf, false)
+	if err != nil {
 		return nil, err
 	}
-	newConf := conf.Clone()
 	if newConf.GetId() == "" {
 		newConf.Id = uuid.NewString()
 	}
 	newConf.Timestamp = time.Now().UnixNano()
 	storeConf := store.MakeFirstConfiguration(newConf)
-	_, err := s.Collection(configurationsCol).InsertOne(ctx, storeConf)
+	_, err = s.Collection(configurationsCol).InsertOne(ctx, storeConf)
 	if err != nil {
 		return nil, err
 	}
@@ -72,12 +72,13 @@ func updateConfiguration(conf *pb.Configuration) mongo.Pipeline {
 }
 
 func (s *Store) UpdateConfiguration(ctx context.Context, conf *pb.Configuration) (*pb.Configuration, error) {
-	if err := store.ValidateAndNormalizeConfiguration(conf, true); err != nil {
+	newConf, err := store.ValidateAndNormalizeConfiguration(conf, true)
+	if err != nil {
 		return nil, err
 	}
 
-	filter := filterConfiguration(conf)
-	update := updateConfiguration(conf)
+	filter := filterConfiguration(newConf)
+	update := updateConfiguration(newConf)
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After).SetProjection(bson.M{store.VersionsKey: false})
 	result := s.Collection(configurationsCol).FindOneAndUpdate(ctx, filter, update, opts)
 	if result.Err() != nil {
@@ -85,7 +86,7 @@ func (s *Store) UpdateConfiguration(ctx context.Context, conf *pb.Configuration)
 	}
 
 	updatedCfg := &store.Configuration{}
-	err := result.Decode(&updatedCfg)
+	err = result.Decode(&updatedCfg)
 	if err != nil {
 		return nil, err
 	}

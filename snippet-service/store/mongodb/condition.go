@@ -24,16 +24,16 @@ func (s *Store) InsertConditions(ctx context.Context, conds ...*store.Condition)
 }
 
 func (s *Store) CreateCondition(ctx context.Context, cond *pb.Condition) (*pb.Condition, error) {
-	if err := store.ValidateAndNormalizeCondition(cond, false); err != nil {
+	newCond, err := store.ValidateAndNormalizeCondition(cond, false)
+	if err != nil {
 		return nil, err
 	}
-	newCond := cond.Clone()
 	if newCond.GetId() == "" {
 		newCond.Id = uuid.NewString()
 	}
 	newCond.Timestamp = time.Now().UnixNano()
 	storeCond := store.MakeFirstCondition(newCond)
-	_, err := s.Collection(conditionsCol).InsertOne(ctx, storeCond)
+	_, err = s.Collection(conditionsCol).InsertOne(ctx, storeCond)
 	if err != nil {
 		return nil, err
 	}
@@ -100,12 +100,13 @@ func updateCondition(cond *pb.Condition) mongo.Pipeline {
 }
 
 func (s *Store) UpdateCondition(ctx context.Context, cond *pb.Condition) (*pb.Condition, error) {
-	if err := store.ValidateAndNormalizeCondition(cond, true); err != nil {
+	newCond, err := store.ValidateAndNormalizeCondition(cond, true)
+	if err != nil {
 		return nil, err
 	}
 
-	filter := filterCondition(cond)
-	update := updateCondition(cond)
+	filter := filterCondition(newCond)
+	update := updateCondition(newCond)
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After).SetProjection(bson.M{store.VersionsKey: false})
 	result := s.Collection(conditionsCol).FindOneAndUpdate(ctx, filter, update, opts)
 	if result.Err() != nil {
@@ -113,7 +114,7 @@ func (s *Store) UpdateCondition(ctx context.Context, cond *pb.Condition) (*pb.Co
 	}
 
 	updatedCond := &store.Condition{}
-	err := result.Decode(&updatedCond)
+	err = result.Decode(&updatedCond)
 	if err != nil {
 		return nil, err
 	}
@@ -245,7 +246,7 @@ func toLatestConditionsQueryFilter(owner string, queries *store.GetLatestConditi
 	return bson.M{"$and": filter}
 }
 
-func (s *Store) GetLatestConditions(ctx context.Context, owner string, query *store.GetLatestConditionsQuery, p store.ProcessConditions) error {
+func (s *Store) GetLatestEnabledConditions(ctx context.Context, owner string, query *store.GetLatestConditionsQuery, p store.ProcessConditions) error {
 	if err := store.ValidateAndNormalizeConditionsQuery(query); err != nil {
 		return err
 	}

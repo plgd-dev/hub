@@ -11,6 +11,7 @@ import (
 
 const (
 	IDKey                 = "_id"                // must match with Id field tag
+	DeviceIDKey           = "deviceId"           // must match with DeviceId field tag
 	OwnerKey              = "owner"              // must match with Owner field tag
 	LatestKey             = "latest"             // must match with Latest field tag
 	NameKey               = "name"               // must match with Name field tag
@@ -25,7 +26,6 @@ const (
 	ResourceHrefFilterKey = "resourceHrefFilter" // must match with Condition.ResourceHrefFilter tag
 	JqExpressionFilterKey = "jqExpressionFilter" // must match with Condition.JqExpressionFilter tag
 	ResourceTypeFilterKey = "resourceTypeFilter" // must match with Condition.ResourceTypeFilter tag
-
 )
 
 type (
@@ -57,6 +57,10 @@ func errInvalidArgument(err error) error {
 	return fmt.Errorf("%w: %w", ErrInvalidArgument, err)
 }
 
+func IsDuplicateKeyError(err error) bool {
+	return mongo.IsDuplicateKeyError(err)
+}
+
 type MongoIterator[T any] struct {
 	Cursor *mongo.Cursor
 }
@@ -82,11 +86,10 @@ type Store interface {
 	GetConditions(ctx context.Context, owner string, query *pb.GetConditionsRequest, p ProcessConditions) error
 	// DeleteConditions deletes conditions from the database.
 	DeleteConditions(ctx context.Context, owner string, query *pb.DeleteConditionsRequest) (int64, error)
-
 	// InsertConditions inserts conditions into the database.
 	InsertConditions(ctx context.Context, conditions ...*Condition) error
-	// GetLatestConditions finds latest conditions that match the query.
-	GetLatestConditions(ctx context.Context, owner string, query *GetLatestConditionsQuery, p ProcessConditions) error
+	// GetLatestEnabledConditions finds latest conditions that match the query.
+	GetLatestEnabledConditions(ctx context.Context, owner string, query *GetLatestConditionsQuery, p ProcessConditions) error
 
 	// CreateConfiguration creates a new configuration in the database.
 	CreateConfiguration(ctx context.Context, conf *pb.Configuration) (*pb.Configuration, error)
@@ -96,6 +99,9 @@ type Store interface {
 	GetConfigurations(ctx context.Context, owner string, query *pb.GetConfigurationsRequest, p ProcessConfigurations) error
 	// DeleteConfigurations deletes configurations from the database.
 	DeleteConfigurations(ctx context.Context, owner string, query *pb.DeleteConfigurationsRequest) (int64, error)
+
+	// CreateAppliedDeviceConfiguration creates a new applied device configuration in the database.
+	CreateAppliedDeviceConfiguration(ctx context.Context, conf *pb.AppliedDeviceConfiguration) (*pb.AppliedDeviceConfiguration, error)
 
 	Close(ctx context.Context) error
 }
