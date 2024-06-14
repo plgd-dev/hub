@@ -10,9 +10,6 @@ import (
 )
 
 func (cr *Configuration_Resource) Clone() *Configuration_Resource {
-	if cr == nil {
-		return nil
-	}
 	return &Configuration_Resource{
 		Href:       cr.GetHref(),
 		Content:    cr.GetContent().Clone(),

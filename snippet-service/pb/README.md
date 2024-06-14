@@ -257,9 +257,7 @@ TODO Naming
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id_filter | [string](#string) | repeated |  |
-| configuration_id_filter | [string](#string) | repeated |  |
-| device_id_filter | [string](#string) | repeated |  |
-| condition_id_filter | [string](#string) | repeated |  |
+| device_id_filter | [string](#string) | repeated | repeated IDFilter configuration_id_filter = 3; // TODO repeated IDFilter condition_id_filter = 4; // TODO |
 
 
 

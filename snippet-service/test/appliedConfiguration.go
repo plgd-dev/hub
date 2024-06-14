@@ -29,17 +29,10 @@ func AppliedConfigurationID(i int) string {
 
 func SetAppliedConfigurationExecutedBy(ac *store.AppliedDeviceConfiguration, i int) {
 	if i%RuntimeConfig.NumConfigurations == 0 {
-		ac.ExecutedBy = &pb.AppliedDeviceConfiguration_OnDemand{
-			OnDemand: true,
-		}
+		ac.ExecutedBy = pb.MakeExecutedByOnDemand()
 		return
 	}
-	ac.ExecutedBy = &pb.AppliedDeviceConfiguration_ConditionId{
-		ConditionId: &pb.AppliedDeviceConfiguration_RelationTo{
-			Id:      ConditionID(i),
-			Version: uint64(i % RuntimeConfig.NumConditions),
-		},
-	}
+	ac.ExecutedBy = pb.MakeExecutedByConditionId(ConditionID(i), uint64(i%RuntimeConfig.NumConditions))
 }
 
 func AppliedConfigurationResource(t *testing.T, deviceID string, start, n int) []*pb.AppliedDeviceConfiguration_Resource {

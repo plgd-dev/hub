@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
+	"github.com/plgd-dev/hub/v2/pkg/mongodb"
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
 	"github.com/plgd-dev/hub/v2/snippet-service/store"
 	"go.mongodb.org/mongo-driver/bson"
@@ -71,10 +72,10 @@ func latestConfiguration(conf *pb.Configuration) bson.M {
 func updateConfiguration(conf *pb.Configuration) mongo.Pipeline {
 	setVersions := appendLatestToVersions([]string{store.NameKey, store.VersionKey, store.ResourcesKey, store.TimestampKey})
 	return mongo.Pipeline{
-		bson.D{{Key: "$set", Value: bson.M{
+		bson.D{{Key: mongodb.Set, Value: bson.M{
 			store.LatestKey: latestConfiguration(conf),
 		}}},
-		bson.D{{Key: "$set", Value: bson.M{
+		bson.D{{Key: mongodb.Set, Value: bson.M{
 			store.VersionsKey: setVersions,
 		}}},
 	}
@@ -104,7 +105,7 @@ func (s *Store) UpdateConfiguration(ctx context.Context, conf *pb.Configuration)
 
 // getConfigurationsByID returns all configurations from documents matched by ID
 func (s *Store) getConfigurationsByID(ctx context.Context, owner string, ids []string, p store.ProcessConfigurations) error {
-	cur, err := s.Collection(configurationsCol).Find(ctx, toFilterQuery(owner, toIdQuery(ids), false))
+	cur, err := s.Collection(configurationsCol).Find(ctx, toIdFilterQuery(owner, toIdQuery(ids), false))
 	if err != nil {
 		return err
 	}
@@ -114,7 +115,7 @@ func (s *Store) getConfigurationsByID(ctx context.Context, owner string, ids []s
 // getLatestConfigurationsByID returns the latest configuration from documents matched by ID
 func (s *Store) getLatestConfigurationsByID(ctx context.Context, owner string, ids []string, p store.ProcessConfigurations) error {
 	opt := options.Find().SetProjection(bson.M{store.VersionsKey: false})
-	cur, err := s.Collection(configurationsCol).Find(ctx, toFilterQuery(owner, toIdQuery(ids), false), opt)
+	cur, err := s.Collection(configurationsCol).Find(ctx, toIdFilterQuery(owner, toIdQuery(ids), false), opt)
 	if err != nil {
 		return err
 	}

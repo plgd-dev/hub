@@ -111,6 +111,8 @@ type Store interface {
 	GetAppliedDeviceConfigurations(ctx context.Context, owner string, query *pb.GetAppliedDeviceConfigurationsRequest, p ProccessAppliedDeviceConfigurations) error
 	// InsertAppliedConditions inserts applied configurations into the database.
 	InsertAppliedConfigurations(ctx context.Context, configurations ...*AppliedDeviceConfiguration) error
+	// UpdateDeviceConfiguration updates an existing applied device configuration in the database.
+	UpdateAppliedDeviceConfiguration(ctx context.Context, conf *pb.AppliedDeviceConfiguration) (*pb.AppliedDeviceConfiguration, error)
 
 	Close(ctx context.Context) error
 }

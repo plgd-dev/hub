@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
+	"github.com/plgd-dev/hub/v2/pkg/mongodb"
 	"github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
 	"github.com/plgd-dev/hub/v2/snippet-service/store"
@@ -90,10 +91,10 @@ func updateCondition(cond *pb.Condition) mongo.Pipeline {
 		store.ApiAccessTokenKey,
 	})
 	return mongo.Pipeline{
-		bson.D{{Key: "$set", Value: bson.M{
+		bson.D{{Key: mongodb.Set, Value: bson.M{
 			store.LatestKey: latestCondition(cond),
 		}}},
-		bson.D{{Key: "$set", Value: bson.M{
+		bson.D{{Key: mongodb.Set, Value: bson.M{
 			store.VersionsKey: setVersions,
 		}}},
 	}
@@ -123,7 +124,7 @@ func (s *Store) UpdateCondition(ctx context.Context, cond *pb.Condition) (*pb.Co
 
 // getConditionsByID returns full condition documents matched by ID
 func (s *Store) getConditionsByID(ctx context.Context, owner string, ids []string, p store.ProcessConditions) error {
-	cur, err := s.Collection(conditionsCol).Find(ctx, toFilterQuery(owner, toIdQuery(ids), false))
+	cur, err := s.Collection(conditionsCol).Find(ctx, toIdFilterQuery(owner, toIdQuery(ids), false))
 	if err != nil {
 		return err
 	}
@@ -146,13 +147,13 @@ func toIdOrConfIdQuery(ids, confIds []string) bson.M {
 	if len(filter) == 1 {
 		return filter[0]
 	}
-	return bson.M{"$or": filter}
+	return bson.M{mongodb.Or: filter}
 }
 
 // getLatestConditions returns the latest condition from document matched by condition ID or configuration ID
 func (s *Store) getLatestConditions(ctx context.Context, owner string, ids, confIds []string, p store.ProcessConditions) error {
 	opt := options.Find().SetProjection(bson.M{store.VersionsKey: false})
-	cur, err := s.Collection(conditionsCol).Find(ctx, toFilterQuery(owner, toIdOrConfIdQuery(ids, confIds), false), opt)
+	cur, err := s.Collection(conditionsCol).Find(ctx, toIdFilterQuery(owner, toIdOrConfIdQuery(ids, confIds), false), opt)
 	if err != nil {
 		return err
 	}
@@ -200,50 +201,44 @@ func toLatestEnabledQueryFilter() bson.D {
 
 func toLatestDeviceIDQueryFilter(deviceID string) bson.M {
 	key := store.LatestKey + "." + store.DeviceIDFilterKey
-	return bson.M{"$or": bson.A{
-		bson.M{key: bson.M{"$exists": false}},
+	return bson.M{mongodb.Or: bson.A{
+		bson.M{key: bson.M{mongodb.Exists: false}},
 		bson.M{key: deviceID},
 	}}
 }
 
 func toLatestResourceHrefQueryFilter(resourceHref string) bson.M {
 	key := store.LatestKey + "." + store.ResourceHrefFilterKey
-	return bson.M{"$or": bson.A{
-		bson.M{key: bson.M{"$exists": false}},
+	return bson.M{mongodb.Or: bson.A{
+		bson.M{key: bson.M{mongodb.Exists: false}},
 		bson.M{key: resourceHref},
 	}}
 }
 
 func toLatestResouceTypeQueryFilter(resourceTypeFilter []string) bson.M {
 	key := store.LatestKey + "." + store.ResourceTypeFilterKey
-	return bson.M{"$or": bson.A{
-		bson.M{key: bson.M{"$exists": false}},
-		bson.M{key: bson.M{"$all": resourceTypeFilter}},
+	return bson.M{mongodb.Or: bson.A{
+		bson.M{key: bson.M{mongodb.Exists: false}},
+		bson.M{key: bson.M{mongodb.All: resourceTypeFilter}},
 	}}
 }
 
 func toLatestConditionsQueryFilter(owner string, queries *store.GetLatestConditionsQuery) interface{} {
-	filter := make([]interface{}, 0, 5)
-	filter = append(filter, toLatestEnabledQueryFilter())
+	filters := make([]interface{}, 0, 5)
+	filters = append(filters, toLatestEnabledQueryFilter())
 	if owner != "" {
-		filter = append(filter, bson.D{{Key: store.OwnerKey, Value: owner}})
+		filters = append(filters, bson.D{{Key: store.OwnerKey, Value: owner}})
 	}
 	if queries.DeviceID != "" {
-		filter = append(filter, toLatestDeviceIDQueryFilter(queries.DeviceID))
+		filters = append(filters, toLatestDeviceIDQueryFilter(queries.DeviceID))
 	}
 	if queries.ResourceHref != "" {
-		filter = append(filter, toLatestResourceHrefQueryFilter(queries.ResourceHref))
+		filters = append(filters, toLatestResourceHrefQueryFilter(queries.ResourceHref))
 	}
 	if len(queries.ResourceTypeFilter) > 0 {
-		filter = append(filter, toLatestResouceTypeQueryFilter(queries.ResourceTypeFilter))
+		filters = append(filters, toLatestResouceTypeQueryFilter(queries.ResourceTypeFilter))
 	}
-	if len(filter) == 0 {
-		return bson.D{}
-	}
-	if len(filter) == 1 {
-		return filter[0]
-	}
-	return bson.M{"$and": filter}
+	return toFilter(mongodb.And, filters)
 }
 
 func (s *Store) GetLatestEnabledConditions(ctx context.Context, owner string, query *store.GetLatestConditionsQuery, p store.ProcessConditions) error {

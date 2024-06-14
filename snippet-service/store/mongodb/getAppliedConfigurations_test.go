@@ -88,9 +88,9 @@ func TestStoreGetAppliedConfigurations(t *testing.T) {
 			},
 		},
 		{
-			name: "owner2/id{0, 1, 2, 3, 4, 5}",
+			name: "owner1/id{0, 1, 2, 3, 4, 5}",
 			args: args{
-				owner: test.Owner(2),
+				owner: test.Owner(1),
 				query: &pb.GetAppliedDeviceConfigurationsRequest{
 					IdFilter: []string{
 						test.AppliedConfigurationID(0),
@@ -105,7 +105,7 @@ func TestStoreGetAppliedConfigurations(t *testing.T) {
 			want: func(confs map[string]*store.AppliedDeviceConfiguration) {
 				stored := make(map[string]*store.AppliedDeviceConfiguration)
 				for _, ac := range appliedConfs {
-					if ac.GetOwner() != test.Owner(2) {
+					if ac.GetOwner() != test.Owner(1) {
 						continue
 					}
 					acID := ac.GetId()
@@ -127,26 +127,63 @@ func TestStoreGetAppliedConfigurations(t *testing.T) {
 			},
 		},
 		{
-			name: "configurationId/{2, 4, 7}",
+			name: "deviceId/{0, 2}",
 			args: args{
 				query: &pb.GetAppliedDeviceConfigurationsRequest{
-					ConfigurationIdFilter: []string{
-						test.ConfigurationID(2),
-						test.ConfigurationID(4),
-						test.ConfigurationID(7),
+					DeviceIdFilter: []string{
+						test.DeviceID(0),
+						test.DeviceID(2),
 						// duplicates should be ignored
-						test.ConfigurationID(7),
-						test.ConfigurationID(4),
-						test.ConfigurationID(2),
+						test.DeviceID(2),
+						test.DeviceID(0),
 					},
 				},
 			},
 			want: func(confs map[string]*store.AppliedDeviceConfiguration) {
 				stored := make(map[string]*store.AppliedDeviceConfiguration)
 				for _, ac := range appliedConfs {
-					acConfId := ac.GetConfigurationId().GetId()
-					if acConfId == test.ConfigurationID(2) || acConfId == test.ConfigurationID(4) || acConfId == test.ConfigurationID(7) {
+					acDeviceID := ac.GetDeviceId()
+					if acDeviceID == test.DeviceID(0) || acDeviceID == test.DeviceID(2) {
 						stored[ac.GetId()] = ac
+					}
+				}
+				require.Len(t, confs, len(stored))
+				for _, c := range confs {
+					ac, ok := stored[c.GetId()]
+					require.True(t, ok)
+					test.CmpJSON(t, ac, c)
+				}
+			},
+		},
+		{
+			name: "owner2/{id{1, 2, 5} + deviceId{1, 3}}",
+			args: args{
+				owner: test.Owner(2),
+				query: &pb.GetAppliedDeviceConfigurationsRequest{
+					IdFilter: []string{
+						test.AppliedConfigurationID(1),
+						test.AppliedConfigurationID(2),
+						test.AppliedConfigurationID(5),
+					},
+					DeviceIdFilter: []string{
+						test.DeviceID(1),
+						test.DeviceID(3),
+					},
+				},
+			},
+			want: func(confs map[string]*store.AppliedDeviceConfiguration) {
+				stored := make(map[string]*store.AppliedDeviceConfiguration)
+				for _, ac := range appliedConfs {
+					if ac.GetOwner() != test.Owner(2) {
+						continue
+					}
+					acID := ac.GetId()
+					acDeviceID := ac.GetDeviceId()
+					if (acID == test.AppliedConfigurationID(1) ||
+						acID == test.AppliedConfigurationID(2) ||
+						acID == test.AppliedConfigurationID(5)) ||
+						(acDeviceID == test.DeviceID(1) || acDeviceID == test.DeviceID(3)) {
+						stored[acID] = ac
 					}
 				}
 				require.Len(t, confs, len(stored))

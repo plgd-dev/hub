@@ -58,10 +58,22 @@ func (r *AppliedDeviceConfiguration_RelationTo) Clone() *AppliedDeviceConfigurat
 	}
 }
 
-func (r *AppliedDeviceConfiguration_Resource) Clone() *AppliedDeviceConfiguration_Resource {
-	if r == nil {
-		return nil
+func MakeExecutedByOnDemand() *AppliedDeviceConfiguration_OnDemand {
+	return &AppliedDeviceConfiguration_OnDemand{
+		OnDemand: true,
 	}
+}
+
+func MakeExecutedByConditionId(conditionID string, version uint64) *AppliedDeviceConfiguration_ConditionId {
+	return &AppliedDeviceConfiguration_ConditionId{
+		ConditionId: &AppliedDeviceConfiguration_RelationTo{
+			Id:      conditionID,
+			Version: version,
+		},
+	}
+}
+
+func (r *AppliedDeviceConfiguration_Resource) Clone() *AppliedDeviceConfiguration_Resource {
 	var ru *events.ResourceUpdated
 	if r.GetResourceUpdated() != nil {
 		ru = &events.ResourceUpdated{}
@@ -78,13 +90,9 @@ func (r *AppliedDeviceConfiguration_Resource) Clone() *AppliedDeviceConfiguratio
 func (c *AppliedDeviceConfiguration) Clone() *AppliedDeviceConfiguration {
 	var executedBy isAppliedDeviceConfiguration_ExecutedBy
 	if c.GetOnDemand() {
-		executedBy = &AppliedDeviceConfiguration_OnDemand{
-			OnDemand: true,
-		}
+		executedBy = MakeExecutedByOnDemand()
 	} else if rt := c.GetConditionId(); rt != nil {
-		executedBy = &AppliedDeviceConfiguration_ConditionId{
-			ConditionId: rt.Clone(),
-		}
+		executedBy = MakeExecutedByConditionId(rt.GetId(), rt.GetVersion())
 	}
 	var resources []*AppliedDeviceConfiguration_Resource
 	if len(c.GetResources()) > 0 {

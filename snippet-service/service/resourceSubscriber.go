@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/hashicorp/go-multierror"
+	"github.com/plgd-dev/go-coap/v3/message"
 	isEvents "github.com/plgd-dev/hub/v2/identity-store/events"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
@@ -25,6 +25,7 @@ import (
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
 	"github.com/plgd-dev/hub/v2/snippet-service/store"
 	"go.opentelemetry.io/otel/trace"
+	"golang.org/x/exp/maps"
 	"google.golang.org/grpc/codes"
 )
 
@@ -142,48 +143,139 @@ func (h *resourceChangedHandler) getConfigurations(ctx context.Context, owner st
 	return confsWithConditions, nil
 }
 
-func (h *resourceChangedHandler) applyConfigurationToResource(ctx context.Context, deviceID, configurationID string, cr *pb.Configuration_Resource, conditions []*pb.Condition) error {
-	// insert applied configuration
-	/// - ak force tak upsert
-	var errs *multierror.Error
+type appliedCondition struct {
+	id      string
+	version uint64
+	token   string
+}
 
-	href := cr.GetHref()
-	resourceID := &commands.ResourceId{Href: href, DeviceId: deviceID}
-	for i, cond := range conditions {
-		h.logger.Debugf("applying configuration(id:%v) to resource(%v) with token(%v)", configurationID, href, i)
-		ctxWithToken := pkgGrpc.CtxWithToken(ctx, cond.GetApiAccessToken())
-		upd := &commands.UpdateResourceRequest{
-			ResourceId:    resourceID,
-			CorrelationId: uuid.NewString(),
-			Content:       cr.GetContent(),
-			TimeToLive:    cr.GetTimeToLive(),
-			CommandMetadata: &commands.CommandMetadata{
-				ConnectionId: configurationID,
-			},
-		}
-		_, err := h.raClient.UpdateResource(ctxWithToken, upd)
+func (h *resourceChangedHandler) applyConfigurationToResource(ctx context.Context, resourceID *commands.ResourceId, configurationID string, cr *pb.Configuration_Resource, conditionID, token string) error {
+	h.logger.Debugf("applying configuration(id:%v) to resource(%v) with condition(%v)", configurationID, resourceID.GetHref(), conditionID)
+	upd := &commands.UpdateResourceRequest{
+		ResourceId:    resourceID,
+		CorrelationId: uuid.NewString(),
+		Content:       cr.GetContent(),
+		TimeToLive:    cr.GetTimeToLive(),
+		CommandMetadata: &commands.CommandMetadata{
+			ConnectionId: configurationID,
+		},
+	}
+	ctxWithToken := pkgGrpc.CtxWithToken(ctx, token)
+	res, err := h.raClient.UpdateResource(ctxWithToken, upd)
+	if err != nil {
+		return err
+	}
+	h.logger.Infof("configuration(id:%v) applied to resource(%v)", configurationID, resourceID.GetHref())
+
+	if res.GetValidUntil() > 0 {
+		h.logger.Debugf("setting timeout for resource(%v) in %vns", resourceID.GetHref(), res.GetValidUntil())
+		// v response je validUntil, ak uplynie cas a zostane v stave pending tak nastavit timeout
+		// TODO: fire timeout event that sets status to timeout
+	}
+	return nil
+}
+
+func (h *resourceChangedHandler) findTokenAndApplyConfigurationToResource(ctx context.Context, resourceID *commands.ResourceId, configurationID string, cr *pb.Configuration_Resource, conditions []*pb.Condition) (appliedCondition, error) {
+	for _, cond := range conditions {
+		condID := cond.GetId()
+		token := cond.GetApiAccessToken()
+		err := h.applyConfigurationToResource(ctx, resourceID, configurationID, cr, condID, token)
 		if err != nil {
 			if grpcCode := pkgGrpc.ErrToStatus(err).Code(); grpcCode == codes.Unauthenticated {
+				h.logger.Debugf("cannot apply configuration(id:%v) to resource(%v): invalid token", configurationID, resourceID.GetHref())
 				continue
 			}
-			errs = multierror.Append(errs, err)
-			h.logger.Errorf("cannot apply configuration(id:%v) to resource(%v): %w", configurationID, href, err)
-			// zapis error AppliedConfigurations
-			break
+			h.logger.Errorf("cannot apply configuration(id:%v) to resource(%v): %w", configurationID, resourceID.GetHref(), err)
+			return appliedCondition{}, err
 		}
-
-		h.logger.Infof("configuration(id:%v) applied to resource(%v)", configurationID, href)
-
-		// v response je validUntil, ak uplynie cas a zostane v stave pending tak nastavit timeout
-
-		// zapis do AppliedConfigurations
-
-		return nil
+		return appliedCondition{id: condID, version: cond.GetVersion(), token: token}, nil
 	}
-	// TODO: write applied configuration to storage
-	// ak sa nepodari ziadny update tak zapisat ResourceUpdated so statusom chybou
+	return appliedCondition{}, errors.New("cannot apply configuration: no valid token found")
+}
 
-	return errs.ErrorOrNil()
+func (h *resourceChangedHandler) applyConfigurationToResources(ctx context.Context, owner, deviceID string, confWithConditions *configurationWithConditions) error {
+	resources := map[string]*pb.AppliedDeviceConfiguration_Resource{}
+	for _, cr := range confWithConditions.configuration.GetResources() {
+		resources[cr.GetHref()] = &pb.AppliedDeviceConfiguration_Resource{
+			Href:          cr.GetHref(),
+			CorrelationId: uuid.NewString(),
+			Status:        pb.AppliedDeviceConfiguration_Resource_QUEUED,
+		}
+	}
+
+	/// TODO: ak force tak upsert
+	appliedConf, errC := h.storage.CreateAppliedDeviceConfiguration(ctx, &pb.AppliedDeviceConfiguration{
+		Owner:    owner,
+		DeviceId: deviceID,
+		ConfigurationId: &pb.AppliedDeviceConfiguration_RelationTo{
+			Id:      confWithConditions.configuration.GetId(),
+			Version: confWithConditions.configuration.GetVersion(),
+		},
+		ExecutedBy: &pb.AppliedDeviceConfiguration_ConditionId{
+			ConditionId: &pb.AppliedDeviceConfiguration_RelationTo{
+				Id:      confWithConditions.conditions[0].GetId(),
+				Version: confWithConditions.conditions[0].GetVersion(),
+			},
+		},
+		Resources: maps.Values(resources),
+		Timestamp: time.Now().UnixNano(),
+	})
+	if errC != nil {
+		if store.IsDuplicateKeyError(errC) {
+			// applied configuration already exists
+			h.logger.Debugf("applied configuration already exists for device(%s) and configuration(%s)", deviceID,
+				confWithConditions.configuration.GetId())
+			return nil
+		}
+		return fmt.Errorf("cannot create applied device configuration: %w", errC)
+	}
+
+	var appliedCond appliedCondition
+	for _, cr := range confWithConditions.configuration.GetResources() {
+		href := cr.GetHref()
+		resourceID := &commands.ResourceId{Href: href, DeviceId: deviceID}
+		confID := confWithConditions.configuration.GetId()
+		var errA error
+		if appliedCond.id != "" {
+			errA = h.applyConfigurationToResource(ctx, resourceID, confID, cr, appliedCond.id, appliedCond.token)
+		} else {
+			appliedCond, errA = h.findTokenAndApplyConfigurationToResource(ctx, resourceID, confID, cr, confWithConditions.conditions)
+			if errA == nil {
+				appliedConf.ExecutedBy = pb.MakeExecutedByConditionId(appliedCond.id, appliedCond.version)
+			}
+		}
+		resource := resources[href]
+		if errA == nil {
+			resource.Status = pb.AppliedDeviceConfiguration_Resource_PENDING
+			// TODO: write applied configuration to storage
+		} else {
+			resource.Status = pb.AppliedDeviceConfiguration_Resource_DONE
+			resource.ResourceUpdated = &events.ResourceUpdated{
+				ResourceId: resourceID,
+				Status:     commands.Status_ERROR,
+				Content: &commands.Content{
+					Data:        []byte(errA.Error()),
+					ContentType: message.TextPlain.String(),
+				},
+				AuditContext: &commands.AuditContext{
+					// UserId:        owner,
+					CorrelationId: resource.GetCorrelationId(),
+					Owner:         owner,
+				},
+				EventMetadata: &events.EventMetadata{
+					ConnectionId: confID,
+				},
+				// ResourceTypes: ,
+				// OpenTelemetryCarrier:
+			}
+			// ak sa nepodari ziadny update tak zapisat ResourceUpdated so statusom chybou
+		}
+		resources[href] = resource
+	}
+
+	appliedConf.Resources = maps.Values(resources)
+	_, errU := h.storage.UpdateAppliedDeviceConfiguration(ctx, appliedConf)
+	return errU
 }
 
 func (h *resourceChangedHandler) applyConfigurations(ctx context.Context, rc *events.ResourceChanged) error {
@@ -225,47 +317,7 @@ func (h *resourceChangedHandler) applyConfigurations(ctx context.Context, rc *ev
 	if confWithConditions == nil {
 		return nil
 	}
-
-	resources := []*pb.AppliedDeviceConfiguration_Resource{}
-	for _, cr := range confWithConditions.configuration.GetResources() {
-		resources = append(resources, &pb.AppliedDeviceConfiguration_Resource{
-			Href:          cr.GetHref(),
-			CorrelationId: uuid.NewString(),
-			Status:        pb.AppliedDeviceConfiguration_Resource_PENDING,
-		})
-	}
-
-	_, err = h.storage.CreateAppliedDeviceConfiguration(ctx, &pb.AppliedDeviceConfiguration{
-		Owner:    owner,
-		DeviceId: deviceID,
-		ConfigurationId: &pb.AppliedDeviceConfiguration_RelationTo{
-			Id:      confWithConditions.configuration.GetId(),
-			Version: confWithConditions.configuration.GetVersion(),
-		},
-		ExecutedBy: &pb.AppliedDeviceConfiguration_ConditionId{
-			ConditionId: &pb.AppliedDeviceConfiguration_RelationTo{
-				Id: confWithConditions.conditions[0].GetId(),
-			},
-		},
-		Resources: resources,
-		Timestamp: time.Now().UnixNano(),
-	})
-	if err != nil {
-		if store.IsDuplicateKeyError(err) {
-			// applied configuration already exists
-			h.logger.Debugf("applied configuration already exists for resource(%s)", resourceHref)
-			return nil
-		}
-		return fmt.Errorf("cannot create applied device configuration: %w", err)
-	}
-
-	var errs *multierror.Error
-	for _, cr := range confWithConditions.configuration.GetResources() {
-		err := h.applyConfigurationToResource(ctx, deviceID, confWithConditions.configuration.GetId(), cr, confWithConditions.conditions)
-		errs = multierror.Append(errs, err)
-	}
-
-	return errs.ErrorOrNil()
+	return h.applyConfigurationToResources(ctx, owner, deviceID, confWithConditions)
 }
 
 func (h *resourceChangedHandler) Handle(ctx context.Context, iter eventbus.Iter) error {

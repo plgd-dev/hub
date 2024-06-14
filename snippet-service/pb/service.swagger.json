@@ -307,27 +307,8 @@
             "collectionFormat": "multi"
           },
           {
-            "name": "configurationIdFilter",
-            "in": "query",
-            "required": false,
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "collectionFormat": "multi"
-          },
-          {
             "name": "deviceIdFilter",
-            "in": "query",
-            "required": false,
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "collectionFormat": "multi"
-          },
-          {
-            "name": "conditionIdFilter",
+            "description": "repeated IDFilter configuration_id_filter = 3; // TODO\n repeated IDFilter condition_id_filter = 4; // TODO",
             "in": "query",
             "required": false,
             "type": "array",

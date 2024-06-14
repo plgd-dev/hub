@@ -18,3 +18,7 @@ func (s *Store) GetAppliedDeviceConfigurations(context.Context, string, *pb.GetA
 func (s *Store) InsertAppliedConfigurations(context.Context, ...*store.AppliedDeviceConfiguration) error {
 	return store.ErrNotSupported
 }
+
+func (s *Store) UpdateAppliedDeviceConfiguration(context.Context, *pb.AppliedDeviceConfiguration) (*pb.AppliedDeviceConfiguration, error) {
+	return nil, store.ErrNotSupported
+}
