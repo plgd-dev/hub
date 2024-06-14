@@ -5,7 +5,8 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	events "github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 )
 
 func (r *AppliedDeviceConfiguration_Resource) Validate() error {
@@ -85,9 +86,12 @@ func (c *AppliedDeviceConfiguration) Clone() *AppliedDeviceConfiguration {
 			ConditionId: rt.Clone(),
 		}
 	}
-	resources := make([]*AppliedDeviceConfiguration_Resource, 0, len(c.GetResources()))
-	for _, r := range c.GetResources() {
-		resources = append(resources, r.Clone())
+	var resources []*AppliedDeviceConfiguration_Resource
+	if len(c.GetResources()) > 0 {
+		resources = make([]*AppliedDeviceConfiguration_Resource, 0, len(c.GetResources()))
+		for _, r := range c.GetResources() {
+			resources = append(resources, r.Clone())
+		}
 	}
 	return &AppliedDeviceConfiguration{
 		Id:              c.GetId(),
@@ -98,4 +102,12 @@ func (c *AppliedDeviceConfiguration) Clone() *AppliedDeviceConfiguration {
 		Owner:           c.GetOwner(),
 		Timestamp:       c.GetTimestamp(),
 	}
+}
+
+func (c *AppliedDeviceConfiguration) UnmarshalBSON(data []byte) error {
+	return pkgMongo.UnmarshalProtoBSON(data, c)
+}
+
+func (c *AppliedDeviceConfiguration) MarshalBSON() ([]byte, error) {
+	return pkgMongo.MarshalProtoBSON(c)
 }

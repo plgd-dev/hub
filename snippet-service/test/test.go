@@ -17,14 +17,15 @@ import (
 
 var (
 	RuntimeConfig struct {
-		numOwners         int
-		numDevices        int
-		numResources      int
-		numResourceTypes  int
-		NumConfigurations int
-		NumConditions     int
-		configurationIds  map[int]string
-		conditionIds      map[int]string
+		numOwners               int
+		numDevices              int
+		numResources            int
+		numResourceTypes        int
+		NumConfigurations       int
+		NumConditions           int
+		configurationIds        map[int]string
+		appliedConfigurationIds map[int]string
+		conditionIds            map[int]string
 	}
 
 	tokens = make(map[string]string)
@@ -32,6 +33,7 @@ var (
 
 func init() {
 	RuntimeConfig.configurationIds = make(map[int]string)
+	RuntimeConfig.appliedConfigurationIds = make(map[int]string)
 	RuntimeConfig.conditionIds = make(map[int]string)
 	RuntimeConfig.numOwners = 3
 	RuntimeConfig.numDevices = 5

@@ -13,6 +13,15 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+func (s *Store) InsertConfigurations(ctx context.Context, confs ...*store.Configuration) error {
+	documents := make([]interface{}, 0, len(confs))
+	for _, conf := range confs {
+		documents = append(documents, conf)
+	}
+	_, err := s.Collection(configurationsCol).InsertMany(ctx, documents)
+	return err
+}
+
 func (s *Store) CreateConfiguration(ctx context.Context, conf *pb.Configuration) (*pb.Configuration, error) {
 	newConf, err := store.ValidateAndNormalizeConfiguration(conf, false)
 	if err != nil {

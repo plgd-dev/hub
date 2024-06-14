@@ -42,7 +42,7 @@ func TestRequestHandlerDeleteConditions(t *testing.T) {
 		_ = conn.Close()
 	}()
 	c := pb.NewSnippetServiceClient(conn)
-	_ = test.AddConfigurations(ctx, t, snippetCfg.APIs.GRPC.Authorization.OwnerClaim, c, 30, nil)
+	_ = test.AddConditions(ctx, t, snippetCfg.APIs.GRPC.Authorization.OwnerClaim, c, 30, nil)
 
 	type args struct {
 		token string

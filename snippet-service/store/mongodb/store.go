@@ -5,11 +5,11 @@ import (
 	"fmt"
 
 	"github.com/hashicorp/go-multierror"
-	"github.com/plgd-dev/hub/v2/certificate-authority/store"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
+	"github.com/plgd-dev/hub/v2/snippet-service/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -29,7 +29,7 @@ const (
 var deviceIDConfigurationIDUniqueIndex = mongo.IndexModel{
 	Keys: bson.D{
 		{Key: store.DeviceIDKey, Value: 1},
-		{Key: "configurationId.id", Value: 1},
+		{Key: store.ConfigurationRelationIDKey, Value: 1},
 	},
 	Options: options.Index().SetUnique(true),
 }

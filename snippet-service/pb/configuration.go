@@ -35,15 +35,18 @@ func (c *Configuration) Validate(isUpdate bool) error {
 	return nil
 }
 
-func (c *Configuration) Normalize() {
-	resources := c.GetResources()
-	slices.SortFunc(resources, func(i, j *Configuration_Resource) int {
-		return strings.Compare(i.GetHref(), j.GetHref())
-	})
+func normalizeResources(resources []*Configuration_Resource) []*Configuration_Resource {
 	resources = slices.CompactFunc(resources, func(i, j *Configuration_Resource) bool {
 		return i.GetHref() == j.GetHref()
 	})
-	c.Resources = resources
+	slices.SortFunc(resources, func(i, j *Configuration_Resource) int {
+		return strings.Compare(i.GetHref(), j.GetHref())
+	})
+	return resources
+}
+
+func (c *Configuration) Normalize() {
+	c.Resources = normalizeResources(c.GetResources())
 }
 
 func (c *Configuration) Clone() *Configuration {

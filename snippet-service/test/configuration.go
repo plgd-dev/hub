@@ -4,6 +4,7 @@ import (
 	"context"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/plgd-dev/go-coap/v3/message"
@@ -15,21 +16,21 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func Owner(i int) string {
+	return "owner" + strconv.Itoa(i)
+}
+
 func ConfigurationID(i int) string {
 	if id, ok := RuntimeConfig.configurationIds[i]; ok {
 		return id
 	}
-	id := uuid.New().String()
+	id := uuid.NewString()
 	RuntimeConfig.configurationIds[i] = id
 	return id
 }
 
 func ConfigurationName(i int) string {
 	return "cfg" + strconv.Itoa(i)
-}
-
-func Owner(i int) string {
-	return "owner" + strconv.Itoa(i)
 }
 
 func ConfigurationResources(t *testing.T, start, n int) []*pb.Configuration_Resource {
@@ -44,19 +45,17 @@ func ConfigurationResources(t *testing.T, start, n int) []*pb.Configuration_Reso
 				ContentType:       message.AppOcfCbor.String(),
 				CoapContentFormat: int32(message.AppOcfCbor),
 			},
-			TimeToLive: 1337,
+			TimeToLive: 1337 + int64(i),
 		})
 	}
 	return resources
 }
 
 type (
-	onCreateConfiguration         = func(ctx context.Context, conf *pb.Configuration) (*pb.Configuration, error)
-	onUpdateConfiguration         = func(ctx context.Context, conf *pb.Configuration) (*pb.Configuration, error)
 	calculateInitialVersionNumber = func(iteration int) uint64
 )
 
-func addConfigurations(ctx context.Context, t *testing.T, n int, calcVersion calculateInitialVersionNumber, create onCreateConfiguration, update onUpdateConfiguration) map[string]store.Configuration {
+func getConfigurations(t *testing.T, n int, calcVersion calculateInitialVersionNumber) map[string]store.Configuration {
 	versions := make(map[int]uint64, RuntimeConfig.NumConfigurations)
 	owners := make(map[int]string, RuntimeConfig.NumConfigurations)
 	configurations := make(map[string]store.Configuration)
@@ -75,29 +74,23 @@ func addConfigurations(ctx context.Context, t *testing.T, n int, calcVersion cal
 			owner = Owner(i % RuntimeConfig.numOwners)
 			owners[i%RuntimeConfig.NumConfigurations] = owner
 		}
-		confIn := &pb.Configuration{
+		conf := &pb.Configuration{
 			Id:        ConfigurationID(i % RuntimeConfig.NumConfigurations),
 			Version:   version,
 			Resources: ConfigurationResources(t, i%16, (i%5)+1),
 			Owner:     owner,
+			Timestamp: time.Now().UnixNano(),
 		}
-		var conf *pb.Configuration
-		var err error
-		if !ok {
-			confIn.Name = ConfigurationName(i % RuntimeConfig.NumConfigurations)
-			conf, err = create(ctx, confIn)
-			require.NoError(t, err)
-		} else {
-			conf, err = update(ctx, confIn)
-			require.NoError(t, err)
-		}
-
+		conf.Normalize()
 		configuration, ok := configurations[conf.GetId()]
 		if !ok {
+			conf.Name = ConfigurationName(i % RuntimeConfig.NumConfigurations)
 			configuration = store.MakeFirstConfiguration(conf)
 			configurations[conf.GetId()] = configuration
 			continue
 		}
+
+		conf.Name = configuration.Latest.Name
 		latest := store.ConfigurationVersion{
 			Name:      conf.GetName(),
 			Version:   conf.GetVersion(),
@@ -112,16 +105,35 @@ func addConfigurations(ctx context.Context, t *testing.T, n int, calcVersion cal
 }
 
 func AddConfigurationsToStore(ctx context.Context, t *testing.T, s store.Store, n int, calcVersion calculateInitialVersionNumber) map[string]store.Configuration {
-	// TODO: speed up the test by using batch operations
-	return addConfigurations(ctx, t, n, calcVersion, s.CreateConfiguration, s.UpdateConfiguration)
+	configurations := getConfigurations(t, n, calcVersion)
+	configurationsToInsert := make([]*store.Configuration, 0, len(configurations))
+	for _, c := range configurations {
+		configurationToInsert := &c
+		configurationsToInsert = append(configurationsToInsert, configurationToInsert)
+	}
+	err := s.InsertConfigurations(ctx, configurationsToInsert...)
+	require.NoError(t, err)
+	return configurations
 }
 
-func AddConfigurations(ctx context.Context, t *testing.T, ownerClaim string, c pb.SnippetServiceClient, n int, calcVersion calculateInitialVersionNumber) map[string]store.Configuration {
-	return addConfigurations(ctx, t, n, calcVersion, func(ctx context.Context, conf *pb.Configuration) (*pb.Configuration, error) {
-		ctxWithToken := pkgGrpc.CtxWithToken(ctx, GetTokenWithOwnerClaim(t, conf.GetOwner(), ownerClaim))
-		return c.CreateConfiguration(ctxWithToken, conf)
-	}, func(ctx context.Context, conf *pb.Configuration) (*pb.Configuration, error) {
-		ctxWithToken := pkgGrpc.CtxWithToken(ctx, GetTokenWithOwnerClaim(t, conf.GetOwner(), ownerClaim))
-		return c.UpdateConfiguration(ctxWithToken, conf)
-	})
+func AddConfigurations(ctx context.Context, t *testing.T, ownerClaim string, ssc pb.SnippetServiceClient, n int, calcVersion calculateInitialVersionNumber) map[string]store.Configuration {
+	configurations := getConfigurations(t, n, calcVersion)
+	for _, c := range configurations {
+		ctxWithToken := pkgGrpc.CtxWithToken(ctx, GetTokenWithOwnerClaim(t, c.Owner, ownerClaim))
+		for i := range c.Versions {
+			conf := c.GetConfiguration(i)
+			if i == 0 {
+				createdConf, err := ssc.CreateConfiguration(ctxWithToken, conf)
+				require.NoError(t, err)
+				c.Latest.Timestamp = createdConf.GetTimestamp()
+				c.Versions[i].Timestamp = createdConf.GetTimestamp()
+				continue
+			}
+			updatedConf, err := ssc.UpdateConfiguration(ctxWithToken, conf)
+			require.NoError(t, err)
+			c.Versions[i].Timestamp = updatedConf.GetTimestamp()
+		}
+		configurations[c.Id] = c
+	}
+	return configurations
 }

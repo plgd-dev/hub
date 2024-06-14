@@ -87,6 +87,7 @@ func getConditions(n int, calcVersion calculateInitialVersionNumber) map[string]
 			ApiAccessToken:     ConditionApiAccessToken(i % RuntimeConfig.NumConditions),
 			Timestamp:          time.Now().UnixNano(),
 		}
+		cond.Normalize()
 		condition, ok := conditions[cond.GetId()]
 		if !ok {
 			cond.Name = ConditionName(i % RuntimeConfig.NumConditions)

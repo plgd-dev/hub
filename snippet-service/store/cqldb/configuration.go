@@ -22,3 +22,7 @@ func (s *Store) GetConfigurations(context.Context, string, *pb.GetConfigurations
 func (s *Store) DeleteConfigurations(context.Context, string, *pb.DeleteConfigurationsRequest) (int64, error) {
 	return 0, store.ErrNotSupported
 }
+
+func (s *Store) InsertConfigurations(context.Context, ...*store.Configuration) error {
+	return store.ErrNotSupported
+}

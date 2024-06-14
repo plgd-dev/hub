@@ -26,6 +26,8 @@ const (
 	ResourceHrefFilterKey = "resourceHrefFilter" // must match with Condition.ResourceHrefFilter tag
 	JqExpressionFilterKey = "jqExpressionFilter" // must match with Condition.JqExpressionFilter tag
 	ResourceTypeFilterKey = "resourceTypeFilter" // must match with Condition.ResourceTypeFilter tag
+
+	ConfigurationRelationIDKey = ConfigurationIDKey + "." + IDKey
 )
 
 type (
@@ -42,9 +44,10 @@ type Iterator[T any] interface {
 }
 
 type (
-	Process[T any]        func(v *T) error
-	ProcessConfigurations = Process[Configuration]
-	ProcessConditions     = Process[Condition]
+	Process[T any]                      func(v *T) error
+	ProccessAppliedDeviceConfigurations = Process[AppliedDeviceConfiguration]
+	ProcessConfigurations               = Process[Configuration]
+	ProcessConditions                   = Process[Condition]
 )
 
 var (
@@ -99,9 +102,15 @@ type Store interface {
 	GetConfigurations(ctx context.Context, owner string, query *pb.GetConfigurationsRequest, p ProcessConfigurations) error
 	// DeleteConfigurations deletes configurations from the database.
 	DeleteConfigurations(ctx context.Context, owner string, query *pb.DeleteConfigurationsRequest) (int64, error)
+	// InsertConditions inserts conditions into the database.
+	InsertConfigurations(ctx context.Context, configurations ...*Configuration) error
 
 	// CreateAppliedDeviceConfiguration creates a new applied device configuration in the database.
 	CreateAppliedDeviceConfiguration(ctx context.Context, conf *pb.AppliedDeviceConfiguration) (*pb.AppliedDeviceConfiguration, error)
+	// GetAppliedDeviceConfigurations loads applied device configurations from the database.
+	GetAppliedDeviceConfigurations(ctx context.Context, owner string, query *pb.GetAppliedDeviceConfigurationsRequest, p ProccessAppliedDeviceConfigurations) error
+	// InsertAppliedConditions inserts applied configurations into the database.
+	InsertAppliedConfigurations(ctx context.Context, configurations ...*AppliedDeviceConfiguration) error
 
 	Close(ctx context.Context) error
 }

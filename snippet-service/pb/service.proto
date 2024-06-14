@@ -128,16 +128,16 @@ message AppliedDeviceConfiguration { //TODO naming
     Status status = 3;
     resourceaggregate.pb.ResourceUpdated resource_updated = 4; // @gotags: bson:"resourceUpdated,omitempty"
   }
-  string id = 1; // @gotags: bson:"_id"
+  string id = 1 [json_name="_id"]; // @gotags: bson:"_id"
   string device_id = 2; // @gotags: bson:"deviceId"
   message RelationTo { //TODO naming
-    string id = 1;
+    string id = 1 [json_name="_id"]; // @gotags: bson:"_id"
     uint64 version = 2;
   }
-  RelationTo configuration_id = 3; // @gotags: bson:"configurationId"
+  RelationTo configuration_id = 3 [json_name="configurationId"]; // @gotags: bson:"configurationId"
   oneof executed_by {
     bool on_demand = 4;
-    RelationTo condition_id = 5; // @gotags: bson:"conditionId" //TODO Naming
+    RelationTo condition_id = 5 [json_name="conditionId"]; // @gotags: bson:"conditionId" //TODO Naming
   }
   repeated Resource resources = 6; //TODO naming
   string owner = 7;

@@ -67,7 +67,7 @@ TODO naming
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  |  |
+| id | [string](#string) |  | @gotags: bson:&#34;_id&#34; |
 | version | [uint64](#uint64) |  |  |
 
 

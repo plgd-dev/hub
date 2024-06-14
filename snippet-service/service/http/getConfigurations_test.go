@@ -55,7 +55,7 @@ func TestRequestHandlerGetConfigurations(t *testing.T) {
 		args         args
 		wantHTTPCode int
 		wantErr      bool
-		want         func(*testing.T, []*pb.Configuration)
+		want         func([]*pb.Configuration)
 	}{
 		{
 			name: "missing owner",
@@ -77,7 +77,7 @@ func TestRequestHandlerGetConfigurations(t *testing.T) {
 				uri: test.HTTPURI(snippetHttp.Configurations),
 			},
 			wantHTTPCode: http.StatusOK,
-			want: func(t *testing.T, values []*pb.Configuration) {
+			want: func(values []*pb.Configuration) {
 				require.NotEmpty(t, values)
 				for _, v := range values {
 					conf, ok := confs[v.GetId()]
@@ -127,7 +127,7 @@ func TestRequestHandlerGetConfigurations(t *testing.T) {
 				require.NoError(t, err)
 				values = append(values, &value)
 			}
-			tt.want(t, values)
+			tt.want(values)
 		})
 	}
 }
