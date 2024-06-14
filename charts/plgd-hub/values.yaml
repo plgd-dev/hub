@@ -228,6 +228,8 @@ mongodb:
       mountPath: "/certs"
     - name: mongodb-cm-crt
       mountPath: "/certs-original"
+    - name: mongodb-extra-ca-pool
+      mountPath: "/certs/extra/storage"
   extraVolumes:
     - name: mongodb-crt
       emptyDir: {}
@@ -261,6 +263,8 @@ mongodb:
           #!/bin/bash
           cp /usr/local/bin/mongodb-admin-tool /certs
           echo '
+          #!/bin/bash
+          set -e
           INIT=0
           while [[ $# -gt 0 ]]; do
             case $1 in
