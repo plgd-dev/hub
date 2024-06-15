@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestStoreUpdateAppliedDeviceConfiguration(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT*100)
+func TestStoreUpdateAppliedConfiguration(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
 	s, cleanUpStore := test.NewMongoStore(t)
@@ -28,7 +28,7 @@ func TestStoreUpdateAppliedDeviceConfiguration(t *testing.T) {
 		},
 	}
 	owner := "owner1"
-	appliedConf, err := s.CreateAppliedDeviceConfiguration(ctx, &pb.AppliedDeviceConfiguration{
+	appliedConf, err := s.CreateAppliedConfiguration(ctx, &pb.AppliedDeviceConfiguration{
 		Id:       id,
 		DeviceId: "dev1",
 		ConfigurationId: &pb.AppliedDeviceConfiguration_RelationTo{
@@ -40,7 +40,7 @@ func TestStoreUpdateAppliedDeviceConfiguration(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	appliedConf2, err := s.CreateAppliedDeviceConfiguration(ctx, &pb.AppliedDeviceConfiguration{
+	appliedConf2, err := s.CreateAppliedConfiguration(ctx, &pb.AppliedDeviceConfiguration{
 		Id:       uuid.NewString(),
 		DeviceId: "dev2",
 		ConfigurationId: &pb.AppliedDeviceConfiguration_RelationTo{
@@ -141,7 +141,7 @@ func TestStoreUpdateAppliedDeviceConfiguration(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			updated, err := s.UpdateAppliedDeviceConfiguration(ctx, tt.args.update)
+			updated, err := s.UpdateAppliedConfiguration(ctx, tt.args.update)
 			if tt.wantErr {
 				require.Error(t, err)
 				return

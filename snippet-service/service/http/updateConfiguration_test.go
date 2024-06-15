@@ -33,7 +33,7 @@ func TestRequestHandlerUpdateConfiguration(t *testing.T) {
 	shutDown := service.SetUpServices(context.Background(), t, service.SetUpServicesOAuth)
 	defer shutDown()
 
-	shutdownHttp := snippetTest.SetUp(t)
+	_, shutdownHttp := snippetTest.SetUp(t)
 	defer shutdownHttp()
 
 	token := oauthTest.GetDefaultAccessToken(t)

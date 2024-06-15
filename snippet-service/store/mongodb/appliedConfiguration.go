@@ -22,7 +22,7 @@ func (s *Store) InsertAppliedConfigurations(ctx context.Context, confs ...*store
 	return err
 }
 
-func (s *Store) CreateAppliedDeviceConfiguration(ctx context.Context, adc *pb.AppliedDeviceConfiguration) (*pb.AppliedDeviceConfiguration, error) {
+func (s *Store) CreateAppliedConfiguration(ctx context.Context, adc *pb.AppliedDeviceConfiguration) (*pb.AppliedDeviceConfiguration, error) {
 	if err := store.ValidateAppliedConfiguration(adc, false); err != nil {
 		return nil, err
 	}
@@ -37,7 +37,7 @@ func (s *Store) CreateAppliedDeviceConfiguration(ctx context.Context, adc *pb.Ap
 	return newAdc, nil
 }
 
-func (s *Store) UpdateAppliedDeviceConfiguration(ctx context.Context, adc *pb.AppliedDeviceConfiguration) (*pb.AppliedDeviceConfiguration, error) {
+func (s *Store) UpdateAppliedConfiguration(ctx context.Context, adc *pb.AppliedDeviceConfiguration) (*pb.AppliedDeviceConfiguration, error) {
 	err := store.ValidateAppliedConfiguration(adc, true)
 	if err != nil {
 		return nil, err
@@ -60,41 +60,43 @@ func (s *Store) UpdateAppliedDeviceConfiguration(ctx context.Context, adc *pb.Ap
 	return &updatedAdc, nil
 }
 
-func toAppliedDeviceConfigurationsIdFilterQuery(query *pb.GetAppliedDeviceConfigurationsRequest) interface{} {
-	idfilters := make([]interface{}, 0, 2)
-	idFilter := inArrayQuery(store.IDKey, strings.Unique(query.GetIdFilter()))
-	if idFilter != nil {
-		idfilters = append(idfilters, idFilter)
+func toAppliedDeviceConfigurationsIdFilterQuery(idFilter, deviceIdFilter []string) interface{} {
+	filters := make([]interface{}, 0, 2)
+	idf := inArrayQuery(store.IDKey, strings.Unique(idFilter))
+	if idf != nil {
+		filters = append(filters, idf)
 	}
-	deviceIdFilter := inArrayQuery(store.DeviceIDKey, strings.Unique(query.GetDeviceIdFilter()))
-	if deviceIdFilter != nil {
-		idfilters = append(idfilters, deviceIdFilter)
+	dif := inArrayQuery(store.DeviceIDKey, strings.Unique(deviceIdFilter))
+	if dif != nil {
+		filters = append(filters, dif)
 	}
-	if len(idfilters) == 0 {
-		return nil
-	}
-	if len(idfilters) == 1 {
-		return idfilters[0]
-	}
-	return bson.M{mongodb.Or: idfilters}
+	return toFilter(mongodb.Or, filters)
 }
 
-func toAppliedDeviceConfigurationsQuery(owner string, query *pb.GetAppliedDeviceConfigurationsRequest) interface{} {
+func toAppliedDeviceConfigurationsQuery(owner string, idFilter, deviceIdFilter []string) interface{} {
 	filters := make([]interface{}, 0, 2)
 	if owner != "" {
 		filters = append(filters, bson.D{{Key: store.OwnerKey, Value: owner}})
 	}
-	idfilters := toAppliedDeviceConfigurationsIdFilterQuery(query)
+	idfilters := toAppliedDeviceConfigurationsIdFilterQuery(idFilter, deviceIdFilter)
 	if idfilters != nil {
 		filters = append(filters, idfilters)
 	}
 	return toFilter(mongodb.And, filters)
 }
 
-func (s *Store) GetAppliedDeviceConfigurations(ctx context.Context, owner string, query *pb.GetAppliedDeviceConfigurationsRequest, p store.ProccessAppliedDeviceConfigurations) error {
-	cur, err := s.Collection(appliedConfigurationsCol).Find(ctx, toAppliedDeviceConfigurationsQuery(owner, query))
+func (s *Store) GetAppliedConfigurations(ctx context.Context, owner string, query *pb.GetAppliedDeviceConfigurationsRequest, p store.ProccessAppliedDeviceConfigurations) error {
+	cur, err := s.Collection(appliedConfigurationsCol).Find(ctx, toAppliedDeviceConfigurationsQuery(owner, query.GetIdFilter(), query.GetDeviceIdFilter()))
 	if err != nil {
 		return err
 	}
 	return processCursor(ctx, cur, p)
+}
+
+func (s *Store) DeleteAppliedConfigurations(ctx context.Context, owner string, query *pb.DeleteAppliedDeviceConfigurationsRequest) (int64, error) {
+	res, err := s.Collection(appliedConfigurationsCol).DeleteMany(ctx, toAppliedDeviceConfigurationsQuery(owner, query.GetIdFilter(), nil))
+	if err != nil {
+		return 0, err
+	}
+	return res.DeletedCount, nil
 }

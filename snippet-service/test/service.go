@@ -93,11 +93,11 @@ func MakeConfig(t require.TestingT) service.Config {
 	return cfg
 }
 
-func SetUp(t require.TestingT) (tearDown func()) {
+func SetUp(t require.TestingT) (*service.Service, func()) {
 	return New(t, MakeConfig(t))
 }
 
-func New(t require.TestingT, cfg service.Config) func() {
+func New(t require.TestingT, cfg service.Config) (*service.Service, func()) {
 	ctx := context.Background()
 	logger := log.NewLogger(cfg.Log)
 
@@ -114,7 +114,7 @@ func New(t require.TestingT, cfg service.Config) func() {
 		_ = s.Serve()
 	}()
 
-	return func() {
+	return s, func() {
 		_ = s.Close()
 		wg.Wait()
 		err = fileWatcher.Close()

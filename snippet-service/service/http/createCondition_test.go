@@ -44,7 +44,7 @@ func TestRequestHandlerCreateCondition(t *testing.T) {
 	defer shutDown()
 
 	snippetCfg := snippetTest.MakeConfig(t)
-	shutdownHttp := snippetTest.New(t, snippetCfg)
+	_, shutdownHttp := snippetTest.New(t, snippetCfg)
 	defer shutdownHttp()
 
 	token := oauthTest.GetDefaultAccessToken(t)

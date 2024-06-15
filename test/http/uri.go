@@ -4,6 +4,7 @@ const (
 	HTTPS_SCHEME = "https://"
 
 	IDKey              = "id"
+	IDFilterKey        = "idFilter"
 	DeviceIDKey        = "deviceID"
 	ResourceHrefKey    = "resourceHref"
 	SubscriptionIDKey  = "subscriptionID"

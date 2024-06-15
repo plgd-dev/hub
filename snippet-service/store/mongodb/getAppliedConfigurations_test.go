@@ -15,7 +15,7 @@ func TestStoreGetAppliedConfigurations(t *testing.T) {
 	s, cleanUpStore := test.NewMongoStore(t)
 	defer cleanUpStore()
 
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT*100)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 	appliedConfs := test.AddAppliedConfigurationsToStore(ctx, t, s)
 
@@ -199,7 +199,7 @@ func TestStoreGetAppliedConfigurations(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			appliedConfigurations := make(map[string]*store.AppliedDeviceConfiguration)
-			err := s.GetAppliedDeviceConfigurations(ctx, tt.args.owner, tt.args.query, func(c *store.AppliedDeviceConfiguration) error {
+			err := s.GetAppliedConfigurations(ctx, tt.args.owner, tt.args.query, func(c *store.AppliedDeviceConfiguration) error {
 				appliedConfigurations[c.GetId()] = c.Clone()
 				return nil
 			})

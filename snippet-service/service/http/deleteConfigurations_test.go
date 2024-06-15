@@ -31,7 +31,7 @@ func TestRequestHandlerDeleteConfigurations(t *testing.T) {
 	defer shutDown()
 
 	snippetCfg := test.MakeConfig(t)
-	shutdownHttp := test.New(t, snippetCfg)
+	_, shutdownHttp := test.New(t, snippetCfg)
 	defer shutdownHttp()
 
 	conn, err := grpc.NewClient(config.SNIPPET_SERVICE_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{

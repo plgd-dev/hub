@@ -201,3 +201,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		resourceSubscriber:    resourceSubscriber,
 	}, nil
 }
+
+func (s *Service) SnippetServiceServer() *grpcService.SnippetServiceServer {
+	return s.snippetService
+}

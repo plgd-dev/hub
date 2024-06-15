@@ -111,7 +111,7 @@ func toFilter(op string, filters []interface{}) interface{} {
 		return bson.M{}
 	}
 	if len(filters) == 1 {
-		return filters[0].(bson.M)
+		return filters[0]
 	}
 	return bson.M{op: filters}
 }

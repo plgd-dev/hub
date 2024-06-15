@@ -257,6 +257,60 @@ func (s *SnippetServiceServer) DeleteConditions(ctx context.Context, req *pb.Del
 	}, nil
 }
 
+func errCannotCreateAppliedConfiguration(err error) error {
+	return fmt.Errorf("cannot create applied configuration: %w", err)
+}
+
+func (s *SnippetServiceServer) CreateAppliedConfiguration(ctx context.Context, configuration *pb.AppliedDeviceConfiguration) (*pb.AppliedDeviceConfiguration, error) {
+	owner, err := s.checkOwner(ctx, configuration.GetOwner())
+	if err != nil {
+		return nil, s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotCreateAppliedConfiguration(err)))
+	}
+
+	configuration.Owner = owner
+	c, err := s.store.CreateAppliedConfiguration(ctx, configuration)
+	if err != nil {
+		return nil, s.logger.LogAndReturnError(status.Errorf(getGRPCErrorCode(err), "%v", errCannotCreateAppliedConfiguration(err)))
+	}
+	return c, nil
+}
+
+func errCannotGetAppliedConfigurations(err error) error {
+	return fmt.Errorf("cannot get applied configurations: %w", err)
+}
+
+func (s *SnippetServiceServer) GetAppliedConfigurations(req *pb.GetAppliedDeviceConfigurationsRequest, srv pb.SnippetService_GetAppliedConfigurationsServer) error {
+	owner, err := s.checkOwner(srv.Context(), "")
+	if err != nil {
+		return s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotGetAppliedConfigurations(err)))
+	}
+	err = s.store.GetAppliedConfigurations(srv.Context(), owner, req, func(c *pb.AppliedDeviceConfiguration) error {
+		return srv.Send(c)
+	})
+	if err != nil {
+		return s.logger.LogAndReturnError(status.Errorf(codes.Internal, "%v", errCannotGetAppliedConfigurations(err)))
+	}
+	return nil
+}
+
+func errCannotDeleteAppliedConfigurations(err error) error {
+	return fmt.Errorf("cannot delete applied configurations: %w", err)
+}
+
+func (s *SnippetServiceServer) DeleteAppliedConfigurations(ctx context.Context, req *pb.DeleteAppliedDeviceConfigurationsRequest) (*pb.DeleteAppliedDeviceConfigurationsResponse, error) {
+	owner, err := s.checkOwner(ctx, "")
+	if err != nil {
+		return nil, s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotDeleteAppliedConfigurations(err)))
+	}
+	count, err := s.store.DeleteAppliedConfigurations(ctx, owner, req)
+	if err != nil {
+		return nil, s.logger.LogAndReturnError(status.Errorf(codes.Internal, "%v", errCannotDeleteAppliedConfigurations(err)))
+	}
+	return &pb.DeleteAppliedDeviceConfigurationsResponse{
+		Count: count,
+	}, nil
+}
+
 func (s *SnippetServiceServer) Close(ctx context.Context) error {
 	return s.store.Close(ctx)
 }

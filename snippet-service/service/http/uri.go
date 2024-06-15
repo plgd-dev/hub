@@ -26,4 +26,8 @@ const (
 	// GET /snippet-service/api/v1/configuration/{id}?version=all -> rpc GetConfigurations + IDFilter{IDFilter_All}
 	// GET /snippet-service/api/v1/configuration/{id}?version={version} -> rpc GetConfigurations + IDFilter{IDFilter_Version{version}}
 	AliasConfigurations = Configurations + "/{" + IDKey + "}"
+
+	// GET /snippet-service/api/v1/configurations/applied -> rpc GetAppliedConfigurations
+	// DELETE /snippet-service/api/v1/configurations/applied -> rpc DeleteAppliedConfigurations
+	AppliedConfigurations = Configurations + "/applied"
 )

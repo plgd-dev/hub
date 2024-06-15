@@ -204,7 +204,7 @@ func (h *resourceChangedHandler) applyConfigurationToResources(ctx context.Conte
 	}
 
 	/// TODO: ak force tak upsert
-	appliedConf, errC := h.storage.CreateAppliedDeviceConfiguration(ctx, &pb.AppliedDeviceConfiguration{
+	appliedConf, errC := h.storage.CreateAppliedConfiguration(ctx, &pb.AppliedDeviceConfiguration{
 		Owner:    owner,
 		DeviceId: deviceID,
 		ConfigurationId: &pb.AppliedDeviceConfiguration_RelationTo{
@@ -274,7 +274,7 @@ func (h *resourceChangedHandler) applyConfigurationToResources(ctx context.Conte
 	}
 
 	appliedConf.Resources = maps.Values(resources)
-	_, errU := h.storage.UpdateAppliedDeviceConfiguration(ctx, appliedConf)
+	_, errU := h.storage.UpdateAppliedConfiguration(ctx, appliedConf)
 	return errU
 }
 

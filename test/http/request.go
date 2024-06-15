@@ -137,6 +137,14 @@ func (c *RequestBuilder) Version(version string) *RequestBuilder {
 	return c
 }
 
+func (c *RequestBuilder) IDFilter(idFilter []string) *RequestBuilder {
+	if len(idFilter) == 0 {
+		return c
+	}
+	c.AddQuery(IDFilterKey, idFilter...)
+	return c
+}
+
 func (c *RequestBuilder) SetQuery(value string) *RequestBuilder {
 	c.query = value
 	return c

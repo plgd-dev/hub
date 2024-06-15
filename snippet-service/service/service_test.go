@@ -203,14 +203,11 @@ func TestService(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	logCfg := log.MakeDefaultConfig()
-	logCfg.Level = log.DebugLevel
-	log.Setup(logCfg)
 	tearDown := hubTestService.SetUp(ctx, t)
 	defer tearDown()
 
 	snippetCfg := test.MakeConfig(t)
-	shutdownSnippetService := test.New(t, snippetCfg)
+	_, shutdownSnippetService := test.New(t, snippetCfg)
 	defer shutdownSnippetService()
 
 	snippetClientConn, err := grpc.NewClient(config.SNIPPET_SERVICE_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{

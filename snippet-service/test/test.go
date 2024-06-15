@@ -11,6 +11,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/stretchr/testify/require"
 )
@@ -258,5 +259,25 @@ func CmpAppliedDeviceConfiguration(t *testing.T, want, got *pb.AppliedDeviceConf
 	if ignoreTimestamp {
 		want.Timestamp = got.GetTimestamp()
 	}
+	require.Len(t, got.GetResources(), len(want.GetResources()))
+	for i := range want.GetResources() {
+		wantResource := want.GetResources()[i]
+		gotResource := got.GetResources()[i]
+		if wantResource.GetResourceUpdated() != nil && gotResource.GetResourceUpdated() != nil {
+			pbTest.CmpResourceUpdated(t, wantResource.GetResourceUpdated(), gotResource.GetResourceUpdated())
+			wantResource.ResourceUpdated = nil
+			gotResource.ResourceUpdated = nil
+		}
+	}
+
 	CmpJSON(t, want, got)
+}
+
+func CmpAppliedDeviceConfigurationsMaps(t *testing.T, want, got map[string]*pb.AppliedDeviceConfiguration, ignoreTimestamp bool) {
+	require.Len(t, got, len(want))
+	for _, v := range want {
+		gotV, ok := got[v.GetId()]
+		require.True(t, ok)
+		CmpAppliedDeviceConfiguration(t, v, gotV, ignoreTimestamp)
+	}
 }

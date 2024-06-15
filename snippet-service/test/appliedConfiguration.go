@@ -7,7 +7,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
+	"github.com/plgd-dev/hub/v2/snippet-service/service"
 	"github.com/plgd-dev/hub/v2/snippet-service/store"
 	hubTest "github.com/plgd-dev/hub/v2/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
@@ -60,7 +62,7 @@ func AppliedConfigurationResource(t *testing.T, deviceID string, start, n int) [
 	return resources
 }
 
-func getAppliedConditions(t *testing.T) map[string]*store.AppliedDeviceConfiguration {
+func getAppliedConfigurations(t *testing.T) map[string]*store.AppliedDeviceConfiguration {
 	owners := make(map[int]string, RuntimeConfig.NumConfigurations)
 	acs := make(map[string]*store.AppliedDeviceConfiguration)
 	i := 0
@@ -92,7 +94,7 @@ func getAppliedConditions(t *testing.T) map[string]*store.AppliedDeviceConfigura
 }
 
 func AddAppliedConfigurationsToStore(ctx context.Context, t *testing.T, s store.Store) map[string]*store.AppliedDeviceConfiguration {
-	acs := getAppliedConditions(t)
+	acs := getAppliedConfigurations(t)
 	acsToInsert := make([]*store.AppliedDeviceConfiguration, 0, len(acs))
 	for _, c := range acs {
 		acsToInsert = append(acsToInsert, c)
@@ -100,4 +102,15 @@ func AddAppliedConfigurationsToStore(ctx context.Context, t *testing.T, s store.
 	err := s.InsertAppliedConfigurations(ctx, acsToInsert...)
 	require.NoError(t, err)
 	return acs
+}
+
+func AddAppliedConfigurations(ctx context.Context, t *testing.T, ownerClaim string, ss *service.Service) map[string]*store.AppliedDeviceConfiguration {
+	configurations := getAppliedConfigurations(t)
+	for _, c := range configurations {
+		ctxWithToken := pkgGrpc.CtxWithIncomingToken(ctx, GetTokenWithOwnerClaim(t, c.GetOwner(), ownerClaim))
+		newConf, err := ss.SnippetServiceServer().CreateAppliedConfiguration(ctxWithToken, c)
+		require.NoError(t, err)
+		configurations[newConf.GetId()] = newConf
+	}
+	return configurations
 }

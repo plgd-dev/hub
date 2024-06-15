@@ -105,14 +105,16 @@ type Store interface {
 	// InsertConditions inserts conditions into the database.
 	InsertConfigurations(ctx context.Context, configurations ...*Configuration) error
 
-	// CreateAppliedDeviceConfiguration creates a new applied device configuration in the database.
-	CreateAppliedDeviceConfiguration(ctx context.Context, conf *pb.AppliedDeviceConfiguration) (*pb.AppliedDeviceConfiguration, error)
-	// GetAppliedDeviceConfigurations loads applied device configurations from the database.
-	GetAppliedDeviceConfigurations(ctx context.Context, owner string, query *pb.GetAppliedDeviceConfigurationsRequest, p ProccessAppliedDeviceConfigurations) error
+	// GetAppliedConfigurations loads applied device configurations from the database.
+	GetAppliedConfigurations(ctx context.Context, owner string, query *pb.GetAppliedDeviceConfigurationsRequest, p ProccessAppliedDeviceConfigurations) error
+	// DeleteAppliedConfigurations deletes applied device configurations from the database.
+	DeleteAppliedConfigurations(ctx context.Context, owner string, query *pb.DeleteAppliedDeviceConfigurationsRequest) (int64, error)
+	// CreateAppliedConfiguration creates a new applied device configuration in the database.
+	CreateAppliedConfiguration(ctx context.Context, conf *pb.AppliedDeviceConfiguration) (*pb.AppliedDeviceConfiguration, error)
 	// InsertAppliedConditions inserts applied configurations into the database.
 	InsertAppliedConfigurations(ctx context.Context, configurations ...*AppliedDeviceConfiguration) error
 	// UpdateDeviceConfiguration updates an existing applied device configuration in the database.
-	UpdateAppliedDeviceConfiguration(ctx context.Context, conf *pb.AppliedDeviceConfiguration) (*pb.AppliedDeviceConfiguration, error)
+	UpdateAppliedConfiguration(ctx context.Context, conf *pb.AppliedDeviceConfiguration) (*pb.AppliedDeviceConfiguration, error)
 
 	Close(ctx context.Context) error
 }
