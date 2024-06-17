@@ -112,22 +112,18 @@ const DetailPage: FC<any> = () => {
 
         try {
             // DATA FOR SAVE
-
             const dataForSave = cloneDeep(formData)
             delete dataForSave.id
 
-            console.log('!!')
-            console.log(dataForSave)
-
-            // await updateConditionApi(formData.id || '', dataForSave)
+            await updateConditionApi(formData.id || '', dataForSave)
 
             Notification.success(
                 { title: _(confT.conditionUpdated), message: _(confT.conditionUpdatedMessage) },
                 { notificationId: notificationId.HUB_SNIPPET_SERVICE_CONDITIONS_DETAIL_PAGE_UPDATE_SUCCESS }
             )
 
-            // handleReset()
-            // refresh()
+            handleReset()
+            refresh()
 
             setPageLoading(false)
         } catch (error: any) {

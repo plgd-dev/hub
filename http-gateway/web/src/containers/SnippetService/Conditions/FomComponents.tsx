@@ -131,13 +131,13 @@ export const Step2FormComponent: FC<Props> = (props) => {
                     listName={_(confT.listOfSelectedResourceType)}
                     listOfItems={resourceTypeFilter}
                     onItemDelete={(key) => {
-                        const newVal = resourceTypeFilter.filter((_, i) => i !== key)
+                        const newVal = resourceTypeFilter?.filter((_, i) => i !== key)
                         setValue('resourceTypeFilter', newVal)
                         updateField('resourceTypeFilter', newVal)
                     }}
                     status={
-                        <StatusTag lowercase={false} variant={resourceTypeFilter.length > 0 ? 'success' : 'normal'}>
-                            {resourceTypeFilter.length > 0 ? _(g.setUp) : _(g.notSet)}
+                        <StatusTag lowercase={false} variant={resourceTypeFilter?.length > 0 ? 'success' : 'normal'}>
+                            {resourceTypeFilter?.length > 0 ? _(g.setUp) : _(g.notSet)}
                         </StatusTag>
                     }
                     title={_(confT.resourceTypeFilter)}
@@ -166,13 +166,13 @@ export const Step2FormComponent: FC<Props> = (props) => {
                     listName={_(confT.listOfSelectedHrefFilter)}
                     listOfItems={resourceHrefFilter}
                     onItemDelete={(key) => {
-                        const newVal = resourceHrefFilter.filter((_, i) => i !== key)
+                        const newVal = resourceHrefFilter?.filter((_, i) => i !== key)
                         setValue('resourceHrefFilter', newVal)
                         updateField('resourceHrefFilter', newVal)
                     }}
                     status={
-                        <StatusTag lowercase={false} variant={resourceHrefFilter.length > 0 ? 'success' : 'normal'}>
-                            {resourceHrefFilter.length > 0 ? _(g.setUp) : _(g.notSet)}
+                        <StatusTag lowercase={false} variant={resourceHrefFilter?.length > 0 ? 'success' : 'normal'}>
+                            {resourceHrefFilter?.length > 0 ? _(g.setUp) : _(g.notSet)}
                         </StatusTag>
                     }
                     title={_(confT.resourceHrefFilter)}
