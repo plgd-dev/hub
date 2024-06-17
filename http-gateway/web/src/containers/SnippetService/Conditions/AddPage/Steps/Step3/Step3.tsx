@@ -10,6 +10,7 @@ import FormLabel from '@shared-ui/components/Atomic/FormLabel'
 import StepButtons from '@shared-ui/components/Templates/FullPageWizard/StepButtons'
 import { FormContext } from '@shared-ui/common/context/FormContext'
 import FullPageWizard from '@shared-ui/components/Templates/FullPageWizard'
+import FormTextarea from '@shared-ui/components/Atomic/FormTextarea'
 
 import { messages as confT } from '@/containers/SnippetService/SnippetService.i18n'
 import { Props, Inputs } from './Step3.types'
@@ -21,13 +22,13 @@ const Step3: FC<Props> = (props) => {
 
     const { formatMessage: _ } = useIntl()
     const { setStep } = useContext(FormContext)
-    const { data, loading, error, refresh } = useResourcesConfigList()
+    const { data, loading } = useResourcesConfigList()
 
     const {
         formState: { errors },
         updateField,
+        register,
         control,
-        setValue,
         watch,
     } = useForm<Inputs>({
         defaultFormData,
@@ -66,7 +67,6 @@ const Step3: FC<Props> = (props) => {
                                 isClearable
                                 error={!!errors.configurationId}
                                 onChange={(option: OptionType) => {
-                                    // const v = options.map((option) => option.value)
                                     onChange(option)
                                     updateField('configurationId', option)
                                 }}
@@ -76,6 +76,15 @@ const Step3: FC<Props> = (props) => {
                         )}
                     />
                 </div>
+            </FormGroup>
+
+            <FormGroup error={errors.apiAccessToken ? _(g.requiredField, { field: _(g.name) }) : undefined} id='apiAccessToken'>
+                <FormLabel text={_(confT.APIAccessToken)} />
+                <FormTextarea
+                    {...register('apiAccessToken', { required: true, validate: (val) => val !== '' })}
+                    onBlur={(e) => updateField('apiAccessToken', e.target.value)}
+                    style={{ height: 450 }}
+                />
             </FormGroup>
 
             <StepButtons

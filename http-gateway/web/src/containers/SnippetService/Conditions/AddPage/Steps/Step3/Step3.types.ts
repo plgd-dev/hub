@@ -7,5 +7,6 @@ export type Props = {
 }
 
 export type Inputs = {
+    apiAccessToken: string
     configurationId: OptionType
 }

@@ -1,7 +1,8 @@
 import React, { FC, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { generatePath, useParams } from 'react-router-dom'
+import { generatePath, useNavigate, useParams } from 'react-router-dom'
 import ReactDOM from 'react-dom'
+import cloneDeep from 'lodash/cloneDeep'
 
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
@@ -27,7 +28,6 @@ import DetailHeader from './DetailHeader'
 import { messages as g } from '@/containers/Global.i18n'
 import DetailForm from './DetailForm'
 import { updateConditionApi } from '@/containers/SnippetService/rest'
-import cloneDeep from 'lodash/cloneDeep'
 
 const DetailPage: FC<any> = () => {
     const { conditionId } = useParams()
@@ -40,6 +40,8 @@ const DetailPage: FC<any> = () => {
     const { refsByKey, setRef } = useRefs()
     const { collapsed } = useContext(AppContext)
     const isMounted = useIsMounted()
+
+    const navigate = useNavigate()
 
     const breadcrumbs = useMemo(
         () => [
@@ -126,6 +128,9 @@ const DetailPage: FC<any> = () => {
             refresh()
 
             setPageLoading(false)
+
+            // temp
+            navigate(generatePath(pages.CONDITIONS.CONDITIONS.LINK))
         } catch (error: any) {
             let e = error
             if (!(error instanceof Error)) {

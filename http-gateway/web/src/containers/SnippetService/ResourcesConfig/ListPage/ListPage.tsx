@@ -16,6 +16,7 @@ import { pages } from '@/routes'
 import PageListTemplate from '@/containers/Common/PageListTemplate/PageListTemplate'
 import { deleteResourcesConfigApi } from '@/containers/SnippetService/rest'
 import { getConfigResourcesPageListI18n } from '@/containers/SnippetService/utils'
+import DateFormat from '@/containers/PendingCommands/DateFormat'
 
 const ListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
@@ -55,8 +56,18 @@ const ListPage: FC<any> = () => {
                 ),
             },
             {
-                Header: _(confT.timeLastModification),
+                Header: _(g.id),
                 accessor: 'id',
+                Cell: ({ value }: { value: string | number }) => <span className='no-wrap-text'>{value}</span>,
+            },
+            {
+                Header: _(confT.timeLastModification),
+                accessor: 'timestamp',
+                Cell: ({ value }: { value: string | number }) => <DateFormat value={value} />,
+            },
+            {
+                Header: _(g.version),
+                accessor: 'version',
                 Cell: ({ value }: { value: string | number }) => <span className='no-wrap-text'>{value}</span>,
             },
         ],

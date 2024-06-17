@@ -72,6 +72,11 @@ const ListPage: FC<any> = () => {
                 Cell: ({ value }: { value: string }) => <DateFormat value={value} />,
             },
             {
+                Header: _(g.version),
+                accessor: 'version',
+                Cell: ({ value }: { value: string | number }) => <span className='no-wrap-text'>{value}</span>,
+            },
+            {
                 Header: _(g.link),
                 accessor: 'configurationId',
                 Cell: ({ value, row }: { value: string; row: any }) => (

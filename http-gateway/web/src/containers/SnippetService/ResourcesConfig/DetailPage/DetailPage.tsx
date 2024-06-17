@@ -15,6 +15,8 @@ import AppContext from '@shared-ui/app/share/AppContext'
 import { useFormData, useIsMounted } from '@shared-ui/common/hooks'
 import FormSelect from '@shared-ui/components/Atomic/FormSelect'
 import { OptionType } from '@shared-ui/components/Atomic/FormSelect/FormSelect.types'
+import FormGroup from '@shared-ui/components/Atomic/FormGroup'
+import FormLabel from '@shared-ui/components/Atomic/FormLabel'
 
 import PageLayout from '@/containers/Common/PageLayout'
 import { pages } from '@/routes'
@@ -25,8 +27,6 @@ import DetailHeader from './DetailHeader'
 import testId from '@/testId'
 import { messages as g } from '@/containers/Global.i18n'
 import { updateResourceConfigApi } from '@/containers/SnippetService/rest'
-import FormGroup from '@shared-ui/components/Atomic/FormGroup'
-import FormLabel from '@shared-ui/components/Atomic/FormLabel'
 
 const Tab1 = lazy(() => import('./Tabs/Tab1'))
 const Tab2 = lazy(() => import('./Tabs/Tab2'))
@@ -119,6 +119,8 @@ const DetailPage: FC<any> = () => {
 
             handleReset()
             refresh()
+
+            navigate(generatePath(pages.CONDITIONS.RESOURCES_CONFIG.LINK))
 
             setPageLoading(false)
         } catch (error: any) {

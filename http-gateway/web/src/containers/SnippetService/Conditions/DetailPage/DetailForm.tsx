@@ -10,13 +10,9 @@ import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
 import FormGroup from '@shared-ui/components/Atomic/FormGroup'
 import FormInput from '@shared-ui/components/Atomic/FormInput'
 import { useForm } from '@shared-ui/common/hooks'
-import FormSelect from '@shared-ui/components/Atomic/FormSelect'
 import Tag from '@shared-ui/components/Atomic/Tag'
 import IconLink from '@shared-ui/components/Atomic/Icon/components/IconLink'
 import { tagVariants } from '@shared-ui/components/Atomic/Tag/constants'
-import ConditionFilter from '@shared-ui/components/Organisms/ConditionFilter/ConditionFilter'
-import FormLabel from '@shared-ui/components/Atomic/FormLabel'
-import StatusTag from '@shared-ui/components/Atomic/StatusTag'
 import FormTextarea from '@shared-ui/components/Atomic/FormTextarea'
 import Switch from '@shared-ui/components/Atomic/Switch'
 
@@ -48,13 +44,7 @@ const DetailForm: FC<Props> = (props) => {
         schema,
     })
 
-    console.log(formData)
-
     const navigate = useNavigate()
-
-    const resourceHrefFilter = watch('resourceHrefFilter')
-    const resourceTypeFilter = watch('resourceTypeFilter')
-    const jqExpressionFilter = watch('jqExpressionFilter')
 
     useEffect(() => {
         if (resetIndex) {

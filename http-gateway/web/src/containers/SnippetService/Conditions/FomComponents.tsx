@@ -42,12 +42,13 @@ export const Step2FormComponent: FC<Props> = (props) => {
     const deviceIdFilterVal: string[] = watch('deviceIdFilter')
     const resourceHrefFilter: string[] = watch('resourceHrefFilter')
     const resourceTypeFilter: string[] = watch('resourceTypeFilter')
-    const jqExpressionFilter: string = watch('jqExpressionFilter')
+    const jqExpressionFilterVal: string = watch('jqExpressionFilter')
 
     const [resourceTypeValue, setResourceTypeValue] = useState<string>('')
     const [resourceHrefValue, setResourceHrefValue] = useState<string>('')
 
     const deviceIdFilter: string[] = useMemo(() => deviceIdFilterVal || [], [deviceIdFilterVal])
+    const jqExpressionFilter = useMemo(() => jqExpressionFilterVal || '', [jqExpressionFilterVal])
 
     const { data: devicesData, loading } = useDevicesList(isActivePage)
 
