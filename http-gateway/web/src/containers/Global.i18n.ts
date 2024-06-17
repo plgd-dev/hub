@@ -426,4 +426,36 @@ export const messages = defineMessages({
         id: 'global.deviceName',
         defaultMessage: 'Device name',
     },
+    keepAlive: {
+        id: 'global.keepAlive',
+        defaultMessage: 'Keep alive',
+    },
+    content: {
+        id: 'global.content',
+        defaultMessage: 'Content',
+    },
+    duration: {
+        id: 'global.duration',
+        defaultMessage: 'Duration',
+    },
+    add: {
+        id: 'global.add',
+        defaultMessage: 'Add',
+    },
+    setDevices: {
+        id: 'global.setDevices',
+        defaultMessage: 'Set Devices',
+    },
+    createAndSave: {
+        id: 'global.createAndSave',
+        defaultMessage: 'Create and Save',
+    },
+    deviceSelected: {
+        id: 'global.deviceSelected',
+        defaultMessage: 'device selected',
+    },
+    devicesSelected: {
+        id: 'global.devicesSelected',
+        defaultMessage: 'devices selected',
+    },
 })

@@ -68,7 +68,7 @@ const ListPage: FC<any> = () => {
         <PageLayout
             breadcrumbs={breadcrumbs}
             header={
-                <Button icon={<IconPlus />} onClick={() => console.log('todo')} variant='primary'>
+                <Button icon={<IconPlus />} onClick={() => navigate(generatePath(pages.CONDITIONS.RESOURCES_CONFIG.ADD.LINK, { tab: '' }))} variant='primary'>
                     {_(confT.configuration)}
                 </Button>
             }

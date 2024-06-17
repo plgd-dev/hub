@@ -53,10 +53,11 @@ const LinkNewHubPage = lazy(() => import('./containers/DeviceProvisioning/Linked
 // Snippet service
 const ResourcesConfigListPage = lazy(() => import('./containers/SnippetService/ResourcesConfig/ListPage'))
 const ResourcesConfigDetailPage = lazy(() => import('./containers/SnippetService/ResourcesConfig/DetailPage'))
+const ResourcesConfigAddPage = lazy(() => import('./containers/SnippetService/ResourcesConfig/AddPage'))
 const ConditionsListPage = lazy(() => import('./containers/SnippetService/Conditions/ListPage'))
 const ConditionsDetailPage = lazy(() => import('./containers/SnippetService/Conditions/DetailPage'))
+const ConditionsAddPage = lazy(() => import('./containers/SnippetService/Conditions/AddPage'))
 const AppliedDeviceConfigListPage = lazy(() => import('./containers/SnippetService/AppliedDeviceConfig/ListPage'))
-const AppliedDeviceConfigAddPage = lazy(() => import('./containers/SnippetService/AppliedDeviceConfig/AddPage'))
 
 // Certificates
 const CertificatesListPage = lazy(() => import('./containers/Certificates'))
@@ -137,11 +138,19 @@ export const pages = {
                 LINK_NO_TABS: '/conditions/resources-config/:resourcesConfigId',
                 TABS: ['', 'conditions', 'certificate-authority', 'device-applied-conditions'],
             },
+            ADD: {
+                LINK: '/conditions/resources-config/add/:tab',
+                STEPS: ['', 'apply-to-devices'],
+            },
         },
         CONDITIONS: {
             LINK: '/conditions/conditions',
             DETAIL: {
                 LINK: '/conditions/conditions/:conditionId',
+            },
+            ADD: {
+                LINK: '/conditions/conditions/add/:tab',
+                STEPS: ['', 'apply-filters', 'select-configuration'],
             },
         },
         APPLIED_DEVICE_CONFIG: {
@@ -296,6 +305,7 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                             pages.CONDITIONS.RESOURCES_CONFIG.LINK,
                             pages.CONDITIONS.RESOURCES_CONFIG.DETAIL.LINK_NO_TABS,
                             pages.CONDITIONS.RESOURCES_CONFIG.DETAIL.LINK,
+                            pages.CONDITIONS.RESOURCES_CONFIG.ADD.LINK,
                         ],
                     },
                     {
@@ -396,8 +406,10 @@ export const noLayoutPages = [
     '/device-provisioning/linked-hubs/link-new-hub/:step',
     '/device-provisioning/enrollment-groups/new-enrollment-group',
     '/device-provisioning/enrollment-groups/new-enrollment-group/:step',
-    '/conditions/applied-device-config/add/:step',
-    '/conditions/applied-device-config/add',
+    '/conditions/resources-config/add/:tab',
+    '/conditions/resources-config/add',
+    '/conditions/conditions/add/:tab',
+    '/conditions/conditions/add',
 ]
 
 export const mather = (pathname: string, pattern: string) => matchPath(pattern, pathname)
@@ -413,8 +425,11 @@ export const NoLayoutRoutes = () => (
         <Route element={withSuspense(<LinkNewHubPage />)} path='/device-provisioning/linked-hubs/link-new-hub' />
         <Route element={withSuspense(<LinkNewHubPage />)} path='/device-provisioning/linked-hubs/link-new-hub/:step' />
         <Route element={withSuspense(<NewEnrollmentGroupsPage />)} path='/device-provisioning/enrollment-groups/new-enrollment-group' />
-        <Route element={withSuspense(<AppliedDeviceConfigAddPage />)} path='/conditions/applied-device-config/add/:step' />
-        <Route element={withSuspense(<AppliedDeviceConfigAddPage />)} path='/conditions/applied-device-config/add' />
+        <Route element={withSuspense(<NewEnrollmentGroupsPage />)} path='/device-provisioning/enrollment-groups/new-enrollment-group/:step' />
+        <Route element={withSuspense(<ResourcesConfigAddPage />)} path='/conditions/resources-config/add/:step' />
+        <Route element={withSuspense(<ResourcesConfigAddPage />)} path='/conditions/resources-config/add' />
+        <Route element={withSuspense(<ConditionsAddPage />)} path='/conditions/conditions/add/:step' />
+        <Route element={withSuspense(<ConditionsAddPage />)} path='/conditions/conditions/add' />
     </RoutesGroup>
 )
 

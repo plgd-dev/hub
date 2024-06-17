@@ -92,7 +92,7 @@ const Tab2: FC<Props> = (props) => {
                     height={height}
                     i18n={{
                         search: '',
-                        placeholder: _(confT.noResourcesConfiguration),
+                        placeholder: _(confT.noConditions),
                     }}
                     loading={loading}
                     paginationPortalTargetId={isActiveTab ? 'paginationPortalTarget' : undefined}

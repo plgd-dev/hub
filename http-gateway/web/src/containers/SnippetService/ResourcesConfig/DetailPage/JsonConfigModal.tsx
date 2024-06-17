@@ -37,7 +37,7 @@ const JsonConfigModal: FC<Props> = (props) => {
         isFunction(onClose) && onClose()
     }
 
-    const wellKnownConfig = security.getWellKnowConfig() as WellKnownConfigType & {
+    const wellKnownConfig = security.getWellKnownConfig() as WellKnownConfigType & {
         defaultCommandTimeToLive: number
     }
 
@@ -61,13 +61,13 @@ const JsonConfigModal: FC<Props> = (props) => {
     const handleOnEditorError = useCallback((error: any) => setInterfaceJsonError(error.length > 0), [])
 
     useEffect(() => {
-        if (resource?.content) {
-            if (typeof resource.content === 'object') {
-                setJsonData(resource.content)
+        if (resource?.content.data) {
+            if (typeof resource.content.data === 'object') {
+                setJsonData(resource.content.data)
                 // @ts-ignore
-                editor?.current?.current?.set(resource.content)
+                editor?.current?.current?.set(resource.content.data)
             } else {
-                const dataString = typeof resource.content === 'string' ? `"${resource.content.toString()}"` : resource.content.toString()
+                const dataString = resource.content.data.toString()
                 // @ts-ignore
                 editor?.current?.current?.setText(dataString)
                 setJsonData(dataString)
@@ -75,14 +75,13 @@ const JsonConfigModal: FC<Props> = (props) => {
         } else {
             setJsonData('')
         }
-    }, [resource?.content])
+    }, [resource?.content.data])
 
     useEffect(() => {
         setHref(resource?.href || '')
     }, [resource?.href])
 
     useEffect(() => {
-        // setTtl(resource?.timeToLive !== undefined ? parseInt(resource?.timeToLive, 10) : wellKnownConfig?.defaultCommandTimeToLive)
         setTtl(parseInt(resource?.timeToLive || '0'))
     }, [resource?.timeToLive, wellKnownConfig?.defaultCommandTimeToLive])
 

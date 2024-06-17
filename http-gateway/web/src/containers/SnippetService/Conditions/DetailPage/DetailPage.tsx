@@ -26,6 +26,8 @@ import notificationId from '@/notificationId'
 import DetailHeader from './DetailHeader'
 import { messages as g } from '@/containers/Global.i18n'
 import DetailForm from './DetailForm'
+import { updateConditionApi } from '@/containers/SnippetService/rest'
+import cloneDeep from 'lodash/cloneDeep'
 
 const DetailPage: FC<any> = () => {
     const { conditionId } = useParams()
@@ -34,6 +36,7 @@ const DetailPage: FC<any> = () => {
 
     const [pageLoading, setPageLoading] = useState(false)
     const [activeItem, setActiveItem] = useState('0')
+
     const { refsByKey, setRef } = useRefs()
     const { collapsed } = useContext(AppContext)
     const isMounted = useIsMounted()
@@ -45,7 +48,7 @@ const DetailPage: FC<any> = () => {
             { label: data?.name || '' },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        []
+        [data]
     )
 
     useEffect(() => {
@@ -110,13 +113,21 @@ const DetailPage: FC<any> = () => {
         try {
             // DATA FOR SAVE
 
+            const dataForSave = cloneDeep(formData)
+            delete dataForSave.id
+
+            console.log('!!')
+            console.log(dataForSave)
+
+            // await updateConditionApi(formData.id || '', dataForSave)
+
             Notification.success(
                 { title: _(confT.conditionUpdated), message: _(confT.conditionUpdatedMessage) },
                 { notificationId: notificationId.HUB_SNIPPET_SERVICE_CONDITIONS_DETAIL_PAGE_UPDATE_SUCCESS }
             )
 
-            handleReset()
-            refresh()
+            // handleReset()
+            // refresh()
 
             setPageLoading(false)
         } catch (error: any) {
@@ -152,11 +163,11 @@ const DetailPage: FC<any> = () => {
                             />
                         </Spacer>
                     </Column>
-                    <Column style={{ height: '100%' }} xl={1}></Column>
+                    <Column xl={1}></Column>
                     <Column style={{ height: '100%' }} xl={8}>
                         <Spacer style={{ height: '100%', overflow: 'auto' }} type='pr-10'>
                             <FormContext.Provider value={context}>
-                                <Loadable condition={!!formData}>
+                                <Loadable condition={!!formData && !loading && !!data}>
                                     <DetailForm
                                         formData={formData}
                                         refs={{

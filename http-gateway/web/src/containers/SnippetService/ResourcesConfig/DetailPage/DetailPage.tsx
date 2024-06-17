@@ -2,6 +2,7 @@ import React, { FC, lazy, useCallback, useContext, useEffect, useMemo, useState 
 import { useIntl } from 'react-intl'
 import { generatePath, useNavigate, useParams } from 'react-router-dom'
 import ReactDOM from 'react-dom'
+import cloneDeep from 'lodash/cloneDeep'
 
 import { getApiErrorMessage } from '@shared-ui/common/utils'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
@@ -12,6 +13,8 @@ import BottomPanel from '@shared-ui/components/Layout/BottomPanel/BottomPanel'
 import Button from '@shared-ui/components/Atomic/Button'
 import AppContext from '@shared-ui/app/share/AppContext'
 import { useFormData, useIsMounted } from '@shared-ui/common/hooks'
+import FormSelect from '@shared-ui/components/Atomic/FormSelect'
+import { OptionType } from '@shared-ui/components/Atomic/FormSelect/FormSelect.types'
 
 import PageLayout from '@/containers/Common/PageLayout'
 import { pages } from '@/routes'
@@ -21,6 +24,9 @@ import notificationId from '@/notificationId'
 import DetailHeader from './DetailHeader'
 import testId from '@/testId'
 import { messages as g } from '@/containers/Global.i18n'
+import { updateResourceConfigApi } from '@/containers/SnippetService/rest'
+import FormGroup from '@shared-ui/components/Atomic/FormGroup'
+import FormLabel from '@shared-ui/components/Atomic/FormLabel'
 
 const Tab1 = lazy(() => import('./Tabs/Tab1'))
 const Tab2 = lazy(() => import('./Tabs/Tab2'))
@@ -29,7 +35,7 @@ const Tab3 = lazy(() => import('./Tabs/Tab3'))
 const DetailPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
     const { resourcesConfigId, tab: tabRoute } = useParams()
-    const { data, loading, error, refresh } = useResourcesConfigDetail(resourcesConfigId || '', !!resourcesConfigId)
+    const { data: configurationData, loading, error, refresh } = useResourcesConfigDetail(resourcesConfigId || '', !!resourcesConfigId)
     const { data: conditionsData, loading: conditionsLoading } = useResourcesConfigConditions(resourcesConfigId || '', !!resourcesConfigId)
     const { data: appliedConfigurationData, loading: appliedConfigurationLoading } = useResourcesConfigApplied(resourcesConfigId || '', !!resourcesConfigId)
     const { collapsed } = useContext(AppContext)
@@ -44,10 +50,13 @@ const DetailPage: FC<any> = () => {
         []
     )
 
-    console.log({ conditionsData })
-    console.log({ appliedConfigurationData })
+    const data = useMemo(() => (configurationData && configurationData?.length > 0 ? configurationData[0] : []), [configurationData])
+    const versions = useMemo(
+        () => configurationData?.map((version: { version: string }) => ({ value: version.version, label: `v${version.version}` })),
+        [configurationData]
+    )
 
-    const { handleReset, context, resetIndex, dirty, formData, hasError } = useFormData({
+    const { handleReset, context, resetIndex, dirty, formData, hasError, formError } = useFormData({
         defaultFormState,
         data,
         i18n: { promptDefaultMessage: _(g.promptDefaultMessage), default: _(g.default) },
@@ -98,6 +107,10 @@ const DetailPage: FC<any> = () => {
 
         try {
             // DATA FOR SAVE
+            const dataForSave = cloneDeep(formData)
+            delete dataForSave.id
+
+            await updateResourceConfigApi(formData.id, dataForSave)
 
             Notification.success(
                 { title: _(confT.resourcesConfigurationUpdated), message: _(confT.resourcesConfigurationUpdatedMessage) },
@@ -126,17 +139,35 @@ const DetailPage: FC<any> = () => {
         [loading, conditionsLoading, appliedConfigurationLoading, pageLoading]
     )
 
+    console.log(data)
+
     return (
         <PageLayout
             breadcrumbs={breadcrumbs}
             header={<DetailHeader id={resourcesConfigId!} loading={loadingState} refresh={refresh} />}
+            headlineCustomContent={
+                <FormGroup inline id='version' marginBottom={false}>
+                    <FormLabel text={_(g.version)} />
+                    <FormSelect
+                        onChange={(options: OptionType) => {
+                            // const v = options.value
+                            // onChange(v)
+                            // updateField('attestationMechanism.x509.leadCertificateName', v)
+                        }}
+                        options={versions || []}
+                        placeholder={_(confT.selectVersion)}
+                        size='small'
+                        // value={value ? leadCertificates.filter((v: { value: string }) => value === v.value) : []}
+                    />
+                </FormGroup>
+            }
             loading={loadingState}
             notFound={notFound}
             title={data?.name}
             xPadding={false}
         >
             <FormContext.Provider value={context}>
-                <Loadable condition={!!formData}>
+                <Loadable condition={!!formData && !!data && Object.keys(data).length > 0}>
                     <Tabs
                         fullHeight
                         innerPadding
@@ -170,7 +201,7 @@ const DetailPage: FC<any> = () => {
                                 name: _(confT.appliedDeviceConfiguration),
                                 id: 2,
                                 dataTestId: testId.snippetService.resourcesConfig.detail.tabDeviceAppliedConfiguration,
-                                content: <Tab3 />,
+                                content: <Tab3 data={appliedConfigurationData} isActiveTab={activeTabItem === 1} loading={appliedConfigurationLoading} />,
                             },
                         ]}
                     />

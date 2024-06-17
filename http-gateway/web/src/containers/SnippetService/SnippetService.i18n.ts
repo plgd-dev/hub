@@ -29,6 +29,10 @@ export const messages = defineMessages({
         id: 'snippetService.resourcesConfigurationError',
         defaultMessage: 'Resources Configuration Error',
     },
+    addConfigurationError: {
+        id: 'snippetService.addConfigurationError',
+        defaultMessage: 'Resources Configuration Error',
+    },
     resourcesConfigurationUpdateError: {
         id: 'snippetService.resourcesConfigurationError',
         defaultMessage: 'Resources Configuration update Error',
@@ -93,6 +97,10 @@ export const messages = defineMessages({
         id: 'snippetService.appliedDeviceConfigurations',
         defaultMessage: 'Applied Device Configurations',
     },
+    addAppliedDeviceConfiguration: {
+        id: 'snippetService.appliedDeviceConfiguration',
+        defaultMessage: 'Add Applied Device Configuration',
+    },
     noAppliedDeviceConfiguration: {
         id: 'snippetService.noAppliedDeviceConfiguration',
         defaultMessage: 'No Applied Device Configuration',
@@ -144,6 +152,10 @@ export const messages = defineMessages({
     createResource: {
         id: 'snippetService.createResource',
         defaultMessage: 'Create Resource',
+    },
+    listOfSelectedDevices: {
+        id: 'snippetService.listOfSelectedDevices',
+        defaultMessage: 'List of selected Devices',
     },
     listOfConditions: {
         id: 'snippetService.listOfConditions',
@@ -260,5 +272,93 @@ export const messages = defineMessages({
     listOfResources: {
         id: 'snippetService.listOfResources',
         defaultMessage: 'List of Resources',
+    },
+    addResource: {
+        id: 'snippetService.addResource',
+        defaultMessage: 'Add resource',
+    },
+    addContent: {
+        id: 'snippetService.addContent',
+        defaultMessage: 'Add content',
+    },
+    applyToAllDevices: {
+        id: 'snippetService.applyToAllDevices',
+        defaultMessage: 'Apply to all devices',
+    },
+    applyToDevicesQuestion: {
+        id: 'snippetService.applyToDevicesQuestions',
+        defaultMessage: 'Do you want to apply to all devices?',
+    },
+    noDevices: {
+        id: 'snippetService.noDevices',
+        defaultMessage: 'No devices',
+    },
+    addConfiguration: {
+        id: 'snippetService.addConfiguration',
+        defaultMessage: 'Add the configuration',
+    },
+    addConfigurationSuccess: {
+        id: 'snippetService.appliedDeviceConfigurationAddSuccess',
+        defaultMessage: 'Device Configuration created',
+    },
+    addConfigurationSuccessMessage: {
+        id: 'snippetService.appliedDeviceConfigurationAddSuccessMessage',
+        defaultMessage: 'Device Configuration {name} was successfully created.',
+    },
+    addNewConfiguration: {
+        id: 'snippetService.addNewConfiguration',
+        defaultMessage: 'Add a new Configuration',
+    },
+    createConditions: {
+        id: 'snippetService.createConditions',
+        defaultMessage: 'Create Conditions',
+    },
+    createConditionsDescription: {
+        id: 'snippetService.createConditionsDescription',
+        defaultMessage: 'Short description ...',
+    },
+    applyFilters: {
+        id: 'snippetService.applyFilters',
+        defaultMessage: 'Apply filters',
+    },
+    applyFiltersDescription: {
+        id: 'snippetService.applyFiltersDescription',
+        defaultMessage: 'Short description ...',
+    },
+    selectConfiguration: {
+        id: 'snippetService.selectConfiguration',
+        defaultMessage: 'Select Configuration',
+    },
+    selectConfigurationDescription: {
+        id: 'snippetService.selectConfigurationDescription',
+        defaultMessage: 'Short description ...',
+    },
+    addConditionsSuccess: {
+        id: 'snippetService.addConditionsSuccess',
+        defaultMessage: 'Condition created',
+    },
+    addConditionsSuccessMessage: {
+        id: 'snippetService.addConditionsSuccessMessage',
+        defaultMessage: 'Condition {name} was successfully created.',
+    },
+    addConditionError: {
+        id: 'snippetService.addConditionError',
+        defaultMessage: 'Condition Error',
+    },
+    addCondition: {
+        id: 'snippetService.addCondition',
+        defaultMessage: 'Add Condition',
+    },
+    createCondition: {
+        id: 'snippetService.createCondition',
+        defaultMessage: 'Create condition',
+    },
+    createConditionDescription: {
+        id: 'snippetService.createConditionDescription',
+        defaultMessage: 'Short description ...',
+    },
+    selectVersion: {
+        id: 'snippetService.v',
+        defaultMessage: 'Select version',
     },
 })

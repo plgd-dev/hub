@@ -9,45 +9,44 @@ import { SnippetServiceApiEndpoints } from './constants'
 
 const getConfig = () => security.getGeneralConfig() as SecurityConfig
 
-export const useResourcesConfigList = (): StreamApiPropsType => {
+export const useResourcesConfigList = (requestActive = true): StreamApiPropsType => {
     const { telemetryWebTracer } = useContext(AppContext)
 
     return useStreamApi(`${getConfig().httpGatewayAddress}${SnippetServiceApiEndpoints.CONFIGURATIONS}`, {
         telemetryWebTracer,
         telemetrySpan: 'snippet-service-get-resources-configurations',
+        requestActive,
     })
 }
 
 export const useResourcesConfigDetail = (id: string, requestActive = false): StreamApiPropsType => {
     const { telemetryWebTracer } = useContext(AppContext)
-    const [data, setData] = useState(null)
+    // const [data, setData] = useState(null)
 
-    const { data: resData, ...rest }: StreamApiPropsType = useStreamApi(
-        `${getConfig().httpGatewayAddress}${SnippetServiceApiEndpoints.CONFIGURATIONS}?httpIdFilter=${id}/latest`,
-        {
-            telemetryWebTracer,
-            telemetrySpan: `snippet-service-get-resources-configuration-${id}`,
-            requestActive,
-        }
-    )
+    return useStreamApi(`${getConfig().httpGatewayAddress}${SnippetServiceApiEndpoints.CONFIGURATIONS}?httpIdFilter=${id}/latest`, {
+        telemetryWebTracer,
+        telemetrySpan: `snippet-service-get-resources-configuration-${id}`,
+        requestActive,
+    })
 
-    useEffect(() => {
-        if (resData && Array.isArray(resData)) {
-            setData({
-                ...resData[0],
-                // inject id
-                resources: resData[0].resources.map((r: any, i: number) => ({ ...r, id: i })),
-            })
-        }
-    }, [resData])
-
-    return { data, ...rest }
+    // useEffect(() => {
+    //     console.log(resData)
+    //     if (resData && Array.isArray(resData)) {
+    //         setData({
+    //             ...resData[0],
+    //             // inject id
+    //             resources: resData[0].resources.map((r: any, i: number) => ({ ...r, id: i })),
+    //         })
+    //     }
+    // }, [resData])
+    //
+    // return { data, ...rest }
 }
 
 export const useResourcesConfigConditions = (id: string, requestActive = false): StreamApiPropsType => {
     const { telemetryWebTracer } = useContext(AppContext)
 
-    return useStreamApi(`${getConfig().httpGatewayAddress}${SnippetServiceApiEndpoints.CONDITIONS}`, {
+    return useStreamApi(`${getConfig().httpGatewayAddress}${SnippetServiceApiEndpoints.CONDITIONS}?configurationIdFilter=${id}`, {
         telemetryWebTracer,
         telemetrySpan: `snippet-service-get-resources-configurations-conditions-${id}`,
         requestActive,
@@ -57,7 +56,7 @@ export const useResourcesConfigConditions = (id: string, requestActive = false):
 export const useResourcesConfigApplied = (id: string, requestActive = false): StreamApiPropsType => {
     const { telemetryWebTracer } = useContext(AppContext)
 
-    return useStreamApi(`${getConfig().httpGatewayAddress}${SnippetServiceApiEndpoints.CONFIGURATIONS_APPLIED}`, {
+    return useStreamApi(`${getConfig().httpGatewayAddress}${SnippetServiceApiEndpoints.CONFIGURATIONS_APPLIED}?configurationIdFilter=${id}`, {
         telemetryWebTracer,
         telemetrySpan: `snippet-service-get-resources-configurations-applied-${id}`,
         requestActive,

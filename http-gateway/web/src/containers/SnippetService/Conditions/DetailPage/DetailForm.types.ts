@@ -1,3 +1,5 @@
+import { OptionType } from '@shared-ui/components/Atomic/FormSelect/FormSelect.types'
+
 export type Props = {
     formData: any
     refs: {
@@ -14,8 +16,9 @@ export type Props = {
 export type Inputs = {
     name: string
     enabled: boolean
-    jqExpressionFilter: string[]
+    jqExpressionFilter: string
     resourceHrefFilter: string[]
     resourceTypeFilter: string[]
+    deviceIdFilter: string[]
     apiAccessToken: string
 }

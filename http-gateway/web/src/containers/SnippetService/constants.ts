@@ -7,3 +7,11 @@ export const SnippetServiceApiEndpoints = {
 // Maximum amount of snippet-service filled into one delete request.
 // (if there is more snippetServiceIds then the provided number, it creates more chunks of a maximum of this number)
 export const DELETE_CHUNK_SIZE = 50
+
+export const DEFAULT_RESOURCE_CONFIG_DATA = {
+    name: '',
+    resources: [],
+    timeToLive: '0',
+}
+
+export const DEFAULT_CONFIG_DATA = {}

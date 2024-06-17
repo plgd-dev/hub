@@ -1,5 +1,6 @@
 import React, { FC, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
+import { useResizeDetector } from 'react-resize-detector'
 
 import Headline from '@shared-ui/components/Atomic/Headline'
 import Button, { buttonSizes, buttonVariants } from '@shared-ui/components/Atomic/Button'
@@ -21,7 +22,7 @@ import { messages as confT } from '../../../../SnippetService.i18n'
 import { useValidationsSchema } from '../../validationSchema'
 import { Props, Inputs, ResourceTypeEnhanced } from './Tab1.types'
 import JsonConfigModal from '@/containers/SnippetService/ResourcesConfig/DetailPage/JsonConfigModal'
-import { useResizeDetector } from 'react-resize-detector'
+import isEqual from 'lodash/isEqual'
 
 const { NS } = commandTimeoutUnits
 
@@ -42,7 +43,9 @@ const Tab1: FC<Props> = (props) => {
         schema,
     })
 
-    const [resources, setResources] = useState<ResourceTypeEnhanced[]>(defaultFormData.resources)
+    console.log(defaultFormData)
+
+    const [resources, setResources] = useState<ResourceTypeEnhanced[]>(defaultFormData.resources || [])
     const [updateResource, setUpdateResource] = useState<number | undefined>(undefined)
     const [createResource, setCreateResource] = useState<boolean>(false)
     const [deleteResource, setDeleteResource] = useState<ResourceTypeEnhanced | undefined>(undefined)
@@ -52,7 +55,10 @@ const Tab1: FC<Props> = (props) => {
             reset()
             setResources(defaultFormData.resources)
         }
-    }, [defaultFormData.resources, reset, resetIndex])
+        if (defaultFormData.resources && !isEqual(defaultFormData.resources, resources)) {
+            setResources(defaultFormData.resources)
+        }
+    }, [defaultFormData.resources, reset, resetIndex, resources])
 
     const { ref, height } = useResizeDetector({
         refreshRate: 500,

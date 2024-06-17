@@ -6,6 +6,11 @@ import Button from '@shared-ui/components/Atomic/Button'
 import { IconPlus } from '@shared-ui/components/Atomic/Icon'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
+import IconLink from '@shared-ui/components/Atomic/Icon/components/IconLink'
+import Tag from '@shared-ui/components/Atomic/Tag'
+import { tagVariants } from '@shared-ui/components/Atomic/Tag/constants'
+import StatusPill from '@shared-ui/components/Atomic/StatusPill'
+import { states } from '@shared-ui/components/Atomic/StatusPill/constants'
 
 import PageLayout from '@/containers/Common/PageLayout'
 import { messages as confT } from '../../SnippetService.i18n'
@@ -15,12 +20,7 @@ import { messages as g } from '@/containers/Global.i18n'
 import { pages } from '@/routes'
 import PageListTemplate from '@/containers/Common/PageListTemplate/PageListTemplate'
 import { deleteConditionsApi } from '@/containers/SnippetService/rest'
-import StatusPill from '@shared-ui/components/Atomic/StatusPill'
-import { states } from '@shared-ui/components/Atomic/StatusPill/constants'
 import DateFormat from '@/containers/PendingCommands/DateFormat'
-import IconLink from '@shared-ui/components/Atomic/Icon/components/IconLink'
-import Tag from '@shared-ui/components/Atomic/Tag'
-import { tagVariants } from '@shared-ui/components/Atomic/Tag/constants'
 
 const ListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
@@ -94,7 +94,7 @@ const ListPage: FC<any> = () => {
         <PageLayout
             breadcrumbs={breadcrumbs}
             header={
-                <Button icon={<IconPlus />} onClick={() => console.log('todo')} variant='primary'>
+                <Button icon={<IconPlus />} onClick={() => navigate(generatePath(pages.CONDITIONS.CONDITIONS.ADD.LINK, { tab: '' }))} variant='primary'>
                     {_(confT.conditions)}
                 </Button>
             }
