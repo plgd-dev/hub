@@ -2306,6 +2306,7 @@ snippetservice:
           certFile:
           useSystemCAPool: false
     resourceAggregate:
+      pendingCommandsCheckInterval: 1m
       grpc:
         address: ""
         sendMsgSize: 4194304

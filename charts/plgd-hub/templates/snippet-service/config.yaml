@@ -102,6 +102,7 @@ data:
             {{- include "plgd-hub.certificateConfig" (list $ $cqlDbTls $cert ) | indent 10 }}
             useSystemCAPool: {{ .clients.storage.cqlDB.tls.useSystemCAPool }}
       resourceAggregate:
+        pendingCommandsCheckInterval: {{ .clients.resourceAggregate.pendingCommandsCheckInterval }}
         grpc:
           {{- $resourceAggregate := .clients.resourceAggregate.grpc.address }}
           address:{{ printf " " }}{{- include "plgd-hub.resourceAggregateAddress" (list $ $resourceAggregate ) | quote }}
