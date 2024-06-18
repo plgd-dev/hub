@@ -8,10 +8,15 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func UnmarshalProtoBSON(data []byte, m proto.Message) error {
+type updateJSON = func(map[string]interface{})
+
+func UnmarshalProtoBSON(data []byte, m proto.Message, update updateJSON) error {
 	var obj map[string]interface{}
 	if err := bson.Unmarshal(data, &obj); err != nil {
 		return err
+	}
+	if update != nil {
+		update(obj)
 	}
 	jsonData, err := json.Marshal(obj)
 	if err != nil {
@@ -20,7 +25,7 @@ func UnmarshalProtoBSON(data []byte, m proto.Message) error {
 	return protojson.Unmarshal(jsonData, m)
 }
 
-func MarshalProtoBSON(m proto.Message) ([]byte, error) {
+func MarshalProtoBSON(m proto.Message, update updateJSON) ([]byte, error) {
 	data, err := protojson.Marshal(m)
 	if err != nil {
 		return nil, err
@@ -29,6 +34,9 @@ func MarshalProtoBSON(m proto.Message) ([]byte, error) {
 	err = json.Unmarshal(data, &obj)
 	if err != nil {
 		return nil, err
+	}
+	if update != nil {
+		update(obj)
 	}
 	return bson.Marshal(obj)
 }

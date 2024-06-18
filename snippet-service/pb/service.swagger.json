@@ -511,9 +511,8 @@
     "AppliedDeviceConfigurationRelationTo": {
       "type": "object",
       "properties": {
-        "_id": {
-          "type": "string",
-          "title": "@gotags: bson:\"_id\""
+        "id": {
+          "type": "string"
         },
         "version": {
           "type": "string",
@@ -661,7 +660,7 @@
     "pbAppliedDeviceConfiguration": {
       "type": "object",
       "properties": {
-        "_id": {
+        "id": {
           "type": "string",
           "title": "@gotags: bson:\"_id\""
         },

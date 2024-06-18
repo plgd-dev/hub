@@ -112,10 +112,26 @@ func (c *AppliedDeviceConfiguration) Clone() *AppliedDeviceConfiguration {
 	}
 }
 
+func (c *AppliedDeviceConfiguration) jsonToBSONTag(json map[string]interface{}) {
+	id, ok := json["id"]
+	if ok {
+		json["_id"] = id
+		delete(json, "id")
+	}
+}
+
+func (c *AppliedDeviceConfiguration) bsonToJSONTag(json map[string]interface{}) {
+	id, ok := json["_id"]
+	if ok {
+		json["id"] = id
+		delete(json, "_id")
+	}
+}
+
 func (c *AppliedDeviceConfiguration) UnmarshalBSON(data []byte) error {
-	return pkgMongo.UnmarshalProtoBSON(data, c)
+	return pkgMongo.UnmarshalProtoBSON(data, c, c.bsonToJSONTag)
 }
 
 func (c *AppliedDeviceConfiguration) MarshalBSON() ([]byte, error) {
-	return pkgMongo.MarshalProtoBSON(c)
+	return pkgMongo.MarshalProtoBSON(c, c.jsonToBSONTag)
 }

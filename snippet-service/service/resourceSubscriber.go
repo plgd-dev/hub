@@ -35,6 +35,7 @@ import (
 
 type pendingConfiguration struct {
 	id         string
+	owner      string
 	resourceID *commands.ResourceId
 }
 
@@ -211,12 +212,16 @@ func (h *resourceChangedHandler) findTokenAndApplyConfigurationToResource(ctx co
 	return appliedCondition{}, 0, errors.New("cannot apply configuration: no valid token found")
 }
 
-func validUntilOrDefault(validUntil int64) time.Time {
-	if validUntil == 0 {
-		// 5m default
-		return time.Now().Add(5 * time.Minute)
+func (h *resourceChangedHandler) updateAppliedConfigurationPendingResources(ctx context.Context, id, owner, href string, status pb.AppliedDeviceConfiguration_Resource_Status) {
+	err := h.storage.UpdateAppliedConfigurationPendingResources(ctx, &store.UpdateAppliedConfigurationPendingResourceRequest{
+		ID:     id,
+		Owner:  owner,
+		Href:   href,
+		Status: status,
+	})
+	if err != nil {
+		h.logger.Errorf("cannot update applied configuration pending resource(%v): %w", href, err)
 	}
-	return pkgTime.Unix(0, validUntil)
 }
 
 func (h *resourceChangedHandler) applyConfigurationToResources(ctx context.Context, owner, deviceID string, confWithConditions *configurationWithConditions) error {
@@ -279,11 +284,13 @@ func (h *resourceChangedHandler) applyConfigurationToResources(ctx context.Conte
 				resourceID.ToUUID(), cache.NewElement(
 					&pendingConfiguration{
 						id:         appliedConf.GetId(),
+						owner:      owner,
 						resourceID: resourceID,
 					},
-					validUntilOrDefault(validUntil), func(d *pendingConfiguration) {
-						// TODO write to storage
+					pkgTime.Unix(0, validUntil),
+					func(d *pendingConfiguration) {
 						h.logger.Debugf("timeout for resource(%v) reached", d.resourceID.GetHref())
+						h.updateAppliedConfigurationPendingResources(ctx, d.id, d.owner, d.resourceID.GetHref(), pb.AppliedDeviceConfiguration_Resource_TIMEOUT)
 					}),
 			)
 		} else {
@@ -393,12 +400,14 @@ func (h *resourceChangedHandler) applyConfigurations(ctx context.Context, rc *ev
 	return h.applyConfigurationToResources(ctx, owner, deviceID, confWithConditions)
 }
 
-func (h *resourceChangedHandler) finishPendingConfiguration(resourceID *commands.ResourceId) {
-	_, ok := h.pendingConfigurations.LoadAndDelete(resourceID.ToUUID())
+func (h *resourceChangedHandler) finishPendingConfiguration(ctx context.Context, resourceID *commands.ResourceId) {
+	pc, ok := h.pendingConfigurations.LoadAndDelete(resourceID.ToUUID())
 	if !ok {
 		return
 	}
+	pcd := pc.Data()
 	h.logger.Debugf("resource(%v) updated", resourceID.GetHref())
+	h.updateAppliedConfigurationPendingResources(ctx, pcd.id, pcd.owner, pcd.resourceID.GetHref(), pb.AppliedDeviceConfiguration_Resource_DONE)
 }
 
 func (h *resourceChangedHandler) Handle(ctx context.Context, iter eventbus.Iter) error {
@@ -425,7 +434,7 @@ func (h *resourceChangedHandler) Handle(ctx context.Context, iter eventbus.Iter)
 				h.logger.Errorf("cannot unmarshal event: %w", err)
 				continue
 			}
-			h.finishPendingConfiguration(updated.GetResourceId())
+			h.finishPendingConfiguration(ctx, updated.GetResourceId())
 			continue
 		}
 

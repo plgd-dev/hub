@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/go-coap/v3/message"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
 	snippetHttp "github.com/plgd-dev/hub/v2/snippet-service/service/http"
@@ -28,6 +29,10 @@ func TestRequestHandlerGetAppliedConfigurations(t *testing.T) {
 	defer shutDown()
 
 	snippetCfg := test.MakeConfig(t)
+	logCfg := log.MakeDefaultConfig()
+	logCfg.Level = log.DebugLevel
+	log.Setup(logCfg)
+	snippetCfg.Log = logCfg
 	ss, shutdownHttp := test.New(t, snippetCfg)
 	defer shutdownHttp()
 

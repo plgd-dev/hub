@@ -27,7 +27,7 @@ const (
 	JqExpressionFilterKey = "jqExpressionFilter" // must match with Condition.JqExpressionFilter tag
 	ResourceTypeFilterKey = "resourceTypeFilter" // must match with Condition.ResourceTypeFilter tag
 
-	ConfigurationRelationIDKey = ConfigurationIDKey + "." + IDKey
+	ConfigurationRelationIDKey = ConfigurationIDKey + ".id"
 )
 
 type (
