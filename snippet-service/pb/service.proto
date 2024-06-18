@@ -75,9 +75,12 @@ message Condition { // driven by resource change event
 
 message GetConditionsRequest { 
   repeated IDFilter id_filter = 1;
-  repeated string configuration_id_filter = 2; // returns latest conditions for given configurationId
+  // returns latest conditions for given configurationId
+  repeated string configuration_id_filter = 2;
   // Format: {id}/{version}, e.g., "ae424c58-e517-4494-6de7-583536c48213/all" or "ae424c58-e517-4494-6de7-583536c48213/latest" or "ae424c58-e517-4494-6de7-583536c48213/1234"
   repeated string http_id_filter = 3 [ deprecated = true ];
+  // returns only latest conditions when id_filter and configuration_id_filter are not set
+  bool latest_filter = 4;
 }
 
 message DeleteConditionsRequest {
@@ -114,6 +117,8 @@ message GetConfigurationsRequest {
   repeated IDFilter id_filter = 1;
   // Format: {id}/{version}, e.g., "ae424c58-e517-4494-6de7-583536c48213/all" or "ae424c58-e517-4494-6de7-583536c48213/latest" or "ae424c58-e517-4494-6de7-583536c48213/1234"
   repeated string http_id_filter = 2 [ deprecated = true ];
+  // returns only latest configurations when id_filter is not set
+  bool latest_filter = 3;
 }
 message DeleteConfigurationsRequest {
   repeated IDFilter id_filter = 1;
@@ -203,6 +208,7 @@ service SnippetService {
     };
   }
 
+  // For update the condition whole condition is required and the version must be incremented.
   rpc UpdateCondition(Condition) returns (Condition) {
     option (google.api.http) = {
       put: "/snippet-service/api/v1/conditions/{id}";
@@ -241,6 +247,7 @@ service SnippetService {
     };
   }
 
+  // For update the configuration whole configuration is required and the version must be incremented.
   rpc UpdateConfiguration(Configuration) returns (Configuration) {
     option (google.api.http) = {
       put: "/snippet-service/api/v1/configurations/{id}";

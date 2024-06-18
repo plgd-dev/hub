@@ -47,10 +47,12 @@ type SnippetServiceClient interface {
 	CreateCondition(ctx context.Context, in *Condition, opts ...grpc.CallOption) (*Condition, error)
 	GetConditions(ctx context.Context, in *GetConditionsRequest, opts ...grpc.CallOption) (SnippetService_GetConditionsClient, error)
 	DeleteConditions(ctx context.Context, in *DeleteConditionsRequest, opts ...grpc.CallOption) (*DeleteConditionsResponse, error)
+	// For update the condition whole condition is required and the version must be incremented.
 	UpdateCondition(ctx context.Context, in *Condition, opts ...grpc.CallOption) (*Condition, error)
 	CreateConfiguration(ctx context.Context, in *Configuration, opts ...grpc.CallOption) (*Configuration, error)
 	GetConfigurations(ctx context.Context, in *GetConfigurationsRequest, opts ...grpc.CallOption) (SnippetService_GetConfigurationsClient, error)
 	DeleteConfigurations(ctx context.Context, in *DeleteConfigurationsRequest, opts ...grpc.CallOption) (*DeleteConfigurationsResponse, error)
+	// For update the configuration whole configuration is required and the version must be incremented.
 	UpdateConfiguration(ctx context.Context, in *Configuration, opts ...grpc.CallOption) (*Configuration, error)
 	// streaming process of update configuration to invoker
 	InvokeConfiguration(ctx context.Context, in *InvokeConfigurationRequest, opts ...grpc.CallOption) (SnippetService_InvokeConfigurationClient, error)
@@ -264,10 +266,12 @@ type SnippetServiceServer interface {
 	CreateCondition(context.Context, *Condition) (*Condition, error)
 	GetConditions(*GetConditionsRequest, SnippetService_GetConditionsServer) error
 	DeleteConditions(context.Context, *DeleteConditionsRequest) (*DeleteConditionsResponse, error)
+	// For update the condition whole condition is required and the version must be incremented.
 	UpdateCondition(context.Context, *Condition) (*Condition, error)
 	CreateConfiguration(context.Context, *Configuration) (*Configuration, error)
 	GetConfigurations(*GetConfigurationsRequest, SnippetService_GetConfigurationsServer) error
 	DeleteConfigurations(context.Context, *DeleteConfigurationsRequest) (*DeleteConfigurationsResponse, error)
+	// For update the configuration whole configuration is required and the version must be incremented.
 	UpdateConfiguration(context.Context, *Configuration) (*Configuration, error)
 	// streaming process of update configuration to invoker
 	InvokeConfiguration(*InvokeConfigurationRequest, SnippetService_InvokeConfigurationServer) error

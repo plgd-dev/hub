@@ -79,6 +79,13 @@
               "type": "string"
             },
             "collectionFormat": "multi"
+          },
+          {
+            "name": "latestFilter",
+            "description": "returns only latest conditions when id_filter and configuration_id_filter are not set",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -151,6 +158,7 @@
     },
     "/snippet-service/api/v1/conditions/{id}": {
       "put": {
+        "summary": "For update the condition whole condition is required and the version must be incremented.",
         "operationId": "SnippetService_UpdateCondition",
         "responses": {
           "200": {
@@ -225,6 +233,13 @@
               "type": "string"
             },
             "collectionFormat": "multi"
+          },
+          {
+            "name": "latestFilter",
+            "description": "returns only latest configurations when id_filter is not set",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -453,6 +468,7 @@
     },
     "/snippet-service/api/v1/configurations/{id}": {
       "put": {
+        "summary": "For update the configuration whole configuration is required and the version must be incremented.",
         "operationId": "SnippetService_UpdateConfiguration",
         "responses": {
           "200": {

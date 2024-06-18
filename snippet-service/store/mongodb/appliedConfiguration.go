@@ -88,6 +88,7 @@ func toAppliedDeviceConfigurationsQuery(owner string, idFilter, deviceIdFilter [
 }
 
 func (s *Store) GetAppliedConfigurations(ctx context.Context, owner string, query *pb.GetAppliedDeviceConfigurationsRequest, p store.ProccessAppliedDeviceConfigurations) error {
+	// TODO: implement ConfigurationIdFilter and ConditionIdFilter
 	cur, err := s.Collection(appliedConfigurationsCol).Find(ctx, toAppliedDeviceConfigurationsQuery(owner, query.GetIdFilter(), query.GetDeviceIdFilter()))
 	if err != nil {
 		return err

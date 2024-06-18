@@ -281,6 +281,7 @@ TODO Naming
 | id_filter | [IDFilter](#snippetservice-pb-IDFilter) | repeated |  |
 | configuration_id_filter | [string](#string) | repeated | returns latest conditions for given configurationId |
 | http_id_filter | [string](#string) | repeated | **Deprecated.** Format: {id}/{version}, e.g., &#34;ae424c58-e517-4494-6de7-583536c48213/all&#34; or &#34;ae424c58-e517-4494-6de7-583536c48213/latest&#34; or &#34;ae424c58-e517-4494-6de7-583536c48213/1234&#34; |
+| latest_filter | [bool](#bool) |  | returns only latest conditions when id_filter and configuration_id_filter are not set |
 
 
 
@@ -297,6 +298,7 @@ TODO Naming
 | ----- | ---- | ----- | ----------- |
 | id_filter | [IDFilter](#snippetservice-pb-IDFilter) | repeated |  |
 | http_id_filter | [string](#string) | repeated | **Deprecated.** Format: {id}/{version}, e.g., &#34;ae424c58-e517-4494-6de7-583536c48213/all&#34; or &#34;ae424c58-e517-4494-6de7-583536c48213/latest&#34; or &#34;ae424c58-e517-4494-6de7-583536c48213/1234&#34; |
+| latest_filter | [bool](#bool) |  | returns only latest configurations when id_filter is not set |
 
 
 
@@ -369,11 +371,11 @@ TODO: /configurations/123?version=latest
 | CreateCondition | [Condition](#snippetservice-pb-Condition) | [Condition](#snippetservice-pb-Condition) |  |
 | GetConditions | [GetConditionsRequest](#snippetservice-pb-GetConditionsRequest) | [Condition](#snippetservice-pb-Condition) stream |  |
 | DeleteConditions | [DeleteConditionsRequest](#snippetservice-pb-DeleteConditionsRequest) | [DeleteConditionsResponse](#snippetservice-pb-DeleteConditionsResponse) |  |
-| UpdateCondition | [Condition](#snippetservice-pb-Condition) | [Condition](#snippetservice-pb-Condition) |  |
+| UpdateCondition | [Condition](#snippetservice-pb-Condition) | [Condition](#snippetservice-pb-Condition) | For update the condition whole condition is required and the version must be incremented. |
 | CreateConfiguration | [Configuration](#snippetservice-pb-Configuration) | [Configuration](#snippetservice-pb-Configuration) |  |
 | GetConfigurations | [GetConfigurationsRequest](#snippetservice-pb-GetConfigurationsRequest) | [Configuration](#snippetservice-pb-Configuration) stream |  |
 | DeleteConfigurations | [DeleteConfigurationsRequest](#snippetservice-pb-DeleteConfigurationsRequest) | [DeleteConfigurationsResponse](#snippetservice-pb-DeleteConfigurationsResponse) |  |
-| UpdateConfiguration | [Configuration](#snippetservice-pb-Configuration) | [Configuration](#snippetservice-pb-Configuration) |  |
+| UpdateConfiguration | [Configuration](#snippetservice-pb-Configuration) | [Configuration](#snippetservice-pb-Configuration) | For update the configuration whole configuration is required and the version must be incremented. |
 | InvokeConfiguration | [InvokeConfigurationRequest](#snippetservice-pb-InvokeConfigurationRequest) | [AppliedDeviceConfiguration](#snippetservice-pb-AppliedDeviceConfiguration) stream | streaming process of update configuration to invoker |
 | GetAppliedConfigurations | [GetAppliedDeviceConfigurationsRequest](#snippetservice-pb-GetAppliedDeviceConfigurationsRequest) | [AppliedDeviceConfiguration](#snippetservice-pb-AppliedDeviceConfiguration) stream |  |
 | DeleteAppliedConfigurations | [DeleteAppliedDeviceConfigurationsRequest](#snippetservice-pb-DeleteAppliedDeviceConfigurationsRequest) | [DeleteAppliedDeviceConfigurationsResponse](#snippetservice-pb-DeleteAppliedDeviceConfigurationsResponse) |  |
