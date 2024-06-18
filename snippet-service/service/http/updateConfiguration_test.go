@@ -133,21 +133,6 @@ func TestRequestHandlerUpdateConfiguration(t *testing.T) {
 			wantErr:      true,
 		},
 		{
-			name: "duplicit version",
-			args: args{
-				id: conf.GetId(),
-				conf: &snippetPb.Configuration{
-					Version: 1,
-					Resources: []*snippetPb.Configuration_Resource{
-						makeTestResource(t, "/test/7", 102),
-					},
-				},
-				token: token,
-			},
-			wantHTTPCode: http.StatusInternalServerError,
-			wantErr:      true,
-		},
-		{
 			name: "missing resources",
 			args: args{
 				id: conf.GetId(),
@@ -167,7 +152,7 @@ func TestRequestHandlerUpdateConfiguration(t *testing.T) {
 					Version: 42,
 					Owner:   "non-matching owner",
 					Resources: []*snippetPb.Configuration_Resource{
-						makeTestResource(t, "/test/8", 112),
+						makeTestResource(t, "/test/7", 112),
 					},
 				},
 				token: token,

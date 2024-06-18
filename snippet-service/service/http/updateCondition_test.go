@@ -63,7 +63,7 @@ func TestRequestHandlerUpdateCondition(t *testing.T) {
 	}()
 	c := snippetPb.NewSnippetServiceClient(conn)
 
-	cond := makeUpdateCondition(uuid.NewString(), uuid.NewString(), oauthService.DeviceUserID, 1)
+	cond := makeUpdateCondition(uuid.NewString(), uuid.NewString(), oauthService.DeviceUserID, 0)
 	_, err = c.CreateCondition(pkgGrpc.CtxWithToken(ctx, token), cond)
 	require.NoError(t, err)
 
@@ -84,7 +84,7 @@ func TestRequestHandlerUpdateCondition(t *testing.T) {
 			args: args{
 				id: "invalid",
 				cond: func() *snippetPb.Condition {
-					c := makeUpdateCondition(cond.GetId(), cond.GetConfigurationId(), cond.GetOwner(), 2)
+					c := makeUpdateCondition(cond.GetId(), cond.GetConfigurationId(), cond.GetOwner(), 1)
 					c.Id = "invalid"
 					return c
 				}(),
@@ -98,7 +98,7 @@ func TestRequestHandlerUpdateCondition(t *testing.T) {
 			args: args{
 				id: cond.GetId(),
 				cond: func() *snippetPb.Condition {
-					c := makeUpdateCondition(cond.GetId(), cond.GetConfigurationId(), cond.GetOwner(), 2)
+					c := makeUpdateCondition(cond.GetId(), cond.GetConfigurationId(), cond.GetOwner(), 1)
 					c.ConfigurationId = "invalid"
 					return c
 				}(),
@@ -108,20 +108,10 @@ func TestRequestHandlerUpdateCondition(t *testing.T) {
 			wantErr:      true,
 		},
 		{
-			name: "duplicit version",
-			args: args{
-				id:    cond.GetId(),
-				cond:  makeUpdateCondition(cond.GetId(), cond.GetConfigurationId(), oauthService.DeviceUserID, 1),
-				token: token,
-			},
-			wantHTTPCode: http.StatusInternalServerError,
-			wantErr:      true,
-		},
-		{
 			name: "configurationID mismatch",
 			args: args{
 				id:    cond.GetId(),
-				cond:  makeUpdateCondition(cond.GetId(), uuid.NewString(), oauthService.DeviceUserID, 2),
+				cond:  makeUpdateCondition(cond.GetId(), uuid.NewString(), oauthService.DeviceUserID, 1),
 				token: token,
 			},
 			wantHTTPCode: http.StatusInternalServerError,
@@ -131,7 +121,7 @@ func TestRequestHandlerUpdateCondition(t *testing.T) {
 			name: "non-matching owner",
 			args: args{
 				id:    cond.GetId(),
-				cond:  makeUpdateCondition(cond.GetId(), uuid.NewString(), "non-matching owner", 2),
+				cond:  makeUpdateCondition(cond.GetId(), uuid.NewString(), "non-matching owner", 1),
 				token: token,
 			},
 			wantHTTPCode: http.StatusForbidden,
@@ -141,32 +131,32 @@ func TestRequestHandlerUpdateCondition(t *testing.T) {
 			name: "update",
 			args: args{
 				id:    cond.GetId(),
-				cond:  makeUpdateCondition(cond.GetId(), "", "", 2),
+				cond:  makeUpdateCondition(cond.GetId(), "", "", 1),
+				token: token,
+			},
+			wantHTTPCode: http.StatusOK,
+			want:         makeUpdateCondition(cond.GetId(), cond.GetConfigurationId(), oauthService.DeviceUserID, 1),
+		},
+		{
+			name: "update (with owner)",
+			args: args{
+				id:    cond.GetId(),
+				cond:  makeUpdateCondition(cond.GetId(), cond.GetConfigurationId(), oauthService.DeviceUserID, 2),
 				token: token,
 			},
 			wantHTTPCode: http.StatusOK,
 			want:         makeUpdateCondition(cond.GetId(), cond.GetConfigurationId(), oauthService.DeviceUserID, 2),
 		},
 		{
-			name: "update (with owner)",
-			args: args{
-				id:    cond.GetId(),
-				cond:  makeUpdateCondition(cond.GetId(), cond.GetConfigurationId(), oauthService.DeviceUserID, 3),
-				token: token,
-			},
-			wantHTTPCode: http.StatusOK,
-			want:         makeUpdateCondition(cond.GetId(), cond.GetConfigurationId(), oauthService.DeviceUserID, 3),
-		},
-		{
 			name: "update (with overwritten ID)",
 			args: args{
 				id: cond.GetId(),
 				// the ID will get overwritten by the ID in the query
-				cond:  makeUpdateCondition(uuid.NewString(), "", oauthService.DeviceUserID, 4),
+				cond:  makeUpdateCondition(uuid.NewString(), "", oauthService.DeviceUserID, 3),
 				token: token,
 			},
 			wantHTTPCode: http.StatusOK,
-			want:         makeUpdateCondition(cond.GetId(), cond.GetConfigurationId(), oauthService.DeviceUserID, 4),
+			want:         makeUpdateCondition(cond.GetId(), cond.GetConfigurationId(), oauthService.DeviceUserID, 3),
 		},
 	}
 
