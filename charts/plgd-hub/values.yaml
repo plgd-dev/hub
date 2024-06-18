@@ -32,18 +32,6 @@ global:
    web:
     clientID:
     scopes: [ "openid" ]
-  
-  authorizationCAPool: |
-    -----BEGIN CERTIFICATE-----
-    MIIBYzCCAQmgAwIBAgIRANlBKhThY7VFbD48DtdtcA8wCgYIKoZIzj0EAwIwETEP
-    MA0GA1UEAxMGUm9vdENBMB4XDTI0MDYxMTExMDYyMVoXDTI1MDYxMTExMDYyMVow
-    ETEPMA0GA1UEAxMGUm9vdENBMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE6MGV
-    A8IIsgoW3VovdYKl7bjEGF1Ig1BAQ187x6ZyP4l1XwEnP57sIzqHDw9pv97+CIX0
-    igidfbC0+lIsyHT3QKNCMEAwDgYDVR0PAQH/BAQDAgEGMA8GA1UdEwEB/wQFMAMB
-    Af8wHQYDVR0OBBYEFKBBVAYdncB74490+ii3APJmlArrMAoGCCqGSM49BAMCA0gA
-    MEUCIQDp9GoW48DAcuaNIlVng4ZEfxGKNY3WlF7E7eXGy1toGgIgMSPChtlMYLTM
-    dOIkxphb6VrtdLC0KzO0+kjDsh422aY=
-    -----END CERTIFICATE-----
   extraCAPool:
     # -- Custom CA certificate for authorization endpoint in PEM format 
     authorization: "{{ include \"plgd-hub.oldGlobalAuthorizationCAPool\" . }}"
@@ -91,7 +79,6 @@ nats:
     enabled: false
   monitor:
     enabled: false
-
 
 # -- External mongodb-replica dependency setup
 mongodb:

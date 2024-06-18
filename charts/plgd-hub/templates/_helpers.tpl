@@ -2,7 +2,7 @@
 Expand the name of the chart.
 */}}
 {{- define "plgd-hub.name" -}}
-{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- default .Chart.Name .Values.nameOverride | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
@@ -531,28 +531,6 @@ true
 {{- end -}}
 {{- end -}}
 
-{{- define "plgd-hub.oldExtraCAPoolAuthorizationSecretName" }}
-{{- $ := . -}}
-{{- $secretName := "authorization-ca-pool" -}}
-{{- if $.Values.extraAuthorizationCAPool -}}
-{{- if $.Values.extraAuthorizationCAPool.name -}}
-{{- $secretName = $.Values.extraAuthorizationCAPool.name -}}
-{{- end -}}
-{{- end -}}
-{{- printf "%s" $secretName }}
-{{- end -}}
-
-{{- define "plgd-hub.oldExtraCAPoolAuthorizationFileName" }}
-{{- $ := . -}}
-{{- $fileName := "ca.crt" -}}
-{{- if $.Values.extraAuthorizationCAPool -}}
-{{- if $.Values.extraAuthorizationCAPool.fileName -}}
-{{- $fileName = $.Values.extraAuthorizationCAPool.fileName -}}
-{{- end -}}
-{{- end -}}
-{{- printf "%s" $fileName }}
-{{- end -}}
-
 {{- define "plgd-hub.isTemplateString" }}
 {{- $ret := "" }}
 {{- if typeIs "string" . -}}
@@ -578,6 +556,28 @@ true
 {{- printf "" }}
 {{- end }}
 {{- end }}
+
+{{- define "plgd-hub.oldExtraCAPoolAuthorizationFileName" }}
+{{- $ := . -}}
+{{- $fileName := "ca.crt" -}}
+{{- if $.Values.extraAuthorizationCAPool -}}
+{{- if $.Values.extraAuthorizationCAPool.fileName -}}
+{{- $fileName = $.Values.extraAuthorizationCAPool.fileName -}}
+{{- end -}}
+{{- end -}}
+{{- printf "%s" $fileName }}
+{{- end -}}
+
+{{- define "plgd-hub.oldExtraCAPoolAuthorizationSecretName" }}
+{{- $ := . -}}
+{{- $secretName := "authorization-ca-pool" -}}
+{{- if $.Values.extraAuthorizationCAPool -}}
+{{- if $.Values.extraAuthorizationCAPool.name -}}
+{{- $secretName = $.Values.extraAuthorizationCAPool.name -}}
+{{- end -}}
+{{- end -}}
+{{- printf "%s" $secretName }}
+{{- end -}}
 
 {{- define "plgd-hub.oldGlobalAuthorizationCAPool" }}
 {{- $ := . -}}
