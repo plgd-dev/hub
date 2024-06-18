@@ -3,6 +3,7 @@ package pb
 import (
 	"cmp"
 	"slices"
+	"strconv"
 	"strings"
 )
 
@@ -173,4 +174,91 @@ func PartitionIDFilter(idfilter []*IDFilter) VersionFilter {
 		vf.Versions[idf.GetId()] = idVersions
 	}
 	return vf
+}
+
+const versionQueryKey = "version"
+
+// we are permissive in parsing id filter
+func idFilterFromString(v string) *IDFilter {
+	if len(v) == 0 {
+		return nil
+	}
+	if v[0] == '/' {
+		v = v[1:]
+	}
+	idHref := strings.SplitN(v, "/", 2)
+	if len(idHref) < 2 {
+		return &IDFilter{
+			Id: v,
+			Version: &IDFilter_All{
+				All: true,
+			},
+		}
+	}
+	switch idHref[1] {
+	case "", "all":
+		return &IDFilter{
+			Id: idHref[0],
+			Version: &IDFilter_All{
+				All: true,
+			},
+		}
+	case "latest":
+		return &IDFilter{
+			Id: idHref[0],
+			Version: &IDFilter_Latest{
+				Latest: true,
+			},
+		}
+	default:
+		v, err := strconv.ParseUint(idHref[1], 10, 64)
+		if err != nil {
+			return nil
+		}
+		return &IDFilter{
+			Id: idHref[0],
+			Version: &IDFilter_Value{
+				Value: v,
+			},
+		}
+	}
+}
+
+func IdFilterFromString(filter []string) []*IDFilter {
+	if len(filter) == 0 {
+		return nil
+	}
+	ret := make([]*IDFilter, 0, len(filter))
+	for _, s := range filter {
+		f := idFilterFromString(s)
+		if f == nil {
+			continue
+		}
+		ret = append(ret, f)
+	}
+	return ret
+}
+
+func (r *GetConditionsRequest) ConvertHTTPIDFilter() []*IDFilter {
+	return IdFilterFromString(r.GetHttpIdFilter())
+}
+
+func (r *GetConfigurationsRequest) ConvertHTTPIDFilter() []*IDFilter {
+	return IdFilterFromString(r.GetHttpIdFilter())
+}
+
+func (r *GetAppliedDeviceConfigurationsRequest) ConvertHTTPConfigurationIdFilter() []*IDFilter {
+	return IdFilterFromString(r.GetHttpConfigurationIdFilter())
+}
+
+func (r *GetAppliedDeviceConfigurationsRequest) ConvertHTTPConditionIdFilter() []*IDFilter {
+	return IdFilterFromString(r.GetHttpConditionIdFilter())
+}
+
+func (r *DeleteConfigurationsRequest) ConvertHTTPIDFilter() []*IDFilter {
+	return IdFilterFromString(r.GetHttpIdFilter())
+}
+
+func (r *DeleteConditionsRequest) ConvertHTTPIDFilter() []*IDFilter {
+	return IdFilterFromString(r.GetHttpIdFilter())
 }

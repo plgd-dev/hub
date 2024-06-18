@@ -197,6 +197,7 @@ driven by resource change event
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id_filter | [IDFilter](#snippetservice-pb-IDFilter) | repeated |  |
+| http_id_filter | [string](#string) | repeated | **Deprecated.** Format: {id}/{version}, e.g., &#34;ae424c58-e517-4494-6de7-583536c48213/all&#34; or &#34;ae424c58-e517-4494-6de7-583536c48213/latest&#34; or &#34;ae424c58-e517-4494-6de7-583536c48213/1234&#34; |
 
 
 
@@ -227,6 +228,7 @@ driven by resource change event
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id_filter | [IDFilter](#snippetservice-pb-IDFilter) | repeated |  |
+| http_id_filter | [string](#string) | repeated | **Deprecated.** Format: {id}/{version}, e.g., &#34;ae424c58-e517-4494-6de7-583536c48213/all&#34; or &#34;ae424c58-e517-4494-6de7-583536c48213/latest&#34; or &#34;ae424c58-e517-4494-6de7-583536c48213/1234&#34; |
 
 
 
@@ -257,7 +259,11 @@ TODO Naming
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id_filter | [string](#string) | repeated |  |
-| device_id_filter | [string](#string) | repeated | repeated IDFilter configuration_id_filter = 3; // TODO repeated IDFilter condition_id_filter = 4; // TODO |
+| device_id_filter | [string](#string) | repeated |  |
+| configuration_id_filter | [IDFilter](#snippetservice-pb-IDFilter) | repeated |  |
+| http_configuration_id_filter | [string](#string) | repeated | **Deprecated.** Format: {id}/{version}, e.g., &#34;ae424c58-e517-4494-6de7-583536c48213/all&#34; or &#34;ae424c58-e517-4494-6de7-583536c48213/latest&#34; or &#34;ae424c58-e517-4494-6de7-583536c48213/1234&#34; |
+| condition_id_filter | [IDFilter](#snippetservice-pb-IDFilter) | repeated |  |
+| http_condition_id_filter | [string](#string) | repeated | **Deprecated.** Format: {id}/{version}, e.g., &#34;ae424c58-e517-4494-6de7-583536c48213/all&#34; or &#34;ae424c58-e517-4494-6de7-583536c48213/latest&#34; or &#34;ae424c58-e517-4494-6de7-583536c48213/1234&#34; |
 
 
 
@@ -274,7 +280,7 @@ TODO Naming
 | ----- | ---- | ----- | ----------- |
 | id_filter | [IDFilter](#snippetservice-pb-IDFilter) | repeated |  |
 | configuration_id_filter | [string](#string) | repeated | returns latest conditions for given configurationId |
-| http_id_filter | [string](#string) | repeated | **Deprecated.** Format: {id}/{version}, e.g., &#34;ae424c58-e517-4494-6de7-583536c48213/all&#34; or &#34;ae424c58-e517-4494-6de7-583536c48213/latest&#34; or &#34;ae424c58-e517-4494-6de7-583536c48213/{version}&#34; |
+| http_id_filter | [string](#string) | repeated | **Deprecated.** Format: {id}/{version}, e.g., &#34;ae424c58-e517-4494-6de7-583536c48213/all&#34; or &#34;ae424c58-e517-4494-6de7-583536c48213/latest&#34; or &#34;ae424c58-e517-4494-6de7-583536c48213/1234&#34; |
 
 
 
@@ -290,7 +296,7 @@ TODO Naming
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id_filter | [IDFilter](#snippetservice-pb-IDFilter) | repeated |  |
-| http_id_filter | [string](#string) | repeated | **Deprecated.** Format: {id}/{version}, e.g., &#34;ae424c58-e517-4494-6de7-583536c48213/all&#34; or &#34;ae424c58-e517-4494-6de7-583536c48213/latest&#34; or &#34;ae424c58-e517-4494-6de7-583536c48213/{version}&#34; |
+| http_id_filter | [string](#string) | repeated | **Deprecated.** Format: {id}/{version}, e.g., &#34;ae424c58-e517-4494-6de7-583536c48213/all&#34; or &#34;ae424c58-e517-4494-6de7-583536c48213/latest&#34; or &#34;ae424c58-e517-4494-6de7-583536c48213/1234&#34; |
 
 
 

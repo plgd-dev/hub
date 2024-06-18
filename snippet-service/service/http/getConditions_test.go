@@ -13,6 +13,7 @@ import (
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
 	snippetHttp "github.com/plgd-dev/hub/v2/snippet-service/service/http"
 	"github.com/plgd-dev/hub/v2/snippet-service/test"
+	"github.com/plgd-dev/hub/v2/snippet-service/uri"
 	hubTest "github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	httpTest "github.com/plgd-dev/hub/v2/test/http"
@@ -45,8 +46,8 @@ func TestRequestHandlerGetConditions(t *testing.T) {
 	conds := test.AddConditions(ctx, t, snippetCfg.APIs.GRPC.Authorization.OwnerClaim, c, 30, nil)
 
 	type args struct {
-		token   string
-		version string
+		token        string
+		httpIDFilter []string
 	}
 	tests := []struct {
 		name         string
@@ -64,6 +65,23 @@ func TestRequestHandlerGetConditions(t *testing.T) {
 			},
 			wantHTTPCode: http.StatusForbidden,
 			wantErr:      true,
+		},
+		{
+			name: "get certain condition",
+			args: args{
+				token: oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTest, map[string]interface{}{
+					snippetCfg.APIs.GRPC.Authorization.OwnerClaim: test.Owner(1),
+				}),
+				httpIDFilter: []string{
+					test.ConditionID(1) + "/0",
+				},
+			},
+			wantHTTPCode: http.StatusOK,
+			want: func(t *testing.T, values []*pb.Condition) {
+				require.Len(t, values, 1)
+				require.Equal(t, test.ConditionID(1), values[0].GetId())
+				require.Equal(t, uint64(0), values[0].GetVersion())
+			},
 		},
 		{
 			name: "owner1/all",
@@ -87,7 +105,10 @@ func TestRequestHandlerGetConditions(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			rb := httpTest.NewRequest(http.MethodGet, test.HTTPURI(snippetHttp.Conditions), nil).AuthToken(tt.args.token)
-			rb = rb.Accept(pkgHttp.ApplicationProtoJsonContentType).ContentType(message.AppCBOR.String()).Version(tt.args.version)
+			rb = rb.Accept(pkgHttp.ApplicationProtoJsonContentType).ContentType(message.AppCBOR.String())
+			if len(tt.args.httpIDFilter) > 0 {
+				rb = rb.AddQuery(uri.HTTPIDFilterQueryKey, tt.args.httpIDFilter...)
+			}
 			resp := httpTest.Do(t, rb.Build(ctx, t))
 			defer func() {
 				_ = resp.Body.Close()

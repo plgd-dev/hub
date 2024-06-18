@@ -71,7 +71,7 @@
           },
           {
             "name": "httpIdFilter",
-            "description": "Format: {id}/{version}, e.g., \"ae424c58-e517-4494-6de7-583536c48213/all\" or \"ae424c58-e517-4494-6de7-583536c48213/latest\" or \"ae424c58-e517-4494-6de7-583536c48213/{version}\"",
+            "description": "Format: {id}/{version}, e.g., \"ae424c58-e517-4494-6de7-583536c48213/all\" or \"ae424c58-e517-4494-6de7-583536c48213/latest\" or \"ae424c58-e517-4494-6de7-583536c48213/1234\"",
             "in": "query",
             "required": false,
             "type": "array",
@@ -101,6 +101,19 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "httpIdFilter",
+            "description": "Format: {id}/{version}, e.g., \"ae424c58-e517-4494-6de7-583536c48213/all\" or \"ae424c58-e517-4494-6de7-583536c48213/latest\" or \"ae424c58-e517-4494-6de7-583536c48213/1234\"",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
         "tags": [
           "Conditions"
         ]
@@ -204,7 +217,7 @@
         "parameters": [
           {
             "name": "httpIdFilter",
-            "description": "Format: {id}/{version}, e.g., \"ae424c58-e517-4494-6de7-583536c48213/all\" or \"ae424c58-e517-4494-6de7-583536c48213/latest\" or \"ae424c58-e517-4494-6de7-583536c48213/{version}\"",
+            "description": "Format: {id}/{version}, e.g., \"ae424c58-e517-4494-6de7-583536c48213/all\" or \"ae424c58-e517-4494-6de7-583536c48213/latest\" or \"ae424c58-e517-4494-6de7-583536c48213/1234\"",
             "in": "query",
             "required": false,
             "type": "array",
@@ -234,6 +247,19 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "httpIdFilter",
+            "description": "Format: {id}/{version}, e.g., \"ae424c58-e517-4494-6de7-583536c48213/all\" or \"ae424c58-e517-4494-6de7-583536c48213/latest\" or \"ae424c58-e517-4494-6de7-583536c48213/1234\"",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
         "tags": [
           "Configurations"
         ]
@@ -308,7 +334,28 @@
           },
           {
             "name": "deviceIdFilter",
-            "description": "repeated IDFilter configuration_id_filter = 3; // TODO\n repeated IDFilter condition_id_filter = 4; // TODO",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "httpConfigurationIdFilter",
+            "description": "Format: {id}/{version}, e.g., \"ae424c58-e517-4494-6de7-583536c48213/all\" or \"ae424c58-e517-4494-6de7-583536c48213/latest\" or \"ae424c58-e517-4494-6de7-583536c48213/1234\"",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "httpConditionIdFilter",
+            "description": "Format: {id}/{version}, e.g., \"ae424c58-e517-4494-6de7-583536c48213/all\" or \"ae424c58-e517-4494-6de7-583536c48213/latest\" or \"ae424c58-e517-4494-6de7-583536c48213/1234\"",
             "in": "query",
             "required": false,
             "type": "array",

@@ -12,6 +12,7 @@ import (
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
 	snippetHttp "github.com/plgd-dev/hub/v2/snippet-service/service/http"
 	"github.com/plgd-dev/hub/v2/snippet-service/test"
+	"github.com/plgd-dev/hub/v2/snippet-service/uri"
 	"github.com/plgd-dev/hub/v2/test/config"
 	httpTest "github.com/plgd-dev/hub/v2/test/http"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
@@ -33,8 +34,10 @@ func TestRequestHandlerGetAppliedConfigurations(t *testing.T) {
 	appliedConfs := test.AddAppliedConfigurations(ctx, t, snippetCfg.APIs.GRPC.Authorization.OwnerClaim, ss)
 
 	type args struct {
-		token    string
-		idFilter []string
+		token                     string
+		idFilter                  []string
+		httpConfigurationIdFilter []string
+		httpConditionIdFilter     []string
 	}
 	tests := []struct {
 		name         string
@@ -70,6 +73,42 @@ func TestRequestHandlerGetAppliedConfigurations(t *testing.T) {
 				}
 			},
 		},
+		/* TODO need to be implemented in mongodb
+		{
+			name: "get certain applied configuration",
+			args: args{
+				token: oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTest, map[string]interface{}{
+					snippetCfg.APIs.GRPC.Authorization.OwnerClaim: test.Owner(0),
+				}),
+				httpConfigurationIdFilter: []string{
+					test.ConfigurationID(0) + "/0",
+				},
+			},
+			wantHTTPCode: http.StatusOK,
+			want: func(values []*pb.AppliedDeviceConfiguration) {
+				require.Len(t, values, 1)
+				require.Equal(t, test.ConfigurationID(0), values[0].GetConfigurationId().GetId())
+				require.Equal(t, uint64(0), values[0].GetConfigurationId().GetVersion())
+			},
+		},
+		{
+			name: "get certain applied condition",
+			args: args{
+				token: oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTest, map[string]interface{}{
+					snippetCfg.APIs.GRPC.Authorization.OwnerClaim: test.Owner(0),
+				}),
+				httpConditionIdFilter: []string{
+					test.ConditionID(0) + "/0",
+				},
+			},
+			wantHTTPCode: http.StatusOK,
+			want: func(values []*pb.AppliedDeviceConfiguration) {
+				require.Len(t, values, 1)
+				require.Equal(t, test.ConditionID(0), values[0].GetConditionId().GetId())
+				require.Equal(t, uint64(0), values[0].GetConditionId().GetVersion())
+			},
+		},
+		*/
 		{
 			name: "owner0/id{0,1,2,3,4,5}",
 			args: args{
@@ -98,6 +137,12 @@ func TestRequestHandlerGetAppliedConfigurations(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			rb := httpTest.NewRequest(http.MethodGet, test.HTTPURI(snippetHttp.AppliedConfigurations), nil).AuthToken(tt.args.token)
 			rb = rb.Accept(pkgHttp.ApplicationProtoJsonContentType).ContentType(message.AppCBOR.String()).IDFilter(tt.args.idFilter)
+			if len(tt.args.httpConfigurationIdFilter) > 0 {
+				rb = rb.AddQuery(uri.HTTPConfigurationIDFilter, tt.args.httpConfigurationIdFilter...)
+			}
+			if len(tt.args.httpConditionIdFilter) > 0 {
+				rb = rb.AddQuery(uri.HTTPConditionIDFilter, tt.args.httpConditionIdFilter...)
+			}
 			resp := httpTest.Do(t, rb.Build(ctx, t))
 			defer func() {
 				_ = resp.Body.Close()

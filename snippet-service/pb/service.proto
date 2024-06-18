@@ -76,11 +76,15 @@ message Condition { // driven by resource change event
 message GetConditionsRequest { 
   repeated IDFilter id_filter = 1;
   repeated string configuration_id_filter = 2; // returns latest conditions for given configurationId
-    // Format: {id}/{version}, e.g., "ae424c58-e517-4494-6de7-583536c48213/all" or "ae424c58-e517-4494-6de7-583536c48213/latest" or "ae424c58-e517-4494-6de7-583536c48213/{version}"
+  // Format: {id}/{version}, e.g., "ae424c58-e517-4494-6de7-583536c48213/all" or "ae424c58-e517-4494-6de7-583536c48213/latest" or "ae424c58-e517-4494-6de7-583536c48213/1234"
   repeated string http_id_filter = 3 [ deprecated = true ];
 }
 
-message DeleteConditionsRequest { repeated IDFilter id_filter = 1; }
+message DeleteConditionsRequest {
+  repeated IDFilter id_filter = 1;
+  // Format: {id}/{version}, e.g., "ae424c58-e517-4494-6de7-583536c48213/all" or "ae424c58-e517-4494-6de7-583536c48213/latest" or "ae424c58-e517-4494-6de7-583536c48213/1234"
+  repeated string http_id_filter = 2 [ deprecated = true ];
+}
 message DeleteConditionsResponse { int64 count = 1; }
 
 message Configuration {
@@ -108,10 +112,14 @@ message Configuration {
 
 message GetConfigurationsRequest {
   repeated IDFilter id_filter = 1;
-  // Format: {id}/{version}, e.g., "ae424c58-e517-4494-6de7-583536c48213/all" or "ae424c58-e517-4494-6de7-583536c48213/latest" or "ae424c58-e517-4494-6de7-583536c48213/{version}"
+  // Format: {id}/{version}, e.g., "ae424c58-e517-4494-6de7-583536c48213/all" or "ae424c58-e517-4494-6de7-583536c48213/latest" or "ae424c58-e517-4494-6de7-583536c48213/1234"
   repeated string http_id_filter = 2 [ deprecated = true ];
 }
-message DeleteConfigurationsRequest { repeated IDFilter id_filter = 1; }
+message DeleteConfigurationsRequest {
+  repeated IDFilter id_filter = 1;
+  // Format: {id}/{version}, e.g., "ae424c58-e517-4494-6de7-583536c48213/all" or "ae424c58-e517-4494-6de7-583536c48213/latest" or "ae424c58-e517-4494-6de7-583536c48213/1234"
+  repeated string http_id_filter = 2 [ deprecated = true ];
+}
 message DeleteConfigurationsResponse { int64 count = 1; }
 
 message AppliedDeviceConfiguration { //TODO naming 
@@ -155,8 +163,12 @@ message InvokeConfigurationRequest {
 message GetAppliedDeviceConfigurationsRequest { //TODO Naming
   repeated string id_filter = 1;
   repeated string device_id_filter = 2;
-  // repeated IDFilter configuration_id_filter = 3; // TODO
-  // repeated IDFilter condition_id_filter = 4; // TODO
+  repeated IDFilter configuration_id_filter = 3;
+  // Format: {id}/{version}, e.g., "ae424c58-e517-4494-6de7-583536c48213/all" or "ae424c58-e517-4494-6de7-583536c48213/latest" or "ae424c58-e517-4494-6de7-583536c48213/1234"
+  repeated string http_configuration_id_filter = 4 [ deprecated = true ];
+  repeated IDFilter condition_id_filter = 5;
+  // Format: {id}/{version}, e.g., "ae424c58-e517-4494-6de7-583536c48213/all" or "ae424c58-e517-4494-6de7-583536c48213/latest" or "ae424c58-e517-4494-6de7-583536c48213/1234"
+  repeated string http_condition_id_filter = 6 [ deprecated = true ];
 }
 
 message DeleteAppliedDeviceConfigurationsRequest { repeated string id_filter = 1; }

@@ -118,6 +118,7 @@ func (s *SnippetServiceServer) GetConfigurations(req *pb.GetConfigurationsReques
 	if err != nil {
 		return s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotGetConfigurations(err)))
 	}
+	req.IdFilter = append(req.GetIdFilter(), req.ConvertHTTPIDFilter()...)
 
 	err = s.store.GetConfigurations(srv.Context(), owner, req, func(c *store.Configuration) error {
 		return sendConfiguration(srv, c)
@@ -137,6 +138,8 @@ func (s *SnippetServiceServer) DeleteConfigurations(ctx context.Context, req *pb
 	if err != nil {
 		return nil, s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotDeleteConfigurations(err)))
 	}
+	req.IdFilter = append(req.GetIdFilter(), req.ConvertHTTPIDFilter()...)
+
 	count, err := s.store.DeleteConfigurations(ctx, owner, req)
 	if err != nil {
 		return nil, s.logger.LogAndReturnError(status.Errorf(codes.Internal, "%v", errCannotDeleteConfigurations(err)))
@@ -214,6 +217,7 @@ func (s *SnippetServiceServer) GetConditions(req *pb.GetConditionsRequest, srv p
 	if err != nil {
 		return s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotGetConditions(err)))
 	}
+	req.IdFilter = append(req.GetIdFilter(), req.ConvertHTTPIDFilter()...)
 
 	err = s.store.GetConditions(srv.Context(), owner, req, func(c *store.Condition) error {
 		return sendCondition(srv, c)
@@ -248,6 +252,8 @@ func (s *SnippetServiceServer) DeleteConditions(ctx context.Context, req *pb.Del
 	if err != nil {
 		return nil, s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotDeleteConditions(err)))
 	}
+	req.IdFilter = append(req.GetIdFilter(), req.ConvertHTTPIDFilter()...)
+
 	count, err := s.store.DeleteConditions(ctx, owner, req)
 	if err != nil {
 		return nil, s.logger.LogAndReturnError(status.Errorf(codes.Internal, "%v", errCannotDeleteConditions(err)))
@@ -284,6 +290,10 @@ func (s *SnippetServiceServer) GetAppliedConfigurations(req *pb.GetAppliedDevice
 	if err != nil {
 		return s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotGetAppliedConfigurations(err)))
 	}
+
+	req.ConditionIdFilter = append(req.GetConditionIdFilter(), req.ConvertHTTPConditionIdFilter()...)
+	req.ConfigurationIdFilter = append(req.GetConfigurationIdFilter(), req.ConvertHTTPConfigurationIdFilter()...)
+
 	err = s.store.GetAppliedConfigurations(srv.Context(), owner, req, func(c *pb.AppliedDeviceConfiguration) error {
 		return srv.Send(c)
 	})
