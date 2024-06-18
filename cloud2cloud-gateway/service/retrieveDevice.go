@@ -74,7 +74,7 @@ type Representation struct {
 }
 
 func unmarshalContent(c *commands.Content, m interface{}) error {
-	if c == nil {
+	if c.GetContentType() == "" {
 		return nil
 	}
 	return commands.DecodeContent(c, m)

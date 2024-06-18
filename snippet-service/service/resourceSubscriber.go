@@ -306,7 +306,6 @@ func (h *resourceChangedHandler) applyConfigurationToResources(ctx context.Conte
 				// ResourceTypes: ,
 				// OpenTelemetryCarrier:
 			}
-			// ak sa nepodari ziadny update tak zapisat ResourceUpdated so statusom chybou
 		}
 		resources[href] = resource
 	}

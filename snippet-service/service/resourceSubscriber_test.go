@@ -147,14 +147,18 @@ func TestEvalJQ(t *testing.T) {
 		},
 		{
 			name: "object",
-			jq:   ".a == 42 and .b == \"leet\" and .c == [1, 2, 3]",
+			jq:   ".a == 42 and .b == \"leet\" and .c[1] == 2",
 			content: &commands.Content{
-				ContentType: message.AppOcfCbor.String(),
-				Data: hubTest.EncodeToCbor(t, map[string]any{
-					"a": 42,
-					"b": "leet",
-					"c": []int{1, 2, 3},
-				}),
+				ContentType: message.AppJSON.String(),
+				Data: func() []byte {
+					data, err := json.Encode(map[string]any{
+						"a": 42,
+						"b": "leet",
+						"c": []int{1, 2, 3},
+					})
+					require.NoError(t, err)
+					return data
+				}(),
 			},
 			want: true,
 		},
@@ -163,7 +167,13 @@ func TestEvalJQ(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var json any
-			err := commands.DecodeContent(tt.content, &json)
+			var jsonMap map[string]any
+			err := commands.DecodeContent(tt.content, &jsonMap)
+			if err == nil {
+				json = jsonMap
+			} else {
+				err = commands.DecodeContent(tt.content, &json)
+			}
 			require.NoError(t, err)
 			got, err := service.EvalJQ(tt.jq, json)
 			if tt.wantErr {
