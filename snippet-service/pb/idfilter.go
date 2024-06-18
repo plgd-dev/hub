@@ -176,8 +176,6 @@ func PartitionIDFilter(idfilter []*IDFilter) VersionFilter {
 	return vf
 }
 
-const versionQueryKey = "version"
-
 // we are permissive in parsing id filter
 func idFilterFromString(v string) *IDFilter {
 	if len(v) == 0 {
