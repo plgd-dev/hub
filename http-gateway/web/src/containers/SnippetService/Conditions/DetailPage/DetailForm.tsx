@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useState } from 'react'
+import React, { FC, useEffect } from 'react'
 import { useIntl } from 'react-intl'
 import { generatePath, useNavigate } from 'react-router-dom'
 import get from 'lodash/get'
@@ -107,7 +107,7 @@ const DetailForm: FC<Props> = (props) => {
                                 <Tag
                                     onClick={() =>
                                         navigate(
-                                            generatePath(pages.CONDITIONS.RESOURCES_CONFIG.DETAIL.LINK, {
+                                            generatePath(pages.SNIPPET_SERVICE.RESOURCES_CONFIG.DETAIL.LINK, {
                                                 resourcesConfigId: formData.configurationId,
                                                 tab: '',
                                             })

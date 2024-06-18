@@ -1,5 +1,3 @@
-import { OptionType } from '@shared-ui/components/Atomic/FormSelect/FormSelect.types'
-
 export type Props = {
     formData: any
     refs: {

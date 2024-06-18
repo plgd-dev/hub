@@ -15,3 +15,9 @@ export const DEFAULT_RESOURCE_CONFIG_DATA = {
 }
 
 export const DEFAULT_CONFIG_DATA = {}
+
+export const APPLIED_DEVICE_CONFIG_STATUS = {
+    SUCCESS: 1,
+    PENDING: 0,
+    ERROR: -1,
+}

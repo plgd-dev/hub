@@ -54,7 +54,7 @@ const Tab2: FC<Props> = (props) => {
                     <TableActionButton
                         items={[
                             {
-                                onClick: () => navigate(generatePath(pages.CONDITIONS.CONDITIONS.DETAIL.LINK, { conditionId: row.original.id, tab: '' })),
+                                onClick: () => navigate(generatePath(pages.SNIPPET_SERVICE.CONDITIONS.DETAIL.LINK, { conditionId: row.original.id, tab: '' })),
                                 label: _(g.view),
                                 icon: <IconArrowDetail />,
                             },
@@ -80,7 +80,7 @@ const Tab2: FC<Props> = (props) => {
             <div ref={ref} style={{ flex: '1 1 auto' }}>
                 <Table
                     columns={columns}
-                    data={data}
+                    data={data || []}
                     defaultPageSize={10}
                     defaultSortBy={[
                         {

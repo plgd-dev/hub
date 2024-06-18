@@ -42,8 +42,8 @@ const Step1: FC<any> = (props) => {
             timeToLive: '0',
             content: {
                 data: '',
-                contentType: 'string',
-                coapContentFormat: 0,
+                contentType: 'application/json',
+                coapContentFormat: -1,
             },
         }),
         []
@@ -130,7 +130,12 @@ const Step1: FC<any> = (props) => {
                                     updateField('resources', newResources)
                                 }}
                                 onUpdate={(data) => {
-                                    const newResources = resources.map((r, index) => (index === key ? data : r))
+                                    const resData = {
+                                        ...data,
+                                        content: { ...data.content, data: btoa(data.content.data.toString()), contentType: 'application/json' },
+                                    }
+                                    const newResources = resources.map((r, index) => (index === key ? resData : r))
+                                    console.log(newResources)
                                     updateField('resources', newResources)
                                     setValue('resources', newResources)
                                 }}

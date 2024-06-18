@@ -458,4 +458,16 @@ export const messages = defineMessages({
         id: 'global.devicesSelected',
         defaultMessage: 'devices selected',
     },
+    error: {
+        id: 'global.error',
+        defaultMessage: 'Error',
+    },
+    pending: {
+        id: 'global.pending',
+        defaultMessage: 'Pending',
+    },
+    success: {
+        id: 'global.success',
+        defaultMessage: 'Success',
+    },
 })

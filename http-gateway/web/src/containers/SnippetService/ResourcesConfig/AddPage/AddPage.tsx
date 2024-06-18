@@ -30,12 +30,12 @@ const AddPage: FC<any> = () => {
             {
                 name: _(confT.createConfig),
                 description: _(confT.createConfigDescription),
-                link: pages.CONDITIONS.RESOURCES_CONFIG.ADD.STEPS[0],
+                link: pages.SNIPPET_SERVICE.RESOURCES_CONFIG.ADD.STEPS[0],
             },
             {
                 name: _(confT.applyToDevices),
                 description: _(confT.applyToDevicesDescription),
-                link: pages.CONDITIONS.RESOURCES_CONFIG.ADD.STEPS[1],
+                link: pages.SNIPPET_SERVICE.RESOURCES_CONFIG.ADD.STEPS[1],
             },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -50,7 +50,7 @@ const AddPage: FC<any> = () => {
         (item: number) => {
             setActiveItem(item)
 
-            navigate(generatePath(pages.CONDITIONS.RESOURCES_CONFIG.ADD.LINK, { tab: steps[item].link }))
+            navigate(generatePath(pages.SNIPPET_SERVICE.RESOURCES_CONFIG.ADD.LINK, { tab: steps[item].link }))
 
             if (item > visitedStep) {
                 setVisitedStep(item)
@@ -68,19 +68,7 @@ const AddPage: FC<any> = () => {
 
             console.log(formData)
 
-            await createResourcesConfigApi({
-                name: 'test',
-                resources: [
-                    {
-                        href: '/etc/1',
-                        timeToLive: '0',
-                        content: {
-                            data: 'test',
-                            contentType: 'string',
-                        },
-                    },
-                ],
-            })
+            await createResourcesConfigApi(formData)
 
             Notification.success(
                 {
@@ -90,9 +78,9 @@ const AddPage: FC<any> = () => {
                 { notificationId: notificationId.HUB_SNIPPET_SERVICE_RESOURCES_CONFIGURATION_LIST_PAGE_ADD_SUCCESS }
             )
 
-            // setFormData(DEFAULT_RESOURCE_CONFIG_DATA)
+            setFormData(DEFAULT_RESOURCE_CONFIG_DATA)
 
-            navigate(pages.CONDITIONS.RESOURCES_CONFIG.LINK)
+            navigate(pages.SNIPPET_SERVICE.RESOURCES_CONFIG.LINK)
         } catch (error: any) {
             Notification.error(
                 { title: _(confT.addConfigurationError), message: getApiErrorMessage(error) },
@@ -121,7 +109,7 @@ const AddPage: FC<any> = () => {
             }}
             onClose={() => {
                 setFormData(DEFAULT_RESOURCE_CONFIG_DATA)
-                navigate(pages.CONDITIONS.RESOURCES_CONFIG.LINK)
+                navigate(pages.SNIPPET_SERVICE.RESOURCES_CONFIG.LINK)
             }}
             onStepChange={onStepChange}
             steps={steps}

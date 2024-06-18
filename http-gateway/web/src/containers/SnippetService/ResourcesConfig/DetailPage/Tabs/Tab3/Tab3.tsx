@@ -62,7 +62,7 @@ const Tab3: FC<Props> = (props) => {
                     <TableActionButton
                         items={[
                             {
-                                onClick: () => navigate(generatePath(pages.CONDITIONS.CONDITIONS.DETAIL.LINK, { conditionId: row.original.id, tab: '' })),
+                                onClick: () => navigate(generatePath(pages.SNIPPET_SERVICE.CONDITIONS.DETAIL.LINK, { conditionId: row.original.id, tab: '' })),
                                 label: _(g.view),
                                 icon: <IconArrowDetail />,
                             },

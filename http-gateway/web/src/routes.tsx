@@ -58,6 +58,7 @@ const ConditionsListPage = lazy(() => import('./containers/SnippetService/Condit
 const ConditionsDetailPage = lazy(() => import('./containers/SnippetService/Conditions/DetailPage'))
 const ConditionsAddPage = lazy(() => import('./containers/SnippetService/Conditions/AddPage'))
 const AppliedDeviceConfigListPage = lazy(() => import('./containers/SnippetService/AppliedDeviceConfig/ListPage'))
+const AppliedDeviceConfigDetailPage = lazy(() => import('./containers/SnippetService/AppliedDeviceConfig/DetailPage'))
 
 // Certificates
 const CertificatesListPage = lazy(() => import('./containers/Certificates'))
@@ -129,38 +130,38 @@ export const pages = {
             DETAIL: '/device-provisioning/enrollment-groups/:enrollmentId',
         },
     },
-    CONDITIONS: {
-        LINK: '/conditions',
+    SNIPPET_SERVICE: {
+        LINK: '/snippet-service',
         RESOURCES_CONFIG: {
-            LINK: '/conditions/resources-config',
+            LINK: '/snippet-service/resources-config',
             DETAIL: {
-                LINK: '/conditions/resources-config/:resourcesConfigId/:tab',
-                LINK_NO_TABS: '/conditions/resources-config/:resourcesConfigId',
-                TABS: ['', 'conditions', 'certificate-authority', 'device-applied-conditions'],
+                LINK: '/snippet-service/resources-config/:resourcesConfigId/:tab',
+                LINK_NO_TABS: '/snippet-service/resources-config/:resourcesConfigId',
+                TABS: ['', 'snippet-service', 'certificate-authority', 'device-applied-conditions'],
             },
             ADD: {
-                LINK: '/conditions/resources-config/add/:tab',
+                LINK: '/snippet-service/resources-config/add/:tab',
                 STEPS: ['', 'apply-to-devices'],
             },
         },
         CONDITIONS: {
-            LINK: '/conditions/conditions',
+            LINK: '/snippet-service/conditions',
             DETAIL: {
-                LINK: '/conditions/conditions/:conditionId',
+                LINK: '/snippet-service/conditions/:conditionId',
             },
             ADD: {
-                LINK: '/conditions/conditions/add/:tab',
+                LINK: '/snippet-service/conditions/add/:tab',
                 STEPS: ['', 'apply-filters', 'select-configuration'],
             },
         },
         APPLIED_DEVICE_CONFIG: {
-            LINK: '/conditions/applied-device-config',
+            LINK: '/snippet-service/applied-device-config',
             ADD: {
-                LINK: '/conditions/applied-device-config/add/:tab',
+                LINK: '/snippet-service/applied-device-config/add/:tab',
                 STEPS: ['', 'apply-to-devices'],
             },
             DETAIL: {
-                LINK: '/conditions/:appliedDeviceConfigId',
+                LINK: '/snippet-service/applied-device-config/:appliedDeviceConfigId',
             },
         },
     },
@@ -291,37 +292,38 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
             {
                 icon: <IconNetwork />,
                 id: '11',
-                title: <MenuTranslate id='menuConditions' />,
-                link: pages.CONDITIONS.LINK,
-                paths: [pages.CONDITIONS.LINK],
+                title: <MenuTranslate id='menuSnippetService' />,
+                link: pages.SNIPPET_SERVICE.LINK,
+                paths: [pages.SNIPPET_SERVICE.LINK],
+
                 exact: true,
-                visibility: menuConfig.deviceConditions || true,
+                visibility: menuConfig.menuSnippetService || true,
                 children: [
                     {
                         id: '111',
                         title: <MenuTranslate id='menuResourcesConfig' />,
                         link: '/resources-config',
                         paths: [
-                            pages.CONDITIONS.RESOURCES_CONFIG.LINK,
-                            pages.CONDITIONS.RESOURCES_CONFIG.DETAIL.LINK_NO_TABS,
-                            pages.CONDITIONS.RESOURCES_CONFIG.DETAIL.LINK,
-                            pages.CONDITIONS.RESOURCES_CONFIG.ADD.LINK,
+                            pages.SNIPPET_SERVICE.RESOURCES_CONFIG.LINK,
+                            pages.SNIPPET_SERVICE.RESOURCES_CONFIG.DETAIL.LINK_NO_TABS,
+                            pages.SNIPPET_SERVICE.RESOURCES_CONFIG.DETAIL.LINK,
+                            pages.SNIPPET_SERVICE.RESOURCES_CONFIG.ADD.LINK,
                         ],
                     },
                     {
                         id: '112',
                         title: <MenuTranslate id='menuConditions' />,
                         link: '/conditions',
-                        paths: [pages.CONDITIONS.CONDITIONS.LINK, pages.CONDITIONS.CONDITIONS.DETAIL.LINK],
+                        paths: [pages.SNIPPET_SERVICE.CONDITIONS.LINK, pages.SNIPPET_SERVICE.CONDITIONS.DETAIL.LINK],
                     },
                     {
                         id: '113',
                         title: <MenuTranslate id='menuAppliedDeviceConfig' />,
                         link: '/applied-device-config',
                         paths: [
-                            pages.CONDITIONS.APPLIED_DEVICE_CONFIG.LINK,
-                            pages.CONDITIONS.APPLIED_DEVICE_CONFIG.DETAIL.LINK,
-                            pages.CONDITIONS.APPLIED_DEVICE_CONFIG.ADD.LINK,
+                            pages.SNIPPET_SERVICE.APPLIED_DEVICE_CONFIG.LINK,
+                            pages.SNIPPET_SERVICE.APPLIED_DEVICE_CONFIG.DETAIL.LINK,
+                            pages.SNIPPET_SERVICE.APPLIED_DEVICE_CONFIG.ADD.LINK,
                         ],
                     },
                 ],
@@ -406,10 +408,10 @@ export const noLayoutPages = [
     '/device-provisioning/linked-hubs/link-new-hub/:step',
     '/device-provisioning/enrollment-groups/new-enrollment-group',
     '/device-provisioning/enrollment-groups/new-enrollment-group/:step',
-    '/conditions/resources-config/add/:tab',
-    '/conditions/resources-config/add',
-    '/conditions/conditions/add/:tab',
-    '/conditions/conditions/add',
+    '/snippet-service/resources-config/add/:tab',
+    '/snippet-service/resources-config/add',
+    '/snippet-service/conditions/add/:tab',
+    '/snippet-service/conditions/add',
 ]
 
 export const mather = (pathname: string, pattern: string) => matchPath(pattern, pathname)
@@ -490,7 +492,7 @@ export const Routes = () => {
             </Route>
 
             {/* ***** SNIPPET SERVICE ***** */}
-            <Route path='conditions'>
+            <Route path='snippet-service'>
                 {/* ***** RESOURCES CONFIGURATION ***** */}
                 <Route path='resources-config'>
                     <Route element={withSuspense(<ResourcesConfigDetailPage />)} path=':resourcesConfigId/:tab' />
@@ -506,6 +508,7 @@ export const Routes = () => {
 
                 {/* ***** APPLIED RESOURCES CONFIGURATION ***** */}
                 <Route path='applied-device-config'>
+                    <Route element={withSuspense(<AppliedDeviceConfigDetailPage />)} path=':appliedDeviceConfigId' />
                     <Route element={withSuspense(<AppliedDeviceConfigListPage />)} path='' />
                 </Route>
             </Route>

@@ -9,11 +9,11 @@ import FormLabel from '@shared-ui/components/Atomic/FormLabel'
 import FormSelect from '@shared-ui/components/Atomic/FormSelect'
 import { OptionType } from '@shared-ui/components/Atomic/FormSelect/FormSelect.types'
 import StatusTag from '@shared-ui/components/Atomic/StatusTag'
+import FormInput from '@shared-ui/components/Atomic/FormInput'
 
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as confT } from '@/containers/SnippetService/SnippetService.i18n'
 import { useDevicesList } from '@/containers/Devices/hooks'
-import FormInput from '@shared-ui/components/Atomic/FormInput'
 
 type Props = {
     isActivePage?: boolean

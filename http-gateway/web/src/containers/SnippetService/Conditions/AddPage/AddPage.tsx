@@ -32,17 +32,17 @@ const AddPage: FC<any> = () => {
             {
                 name: _(confT.createConditions),
                 description: _(confT.createConditionsDescription),
-                link: pages.CONDITIONS.CONDITIONS.ADD.STEPS[0],
+                link: pages.SNIPPET_SERVICE.CONDITIONS.ADD.STEPS[0],
             },
             {
                 name: _(confT.applyFilters),
                 description: _(confT.applyFiltersDescription),
-                link: pages.CONDITIONS.CONDITIONS.ADD.STEPS[1],
+                link: pages.SNIPPET_SERVICE.CONDITIONS.ADD.STEPS[1],
             },
             {
                 name: _(confT.selectConfiguration),
                 description: _(confT.selectConfigurationDescription),
-                link: pages.CONDITIONS.CONDITIONS.ADD.STEPS[2],
+                link: pages.SNIPPET_SERVICE.CONDITIONS.ADD.STEPS[2],
             },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -57,7 +57,7 @@ const AddPage: FC<any> = () => {
         (item: number) => {
             setActiveItem(item)
 
-            navigate(generatePath(pages.CONDITIONS.CONDITIONS.ADD.LINK, { tab: steps[item].link }))
+            navigate(generatePath(pages.SNIPPET_SERVICE.CONDITIONS.ADD.LINK, { tab: steps[item].link }))
 
             if (item > visitedStep) {
                 setVisitedStep(item)
@@ -71,8 +71,8 @@ const AddPage: FC<any> = () => {
             delete formData.id
 
             const dataForSave = cloneDeep(formData)
-            dataForSave.deviceIdFilter = dataForSave.deviceIds.map((device: any) => device.value)
-            delete dataForSave.deviceIds
+            // dataForSave.deviceIdFilter = dataForSave.deviceIds.map((device: any) => device.value)
+            // delete dataForSave.deviceIds
 
             // FormSelect
             dataForSave.configurationId = formData.configurationId.value
@@ -89,7 +89,7 @@ const AddPage: FC<any> = () => {
 
             setFormData(DEFAULT_RESOURCE_CONFIG_DATA)
 
-            navigate(pages.CONDITIONS.CONDITIONS.LINK)
+            navigate(pages.SNIPPET_SERVICE.CONDITIONS.LINK)
         } catch (error: any) {
             Notification.error(
                 { title: _(confT.addConditionError), message: getApiErrorMessage(error) },
@@ -118,7 +118,7 @@ const AddPage: FC<any> = () => {
             }}
             onClose={() => {
                 setFormData(DEFAULT_RESOURCE_CONFIG_DATA)
-                navigate(pages.CONDITIONS.CONDITIONS.LINK)
+                navigate(pages.SNIPPET_SERVICE.CONDITIONS.LINK)
             }}
             onStepChange={onStepChange}
             steps={steps}

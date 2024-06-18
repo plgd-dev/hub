@@ -1,6 +1,10 @@
 import { defineMessages } from '@formatjs/intl'
 
 export const messages = defineMessages({
+    snippetService: {
+        id: 'snippetService.snippetService',
+        defaultMessage: 'Snippet service',
+    },
     conditions: {
         id: 'snippetService.conditions',
         defaultMessage: 'Conditions',

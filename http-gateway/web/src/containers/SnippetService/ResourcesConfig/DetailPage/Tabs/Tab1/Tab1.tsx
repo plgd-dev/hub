@@ -93,7 +93,7 @@ const Tab1: FC<Props> = (props) => {
                             href='#'
                             onClick={(e) => {
                                 e.preventDefault()
-                                // navigate(generatePath(pages.CONDITIONS.RESOURCES_CONFIG.DETAIL.LINK, { resourcesConfigId: row.original.id, tab: '' }))
+                                // navigate(generatePath(pages.SNIPPET_SERVICE.RESOURCES_CONFIG.DETAIL.LINK, { resourcesConfigId: row.original.id, tab: '' }))
                             }}
                         >
                             <span className='no-wrap-text'>

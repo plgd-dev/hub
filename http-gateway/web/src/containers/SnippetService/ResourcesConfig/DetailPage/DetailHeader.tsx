@@ -51,7 +51,7 @@ const DetailHeader: FC<Props> = (props) => {
                     { notificationId: notificationId.HUB_SNIPPET_SERVICE_RESOURCES_CONFIGURATION_DETAIL_PAGE_DELETE_SUCCESS }
                 )
 
-                navigate(generatePath(pages.CONDITIONS.RESOURCES_CONFIG.LINK))
+                navigate(generatePath(pages.SNIPPET_SERVICE.RESOURCES_CONFIG.LINK))
             }}
             testIds={{
                 deleteButton: testId.snippetService.resourcesConfig.detail.deleteButton,

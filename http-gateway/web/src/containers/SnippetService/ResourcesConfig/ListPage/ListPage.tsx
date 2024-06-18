@@ -25,7 +25,7 @@ const ListPage: FC<any> = () => {
     const navigate = useNavigate()
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    const breadcrumbs = useMemo(() => [{ label: _(confT.conditions), link: '/conditions' }, { label: _(confT.resourcesConfiguration) }], [])
+    const breadcrumbs = useMemo(() => [{ label: _(confT.snippetService), link: '/conditions' }, { label: _(confT.resourcesConfiguration) }], [])
 
     useEffect(() => {
         error &&
@@ -45,10 +45,10 @@ const ListPage: FC<any> = () => {
                 accessor: 'name',
                 Cell: ({ value, row }: { value: string | number; row: any }) => (
                     <a
-                        href={generatePath(pages.CONDITIONS.RESOURCES_CONFIG.DETAIL.LINK, { resourcesConfigId: row.original.id, tab: '' })}
+                        href={generatePath(pages.SNIPPET_SERVICE.RESOURCES_CONFIG.DETAIL.LINK, { resourcesConfigId: row.original.id, tab: '' })}
                         onClick={(e) => {
                             e.preventDefault()
-                            navigate(generatePath(pages.CONDITIONS.RESOURCES_CONFIG.DETAIL.LINK, { resourcesConfigId: row.original.id, tab: '' }))
+                            navigate(generatePath(pages.SNIPPET_SERVICE.RESOURCES_CONFIG.DETAIL.LINK, { resourcesConfigId: row.original.id, tab: '' }))
                         }}
                     >
                         <span className='no-wrap-text'>{value}</span>
@@ -79,7 +79,11 @@ const ListPage: FC<any> = () => {
         <PageLayout
             breadcrumbs={breadcrumbs}
             header={
-                <Button icon={<IconPlus />} onClick={() => navigate(generatePath(pages.CONDITIONS.RESOURCES_CONFIG.ADD.LINK, { tab: '' }))} variant='primary'>
+                <Button
+                    icon={<IconPlus />}
+                    onClick={() => navigate(generatePath(pages.SNIPPET_SERVICE.RESOURCES_CONFIG.ADD.LINK, { tab: '' }))}
+                    variant='primary'
+                >
                     {_(confT.configuration)}
                 </Button>
             }
@@ -104,7 +108,7 @@ const ListPage: FC<any> = () => {
                         { notificationId: notificationId.HUB_SNIPPET_SERVICE_RESOURCES_CONFIGURATION_LIST_PAGE_DELETE_SUCCESS }
                     )
                 }}
-                onDetailClick={(id: string) => navigate(generatePath(pages.CONDITIONS.RESOURCES_CONFIG.DETAIL.LINK, { resourcesConfigId: id, tab: '' }))}
+                onDetailClick={(id: string) => navigate(generatePath(pages.SNIPPET_SERVICE.RESOURCES_CONFIG.DETAIL.LINK, { resourcesConfigId: id, tab: '' }))}
                 refresh={() => refresh()}
             />
         </PageLayout>

@@ -50,6 +50,8 @@ const DetailPage: FC<any> = () => {
         []
     )
 
+    console.log(configurationData)
+
     const data = useMemo(() => (configurationData && configurationData?.length > 0 ? configurationData[0] : []), [configurationData])
     const versions = useMemo(
         () => configurationData?.map((version: { version: string }) => ({ value: version.version, label: `v${version.version}` })),
@@ -64,7 +66,7 @@ const DetailPage: FC<any> = () => {
 
     const [pageLoading, setPageLoading] = useState(false)
     const [notFound, setNotFound] = useState(false)
-    const [activeTabItem, setActiveTabItem] = useState(tab ? pages.CONDITIONS.RESOURCES_CONFIG.DETAIL.TABS.indexOf(tab) : 0)
+    const [activeTabItem, setActiveTabItem] = useState(tab ? pages.SNIPPET_SERVICE.RESOURCES_CONFIG.DETAIL.TABS.indexOf(tab) : 0)
 
     const isMounted = useIsMounted()
     const navigate = useNavigate()
@@ -80,15 +82,15 @@ const DetailPage: FC<any> = () => {
     }, [error])
 
     useEffect(() => {
-        if (pages.CONDITIONS.RESOURCES_CONFIG.DETAIL.TABS.indexOf(tab) === -1) {
+        if (pages.SNIPPET_SERVICE.RESOURCES_CONFIG.DETAIL.TABS.indexOf(tab) === -1) {
             setNotFound(true)
         }
     }, [tab])
 
     const breadcrumbs = useMemo(
         () => [
-            { label: _(confT.conditions), link: generatePath(pages.CONDITIONS.LINK) },
-            { label: _(confT.resourcesConfiguration), link: generatePath(pages.CONDITIONS.RESOURCES_CONFIG.LINK) },
+            { label: _(confT.snippetService), link: generatePath(pages.SNIPPET_SERVICE.LINK) },
+            { label: _(confT.resourcesConfiguration), link: generatePath(pages.SNIPPET_SERVICE.RESOURCES_CONFIG.LINK) },
             { label: data?.name || '' },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -98,7 +100,9 @@ const DetailPage: FC<any> = () => {
     const handleTabChange = useCallback((i: number) => {
         setActiveTabItem(i)
 
-        navigate(generatePath(pages.CONDITIONS.RESOURCES_CONFIG.DETAIL.LINK, { resourcesConfigId, tab: pages.CONDITIONS.RESOURCES_CONFIG.DETAIL.TABS[i] }))
+        navigate(
+            generatePath(pages.SNIPPET_SERVICE.RESOURCES_CONFIG.DETAIL.LINK, { resourcesConfigId, tab: pages.SNIPPET_SERVICE.RESOURCES_CONFIG.DETAIL.TABS[i] })
+        )
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
@@ -120,7 +124,7 @@ const DetailPage: FC<any> = () => {
             handleReset()
             refresh()
 
-            navigate(generatePath(pages.CONDITIONS.RESOURCES_CONFIG.LINK))
+            navigate(generatePath(pages.SNIPPET_SERVICE.RESOURCES_CONFIG.LINK))
 
             setPageLoading(false)
         } catch (error: any) {

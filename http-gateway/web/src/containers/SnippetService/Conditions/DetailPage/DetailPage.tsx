@@ -3,6 +3,7 @@ import { useIntl } from 'react-intl'
 import { generatePath, useNavigate, useParams } from 'react-router-dom'
 import ReactDOM from 'react-dom'
 import cloneDeep from 'lodash/cloneDeep'
+import { useMediaQuery } from 'react-responsive'
 
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
@@ -45,8 +46,8 @@ const DetailPage: FC<any> = () => {
 
     const breadcrumbs = useMemo(
         () => [
-            { label: _(confT.conditions), link: generatePath(pages.CONDITIONS.LINK) },
-            { label: _(confT.conditions), link: generatePath(pages.CONDITIONS.CONDITIONS.LINK) },
+            { label: _(confT.snippetService), link: generatePath(pages.SNIPPET_SERVICE.LINK) },
+            { label: _(confT.conditions), link: generatePath(pages.SNIPPET_SERVICE.CONDITIONS.LINK) },
             { label: data?.name || '' },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -130,7 +131,7 @@ const DetailPage: FC<any> = () => {
             setPageLoading(false)
 
             // temp
-            navigate(generatePath(pages.CONDITIONS.CONDITIONS.LINK))
+            navigate(generatePath(pages.SNIPPET_SERVICE.CONDITIONS.LINK))
         } catch (error: any) {
             let e = error
             if (!(error instanceof Error)) {
@@ -144,6 +145,14 @@ const DetailPage: FC<any> = () => {
         }
     }
 
+    const isDesktopOrLaptop = useMediaQuery(
+        {
+            query: '(min-width: 1200px)',
+        },
+        undefined,
+        () => {}
+    )
+
     return (
         <PageLayout
             breadcrumbs={breadcrumbs}
@@ -153,9 +162,15 @@ const DetailPage: FC<any> = () => {
             xPadding={false}
         >
             <Spacer style={{ height: '100%', overflow: 'hidden' }} type='pt-4 pl-10'>
-                <Row style={{ height: '100%' }}>
+                <Row
+                    style={
+                        isDesktopOrLaptop
+                            ? { height: '100%' }
+                            : { display: 'flex', flexDirection: 'column', flexWrap: 'nowrap', overflow: 'hidden', height: '100%' }
+                    }
+                >
                     <Column xl={3}>
-                        <Spacer type='mb-4'>
+                        <Spacer type={`mb-4${isDesktopOrLaptop ? '' : ' pr-10'}`}>
                             <ContentMenu
                                 activeItem={activeItem}
                                 handleItemClick={handleItemClick}
@@ -164,8 +179,8 @@ const DetailPage: FC<any> = () => {
                             />
                         </Spacer>
                     </Column>
-                    <Column xl={1}></Column>
-                    <Column style={{ height: '100%' }} xl={8}>
+                    {isDesktopOrLaptop && <Column xl={1}></Column>}
+                    <Column style={isDesktopOrLaptop ? { height: '100%' } : { flex: '1 1 auto', overflow: 'hidden' }} xl={8}>
                         <Spacer style={{ height: '100%', overflow: 'auto' }} type='pr-10'>
                             <FormContext.Provider value={context}>
                                 <Loadable condition={!!formData && !loading && !!data}>
@@ -184,29 +199,28 @@ const DetailPage: FC<any> = () => {
                                 </Loadable>
                             </FormContext.Provider>
                         </Spacer>
-
-                        {isMounted &&
-                            document.querySelector('#modal-root') &&
-                            ReactDOM.createPortal(
-                                <BottomPanel
-                                    actionPrimary={
-                                        <Button disabled={hasError} loading={loading} loadingText={_(g.loading)} onClick={onSubmit} variant='primary'>
-                                            {_(g.saveChanges)}
-                                        </Button>
-                                    }
-                                    actionSecondary={
-                                        <Button disabled={loading} onClick={handleReset} variant='secondary'>
-                                            {_(g.reset)}
-                                        </Button>
-                                    }
-                                    leftPanelCollapsed={collapsed}
-                                    show={dirty}
-                                />,
-                                document.querySelector('#modal-root') as Element
-                            )}
                     </Column>
                 </Row>
             </Spacer>
+            {isMounted &&
+                document.querySelector('#modal-root') &&
+                ReactDOM.createPortal(
+                    <BottomPanel
+                        actionPrimary={
+                            <Button disabled={hasError} loading={loading} loadingText={_(g.loading)} onClick={onSubmit} variant='primary'>
+                                {_(g.saveChanges)}
+                            </Button>
+                        }
+                        actionSecondary={
+                            <Button disabled={loading} onClick={handleReset} variant='secondary'>
+                                {_(g.reset)}
+                            </Button>
+                        }
+                        leftPanelCollapsed={collapsed}
+                        show={dirty}
+                    />,
+                    document.querySelector('#modal-root') as Element
+                )}
         </PageLayout>
     )
 }

@@ -1,12 +1,14 @@
-import React, { FC, useEffect, useMemo } from 'react'
+import React, { FC, useCallback, useEffect, useMemo } from 'react'
 import { useIntl } from 'react-intl'
 import { generatePath, useNavigate } from 'react-router-dom'
 
-import Button from '@shared-ui/components/Atomic/Button'
-import { IconPlus } from '@shared-ui/components/Atomic/Icon'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
 import StatusPill from '@shared-ui/components/Atomic/StatusPill'
+import Tag from '@shared-ui/components/Atomic/Tag'
+import { tagVariants } from '@shared-ui/components/Atomic/Tag/constants'
+import IconLink from '@shared-ui/components/Atomic/Icon/components/IconLink'
+import { states } from '@shared-ui/components/Atomic/StatusPill/constants'
 
 import PageLayout from '@/containers/Common/PageLayout'
 import { messages as confT } from '../../SnippetService.i18n'
@@ -16,9 +18,7 @@ import { messages as g } from '@/containers/Global.i18n'
 import { pages } from '@/routes'
 import PageListTemplate from '@/containers/Common/PageListTemplate/PageListTemplate'
 import { deleteAppliedDeviceConfigApi } from '@/containers/SnippetService/rest'
-import Tag from '@shared-ui/components/Atomic/Tag'
-import { tagVariants } from '@shared-ui/components/Atomic/Tag/constants'
-import IconLink from '@shared-ui/components/Atomic/Icon/components/IconLink'
+import { APPLIED_DEVICE_CONFIG_STATUS } from '@/containers/SnippetService/constants'
 
 const ListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
@@ -26,8 +26,10 @@ const ListPage: FC<any> = () => {
     const { data, loading, error, refresh } = useAppliedDeviceConfigList()
     const navigate = useNavigate()
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    const breadcrumbs = useMemo(() => [{ label: _(confT.conditions), link: pages.CONDITIONS.LINK }, { label: _(confT.appliedDeviceConfiguration) }], [])
+    const breadcrumbs = useMemo(
+        () => [{ label: _(confT.snippetService), link: pages.SNIPPET_SERVICE.LINK }, { label: _(confT.appliedDeviceConfiguration) }],
+        [_]
+    )
 
     useEffect(() => {
         error &&
@@ -38,7 +40,32 @@ const ListPage: FC<any> = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [error])
 
-    console.log(data)
+    const getValue = useCallback(
+        (status: number) => {
+            switch (status) {
+                case APPLIED_DEVICE_CONFIG_STATUS.ERROR:
+                    return _(g.error)
+                case APPLIED_DEVICE_CONFIG_STATUS.PENDING:
+                    return _(g.pending)
+                default:
+                case APPLIED_DEVICE_CONFIG_STATUS.SUCCESS:
+                    return _(g.success)
+            }
+        },
+        [_]
+    )
+
+    const getStatus = useCallback((status: number) => {
+        switch (status) {
+            case APPLIED_DEVICE_CONFIG_STATUS.ERROR:
+                return states.OFFLINE
+            case APPLIED_DEVICE_CONFIG_STATUS.PENDING:
+                return states.OCCUPIED
+            default:
+            case APPLIED_DEVICE_CONFIG_STATUS.SUCCESS:
+                return states.ONLINE
+        }
+    }, [])
 
     const columns = useMemo(
         () => [
@@ -47,10 +74,10 @@ const ListPage: FC<any> = () => {
                 accessor: 'name',
                 Cell: ({ value, row }: { value: string | number; row: any }) => (
                     <a
-                        href={generatePath(pages.CONDITIONS.APPLIED_DEVICE_CONFIG.DETAIL.LINK, { appliedDeviceConfigId: row.original.id, section: '' })}
+                        href={generatePath(pages.SNIPPET_SERVICE.APPLIED_DEVICE_CONFIG.DETAIL.LINK, { appliedDeviceConfigId: row.original._id })}
                         onClick={(e) => {
                             e.preventDefault()
-                            navigate(generatePath(pages.CONDITIONS.APPLIED_DEVICE_CONFIG.DETAIL.LINK, { appliedDeviceConfigId: row.original.id, section: '' }))
+                            navigate(generatePath(pages.SNIPPET_SERVICE.APPLIED_DEVICE_CONFIG.DETAIL.LINK, { appliedDeviceConfigId: row.original._id }))
                         }}
                     >
                         <span className='no-wrap-text'>{value}</span>
@@ -65,23 +92,14 @@ const ListPage: FC<any> = () => {
             {
                 Header: _(g.status),
                 accessor: 'status',
-                Cell: ({ value }: { value: string | number }) => (
-                    <StatusPill
-                        label='Offline'
-                        pending={{
-                            onClick: () => console.log('on click'),
-                            text: '3 pending commands',
-                        }}
-                        status='offline'
-                    />
-                ),
+                Cell: ({ value }: { value: number }) => <StatusPill label={getValue(value)} status={getStatus(value)} />,
             },
             {
                 Header: _(confT.condition),
                 accessor: 'conditionId',
                 Cell: ({ value, row }: { value: string; row: any }) => (
                     <Tag
-                        onClick={() => navigate(generatePath(pages.CONDITIONS.CONDITIONS.DETAIL.LINK, { conditionId: row.original.id, tab: '' }))}
+                        onClick={() => navigate(generatePath(pages.SNIPPET_SERVICE.CONDITIONS.DETAIL.LINK, { conditionId: row.original.conditionId, tab: '' }))}
                         variant={tagVariants.BLUE}
                     >
                         <IconLink />
@@ -95,7 +113,11 @@ const ListPage: FC<any> = () => {
                 accessor: 'configurationId',
                 Cell: ({ value, row }: { value: string; row: any }) => (
                     <Tag
-                        onClick={() => navigate(generatePath(pages.CONDITIONS.RESOURCES_CONFIG.DETAIL.LINK, { resourcesConfigId: row.original.id, tab: '' }))}
+                        onClick={() =>
+                            navigate(
+                                generatePath(pages.SNIPPET_SERVICE.RESOURCES_CONFIG.DETAIL.LINK, { resourcesConfigId: row.original.configurationId, tab: '' })
+                            )
+                        }
                         variant={tagVariants.BLUE}
                     >
                         <IconLink />
@@ -110,20 +132,7 @@ const ListPage: FC<any> = () => {
     )
 
     return (
-        <PageLayout
-            breadcrumbs={breadcrumbs}
-            header={
-                <Button
-                    icon={<IconPlus />}
-                    onClick={() => navigate(generatePath(pages.CONDITIONS.APPLIED_DEVICE_CONFIG.ADD.LINK, { tab: '' }))}
-                    variant='primary'
-                >
-                    {_(confT.configuration)}
-                </Button>
-            }
-            loading={loading}
-            title={_(confT.appliedDeviceConfiguration)}
-        >
+        <PageLayout breadcrumbs={breadcrumbs} loading={loading} title={_(confT.appliedDeviceConfiguration)}>
             <PageListTemplate
                 columns={columns}
                 data={data}
@@ -159,7 +168,7 @@ const ListPage: FC<any> = () => {
                     )
                 }}
                 onDetailClick={(id: string) =>
-                    navigate(generatePath(pages.CONDITIONS.APPLIED_DEVICE_CONFIG.DETAIL.LINK, { appliedDeviceConfigId: id, tab: '' }))
+                    navigate(generatePath(pages.SNIPPET_SERVICE.APPLIED_DEVICE_CONFIG.DETAIL.LINK, { appliedDeviceConfigId: id, tab: '' }))
                 }
                 refresh={() => refresh()}
             />
