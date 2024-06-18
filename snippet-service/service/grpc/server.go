@@ -17,18 +17,20 @@ import (
 type SnippetServiceServer struct {
 	pb.UnimplementedSnippetServiceServer
 
-	logger     log.Logger
-	ownerClaim string
-	store      store.Store
-	hubID      string
+	store           store.Store
+	resourceUpdater *store.ResourceUpdater
+	ownerClaim      string
+	hubID           string
+	logger          log.Logger
 }
 
-func NewSnippetServiceServer(ownerClaim string, hubID string, store store.Store, logger log.Logger) *SnippetServiceServer {
+func NewSnippetServiceServer(store store.Store, resourceUpdater *store.ResourceUpdater, ownerClaim string, hubID string, logger log.Logger) *SnippetServiceServer {
 	return &SnippetServiceServer{
-		logger:     logger,
-		ownerClaim: ownerClaim,
-		store:      store,
-		hubID:      hubID,
+		store:           store,
+		resourceUpdater: resourceUpdater,
+		logger:          logger,
+		ownerClaim:      ownerClaim,
+		hubID:           hubID,
 	}
 }
 
@@ -151,6 +153,18 @@ func (s *SnippetServiceServer) DeleteConfigurations(ctx context.Context, req *pb
 	}, nil
 }
 
+func errCannotInvokeConfiguration(err error) error {
+	return fmt.Errorf("cannot invaoke configuration: %w", err)
+}
+
+func (s *SnippetServiceServer) InvokeConfiguration(req *pb.InvokeConfigurationRequest, srv pb.SnippetService_InvokeConfigurationServer) error {
+	owner, err := s.checkOwner(srv.Context(), "")
+	if err != nil {
+		return s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotInvokeConfiguration(err)))
+	}
+	return s.resourceUpdater.InvokeConfiguration(srv.Context(), owner, req)
+}
+
 func errCannotCreateCondition(err error) error {
 	return fmt.Errorf("cannot create condition: %w", err)
 }
@@ -224,21 +238,6 @@ func (s *SnippetServiceServer) GetConditions(req *pb.GetConditionsRequest, srv p
 	req.IdFilter = append(req.GetIdFilter(), req.ConvertHTTPIDFilter()...)
 
 	err = s.store.GetConditions(srv.Context(), owner, req, func(c *store.Condition) error {
-		return sendCondition(srv, c)
-	})
-	if err != nil {
-		return s.logger.LogAndReturnError(status.Errorf(codes.Internal, "%v", errCannotGetConditions(err)))
-	}
-	return nil
-}
-
-func (s *SnippetServiceServer) GetLatestEnabledConditions(req *store.GetLatestConditionsQuery, srv pb.SnippetService_GetConditionsServer) error {
-	owner, err := s.checkOwner(srv.Context(), "")
-	if err != nil {
-		return s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotGetConditions(err)))
-	}
-
-	err = s.store.GetLatestEnabledConditions(srv.Context(), owner, req, func(c *store.Condition) error {
 		return sendCondition(srv, c)
 	})
 	if err != nil {

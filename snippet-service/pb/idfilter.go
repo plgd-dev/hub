@@ -222,7 +222,7 @@ func idFilterFromString(v string) *IDFilter {
 	}
 }
 
-func IdFilterFromString(filter []string) []*IDFilter {
+func IDFilterFromString(filter []string) []*IDFilter {
 	if len(filter) == 0 {
 		return nil
 	}
@@ -238,25 +238,25 @@ func IdFilterFromString(filter []string) []*IDFilter {
 }
 
 func (r *GetConditionsRequest) ConvertHTTPIDFilter() []*IDFilter {
-	return IdFilterFromString(r.GetHttpIdFilter())
+	return IDFilterFromString(r.GetHttpIdFilter())
 }
 
 func (r *GetConfigurationsRequest) ConvertHTTPIDFilter() []*IDFilter {
-	return IdFilterFromString(r.GetHttpIdFilter())
+	return IDFilterFromString(r.GetHttpIdFilter())
 }
 
 func (r *GetAppliedDeviceConfigurationsRequest) ConvertHTTPConfigurationIdFilter() []*IDFilter {
-	return IdFilterFromString(r.GetHttpConfigurationIdFilter())
+	return IDFilterFromString(r.GetHttpConfigurationIdFilter())
 }
 
 func (r *GetAppliedDeviceConfigurationsRequest) ConvertHTTPConditionIdFilter() []*IDFilter {
-	return IdFilterFromString(r.GetHttpConditionIdFilter())
+	return IDFilterFromString(r.GetHttpConditionIdFilter())
 }
 
 func (r *DeleteConfigurationsRequest) ConvertHTTPIDFilter() []*IDFilter {
-	return IdFilterFromString(r.GetHttpIdFilter())
+	return IDFilterFromString(r.GetHttpIdFilter())
 }
 
 func (r *DeleteConditionsRequest) ConvertHTTPIDFilter() []*IDFilter {
-	return IdFilterFromString(r.GetHttpIdFilter())
+	return IDFilterFromString(r.GetHttpIdFilter())
 }

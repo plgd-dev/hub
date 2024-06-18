@@ -19,7 +19,6 @@ import (
 	httpService "github.com/plgd-dev/hub/v2/snippet-service/service/http"
 	"github.com/plgd-dev/hub/v2/snippet-service/store"
 	storeConfig "github.com/plgd-dev/hub/v2/snippet-service/store/config"
-	"github.com/plgd-dev/hub/v2/snippet-service/store/cqldb"
 	"github.com/plgd-dev/hub/v2/snippet-service/store/mongodb"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -29,23 +28,16 @@ const serviceName = "snippet-service"
 type Service struct {
 	*service.Service
 
-	snippetService        *grpcService.SnippetServiceServer
-	resourceChangeHandler *resourceChangedHandler
-	resourceSubscriber    *ResourceSubscriber
+	snippetService     *grpcService.SnippetServiceServer
+	resourceUpdater    *store.ResourceUpdater
+	resourceSubscriber *ResourceSubscriber
 }
 
 func createStore(ctx context.Context, config storeConfig.Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (store.Store, error) {
-	switch config.Use {
-	case database.MongoDB:
+	if config.Use == database.MongoDB {
 		s, err := mongodb.New(ctx, config.MongoDB, fileWatcher, logger, tracerProvider)
 		if err != nil {
 			return nil, fmt.Errorf("mongodb: %w", err)
-		}
-		return s, nil
-	case database.CqlDB:
-		s, err := cqldb.New(ctx, config.CqlDB, fileWatcher, logger, tracerProvider)
-		if err != nil {
-			return nil, fmt.Errorf("cqldb: %w", err)
 		}
 		return s, nil
 	}
@@ -143,27 +135,19 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	}
 	closerFn.AddFunc(closeStore)
 
-	snippetService := grpcService.NewSnippetServiceServer(config.APIs.GRPC.Authorization.OwnerClaim, config.HubID, dbStorage, logger)
-	closerFn.AddFunc(func() {
-		errC := snippetService.Close(ctx)
-		if errC != nil {
-			log.Errorf("failed to close grpc %s server: %w", serviceName, errC)
-		}
-	})
-
-	resourceChangeHandler, err := newResourceChangedHandler(ctx, config.Clients.ResourceAggregate, dbStorage, fileWatcher, logger, tracerProvider)
+	resourceUpdater, err := store.NewResourceUpdater(ctx, config.Clients.ResourceAggregate.Connection, config.Clients.ResourceAggregate.PendingCommandsCheckInterval, dbStorage, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		closerFn.Execute()
 		return nil, fmt.Errorf("cannot create resource change handler: %w", err)
 	}
 	closerFn.AddFunc(func() {
-		errC := resourceChangeHandler.Close()
+		errC := resourceUpdater.Close()
 		if errC != nil {
 			log.Errorf("failed to close resource change handler: %w", errC)
 		}
 	})
 
-	resourceSubscriber, err := NewResourceSubscriber(ctx, config.Clients.EventBus.NATS, fileWatcher, logger, resourceChangeHandler)
+	resourceSubscriber, err := NewResourceSubscriber(ctx, config.Clients.EventBus.NATS, fileWatcher, logger, resourceUpdater)
 	if err != nil {
 		closerFn.Execute()
 		return nil, fmt.Errorf("cannot create resource subscriber: %w", err)
@@ -172,6 +156,14 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		errC := resourceSubscriber.Close()
 		if errC != nil {
 			log.Errorf("failed to close resource subscriber: %w", errC)
+		}
+	})
+
+	snippetService := grpcService.NewSnippetServiceServer(dbStorage, resourceUpdater, config.APIs.GRPC.Authorization.OwnerClaim, config.HubID, logger)
+	closerFn.AddFunc(func() {
+		errC := snippetService.Close(ctx)
+		if errC != nil {
+			log.Errorf("failed to close grpc %s server: %w", serviceName, errC)
 		}
 	})
 
@@ -196,9 +188,9 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	return &Service{
 		Service: s,
 
-		snippetService:        snippetService,
-		resourceChangeHandler: resourceChangeHandler,
-		resourceSubscriber:    resourceSubscriber,
+		snippetService:     snippetService,
+		resourceUpdater:    resourceUpdater,
+		resourceSubscriber: resourceSubscriber,
 	}, nil
 }
 

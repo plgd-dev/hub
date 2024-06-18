@@ -97,3 +97,61 @@ func TestNormalizeIDFilter(t *testing.T) {
 		})
 	}
 }
+
+func TestIDFilterFromString(t *testing.T) {
+	tests := []struct {
+		name   string
+		filter []string
+		want   []*pb.IDFilter
+	}{
+		{
+			name:   "nil",
+			filter: nil,
+			want:   nil,
+		},
+		{
+			name:   "empty",
+			filter: []string{""},
+			want:   []*pb.IDFilter{},
+		},
+		{
+			name:   "all",
+			filter: []string{"/id1", "/id2/", "id3/", "/id4/all"},
+			want: []*pb.IDFilter{
+				{Id: "id1", Version: &pb.IDFilter_All{All: true}},
+				{Id: "id2", Version: &pb.IDFilter_All{All: true}},
+				{Id: "id3", Version: &pb.IDFilter_All{All: true}},
+				{Id: "id4", Version: &pb.IDFilter_All{All: true}},
+			},
+		},
+		{
+			name:   "latest",
+			filter: []string{"/id1/latest", "id2/latest"},
+			want: []*pb.IDFilter{
+				{Id: "id1", Version: &pb.IDFilter_Latest{Latest: true}},
+				{Id: "id2", Version: &pb.IDFilter_Latest{Latest: true}},
+			},
+		},
+		{
+			name:   "value",
+			filter: []string{"/id1/0", "id2/1", "id3/2", "id4/42"},
+			want: []*pb.IDFilter{
+				{Id: "id1", Version: &pb.IDFilter_Value{Value: 0}},
+				{Id: "id2", Version: &pb.IDFilter_Value{Value: 1}},
+				{Id: "id3", Version: &pb.IDFilter_Value{Value: 2}},
+				{Id: "id4", Version: &pb.IDFilter_Value{Value: 42}},
+			},
+		},
+		{
+			name:   "invalid",
+			filter: []string{"id1/fail", "/id2/fail"},
+			want:   []*pb.IDFilter{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			require.EqualValues(t, tt.want, pb.IDFilterFromString(tt.filter))
+		})
+	}
+}
