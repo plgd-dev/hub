@@ -428,10 +428,10 @@ export const NoLayoutRoutes = () => (
         <Route element={withSuspense(<LinkNewHubPage />)} path='/device-provisioning/linked-hubs/link-new-hub/:step' />
         <Route element={withSuspense(<NewEnrollmentGroupsPage />)} path='/device-provisioning/enrollment-groups/new-enrollment-group' />
         <Route element={withSuspense(<NewEnrollmentGroupsPage />)} path='/device-provisioning/enrollment-groups/new-enrollment-group/:step' />
-        <Route element={withSuspense(<ResourcesConfigAddPage />)} path='/conditions/resources-config/add/:step' />
-        <Route element={withSuspense(<ResourcesConfigAddPage />)} path='/conditions/resources-config/add' />
-        <Route element={withSuspense(<ConditionsAddPage />)} path='/conditions/conditions/add/:step' />
-        <Route element={withSuspense(<ConditionsAddPage />)} path='/conditions/conditions/add' />
+        <Route element={withSuspense(<ResourcesConfigAddPage />)} path='/snippet-service/resources-config/add/:step' />
+        <Route element={withSuspense(<ResourcesConfigAddPage />)} path='/snippet-service/resources-config/add' />
+        <Route element={withSuspense(<ConditionsAddPage />)} path='/snippet-service/conditions/add/:step' />
+        <Route element={withSuspense(<ConditionsAddPage />)} path='/snippet-service/conditions/add' />
     </RoutesGroup>
 )
 

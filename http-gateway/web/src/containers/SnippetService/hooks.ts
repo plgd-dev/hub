@@ -121,7 +121,7 @@ export const useAppliedDeviceConfigList = (): StreamApiPropsType => {
     })
 
     useEffect(() => {
-        if (!devicesLoading && !appliedConfigLoading) {
+        if (!devicesLoading && !appliedConfigLoading && devicesData && appliedConfigData) {
             const appliedDeviceConfig = appliedConfigData.map((config: any) => {
                 const device = devicesData.find((d: any) => d.id === config.deviceId)
                 return {
@@ -174,11 +174,13 @@ export const useAppliedDeviceConfigDetail = (id: string, requestActive = false):
         if (!devicesLoading && !appliedConfigLoading) {
             const detailData = appliedConfigData && appliedConfigData[0]
 
-            setData({
-                ...detailData,
-                name: devicesData.find((d: any) => d.id === detailData.deviceId)?.name,
-                status: getAppliedDeviceConfigStatus(detailData),
-            })
+            if (detailData) {
+                setData({
+                    ...detailData,
+                    name: devicesData.find((d: any) => d.id === detailData.deviceId)?.name,
+                    status: getAppliedDeviceConfigStatus(detailData),
+                })
+            }
         }
     }, [appliedConfigLoading, devicesData, devicesLoading, appliedConfigData])
 
