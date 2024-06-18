@@ -2,9 +2,11 @@ package mongodb
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/hub/v2/pkg/mongodb"
 	"github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
@@ -99,4 +101,60 @@ func (s *Store) DeleteAppliedConfigurations(ctx context.Context, owner string, q
 		return 0, err
 	}
 	return res.DeletedCount, nil
+}
+
+func (s *Store) updateAppliedConfigurationPendingResources(ctx context.Context, owner string, requests []*store.UpdateAppliedConfigurationPendingResourceRequest) error {
+	// TODO: this can be rewritten to a single or at least two queries (all DONE hrefs at the same time and same for TIMEOUT)
+	var errs *multierror.Error
+	for _, r := range requests {
+		filter := bson.M{
+			store.ResourcesKey + ".status": pb.AppliedDeviceConfiguration_Resource_PENDING.String(),
+		}
+		if r.ID != "" {
+			filter[store.IDKey] = r.ID
+		}
+		if r.Href != owner {
+			filter[store.OwnerKey] = owner
+		}
+		update := bson.M{
+			mongodb.Set: bson.M{
+				store.ResourcesKey + ".$[elem].status": r.Status.String(),
+			},
+			"$unset": bson.M{
+				store.ResourcesKey + ".$[elem].resourceUpdated": "",
+			},
+		}
+		optFilters := bson.M{"elem.status": pb.AppliedDeviceConfiguration_Resource_PENDING.String()}
+		if r.Href != "" {
+			optFilters["elem.href"] = r.Href
+		}
+		res, err := s.Collection(appliedConfigurationsCol).UpdateOne(ctx, filter, update, &options.UpdateOptions{
+			ArrayFilters: &options.ArrayFilters{
+				Filters: bson.A{optFilters},
+			},
+		})
+		if err == nil && res.ModifiedCount == 0 {
+			err = fmt.Errorf("no resource with id %v and href %v in pending status", r.ID, r.Href)
+		}
+		errs = multierror.Append(errs, err)
+	}
+	return errs.ErrorOrNil()
+}
+
+func (s *Store) UpdateAppliedConfigurationPendingResources(ctx context.Context, resources ...*store.UpdateAppliedConfigurationPendingResourceRequest) error {
+	ownerRequests := make(map[string][]*store.UpdateAppliedConfigurationPendingResourceRequest)
+	for _, r := range resources {
+		if err := r.Validate(); err != nil {
+			return err
+		}
+		ownerRequests[r.Owner] = append(ownerRequests[r.Owner], r)
+	}
+
+	// TODO: bulk write?
+	var errs *multierror.Error
+	for owner, requests := range ownerRequests {
+		err := s.updateAppliedConfigurationPendingResources(ctx, owner, requests)
+		errs = multierror.Append(errs, err)
+	}
+	return errs.ErrorOrNil()
 }

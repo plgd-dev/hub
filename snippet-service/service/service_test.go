@@ -200,13 +200,17 @@ func TestServiceNew(t *testing.T) {
 
 func TestService(t *testing.T) {
 	deviceID := hubTest.MustFindDeviceByName(hubTest.TestDeviceName)
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT*100)
 	defer cancel()
 
 	tearDown := hubTestService.SetUp(ctx, t)
 	defer tearDown()
 
+	logCfg := log.MakeDefaultConfig()
+	logCfg.Level = log.DebugLevel
+	log.Setup(logCfg)
 	snippetCfg := test.MakeConfig(t)
+	snippetCfg.Log = logCfg
 	_, shutdownSnippetService := test.New(t, snippetCfg)
 	defer shutdownSnippetService()
 

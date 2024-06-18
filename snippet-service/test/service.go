@@ -49,7 +49,8 @@ func MakeClientsConfig() service.ClientsConfig {
 			NATS: config.MakeSubscriberConfig(),
 		},
 		ResourceAggregate: service.ResourceAggregateConfig{
-			Connection: config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST),
+			Connection:                   config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST),
+			PendingCommandsCheckInterval: time.Second * 10,
 		},
 	}
 }

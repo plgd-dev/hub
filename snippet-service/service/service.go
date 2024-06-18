@@ -151,7 +151,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		}
 	})
 
-	resourceChangeHandler, err := newResourceChangedHandler(config.Clients.ResourceAggregate, dbStorage, fileWatcher, logger, tracerProvider)
+	resourceChangeHandler, err := newResourceChangedHandler(ctx, config.Clients.ResourceAggregate, dbStorage, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		closerFn.Execute()
 		return nil, fmt.Errorf("cannot create resource change handler: %w", err)

@@ -5,7 +5,10 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
+	"github.com/plgd-dev/hub/v2/snippet-service/store"
 	"github.com/plgd-dev/hub/v2/snippet-service/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
@@ -150,4 +153,74 @@ func TestStoreUpdateAppliedConfiguration(t *testing.T) {
 			tt.want(updated)
 		})
 	}
+}
+
+func TestStoreUpdateAppliedConfigurationPendingResources(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	defer cancel()
+
+	s, cleanUpStore := test.NewMongoStore(t)
+	defer cleanUpStore()
+
+	id := uuid.NewString()
+	confID := uuid.NewString()
+	condID := uuid.NewString()
+	resources := []*pb.AppliedDeviceConfiguration_Resource{
+		{
+			Href:          "/test/1",
+			CorrelationId: "corID1",
+			Status:        pb.AppliedDeviceConfiguration_Resource_PENDING,
+		},
+		{
+			Href:          "/test/2",
+			CorrelationId: "corID2",
+			Status:        pb.AppliedDeviceConfiguration_Resource_PENDING,
+			ResourceUpdated: &events.ResourceUpdated{
+				ResourceId: &commands.ResourceId{DeviceId: "deviceID", Href: "/test/2"},
+			},
+		},
+		{
+			Href:          "/test/3",
+			CorrelationId: "corID3",
+			Status:        pb.AppliedDeviceConfiguration_Resource_QUEUED,
+		},
+	}
+	owner := "owner1"
+	_, err := s.CreateAppliedConfiguration(ctx, &pb.AppliedDeviceConfiguration{
+		Id:       id,
+		DeviceId: "dev1",
+		ConfigurationId: &pb.AppliedDeviceConfiguration_RelationTo{
+			Id: confID,
+		},
+		ExecutedBy: pb.MakeExecutedByConditionId(condID, 0),
+		Resources:  resources,
+		Owner:      owner,
+	})
+	require.NoError(t, err)
+
+	err = s.UpdateAppliedConfigurationPendingResources(ctx, &store.UpdateAppliedConfigurationPendingResourceRequest{
+		ID:     id,
+		Owner:  owner,
+		Href:   "/test/1",
+		Status: pb.AppliedDeviceConfiguration_Resource_DONE,
+	})
+	require.NoError(t, err)
+
+	// /test/1 is no longer in pending state, so additional update should fail
+	err = s.UpdateAppliedConfigurationPendingResources(ctx, &store.UpdateAppliedConfigurationPendingResourceRequest{
+		ID:     id,
+		Owner:  owner,
+		Href:   "/test/1",
+		Status: pb.AppliedDeviceConfiguration_Resource_TIMEOUT,
+	})
+	require.Error(t, err)
+
+	// mismatched owner
+	err = s.UpdateAppliedConfigurationPendingResources(ctx, &store.UpdateAppliedConfigurationPendingResourceRequest{
+		ID:     id,
+		Owner:  "mismatch",
+		Href:   "/test/2",
+		Status: pb.AppliedDeviceConfiguration_Resource_DONE,
+	})
+	require.Error(t, err)
 }

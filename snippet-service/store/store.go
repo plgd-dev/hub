@@ -113,8 +113,10 @@ type Store interface {
 	CreateAppliedConfiguration(ctx context.Context, conf *pb.AppliedDeviceConfiguration) (*pb.AppliedDeviceConfiguration, error)
 	// InsertAppliedConditions inserts applied configurations into the database.
 	InsertAppliedConfigurations(ctx context.Context, configurations ...*AppliedDeviceConfiguration) error
-	// UpdateDeviceConfiguration updates an existing applied device configuration in the database.
+	// UpdateAppliedConfiguration updates an existing applied device configuration in the database.
 	UpdateAppliedConfiguration(ctx context.Context, conf *pb.AppliedDeviceConfiguration) (*pb.AppliedDeviceConfiguration, error)
+
+	UpdateAppliedConfigurationPendingResources(ctx context.Context, resources ...*UpdateAppliedConfigurationPendingResourceRequest) error
 
 	Close(ctx context.Context) error
 }

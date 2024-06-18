@@ -78,12 +78,16 @@ func (c *StorageConfig) Validate() error {
 }
 
 type ResourceAggregateConfig struct {
-	Connection grpcClient.Config `yaml:"grpc" json:"grpc"`
+	Connection                   grpcClient.Config `yaml:"grpc" json:"grpc"`
+	PendingCommandsCheckInterval time.Duration     `yaml:"pendingCommandsCheckInterval" json:"pendingCommandsCheckInterval"`
 }
 
 func (c *ResourceAggregateConfig) Validate() error {
 	if err := c.Connection.Validate(); err != nil {
 		return fmt.Errorf("grpc.%w", err)
+	}
+	if c.PendingCommandsCheckInterval <= 0 {
+		return fmt.Errorf("pendingCommandsCheckInterval('%v') - must be greater than 0", c.PendingCommandsCheckInterval)
 	}
 	return nil
 }

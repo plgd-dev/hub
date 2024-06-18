@@ -10,13 +10,10 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/plgd-dev/device/v2/schema"
-	"github.com/plgd-dev/go-coap/v3/message"
 	pbGRPC "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
-	"github.com/plgd-dev/kit/v2/codec/cbor"
-	"github.com/plgd-dev/kit/v2/codec/json"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -77,34 +74,10 @@ type Representation struct {
 }
 
 func unmarshalContent(c *commands.Content, m interface{}) error {
-	switch c.GetContentType() {
-	case message.AppCBOR.String(), message.AppOcfCbor.String():
-		err := cbor.Decode(c.GetData(), m)
-		if err != nil {
-			return fmt.Errorf("cannot unmarshal resource content: %w", err)
-		}
-	case message.AppJSON.String():
-		err := json.Decode(c.GetData(), m)
-		if err != nil {
-			return fmt.Errorf("cannot unmarshal resource content: %w", err)
-		}
-	case message.TextPlain.String():
-		switch v := m.(type) {
-		case *string:
-			*v = string(c.GetData())
-		case *[]byte:
-			*v = c.GetData()
-		case *interface{}:
-			*v = string(c.GetData())
-		default:
-			return fmt.Errorf("cannot unmarshal resource content: invalid type (%T)", m)
-		}
-	case "":
+	if c == nil {
 		return nil
-	default:
-		return fmt.Errorf("cannot unmarshal resource content: unknown content type (%v)", c.GetContentType())
 	}
-	return nil
+	return commands.DecodeContent(c, m)
 }
 
 func (rh *RequestHandler) RetrieveResources(ctx context.Context, resourceIdFilter []*pbGRPC.ResourceIdFilter, deviceIdFilter []string) (map[string][]Representation, error) {

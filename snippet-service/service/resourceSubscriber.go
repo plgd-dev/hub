@@ -9,12 +9,16 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/itchyny/gojq"
 	"github.com/plgd-dev/go-coap/v3/message"
+	"github.com/plgd-dev/go-coap/v3/pkg/cache"
+	"github.com/plgd-dev/go-coap/v3/pkg/runner/periodic"
 	isEvents "github.com/plgd-dev/hub/v2/identity-store/events"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
+	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
 	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
@@ -29,27 +33,46 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-type resourceChangedHandler struct {
-	storage  store.Store
-	raConn   *grpcClient.Client
-	raClient raService.ResourceAggregateClient
-	logger   log.Logger
+type pendingConfiguration struct {
+	id         string
+	resourceID *commands.ResourceId
 }
 
-func newResourceChangedHandler(config ResourceAggregateConfig, storage store.Store, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*resourceChangedHandler, error) {
+type resourceChangedHandler struct {
+	storage               store.Store
+	raConn                *grpcClient.Client
+	raClient              raService.ResourceAggregateClient
+	pendingConfigurations *cache.Cache[uuid.UUID, *pendingConfiguration]
+	logger                log.Logger
+}
+
+func newPendingConfigurationsCache(ctx context.Context, interval time.Duration) *cache.Cache[uuid.UUID, *pendingConfiguration] {
+	c := cache.NewCache[uuid.UUID, *pendingConfiguration]()
+	add := periodic.New(ctx.Done(), interval)
+	add(func(now time.Time) bool {
+		c.CheckExpirations(now)
+		return true
+	})
+	return c
+}
+
+func newResourceChangedHandler(ctx context.Context, config ResourceAggregateConfig, storage store.Store, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*resourceChangedHandler, error) {
 	raConn, err := grpcClient.New(config.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, fmt.Errorf("cannot connect to resource aggregate: %w", err)
 	}
 	return &resourceChangedHandler{
-		storage:  storage,
-		raConn:   raConn,
-		raClient: raService.NewResourceAggregateClient(raConn.GRPC()),
-		logger:   logger,
+		storage:               storage,
+		raConn:                raConn,
+		raClient:              raService.NewResourceAggregateClient(raConn.GRPC()),
+		pendingConfigurations: newPendingConfigurationsCache(ctx, config.PendingCommandsCheckInterval),
+		logger:                logger,
 	}, nil
 }
 
-func (h *resourceChangedHandler) getConditions(ctx context.Context, owner, deviceID, resourceHref string, resourceTypes []string) ([]*pb.Condition, error) {
+type evaluateCondition = func(condition *pb.Condition) bool
+
+func (h *resourceChangedHandler) getConditions(ctx context.Context, owner, deviceID, resourceHref string, resourceTypes []string, eval evaluateCondition) ([]*pb.Condition, error) {
 	conditions := make([]*pb.Condition, 0, 4)
 	err := h.storage.GetLatestEnabledConditions(ctx, owner, &store.GetLatestConditionsQuery{
 		DeviceID:           deviceID,
@@ -60,16 +83,16 @@ func (h *resourceChangedHandler) getConditions(ctx context.Context, owner, devic
 		if errG != nil {
 			return fmt.Errorf("cannot get condition: %w", errG)
 		}
+		if !eval(c) {
+			h.logger.Debugf("condition(%v) skipped", c)
+			return nil
+		}
 		conditions = append(conditions, c.Clone())
 		return nil
 	})
 	if err != nil {
 		return nil, fmt.Errorf("cannot get latest conditions: %w", err)
 	}
-
-	// TODO: evaluate conditions
-	// https://github.com/itchyny/gojq
-
 	return conditions, nil
 }
 
@@ -149,7 +172,7 @@ type appliedCondition struct {
 	token   string
 }
 
-func (h *resourceChangedHandler) applyConfigurationToResource(ctx context.Context, resourceID *commands.ResourceId, configurationID string, cr *pb.Configuration_Resource, conditionID, token string) error {
+func (h *resourceChangedHandler) applyConfigurationToResource(ctx context.Context, resourceID *commands.ResourceId, configurationID string, cr *pb.Configuration_Resource, conditionID, token string) (int64, error) {
 	h.logger.Debugf("applying configuration(id:%v) to resource(%v) with condition(%v)", configurationID, resourceID.GetHref(), conditionID)
 	upd := &commands.UpdateResourceRequest{
 		ResourceId:    resourceID,
@@ -163,34 +186,37 @@ func (h *resourceChangedHandler) applyConfigurationToResource(ctx context.Contex
 	ctxWithToken := pkgGrpc.CtxWithToken(ctx, token)
 	res, err := h.raClient.UpdateResource(ctxWithToken, upd)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	h.logger.Infof("configuration(id:%v) applied to resource(%v)", configurationID, resourceID.GetHref())
 
-	if res.GetValidUntil() > 0 {
-		h.logger.Debugf("setting timeout for resource(%v) in %vns", resourceID.GetHref(), res.GetValidUntil())
-		// v response je validUntil, ak uplynie cas a zostane v stave pending tak nastavit timeout
-		// TODO: fire timeout event that sets status to timeout
-	}
-	return nil
+	return res.GetValidUntil(), nil
 }
 
-func (h *resourceChangedHandler) findTokenAndApplyConfigurationToResource(ctx context.Context, resourceID *commands.ResourceId, configurationID string, cr *pb.Configuration_Resource, conditions []*pb.Condition) (appliedCondition, error) {
+func (h *resourceChangedHandler) findTokenAndApplyConfigurationToResource(ctx context.Context, resourceID *commands.ResourceId, configurationID string, cr *pb.Configuration_Resource, conditions []*pb.Condition) (appliedCondition, int64, error) {
 	for _, cond := range conditions {
 		condID := cond.GetId()
 		token := cond.GetApiAccessToken()
-		err := h.applyConfigurationToResource(ctx, resourceID, configurationID, cr, condID, token)
+		validUntil, err := h.applyConfigurationToResource(ctx, resourceID, configurationID, cr, condID, token)
 		if err != nil {
 			if grpcCode := pkgGrpc.ErrToStatus(err).Code(); grpcCode == codes.Unauthenticated {
 				h.logger.Debugf("cannot apply configuration(id:%v) to resource(%v): invalid token", configurationID, resourceID.GetHref())
 				continue
 			}
 			h.logger.Errorf("cannot apply configuration(id:%v) to resource(%v): %w", configurationID, resourceID.GetHref(), err)
-			return appliedCondition{}, err
+			return appliedCondition{}, 0, err
 		}
-		return appliedCondition{id: condID, version: cond.GetVersion(), token: token}, nil
+		return appliedCondition{id: condID, version: cond.GetVersion(), token: token}, validUntil, nil
 	}
-	return appliedCondition{}, errors.New("cannot apply configuration: no valid token found")
+	return appliedCondition{}, 0, errors.New("cannot apply configuration: no valid token found")
+}
+
+func validUntilOrDefault(validUntil int64) time.Time {
+	if validUntil == 0 {
+		// 5m default
+		return time.Now().Add(5 * time.Minute)
+	}
+	return pkgTime.Unix(0, validUntil)
 }
 
 func (h *resourceChangedHandler) applyConfigurationToResources(ctx context.Context, owner, deviceID string, confWithConditions *configurationWithConditions) error {
@@ -235,19 +261,31 @@ func (h *resourceChangedHandler) applyConfigurationToResources(ctx context.Conte
 		href := cr.GetHref()
 		resourceID := &commands.ResourceId{Href: href, DeviceId: deviceID}
 		confID := confWithConditions.configuration.GetId()
+		var validUntil int64
 		var errA error
 		if appliedCond.id != "" {
-			errA = h.applyConfigurationToResource(ctx, resourceID, confID, cr, appliedCond.id, appliedCond.token)
+			validUntil, errA = h.applyConfigurationToResource(ctx, resourceID, confID, cr, appliedCond.id, appliedCond.token)
 		} else {
-			appliedCond, errA = h.findTokenAndApplyConfigurationToResource(ctx, resourceID, confID, cr, confWithConditions.conditions)
+			appliedCond, validUntil, errA = h.findTokenAndApplyConfigurationToResource(ctx, resourceID, confID, cr, confWithConditions.conditions)
 			if errA == nil {
 				appliedConf.ExecutedBy = pb.MakeExecutedByConditionId(appliedCond.id, appliedCond.version)
 			}
 		}
+
 		resource := resources[href]
 		if errA == nil {
 			resource.Status = pb.AppliedDeviceConfiguration_Resource_PENDING
-			// TODO: write applied configuration to storage
+			h.pendingConfigurations.LoadOrStore(
+				resourceID.ToUUID(), cache.NewElement(
+					&pendingConfiguration{
+						id:         appliedConf.GetId(),
+						resourceID: resourceID,
+					},
+					validUntilOrDefault(validUntil), func(d *pendingConfiguration) {
+						// TODO write to storage
+						h.logger.Debugf("timeout for resource(%v) reached", d.resourceID.GetHref())
+					}),
+			)
 		} else {
 			resource.Status = pb.AppliedDeviceConfiguration_Resource_DONE
 			resource.ResourceUpdated = &events.ResourceUpdated{
@@ -278,10 +316,46 @@ func (h *resourceChangedHandler) applyConfigurationToResources(ctx context.Conte
 	return errU
 }
 
+func EvalJQ(jq string, v any) (bool, error) {
+	q, err := gojq.Parse(jq)
+	if err != nil {
+		return false, fmt.Errorf("cannot parse jq query(%v): %w", jq, err)
+	}
+	iter := q.Run(v)
+	val, ok := iter.Next()
+	if !ok {
+		return false, nil
+	}
+	if result, ok := val.(bool); ok {
+		return result, nil
+	}
+	return false, fmt.Errorf("invalid jq result: %v", val)
+}
+
 func (h *resourceChangedHandler) applyConfigurations(ctx context.Context, rc *events.ResourceChanged) error {
 	owner := rc.GetAuditContext().GetOwner()
 	if owner == "" {
 		return errors.New("owner not set")
+	}
+
+	var rcData map[string]any
+	eval := func(condition *pb.Condition) bool {
+		jq := condition.GetJqExpressionFilter()
+		if jq == "" {
+			return true
+		}
+		if rcData == nil {
+			if err := commands.DecodeContent(rc.GetContent(), &rcData); err != nil {
+				h.logger.Errorf("cannot decode content: %w", err)
+				return false
+			}
+		}
+		ok, err := EvalJQ(jq, rcData)
+		if err != nil {
+			h.logger.Error(err)
+			return false
+		}
+		return ok
 	}
 
 	resourceID := rc.GetResourceId()
@@ -289,7 +363,7 @@ func (h *resourceChangedHandler) applyConfigurations(ctx context.Context, rc *ev
 	resourceHref := resourceID.GetHref()
 	resourceTypes := rc.GetResourceTypes()
 	// get matching conditions
-	conditions, err := h.getConditions(ctx, owner, deviceID, resourceHref, resourceTypes)
+	conditions, err := h.getConditions(ctx, owner, deviceID, resourceHref, resourceTypes, eval)
 	if err != nil {
 		return err
 	}
@@ -320,24 +394,43 @@ func (h *resourceChangedHandler) applyConfigurations(ctx context.Context, rc *ev
 	return h.applyConfigurationToResources(ctx, owner, deviceID, confWithConditions)
 }
 
+func (h *resourceChangedHandler) finishPendingConfiguration(resourceID *commands.ResourceId) {
+	_, ok := h.pendingConfigurations.LoadAndDelete(resourceID.ToUUID())
+	if !ok {
+		return
+	}
+	h.logger.Debugf("resource(%v) updated", resourceID.GetHref())
+}
+
 func (h *resourceChangedHandler) Handle(ctx context.Context, iter eventbus.Iter) error {
 	for {
 		ev, ok := iter.Next(ctx)
 		if !ok {
 			return iter.Err()
 		}
-		var s events.ResourceChanged
-		if ev.EventType() != s.EventType() {
-			h.logger.Errorf("unexpected event type: %v", ev.EventType())
+		var changed events.ResourceChanged
+		if ev.EventType() == changed.EventType() {
+			if err := ev.Unmarshal(&changed); err != nil {
+				h.logger.Errorf("cannot unmarshal event: %w", err)
+				continue
+			}
+			if err := h.applyConfigurations(ctx, &changed); err != nil {
+				h.logger.Errorf("cannot apply configurations: %w", err)
+			}
 			continue
 		}
-		if err := ev.Unmarshal(&s); err != nil {
-			h.logger.Errorf("cannot unmarshal event: %w", err)
+
+		var updated events.ResourceUpdated
+		if ev.EventType() == updated.EventType() {
+			if err := ev.Unmarshal(&updated); err != nil {
+				h.logger.Errorf("cannot unmarshal event: %w", err)
+				continue
+			}
+			h.finishPendingConfiguration(updated.GetResourceId())
 			continue
 		}
-		if err := h.applyConfigurations(ctx, &s); err != nil {
-			h.logger.Errorf("cannot apply configurations: %w", err)
-		}
+
+		h.logger.Errorf("unexpected event type: %v", ev.EventType())
 	}
 }
 
@@ -376,11 +469,15 @@ func NewResourceSubscriber(ctx context.Context, config natsClient.Config, fileWa
 
 	subscriptionID := uuid.NewString()
 	const owner = "*"
-	subject := []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent,
+	subjectResourceChanged := isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent,
 		isEvents.WithOwner(owner),
 		WithAllDevicesAndResources(),
-		isEvents.WithEventType((&events.ResourceChanged{}).EventType()))}
-	observer, err := subscriber.Subscribe(ctx, subscriptionID, subject, handler)
+		isEvents.WithEventType((&events.ResourceChanged{}).EventType()))
+	subjectResourceUpdated := isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent,
+		isEvents.WithOwner(owner),
+		WithAllDevicesAndResources(),
+		isEvents.WithEventType((&events.ResourceUpdated{}).EventType()))
+	observer, err := subscriber.Subscribe(ctx, subscriptionID, []string{subjectResourceChanged, subjectResourceUpdated}, handler)
 	if err != nil {
 		subscriber.Close()
 		nats.Close()

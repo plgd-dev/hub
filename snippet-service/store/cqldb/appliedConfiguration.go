@@ -26,3 +26,7 @@ func (s *Store) InsertAppliedConfigurations(context.Context, ...*store.AppliedDe
 func (s *Store) UpdateAppliedConfiguration(context.Context, *pb.AppliedDeviceConfiguration) (*pb.AppliedDeviceConfiguration, error) {
 	return nil, store.ErrNotSupported
 }
+
+func (s *Store) UpdateAppliedConfigurationPendingResources(context.Context, ...*store.UpdateAppliedConfigurationPendingResourceRequest) error {
+	return store.ErrNotSupported
+}
