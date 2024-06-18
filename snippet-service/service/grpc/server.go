@@ -79,6 +79,8 @@ func (s *SnippetServiceServer) UpdateConfiguration(ctx context.Context, conf *pb
 	}
 
 	conf.Owner = owner
+	// increment version automatically by mongo
+	conf.Version = 0
 	c, err := s.store.UpdateConfiguration(ctx, conf)
 	if err != nil {
 		return nil, s.logger.LogAndReturnError(status.Errorf(getGRPCErrorCode(err), "%v", errCannotUpdateConfiguration(err)))
@@ -178,6 +180,8 @@ func (s *SnippetServiceServer) UpdateCondition(ctx context.Context, condition *p
 	}
 
 	condition.Owner = owner
+	// increment version automatically by mongo
+	condition.Version = 0
 	c, err := s.store.UpdateCondition(ctx, condition)
 	if err != nil {
 		return nil, s.logger.LogAndReturnError(status.Errorf(getGRPCErrorCode(err), "%v", errCannotUpdateCondition(err)))
