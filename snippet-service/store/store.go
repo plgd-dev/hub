@@ -19,6 +19,7 @@ const (
 	VersionsKey           = "versions"           // must match with Versions field tag
 	ResourcesKey          = "resources"          // must match with Resources field tag
 	ConfigurationIDKey    = "configurationId"    // must match with ConfigurationId field tag
+	ConditionIDKey        = "conditionId"        // must match with ConditionId field tag
 	EnabledKey            = "enabled"            // must match with Enabled field tag
 	TimestampKey          = "timestamp"          // must match with Timestamp field tag
 	ApiAccessTokenKey     = "apiAccessToken"     // must match with ApiAccessToken field tag
@@ -27,7 +28,10 @@ const (
 	JqExpressionFilterKey = "jqExpressionFilter" // must match with Condition.JqExpressionFilter tag
 	ResourceTypeFilterKey = "resourceTypeFilter" // must match with Condition.ResourceTypeFilter tag
 
-	ConfigurationRelationIDKey = ConfigurationIDKey + ".id"
+	ConfigurationRelationIDKey      = ConfigurationIDKey + ".id"            // configurationId.id
+	ConfigurationRelationVersionKey = ConfigurationIDKey + "." + VersionKey // configurationId.version
+	ConditionRelationIDKey          = ConditionIDKey + ".id"                // conditionId.id
+	ConditionRelationVersionKey     = ConditionIDKey + "." + VersionKey     // conditionId.version
 )
 
 type (

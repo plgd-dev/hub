@@ -108,12 +108,20 @@ func toIdQuery(ids []string) bson.M {
 
 func toFilter(op string, filters []interface{}) interface{} {
 	if len(filters) == 0 {
-		return bson.M{}
+		return nil
 	}
 	if len(filters) == 1 {
 		return filters[0]
 	}
 	return bson.M{op: filters}
+}
+
+func toFilterQuery(op string, filters []interface{}) interface{} {
+	filter := toFilter(op, filters)
+	if filter == nil {
+		return bson.M{}
+	}
+	return filter
 }
 
 func toIdFilterQuery(owner string, idfilter bson.M, emptyVersions bool) interface{} {
@@ -127,7 +135,7 @@ func toIdFilterQuery(owner string, idfilter bson.M, emptyVersions bool) interfac
 	if emptyVersions {
 		filters = append(filters, bson.D{{Key: store.VersionsKey + ".0", Value: bson.M{mongodb.Exists: false}}})
 	}
-	return toFilter(mongodb.And, filters)
+	return toFilterQuery(mongodb.And, filters)
 }
 
 func processCursor[T any](ctx context.Context, cr *mongo.Cursor, process store.Process[T]) error {

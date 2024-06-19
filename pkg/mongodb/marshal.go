@@ -2,6 +2,8 @@ package mongodb
 
 import (
 	"encoding/json"
+	"strconv"
+	"strings"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -9,6 +11,38 @@ import (
 )
 
 type updateJSON = func(map[string]interface{})
+
+func ConvertStringValueToInt(json map[string]interface{}, path string) {
+	pos := strings.Index(path, ".")
+	if pos == -1 {
+		valueI, ok := json[path]
+		if !ok {
+			return
+		}
+		valueStr, ok := valueI.(string)
+		if !ok {
+			return
+		}
+		value, err := strconv.ParseInt(valueStr, 10, 64)
+		if err != nil {
+			return
+		}
+		json[path] = value
+		return
+	}
+
+	elemPath := path[:pos]
+	elem, ok := json[elemPath]
+	if !ok {
+		return
+	}
+	elemMap, ok := elem.(map[string]interface{})
+	if !ok {
+		return
+	}
+	ConvertStringValueToInt(elemMap, path[pos+1:])
+	json[elemPath] = elemMap
+}
 
 func UnmarshalProtoBSON(data []byte, m proto.Message, update updateJSON) error {
 	var obj map[string]interface{}

@@ -113,16 +113,16 @@ func (c *AppliedDeviceConfiguration) Clone() *AppliedDeviceConfiguration {
 }
 
 func (c *AppliedDeviceConfiguration) jsonToBSONTag(json map[string]interface{}) {
-	id, ok := json["id"]
-	if ok {
+	if id, ok := json["id"]; ok {
 		json["_id"] = id
 		delete(json, "id")
 	}
+	pkgMongo.ConvertStringValueToInt(json, "configurationId.version")
+	pkgMongo.ConvertStringValueToInt(json, "conditionId.version")
 }
 
 func (c *AppliedDeviceConfiguration) bsonToJSONTag(json map[string]interface{}) {
-	id, ok := json["_id"]
-	if ok {
+	if id, ok := json["_id"]; ok {
 		json["id"] = id
 		delete(json, "_id")
 	}

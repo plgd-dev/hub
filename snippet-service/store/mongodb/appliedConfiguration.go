@@ -62,8 +62,37 @@ func (s *Store) UpdateAppliedConfiguration(ctx context.Context, adc *pb.AppliedD
 	return &updatedAdc, nil
 }
 
-func toAppliedDeviceConfigurationsIdFilterQuery(idFilter, deviceIdFilter []string) interface{} {
+func toAppliedDeviceConfigurationsVersionFilter(idKey, versionsKey string, vf pb.VersionFilter) interface{} {
 	filters := make([]interface{}, 0, 2)
+	if len(vf.All) > 0 {
+		// all ids
+		if vf.All[0] == "" {
+			return bson.M{idKey: bson.M{mongodb.Exists: true}}
+		}
+		cidFilter := inArrayQuery(idKey, vf.All)
+		if cidFilter != nil {
+			filters = append(filters, cidFilter)
+		}
+	}
+	versionFilters := make([]interface{}, 0, len(vf.Versions))
+	for id, versions := range vf.Versions {
+		version := bson.M{
+			versionsKey: bson.M{mongodb.In: versions},
+		}
+		if id != "" {
+			version[idKey] = id
+		}
+		// id must match and version must be in the list of versions
+		versionFilters = append(versionFilters, version)
+	}
+	if len(versionFilters) > 0 {
+		filters = append(filters, toFilter(mongodb.Or, versionFilters))
+	}
+	return toFilter(mongodb.Or, filters)
+}
+
+func toAppliedDeviceConfigurationsIdFilter(idFilter, deviceIdFilter []string, configurationIdFilter, conditionIdFilter pb.VersionFilter) interface{} {
+	filters := make([]interface{}, 0, 4)
 	idf := inArrayQuery(store.IDKey, strings.Unique(idFilter))
 	if idf != nil {
 		filters = append(filters, idf)
@@ -72,24 +101,34 @@ func toAppliedDeviceConfigurationsIdFilterQuery(idFilter, deviceIdFilter []strin
 	if dif != nil {
 		filters = append(filters, dif)
 	}
+	confif := toAppliedDeviceConfigurationsVersionFilter(store.ConfigurationRelationIDKey, store.ConfigurationRelationVersionKey, configurationIdFilter)
+	if confif != nil {
+		filters = append(filters, confif)
+	}
+	condif := toAppliedDeviceConfigurationsVersionFilter(store.ConditionRelationIDKey, store.ConditionRelationVersionKey, conditionIdFilter)
+	if condif != nil {
+		filters = append(filters, condif)
+	}
 	return toFilter(mongodb.Or, filters)
 }
 
-func toAppliedDeviceConfigurationsQuery(owner string, idFilter, deviceIdFilter []string) interface{} {
+func toAppliedDeviceConfigurationsQuery(owner string, idFilter, deviceIdFilter []string, configurationIdFilter, conditionIdFilter pb.VersionFilter) interface{} {
 	filters := make([]interface{}, 0, 2)
 	if owner != "" {
 		filters = append(filters, bson.D{{Key: store.OwnerKey, Value: owner}})
 	}
-	idfilters := toAppliedDeviceConfigurationsIdFilterQuery(idFilter, deviceIdFilter)
+	idfilters := toAppliedDeviceConfigurationsIdFilter(idFilter, deviceIdFilter, configurationIdFilter, conditionIdFilter)
 	if idfilters != nil {
 		filters = append(filters, idfilters)
 	}
-	return toFilter(mongodb.And, filters)
+	return toFilterQuery(mongodb.And, filters)
 }
 
 func (s *Store) GetAppliedConfigurations(ctx context.Context, owner string, query *pb.GetAppliedDeviceConfigurationsRequest, p store.ProccessAppliedDeviceConfigurations) error {
-	// TODO: implement ConfigurationIdFilter and ConditionIdFilter
-	cur, err := s.Collection(appliedConfigurationsCol).Find(ctx, toAppliedDeviceConfigurationsQuery(owner, query.GetIdFilter(), query.GetDeviceIdFilter()))
+	configurationIdFilter := pb.PartitionIDFilter(query.GetConfigurationIdFilter())
+	conditionIdFilter := pb.PartitionIDFilter(query.GetConditionIdFilter())
+	filter := toAppliedDeviceConfigurationsQuery(owner, query.GetIdFilter(), query.GetDeviceIdFilter(), configurationIdFilter, conditionIdFilter)
+	cur, err := s.Collection(appliedConfigurationsCol).Find(ctx, filter)
 	if err != nil {
 		return err
 	}
@@ -97,7 +136,7 @@ func (s *Store) GetAppliedConfigurations(ctx context.Context, owner string, quer
 }
 
 func (s *Store) DeleteAppliedConfigurations(ctx context.Context, owner string, query *pb.DeleteAppliedDeviceConfigurationsRequest) (int64, error) {
-	res, err := s.Collection(appliedConfigurationsCol).DeleteMany(ctx, toAppliedDeviceConfigurationsQuery(owner, query.GetIdFilter(), nil))
+	res, err := s.Collection(appliedConfigurationsCol).DeleteMany(ctx, toAppliedDeviceConfigurationsQuery(owner, query.GetIdFilter(), nil, pb.VersionFilter{}, pb.VersionFilter{}))
 	if err != nil {
 		return 0, err
 	}

@@ -223,7 +223,7 @@ func toLatestResouceTypeQueryFilter(resourceTypeFilter []string) bson.M {
 	}}
 }
 
-func toLatestConditionsQueryFilter(owner string, queries *store.GetLatestConditionsQuery) interface{} {
+func toLatestConditionsQuery(owner string, queries *store.GetLatestConditionsQuery) interface{} {
 	filters := make([]interface{}, 0, 5)
 	filters = append(filters, toLatestEnabledQueryFilter())
 	if owner != "" {
@@ -238,7 +238,7 @@ func toLatestConditionsQueryFilter(owner string, queries *store.GetLatestConditi
 	if len(queries.ResourceTypeFilter) > 0 {
 		filters = append(filters, toLatestResouceTypeQueryFilter(queries.ResourceTypeFilter))
 	}
-	return toFilter(mongodb.And, filters)
+	return toFilterQuery(mongodb.And, filters)
 }
 
 func (s *Store) GetLatestEnabledConditions(ctx context.Context, owner string, query *store.GetLatestConditionsQuery, p store.ProcessConditions) error {
@@ -246,7 +246,7 @@ func (s *Store) GetLatestEnabledConditions(ctx context.Context, owner string, qu
 		return err
 	}
 	opt := options.Find().SetProjection(bson.M{store.VersionsKey: false})
-	cur, err := s.Collection(conditionsCol).Find(ctx, toLatestConditionsQueryFilter(owner, query), opt)
+	cur, err := s.Collection(conditionsCol).Find(ctx, toLatestConditionsQuery(owner, query), opt)
 	if err != nil {
 		return err
 	}
