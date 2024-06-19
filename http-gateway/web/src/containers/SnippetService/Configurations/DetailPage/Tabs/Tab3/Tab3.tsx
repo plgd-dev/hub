@@ -7,13 +7,12 @@ import Headline from '@shared-ui/components/Atomic/Headline'
 import Table from '@shared-ui/components/Atomic/TableNew'
 import IconArrowDetail from '@shared-ui/components/Atomic/Icon/components/IconArrowDetail'
 import TableActionButton from '@shared-ui/components/Organisms/TableActionButton'
+import Spacer from '@shared-ui/components/Atomic/Spacer'
 
 import { Props } from './Tab3.types'
 import { messages as confT } from '@/containers/SnippetService/SnippetService.i18n'
 import { messages as g } from '@/containers/Global.i18n'
-
 import { pages } from '@/routes'
-import Spacer from '@shared-ui/components/Atomic/Spacer'
 
 const Tab3: FC<Props> = (props) => {
     const { data, loading, isActiveTab } = props
@@ -79,12 +78,12 @@ const Tab3: FC<Props> = (props) => {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
             <Spacer type='mb-6'>
-                <Headline type='h5'>{_(confT.listOfDeviceAppliedConfigurations)}</Headline>
+                <Headline type='h5'>{_(confT.listOfAppliedConfigurations)}</Headline>
             </Spacer>
             <div ref={ref} style={{ flex: '1 1 auto' }}>
                 <Table
                     columns={columns}
-                    data={[]}
+                    data={data || []}
                     defaultPageSize={10}
                     defaultSortBy={[
                         {
@@ -96,7 +95,7 @@ const Tab3: FC<Props> = (props) => {
                     height={height}
                     i18n={{
                         search: '',
-                        placeholder: _(confT.noAppliedDeviceConfiguration),
+                        placeholder: _(confT.noAppliedConfiguration),
                     }}
                     loading={loading}
                     paginationPortalTargetId={isActiveTab ? 'paginationPortalTarget' : undefined}

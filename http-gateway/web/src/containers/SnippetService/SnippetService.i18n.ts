@@ -89,41 +89,41 @@ export const messages = defineMessages({
         id: 'snippetService.conditionsDeletedMessage',
         defaultMessage: 'The selected conditions has been deleted.',
     },
-    appliedDeviceConfiguration: {
-        id: 'snippetService.appliedDeviceConfiguration',
-        defaultMessage: 'Applied Device Configuration',
+    appliedConfiguration: {
+        id: 'snippetService.appliedConfiguration',
+        defaultMessage: 'Applied Configuration',
     },
-    appliedDeviceConfigurations: {
-        id: 'snippetService.appliedDeviceConfigurations',
-        defaultMessage: 'Applied Device Configurations',
+    appliedConfigurations: {
+        id: 'snippetService.appliedConfigurations',
+        defaultMessage: 'Applied Configurations',
     },
-    addAppliedDeviceConfiguration: {
-        id: 'snippetService.appliedDeviceConfiguration',
-        defaultMessage: 'Add Applied Device Configuration',
+    addAppliedConfiguration: {
+        id: 'snippetService.addAppliedConfiguration',
+        defaultMessage: 'Add Applied Configuration',
     },
-    noAppliedDeviceConfiguration: {
-        id: 'snippetService.noAppliedDeviceConfiguration',
-        defaultMessage: 'No Applied Device Configuration',
+    noAppliedConfiguration: {
+        id: 'snippetService.noAppliedConfiguration',
+        defaultMessage: 'No Applied Configuration',
     },
-    deleteAppliedDeviceConfigurationMessage: {
-        id: 'snippetService.deleteAppliedDeviceConfigurationMessage',
-        defaultMessage: 'Are you sure you want to delete this Applied Device Configuration ?',
+    deleteAppliedConfigurationMessage: {
+        id: 'snippetService.deleteAppliedConfigurationMessage',
+        defaultMessage: 'Are you sure you want to delete this Applied Configuration ?',
     },
-    deleteAppliedDeviceConfigurationsMessage: {
-        id: 'snippetService.deleteAppliedDeviceConfigurationsMessage',
-        defaultMessage: 'Are you sure you want to delete {count} Applied Device Configurations ?',
+    deleteAppliedConfigurationsMessage: {
+        id: 'snippetService.deleteAppliedConfigurationsMessage',
+        defaultMessage: 'Are you sure you want to delete {count} Applied Configurations ?',
     },
-    appliedDeviceConfigurationError: {
-        id: 'snippetService.appliedDeviceConfigurationError',
-        defaultMessage: 'Applied Device Configurations Error',
+    appliedConfigurationError: {
+        id: 'snippetService.appliedConfigurationError',
+        defaultMessage: 'Applied Configurations Error',
     },
-    appliedDeviceConfigurationDeleted: {
-        id: 'snippetService.appliedDeviceConfigurationDeleted',
-        defaultMessage: 'Applied Device Configuration deleted',
+    appliedConfigurationDeleted: {
+        id: 'snippetService.appliedConfigurationDeleted',
+        defaultMessage: 'Applied Device deleted',
     },
-    appliedDeviceConfigurationDeletedMessage: {
-        id: 'snippetService.appliedDeviceConfigurationDeletedMessage',
-        defaultMessage: 'The selected Applied Device Configurations has been deleted.',
+    appliedConfigurationDeletedMessage: {
+        id: 'snippetService.appliedConfigurationDeletedMessage',
+        defaultMessage: 'The selected Applied Configurations has been deleted.',
     },
     deleteConfigurationTitle: {
         id: 'snippetService.deleteConfigurationTitle',
@@ -161,9 +161,9 @@ export const messages = defineMessages({
         id: 'snippetService.listOfConditions',
         defaultMessage: 'List of Conditions',
     },
-    listOfDeviceAppliedConfigurations: {
-        id: 'snippetService.listOfDeviceAppliedConfigurations',
-        defaultMessage: 'List of Device Applied Configurations',
+    listOfAppliedConfigurations: {
+        id: 'snippetService.listOfAppliedConfigurations',
+        defaultMessage: 'List of Applied Configurations',
     },
     appliedConfigurationTablePlaceholder: {
         id: 'snippetService.appliedConfigurationTablePlaceholder',
@@ -372,5 +372,9 @@ export const messages = defineMessages({
     appliedConfigurationsError: {
         id: 'snippetService.appliedConfigurationsError',
         defaultMessage: 'Applied Configurations Error',
+    },
+    appliedToDevices: {
+        id: 'snippetService.appliedToDevices',
+        defaultMessage: 'Applied to devices',
     },
 })

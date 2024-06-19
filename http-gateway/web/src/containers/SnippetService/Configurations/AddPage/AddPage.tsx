@@ -123,7 +123,7 @@ const AddPage: FC<any> = () => {
             }}
             onStepChange={onStepChange}
             steps={steps}
-            title={_(confT.addAppliedDeviceConfiguration)}
+            title={_(confT.addAppliedConfiguration)}
             visitedStep={visitedStep}
         >
             <Loadable condition={rehydrated}>

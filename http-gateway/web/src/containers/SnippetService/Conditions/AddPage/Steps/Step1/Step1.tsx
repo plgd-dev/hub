@@ -27,7 +27,6 @@ const Step1: FC<Props> = (props) => {
     const {
         formState: { errors },
         register,
-        setValue,
         watch,
         updateField,
         control,

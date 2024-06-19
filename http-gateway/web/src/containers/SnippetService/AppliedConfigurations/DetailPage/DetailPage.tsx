@@ -33,7 +33,7 @@ const DetailPage: FC<any> = () => {
     const { appliedConfigurationId } = useParams()
 
     const { formatMessage: _ } = useIntl()
-    const { data, loading, error } = useAppliedConfigurationDetail(appliedConfigurationId!, !!appliedConfigurationId)
+    const { data, loading, error } = useAppliedConfigurationDetail(appliedConfigurationId || '', !!appliedConfigurationId)
 
     const [activeItem, setActiveItem] = useState('0')
     const [pageLoading, setPageLoading] = useState(false)
@@ -43,7 +43,7 @@ const DetailPage: FC<any> = () => {
     const breadcrumbs = useMemo(
         () => [
             { label: _(confT.snippetService), link: generatePath(pages.SNIPPET_SERVICE.LINK) },
-            { label: _(confT.conditions), link: generatePath(pages.SNIPPET_SERVICE.APPLIED_CONFIGURATIONS.LINK) },
+            { label: _(confT.appliedConfiguration), link: generatePath(pages.SNIPPET_SERVICE.APPLIED_CONFIGURATIONS.LINK) },
             { label: data?.name || '' },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -63,8 +63,8 @@ const DetailPage: FC<any> = () => {
     const menu = useMemo(
         () => [
             { id: '0', link: '#general', title: _(g.general), icon: <IconInfo /> },
-            { id: '1', link: '#filters', title: _(g.filters), icon: <IconShield /> },
-            { id: '2', link: '#APIAccessToken', title: _(confT.APIAccessToken), icon: <IconGlobe /> },
+            { id: '1', link: '#listOfResources', title: _(confT.listOfResources), icon: <IconShield /> },
+            { id: '2', link: '#appliedToDevices', title: _(confT.appliedToDevices), icon: <IconGlobe /> },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [data]
@@ -78,7 +78,9 @@ const DetailPage: FC<any> = () => {
             const id = parseInt(item.id)
             const element = refs[id] as HTMLElement
 
-            element?.scrollIntoView({ behavior: 'smooth' })
+            setTimeout(() => {
+                element?.scrollIntoView({ behavior: 'smooth' })
+            }, 0)
         },
         [refs]
     )
@@ -107,43 +109,49 @@ const DetailPage: FC<any> = () => {
                         <Spacer style={{ height: '100%', overflow: 'auto' }} type='pr-10'>
                             <Loadable condition={!loading && !!data}>
                                 <>
-                                    <Spacer type='mb-4'>
-                                        <Headline type='h5'>{_(g.general)}</Headline>
-                                    </Spacer>
+                                    <div ref={(element: HTMLDivElement) => setRef(element, '0')}>
+                                        <Spacer type='mb-4'>
+                                            <Headline type='h5'>{_(g.general)}</Headline>
+                                        </Spacer>
 
-                                    <SimpleStripTable
-                                        leftColSize={6}
-                                        rightColSize={6}
-                                        rows={[
-                                            {
-                                                attribute: _(g.name),
-                                                value: (
-                                                    <FormGroup id='name' marginBottom={false} style={{ width: '100%' }}>
-                                                        <FormInput disabled align='right' size='small' value={data?.name} />
-                                                    </FormGroup>
-                                                ),
-                                            },
-                                        ]}
-                                    />
+                                        <SimpleStripTable
+                                            leftColSize={6}
+                                            rightColSize={6}
+                                            rows={[
+                                                {
+                                                    attribute: _(g.name),
+                                                    value: (
+                                                        <FormGroup id='name' marginBottom={false} style={{ width: '100%' }}>
+                                                            <FormInput disabled align='right' size='small' value={data?.name} />
+                                                        </FormGroup>
+                                                    ),
+                                                },
+                                            ]}
+                                        />
+                                    </div>
 
-                                    <Spacer type='mt-8'>
-                                        <Headline type='h5'>{_(g.listOfResources)}</Headline>
-                                        <p style={{ margin: '4px 0 0 0' }}>Short description...</p>
-                                    </Spacer>
+                                    <div ref={(element: HTMLDivElement) => setRef(element, '1')}>
+                                        <Spacer type='mt-8'>
+                                            <Headline type='h5'>{_(g.listOfResources)}</Headline>
+                                            <p style={{ margin: '4px 0 0 0' }}>Short description...</p>
+                                        </Spacer>
 
-                                    <Spacer type='mt-6'>
-                                        {data?.resources &&
-                                            data?.resources?.map((resource: ResourceType, key: number) => (
-                                                <Spacer key={key} type='mb-2'>
-                                                    <ResourceToggleCreator defaultOpen readOnly i18n={resourceI18n} resourceData={resource} />
-                                                </Spacer>
-                                            ))}
-                                    </Spacer>
+                                        <Spacer type='mt-6'>
+                                            {data?.resources &&
+                                                data?.resources?.map((resource: ResourceType, key: number) => (
+                                                    <Spacer key={key} type='mb-2'>
+                                                        <ResourceToggleCreator defaultOpen readOnly i18n={resourceI18n} resourceData={resource} />
+                                                    </Spacer>
+                                                ))}
+                                        </Spacer>
+                                    </div>
 
-                                    <Spacer type='mt-8'>
-                                        <Headline type='h5'>{_(confT.applyToDevices)}</Headline>
-                                        <p style={{ margin: '4px 0 0 0' }}>Short description...</p>
-                                    </Spacer>
+                                    <div ref={(element: HTMLDivElement) => setRef(element, '2')}>
+                                        <Spacer type='mt-8'>
+                                            <Headline type='h5'>{_(confT.appliedToDevices)}</Headline>
+                                            <p style={{ margin: '4px 0 0 0' }}>Short description...</p>
+                                        </Spacer>
+                                    </div>
                                 </>
                             </Loadable>
                         </Spacer>

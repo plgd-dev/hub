@@ -211,9 +211,9 @@ const DetailPage: FC<any> = () => {
                                 content: <Tab2 data={conditionsData} isActiveTab={activeTabItem === 1} loading={conditionsLoading} />,
                             },
                             {
-                                name: _(confT.appliedDeviceConfiguration),
+                                name: _(confT.appliedConfiguration),
                                 id: 2,
-                                dataTestId: testId.snippetService.configurations.detail.tabDeviceAppliedConfiguration,
+                                dataTestId: testId.snippetService.configurations.detail.tabAppliedConfiguration,
                                 content: <Tab3 data={appliedConfigurationData} isActiveTab={activeTabItem === 1} loading={appliedConfigurationLoading} />,
                             },
                         ]}

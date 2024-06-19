@@ -26,10 +26,7 @@ const ListPage: FC<any> = () => {
     const { data, loading, error, refresh } = useAppliedConfigurationsList()
     const navigate = useNavigate()
 
-    const breadcrumbs = useMemo(
-        () => [{ label: _(confT.snippetService), link: pages.SNIPPET_SERVICE.LINK }, { label: _(confT.appliedDeviceConfiguration) }],
-        [_]
-    )
+    const breadcrumbs = useMemo(() => [{ label: _(confT.snippetService), link: pages.SNIPPET_SERVICE.LINK }, { label: _(confT.appliedConfiguration) }], [_])
 
     useEffect(() => {
         error &&
@@ -47,8 +44,8 @@ const ListPage: FC<any> = () => {
                     return _(g.error)
                 case APPLIED_CONFIGURATIONS_STATUS.PENDING:
                     return _(g.pending)
-                default:
                 case APPLIED_CONFIGURATIONS_STATUS.SUCCESS:
+                default:
                     return _(g.success)
             }
         },
@@ -61,8 +58,8 @@ const ListPage: FC<any> = () => {
                 return states.OFFLINE
             case APPLIED_CONFIGURATIONS_STATUS.PENDING:
                 return states.OCCUPIED
-            default:
             case APPLIED_CONFIGURATIONS_STATUS.SUCCESS:
+            default:
                 return states.ONLINE
         }
     }, [])
@@ -130,15 +127,15 @@ const ListPage: FC<any> = () => {
     )
 
     return (
-        <PageLayout breadcrumbs={breadcrumbs} loading={loading} title={_(confT.appliedDeviceConfiguration)}>
+        <PageLayout breadcrumbs={breadcrumbs} loading={loading} title={_(confT.appliedConfiguration)}>
             <PageListTemplate
                 columns={columns}
                 data={data}
                 deleteApiMethod={deleteAppliedDeviceConfigApi}
                 i18n={{
-                    singleSelected: _(confT.appliedDeviceConfiguration),
-                    multiSelected: _(confT.appliedDeviceConfigurations),
-                    tablePlaceholder: _(confT.noAppliedDeviceConfiguration),
+                    singleSelected: _(confT.appliedConfiguration),
+                    multiSelected: _(confT.appliedConfigurations),
+                    tablePlaceholder: _(confT.noAppliedConfiguration),
                     id: _(g.id),
                     name: _(g.name),
                     cancel: _(g.cancel),
@@ -148,20 +145,18 @@ const ListPage: FC<any> = () => {
                     deleteModalSubtitle: _(g.undoneAction),
                     view: _(g.view),
                     deleteModalTitle: (selected: number) =>
-                        selected === 1
-                            ? _(confT.deleteAppliedDeviceConfigurationMessage)
-                            : _(confT.deleteAppliedDeviceConfigurationsMessage, { count: selected }),
+                        selected === 1 ? _(confT.deleteAppliedConfigurationMessage) : _(confT.deleteAppliedConfigurationsMessage, { count: selected }),
                 }}
                 loading={loading}
                 onDeletionError={(e) => {
                     Notification.error(
-                        { title: _(confT.appliedDeviceConfigurationError), message: getApiErrorMessage(e) },
+                        { title: _(confT.appliedConfigurationError), message: getApiErrorMessage(e) },
                         { notificationId: notificationId.HUB_SNIPPET_SERVICE_APPLIED_CONFIGURATIONS_LIST_PAGE_DELETE_ERROR }
                     )
                 }}
                 onDeletionSuccess={() => {
                     Notification.success(
-                        { title: _(confT.appliedDeviceConfigurationDeleted), message: _(confT.appliedDeviceConfigurationDeletedMessage) },
+                        { title: _(confT.appliedConfigurationDeleted), message: _(confT.appliedConfigurationDeletedMessage) },
                         { notificationId: notificationId.HUB_SNIPPET_SERVICE_APPLIED_CONFIGURATIONS_LIST_PAGE_DELETE_SUCCESS }
                     )
                 }}

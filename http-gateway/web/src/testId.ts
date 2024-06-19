@@ -96,7 +96,7 @@ const testId = {
                 deleteButtonCancel: 'hub-snippet-service-configurations-detail-delete-button-cancel',
                 tabGeneral: 'hub-snippet-service-configurations-detail-tab-general',
                 tabConditions: 'hub-snippet-service-configurations-detail-tab-conditions',
-                tabDeviceAppliedConfiguration: 'hub-snippet-service-configurations-detail-tab-device-applied-configuration',
+                tabAppliedConfiguration: 'hub-snippet-service-configurations-detail-tab-applied-configuration',
             },
         },
     },

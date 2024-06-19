@@ -33,7 +33,7 @@ import { updateConditionApi } from '@/containers/SnippetService/rest'
 const DetailPage: FC<any> = () => {
     const { conditionId } = useParams()
     const { formatMessage: _ } = useIntl()
-    const { data, loading, error, refresh } = useConditionsDetail(conditionId!, !!conditionId)
+    const { data, loading, error, refresh } = useConditionsDetail(conditionId || '', !!conditionId)
 
     const [pageLoading, setPageLoading] = useState(false)
     const [activeItem, setActiveItem] = useState('0')
