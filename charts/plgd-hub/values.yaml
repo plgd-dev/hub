@@ -32,6 +32,7 @@ global:
    web:
     clientID:
     scopes: [ "openid" ]
+  # -- Custom CA certificates
   extraCAPool:
     # -- Custom CA certificate for authorization endpoint in PEM format 
     authorization: "{{ include \"plgd-hub.oldGlobalAuthorizationCAPool\" . }}"
@@ -94,7 +95,6 @@ mongodb:
   auth:
     enabled: false
   image:
-    #tag: 6.0.10-debian-11-r0
     debug: true
   tls:
     enabled: false
