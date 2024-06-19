@@ -24,6 +24,7 @@ const ListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
 
     const { data, loading, error, refresh } = useAppliedConfigurationsList()
+    console.log(data)
     const navigate = useNavigate()
 
     const breadcrumbs = useMemo(() => [{ label: _(confT.snippetService), link: pages.SNIPPET_SERVICE.LINK }, { label: _(confT.appliedConfiguration) }], [_])
@@ -96,7 +97,11 @@ const ListPage: FC<any> = () => {
                 accessor: 'conditionId',
                 Cell: ({ value, row }: { value: string; row: any }) => (
                     <Tag
-                        onClick={() => navigate(generatePath(pages.SNIPPET_SERVICE.CONDITIONS.DETAIL.LINK, { conditionId: row.original.conditionId, tab: '' }))}
+                        onClick={() =>
+                            `${navigate(
+                                generatePath(pages.SNIPPET_SERVICE.CONDITIONS.DETAIL.LINK, { conditionId: row.original.conditionId.id, tab: '' })
+                            )}?version=${row.original.conditionId.version}`
+                        }
                         variant={tagVariants.BLUE}
                     >
                         <IconLink />
@@ -111,7 +116,9 @@ const ListPage: FC<any> = () => {
                 Cell: ({ value, row }: { value: string; row: any }) => (
                     <Tag
                         onClick={() =>
-                            navigate(generatePath(pages.SNIPPET_SERVICE.CONFIGURATIONS.DETAIL.LINK, { configurationId: row.original.configurationId, tab: '' }))
+                            navigate(
+                                generatePath(pages.SNIPPET_SERVICE.CONFIGURATIONS.DETAIL.LINK, { configurationId: row.original.configurationId.id, tab: '' })
+                            )
                         }
                         variant={tagVariants.BLUE}
                     >

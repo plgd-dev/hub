@@ -38,7 +38,7 @@ export const getAppliedDeviceConfigStatus = (appliedDeviceConfig: AppliedDeviceC
         if (resource.status === 'PENDING') {
             return 'PENDING'
         }
-        return resource.resourceUpdated.status
+        return resource.resourceUpdated?.status
     })
     let configStatus = APPLIED_CONFIGURATIONS_STATUS.SUCCESS
 
