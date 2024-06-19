@@ -1,6 +1,5 @@
 import React, { FC, useContext, useMemo } from 'react'
 import { useIntl } from 'react-intl'
-import { Controller } from 'react-hook-form'
 
 import FormSelect from '@shared-ui/components/Atomic/FormSelect'
 import { OptionType } from '@shared-ui/components/Atomic/FormSelect/FormSelect.types'
@@ -28,7 +27,8 @@ const Step3: FC<Props> = (props) => {
         formState: { errors },
         updateField,
         register,
-        control,
+        watch,
+        setValue,
     } = useForm<Inputs>({
         defaultFormData,
         errorKey: 'tab3',
@@ -45,6 +45,9 @@ const Step3: FC<Props> = (props) => {
         [data, loading]
     )
 
+    const configurationId = watch('configurationId')
+    const apiAccessToken = watch('apiAccessToken')
+
     return (
         <form>
             <FullPageWizard.Headline>{_(confT.selectConfiguration)}</FullPageWizard.Headline>
@@ -54,30 +57,22 @@ const Step3: FC<Props> = (props) => {
             <FullPageWizard.Description>Popis čo tu uživateľ musí nastaviať a prípadne prečo</FullPageWizard.Description>
 
             <FormGroup error={errors.configurationId ? _(g.requiredField, { field: _(confT.configuration) }) : undefined} id='configurationId'>
-                <FormLabel text={_(confT.selectConfiguration)} />
-                <div>
-                    <Controller
-                        control={control}
-                        name='configurationId'
-                        render={({ field: { onChange, value } }) => (
-                            <FormSelect
-                                isClearable
-                                error={!!errors.configurationId}
-                                onChange={(option: OptionType) => {
-                                    const value = option ? option.value : ''
-                                    onChange('configurationId', value)
-                                    updateField('configurationId', value)
-                                }}
-                                options={options}
-                                value={value ? options?.find((o: OptionType) => o.value === value) : null}
-                            />
-                        )}
-                    />
-                </div>
+                <FormLabel required text={_(confT.selectConfiguration)} />
+                <FormSelect
+                    isClearable
+                    error={!!errors.configurationId}
+                    onChange={(option: OptionType) => {
+                        const v = option ? option.value : ''
+                        setValue('configurationId', v.toString())
+                        updateField('configurationId', v)
+                    }}
+                    options={options}
+                    value={configurationId ? options?.find((o: OptionType) => o.value === configurationId) : null}
+                />
             </FormGroup>
 
             <FormGroup error={errors.apiAccessToken ? _(g.requiredField, { field: _(g.name) }) : undefined} id='apiAccessToken'>
-                <FormLabel text={_(confT.APIAccessToken)} />
+                <FormLabel required text={_(confT.APIAccessToken)} />
                 <FormTextarea
                     {...register('apiAccessToken', { required: true, validate: (val) => val !== '' })}
                     onBlur={(e) => updateField('apiAccessToken', e.target.value)}
@@ -86,7 +81,7 @@ const Step3: FC<Props> = (props) => {
             </FormGroup>
 
             <StepButtons
-                disableNext={false}
+                disableNext={!configurationId || !apiAccessToken || Object.keys(errors).length > 0}
                 i18n={{
                     back: _(g.back),
                     continue: _(g.createAndSave),
@@ -95,7 +90,6 @@ const Step3: FC<Props> = (props) => {
                 }}
                 onClickBack={() => setStep?.(1)}
                 onClickNext={onFinish}
-                showRequiredMessage={false}
             />
         </form>
     )
