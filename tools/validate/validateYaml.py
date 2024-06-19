@@ -35,7 +35,7 @@ def validate_yaml_key_format(key):
   """Check that key begins with lower-case letter and contains only supported characters."""
   valid = True
   # must be alphanumeric
-  if not re.match("^[a-z][a-zA-Z0-9_]*$", key):
+  if not re.match("^[a-z]\w*$", key):
     valid = False
 
   if args.verbose:
@@ -62,7 +62,7 @@ def fill_yaml_tags_from_file(go_tags, file):
   """Extract all yaml tags from given file and save them as list in dictionary."""
   with open(file, "r") as f:
     for line in f:
-      if not 'yaml:' in line:
+      if 'yaml:' not in line:
         continue
       line = line.strip()
       if line.startswith("//"):

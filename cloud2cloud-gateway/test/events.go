@@ -154,7 +154,7 @@ func (s *EventsServer) Run(t *testing.T) EventChan {
 				data:   data,
 			}
 			w.WriteHeader(http.StatusOK)
-		})).Methods("POST")
+		})).Methods(http.MethodPost)
 		_ = http.Serve(s.listener, r)
 	}()
 	return dataChan

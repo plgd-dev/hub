@@ -118,7 +118,7 @@ func ParseEventHeader(r *http.Request) (h EventHeader, _ error) {
 
 	var acceptEncoding []string
 	v := r.Header.Get(AcceptEncodingKey)
-	if r.Method == "POST" && v != "" {
+	if r.Method == http.MethodPost && v != "" {
 		acceptEncoding = strings.Split(v, ",")
 		if len(acceptEncoding) != 1 {
 			return h, invalidKeyValueError(AcceptEncodingKey, acceptEncoding, errors.New("more than 1"))

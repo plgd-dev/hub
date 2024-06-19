@@ -72,7 +72,7 @@ def fill_proto_and_json_tags_from_file(proto_tags, json_tags, file):
         line = fill_protojson_tag_from_str(proto_tags, line, file)
         continue
 
-      if not 'json:' in line:
+      if 'json:' not in line:
         continue
       json_tag = fill_json_tag_from_str(json_tags, line, file)
 
@@ -117,7 +117,7 @@ def validate_key_existence(key, tags):
 def validate_component(component, tags):
   """Check that all properties from given swagger component have existing tag counterparts."""
 
-  if not "properties" in component:
+  if "properties" not in component:
     return True
 
   exists = True
@@ -125,7 +125,7 @@ def validate_component(component, tags):
     if args.verbose:
       print("{}:{}".format(k, v))
     exists = validate_key_existence(str(k), tags) and exists
-    if not "type" in v:
+    if "type" not in v:
       continue
     if v["type"] == "object":
       exists = validate_component(v, tags) and exists
@@ -173,7 +173,7 @@ def validate_components_from_file(file, excluded_components, tags):
           print("component {}".format(component_name))
         if component_name in excluded_components:
           continue
-        if not "type" in component or not component["type"] == "object":
+        if "type" not in component or component["type"] != "object":
           continue
         valid = validate_component(component, tags) and valid
     except yaml.YAMLError as exc:
@@ -185,7 +185,7 @@ def validate_tag_format(tag):
   """Check that tag begins with lower-case letter and contains only supported characters."""
   valid = True
   # must be alphanumeric
-  if not re.match("^[a-z][a-zA-Z0-9_]*$", tag):
+  if not re.match("^[a-z]\w*$", tag):
     valid = False
 
   if args.verbose:
