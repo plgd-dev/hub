@@ -65,7 +65,7 @@ export const deleteConfigurationsApi = (ids: string[]) => {
     const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
 
     return deleteByChunks(
-        `${httpGatewayAddress}${SnippetServiceApiEndpoints.CONFIGURATIONS}`,
+        `${httpGatewayAddress}${SnippetServiceApiEndpoints.CONFIGURATIONS}/all`,
         ids,
         cancelRequestDeadlineTimeout,
         'snippet-service-delete-configurations',
@@ -78,7 +78,7 @@ export const deleteConditionsApi = (ids: string[]) => {
     const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
 
     return deleteByChunks(
-        `${httpGatewayAddress}${SnippetServiceApiEndpoints.CONDITIONS}`,
+        `${httpGatewayAddress}${SnippetServiceApiEndpoints.CONDITIONS}/all`,
         ids,
         cancelRequestDeadlineTimeout,
         'snippet-service-delete-conditions',
@@ -91,7 +91,7 @@ export const deleteAppliedDeviceConfigApi = (ids: string[]) => {
     const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
 
     return deleteByChunks(
-        `${httpGatewayAddress}${SnippetServiceApiEndpoints.CONFIGURATIONS_APPLIED}`,
+        `${httpGatewayAddress}${SnippetServiceApiEndpoints.CONFIGURATIONS_APPLIED}/all`,
         ids,
         cancelRequestDeadlineTimeout,
         'snippet-service-delete-applied-devices-config',
