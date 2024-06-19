@@ -75,22 +75,12 @@ export const useConditionsDetail = (id: string, requestActive = false): StreamAp
     const { telemetryWebTracer, unauthorizedCallback } = useContext(AppContext)
     const url = getWellKnow()?.ui?.snippetService || getConfig().httpGatewayAddress
 
-    const [data, setData] = useState(null)
-
-    const { data: resData, ...rest }: StreamApiPropsType = useStreamApi(`${url}${SnippetServiceApiEndpoints.CONDITIONS}?httpIdFilter=${id}/latest`, {
+    return useStreamApi(`${url}${SnippetServiceApiEndpoints.CONDITIONS}?httpIdFilter=${id}/all`, {
         telemetryWebTracer,
         telemetrySpan: `snippet-service-get-condition-${id}`,
         requestActive,
         unauthorizedCallback,
     })
-
-    useEffect(() => {
-        if (resData && Array.isArray(resData)) {
-            setData(resData[0])
-        }
-    }, [resData])
-
-    return { data, ...rest }
 }
 
 export const useAppliedConfigurationsList = (): StreamApiPropsType => {

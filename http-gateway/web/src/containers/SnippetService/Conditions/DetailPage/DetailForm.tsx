@@ -3,6 +3,7 @@ import { useIntl } from 'react-intl'
 import { generatePath, useNavigate } from 'react-router-dom'
 import get from 'lodash/get'
 import { Controller } from 'react-hook-form'
+import pick from 'lodash/pick'
 
 import Spacer from '@shared-ui/components/Atomic/Spacer'
 import Headline from '@shared-ui/components/Atomic/Headline'
@@ -20,11 +21,9 @@ import { messages as g } from '@/containers/Global.i18n'
 import { useValidationsSchema } from '@/containers/SnippetService/Conditions/DetailPage/validationSchema'
 import { Props, Inputs } from './DetailForm.types'
 import { messages as confT } from '@/containers/SnippetService/SnippetService.i18n'
-
 import { pages } from '@/routes'
 import { formatText } from '@/containers/PendingCommands/DateFormat'
 import { Step2FormComponent } from '@/containers/SnippetService/Conditions/FomComponents'
-import pick from 'lodash/pick'
 
 const DetailForm: FC<Props> = (props) => {
     const { formData, refs, resetIndex } = props
@@ -122,11 +121,15 @@ const DetailForm: FC<Props> = (props) => {
                         },
                         {
                             attribute: _(g.lastModified),
-                            value: <FormInput disabled value={formatText(formData.timestamp, formatDate, formatTime)} />,
+                            value: formData.timestamp ? (
+                                <FormInput disabled onChange={() => {}} value={formatText(formData.timestamp, formatDate, formatTime)} />
+                            ) : (
+                                '-'
+                            ),
                         },
                         {
                             attribute: _(g.version),
-                            value: <FormInput disabled value={formData.version} />,
+                            value: <FormInput disabled onChange={() => {}} value={formData.version || ''} />,
                         },
                     ]}
                 />

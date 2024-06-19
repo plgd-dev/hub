@@ -1,6 +1,6 @@
 import React, { FC, lazy, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { generatePath, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { generatePath, useNavigate, useParams } from 'react-router-dom'
 import ReactDOM from 'react-dom'
 import cloneDeep from 'lodash/cloneDeep'
 
@@ -13,10 +13,7 @@ import BottomPanel from '@shared-ui/components/Layout/BottomPanel/BottomPanel'
 import Button from '@shared-ui/components/Atomic/Button'
 import AppContext from '@shared-ui/app/share/AppContext'
 import { useFormData, useIsMounted } from '@shared-ui/common/hooks'
-import FormSelect from '@shared-ui/components/Atomic/FormSelect'
-import { OptionType } from '@shared-ui/components/Atomic/FormSelect/FormSelect.types'
-import FormGroup from '@shared-ui/components/Atomic/FormGroup'
-import FormLabel from '@shared-ui/components/Atomic/FormLabel'
+import { useVersion } from '@shared-ui/common/hooks/use-version'
 
 import PageLayout from '@/containers/Common/PageLayout'
 import { pages } from '@/routes'
@@ -35,9 +32,6 @@ const Tab3 = lazy(() => import('./Tabs/Tab3'))
 const DetailPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
     const { configurationId, tab: tabRoute } = useParams()
-    const [searchParams, setSearchParams] = useSearchParams()
-
-    const version = searchParams.get('version')
 
     const { data: configurationData, loading, error, refresh } = useConfigurationDetail(configurationId || '', !!configurationId)
     const { data: conditionsData, loading: conditionsLoading } = useConfigurationConditions(configurationId || '', !!configurationId)
@@ -58,15 +52,11 @@ const DetailPage: FC<any> = () => {
         []
     )
 
-    const data = useMemo(() => {
-        const v = version || configurationData?.length - 1
-        return configurationData && configurationData?.length > 0 ? configurationData[v] : []
-    }, [configurationData, version])
-
-    const versions = useMemo(
-        () => configurationData?.map((version: { version: string }) => ({ value: version.version, label: `v${version.version}` })),
-        [configurationData]
-    )
+    const { Selector, data } = useVersion({
+        i18n: { version: _(g.version), selectVersion: _(confT.selectVersion) },
+        versionData: configurationData,
+        refresh,
+    })
 
     const { handleReset, context, resetIndex, dirty, formData, hasError } = useFormData({
         defaultFormState,
@@ -158,22 +148,7 @@ const DetailPage: FC<any> = () => {
         <PageLayout
             breadcrumbs={breadcrumbs}
             header={<DetailHeader id={configurationId!} loading={loadingState} name={data?.name} refresh={refresh} />}
-            headlineCustomContent={
-                <FormGroup inline id='version' marginBottom={false}>
-                    <FormLabel text={_(g.version)} />
-                    <FormSelect
-                        onChange={(options: OptionType) => {
-                            const v = options.value
-                            setSearchParams({ version: v as string })
-                            refresh()
-                        }}
-                        options={versions || []}
-                        placeholder={_(confT.selectVersion)}
-                        size='small'
-                        value={versions?.find((v: OptionType) => v.value === version) || null}
-                    />
-                </FormGroup>
-            }
+            headlineCustomContent={<Selector />}
             loading={loadingState}
             notFound={notFound}
             title={data?.name}

@@ -1,6 +1,6 @@
 import React, { FC, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { generatePath, useNavigate, useParams } from 'react-router-dom'
+import { generatePath, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import ReactDOM from 'react-dom'
 import cloneDeep from 'lodash/cloneDeep'
 import { useMediaQuery } from 'react-responsive'
@@ -19,6 +19,7 @@ import { FormContext } from '@shared-ui/common/context/FormContext'
 import BottomPanel from '@shared-ui/components/Layout/BottomPanel/BottomPanel'
 import Button from '@shared-ui/components/Atomic/Button'
 import AppContext from '@shared-ui/app/share/AppContext'
+import { useVersion } from '@shared-ui/common/hooks/use-version'
 
 import { useConditionsDetail } from '@/containers/SnippetService/hooks'
 import PageLayout from '@/containers/Common/PageLayout'
@@ -33,7 +34,13 @@ import { updateConditionApi } from '@/containers/SnippetService/rest'
 const DetailPage: FC<any> = () => {
     const { conditionId } = useParams()
     const { formatMessage: _ } = useIntl()
-    const { data, loading, error, refresh } = useConditionsDetail(conditionId || '', !!conditionId)
+    const { data: conditionData, loading, error, refresh } = useConditionsDetail(conditionId || '', !!conditionId)
+
+    const { Selector, data } = useVersion({
+        i18n: { version: _(g.version), selectVersion: _(confT.selectVersion) },
+        versionData: conditionData,
+        refresh,
+    })
 
     const [pageLoading, setPageLoading] = useState(false)
     const [activeItem, setActiveItem] = useState('0')
@@ -161,6 +168,7 @@ const DetailPage: FC<any> = () => {
         <PageLayout
             breadcrumbs={breadcrumbs}
             header={<DetailHeader id={conditionId!} loading={loading || pageLoading} name={data?.name} />}
+            headlineCustomContent={<Selector />}
             loading={loading || pageLoading}
             title={data?.name}
             xPadding={false}
@@ -187,7 +195,7 @@ const DetailPage: FC<any> = () => {
                     <Column style={isDesktopOrLaptop ? { height: '100%' } : { flex: '1 1 auto', overflow: 'hidden' }} xl={8}>
                         <Spacer style={{ height: '100%', overflow: 'auto' }} type='pr-10'>
                             <FormContext.Provider value={context}>
-                                <Loadable condition={!!formData && !loading && !!data}>
+                                <Loadable condition={!!formData && !loading && !!data && Object.keys(data).length > 0 && Object.keys(formData).length > 0}>
                                     <DetailForm
                                         formData={formData}
                                         refs={{
