@@ -186,6 +186,14 @@ func idFilterFromString(v string) *IDFilter {
 	}
 	idHref := strings.SplitN(v, "/", 2)
 	if len(idHref) < 2 {
+		ver, err := strconv.ParseUint(v, 10, 64)
+		if err == nil {
+			return &IDFilter{
+				Version: &IDFilter_Value{
+					Value: ver,
+				},
+			}
+		}
 		return &IDFilter{
 			Id: v,
 			Version: &IDFilter_All{
@@ -209,14 +217,14 @@ func idFilterFromString(v string) *IDFilter {
 			},
 		}
 	default:
-		v, err := strconv.ParseUint(idHref[1], 10, 64)
+		ver, err := strconv.ParseUint(idHref[1], 10, 64)
 		if err != nil {
 			return nil
 		}
 		return &IDFilter{
 			Id: idHref[0],
 			Version: &IDFilter_Value{
-				Value: v,
+				Value: ver,
 			},
 		}
 	}

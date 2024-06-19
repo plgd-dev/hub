@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/go-coap/v3/message"
-	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
 	snippetHttp "github.com/plgd-dev/hub/v2/snippet-service/service/http"
@@ -29,10 +28,6 @@ func TestRequestHandlerGetAppliedConfigurations(t *testing.T) {
 	defer shutDown()
 
 	snippetCfg := test.MakeConfig(t)
-	logCfg := log.MakeDefaultConfig()
-	logCfg.Level = log.DebugLevel
-	log.Setup(logCfg)
-	snippetCfg.Log = logCfg
 	ss, shutdownHttp := test.New(t, snippetCfg)
 	defer shutdownHttp()
 
@@ -49,7 +44,7 @@ func TestRequestHandlerGetAppliedConfigurations(t *testing.T) {
 		args         args
 		wantHTTPCode int
 		wantErr      bool
-		want         func([]*pb.AppliedDeviceConfiguration)
+		want         func(*pb.AppliedDeviceConfiguration) bool
 	}{
 		{
 			name: "missing owner",
@@ -69,51 +64,10 @@ func TestRequestHandlerGetAppliedConfigurations(t *testing.T) {
 				}),
 			},
 			wantHTTPCode: http.StatusOK,
-			want: func(values []*pb.AppliedDeviceConfiguration) {
-				require.NotEmpty(t, values)
-				for _, v := range values {
-					conf, ok := appliedConfs[v.GetId()]
-					require.True(t, ok)
-					test.CmpAppliedDeviceConfiguration(t, conf, v, false)
-				}
+			want: func(ac *pb.AppliedDeviceConfiguration) bool {
+				return ac.GetOwner() == test.Owner(1)
 			},
 		},
-		/* TODO need to be implemented in mongodb
-		{
-			name: "get certain applied configuration",
-			args: args{
-				token: oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTest, map[string]interface{}{
-					snippetCfg.APIs.GRPC.Authorization.OwnerClaim: test.Owner(0),
-				}),
-				httpConfigurationIdFilter: []string{
-					test.ConfigurationID(0) + "/0",
-				},
-			},
-			wantHTTPCode: http.StatusOK,
-			want: func(values []*pb.AppliedDeviceConfiguration) {
-				require.Len(t, values, 1)
-				require.Equal(t, test.ConfigurationID(0), values[0].GetConfigurationId().GetId())
-				require.Equal(t, uint64(0), values[0].GetConfigurationId().GetVersion())
-			},
-		},
-		{
-			name: "get certain applied condition",
-			args: args{
-				token: oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTest, map[string]interface{}{
-					snippetCfg.APIs.GRPC.Authorization.OwnerClaim: test.Owner(0),
-				}),
-				httpConditionIdFilter: []string{
-					test.ConditionID(0) + "/0",
-				},
-			},
-			wantHTTPCode: http.StatusOK,
-			want: func(values []*pb.AppliedDeviceConfiguration) {
-				require.Len(t, values, 1)
-				require.Equal(t, test.ConditionID(0), values[0].GetConditionId().GetId())
-				require.Equal(t, uint64(0), values[0].GetConditionId().GetVersion())
-			},
-		},
-		*/
 		{
 			name: "owner0/id{0,1,2,3,4,5}",
 			args: args{
@@ -126,14 +80,54 @@ func TestRequestHandlerGetAppliedConfigurations(t *testing.T) {
 				},
 			},
 			wantHTTPCode: http.StatusOK,
-			want: func(values []*pb.AppliedDeviceConfiguration) {
-				require.NotEmpty(t, values)
-				for _, v := range values {
-					require.Equal(t, test.Owner(0), v.GetOwner())
-					conf, ok := appliedConfs[v.GetId()]
-					require.True(t, ok)
-					test.CmpAppliedDeviceConfiguration(t, conf, v, false)
-				}
+			want: func(ac *pb.AppliedDeviceConfiguration) bool {
+				acID := ac.GetId()
+				return ac.GetOwner() == test.Owner(0) &&
+					(acID == test.AppliedConfigurationID(0) || acID == test.AppliedConfigurationID(1) ||
+						acID == test.AppliedConfigurationID(2) || acID == test.AppliedConfigurationID(3) ||
+						acID == test.AppliedConfigurationID(4) || acID == test.AppliedConfigurationID(5))
+			},
+		},
+		{
+			name: "owner2/configurationId[{id:2,version:2},id:5]",
+			args: args{
+				token: oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTest, map[string]interface{}{
+					snippetCfg.APIs.GRPC.Authorization.OwnerClaim: test.Owner(2),
+				}),
+				httpConfigurationIdFilter: []string{
+					test.ConfigurationID(2) + "/2",
+					test.ConfigurationID(5) + "/all",
+				},
+			},
+			wantHTTPCode: http.StatusOK,
+			want: func(ac *pb.AppliedDeviceConfiguration) bool {
+				acConfID := ac.GetConfigurationId().GetId()
+				acConfVersion := ac.GetConfigurationId().GetVersion()
+				return ac.GetOwner() == test.Owner(2) &&
+					((acConfID == test.ConfigurationID(2) && acConfVersion == 2) ||
+						(acConfID == test.ConfigurationID(5)))
+			},
+		},
+		{
+			name: "owner0/conditionId[{id:3,version:3},{id:6},{version:13}]",
+			args: args{
+				token: oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTest, map[string]interface{}{
+					snippetCfg.APIs.GRPC.Authorization.OwnerClaim: test.Owner(0),
+				}),
+				httpConditionIdFilter: []string{
+					test.ConditionID(3) + "/3",
+					test.ConditionID(6) + "/all",
+					"13",
+				},
+			},
+			wantHTTPCode: http.StatusOK,
+			want: func(ac *pb.AppliedDeviceConfiguration) bool {
+				acCondID := ac.GetConditionId().GetId()
+				acCondVersion := ac.GetConditionId().GetVersion()
+				return ac.GetOwner() == test.Owner(0) &&
+					((acCondID == test.ConditionID(3) && acCondVersion == 3) ||
+						(acCondID == test.ConditionID(6)) ||
+						(acCondVersion == 13))
 			},
 		},
 	}
@@ -154,7 +148,7 @@ func TestRequestHandlerGetAppliedConfigurations(t *testing.T) {
 			}()
 			require.Equal(t, tt.wantHTTPCode, resp.StatusCode)
 
-			values := make([]*pb.AppliedDeviceConfiguration, 0, 1)
+			receivedConfs := make(map[string]*pb.AppliedDeviceConfiguration)
 			for {
 				var value pb.AppliedDeviceConfiguration
 				err := httpTest.Unmarshal(resp.StatusCode, resp.Body, &value)
@@ -166,9 +160,21 @@ func TestRequestHandlerGetAppliedConfigurations(t *testing.T) {
 					return
 				}
 				require.NoError(t, err)
-				values = append(values, &value)
+				receivedConfs[value.GetId()] = &value
 			}
-			tt.want(values)
+
+			stored := make(map[string]*pb.AppliedDeviceConfiguration)
+			for _, ac := range appliedConfs {
+				if tt.want(ac) {
+					stored[ac.GetId()] = ac
+				}
+			}
+			require.Len(t, receivedConfs, len(stored))
+			for _, c := range receivedConfs {
+				ac, ok := stored[c.GetId()]
+				require.True(t, ok)
+				test.CmpAppliedDeviceConfiguration(t, ac, c, false)
+			}
 		})
 	}
 }

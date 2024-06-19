@@ -6,7 +6,6 @@ import (
 
 	"github.com/google/uuid"
 	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
-	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 )
 
 func (r *AppliedDeviceConfiguration_Resource) Validate() error {
@@ -74,16 +73,11 @@ func MakeExecutedByConditionId(conditionID string, version uint64) *AppliedDevic
 }
 
 func (r *AppliedDeviceConfiguration_Resource) Clone() *AppliedDeviceConfiguration_Resource {
-	var ru *events.ResourceUpdated
-	if r.GetResourceUpdated() != nil {
-		ru = &events.ResourceUpdated{}
-		ru.CopyData(r.GetResourceUpdated())
-	}
 	return &AppliedDeviceConfiguration_Resource{
 		Href:            r.GetHref(),
 		CorrelationId:   r.GetCorrelationId(),
 		Status:          r.GetStatus(),
-		ResourceUpdated: ru,
+		ResourceUpdated: r.GetResourceUpdated().Clone(),
 	}
 }
 

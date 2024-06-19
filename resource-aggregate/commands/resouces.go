@@ -12,6 +12,17 @@ func (c *Content) Clone() *Content {
 	}
 }
 
+func (r *ResourceId) Clone() *ResourceId {
+	if r == nil {
+		return nil
+	}
+
+	return &ResourceId{
+		DeviceId: r.GetDeviceId(),
+		Href:     r.GetHref(),
+	}
+}
+
 func (e *EndpointInformation) Clone() *EndpointInformation {
 	if e == nil {
 		return nil
