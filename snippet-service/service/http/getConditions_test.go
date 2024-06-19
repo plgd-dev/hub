@@ -43,7 +43,8 @@ func TestRequestHandlerGetConditions(t *testing.T) {
 		_ = conn.Close()
 	}()
 	c := pb.NewSnippetServiceClient(conn)
-	conds := test.AddConditions(ctx, t, snippetCfg.APIs.GRPC.Authorization.OwnerClaim, c, 30, nil)
+	n := 30
+	conds := test.AddConditions(ctx, t, snippetCfg.APIs.GRPC.Authorization.OwnerClaim, c, n, nil)
 
 	type args struct {
 		token        string
@@ -84,7 +85,7 @@ func TestRequestHandlerGetConditions(t *testing.T) {
 			},
 		},
 		{
-			name: "owner1/all",
+			name: "owner1/default",
 			args: args{
 				token: oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTest, map[string]interface{}{
 					snippetCfg.APIs.GRPC.Authorization.OwnerClaim: test.Owner(1),
@@ -93,6 +94,28 @@ func TestRequestHandlerGetConditions(t *testing.T) {
 			wantHTTPCode: http.StatusOK,
 			want: func(t *testing.T, values []*pb.Condition) {
 				require.NotEmpty(t, values)
+				require.InDelta(t, test.RuntimeConfig.NumConditions/test.RuntimeConfig.NumOwners, len(values), 1)
+				for _, v := range values {
+					cond, ok := conds[v.GetId()]
+					require.True(t, ok)
+					test.ConditionContains(t, cond, v)
+				}
+			},
+		},
+		{
+			name: "owner1/all",
+			args: args{
+				token: oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTest, map[string]interface{}{
+					snippetCfg.APIs.GRPC.Authorization.OwnerClaim: test.Owner(1),
+				}),
+				httpIDFilter: []string{
+					"//all",
+				},
+			},
+			wantHTTPCode: http.StatusOK,
+			want: func(t *testing.T, values []*pb.Condition) {
+				require.NotEmpty(t, values)
+				require.InDelta(t, n/test.RuntimeConfig.NumOwners, len(values), 1)
 				for _, v := range values {
 					cond, ok := conds[v.GetId()]
 					require.True(t, ok)

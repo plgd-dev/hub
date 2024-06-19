@@ -79,13 +79,6 @@
               "type": "string"
             },
             "collectionFormat": "multi"
-          },
-          {
-            "name": "latestFilter",
-            "description": "returns only latest conditions when id_filter and configuration_id_filter are not set",
-            "in": "query",
-            "required": false,
-            "type": "boolean"
           }
         ],
         "tags": [
@@ -233,13 +226,6 @@
               "type": "string"
             },
             "collectionFormat": "multi"
-          },
-          {
-            "name": "latestFilter",
-            "description": "returns only latest configurations when id_filter is not set",
-            "in": "query",
-            "required": false,
-            "type": "boolean"
           }
         ],
         "tags": [

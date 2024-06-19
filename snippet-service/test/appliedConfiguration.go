@@ -70,7 +70,7 @@ func getAppliedConfigurations(t *testing.T) map[string]*store.AppliedDeviceConfi
 		for c := range RuntimeConfig.NumConfigurations {
 			owner, ok := owners[i%RuntimeConfig.NumConfigurations]
 			if !ok {
-				owner = Owner(i % RuntimeConfig.numOwners)
+				owner = Owner(i % RuntimeConfig.NumOwners)
 				owners[i%RuntimeConfig.NumConfigurations] = owner
 			}
 			deviceID := DeviceID(d)

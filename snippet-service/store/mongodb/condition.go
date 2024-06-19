@@ -170,8 +170,6 @@ func (s *Store) getConditionsByAggregation(ctx context.Context, owner, id string
 }
 
 func (s *Store) GetConditions(ctx context.Context, owner string, query *pb.GetConditionsRequest, p store.Process[store.Condition]) error {
-	// TODO: implement latestFilter
-
 	vf := pb.PartitionIDFilter(query.GetIdFilter())
 	confIdLatestFilter := strings.Unique(query.GetConfigurationIdFilter())
 	var errors *multierror.Error

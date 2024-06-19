@@ -117,12 +117,26 @@ func sendConfiguration(srv pb.SnippetService_GetConfigurationsServer, c *store.C
 	return srv.Send(latest)
 }
 
+func getAllLatest() []*pb.IDFilter {
+	return []*pb.IDFilter{
+		{
+			Version: &pb.IDFilter_Latest{
+				Latest: true,
+			},
+		},
+	}
+}
+
 func (s *SnippetServiceServer) GetConfigurations(req *pb.GetConfigurationsRequest, srv pb.SnippetService_GetConfigurationsServer) error {
 	owner, err := s.checkOwner(srv.Context(), "")
 	if err != nil {
 		return s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotGetConfigurations(err)))
 	}
 	req.IdFilter = append(req.GetIdFilter(), req.ConvertHTTPIDFilter()...)
+	if len(req.GetIdFilter()) == 0 {
+		// get all latest conditions by default
+		req.IdFilter = getAllLatest()
+	}
 
 	err = s.store.GetConfigurations(srv.Context(), owner, req, func(c *store.Configuration) error {
 		return sendConfiguration(srv, c)
@@ -236,6 +250,10 @@ func (s *SnippetServiceServer) GetConditions(req *pb.GetConditionsRequest, srv p
 		return s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotGetConditions(err)))
 	}
 	req.IdFilter = append(req.GetIdFilter(), req.ConvertHTTPIDFilter()...)
+	if len(req.GetIdFilter()) == 0 && len(req.GetConfigurationIdFilter()) == 0 {
+		// get all latest conditions by default
+		req.IdFilter = getAllLatest()
+	}
 
 	err = s.store.GetConditions(srv.Context(), owner, req, func(c *store.Condition) error {
 		return sendCondition(srv, c)

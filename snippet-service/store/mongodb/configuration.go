@@ -132,8 +132,6 @@ func (s *Store) getConfigurationsByAggregation(ctx context.Context, owner, id st
 }
 
 func (s *Store) GetConfigurations(ctx context.Context, owner string, query *pb.GetConfigurationsRequest, p store.Process[store.Configuration]) error {
-	// TODO: implement latestFilter
-
 	vf := pb.PartitionIDFilter(query.GetIdFilter())
 	var errors *multierror.Error
 	if len(vf.All) > 0 || vf.IsEmpty() {

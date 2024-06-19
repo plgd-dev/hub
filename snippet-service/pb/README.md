@@ -281,7 +281,6 @@ TODO Naming
 | id_filter | [IDFilter](#snippetservice-pb-IDFilter) | repeated |  |
 | configuration_id_filter | [string](#string) | repeated | returns latest conditions for given configurationId |
 | http_id_filter | [string](#string) | repeated | **Deprecated.** Format: {id}/{version}, e.g., &#34;ae424c58-e517-4494-6de7-583536c48213/all&#34; or &#34;ae424c58-e517-4494-6de7-583536c48213/latest&#34; or &#34;ae424c58-e517-4494-6de7-583536c48213/1234&#34; |
-| latest_filter | [bool](#bool) |  | returns only latest conditions when id_filter and configuration_id_filter are not set |
 
 
 
@@ -298,7 +297,6 @@ TODO Naming
 | ----- | ---- | ----- | ----------- |
 | id_filter | [IDFilter](#snippetservice-pb-IDFilter) | repeated |  |
 | http_id_filter | [string](#string) | repeated | **Deprecated.** Format: {id}/{version}, e.g., &#34;ae424c58-e517-4494-6de7-583536c48213/all&#34; or &#34;ae424c58-e517-4494-6de7-583536c48213/latest&#34; or &#34;ae424c58-e517-4494-6de7-583536c48213/1234&#34; |
-| latest_filter | [bool](#bool) |  | returns only latest configurations when id_filter is not set |
 
 
 

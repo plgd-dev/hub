@@ -43,7 +43,8 @@ func TestRequestHandlerGetConfigurations(t *testing.T) {
 		_ = conn.Close()
 	}()
 	c := pb.NewSnippetServiceClient(conn)
-	confs := test.AddConfigurations(ctx, t, snippetCfg.APIs.GRPC.Authorization.OwnerClaim, c, 30, nil)
+	n := 30
+	confs := test.AddConfigurations(ctx, t, snippetCfg.APIs.GRPC.Authorization.OwnerClaim, c, n, nil)
 
 	type args struct {
 		token        string
@@ -87,7 +88,7 @@ func TestRequestHandlerGetConfigurations(t *testing.T) {
 			},
 		},
 		{
-			name: "owner1/all",
+			name: "owner1/default",
 			args: args{
 				token: oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTest, map[string]interface{}{
 					snippetCfg.APIs.GRPC.Authorization.OwnerClaim: test.Owner(1),
@@ -97,6 +98,7 @@ func TestRequestHandlerGetConfigurations(t *testing.T) {
 			wantHTTPCode: http.StatusOK,
 			want: func(values []*pb.Configuration) {
 				require.NotEmpty(t, values)
+				require.InDelta(t, test.RuntimeConfig.NumConfigurations/test.RuntimeConfig.NumOwners, len(values), 1)
 				for _, v := range values {
 					conf, ok := confs[v.GetId()]
 					require.True(t, ok)
@@ -104,21 +106,28 @@ func TestRequestHandlerGetConfigurations(t *testing.T) {
 				}
 			},
 		},
-		// {
-		// 	name: "owner0/id0?version=all",
-		// 	args: args{
-		// 		token: oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTest, map[string]interface{}{
-		// 			snippetCfg.APIs.GRPC.Authorization.OwnerClaim: test.Owner(0),
-		// 		}),
-		// 		uri:     test.HTTPURI(snippetHttp.AliasConfigurations),
-		// 		id:      test.ConfigurationID(0),
-		// 		version: "all",
-		// 	},
-		// 	wantHTTPCode: http.StatusOK,
-		// 	want: func(t *testing.T, values []*pb.Configuration) {
-		// 		require.NotEmpty(t, values)
-		// 	},
-		// },
+		{
+			name: "owner1/all",
+			args: args{
+				token: oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTest, map[string]interface{}{
+					snippetCfg.APIs.GRPC.Authorization.OwnerClaim: test.Owner(1),
+				}),
+				uri: test.HTTPURI(snippetHttp.Configurations),
+				httpIDFilter: []string{
+					"//all",
+				},
+			},
+			wantHTTPCode: http.StatusOK,
+			want: func(values []*pb.Configuration) {
+				require.NotEmpty(t, values)
+				require.InDelta(t, len(confs)*(n/len(confs)/test.RuntimeConfig.NumOwners), len(values), 1)
+				for _, v := range values {
+					conf, ok := confs[v.GetId()]
+					require.True(t, ok)
+					test.ConfigurationContains(t, conf, v)
+				}
+			},
+		},
 	}
 
 	for _, tt := range tests {

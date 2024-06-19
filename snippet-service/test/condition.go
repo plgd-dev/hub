@@ -71,7 +71,7 @@ func getConditions(n int, calcVersion calculateInitialVersionNumber) map[string]
 		versions[i%RuntimeConfig.NumConditions]++
 		owner, ok := owners[i%RuntimeConfig.NumConditions]
 		if !ok {
-			owner = Owner(i % RuntimeConfig.numOwners)
+			owner = Owner(i % RuntimeConfig.NumOwners)
 			owners[i%RuntimeConfig.NumConditions] = owner
 		}
 		cond := &pb.Condition{

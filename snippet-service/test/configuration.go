@@ -71,7 +71,7 @@ func getConfigurations(t *testing.T, n int, calcVersion calculateInitialVersionN
 		versions[i%RuntimeConfig.NumConfigurations]++
 		owner, ok := owners[i%RuntimeConfig.NumConfigurations]
 		if !ok {
-			owner = Owner(i % RuntimeConfig.numOwners)
+			owner = Owner(i % RuntimeConfig.NumOwners)
 			owners[i%RuntimeConfig.NumConfigurations] = owner
 		}
 		conf := &pb.Configuration{

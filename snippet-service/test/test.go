@@ -18,7 +18,7 @@ import (
 
 var (
 	RuntimeConfig struct {
-		numOwners               int
+		NumOwners               int
 		numDevices              int
 		numResources            int
 		numResourceTypes        int
@@ -36,7 +36,7 @@ func init() {
 	RuntimeConfig.configurationIds = make(map[int]string)
 	RuntimeConfig.appliedConfigurationIds = make(map[int]string)
 	RuntimeConfig.conditionIds = make(map[int]string)
-	RuntimeConfig.numOwners = 3
+	RuntimeConfig.NumOwners = 3
 	RuntimeConfig.numDevices = 5
 	RuntimeConfig.numResources = 5
 	RuntimeConfig.numResourceTypes = 7
