@@ -11,71 +11,62 @@ import { getAppliedDeviceConfigStatus } from '@/containers/SnippetService/utils'
 
 const getConfig = () => security.getGeneralConfig() as SecurityConfig
 
-export const useResourcesConfigList = (requestActive = true): StreamApiPropsType => {
-    const { telemetryWebTracer } = useContext(AppContext)
+export const useConfigurationList = (requestActive = true): StreamApiPropsType => {
+    const { telemetryWebTracer, unauthorizedCallback } = useContext(AppContext)
 
     return useStreamApi(`${getConfig().httpGatewayAddress}${SnippetServiceApiEndpoints.CONFIGURATIONS}`, {
         telemetryWebTracer,
-        telemetrySpan: 'snippet-service-get-resources-configurations',
+        telemetrySpan: 'snippet-service-get-configurations',
         requestActive,
+        unauthorizedCallback,
     })
 }
 
-export const useResourcesConfigDetail = (id: string, requestActive = false): StreamApiPropsType => {
-    const { telemetryWebTracer } = useContext(AppContext)
-    // const [data, setData] = useState(null)
+export const useConfigurationDetail = (id: string, requestActive = false): StreamApiPropsType => {
+    const { telemetryWebTracer, unauthorizedCallback } = useContext(AppContext)
 
-    return useStreamApi(`${getConfig().httpGatewayAddress}${SnippetServiceApiEndpoints.CONFIGURATIONS}?httpIdFilter=${id}/latest`, {
+    return useStreamApi(`${getConfig().httpGatewayAddress}${SnippetServiceApiEndpoints.CONFIGURATIONS}?httpIdFilter=${id}/all`, {
         telemetryWebTracer,
-        telemetrySpan: `snippet-service-get-resources-configuration-${id}`,
+        telemetrySpan: `snippet-service-get-configuration-${id}`,
         requestActive,
+        unauthorizedCallback,
     })
-
-    // useEffect(() => {
-    //     console.log(resData)
-    //     if (resData && Array.isArray(resData)) {
-    //         setData({
-    //             ...resData[0],
-    //             // inject id
-    //             resources: resData[0].resources.map((r: any, i: number) => ({ ...r, id: i })),
-    //         })
-    //     }
-    // }, [resData])
-    //
-    // return { data, ...rest }
 }
 
-export const useResourcesConfigConditions = (id: string, requestActive = false): StreamApiPropsType => {
-    const { telemetryWebTracer } = useContext(AppContext)
+export const useConfigurationConditions = (id: string, requestActive = false): StreamApiPropsType => {
+    const { telemetryWebTracer, unauthorizedCallback } = useContext(AppContext)
 
     return useStreamApi(`${getConfig().httpGatewayAddress}${SnippetServiceApiEndpoints.CONDITIONS}?configurationIdFilter=${id}`, {
         telemetryWebTracer,
-        telemetrySpan: `snippet-service-get-resources-configurations-conditions-${id}`,
+        telemetrySpan: `snippet-service-get-configurations-conditions-${id}`,
         requestActive,
+        unauthorizedCallback,
     })
 }
 
-export const useResourcesConfigApplied = (id: string, requestActive = false): StreamApiPropsType => {
-    const { telemetryWebTracer } = useContext(AppContext)
+export const useConfigurationAppliedConfigurations = (id: string, requestActive = false): StreamApiPropsType => {
+    const { telemetryWebTracer, unauthorizedCallback } = useContext(AppContext)
 
-    return useStreamApi(`${getConfig().httpGatewayAddress}${SnippetServiceApiEndpoints.CONFIGURATIONS_APPLIED}?configurationIdFilter=${id}`, {
+    return useStreamApi(`${getConfig().httpGatewayAddress}${SnippetServiceApiEndpoints.CONFIGURATIONS_APPLIED}?httpConfigurationIdFilter=${id}`, {
         telemetryWebTracer,
-        telemetrySpan: `snippet-service-get-resources-configurations-applied-${id}`,
+        telemetrySpan: `snippet-service-get-configuration-applied-configurations-${id}`,
         requestActive,
+        unauthorizedCallback,
     })
 }
 
 export const useConditionsList = (): StreamApiPropsType => {
-    const { telemetryWebTracer } = useContext(AppContext)
+    const { telemetryWebTracer, unauthorizedCallback } = useContext(AppContext)
 
     return useStreamApi(`${getConfig().httpGatewayAddress}${SnippetServiceApiEndpoints.CONDITIONS}`, {
         telemetryWebTracer,
         telemetrySpan: 'snippet-service-get-conditions',
+        unauthorizedCallback,
     })
 }
 
 export const useConditionsDetail = (id: string, requestActive = false): StreamApiPropsType => {
-    const { telemetryWebTracer } = useContext(AppContext)
+    const { telemetryWebTracer, unauthorizedCallback } = useContext(AppContext)
     const [data, setData] = useState(null)
 
     const { data: resData, ...rest }: StreamApiPropsType = useStreamApi(
@@ -84,6 +75,7 @@ export const useConditionsDetail = (id: string, requestActive = false): StreamAp
             telemetryWebTracer,
             telemetrySpan: `snippet-service-get-condition-${id}`,
             requestActive,
+            unauthorizedCallback,
         }
     )
 
@@ -96,7 +88,7 @@ export const useConditionsDetail = (id: string, requestActive = false): StreamAp
     return { data, ...rest }
 }
 
-export const useAppliedDeviceConfigList = (): StreamApiPropsType => {
+export const useAppliedConfigurationsList = (): StreamApiPropsType => {
     const { telemetryWebTracer, unauthorizedCallback } = useContext(AppContext)
     const [data, setData] = useState(null)
 
@@ -108,6 +100,7 @@ export const useAppliedDeviceConfigList = (): StreamApiPropsType => {
     }: StreamApiPropsType = useStreamApi(`${getConfig().httpGatewayAddress}${SnippetServiceApiEndpoints.CONFIGURATIONS_APPLIED}`, {
         telemetryWebTracer,
         telemetrySpan: 'snippet-service-get-applied-devices-config',
+        unauthorizedCallback,
     })
 
     const {
@@ -145,7 +138,7 @@ export const useAppliedDeviceConfigList = (): StreamApiPropsType => {
     return { data, refresh, loading, ...rest }
 }
 
-export const useAppliedDeviceConfigDetail = (id: string, requestActive = false): StreamApiPropsType => {
+export const useAppliedConfigurationDetail = (id: string, requestActive = false): StreamApiPropsType => {
     const { telemetryWebTracer, unauthorizedCallback } = useContext(AppContext)
     const [data, setData] = useState(null)
 
@@ -156,8 +149,9 @@ export const useAppliedDeviceConfigDetail = (id: string, requestActive = false):
         ...rest
     }: StreamApiPropsType = useStreamApi(`${getConfig().httpGatewayAddress}${SnippetServiceApiEndpoints.CONFIGURATIONS_APPLIED}?httpIdFilter=${id}/latest`, {
         telemetryWebTracer,
-        telemetrySpan: `snippet-service-get-applied-devices-config-${id}`,
+        telemetrySpan: `snippet-service-get-applied-configuration-${id}`,
         requestActive,
+        unauthorizedCallback,
     })
 
     const {

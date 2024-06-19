@@ -89,14 +89,14 @@ const testId = {
         },
     },
     snippetService: {
-        resourcesConfig: {
+        configurations: {
             detail: {
-                deleteButton: 'hub-snippet-service-resources-config-detail-delete-button',
-                deleteButtonConfirm: 'hub-snippet-service-resources-config-detail-delete-button-confirm',
-                deleteButtonCancel: 'hub-snippet-service-resources-config-detail-delete-button-cancel',
-                tabGeneral: 'hub-snippet-service-resources-config-detail-tab-general',
-                tabConditions: 'hub-snippet-service-resources-config-detail-tab-conditions',
-                tabDeviceAppliedConfiguration: 'hub-snippet-service-resources-config-detail-tab-device-applied-configuration',
+                deleteButton: 'hub-snippet-service-configurations-detail-delete-button',
+                deleteButtonConfirm: 'hub-snippet-service-configurations-detail-delete-button-confirm',
+                deleteButtonCancel: 'hub-snippet-service-configurations-detail-delete-button-cancel',
+                tabGeneral: 'hub-snippet-service-configurations-detail-tab-general',
+                tabConditions: 'hub-snippet-service-configurations-detail-tab-conditions',
+                tabDeviceAppliedConfiguration: 'hub-snippet-service-configurations-detail-tab-device-applied-configuration',
             },
         },
     },

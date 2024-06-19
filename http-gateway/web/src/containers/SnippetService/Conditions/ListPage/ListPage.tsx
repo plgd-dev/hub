@@ -34,13 +34,11 @@ const ListPage: FC<any> = () => {
     useEffect(() => {
         error &&
             Notification.error(
-                { title: _(confT.resourcesConfigurationError), message: getApiErrorMessage(error) },
+                { title: _(confT.conditionsError), message: getApiErrorMessage(error) },
                 { notificationId: notificationId.HUB_SNIPPET_SERVICE_CONDITIONS_LIST_PAGE_ERROR }
             )
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [error])
-
-    console.log(data)
 
     const columns = useMemo(
         () => [
@@ -81,9 +79,7 @@ const ListPage: FC<any> = () => {
                 accessor: 'configurationId',
                 Cell: ({ value, row }: { value: string; row: any }) => (
                     <Tag
-                        onClick={() =>
-                            navigate(generatePath(pages.SNIPPET_SERVICE.RESOURCES_CONFIG.DETAIL.LINK, { resourcesConfigId: row.original.id, tab: '' }))
-                        }
+                        onClick={() => navigate(generatePath(pages.SNIPPET_SERVICE.CONFIGURATIONS.DETAIL.LINK, { configurationId: row.original.id, tab: '' }))}
                         variant={tagVariants.BLUE}
                     >
                         <IconLink />
@@ -131,13 +127,13 @@ const ListPage: FC<any> = () => {
                 onDeletionError={(e) => {
                     Notification.error(
                         { title: _(confT.conditionsError), message: getApiErrorMessage(e) },
-                        { notificationId: notificationId.HUB_SNIPPET_SERVICE_RESOURCES_CONFIGURATION_LIST_PAGE_DELETE_ERROR }
+                        { notificationId: notificationId.HUB_SNIPPET_SERVICE_CONFIGURATIONS_LIST_PAGE_DELETE_ERROR }
                     )
                 }}
                 onDeletionSuccess={() => {
                     Notification.success(
                         { title: _(confT.conditionDeleted), message: _(confT.conditionsDeletedMessage) },
-                        { notificationId: notificationId.HUB_SNIPPET_SERVICE_RESOURCES_CONFIGURATION_LIST_PAGE_DELETE_SUCCESS }
+                        { notificationId: notificationId.HUB_SNIPPET_SERVICE_CONFIGURATIONS_LIST_PAGE_DELETE_SUCCESS }
                     )
                 }}
                 onDetailClick={(id: string) => navigate(generatePath(pages.SNIPPET_SERVICE.CONDITIONS.DETAIL.LINK, { conditionId: id, tab: '' }))}

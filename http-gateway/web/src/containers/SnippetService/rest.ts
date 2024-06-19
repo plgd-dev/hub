@@ -5,7 +5,7 @@ import { withTelemetry } from '@shared-ui/common/services/opentelemetry'
 import { SecurityConfig } from '@/containers/App/App.types'
 import { DELETE_CHUNK_SIZE, SnippetServiceApiEndpoints } from '@/containers/SnippetService/constants'
 
-export const createResourcesConfigApi = (body: any) => {
+export const createConfigurationApi = (body: any) => {
     const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
 
     return withTelemetry(
@@ -61,14 +61,15 @@ export const updateConditionApi = (id: string, body: any) => {
     )
 }
 
-export const deleteResourcesConfigApi = (ids: string[]) => {
+export const deleteConfigurationsApi = (ids: string[]) => {
     const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
 
     return deleteByChunks(
         `${httpGatewayAddress}${SnippetServiceApiEndpoints.CONFIGURATIONS}`,
         ids,
         cancelRequestDeadlineTimeout,
-        'snippet-service-delete-resources-config',
+        'snippet-service-delete-configurations',
+        'httpIdFilter',
         DELETE_CHUNK_SIZE
     )
 }
@@ -81,6 +82,7 @@ export const deleteConditionsApi = (ids: string[]) => {
         ids,
         cancelRequestDeadlineTimeout,
         'snippet-service-delete-conditions',
+        'httpIdFilter',
         DELETE_CHUNK_SIZE
     )
 }
@@ -93,6 +95,7 @@ export const deleteAppliedDeviceConfigApi = (ids: string[]) => {
         ids,
         cancelRequestDeadlineTimeout,
         'snippet-service-delete-applied-devices-config',
+        'httpIdFilter',
         DELETE_CHUNK_SIZE
     )
 }

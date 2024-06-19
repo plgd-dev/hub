@@ -15,21 +15,20 @@ import FormTextarea from '@shared-ui/components/Atomic/FormTextarea'
 import { messages as confT } from '@/containers/SnippetService/SnippetService.i18n'
 import { Props, Inputs } from './Step3.types'
 import { messages as g } from '@/containers/Global.i18n'
-import { useResourcesConfigList } from '@/containers/SnippetService/hooks'
+import { useConfigurationList } from '@/containers/SnippetService/hooks'
 
 const Step3: FC<Props> = (props) => {
     const { defaultFormData, onFinish } = props
 
     const { formatMessage: _ } = useIntl()
     const { setStep } = useContext(FormContext)
-    const { data, loading } = useResourcesConfigList()
+    const { data, loading } = useConfigurationList()
 
     const {
         formState: { errors },
         updateField,
         register,
         control,
-        watch,
     } = useForm<Inputs>({
         defaultFormData,
         errorKey: 'tab3',
@@ -45,8 +44,6 @@ const Step3: FC<Props> = (props) => {
                   })) || [],
         [data, loading]
     )
-
-    const configurationId = watch('configurationId')
 
     return (
         <form>
@@ -67,11 +64,12 @@ const Step3: FC<Props> = (props) => {
                                 isClearable
                                 error={!!errors.configurationId}
                                 onChange={(option: OptionType) => {
-                                    onChange(option)
-                                    updateField('configurationId', option)
+                                    const value = option ? option.value : ''
+                                    onChange('configurationId', value)
+                                    updateField('configurationId', value)
                                 }}
                                 options={options}
-                                value={configurationId}
+                                value={value ? options?.find((o: OptionType) => o.value === value) : null}
                             />
                         )}
                     />

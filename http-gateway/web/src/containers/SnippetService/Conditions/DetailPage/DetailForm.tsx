@@ -24,6 +24,7 @@ import { messages as confT } from '@/containers/SnippetService/SnippetService.i1
 import { pages } from '@/routes'
 import { formatText } from '@/containers/PendingCommands/DateFormat'
 import { Step2FormComponent } from '@/containers/SnippetService/Conditions/FomComponents'
+import pick from 'lodash/pick'
 
 const DetailForm: FC<Props> = (props) => {
     const { formData, refs, resetIndex } = props
@@ -54,7 +55,7 @@ const DetailForm: FC<Props> = (props) => {
 
     return (
         <>
-            <div>
+            <div ref={refs.general}>
                 <Spacer type='mb-4'>
                     <Headline type='h5'>{_(g.general)}</Headline>
                 </Spacer>
@@ -107,7 +108,7 @@ const DetailForm: FC<Props> = (props) => {
                                 <Tag
                                     onClick={() =>
                                         navigate(
-                                            generatePath(pages.SNIPPET_SERVICE.RESOURCES_CONFIG.DETAIL.LINK, {
+                                            generatePath(pages.SNIPPET_SERVICE.CONFIGURATIONS.DETAIL.LINK, {
                                                 resourcesConfigId: formData.configurationId,
                                                 tab: '',
                                             })
@@ -130,12 +131,18 @@ const DetailForm: FC<Props> = (props) => {
                     ]}
                 />
             </div>
-            <Spacer ref={refs.general} type='pt-8'>
+            <Spacer type='pt-8'>
                 <Spacer type='mb-6'>
                     <Headline type='h5'>{_(g.filters)}</Headline>
                     <p style={{ margin: '4px 0 0 0' }}>Short description...</p>
 
-                    <Step2FormComponent isActivePage={true} setValue={setValue} updateField={updateField} watch={watch} />
+                    <Step2FormComponent
+                        isActivePage={true}
+                        refs={pick(refs, ['filterDeviceId', 'filterJqExpression', 'filterResourceHref', 'filterResourceType'])}
+                        setValue={setValue}
+                        updateField={updateField}
+                        watch={watch}
+                    />
 
                     <Spacer ref={refs.accessToken} type='pt-8'>
                         <Headline type='h5'>{_(confT.APIAccessToken)}</Headline>

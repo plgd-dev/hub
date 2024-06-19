@@ -12,18 +12,18 @@ import { states } from '@shared-ui/components/Atomic/StatusPill/constants'
 
 import PageLayout from '@/containers/Common/PageLayout'
 import { messages as confT } from '../../SnippetService.i18n'
-import { useAppliedDeviceConfigList } from '@/containers/SnippetService/hooks'
+import { useAppliedConfigurationsList } from '@/containers/SnippetService/hooks'
 import notificationId from '@/notificationId'
 import { messages as g } from '@/containers/Global.i18n'
 import { pages } from '@/routes'
 import PageListTemplate from '@/containers/Common/PageListTemplate/PageListTemplate'
 import { deleteAppliedDeviceConfigApi } from '@/containers/SnippetService/rest'
-import { APPLIED_DEVICE_CONFIG_STATUS } from '@/containers/SnippetService/constants'
+import { APPLIED_CONFIGURATIONS_STATUS } from '@/containers/SnippetService/constants'
 
 const ListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
 
-    const { data, loading, error, refresh } = useAppliedDeviceConfigList()
+    const { data, loading, error, refresh } = useAppliedConfigurationsList()
     const navigate = useNavigate()
 
     const breadcrumbs = useMemo(
@@ -34,8 +34,8 @@ const ListPage: FC<any> = () => {
     useEffect(() => {
         error &&
             Notification.error(
-                { title: _(confT.resourcesConfigurationError), message: getApiErrorMessage(error) },
-                { notificationId: notificationId.HUB_SNIPPET_SERVICE_APPLIED_DEVICE_CONFIGURATION_LIST_PAGE_ERROR }
+                { title: _(confT.appliedConfigurationsError), message: getApiErrorMessage(error) },
+                { notificationId: notificationId.HUB_SNIPPET_SERVICE_APPLIED_CONFIGURATIONS_LIST_PAGE_ERROR }
             )
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [error])
@@ -43,12 +43,12 @@ const ListPage: FC<any> = () => {
     const getValue = useCallback(
         (status: number) => {
             switch (status) {
-                case APPLIED_DEVICE_CONFIG_STATUS.ERROR:
+                case APPLIED_CONFIGURATIONS_STATUS.ERROR:
                     return _(g.error)
-                case APPLIED_DEVICE_CONFIG_STATUS.PENDING:
+                case APPLIED_CONFIGURATIONS_STATUS.PENDING:
                     return _(g.pending)
                 default:
-                case APPLIED_DEVICE_CONFIG_STATUS.SUCCESS:
+                case APPLIED_CONFIGURATIONS_STATUS.SUCCESS:
                     return _(g.success)
             }
         },
@@ -57,12 +57,12 @@ const ListPage: FC<any> = () => {
 
     const getStatus = useCallback((status: number) => {
         switch (status) {
-            case APPLIED_DEVICE_CONFIG_STATUS.ERROR:
+            case APPLIED_CONFIGURATIONS_STATUS.ERROR:
                 return states.OFFLINE
-            case APPLIED_DEVICE_CONFIG_STATUS.PENDING:
+            case APPLIED_CONFIGURATIONS_STATUS.PENDING:
                 return states.OCCUPIED
             default:
-            case APPLIED_DEVICE_CONFIG_STATUS.SUCCESS:
+            case APPLIED_CONFIGURATIONS_STATUS.SUCCESS:
                 return states.ONLINE
         }
     }, [])
@@ -74,10 +74,10 @@ const ListPage: FC<any> = () => {
                 accessor: 'name',
                 Cell: ({ value, row }: { value: string | number; row: any }) => (
                     <a
-                        href={generatePath(pages.SNIPPET_SERVICE.APPLIED_DEVICE_CONFIG.DETAIL.LINK, { appliedDeviceConfigId: row.original._id })}
+                        href={generatePath(pages.SNIPPET_SERVICE.APPLIED_CONFIGURATIONS.DETAIL.LINK, { appliedConfigurationId: row.original.id })}
                         onClick={(e) => {
                             e.preventDefault()
-                            navigate(generatePath(pages.SNIPPET_SERVICE.APPLIED_DEVICE_CONFIG.DETAIL.LINK, { appliedDeviceConfigId: row.original._id }))
+                            navigate(generatePath(pages.SNIPPET_SERVICE.APPLIED_CONFIGURATIONS.DETAIL.LINK, { appliedConfigurationId: row.original.id }))
                         }}
                     >
                         <span className='no-wrap-text'>{value}</span>
@@ -114,9 +114,7 @@ const ListPage: FC<any> = () => {
                 Cell: ({ value, row }: { value: string; row: any }) => (
                     <Tag
                         onClick={() =>
-                            navigate(
-                                generatePath(pages.SNIPPET_SERVICE.RESOURCES_CONFIG.DETAIL.LINK, { resourcesConfigId: row.original.configurationId, tab: '' })
-                            )
+                            navigate(generatePath(pages.SNIPPET_SERVICE.CONFIGURATIONS.DETAIL.LINK, { configurationId: row.original.configurationId, tab: '' }))
                         }
                         variant={tagVariants.BLUE}
                     >
@@ -158,17 +156,17 @@ const ListPage: FC<any> = () => {
                 onDeletionError={(e) => {
                     Notification.error(
                         { title: _(confT.appliedDeviceConfigurationError), message: getApiErrorMessage(e) },
-                        { notificationId: notificationId.HUB_SNIPPET_SERVICE_APPLIED_DEVICE_CONFIGURATION_LIST_PAGE_DELETE_ERROR }
+                        { notificationId: notificationId.HUB_SNIPPET_SERVICE_APPLIED_CONFIGURATIONS_LIST_PAGE_DELETE_ERROR }
                     )
                 }}
                 onDeletionSuccess={() => {
                     Notification.success(
                         { title: _(confT.appliedDeviceConfigurationDeleted), message: _(confT.appliedDeviceConfigurationDeletedMessage) },
-                        { notificationId: notificationId.HUB_SNIPPET_SERVICE_APPLIED_DEVICE_CONFIGURATION_LIST_PAGE_DELETE_SUCCESS }
+                        { notificationId: notificationId.HUB_SNIPPET_SERVICE_APPLIED_CONFIGURATIONS_LIST_PAGE_DELETE_SUCCESS }
                     )
                 }}
                 onDetailClick={(id: string) =>
-                    navigate(generatePath(pages.SNIPPET_SERVICE.APPLIED_DEVICE_CONFIG.DETAIL.LINK, { appliedDeviceConfigId: id, tab: '' }))
+                    navigate(generatePath(pages.SNIPPET_SERVICE.APPLIED_CONFIGURATIONS.DETAIL.LINK, { appliedConfigurationId: id, tab: '' }))
                 }
                 refresh={() => refresh()}
             />

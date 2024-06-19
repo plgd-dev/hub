@@ -14,20 +14,26 @@ import Spacer from '@shared-ui/components/Atomic/Spacer'
 import Row from '@shared-ui/components/Atomic/Grid/Row'
 import ContentMenu from '@shared-ui/components/Atomic/ContentMenu'
 import Column from '@shared-ui/components/Atomic/Grid/Column'
+import Loadable from '@shared-ui/components/Atomic/Loadable'
+import Headline from '@shared-ui/components/Atomic/Headline'
+import FormGroup from '@shared-ui/components/Atomic/FormGroup'
+import FormInput from '@shared-ui/components/Atomic/FormInput'
+import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
+import ResourceToggleCreator from '@shared-ui/components/Organisms/ResourceToggleCreator'
+import { ResourceType } from '@shared-ui/components/Organisms/ResourceToggleCreator/ResourceToggleCreator.types'
 
 import { messages as confT } from '@/containers/SnippetService/SnippetService.i18n'
 import { pages } from '@/routes'
-import { useAppliedDeviceConfigDetail } from '@/containers/SnippetService/hooks'
+import { useAppliedConfigurationDetail } from '@/containers/SnippetService/hooks'
 import notificationId from '@/notificationId'
 import { messages as g } from '@/containers/Global.i18n'
-import Loadable from '@shared-ui/components/Atomic/Loadable'
-import Headline from '@shared-ui/components/Atomic/Headline'
+import { getResourceI18n } from '@/containers/SnippetService/utils'
 
 const DetailPage: FC<any> = () => {
-    const { appliedDeviceConfigId } = useParams()
+    const { appliedConfigurationId } = useParams()
 
     const { formatMessage: _ } = useIntl()
-    const { data, loading, error } = useAppliedDeviceConfigDetail(appliedDeviceConfigId!, !!appliedDeviceConfigId)
+    const { data, loading, error } = useAppliedConfigurationDetail(appliedConfigurationId!, !!appliedConfigurationId)
 
     const [activeItem, setActiveItem] = useState('0')
     const [pageLoading, setPageLoading] = useState(false)
@@ -37,7 +43,7 @@ const DetailPage: FC<any> = () => {
     const breadcrumbs = useMemo(
         () => [
             { label: _(confT.snippetService), link: generatePath(pages.SNIPPET_SERVICE.LINK) },
-            { label: _(confT.conditions), link: generatePath(pages.SNIPPET_SERVICE.APPLIED_DEVICE_CONFIG.LINK) },
+            { label: _(confT.conditions), link: generatePath(pages.SNIPPET_SERVICE.APPLIED_CONFIGURATIONS.LINK) },
             { label: data?.name || '' },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -48,7 +54,7 @@ const DetailPage: FC<any> = () => {
         if (error) {
             Notification.error(
                 { title: _(confT.conditionsError), message: getApiErrorMessage(error) },
-                { notificationId: notificationId.HUB_SNIPPET_SERVICE_APPLIED_DEVICE_DETAIL_PAGE_ERROR }
+                { notificationId: notificationId.HUB_SNIPPET_SERVICE_APPLIED_CONFIGURATIONS_DETAIL_PAGE_ERROR }
             )
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -77,6 +83,8 @@ const DetailPage: FC<any> = () => {
         [refs]
     )
 
+    const resourceI18n = useMemo(() => getResourceI18n(_), [_])
+
     const isDesktopOrLaptop = true
 
     return (
@@ -93,16 +101,52 @@ const DetailPage: FC<any> = () => {
                                 title={_(g.navigation)}
                             />
                         </Spacer>
-                        {isDesktopOrLaptop && <Column xl={1}></Column>}
-                        <Column style={isDesktopOrLaptop ? { height: '100%' } : { flex: '1 1 auto', overflow: 'hidden' }} xl={8}>
-                            <Spacer style={{ height: '100%', overflow: 'auto' }} type='pr-10'>
-                                <Loadable condition={!loading && !!data}>
+                    </Column>
+                    {isDesktopOrLaptop && <Column xl={1}></Column>}
+                    <Column style={isDesktopOrLaptop ? { height: '100%' } : { flex: '1 1 auto', overflow: 'hidden' }} xl={8}>
+                        <Spacer style={{ height: '100%', overflow: 'auto' }} type='pr-10'>
+                            <Loadable condition={!loading && !!data}>
+                                <>
                                     <Spacer type='mb-4'>
                                         <Headline type='h5'>{_(g.general)}</Headline>
                                     </Spacer>
-                                </Loadable>
-                            </Spacer>
-                        </Column>
+
+                                    <SimpleStripTable
+                                        leftColSize={6}
+                                        rightColSize={6}
+                                        rows={[
+                                            {
+                                                attribute: _(g.name),
+                                                value: (
+                                                    <FormGroup id='name' marginBottom={false} style={{ width: '100%' }}>
+                                                        <FormInput disabled align='right' size='small' value={data?.name} />
+                                                    </FormGroup>
+                                                ),
+                                            },
+                                        ]}
+                                    />
+
+                                    <Spacer type='mt-8'>
+                                        <Headline type='h5'>{_(g.listOfResources)}</Headline>
+                                        <p style={{ margin: '4px 0 0 0' }}>Short description...</p>
+                                    </Spacer>
+
+                                    <Spacer type='mt-6'>
+                                        {data?.resources &&
+                                            data?.resources?.map((resource: ResourceType, key: number) => (
+                                                <Spacer key={key} type='mb-2'>
+                                                    <ResourceToggleCreator defaultOpen readOnly i18n={resourceI18n} resourceData={resource} />
+                                                </Spacer>
+                                            ))}
+                                    </Spacer>
+
+                                    <Spacer type='mt-8'>
+                                        <Headline type='h5'>{_(confT.applyToDevices)}</Headline>
+                                        <p style={{ margin: '4px 0 0 0' }}>Short description...</p>
+                                    </Spacer>
+                                </>
+                            </Loadable>
+                        </Spacer>
                     </Column>
                 </Row>
             </Spacer>

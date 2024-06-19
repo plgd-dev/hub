@@ -1,5 +1,3 @@
-import { OptionType } from '@shared-ui/components/Atomic/FormSelect/FormSelect.types'
-
 export type Props = {
     defaultFormData: any
     isActivePage: boolean
@@ -8,5 +6,5 @@ export type Props = {
 
 export type Inputs = {
     apiAccessToken: string
-    configurationId: OptionType
+    configurationId: string
 }

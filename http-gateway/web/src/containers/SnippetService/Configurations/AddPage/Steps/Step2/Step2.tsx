@@ -9,14 +9,14 @@ import { useForm } from '@shared-ui/common/hooks'
 import Alert from '@shared-ui/components/Atomic/Alert'
 import ShowAnimate from '@shared-ui/components/Atomic/ShowAnimate'
 import Table from '@shared-ui/components/Atomic/TableNew'
+import Loadable from '@shared-ui/components/Atomic/Loadable'
+import StepButtons from '@shared-ui/components/Templates/FullPageWizard/StepButtons'
+import { FormContext } from '@shared-ui/common/context/FormContext'
 
 import { Props, Inputs } from './Step2.types'
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as confT } from '../../../../SnippetService.i18n'
-import StepButtons from '@shared-ui/components/Templates/FullPageWizard/StepButtons'
-import { FormContext } from '@shared-ui/common/context/FormContext'
 import { useDevicesList } from '@/containers/Devices/hooks'
-import Loadable from '@shared-ui/components/Atomic/Loadable'
 
 const Step2: FC<Props> = (props) => {
     const { defaultFormData, isActivePage, onFinish } = props
@@ -36,8 +36,6 @@ const Step2: FC<Props> = (props) => {
 
     const { data, loading } = useDevicesList(isActivePage)
 
-    console.log(data)
-
     const allDevices = watch('allDevices')
 
     const columns = useMemo(
@@ -46,11 +44,9 @@ const Step2: FC<Props> = (props) => {
                 Header: _(g.deviceName),
                 accessor: 'name',
                 Cell: ({ value }: { value: string | number }) => (
-                    <a href='#' onClick={(e) => console.log(value)}>
-                        <span className='no-wrap-text' style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {value}
-                        </span>
-                    </a>
+                    <span className='no-wrap-text' style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {value}
+                    </span>
                 ),
                 style: { maxWidth: '200px' },
             },
@@ -69,8 +65,6 @@ const Step2: FC<Props> = (props) => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
         []
     )
-
-    console.log(loading)
 
     return (
         <form>

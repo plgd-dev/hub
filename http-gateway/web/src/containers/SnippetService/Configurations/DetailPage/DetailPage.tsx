@@ -1,6 +1,6 @@
 import React, { FC, lazy, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { generatePath, useNavigate, useParams } from 'react-router-dom'
+import { generatePath, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import ReactDOM from 'react-dom'
 import cloneDeep from 'lodash/cloneDeep'
 
@@ -21,7 +21,7 @@ import FormLabel from '@shared-ui/components/Atomic/FormLabel'
 import PageLayout from '@/containers/Common/PageLayout'
 import { pages } from '@/routes'
 import { messages as confT } from '../../SnippetService.i18n'
-import { useResourcesConfigApplied, useResourcesConfigConditions, useResourcesConfigDetail } from '@/containers/SnippetService/hooks'
+import { useConfigurationAppliedConfigurations, useConfigurationConditions, useConfigurationDetail } from '@/containers/SnippetService/hooks'
 import notificationId from '@/notificationId'
 import DetailHeader from './DetailHeader'
 import testId from '@/testId'
@@ -34,10 +34,18 @@ const Tab3 = lazy(() => import('./Tabs/Tab3'))
 
 const DetailPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
-    const { resourcesConfigId, tab: tabRoute } = useParams()
-    const { data: configurationData, loading, error, refresh } = useResourcesConfigDetail(resourcesConfigId || '', !!resourcesConfigId)
-    const { data: conditionsData, loading: conditionsLoading } = useResourcesConfigConditions(resourcesConfigId || '', !!resourcesConfigId)
-    const { data: appliedConfigurationData, loading: appliedConfigurationLoading } = useResourcesConfigApplied(resourcesConfigId || '', !!resourcesConfigId)
+    const { configurationId, tab: tabRoute } = useParams()
+    const [searchParams, setSearchParams] = useSearchParams()
+
+    const version = searchParams.get('version')
+
+    const { data: configurationData, loading, error, refresh } = useConfigurationDetail(configurationId || '', !!configurationId)
+    const { data: conditionsData, loading: conditionsLoading } = useConfigurationConditions(configurationId || '', !!configurationId)
+    const { data: appliedConfigurationData, loading: appliedConfigurationLoading } = useConfigurationAppliedConfigurations(
+        configurationId || '',
+        !!configurationId
+    )
+
     const { collapsed } = useContext(AppContext)
     const tab = tabRoute || ''
 
@@ -50,15 +58,17 @@ const DetailPage: FC<any> = () => {
         []
     )
 
-    console.log(configurationData)
+    const data = useMemo(() => {
+        const v = version || configurationData?.length - 1
+        return configurationData && configurationData?.length > 0 ? configurationData[v] : []
+    }, [configurationData, version])
 
-    const data = useMemo(() => (configurationData && configurationData?.length > 0 ? configurationData[0] : []), [configurationData])
     const versions = useMemo(
         () => configurationData?.map((version: { version: string }) => ({ value: version.version, label: `v${version.version}` })),
         [configurationData]
     )
 
-    const { handleReset, context, resetIndex, dirty, formData, hasError, formError } = useFormData({
+    const { handleReset, context, resetIndex, dirty, formData, hasError } = useFormData({
         defaultFormState,
         data,
         i18n: { promptDefaultMessage: _(g.promptDefaultMessage), default: _(g.default) },
@@ -66,7 +76,7 @@ const DetailPage: FC<any> = () => {
 
     const [pageLoading, setPageLoading] = useState(false)
     const [notFound, setNotFound] = useState(false)
-    const [activeTabItem, setActiveTabItem] = useState(tab ? pages.SNIPPET_SERVICE.RESOURCES_CONFIG.DETAIL.TABS.indexOf(tab) : 0)
+    const [activeTabItem, setActiveTabItem] = useState(tab ? pages.SNIPPET_SERVICE.CONFIGURATIONS.DETAIL.TABS.indexOf(tab) : 0)
 
     const isMounted = useIsMounted()
     const navigate = useNavigate()
@@ -74,23 +84,23 @@ const DetailPage: FC<any> = () => {
     useEffect(() => {
         if (error) {
             Notification.error(
-                { title: _(confT.resourcesConfigurationError), message: getApiErrorMessage(error) },
-                { notificationId: notificationId.HUB_SNIPPET_SERVICE_RESOURCES_CONFIGURATION_DETAIL_PAGE_ERROR }
+                { title: _(confT.configurationsError), message: getApiErrorMessage(error) },
+                { notificationId: notificationId.HUB_SNIPPET_SERVICE_CONFIGURATIONS_DETAIL_PAGE_ERROR }
             )
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [error])
 
     useEffect(() => {
-        if (pages.SNIPPET_SERVICE.RESOURCES_CONFIG.DETAIL.TABS.indexOf(tab) === -1) {
+        if (pages.SNIPPET_SERVICE.CONFIGURATIONS.DETAIL.TABS.indexOf(tab) === -1 || configurationData?.length === 0) {
             setNotFound(true)
         }
-    }, [tab])
+    }, [configurationData?.length, tab])
 
     const breadcrumbs = useMemo(
         () => [
             { label: _(confT.snippetService), link: generatePath(pages.SNIPPET_SERVICE.LINK) },
-            { label: _(confT.resourcesConfiguration), link: generatePath(pages.SNIPPET_SERVICE.RESOURCES_CONFIG.LINK) },
+            { label: _(confT.configurations), link: generatePath(pages.SNIPPET_SERVICE.CONFIGURATIONS.LINK) },
             { label: data?.name || '' },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -100,9 +110,7 @@ const DetailPage: FC<any> = () => {
     const handleTabChange = useCallback((i: number) => {
         setActiveTabItem(i)
 
-        navigate(
-            generatePath(pages.SNIPPET_SERVICE.RESOURCES_CONFIG.DETAIL.LINK, { resourcesConfigId, tab: pages.SNIPPET_SERVICE.RESOURCES_CONFIG.DETAIL.TABS[i] })
-        )
+        navigate(generatePath(pages.SNIPPET_SERVICE.CONFIGURATIONS.DETAIL.LINK, { configurationId, tab: pages.SNIPPET_SERVICE.CONFIGURATIONS.DETAIL.TABS[i] }))
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
@@ -113,18 +121,19 @@ const DetailPage: FC<any> = () => {
             // DATA FOR SAVE
             const dataForSave = cloneDeep(formData)
             delete dataForSave.id
+            dataForSave.version = (parseInt(dataForSave.version, 10) + 1).toString()
 
             await updateResourceConfigApi(formData.id, dataForSave)
 
             Notification.success(
-                { title: _(confT.resourcesConfigurationUpdated), message: _(confT.resourcesConfigurationUpdatedMessage) },
-                { notificationId: notificationId.HUB_SNIPPET_SERVICE_RESOURCES_CONFIGURATION_DETAIL_PAGE_UPDATE_SUCCESS }
+                { title: _(confT.configurationUpdated), message: _(confT.configurationUpdatedMessage) },
+                { notificationId: notificationId.HUB_SNIPPET_SERVICE_CONFIGURATIONS_DETAIL_PAGE_UPDATE_SUCCESS }
             )
 
             handleReset()
             refresh()
 
-            navigate(generatePath(pages.SNIPPET_SERVICE.RESOURCES_CONFIG.LINK))
+            navigate(generatePath(pages.SNIPPET_SERVICE.CONFIGURATIONS.LINK))
 
             setPageLoading(false)
         } catch (error: any) {
@@ -133,8 +142,8 @@ const DetailPage: FC<any> = () => {
                 e = new Error(error)
             }
             Notification.error(
-                { title: _(confT.resourcesConfigurationUpdateError), message: e.message },
-                { notificationId: notificationId.HUB_SNIPPET_SERVICE_RESOURCES_CONFIGURATION_DETAIL_PAGE_UPDATE_ERROR }
+                { title: _(confT.configurationUpdateError), message: e.message },
+                { notificationId: notificationId.HUB_SNIPPET_SERVICE_CONFIGURATIONS_DETAIL_PAGE_UPDATE_ERROR }
             )
             setPageLoading(false)
         }
@@ -145,25 +154,23 @@ const DetailPage: FC<any> = () => {
         [loading, conditionsLoading, appliedConfigurationLoading, pageLoading]
     )
 
-    console.log(data)
-
     return (
         <PageLayout
             breadcrumbs={breadcrumbs}
-            header={<DetailHeader id={resourcesConfigId!} loading={loadingState} refresh={refresh} />}
+            header={<DetailHeader id={configurationId!} loading={loadingState} name={data?.name} refresh={refresh} />}
             headlineCustomContent={
                 <FormGroup inline id='version' marginBottom={false}>
                     <FormLabel text={_(g.version)} />
                     <FormSelect
                         onChange={(options: OptionType) => {
-                            // const v = options.value
-                            // onChange(v)
-                            // updateField('attestationMechanism.x509.leadCertificateName', v)
+                            const v = options.value
+                            setSearchParams({ version: v as string })
+                            refresh()
                         }}
                         options={versions || []}
                         placeholder={_(confT.selectVersion)}
                         size='small'
-                        // value={value ? leadCertificates.filter((v: { value: string }) => value === v.value) : []}
+                        value={versions?.find((v: OptionType) => v.value === version) || null}
                     />
                 </FormGroup>
             }
@@ -187,7 +194,7 @@ const DetailPage: FC<any> = () => {
                             {
                                 name: _(confT.generalAndResources),
                                 id: 0,
-                                dataTestId: testId.snippetService.resourcesConfig.detail.tabGeneral,
+                                dataTestId: testId.snippetService.configurations.detail.tabGeneral,
                                 content: (
                                     <Tab1
                                         defaultFormData={formData}
@@ -200,13 +207,13 @@ const DetailPage: FC<any> = () => {
                             {
                                 name: _(confT.conditions),
                                 id: 1,
-                                dataTestId: testId.snippetService.resourcesConfig.detail.tabConditions,
+                                dataTestId: testId.snippetService.configurations.detail.tabConditions,
                                 content: <Tab2 data={conditionsData} isActiveTab={activeTabItem === 1} loading={conditionsLoading} />,
                             },
                             {
                                 name: _(confT.appliedDeviceConfiguration),
                                 id: 2,
-                                dataTestId: testId.snippetService.resourcesConfig.detail.tabDeviceAppliedConfiguration,
+                                dataTestId: testId.snippetService.configurations.detail.tabDeviceAppliedConfiguration,
                                 content: <Tab3 data={appliedConfigurationData} isActiveTab={activeTabItem === 1} loading={appliedConfigurationLoading} />,
                             },
                         ]}

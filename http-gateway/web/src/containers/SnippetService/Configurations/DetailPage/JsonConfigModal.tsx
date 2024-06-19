@@ -61,13 +61,13 @@ const JsonConfigModal: FC<Props> = (props) => {
     const handleOnEditorError = useCallback((error: any) => setInterfaceJsonError(error.length > 0), [])
 
     useEffect(() => {
-        if (resource?.content.data) {
-            if (typeof resource.content.data === 'object') {
-                setJsonData(resource.content.data)
+        if (resource?.content) {
+            if (typeof resource.content === 'object') {
+                setJsonData(resource.content)
                 // @ts-ignore
-                editor?.current?.current?.set(resource.content.data)
+                editor?.current?.current?.set(resource.content)
             } else {
-                const dataString = resource.content.data.toString()
+                const dataString = resource.content.toString()
                 // @ts-ignore
                 editor?.current?.current?.setText(dataString)
                 setJsonData(dataString)
@@ -75,7 +75,7 @@ const JsonConfigModal: FC<Props> = (props) => {
         } else {
             setJsonData('')
         }
-    }, [resource?.content.data])
+    }, [resource?.content])
 
     useEffect(() => {
         setHref(resource?.href || '')

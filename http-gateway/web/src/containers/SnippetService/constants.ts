@@ -8,15 +8,15 @@ export const SnippetServiceApiEndpoints = {
 // (if there is more snippetServiceIds then the provided number, it creates more chunks of a maximum of this number)
 export const DELETE_CHUNK_SIZE = 50
 
-export const DEFAULT_RESOURCE_CONFIG_DATA = {
+export const DEFAULT_CONFIGURATIONS_DATA = {
     name: '',
     resources: [],
     timeToLive: '0',
 }
 
-export const DEFAULT_CONFIG_DATA = {}
+export const DEFAULT_CONDITIONS_DATA = {}
 
-export const APPLIED_DEVICE_CONFIG_STATUS = {
+export const APPLIED_CONFIGURATIONS_STATUS = {
     SUCCESS: 1,
     PENDING: 0,
     ERROR: -1,

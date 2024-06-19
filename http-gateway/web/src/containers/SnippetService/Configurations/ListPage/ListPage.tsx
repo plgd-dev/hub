@@ -9,34 +9,32 @@ import { getApiErrorMessage } from '@shared-ui/common/utils'
 
 import PageLayout from '@/containers/Common/PageLayout'
 import { messages as confT } from '../../SnippetService.i18n'
-import { useResourcesConfigList } from '@/containers/SnippetService/hooks'
+import { useConfigurationList } from '@/containers/SnippetService/hooks'
 import notificationId from '@/notificationId'
 import { messages as g } from '@/containers/Global.i18n'
 import { pages } from '@/routes'
 import PageListTemplate from '@/containers/Common/PageListTemplate/PageListTemplate'
-import { deleteResourcesConfigApi } from '@/containers/SnippetService/rest'
-import { getConfigResourcesPageListI18n } from '@/containers/SnippetService/utils'
+import { deleteConfigurationsApi } from '@/containers/SnippetService/rest'
+import { getConfigurationsPageListI18n } from '@/containers/SnippetService/utils'
 import DateFormat from '@/containers/PendingCommands/DateFormat'
 
 const ListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
 
-    const { data, loading, error, refresh } = useResourcesConfigList()
+    const { data, loading, error, refresh } = useConfigurationList()
     const navigate = useNavigate()
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    const breadcrumbs = useMemo(() => [{ label: _(confT.snippetService), link: '/conditions' }, { label: _(confT.resourcesConfiguration) }], [])
+    const breadcrumbs = useMemo(() => [{ label: _(confT.snippetService), link: pages.SNIPPET_SERVICE.LINK }, { label: _(confT.configurations) }], [])
 
     useEffect(() => {
         error &&
             Notification.error(
-                { title: _(confT.resourcesConfigurationError), message: getApiErrorMessage(error) },
-                { notificationId: notificationId.HUB_SNIPPET_SERVICE_RESOURCES_CONFIGURATION_LIST_PAGE_ERROR }
+                { title: _(confT.configurationsError), message: getApiErrorMessage(error) },
+                { notificationId: notificationId.HUB_SNIPPET_SERVICE_CONFIGURATIONS_LIST_PAGE_ERROR }
             )
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [error])
-
-    console.log(data)
 
     const columns = useMemo(
         () => [
@@ -45,10 +43,10 @@ const ListPage: FC<any> = () => {
                 accessor: 'name',
                 Cell: ({ value, row }: { value: string | number; row: any }) => (
                     <a
-                        href={generatePath(pages.SNIPPET_SERVICE.RESOURCES_CONFIG.DETAIL.LINK, { resourcesConfigId: row.original.id, tab: '' })}
+                        href={generatePath(pages.SNIPPET_SERVICE.CONFIGURATIONS.DETAIL.LINK, { configurationId: row.original.id, tab: '' })}
                         onClick={(e) => {
                             e.preventDefault()
-                            navigate(generatePath(pages.SNIPPET_SERVICE.RESOURCES_CONFIG.DETAIL.LINK, { resourcesConfigId: row.original.id, tab: '' }))
+                            navigate(generatePath(pages.SNIPPET_SERVICE.CONFIGURATIONS.DETAIL.LINK, { configurationId: row.original.id, tab: '' }))
                         }}
                     >
                         <span className='no-wrap-text'>{value}</span>
@@ -81,34 +79,34 @@ const ListPage: FC<any> = () => {
             header={
                 <Button
                     icon={<IconPlus />}
-                    onClick={() => navigate(generatePath(pages.SNIPPET_SERVICE.RESOURCES_CONFIG.ADD.LINK, { tab: '' }))}
+                    onClick={() => navigate(generatePath(pages.SNIPPET_SERVICE.CONFIGURATIONS.ADD.LINK, { tab: '' }))}
                     variant='primary'
                 >
                     {_(confT.configuration)}
                 </Button>
             }
             loading={loading}
-            title={_(confT.resourcesConfiguration)}
+            title={_(confT.configurations)}
         >
             <PageListTemplate
                 columns={columns}
                 data={data}
-                deleteApiMethod={deleteResourcesConfigApi}
-                i18n={getConfigResourcesPageListI18n(_)}
+                deleteApiMethod={deleteConfigurationsApi}
+                i18n={getConfigurationsPageListI18n(_)}
                 loading={loading}
                 onDeletionError={(e) => {
                     Notification.error(
-                        { title: _(confT.resourcesConfigurationError), message: getApiErrorMessage(e) },
-                        { notificationId: notificationId.HUB_SNIPPET_SERVICE_RESOURCES_CONFIGURATION_LIST_PAGE_DELETE_ERROR }
+                        { title: _(confT.configurationsError), message: getApiErrorMessage(e) },
+                        { notificationId: notificationId.HUB_SNIPPET_SERVICE_CONFIGURATIONS_LIST_PAGE_DELETE_ERROR }
                     )
                 }}
                 onDeletionSuccess={() => {
                     Notification.success(
-                        { title: _(confT.resourcesConfigurationDeleted), message: _(confT.resourcesConfigurationDeletedMessage) },
-                        { notificationId: notificationId.HUB_SNIPPET_SERVICE_RESOURCES_CONFIGURATION_LIST_PAGE_DELETE_SUCCESS }
+                        { title: _(confT.configurationsDeleted), message: _(confT.configurationsDeletedMessage) },
+                        { notificationId: notificationId.HUB_SNIPPET_SERVICE_CONFIGURATIONS_LIST_PAGE_DELETE_SUCCESS }
                     )
                 }}
-                onDetailClick={(id: string) => navigate(generatePath(pages.SNIPPET_SERVICE.RESOURCES_CONFIG.DETAIL.LINK, { resourcesConfigId: id, tab: '' }))}
+                onDetailClick={(id: string) => navigate(generatePath(pages.SNIPPET_SERVICE.CONFIGURATIONS.DETAIL.LINK, { configurationId: id, tab: '' }))}
                 refresh={() => refresh()}
             />
         </PageLayout>

@@ -1,6 +1,7 @@
 import React, { FC, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
 import { useResizeDetector } from 'react-resize-detector'
+import isEqual from 'lodash/isEqual'
 
 import Headline from '@shared-ui/components/Atomic/Headline'
 import Button, { buttonSizes, buttonVariants } from '@shared-ui/components/Atomic/Button'
@@ -21,8 +22,7 @@ import { messages as g } from '@/containers/Global.i18n'
 import { messages as confT } from '../../../../SnippetService.i18n'
 import { useValidationsSchema } from '../../validationSchema'
 import { Props, Inputs, ResourceTypeEnhanced } from './Tab1.types'
-import JsonConfigModal from '@/containers/SnippetService/ResourcesConfig/DetailPage/JsonConfigModal'
-import isEqual from 'lodash/isEqual'
+import JsonConfigModal from '@/containers/SnippetService/Configurations/DetailPage/JsonConfigModal'
 
 const { NS } = commandTimeoutUnits
 
@@ -43,10 +43,8 @@ const Tab1: FC<Props> = (props) => {
         schema,
     })
 
-    console.log(defaultFormData)
-
     const [resources, setResources] = useState<ResourceTypeEnhanced[]>(defaultFormData.resources || [])
-    const [updateResource, setUpdateResource] = useState<number | undefined>(undefined)
+    const [updateResource, setUpdateResource] = useState<string | undefined>(undefined)
     const [createResource, setCreateResource] = useState<boolean>(false)
     const [deleteResource, setDeleteResource] = useState<ResourceTypeEnhanced | undefined>(undefined)
 
@@ -75,7 +73,7 @@ const Tab1: FC<Props> = (props) => {
                         href='#'
                         onClick={(e) => {
                             e.preventDefault()
-                            setUpdateResource(row.original.id)
+                            setUpdateResource(row.original.href)
                         }}
                     >
                         <span className='no-wrap-text'>{value}</span>
@@ -89,17 +87,9 @@ const Tab1: FC<Props> = (props) => {
                     const closestUnit = findClosestUnit(parseFloat(value))
                     const v = convertAndNormalizeValueFromTo(value, NS, closestUnit)
                     return (
-                        <a
-                            href='#'
-                            onClick={(e) => {
-                                e.preventDefault()
-                                // navigate(generatePath(pages.SNIPPET_SERVICE.RESOURCES_CONFIG.DETAIL.LINK, { resourcesConfigId: row.original.id, tab: '' }))
-                            }}
-                        >
-                            <span className='no-wrap-text'>
-                                {v} {closestUnit}
-                            </span>
-                        </a>
+                        <span className='no-wrap-text'>
+                            {v} {closestUnit}
+                        </span>
                     )
                 },
             },
@@ -111,12 +101,12 @@ const Tab1: FC<Props> = (props) => {
                     <TableActionButton
                         items={[
                             {
-                                onClick: () => setDeleteResource(resources.find((r) => r.id === row.original.id)),
+                                onClick: () => setDeleteResource(resources.find((r) => r.href === row.original.href)),
                                 label: _(g.delete),
                                 icon: <IconTrash />,
                             },
                             {
-                                onClick: () => setUpdateResource(row.original.id),
+                                onClick: () => setUpdateResource(row.original.href),
                                 label: _(g.edit),
                                 icon: <IconEdit />,
                             },
@@ -179,7 +169,7 @@ const Tab1: FC<Props> = (props) => {
                     height={height}
                     i18n={{
                         search: '',
-                        placeholder: _(confT.noResourcesConfiguration),
+                        placeholder: _(confT.noConfigurations),
                     }}
                     loading={loading}
                     paginationPortalTargetId={isActiveTab ? 'paginationPortalTarget' : undefined}
@@ -194,18 +184,18 @@ const Tab1: FC<Props> = (props) => {
                     }}
                     onSubmit={(data) => {
                         if (updateResource !== undefined) {
-                            const newResources = resources.map((r) => (r.id === updateResource ? data : r))
+                            const newResources = resources.map((r) => (r.href === updateResource ? data : r))
                             setResources(newResources)
                             setUpdateResource(undefined)
                             updateField('resources', newResources)
                         } else if (createResource) {
-                            const newResources = [...resources, { ...data, id: resources.length + 1 }]
+                            const newResources = [...resources, { ...data }]
                             setResources(newResources)
                             updateField('resources', newResources)
                             setCreateResource(false)
                         }
                     }}
-                    resource={updateResource !== undefined ? resources.find((r) => r.id === updateResource) : undefined}
+                    resource={updateResource !== undefined ? resources.find((r) => r.href === updateResource) : undefined}
                     show={updateResource !== undefined || createResource}
                 />
 
@@ -221,7 +211,7 @@ const Tab1: FC<Props> = (props) => {
                         {
                             label: _(g.delete),
                             onClick: () => {
-                                const newResources = resources.filter((r) => r.id !== deleteResource?.id)
+                                const newResources = resources.filter((r) => r.href !== deleteResource?.href)
                                 setResources(newResources)
                                 updateField('resources', newResources)
                                 setDeleteResource(undefined)

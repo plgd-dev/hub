@@ -29,7 +29,13 @@ const Tab2: FC<Props> = (props) => {
                 Header: _(g.name),
                 accessor: 'name',
                 Cell: ({ value, row }: { value: string | number; row: any }) => (
-                    <a href='#'>
+                    <a
+                        href='#'
+                        onClick={(e) => {
+                            e.preventDefault()
+                            navigate(generatePath(pages.SNIPPET_SERVICE.CONDITIONS.DETAIL.LINK, { conditionId: row.original.id, tab: '' }))
+                        }}
+                    >
                         <span className='no-wrap-text'>{value}</span>
                     </a>
                 ),

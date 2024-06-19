@@ -129,12 +129,12 @@ export const messages = defineMessages({
         id: 'app.menuConditions',
         defaultMessage: 'Conditions',
     },
-    menuResourcesConfig: {
-        id: 'app.menuResourcesConfig',
-        defaultMessage: 'Resources config',
+    menuConfigurations: {
+        id: 'app.menuConfigurations',
+        defaultMessage: 'Configurations',
     },
-    menuAppliedDeviceConfig: {
-        id: 'app.menuAppliedDeviceConfig',
-        defaultMessage: 'Applied Device Config',
+    menuAppliedConfigurations: {
+        id: 'app.menuAppliedConfigurations',
+        defaultMessage: 'Applied Configurations',
     },
 })

@@ -13,13 +13,9 @@ export const messages = defineMessages({
         id: 'snippetService.condition',
         defaultMessage: 'Condition',
     },
-    resourcesConfiguration: {
-        id: 'snippetService.resourcesConfiguration',
-        defaultMessage: 'Resources Configuration',
-    },
-    resourcesConfigurations: {
-        id: 'snippetService.resourcesConfigurations',
-        defaultMessage: 'Resources Configurations',
+    configurations: {
+        id: 'snippetService.configurations',
+        defaultMessage: 'Configurations',
     },
     configuration: {
         id: 'snippetService.configuration',
@@ -29,37 +25,37 @@ export const messages = defineMessages({
         id: 'snippetService.timeLastModification',
         defaultMessage: 'Time Last Modification',
     },
-    resourcesConfigurationError: {
-        id: 'snippetService.resourcesConfigurationError',
-        defaultMessage: 'Resources Configuration Error',
+    configurationsError: {
+        id: 'snippetService.configurationsError',
+        defaultMessage: 'Configurations Error',
     },
     addConfigurationError: {
         id: 'snippetService.addConfigurationError',
-        defaultMessage: 'Resources Configuration Error',
+        defaultMessage: 'Configuration Error',
     },
-    resourcesConfigurationUpdateError: {
-        id: 'snippetService.resourcesConfigurationError',
-        defaultMessage: 'Resources Configuration update Error',
+    configurationUpdateError: {
+        id: 'snippetService.configurationUpdateError',
+        defaultMessage: 'Configuration update Error',
     },
-    noResourcesConfiguration: {
-        id: 'snippetService.noResourcesConfiguration',
-        defaultMessage: 'No Resources Configuration',
+    noConfigurations: {
+        id: 'snippetService.noConfigurations',
+        defaultMessage: 'No Configurations',
     },
-    deleteResourcesConfigurationMessage: {
-        id: 'snippetService.deleteResourcesConfigurationMessage',
-        defaultMessage: 'Are you sure you want to delete this Resources Configuration ?',
+    deleteConfigurationMessage: {
+        id: 'snippetService.deleteConfigurationMessage',
+        defaultMessage: 'Are you sure you want to delete this Configuration ?',
     },
-    deleteResourcesConfigurationsMessage: {
-        id: 'snippetService.deleteResourcesConfigurationsMessage',
-        defaultMessage: 'Are you sure you want to delete {count} Resources Configurations ?',
+    deleteConfigurationsMessage: {
+        id: 'snippetService.deleteConfigurationsMessage',
+        defaultMessage: 'Are you sure you want to delete {count} Configurations ?',
     },
-    resourcesConfigurationDeleted: {
-        id: 'snippetService.resourcesConfigurationDeleted',
-        defaultMessage: 'Resources configurations deleted',
+    configurationsDeleted: {
+        id: 'snippetService.configurationsDeleted',
+        defaultMessage: 'Configurations deleted',
     },
-    resourcesConfigurationDeletedMessage: {
-        id: 'snippetService.resourcesConfigurationDeletedMessage',
-        defaultMessage: 'The selected resources configurations has been deleted.',
+    configurationsDeletedMessage: {
+        id: 'snippetService.configurationsDeletedMessage',
+        defaultMessage: 'The selected configurations has been deleted.',
     },
     noConditions: {
         id: 'snippetService.noConditions',
@@ -70,7 +66,7 @@ export const messages = defineMessages({
         defaultMessage: 'Are you sure you want to delete this Condition ?',
     },
     deleteConditionsMessage: {
-        id: 'snippetService.deleteResourcesConfigurationsMessage',
+        id: 'snippetService.deleteConditionsMessage',
         defaultMessage: 'Are you sure you want to delete {count} Conditions ?',
     },
     deleteConditions: {
@@ -129,9 +125,9 @@ export const messages = defineMessages({
         id: 'snippetService.appliedDeviceConfigurationDeletedMessage',
         defaultMessage: 'The selected Applied Device Configurations has been deleted.',
     },
-    deleteResourcesConfigurationTitle: {
-        id: 'snippetService.deleteResourcesConfigurationTitle',
-        defaultMessage: 'Delete Resources Configuration',
+    deleteConfigurationTitle: {
+        id: 'snippetService.deleteConfigurationTitle',
+        defaultMessage: 'Delete Configuration',
     },
     generalAndResources: {
         id: 'snippetService.generalAndResources',
@@ -141,13 +137,13 @@ export const messages = defineMessages({
         id: 'snippetService.addResources',
         defaultMessage: 'Add Resources',
     },
-    resourcesConfigurationUpdated: {
-        id: 'snippetService.resourcesConfigurationUpdated',
-        defaultMessage: 'Resources Configuration updated',
+    configurationUpdated: {
+        id: 'snippetService.configurationUpdated',
+        defaultMessage: 'Configuration updated',
     },
-    resourcesConfigurationUpdatedMessage: {
-        id: 'snippetService.resourcesConfigurationUpdatedMessage',
-        defaultMessage: 'The Resources Configuration has been updated',
+    configurationUpdatedMessage: {
+        id: 'snippetService.configurationUpdatedMessage',
+        defaultMessage: 'The Configuration has been updated',
     },
     editResource: {
         id: 'snippetService.editResource',
@@ -169,9 +165,9 @@ export const messages = defineMessages({
         id: 'snippetService.listOfDeviceAppliedConfigurations',
         defaultMessage: 'List of Device Applied Configurations',
     },
-    appliedResourcesConfigurationTablePlaceholder: {
-        id: 'snippetService.appliedResourcesConfigurationTablePlaceholder',
-        defaultMessage: 'No Conditions',
+    appliedConfigurationTablePlaceholder: {
+        id: 'snippetService.appliedConfigurationTablePlaceholder',
+        defaultMessage: 'No Applied Configurations',
     },
     configLink: {
         id: 'snippetService.configLink',
@@ -285,6 +281,14 @@ export const messages = defineMessages({
         id: 'snippetService.addContent',
         defaultMessage: 'Add content',
     },
+    editContent: {
+        id: 'snippetService.editContent',
+        defaultMessage: 'Edit content',
+    },
+    viewContent: {
+        id: 'snippetService.viewContent',
+        defaultMessage: 'View content',
+    },
     applyToAllDevices: {
         id: 'snippetService.applyToAllDevices',
         defaultMessage: 'Apply to all devices',
@@ -362,7 +366,11 @@ export const messages = defineMessages({
         defaultMessage: 'Short description ...',
     },
     selectVersion: {
-        id: 'snippetService.v',
+        id: 'snippetService.selectVersion',
         defaultMessage: 'Select version',
+    },
+    appliedConfigurationsError: {
+        id: 'snippetService.appliedConfigurationsError',
+        defaultMessage: 'Applied Configurations Error',
     },
 })

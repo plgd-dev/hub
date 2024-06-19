@@ -11,7 +11,7 @@ import FullPageWizard from '@shared-ui/components/Templates/FullPageWizard'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 
 import { messages as g } from '@/containers/Global.i18n'
-import { DEFAULT_CONFIG_DATA, DEFAULT_RESOURCE_CONFIG_DATA } from '@/containers/SnippetService/constants'
+import { DEFAULT_CONDITIONS_DATA } from '@/containers/SnippetService/constants'
 import { pages } from '@/routes'
 import { messages as confT } from '@/containers/SnippetService/SnippetService.i18n'
 import notificationId from '@/notificationId'
@@ -50,7 +50,7 @@ const AddPage: FC<any> = () => {
     )
 
     const [activeItem, setActiveItem] = useState(step ? steps.findIndex((s) => s.link.includes(step)) : 0)
-    const [formData, setFormData, rehydrated] = usePersistentState<any>('snippet-service-create-condition', DEFAULT_CONFIG_DATA)
+    const [formData, setFormData, rehydrated] = usePersistentState<any>('snippet-service-create-condition', DEFAULT_CONDITIONS_DATA)
     const [visitedStep, setVisitedStep] = useState<number>(activeItem)
 
     const onStepChange = useCallback(
@@ -71,11 +71,9 @@ const AddPage: FC<any> = () => {
             delete formData.id
 
             const dataForSave = cloneDeep(formData)
-            // dataForSave.deviceIdFilter = dataForSave.deviceIds.map((device: any) => device.value)
-            // delete dataForSave.deviceIds
 
-            // FormSelect
-            dataForSave.configurationId = formData.configurationId.value
+            // FormSelect with multiple values
+            dataForSave.deviceIdFilter = dataForSave.deviceIdFilter.map((device: any) => (typeof device === 'string' ? device : device.value))
 
             await createConditionApi(dataForSave)
 
@@ -87,8 +85,7 @@ const AddPage: FC<any> = () => {
                 { notificationId: notificationId.HUB_SNIPPET_SERVICE_CONDITIONS_ADD_PAGE_SUCCESS }
             )
 
-            setFormData(DEFAULT_RESOURCE_CONFIG_DATA)
-
+            setFormData(DEFAULT_CONDITIONS_DATA)
             navigate(pages.SNIPPET_SERVICE.CONDITIONS.LINK)
         } catch (error: any) {
             Notification.error(
@@ -117,7 +114,7 @@ const AddPage: FC<any> = () => {
                 close: _(g.close),
             }}
             onClose={() => {
-                setFormData(DEFAULT_RESOURCE_CONFIG_DATA)
+                setFormData(DEFAULT_CONDITIONS_DATA)
                 navigate(pages.SNIPPET_SERVICE.CONDITIONS.LINK)
             }}
             onStepChange={onStepChange}

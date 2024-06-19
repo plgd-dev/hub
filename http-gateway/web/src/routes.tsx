@@ -51,14 +51,14 @@ const LinkedHubsDetailPage = lazy(() => import('./containers/DeviceProvisioning/
 const LinkNewHubPage = lazy(() => import('./containers/DeviceProvisioning/LinkedHubs/LinkNewHubPage'))
 
 // Snippet service
-const ResourcesConfigListPage = lazy(() => import('./containers/SnippetService/ResourcesConfig/ListPage'))
-const ResourcesConfigDetailPage = lazy(() => import('./containers/SnippetService/ResourcesConfig/DetailPage'))
-const ResourcesConfigAddPage = lazy(() => import('./containers/SnippetService/ResourcesConfig/AddPage'))
+const ConfigurationListPage = lazy(() => import('@/containers/SnippetService/Configurations/ListPage'))
+const ConfigurationDetailPage = lazy(() => import('@/containers/SnippetService/Configurations/DetailPage'))
+const ConfigurationAddPage = lazy(() => import('@/containers/SnippetService/Configurations/AddPage'))
 const ConditionsListPage = lazy(() => import('./containers/SnippetService/Conditions/ListPage'))
 const ConditionsDetailPage = lazy(() => import('./containers/SnippetService/Conditions/DetailPage'))
 const ConditionsAddPage = lazy(() => import('./containers/SnippetService/Conditions/AddPage'))
-const AppliedDeviceConfigListPage = lazy(() => import('./containers/SnippetService/AppliedDeviceConfig/ListPage'))
-const AppliedDeviceConfigDetailPage = lazy(() => import('./containers/SnippetService/AppliedDeviceConfig/DetailPage'))
+const AppliedConfigurationListPage = lazy(() => import('@/containers/SnippetService/AppliedConfigurations/ListPage'))
+const AppliedConfigurationDetailPage = lazy(() => import('@/containers/SnippetService/AppliedConfigurations/DetailPage'))
 
 // Certificates
 const CertificatesListPage = lazy(() => import('./containers/Certificates'))
@@ -132,15 +132,15 @@ export const pages = {
     },
     SNIPPET_SERVICE: {
         LINK: '/snippet-service',
-        RESOURCES_CONFIG: {
-            LINK: '/snippet-service/resources-config',
+        CONFIGURATIONS: {
+            LINK: '/snippet-service/configurations',
             DETAIL: {
-                LINK: '/snippet-service/resources-config/:resourcesConfigId/:tab',
-                LINK_NO_TABS: '/snippet-service/resources-config/:resourcesConfigId',
-                TABS: ['', 'snippet-service', 'certificate-authority', 'device-applied-conditions'],
+                LINK: '/snippet-service/configurations/:configurationId/:tab',
+                LINK_NO_TABS: '/snippet-service/configurations/:configurationId',
+                TABS: ['', 'conditions', 'applied-device-configuration'],
             },
             ADD: {
-                LINK: '/snippet-service/resources-config/add/:tab',
+                LINK: '/snippet-service/configurations/add/:tab',
                 STEPS: ['', 'apply-to-devices'],
             },
         },
@@ -154,14 +154,14 @@ export const pages = {
                 STEPS: ['', 'apply-filters', 'select-configuration'],
             },
         },
-        APPLIED_DEVICE_CONFIG: {
-            LINK: '/snippet-service/applied-device-config',
+        APPLIED_CONFIGURATIONS: {
+            LINK: '/snippet-service/applied-configurations',
             ADD: {
-                LINK: '/snippet-service/applied-device-config/add/:tab',
+                LINK: '/snippet-service/applied-configurations/add/:tab',
                 STEPS: ['', 'apply-to-devices'],
             },
             DETAIL: {
-                LINK: '/snippet-service/applied-device-config/:appliedDeviceConfigId',
+                LINK: '/snippet-service/applied-configurations/:appliedConfigurationId',
             },
         },
     },
@@ -301,13 +301,13 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                 children: [
                     {
                         id: '111',
-                        title: <MenuTranslate id='menuResourcesConfig' />,
-                        link: '/resources-config',
+                        title: <MenuTranslate id='menuConfigurations' />,
+                        link: '/configurations',
                         paths: [
-                            pages.SNIPPET_SERVICE.RESOURCES_CONFIG.LINK,
-                            pages.SNIPPET_SERVICE.RESOURCES_CONFIG.DETAIL.LINK_NO_TABS,
-                            pages.SNIPPET_SERVICE.RESOURCES_CONFIG.DETAIL.LINK,
-                            pages.SNIPPET_SERVICE.RESOURCES_CONFIG.ADD.LINK,
+                            pages.SNIPPET_SERVICE.CONFIGURATIONS.LINK,
+                            pages.SNIPPET_SERVICE.CONFIGURATIONS.DETAIL.LINK_NO_TABS,
+                            pages.SNIPPET_SERVICE.CONFIGURATIONS.DETAIL.LINK,
+                            pages.SNIPPET_SERVICE.CONFIGURATIONS.ADD.LINK,
                         ],
                     },
                     {
@@ -318,12 +318,12 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                     },
                     {
                         id: '113',
-                        title: <MenuTranslate id='menuAppliedDeviceConfig' />,
-                        link: '/applied-device-config',
+                        title: <MenuTranslate id='menuAppliedConfigurations' />,
+                        link: '/applied-configurations',
                         paths: [
-                            pages.SNIPPET_SERVICE.APPLIED_DEVICE_CONFIG.LINK,
-                            pages.SNIPPET_SERVICE.APPLIED_DEVICE_CONFIG.DETAIL.LINK,
-                            pages.SNIPPET_SERVICE.APPLIED_DEVICE_CONFIG.ADD.LINK,
+                            pages.SNIPPET_SERVICE.APPLIED_CONFIGURATIONS.LINK,
+                            pages.SNIPPET_SERVICE.APPLIED_CONFIGURATIONS.DETAIL.LINK,
+                            pages.SNIPPET_SERVICE.APPLIED_CONFIGURATIONS.ADD.LINK,
                         ],
                     },
                 ],
@@ -408,8 +408,8 @@ export const noLayoutPages = [
     '/device-provisioning/linked-hubs/link-new-hub/:step',
     '/device-provisioning/enrollment-groups/new-enrollment-group',
     '/device-provisioning/enrollment-groups/new-enrollment-group/:step',
-    '/snippet-service/resources-config/add/:tab',
-    '/snippet-service/resources-config/add',
+    '/snippet-service/configurations/add/:tab',
+    '/snippet-service/configurations/add',
     '/snippet-service/conditions/add/:tab',
     '/snippet-service/conditions/add',
 ]
@@ -428,8 +428,8 @@ export const NoLayoutRoutes = () => (
         <Route element={withSuspense(<LinkNewHubPage />)} path='/device-provisioning/linked-hubs/link-new-hub/:step' />
         <Route element={withSuspense(<NewEnrollmentGroupsPage />)} path='/device-provisioning/enrollment-groups/new-enrollment-group' />
         <Route element={withSuspense(<NewEnrollmentGroupsPage />)} path='/device-provisioning/enrollment-groups/new-enrollment-group/:step' />
-        <Route element={withSuspense(<ResourcesConfigAddPage />)} path='/snippet-service/resources-config/add/:step' />
-        <Route element={withSuspense(<ResourcesConfigAddPage />)} path='/snippet-service/resources-config/add' />
+        <Route element={withSuspense(<ConfigurationAddPage />)} path='/snippet-service/configurations/add/:step' />
+        <Route element={withSuspense(<ConfigurationAddPage />)} path='/snippet-service/configurations/add' />
         <Route element={withSuspense(<ConditionsAddPage />)} path='/snippet-service/conditions/add/:step' />
         <Route element={withSuspense(<ConditionsAddPage />)} path='/snippet-service/conditions/add' />
     </RoutesGroup>
@@ -494,10 +494,10 @@ export const Routes = () => {
             {/* ***** SNIPPET SERVICE ***** */}
             <Route path='snippet-service'>
                 {/* ***** RESOURCES CONFIGURATION ***** */}
-                <Route path='resources-config'>
-                    <Route element={withSuspense(<ResourcesConfigDetailPage />)} path=':resourcesConfigId/:tab' />
-                    <Route element={withSuspense(<ResourcesConfigDetailPage />)} path=':resourcesConfigId' />
-                    <Route element={withSuspense(<ResourcesConfigListPage />)} path='' />
+                <Route path='configurations'>
+                    <Route element={withSuspense(<ConfigurationDetailPage />)} path=':configurationId/:tab' />
+                    <Route element={withSuspense(<ConfigurationDetailPage />)} path=':configurationId' />
+                    <Route element={withSuspense(<ConfigurationListPage />)} path='' />
                 </Route>
 
                 {/* ***** CONDITIONS ***** */}
@@ -507,9 +507,9 @@ export const Routes = () => {
                 </Route>
 
                 {/* ***** APPLIED RESOURCES CONFIGURATION ***** */}
-                <Route path='applied-device-config'>
-                    <Route element={withSuspense(<AppliedDeviceConfigDetailPage />)} path=':appliedDeviceConfigId' />
-                    <Route element={withSuspense(<AppliedDeviceConfigListPage />)} path='' />
+                <Route path='applied-configurations'>
+                    <Route element={withSuspense(<AppliedConfigurationDetailPage />)} path=':appliedConfigurationId' />
+                    <Route element={withSuspense(<AppliedConfigurationListPage />)} path='' />
                 </Route>
             </Route>
 

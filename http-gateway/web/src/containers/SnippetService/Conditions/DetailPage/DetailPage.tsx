@@ -58,7 +58,7 @@ const DetailPage: FC<any> = () => {
         if (error) {
             Notification.error(
                 { title: _(confT.conditionsError), message: getApiErrorMessage(error) },
-                { notificationId: notificationId.HUB_SNIPPET_SERVICE_RESOURCES_CONFIGURATION_DETAIL_PAGE_ERROR }
+                { notificationId: notificationId.HUB_SNIPPET_SERVICE_CONFIGURATIONS_DETAIL_PAGE_ERROR }
             )
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -92,7 +92,9 @@ const DetailPage: FC<any> = () => {
             const id = parseInt(item.id)
             const element = refs[id] as HTMLElement
 
-            element?.scrollIntoView({ behavior: 'smooth' })
+            setTimeout(() => {
+                element?.scrollIntoView({ behavior: 'smooth' })
+            }, 0)
         },
         [refs]
     )
@@ -117,6 +119,8 @@ const DetailPage: FC<any> = () => {
             // DATA FOR SAVE
             const dataForSave = cloneDeep(formData)
             delete dataForSave.id
+
+            dataForSave.version = (parseInt(dataForSave.version, 10) + 1).toString()
 
             await updateConditionApi(formData.id || '', dataForSave)
 

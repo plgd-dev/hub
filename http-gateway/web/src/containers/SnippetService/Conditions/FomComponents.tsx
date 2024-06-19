@@ -62,8 +62,8 @@ export const Step2FormComponent: FC<Props> = (props) => {
 
     return (
         <>
-            <Loadable condition={!loading}>
-                <Spacer type='pt-6'>
+            <Spacer ref={refs?.filterDeviceId} type='pt-6'>
+                <Loadable condition={!loading}>
                     <ConditionFilter
                         listName={_(confT.listOfSelectedDevices)}
                         listOfItems={deviceIdFilter.map((id) => options?.find((o) => o.value === id)?.label || id)}
@@ -124,8 +124,8 @@ export const Step2FormComponent: FC<Props> = (props) => {
                             />
                         </FormGroup>
                     </ConditionFilter>
-                </Spacer>
-            </Loadable>
+                </Loadable>
+            </Spacer>
 
             <Spacer ref={refs?.filterResourceType} type='pt-2'>
                 <ConditionFilter

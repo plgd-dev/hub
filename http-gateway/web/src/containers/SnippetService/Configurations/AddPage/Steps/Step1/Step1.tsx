@@ -18,6 +18,7 @@ import { messages as confT } from '../../../../SnippetService.i18n'
 import { messages as g } from '@/containers/Global.i18n'
 import { Inputs } from './Step1.types'
 import { useValidationsSchema } from '../../validationSchema'
+import { getResourceI18n } from '@/containers/SnippetService/utils'
 
 const Step1: FC<any> = (props) => {
     const { defaultFormData } = props
@@ -40,36 +41,12 @@ const Step1: FC<any> = (props) => {
         () => ({
             href: '',
             timeToLive: '0',
-            content: {
-                data: '',
-                contentType: 'application/json',
-                coapContentFormat: -1,
-            },
+            content: '',
         }),
         []
     )
 
-    const resourceI18n = useMemo(
-        () => ({
-            add: _(g.add),
-            addContent: _(confT.addContent),
-            close: _(g.close),
-            compactView: _(g.compactView),
-            content: _(g.content),
-            default: _(g.default),
-            duration: _(g.duration),
-            edit: _(g.edit),
-            fullView: _(g.fullView),
-            href: _(g.href),
-            name: _(g.name),
-            placeholder: _(g.placeholder),
-            requiredField: (field: string) => _(g.requiredField, { field }),
-            timeToLive: _(g.timeToLive),
-            unit: _(g.unit),
-            update: _(g.update),
-        }),
-        [_]
-    )
+    const resourceI18n = useMemo(() => getResourceI18n(_), [_])
 
     const resources = watch('resources')
     const name = watch('name')
@@ -89,6 +66,10 @@ const Step1: FC<any> = (props) => {
     const hasError = useMemo(() => {
         const hrefs: string[] = []
         let er = false
+
+        if (resources.length === 0) {
+            return true
+        }
 
         resources.forEach((resource, index) => {
             if (hrefs.includes(resource.href)) {
@@ -130,18 +111,12 @@ const Step1: FC<any> = (props) => {
                                     updateField('resources', newResources)
                                 }}
                                 onUpdate={(data) => {
-                                    const resData = {
-                                        ...data,
-                                        content: { ...data.content, data: btoa(data.content.data.toString()), contentType: 'application/json' },
-                                    }
-                                    const newResources = resources.map((r, index) => (index === key ? resData : r))
-                                    console.log(newResources)
+                                    const newResources = resources.map((r, index) => (index === key ? data : r))
                                     updateField('resources', newResources)
                                     setValue('resources', newResources)
                                 }}
                                 resourceData={resource}
-                                title={`Resource #${key}`}
-                                updateField={updateField}
+                                responsive={false}
                             />
                         </Spacer>
                     ))}
