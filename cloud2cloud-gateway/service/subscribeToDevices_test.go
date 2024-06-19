@@ -92,7 +92,7 @@ func TestRequestHandlerSubscribeToDevices(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 			err2 = eventsServer.Close()
 			assert.NoError(t, err2)
-		})).Methods("POST")
+		})).Methods(http.MethodPost)
 		_ = http.Serve(eventsServer, r)
 	}()
 
@@ -185,7 +185,7 @@ func TestRequestHandlerSubscribeToDevicesOffline(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 			err2 = eventsServer.Close()
 			assert.NoError(t, err2)
-		})).Methods("POST")
+		})).Methods(http.MethodPost)
 		_ = http.Serve(eventsServer, r)
 	}()
 

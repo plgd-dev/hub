@@ -29,6 +29,43 @@ func GetResponse(ctx context.Context, messagePool *pool.Pool, code codes.Code, t
 	}
 }
 
+func isGrpcTempError(err error) (ok bool, result bool) {
+	var grpcStatus interface {
+		GRPCStatus() *grpcStatus.Status
+	}
+	if errors.As(err, &grpcStatus) {
+		switch grpcStatus.GRPCStatus().Code() {
+		case grpcCodes.PermissionDenied,
+			grpcCodes.Unauthenticated,
+			grpcCodes.NotFound,
+			grpcCodes.AlreadyExists,
+			grpcCodes.InvalidArgument:
+			return true, false
+		}
+		return true, true
+	}
+	return false, false
+}
+
+func isOauth2TempError(err error) (ok bool, result bool) {
+	oauth2Err := &oauth2.RetrieveError{}
+	if errors.As(err, &oauth2Err) {
+		if oauth2Err.Response != nil {
+			switch oauth2Err.Response.StatusCode {
+			case
+				http.StatusBadRequest,
+				http.StatusConflict,
+				http.StatusNotFound,
+				http.StatusForbidden,
+				http.StatusUnauthorized:
+				return true, false
+			}
+		}
+		return true, true
+	}
+	return false, false
+}
+
 // IsTempError returns true if error is temporary. Only certain errors are not considered as temporary errors.
 func IsTempError(err error) bool {
 	if err == nil {
@@ -49,35 +86,17 @@ func IsTempError(err error) bool {
 	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 		return true
 	}
-	var grpcStatus interface {
-		GRPCStatus() *grpcStatus.Status
+
+	ok, temp := isGrpcTempError(err)
+	if ok {
+		return temp
 	}
-	if errors.As(err, &grpcStatus) {
-		switch grpcStatus.GRPCStatus().Code() {
-		case grpcCodes.PermissionDenied,
-			grpcCodes.Unauthenticated,
-			grpcCodes.NotFound,
-			grpcCodes.AlreadyExists,
-			grpcCodes.InvalidArgument:
-			return false
-		}
-		return true
+
+	ok, temp = isOauth2TempError(err)
+	if ok {
+		return temp
 	}
-	oauth2Err := &oauth2.RetrieveError{}
-	if errors.As(err, &oauth2Err) {
-		if oauth2Err.Response != nil {
-			switch oauth2Err.Response.StatusCode {
-			case
-				http.StatusBadRequest,
-				http.StatusConflict,
-				http.StatusNotFound,
-				http.StatusForbidden,
-				http.StatusUnauthorized:
-				return false
-			}
-		}
-		return true
-	}
+
 	switch {
 	// TODO: We could optimize this by using error.Is to avoid string comparison.
 	case strings.Contains(err.Error(), "connect: connection refused"),

@@ -24,7 +24,9 @@ type Projection struct {
 
 // NewProjection creates new resource projection.
 func NewProjection(ctx context.Context, name string, store eventstore.EventStore, subscriber eventbus.Subscriber, factoryModel eventstore.FactoryModelFunc) (*Projection, error) {
-	cqrsProjection, err := newProjection(ctx, store, name, subscriber, factoryModel, func(string, ...interface{}) {})
+	cqrsProjection, err := newProjection(ctx, store, name, subscriber, factoryModel, func(string, ...interface{}) {
+		// no-op if not set
+	})
 	if err != nil {
 		return nil, fmt.Errorf("cannot create Projection: %w", err)
 	}

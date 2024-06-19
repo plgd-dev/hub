@@ -177,23 +177,23 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Intercep
 	}))
 
 	// health check
-	r.HandleFunc("/", healthCheck).Methods("GET")
+	r.HandleFunc("/", healthCheck).Methods(http.MethodGet)
 
 	// retrieve all devices
-	r.HandleFunc(uri.Devices, requestHandler.RetrieveDevices).Methods("GET")
+	r.HandleFunc(uri.Devices, requestHandler.RetrieveDevices).Methods(http.MethodGet)
 
 	// devices subscription
-	r.HandleFunc(uri.DevicesSubscriptions, requestHandler.SubscribeToDevices).Methods("POST")
-	r.HandleFunc(uri.DevicesSubscription, requestHandler.RetrieveDevicesSubscription).Methods("GET")
-	r.HandleFunc(uri.DevicesSubscription, requestHandler.UnsubscribeFromDevices).Methods("DELETE")
+	r.HandleFunc(uri.DevicesSubscriptions, requestHandler.SubscribeToDevices).Methods(http.MethodPost)
+	r.HandleFunc(uri.DevicesSubscription, requestHandler.RetrieveDevicesSubscription).Methods(http.MethodGet)
+	r.HandleFunc(uri.DevicesSubscription, requestHandler.UnsubscribeFromDevices).Methods(http.MethodDelete)
 
 	// retrieve device
-	r.HandleFunc(uri.Device, requestHandler.RetrieveDevice).Methods("GET")
+	r.HandleFunc(uri.Device, requestHandler.RetrieveDevice).Methods(http.MethodGet)
 
 	// device subscription
-	r.HandleFunc(uri.DeviceSubscriptions, requestHandler.SubscribeToDevice).Methods("POST")
-	r.HandleFunc(uri.DeviceSubscription, requestHandler.RetrieveDeviceSubscription).Methods("GET")
-	r.HandleFunc(uri.DeviceSubscription, requestHandler.UnsubscribeFromDevice).Methods("DELETE")
+	r.HandleFunc(uri.DeviceSubscriptions, requestHandler.SubscribeToDevice).Methods(http.MethodPost)
+	r.HandleFunc(uri.DeviceSubscription, requestHandler.RetrieveDeviceSubscription).Methods(http.MethodGet)
+	r.HandleFunc(uri.DeviceSubscription, requestHandler.UnsubscribeFromDevice).Methods(http.MethodDelete)
 
 	s1 := r.PathPrefix(uri.Device).Subrouter()
 	// resource subscription
@@ -208,12 +208,12 @@ func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Intercep
 			return true
 		}
 		return false
-	}).Methods("POST").HandlerFunc(requestHandler.SubscribeToResource)
-	s1.MatcherFunc(resourceSubscriptionMatcher).Methods("GET").HandlerFunc(requestHandler.RetrieveResourceSubscription)
-	s1.MatcherFunc(resourceSubscriptionMatcher).Methods("DELETE").HandlerFunc(requestHandler.UnsubscribeFromResource)
+	}).Methods(http.MethodPost).HandlerFunc(requestHandler.SubscribeToResource)
+	s1.MatcherFunc(resourceSubscriptionMatcher).Methods(http.MethodGet).HandlerFunc(requestHandler.RetrieveResourceSubscription)
+	s1.MatcherFunc(resourceSubscriptionMatcher).Methods(http.MethodDelete).HandlerFunc(requestHandler.UnsubscribeFromResource)
 
 	// resource
-	s1.MatcherFunc(resourceMatcher).Methods("POST").HandlerFunc(requestHandler.UpdateResource)
-	s1.MatcherFunc(resourceMatcher).Methods("GET").HandlerFunc(requestHandler.RetrieveResource)
+	s1.MatcherFunc(resourceMatcher).Methods(http.MethodPost).HandlerFunc(requestHandler.UpdateResource)
+	s1.MatcherFunc(resourceMatcher).Methods(http.MethodGet).HandlerFunc(requestHandler.RetrieveResource)
 	return r
 }
