@@ -5,12 +5,15 @@ import { withTelemetry } from '@shared-ui/common/services/opentelemetry'
 import { SecurityConfig } from '@/containers/App/App.types'
 import { DELETE_CHUNK_SIZE, SnippetServiceApiEndpoints } from '@/containers/SnippetService/constants'
 
+const getWellKnow = () => security.getWellKnownConfig()
+
 export const createConfigurationApi = (body: any) => {
     const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
+    const url = getWellKnow()?.ui?.snippetService || httpGatewayAddress
 
     return withTelemetry(
         () =>
-            fetchApi(`${httpGatewayAddress}${SnippetServiceApiEndpoints.CONFIGURATIONS}`, {
+            fetchApi(`${url}${SnippetServiceApiEndpoints.CONFIGURATIONS}`, {
                 method: 'POST',
                 cancelRequestDeadlineTimeout,
                 body,
@@ -21,10 +24,11 @@ export const createConfigurationApi = (body: any) => {
 
 export const updateResourceConfigApi = (id: string, body: any) => {
     const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
+    const url = getWellKnow()?.ui?.snippetService || httpGatewayAddress
 
     return withTelemetry(
         () =>
-            fetchApi(`${httpGatewayAddress}${SnippetServiceApiEndpoints.CONFIGURATIONS}/${id}`, {
+            fetchApi(`${url}${SnippetServiceApiEndpoints.CONFIGURATIONS}/${id}`, {
                 method: 'PUT',
                 cancelRequestDeadlineTimeout,
                 body,
@@ -35,10 +39,11 @@ export const updateResourceConfigApi = (id: string, body: any) => {
 
 export const createConditionApi = (body: any) => {
     const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
+    const url = getWellKnow()?.ui?.snippetService || httpGatewayAddress
 
     return withTelemetry(
         () =>
-            fetchApi(`${httpGatewayAddress}${SnippetServiceApiEndpoints.CONDITIONS}`, {
+            fetchApi(`${url}${SnippetServiceApiEndpoints.CONDITIONS}`, {
                 method: 'POST',
                 cancelRequestDeadlineTimeout,
                 body,
@@ -49,10 +54,11 @@ export const createConditionApi = (body: any) => {
 
 export const updateConditionApi = (id: string, body: any) => {
     const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
+    const url = getWellKnow()?.ui?.snippetService || httpGatewayAddress
 
     return withTelemetry(
         () =>
-            fetchApi(`${httpGatewayAddress}${SnippetServiceApiEndpoints.CONDITIONS}/${id}`, {
+            fetchApi(`${url}${SnippetServiceApiEndpoints.CONDITIONS}/${id}`, {
                 method: 'PUT',
                 cancelRequestDeadlineTimeout,
                 body,
@@ -63,39 +69,45 @@ export const updateConditionApi = (id: string, body: any) => {
 
 export const deleteConfigurationsApi = (ids: string[]) => {
     const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
+    const url = getWellKnow()?.ui?.snippetService || httpGatewayAddress
 
     return deleteByChunks(
-        `${httpGatewayAddress}${SnippetServiceApiEndpoints.CONFIGURATIONS}/all`,
+        `${url}${SnippetServiceApiEndpoints.CONFIGURATIONS}`,
         ids,
         cancelRequestDeadlineTimeout,
         'snippet-service-delete-configurations',
         'httpIdFilter',
+        '/all',
         DELETE_CHUNK_SIZE
     )
 }
 
 export const deleteConditionsApi = (ids: string[]) => {
     const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
+    const url = getWellKnow()?.ui?.snippetService || httpGatewayAddress
 
     return deleteByChunks(
-        `${httpGatewayAddress}${SnippetServiceApiEndpoints.CONDITIONS}/all`,
+        `${url}${SnippetServiceApiEndpoints.CONDITIONS}`,
         ids,
         cancelRequestDeadlineTimeout,
         'snippet-service-delete-conditions',
         'httpIdFilter',
+        '/all',
         DELETE_CHUNK_SIZE
     )
 }
 
 export const deleteAppliedDeviceConfigApi = (ids: string[]) => {
     const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
+    const url = getWellKnow()?.ui?.snippetService || httpGatewayAddress
 
     return deleteByChunks(
-        `${httpGatewayAddress}${SnippetServiceApiEndpoints.CONFIGURATIONS_APPLIED}/all`,
+        `${url}${SnippetServiceApiEndpoints.CONFIGURATIONS_APPLIED}`,
         ids,
         cancelRequestDeadlineTimeout,
         'snippet-service-delete-applied-devices-config',
         'httpIdFilter',
+        '/all',
         DELETE_CHUNK_SIZE
     )
 }

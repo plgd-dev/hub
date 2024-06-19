@@ -10,11 +10,13 @@ import { devicesApiEndpoints } from '@/containers/Devices/constants'
 import { getAppliedDeviceConfigStatus } from '@/containers/SnippetService/utils'
 
 const getConfig = () => security.getGeneralConfig() as SecurityConfig
+const getWellKnow = () => security.getWellKnownConfig()
 
 export const useConfigurationList = (requestActive = true): StreamApiPropsType => {
     const { telemetryWebTracer, unauthorizedCallback } = useContext(AppContext)
+    const url = getWellKnow()?.ui?.snippetService || getConfig().httpGatewayAddress
 
-    return useStreamApi(`${getConfig().httpGatewayAddress}${SnippetServiceApiEndpoints.CONFIGURATIONS}`, {
+    return useStreamApi(`${url}${SnippetServiceApiEndpoints.CONFIGURATIONS}`, {
         telemetryWebTracer,
         telemetrySpan: 'snippet-service-get-configurations',
         requestActive,
@@ -24,8 +26,9 @@ export const useConfigurationList = (requestActive = true): StreamApiPropsType =
 
 export const useConfigurationDetail = (id: string, requestActive = false): StreamApiPropsType => {
     const { telemetryWebTracer, unauthorizedCallback } = useContext(AppContext)
+    const url = getWellKnow()?.ui?.snippetService || getConfig().httpGatewayAddress
 
-    return useStreamApi(`${getConfig().httpGatewayAddress}${SnippetServiceApiEndpoints.CONFIGURATIONS}?httpIdFilter=${id}/all`, {
+    return useStreamApi(`${url}${SnippetServiceApiEndpoints.CONFIGURATIONS}?httpIdFilter=${id}/all`, {
         telemetryWebTracer,
         telemetrySpan: `snippet-service-get-configuration-${id}`,
         requestActive,
@@ -35,8 +38,9 @@ export const useConfigurationDetail = (id: string, requestActive = false): Strea
 
 export const useConfigurationConditions = (id: string, requestActive = false): StreamApiPropsType => {
     const { telemetryWebTracer, unauthorizedCallback } = useContext(AppContext)
+    const url = getWellKnow()?.ui?.snippetService || getConfig().httpGatewayAddress
 
-    return useStreamApi(`${getConfig().httpGatewayAddress}${SnippetServiceApiEndpoints.CONDITIONS}?configurationIdFilter=${id}`, {
+    return useStreamApi(`${url}${SnippetServiceApiEndpoints.CONDITIONS}?configurationIdFilter=${id}`, {
         telemetryWebTracer,
         telemetrySpan: `snippet-service-get-configurations-conditions-${id}`,
         requestActive,
@@ -46,8 +50,9 @@ export const useConfigurationConditions = (id: string, requestActive = false): S
 
 export const useConfigurationAppliedConfigurations = (id: string, requestActive = false): StreamApiPropsType => {
     const { telemetryWebTracer, unauthorizedCallback } = useContext(AppContext)
+    const url = getWellKnow()?.ui?.snippetService || getConfig().httpGatewayAddress
 
-    return useStreamApi(`${getConfig().httpGatewayAddress}${SnippetServiceApiEndpoints.CONFIGURATIONS_APPLIED}?httpConfigurationIdFilter=${id}`, {
+    return useStreamApi(`${url}${SnippetServiceApiEndpoints.CONFIGURATIONS_APPLIED}?httpConfigurationIdFilter=${id}`, {
         telemetryWebTracer,
         telemetrySpan: `snippet-service-get-configuration-applied-configurations-${id}`,
         requestActive,
@@ -57,8 +62,9 @@ export const useConfigurationAppliedConfigurations = (id: string, requestActive 
 
 export const useConditionsList = (): StreamApiPropsType => {
     const { telemetryWebTracer, unauthorizedCallback } = useContext(AppContext)
+    const url = getWellKnow()?.ui?.snippetService || getConfig().httpGatewayAddress
 
-    return useStreamApi(`${getConfig().httpGatewayAddress}${SnippetServiceApiEndpoints.CONDITIONS}`, {
+    return useStreamApi(`${url}${SnippetServiceApiEndpoints.CONDITIONS}`, {
         telemetryWebTracer,
         telemetrySpan: 'snippet-service-get-conditions',
         unauthorizedCallback,
@@ -67,17 +73,16 @@ export const useConditionsList = (): StreamApiPropsType => {
 
 export const useConditionsDetail = (id: string, requestActive = false): StreamApiPropsType => {
     const { telemetryWebTracer, unauthorizedCallback } = useContext(AppContext)
+    const url = getWellKnow()?.ui?.snippetService || getConfig().httpGatewayAddress
+
     const [data, setData] = useState(null)
 
-    const { data: resData, ...rest }: StreamApiPropsType = useStreamApi(
-        `${getConfig().httpGatewayAddress}${SnippetServiceApiEndpoints.CONDITIONS}?httpIdFilter=${id}/latest`,
-        {
-            telemetryWebTracer,
-            telemetrySpan: `snippet-service-get-condition-${id}`,
-            requestActive,
-            unauthorizedCallback,
-        }
-    )
+    const { data: resData, ...rest }: StreamApiPropsType = useStreamApi(`${url}${SnippetServiceApiEndpoints.CONDITIONS}?httpIdFilter=${id}/latest`, {
+        telemetryWebTracer,
+        telemetrySpan: `snippet-service-get-condition-${id}`,
+        requestActive,
+        unauthorizedCallback,
+    })
 
     useEffect(() => {
         if (resData && Array.isArray(resData)) {
@@ -90,6 +95,8 @@ export const useConditionsDetail = (id: string, requestActive = false): StreamAp
 
 export const useAppliedConfigurationsList = (): StreamApiPropsType => {
     const { telemetryWebTracer, unauthorizedCallback } = useContext(AppContext)
+    const url = getWellKnow()?.ui?.snippetService || getConfig().httpGatewayAddress
+
     const [data, setData] = useState(null)
 
     const {
@@ -97,7 +104,7 @@ export const useAppliedConfigurationsList = (): StreamApiPropsType => {
         loading: appliedConfigLoading,
         refresh: appliedConfigRefresh,
         ...rest
-    }: StreamApiPropsType = useStreamApi(`${getConfig().httpGatewayAddress}${SnippetServiceApiEndpoints.CONFIGURATIONS_APPLIED}`, {
+    }: StreamApiPropsType = useStreamApi(`${url}${SnippetServiceApiEndpoints.CONFIGURATIONS_APPLIED}`, {
         telemetryWebTracer,
         telemetrySpan: 'snippet-service-get-applied-devices-config',
         unauthorizedCallback,
@@ -140,6 +147,8 @@ export const useAppliedConfigurationsList = (): StreamApiPropsType => {
 
 export const useAppliedConfigurationDetail = (id: string, requestActive = false): StreamApiPropsType => {
     const { telemetryWebTracer, unauthorizedCallback } = useContext(AppContext)
+    const url = getWellKnow()?.ui?.snippetService || getConfig().httpGatewayAddress
+
     const [data, setData] = useState(null)
 
     const {
@@ -147,7 +156,7 @@ export const useAppliedConfigurationDetail = (id: string, requestActive = false)
         loading: appliedConfigLoading,
         refresh: appliedConfigRefresh,
         ...rest
-    }: StreamApiPropsType = useStreamApi(`${getConfig().httpGatewayAddress}${SnippetServiceApiEndpoints.CONFIGURATIONS_APPLIED}?httpIdFilter=${id}/latest`, {
+    }: StreamApiPropsType = useStreamApi(`${url}${SnippetServiceApiEndpoints.CONFIGURATIONS_APPLIED}?httpIdFilter=${id}/latest`, {
         telemetryWebTracer,
         telemetrySpan: `snippet-service-get-applied-configuration-${id}`,
         requestActive,
