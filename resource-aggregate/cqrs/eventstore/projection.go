@@ -71,7 +71,9 @@ type Projection struct {
 // NewProjection projection over eventstore.
 func NewProjection(store EventStore, factoryModel FactoryModelFunc, logDebugfFunc LogDebugfFunc) *Projection {
 	if logDebugfFunc == nil {
-		logDebugfFunc = func(string, ...interface{}) {}
+		logDebugfFunc = func(string, ...interface{}) {
+			// no-op if not set
+		}
 	}
 	return &Projection{
 		store:           store,
