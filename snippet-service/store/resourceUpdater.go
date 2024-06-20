@@ -124,6 +124,8 @@ func (h *ResourceUpdater) getConfigurations(ctx context.Context, owner string, c
 		return []configurationWithConditions{}, nil
 	}
 
+	h.logger.Debugf("getting configurations for conditions: %v", idFilter)
+
 	// get configurations
 	configurations := make([]*pb.Configuration, 0, 4)
 	err := h.storage.GetConfigurations(ctx, owner, &pb.GetConfigurationsRequest{
@@ -139,6 +141,12 @@ func (h *ResourceUpdater) getConfigurations(ctx context.Context, owner string, c
 	if err != nil {
 		return nil, fmt.Errorf("cannot get configurations: %w", err)
 	}
+
+	ids := make([]string, 0, len(configurations))
+	for _, c := range configurations {
+		ids = append(ids, c.GetId())
+	}
+	h.logger.Debugf("got configurations for conditions: %v", ids)
 
 	confsWithConditions := make([]configurationWithConditions, 0, len(configurations))
 	for _, c := range configurations {
@@ -157,6 +165,11 @@ func (h *ResourceUpdater) getConfigurations(ctx context.Context, owner string, c
 			configuration: c,
 			conditions:    confConditions,
 		})
+		condIDs := make([]string, 0, len(confConditions))
+		for _, cond := range confConditions {
+			condIDs = append(condIDs, cond.GetId())
+		}
+		h.logger.Debugf("found %v conditions for configuration(id:%v)", condIDs, c.GetId())
 	}
 
 	return confsWithConditions, nil
@@ -249,7 +262,7 @@ func (h *ResourceUpdater) applyConfigurationToResources(ctx context.Context, own
 	if errC != nil {
 		if IsDuplicateKeyError(errC) {
 			// applied configuration already exists
-			h.logger.Debugf("applied configuration already exists for device(%s) and configuration(%s)", deviceID,
+			h.logger.Debugf("applied configuration already exists for device(%s) and configuration(%s) triggered", deviceID,
 				confWithConditions.configuration.GetId())
 			return nil
 		}
@@ -350,6 +363,7 @@ func (h *ResourceUpdater) applyConfigurations(ctx context.Context, rc *events.Re
 	if err != nil {
 		return err
 	}
+	h.logger.Debugf("found %v conditions for resource changed event(deviceID:%v, href:%v, resourceTypes %v)", len(conditions), deviceID, resourceHref, resourceTypes)
 
 	// get configurations with tokens
 	confsWithConditions, err := h.getConfigurations(ctx, owner, conditions)
