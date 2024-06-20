@@ -165,9 +165,7 @@ func TestRequestHandlerGetResourcePendingCommands(t *testing.T) {
 	secureGWShutdown()
 
 	createFn := func() {
-		createCtx, cancel := context.WithTimeout(ctx, time.Second)
-		defer cancel()
-		_, errC := c.CreateResource(createCtx, &pb.CreateResourceRequest{
+		_, errC := c.CreateResource(ctx, &pb.CreateResourceRequest{
 			ResourceId: commands.NewResourceID(deviceID, device.ResourceURI),
 			Content: &pb.Content{
 				ContentType: message.AppOcfCbor.String(),
@@ -175,8 +173,9 @@ func TestRequestHandlerGetResourcePendingCommands(t *testing.T) {
 					"power": 1,
 				}),
 			},
+			Async: true,
 		})
-		require.Error(t, errC)
+		require.NoError(t, errC)
 	}
 	createFn()
 	retrieveFn := func() {
@@ -189,9 +188,7 @@ func TestRequestHandlerGetResourcePendingCommands(t *testing.T) {
 	}
 	retrieveFn()
 	updateFn := func() {
-		updateCtx, cancel := context.WithTimeout(ctx, time.Second)
-		defer cancel()
-		_, errU := c.UpdateResource(updateCtx, &pb.UpdateResourceRequest{
+		_, errU := c.UpdateResource(ctx, &pb.UpdateResourceRequest{
 			ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 			Content: &pb.Content{
 				ContentType: message.AppOcfCbor.String(),
@@ -199,17 +196,17 @@ func TestRequestHandlerGetResourcePendingCommands(t *testing.T) {
 					"power": 1,
 				}),
 			},
+			Async: true,
 		})
-		require.Error(t, errU)
+		require.NoError(t, errU)
 	}
 	updateFn()
 	deleteFn := func() {
-		deleteCtx, cancel := context.WithTimeout(ctx, time.Second)
-		defer cancel()
-		_, errD := c.DeleteResource(deleteCtx, &pb.DeleteResourceRequest{
+		_, errD := c.DeleteResource(ctx, &pb.DeleteResourceRequest{
 			ResourceId: commands.NewResourceID(deviceID, device.ResourceURI),
+			Async:      true,
 		})
-		require.Error(t, errD)
+		require.NoError(t, errD)
 	}
 	deleteFn()
 	updateDeviceMetadataFn := func() {

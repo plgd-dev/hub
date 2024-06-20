@@ -113,9 +113,9 @@ func (rlp *resourceLinksProjection) Handle(ctx context.Context, iter eventstore.
 }
 
 func (rlp *resourceLinksProjection) ToResourceLinksPublished(typeFilter strings.Set) *events.ResourceLinksPublished {
-	resources := make([]*commands.Resource, 0, len(rlp.private.snapshot.GetResources()))
 	rlp.private.lock.RLock()
 	defer rlp.private.lock.RUnlock()
+	resources := make([]*commands.Resource, 0, len(rlp.private.snapshot.GetResources()))
 	for _, resource := range rlp.private.snapshot.GetResources() {
 		if hasMatchingType(resource.GetResourceTypes(), typeFilter) {
 			resources = append(resources, resource)

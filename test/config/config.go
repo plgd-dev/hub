@@ -43,6 +43,8 @@ const (
 	RESOURCE_DIRECTORY_HOST         = "localhost:20004"
 	CERTIFICATE_AUTHORITY_HOST      = "localhost:20011"
 	CERTIFICATE_AUTHORITY_HTTP_HOST = "localhost:20012"
+	SNIPPET_SERVICE_HOST            = "localhost:20013"
+	SNIPPET_SERVICE_HTTP_HOST       = "localhost:20014"
 	GRPC_GW_HOST                    = "localhost:20005"
 	C2C_CONNECTOR_HOST              = "localhost:20006"
 	C2C_CONNECTOR_DB                = "cloud2cloudConnector"
@@ -133,16 +135,20 @@ func MakeTLSServerConfig() server.Config {
 	}
 }
 
+func MakeAuthorizationConfig() grpcServer.AuthorizationConfig {
+	return grpcServer.AuthorizationConfig{
+		OwnerClaim: OWNER_CLAIM,
+		Config:     MakeValidatorConfig(),
+	}
+}
+
 func MakeGrpcServerConfig(address string) grpcServer.Config {
 	return grpcServer.Config{
-		Addr:        address,
-		SendMsgSize: DefaultGrpcMaxMsgSize,
-		RecvMsgSize: DefaultGrpcMaxMsgSize,
-		TLS:         MakeTLSServerConfig(),
-		Authorization: grpcServer.AuthorizationConfig{
-			OwnerClaim: OWNER_CLAIM,
-			Config:     MakeAuthorizationConfig(),
-		},
+		Addr:          address,
+		SendMsgSize:   DefaultGrpcMaxMsgSize,
+		RecvMsgSize:   DefaultGrpcMaxMsgSize,
+		TLS:           MakeTLSServerConfig(),
+		Authorization: MakeAuthorizationConfig(),
 		EnforcementPolicy: grpcServer.EnforcementPolicyConfig{
 			MinTime:             time.Second * 5,
 			PermitWithoutStream: true,
@@ -242,7 +248,7 @@ func MakeEventsStoreCqlDBConfig() *cqldb.Config {
 	}
 }
 
-func MakeAuthorizationConfig() validator.Config {
+func MakeValidatorConfig() validator.Config {
 	return validator.Config{
 		Authority: http.HTTPS_SCHEME + OAUTH_SERVER_HOST,
 		Audience:  http.HTTPS_SCHEME + OAUTH_MANAGER_AUDIENCE,

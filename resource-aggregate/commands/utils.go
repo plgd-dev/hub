@@ -1,12 +1,17 @@
 package commands
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/google/uuid"
 	"github.com/plgd-dev/device/v2/schema"
+	"github.com/plgd-dev/go-coap/v3/message"
 	extCodes "github.com/plgd-dev/hub/v2/grpc-gateway/pb/codes"
+	"github.com/plgd-dev/kit/v2/codec/cbor"
+	"github.com/plgd-dev/kit/v2/codec/json"
 	"google.golang.org/grpc/codes"
 )
 
@@ -171,4 +176,35 @@ func ResourceIdFromString(v string) *ResourceId {
 		DeviceId: deviceIDHref[0],
 		Href:     "/" + deviceIDHref[1],
 	}
+}
+
+func DecodeContent(content *Content, v interface{}) error {
+	if content == nil {
+		return errors.New("cannot parse empty content")
+	}
+
+	var decode func([]byte, interface{}) error
+
+	switch content.GetContentType() {
+	case message.AppCBOR.String(), message.AppOcfCbor.String():
+		decode = cbor.Decode
+	case message.AppJSON.String():
+		decode = json.Decode
+	case message.TextPlain.String():
+		switch out := v.(type) {
+		case *string:
+			*out = string(content.GetData())
+		case *[]byte:
+			*out = content.GetData()
+		case *interface{}:
+			*out = string(content.GetData())
+		default:
+			return fmt.Errorf("cannot decode content: invalid type (%T)", v)
+		}
+		return nil
+	default:
+		return fmt.Errorf("unsupported content type: %v", content.GetContentType())
+	}
+
+	return decode(content.GetData(), v)
 }
