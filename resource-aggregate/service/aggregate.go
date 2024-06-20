@@ -43,7 +43,6 @@ func (r *resourceStateModel) isPublished(resourceID *commands.ResourceId) bool {
 		return false
 	}
 	return r.resourceLinks.GetResources()[resourceID.GetHref()] != nil
-
 }
 
 func (r *resourceStateModel) model(_ context.Context, groupID string, aggregateID string) (cqrsAggregate.AggregateModel, error) {
