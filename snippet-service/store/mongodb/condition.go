@@ -56,17 +56,30 @@ func filterCondition(cond *pb.Condition) bson.M {
 	return filter
 }
 
-func latestCondition(cond *pb.Condition) bson.M {
+func updateLatestCondition(cond *pb.Condition) (bson.M, bson.M) {
 	ts := time.Now().UnixNano()
+	unsetLatest := bson.M{}
 	latest := bson.M{
 		store.VersionKey:            cond.GetVersion(),
 		store.EnabledKey:            cond.GetEnabled(),
 		store.TimestampKey:          ts,
-		store.DeviceIDFilterKey:     cond.GetDeviceIdFilter(),
-		store.ResourceTypeFilterKey: cond.GetResourceTypeFilter(),
-		store.ResourceHrefFilterKey: cond.GetResourceHrefFilter(),
 		store.JqExpressionFilterKey: cond.GetJqExpressionFilter(),
 		store.ApiAccessTokenKey:     cond.GetApiAccessToken(),
+	}
+	if len(cond.GetDeviceIdFilter()) == 0 {
+		unsetLatest[store.DeviceIDFilterKey] = ""
+	} else {
+		latest[store.DeviceIDFilterKey] = cond.GetDeviceIdFilter()
+	}
+	if len(cond.GetResourceTypeFilter()) == 0 {
+		unsetLatest[store.ResourceTypeFilterKey] = ""
+	} else {
+		latest[store.ResourceTypeFilterKey] = cond.GetResourceTypeFilter()
+	}
+	if len(cond.GetResourceHrefFilter()) == 0 {
+		unsetLatest[store.ResourceHrefFilterKey] = ""
+	} else {
+		latest[store.ResourceHrefFilterKey] = cond.GetResourceHrefFilter()
 	}
 	if cond.GetName() != "" {
 		latest[store.NameKey] = cond.GetName()
@@ -75,7 +88,7 @@ func latestCondition(cond *pb.Condition) bson.M {
 		// if version is not set -> set it to $latest.version + 1
 		latest[store.VersionKey] = incrementLatestVersion()
 	}
-	return latest
+	return latest, unsetLatest
 }
 
 func updateCondition(cond *pb.Condition) mongo.Pipeline {
@@ -90,14 +103,19 @@ func updateCondition(cond *pb.Condition) mongo.Pipeline {
 		store.JqExpressionFilterKey,
 		store.ApiAccessTokenKey,
 	})
-	return mongo.Pipeline{
+	latest, unsetLatest := updateLatestCondition(cond)
+	p := mongo.Pipeline{
 		bson.D{{Key: mongodb.Set, Value: bson.M{
-			store.LatestKey: latestCondition(cond),
+			store.LatestKey: latest,
 		}}},
 		bson.D{{Key: mongodb.Set, Value: bson.M{
 			store.VersionsKey: setVersions,
 		}}},
 	}
+	if len(unsetLatest) > 0 {
+		p = append(p, bson.D{{Key: mongodb.Unset, Value: unsetLatest}})
+	}
+	return p
 }
 
 func (s *Store) UpdateCondition(ctx context.Context, cond *pb.Condition) (*pb.Condition, error) {

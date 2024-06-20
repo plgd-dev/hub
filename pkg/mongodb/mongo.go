@@ -9,4 +9,5 @@ const (
 	All    Operator = "$all"
 	In     Operator = "$in"
 	Set    Operator = "$set"
+	Unset  Operator = "$unset"
 )
