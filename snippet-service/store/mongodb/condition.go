@@ -56,9 +56,9 @@ func filterCondition(cond *pb.Condition) bson.M {
 	return filter
 }
 
-func updateLatestCondition(cond *pb.Condition) (bson.M, bson.M) {
+func updateLatestCondition(cond *pb.Condition) (bson.M, bson.A) {
 	ts := time.Now().UnixNano()
-	unsetLatest := bson.M{}
+	unsetLatest := bson.A{}
 	latest := bson.M{
 		store.VersionKey:            cond.GetVersion(),
 		store.EnabledKey:            cond.GetEnabled(),
@@ -67,17 +67,17 @@ func updateLatestCondition(cond *pb.Condition) (bson.M, bson.M) {
 		store.ApiAccessTokenKey:     cond.GetApiAccessToken(),
 	}
 	if len(cond.GetDeviceIdFilter()) == 0 {
-		unsetLatest[store.DeviceIDFilterKey] = ""
+		unsetLatest = append(unsetLatest, store.DeviceIDFilterKey)
 	} else {
 		latest[store.DeviceIDFilterKey] = cond.GetDeviceIdFilter()
 	}
 	if len(cond.GetResourceTypeFilter()) == 0 {
-		unsetLatest[store.ResourceTypeFilterKey] = ""
+		unsetLatest = append(unsetLatest, store.ResourceTypeFilterKey)
 	} else {
 		latest[store.ResourceTypeFilterKey] = cond.GetResourceTypeFilter()
 	}
 	if len(cond.GetResourceHrefFilter()) == 0 {
-		unsetLatest[store.ResourceHrefFilterKey] = ""
+		unsetLatest = append(unsetLatest, store.ResourceHrefFilterKey)
 	} else {
 		latest[store.ResourceHrefFilterKey] = cond.GetResourceHrefFilter()
 	}
