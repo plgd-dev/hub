@@ -92,18 +92,12 @@ func updateLatestCondition(cond *pb.Condition) (bson.M, bson.M) {
 }
 
 func updateCondition(cond *pb.Condition) mongo.Pipeline {
-	setVersions := appendLatestToVersions([]string{
-		store.NameKey,
-		store.VersionKey,
-		store.EnabledKey,
-		store.TimestampKey,
-		store.DeviceIDFilterKey,
-		store.ResourceTypeFilterKey,
-		store.ResourceHrefFilterKey,
-		store.JqExpressionFilterKey,
-		store.ApiAccessTokenKey,
-	})
 	latest, unsetLatest := updateLatestCondition(cond)
+	keys := make([]string, 0, len(latest))
+	for k := range latest {
+		keys = append(keys, k)
+	}
+	setVersions := appendLatestToVersions(keys)
 	p := mongo.Pipeline{
 		bson.D{{Key: mongodb.Set, Value: bson.M{
 			store.LatestKey: latest,
