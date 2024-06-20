@@ -26,8 +26,6 @@ const ListPage: FC<any> = () => {
     const { data, loading, error, refresh } = useAppliedConfigurationsList()
     const navigate = useNavigate()
 
-    console.log(data)
-
     const breadcrumbs = useMemo(() => [{ label: _(confT.snippetService), link: pages.SNIPPET_SERVICE.LINK }, { label: _(confT.appliedConfiguration) }], [_])
 
     useEffect(() => {
@@ -95,7 +93,7 @@ const ListPage: FC<any> = () => {
             },
             {
                 Header: _(confT.condition),
-                accessor: 'conditionId',
+                accessor: 'conditionName',
                 Cell: ({ value, row }: { value: string; row: any }) => (
                     <Tag
                         onClick={() =>
@@ -106,14 +104,14 @@ const ListPage: FC<any> = () => {
                         variant={tagVariants.BLUE}
                     >
                         <IconLink />
-                        &nbsp;{_(confT.conditionLink)}
+                        &nbsp;{value}
                     </Tag>
                 ),
                 disableSortBy: true,
             },
             {
                 Header: _(g.configuration),
-                accessor: 'configurationId',
+                accessor: 'configurationName',
                 Cell: ({ value, row }: { value: string; row: any }) => (
                     <Tag
                         onClick={() =>
@@ -124,7 +122,7 @@ const ListPage: FC<any> = () => {
                         variant={tagVariants.BLUE}
                     >
                         <IconLink />
-                        &nbsp;{_(confT.configLink)}
+                        &nbsp;{value}
                     </Tag>
                 ),
                 disableSortBy: true,

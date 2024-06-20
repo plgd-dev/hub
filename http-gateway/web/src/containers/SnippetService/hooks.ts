@@ -8,6 +8,8 @@ import { SecurityConfig, StreamApiPropsType } from '@/containers/App/App.types'
 import { SnippetServiceApiEndpoints } from './constants'
 import { devicesApiEndpoints } from '@/containers/Devices/constants'
 import { getAppliedDeviceConfigStatus } from '@/containers/SnippetService/utils'
+import { AppliedConfigurationDataType, ConditionDataType, ConfigurationDataType } from '@/containers/SnippetService/ServiceSnippet.types'
+import { DeviceDataType } from '@/containers/Devices/Devices.types'
 
 const getConfig = () => security.getGeneralConfig() as SecurityConfig
 const getWellKnow = () => security.getWellKnownConfig()
@@ -110,27 +112,36 @@ export const useAppliedConfigurationsList = (): StreamApiPropsType => {
         unauthorizedCallback,
     })
 
+    const { data: configurationsData, loading: configurationsLoading } = useConfigurationList()
+    const { data: conditionsData, loading: conditionsLoading } = useConditionsList()
+
+    const loading = useMemo(
+        () => devicesLoading || appliedConfigLoading || configurationsLoading || conditionsLoading,
+        [appliedConfigLoading, configurationsLoading, devicesLoading, conditionsLoading]
+    )
+
     useEffect(() => {
-        if (!devicesLoading && !appliedConfigLoading && devicesData && appliedConfigData) {
-            const appliedDeviceConfig = appliedConfigData.map((config: any) => {
-                const device = devicesData.find((d: any) => d.id === config.deviceId)
+        if (!loading && devicesData && appliedConfigData && configurationsData && conditionsData) {
+            const appliedDeviceConfig = appliedConfigData.map((appliedConfig: AppliedConfigurationDataType) => {
+                const device = devicesData.find((d: DeviceDataType) => d.id === appliedConfig.deviceId)
                 return {
-                    ...config,
+                    ...appliedConfig,
                     name: device?.name,
-                    status: getAppliedDeviceConfigStatus(config),
+                    status: getAppliedDeviceConfigStatus(appliedConfig),
+                    configurationName: configurationsData.find((configuration: ConfigurationDataType) => configuration.id === appliedConfig.configurationId.id)
+                        ?.name,
+                    conditionName: conditionsData.find((condition: ConditionDataType) => condition.id === appliedConfig.conditionId.id)?.name,
                 }
             })
 
             setData(appliedDeviceConfig)
         }
-    }, [appliedConfigLoading, devicesData, devicesLoading, appliedConfigData])
+    }, [loading, devicesData, appliedConfigData, configurationsData, conditionsData])
 
     const refresh = useCallback(() => {
         appliedConfigRefresh()
         deviceRefresh()
     }, [appliedConfigRefresh, deviceRefresh])
-
-    const loading = useMemo(() => devicesLoading || appliedConfigLoading, [appliedConfigLoading, devicesLoading])
 
     return { data, refresh, loading, ...rest }
 }

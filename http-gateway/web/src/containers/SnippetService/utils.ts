@@ -1,6 +1,7 @@
 import { messages as confT } from '@/containers/SnippetService/SnippetService.i18n'
 import { messages as g } from '@/containers/Global.i18n'
 import { APPLIED_CONFIGURATIONS_STATUS } from '@/containers/SnippetService/constants'
+import { AppliedConfigurationDataType } from '@/containers/SnippetService/ServiceSnippet.types'
 
 export const getConfigurationsPageListI18n = (_: any) => ({
     singleSelected: _(confT.configuration),
@@ -17,23 +18,7 @@ export const getConfigurationsPageListI18n = (_: any) => ({
     deleteModalTitle: (selected: number) => (selected === 1 ? _(confT.deleteConfigurationMessage) : _(confT.deleteConfigurationsMessage, { count: selected })),
 })
 
-type AppliedDeviceConfigType = {
-    resources: {
-        correlationId: string
-        href: string
-        resourceUpdated: {
-            auditContext: {
-                correlationId: string
-                owner: string
-            }
-            content: string
-            status: string
-        }
-        status: string
-    }[]
-}
-
-export const getAppliedDeviceConfigStatus = (appliedDeviceConfig: AppliedDeviceConfigType) => {
+export const getAppliedDeviceConfigStatus = (appliedDeviceConfig: AppliedConfigurationDataType) => {
     const statuses = appliedDeviceConfig.resources.map((resource) => {
         if (resource.status === 'PENDING') {
             return 'PENDING'
