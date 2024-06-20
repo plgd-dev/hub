@@ -1,6 +1,6 @@
 import React, { FC, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { generatePath, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { generatePath, useNavigate, useParams } from 'react-router-dom'
 import ReactDOM from 'react-dom'
 import cloneDeep from 'lodash/cloneDeep'
 import { useMediaQuery } from 'react-responsive'
@@ -20,6 +20,7 @@ import BottomPanel from '@shared-ui/components/Layout/BottomPanel/BottomPanel'
 import Button from '@shared-ui/components/Atomic/Button'
 import AppContext from '@shared-ui/app/share/AppContext'
 import { useVersion } from '@shared-ui/common/hooks/use-version'
+import { OptionType } from '@shared-ui/components/Atomic/FormSelect/FormSelect.types'
 
 import { useConditionsDetail } from '@/containers/SnippetService/hooks'
 import PageLayout from '@/containers/Common/PageLayout'
@@ -30,7 +31,6 @@ import DetailHeader from './DetailHeader'
 import { messages as g } from '@/containers/Global.i18n'
 import DetailForm from './DetailForm'
 import { updateConditionApi } from '@/containers/SnippetService/rest'
-import { OptionType } from '@shared-ui/components/Atomic/FormSelect/FormSelect.types'
 
 const DetailPage: FC<any> = () => {
     const { conditionId } = useParams()
@@ -49,8 +49,6 @@ const DetailPage: FC<any> = () => {
     const { refsByKey, setRef } = useRefs()
     const { collapsed } = useContext(AppContext)
     const isMounted = useIsMounted()
-
-    const navigate = useNavigate()
 
     const breadcrumbs = useMemo(
         () => [

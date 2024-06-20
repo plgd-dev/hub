@@ -99,6 +99,20 @@ const testId = {
                 tabAppliedConfiguration: 'hub-snippet-service-configurations-detail-tab-applied-configuration',
             },
         },
+        conditions: {
+            detail: {
+                deleteButton: 'hub-snippet-service-conditions-detail-delete-button',
+                deleteButtonConfirm: 'hub-snippet-service-conditions-detail-delete-button-confirm',
+                deleteButtonCancel: 'hub-snippet-service-conditions-detail-delete-button-cancel',
+            },
+        },
+        appliedConfigurations: {
+            detail: {
+                deleteButton: 'hub-snippet-service-applied-configurations-detail-delete-button',
+                deleteButtonConfirm: 'hub-snippet-service-applied-configurations-detail-delete-button-confirm',
+                deleteButtonCancel: 'hub-snippet-service-applied-configurations-detail-delete-button-cancel',
+            },
+        },
     },
 }
 

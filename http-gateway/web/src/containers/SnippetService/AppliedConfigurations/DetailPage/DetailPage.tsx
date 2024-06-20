@@ -1,6 +1,7 @@
 import React, { FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { generatePath, useParams } from 'react-router-dom'
+import { generatePath, useNavigate, useParams } from 'react-router-dom'
+import { useMediaQuery } from 'react-responsive'
 
 import PageLayout from '@/containers/Common/PageLayout'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
@@ -8,7 +9,6 @@ import { getApiErrorMessage } from '@shared-ui/common/utils'
 import { useRefs } from '@shared-ui/common/hooks/useRefs'
 import IconInfo from '@shared-ui/components/Atomic/Icon/components/IconInfo'
 import IconShield from '@shared-ui/components/Atomic/Icon/components/IconShield'
-import IconGlobe from '@shared-ui/components/Atomic/Icon/components/IconGlobe'
 import { ItemType, SubItemItem } from '@shared-ui/components/Atomic/ContentMenu/ContentMenu.types'
 import Spacer from '@shared-ui/components/Atomic/Spacer'
 import Row from '@shared-ui/components/Atomic/Grid/Row'
@@ -20,7 +20,12 @@ import FormGroup from '@shared-ui/components/Atomic/FormGroup'
 import FormInput from '@shared-ui/components/Atomic/FormInput'
 import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
 import ResourceToggleCreator from '@shared-ui/components/Organisms/ResourceToggleCreator'
+import StatusTag from '@shared-ui/components/Atomic/StatusTag'
+import { tagVariants as statusTagVariants } from '@shared-ui/components/Atomic/StatusTag/constants'
+import { tagVariants } from '@shared-ui/components/Atomic/Tag/constants'
 import { ResourceType } from '@shared-ui/components/Organisms/ResourceToggleCreator/ResourceToggleCreator.types'
+import Tag from '@shared-ui/components/Atomic/Tag'
+import IconLink from '@shared-ui/components/Atomic/Icon/components/IconLink'
 
 import { messages as confT } from '@/containers/SnippetService/SnippetService.i18n'
 import { pages } from '@/routes'
@@ -28,6 +33,7 @@ import { useAppliedConfigurationDetail } from '@/containers/SnippetService/hooks
 import notificationId from '@/notificationId'
 import { messages as g } from '@/containers/Global.i18n'
 import { getResourceI18n } from '@/containers/SnippetService/utils'
+import DetailHeader from './DetailHeader'
 
 const DetailPage: FC<any> = () => {
     const { appliedConfigurationId } = useParams()
@@ -39,6 +45,7 @@ const DetailPage: FC<any> = () => {
     const [pageLoading, setPageLoading] = useState(false)
 
     const { refsByKey, setRef } = useRefs()
+    const navigate = useNavigate()
 
     const breadcrumbs = useMemo(
         () => [
@@ -64,7 +71,6 @@ const DetailPage: FC<any> = () => {
         () => [
             { id: '0', link: '#general', title: _(g.general), icon: <IconInfo /> },
             { id: '1', link: '#listOfResources', title: _(confT.listOfResources), icon: <IconShield /> },
-            { id: '2', link: '#appliedToDevices', title: _(confT.appliedToDevices), icon: <IconGlobe /> },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [data]
@@ -85,14 +91,52 @@ const DetailPage: FC<any> = () => {
         [refs]
     )
 
+    const getStatusTag = (resource: ResourceType) => {
+        switch (resource.resourceUpdated?.status) {
+            case 'SUCCESS':
+                return <StatusTag variant={statusTagVariants.SUCCESS}>{resource.resourceUpdated?.status}</StatusTag>
+            case 'ERROR':
+            default: {
+                return <StatusTag variant={statusTagVariants.ERROR}>{resource.resourceUpdated?.status}</StatusTag>
+            }
+        }
+    }
+
     const resourceI18n = useMemo(() => getResourceI18n(_), [_])
 
-    const isDesktopOrLaptop = true
+    const isDesktopOrLaptop = useMediaQuery(
+        {
+            query: '(min-width: 1200px)',
+        },
+        undefined,
+        () => {}
+    )
 
     return (
-        <PageLayout breadcrumbs={breadcrumbs} loading={loading || pageLoading} title={data?.name} xPadding={false}>
+        <PageLayout
+            breadcrumbs={breadcrumbs}
+            header={
+                <DetailHeader
+                    conditionId={data?.conditionId?.id || _(confT.onDemand)}
+                    conditionName={data?.conditionName !== -1 ? data?.conditionName : undefined}
+                    configurationId={data?.configurationId?.id || ''}
+                    configurationName={data?.configurationName || ''}
+                    id={data?.id || ''}
+                    loading={loading || pageLoading}
+                />
+            }
+            loading={loading || pageLoading}
+            title={data?.name}
+            xPadding={false}
+        >
             <Spacer style={{ height: '100%', overflow: 'hidden' }} type='pt-4 pl-10'>
-                <Row style={{ height: '100%' }}>
+                <Row
+                    style={
+                        isDesktopOrLaptop
+                            ? { height: '100%' }
+                            : { display: 'flex', flexDirection: 'column', flexWrap: 'nowrap', overflow: 'hidden', height: '100%' }
+                    }
+                >
                     <Column xl={3}>
                         <Spacer type={`mb-4${isDesktopOrLaptop ? '' : ' pr-10'}`}>
                             <ContentMenu
@@ -119,11 +163,51 @@ const DetailPage: FC<any> = () => {
                                             rightColSize={6}
                                             rows={[
                                                 {
-                                                    attribute: _(g.name),
+                                                    attribute: _(g.deviceName),
                                                     value: (
                                                         <FormGroup id='name' marginBottom={false} style={{ width: '100%' }}>
                                                             <FormInput disabled align='right' size='small' value={data?.name} />
                                                         </FormGroup>
+                                                    ),
+                                                },
+                                                {
+                                                    attribute: _(confT.configuration),
+                                                    value: (
+                                                        <Tag
+                                                            onClick={() =>
+                                                                navigate(
+                                                                    generatePath(pages.SNIPPET_SERVICE.CONFIGURATIONS.DETAIL.LINK, {
+                                                                        configurationId: data?.configurationId?.id,
+                                                                        tab: '',
+                                                                    })
+                                                                )
+                                                            }
+                                                            variant={tagVariants.BLUE}
+                                                        >
+                                                            <IconLink />
+                                                            <Spacer type='ml-2'>{data?.configurationName}</Spacer>
+                                                        </Tag>
+                                                    ),
+                                                },
+                                                {
+                                                    attribute: _(confT.condition),
+                                                    value: data?.conditionId ? (
+                                                        <Tag
+                                                            onClick={() =>
+                                                                navigate(
+                                                                    generatePath(pages.SNIPPET_SERVICE.CONDITIONS.DETAIL.LINK, {
+                                                                        conditionId: data?.conditionId?.id,
+                                                                        tab: '',
+                                                                    })
+                                                                )
+                                                            }
+                                                            variant={tagVariants.BLUE}
+                                                        >
+                                                            <IconLink />
+                                                            <Spacer type='ml-2'>{data?.conditionName}</Spacer>
+                                                        </Tag>
+                                                    ) : (
+                                                        <StatusTag variant={statusTagVariants.NORMAL}>{_(confT.onDemand)}</StatusTag>
                                                     ),
                                                 },
                                             ]}
@@ -138,18 +222,17 @@ const DetailPage: FC<any> = () => {
 
                                         <Spacer type='mt-6'>
                                             {data?.resources &&
-                                                data?.resources?.map((resource: ResourceType, key: number) => (
-                                                    <Spacer key={key} type='mb-2'>
-                                                        <ResourceToggleCreator defaultOpen readOnly i18n={resourceI18n} resourceData={resource} />
+                                                data?.resources?.map((resource, key: number) => (
+                                                    <Spacer key={resource.href} type='mb-2'>
+                                                        <ResourceToggleCreator
+                                                            defaultOpen
+                                                            readOnly
+                                                            i18n={resourceI18n}
+                                                            resourceData={resource}
+                                                            statusTag={getStatusTag(resource)}
+                                                        />
                                                     </Spacer>
                                                 ))}
-                                        </Spacer>
-                                    </div>
-
-                                    <div ref={(element: HTMLDivElement) => setRef(element, '2')}>
-                                        <Spacer type='mt-8'>
-                                            <Headline type='h5'>{_(confT.appliedToDevices)}</Headline>
-                                            <p style={{ margin: '4px 0 0 0' }}>Short description...</p>
                                         </Spacer>
                                     </div>
                                 </>

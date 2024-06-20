@@ -59,9 +59,9 @@ const DetailHeader: FC<Props> = (props) => {
                 navigate(generatePath(pages.SNIPPET_SERVICE.CONDITIONS.LINK))
             }}
             testIds={{
-                deleteButton: testId.snippetService.configurations.detail.deleteButton,
-                deleteButtonCancel: testId.snippetService.configurations.detail.deleteButtonCancel,
-                deleteButtonConfirm: testId.snippetService.configurations.detail.deleteButtonConfirm,
+                deleteButton: testId.snippetService.conditions.detail.deleteButton,
+                deleteButtonCancel: testId.snippetService.conditions.detail.deleteButtonCancel,
+                deleteButtonConfirm: testId.snippetService.conditions.detail.deleteButtonConfirm,
             }}
         />
     )

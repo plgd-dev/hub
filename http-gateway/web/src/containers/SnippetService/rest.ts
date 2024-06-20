@@ -97,7 +97,7 @@ export const deleteConditionsApi = (ids: string[]) => {
     )
 }
 
-export const deleteAppliedDeviceConfigApi = (ids: string[]) => {
+export const deleteAppliedConfigurationApi = (ids: string[]) => {
     const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
     const url = getWellKnow()?.ui?.snippetService || httpGatewayAddress
 

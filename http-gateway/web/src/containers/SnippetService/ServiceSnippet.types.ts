@@ -1,4 +1,4 @@
-import { ResourceType } from '@shared-ui/components/Organisms/ResourceToggleCreator/ResourceToggleCreator.types'
+import { ResourceContentType, ResourceType } from '@shared-ui/components/Organisms/ResourceToggleCreator/ResourceToggleCreator.types'
 
 export type ConfigurationDataType = {
     id: string
@@ -23,30 +23,26 @@ export type ConditionDataType = {
 }
 
 export type AppliedConfigurationDataType = {
-    configurationId: {
+    conditionId?: {
         id: string
         version: string
     }
-    conditionId: {
+    configurationId: {
         id: string
         version: string
     }
     deviceId: string
     id: string
+    onDemand?: boolean
+    resources: ResourceType[]
     status: number
     timestamp: string
     version: string
-    resources: {
-        correlationId: string
-        href: string
-        resourceUpdated: {
-            auditContext: {
-                correlationId: string
-                owner: string
-            }
-            content: string
-            status: string
-        }
-        status: string
-    }[]
+}
+
+export type AppliedConfigurationDataEnhancedType = AppliedConfigurationDataType & {
+    name: string
+    status: string
+    configurationName?: string
+    conditionName?: string | number
 }

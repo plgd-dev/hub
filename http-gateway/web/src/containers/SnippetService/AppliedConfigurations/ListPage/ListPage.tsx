@@ -6,9 +6,14 @@ import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
 import StatusPill from '@shared-ui/components/Atomic/StatusPill'
 import Tag from '@shared-ui/components/Atomic/Tag'
-import { tagVariants } from '@shared-ui/components/Atomic/Tag/constants'
 import IconLink from '@shared-ui/components/Atomic/Icon/components/IconLink'
 import { states } from '@shared-ui/components/Atomic/StatusPill/constants'
+import { tagVariants as statusTagVariants } from '@shared-ui/components/Atomic/StatusTag/constants'
+import { tagVariants } from '@shared-ui/components/Atomic/Tag/constants'
+import Tooltip from '@shared-ui/components/Atomic/Tooltip'
+import IconQuestion from '@shared-ui/components/Atomic/Icon/components/IconQuestion'
+import Spacer from '@shared-ui/components/Atomic/Spacer'
+import StatusTag from '@shared-ui/components/Atomic/StatusTag'
 
 import PageLayout from '@/containers/Common/PageLayout'
 import { messages as confT } from '../../SnippetService.i18n'
@@ -17,7 +22,7 @@ import notificationId from '@/notificationId'
 import { messages as g } from '@/containers/Global.i18n'
 import { pages } from '@/routes'
 import PageListTemplate from '@/containers/Common/PageListTemplate/PageListTemplate'
-import { deleteAppliedDeviceConfigApi } from '@/containers/SnippetService/rest'
+import { deleteAppliedConfigurationApi } from '@/containers/SnippetService/rest'
 import { APPLIED_CONFIGURATIONS_STATUS } from '@/containers/SnippetService/constants'
 
 const ListPage: FC<any> = () => {
@@ -67,24 +72,39 @@ const ListPage: FC<any> = () => {
     const columns = useMemo(
         () => [
             {
+                Header: _(confT.configurationName),
+                accessor: 'configurationName',
+                Cell: ({ value, row }: { value: string; row: any }) => (
+                    <a
+                        href={generatePath(pages.SNIPPET_SERVICE.CONFIGURATIONS.DETAIL.LINK, { configurationId: row.original.configurationId.id, tab: '' })}
+                        onClick={(e) => {
+                            e.preventDefault()
+                            navigate(
+                                generatePath(pages.SNIPPET_SERVICE.CONFIGURATIONS.DETAIL.LINK, { configurationId: row.original.configurationId.id, tab: '' })
+                            )
+                        }}
+                    >
+                        {value}
+                    </a>
+                ),
+                disableSortBy: true,
+            },
+            {
+                Header: _(confT.configurationVersion),
+                accessor: 'configurationId.version',
+                Cell: ({ value }: { value: string }) => <StatusTag variant={statusTagVariants.NORMAL}>{value}</StatusTag>,
+            },
+            {
                 Header: _(g.deviceName),
                 accessor: 'name',
                 Cell: ({ value, row }: { value: string | number; row: any }) => (
-                    <a
-                        href={generatePath(pages.SNIPPET_SERVICE.APPLIED_CONFIGURATIONS.DETAIL.LINK, { appliedConfigurationId: row.original.id })}
-                        onClick={(e) => {
-                            e.preventDefault()
-                            navigate(generatePath(pages.SNIPPET_SERVICE.APPLIED_CONFIGURATIONS.DETAIL.LINK, { appliedConfigurationId: row.original.id }))
-                        }}
-                    >
-                        <span className='no-wrap-text'>{value}</span>
-                    </a>
+                    <Tooltip content={row.original.deviceId} delay={0} portalTarget={document.body}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            {`${value} - ${row.original.deviceId.substr(0, 8)} ...`}
+                            <IconQuestion />
+                        </span>
+                    </Tooltip>
                 ),
-            },
-            {
-                Header: _(g.deviceId),
-                accessor: 'deviceId',
-                Cell: ({ value }: { value: string | number }) => <span className='no-wrap-text'>{value}</span>,
             },
             {
                 Header: _(g.status),
@@ -94,37 +114,25 @@ const ListPage: FC<any> = () => {
             {
                 Header: _(confT.condition),
                 accessor: 'conditionName',
-                Cell: ({ value, row }: { value: string; row: any }) => (
-                    <Tag
-                        onClick={() =>
-                            `${navigate(
-                                generatePath(pages.SNIPPET_SERVICE.CONDITIONS.DETAIL.LINK, { conditionId: row.original.conditionId.id, tab: '' })
-                            )}?version=${row.original.conditionId.version}`
-                        }
-                        variant={tagVariants.BLUE}
-                    >
-                        <IconLink />
-                        &nbsp;{value}
-                    </Tag>
-                ),
-                disableSortBy: true,
-            },
-            {
-                Header: _(g.configuration),
-                accessor: 'configurationName',
-                Cell: ({ value, row }: { value: string; row: any }) => (
-                    <Tag
-                        onClick={() =>
-                            navigate(
-                                generatePath(pages.SNIPPET_SERVICE.CONFIGURATIONS.DETAIL.LINK, { configurationId: row.original.configurationId.id, tab: '' })
-                            )
-                        }
-                        variant={tagVariants.BLUE}
-                    >
-                        <IconLink />
-                        &nbsp;{value}
-                    </Tag>
-                ),
+                Cell: ({ value, row }: { value: string; row: any }) => {
+                    if (row.original.onDemand) {
+                        return 'on demand'
+                    } else {
+                        return (
+                            <Tag
+                                onClick={() =>
+                                    `${navigate(
+                                        generatePath(pages.SNIPPET_SERVICE.CONDITIONS.DETAIL.LINK, { conditionId: row.original.conditionId.id, tab: '' })
+                                    )}?version=${row.original.conditionId.version}`
+                                }
+                                variant={tagVariants.BLUE}
+                            >
+                                <IconLink />
+                                <Spacer type='pl-2'>{value}</Spacer>
+                            </Tag>
+                        )
+                    }
+                },
                 disableSortBy: true,
             },
         ],
@@ -137,7 +145,7 @@ const ListPage: FC<any> = () => {
             <PageListTemplate
                 columns={columns}
                 data={data}
-                deleteApiMethod={deleteAppliedDeviceConfigApi}
+                deleteApiMethod={deleteAppliedConfigurationApi}
                 i18n={{
                     singleSelected: _(confT.appliedConfiguration),
                     multiSelected: _(confT.appliedConfigurations),

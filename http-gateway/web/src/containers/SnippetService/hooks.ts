@@ -3,13 +3,20 @@ import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import AppContext from '@shared-ui/app/share/AppContext'
 import { useStreamApi } from '@shared-ui/common/hooks'
 import { security } from '@shared-ui/common/services'
+import { useStreamVersionData } from '@shared-ui/common/hooks/useStreamVersionData'
 
 import { SecurityConfig, StreamApiPropsType } from '@/containers/App/App.types'
 import { SnippetServiceApiEndpoints } from './constants'
 import { devicesApiEndpoints } from '@/containers/Devices/constants'
 import { getAppliedDeviceConfigStatus } from '@/containers/SnippetService/utils'
-import { AppliedConfigurationDataType, ConditionDataType, ConfigurationDataType } from '@/containers/SnippetService/ServiceSnippet.types'
+import {
+    AppliedConfigurationDataEnhancedType,
+    AppliedConfigurationDataType,
+    ConditionDataType,
+    ConfigurationDataType,
+} from '@/containers/SnippetService/ServiceSnippet.types'
 import { DeviceDataType } from '@/containers/Devices/Devices.types'
+import { StreamApiReturnType } from '@shared-ui/common/types/API.types'
 
 const getConfig = () => security.getGeneralConfig() as SecurityConfig
 const getWellKnow = () => security.getWellKnownConfig()
@@ -85,21 +92,23 @@ export const useConditionsDetail = (id: string, requestActive = false): StreamAp
     })
 }
 
-export const useAppliedConfigurationsList = (): StreamApiPropsType => {
+export const useAppliedConfigurationsList = (id = '', requestActive = true): StreamApiPropsType => {
     const { telemetryWebTracer, unauthorizedCallback } = useContext(AppContext)
     const url = getWellKnow()?.ui?.snippetService || getConfig().httpGatewayAddress
 
     const [data, setData] = useState(null)
+    const filter = id && id !== '' ? `?idFilter=${id}` : ''
 
     const {
         data: appliedConfigData,
         loading: appliedConfigLoading,
         refresh: appliedConfigRefresh,
         ...rest
-    }: StreamApiPropsType = useStreamApi(`${url}${SnippetServiceApiEndpoints.CONFIGURATIONS_APPLIED}`, {
+    }: StreamApiPropsType = useStreamApi(`${url}${SnippetServiceApiEndpoints.CONFIGURATIONS_APPLIED}${filter}`, {
         telemetryWebTracer,
         telemetrySpan: 'snippet-service-get-applied-devices-config',
         unauthorizedCallback,
+        requestActive,
     })
 
     const {
@@ -111,9 +120,45 @@ export const useAppliedConfigurationsList = (): StreamApiPropsType => {
         telemetrySpan: 'get-devices',
         unauthorizedCallback,
     })
+    // const {
+    //     data: devicesData,
+    //     loading: devicesLoading,
+    //     refresh: deviceRefresh,
+    // }: StreamApiPropsType = useStreamApi(`${getConfig().httpGatewayAddress}${devicesApiEndpoints.DEVICES}/${detailData?.deviceId}`, {
+    //     telemetryWebTracer,
+    //     streamApi: false,
+    //     telemetrySpan: `get-device-${detailData?.deviceId || ''}`,
+    //     unauthorizedCallback,
+    //     requestActive: !!appliedConfigData,
+    // })
 
-    const { data: configurationsData, loading: configurationsLoading } = useConfigurationList()
-    const { data: conditionsData, loading: conditionsLoading } = useConditionsList()
+    const {
+        data: configurationsData,
+        loading: configurationsLoading,
+        refresh: configurationRefresh,
+    } = useStreamVersionData<ConfigurationDataType[]>({
+        unauthorizedCallback,
+        url: `${url}${SnippetServiceApiEndpoints.CONFIGURATIONS}`,
+        ids: appliedConfigData ? appliedConfigData.map((config: AppliedConfigurationDataType) => config.configurationId) : [],
+        requestActive: !!appliedConfigData,
+        telemetrySpan: 'snippet-service-get-configurations',
+    })
+
+    const {
+        data: conditionsData,
+        loading: conditionsLoading,
+        refresh: conditionsRefresh,
+    } = useStreamVersionData<ConditionDataType[]>({
+        unauthorizedCallback,
+        url: `${url}${SnippetServiceApiEndpoints.CONDITIONS}`,
+        ids: appliedConfigData
+            ? appliedConfigData
+                  .map((config: AppliedConfigurationDataType) => config.conditionId)
+                  .filter((i: { id: string; version: string } | undefined) => !!i)
+            : [],
+        requestActive: !!appliedConfigData,
+        telemetrySpan: 'snippet-service-get-conditions',
+    })
 
     const loading = useMemo(
         () => devicesLoading || appliedConfigLoading || configurationsLoading || conditionsLoading,
@@ -121,16 +166,17 @@ export const useAppliedConfigurationsList = (): StreamApiPropsType => {
     )
 
     useEffect(() => {
-        if (!loading && devicesData && appliedConfigData && configurationsData && conditionsData) {
+        if (!loading && configurationsData && appliedConfigData && configurationsData && conditionsData) {
             const appliedDeviceConfig = appliedConfigData.map((appliedConfig: AppliedConfigurationDataType) => {
-                const device = devicesData.find((d: DeviceDataType) => d.id === appliedConfig.deviceId)
                 return {
                     ...appliedConfig,
-                    name: device?.name,
+                    name: devicesData.find((d: DeviceDataType) => d.id === appliedConfig.deviceId)?.name,
                     status: getAppliedDeviceConfigStatus(appliedConfig),
                     configurationName: configurationsData.find((configuration: ConfigurationDataType) => configuration.id === appliedConfig.configurationId.id)
                         ?.name,
-                    conditionName: conditionsData.find((condition: ConditionDataType) => condition.id === appliedConfig.conditionId.id)?.name,
+                    conditionName: appliedConfig.conditionId
+                        ? conditionsData?.find((condition: ConditionDataType) => condition.id === appliedConfig.conditionId?.id)?.name
+                        : -1,
                 }
             })
 
@@ -141,59 +187,23 @@ export const useAppliedConfigurationsList = (): StreamApiPropsType => {
     const refresh = useCallback(() => {
         appliedConfigRefresh()
         deviceRefresh()
-    }, [appliedConfigRefresh, deviceRefresh])
+        configurationRefresh()
+        conditionsRefresh()
+    }, [appliedConfigRefresh, deviceRefresh, configurationRefresh, conditionsRefresh])
 
     return { data, refresh, loading, ...rest }
 }
 
-export const useAppliedConfigurationDetail = (id: string, requestActive = false): StreamApiPropsType => {
-    const { telemetryWebTracer, unauthorizedCallback } = useContext(AppContext)
-    const url = getWellKnow()?.ui?.snippetService || getConfig().httpGatewayAddress
-
+export const useAppliedConfigurationDetail = (id: string, requestActive = false): StreamApiReturnType<AppliedConfigurationDataEnhancedType> => {
     const [data, setData] = useState(null)
 
-    const {
-        data: appliedConfigData,
-        loading: appliedConfigLoading,
-        refresh: appliedConfigRefresh,
-        ...rest
-    }: StreamApiPropsType = useStreamApi(`${url}${SnippetServiceApiEndpoints.CONFIGURATIONS_APPLIED}?httpIdFilter=${id}/latest`, {
-        telemetryWebTracer,
-        telemetrySpan: `snippet-service-get-applied-configuration-${id}`,
-        requestActive,
-        unauthorizedCallback,
-    })
-
-    const {
-        data: devicesData,
-        loading: devicesLoading,
-        refresh: deviceRefresh,
-    }: StreamApiPropsType = useStreamApi(`${getConfig().httpGatewayAddress}${devicesApiEndpoints.DEVICES}`, {
-        telemetryWebTracer,
-        telemetrySpan: 'get-devices',
-        unauthorizedCallback,
-    })
+    const { data: listData, ...rest } = useAppliedConfigurationsList(id, requestActive)
 
     useEffect(() => {
-        if (!devicesLoading && !appliedConfigLoading) {
-            const detailData = appliedConfigData && appliedConfigData[0]
-
-            if (detailData) {
-                setData({
-                    ...detailData,
-                    name: devicesData.find((d: any) => d.id === detailData.deviceId)?.name,
-                    status: getAppliedDeviceConfigStatus(detailData),
-                })
-            }
+        if (listData) {
+            setData(listData[0])
         }
-    }, [appliedConfigLoading, devicesData, devicesLoading, appliedConfigData])
+    }, [listData])
 
-    const refresh = useCallback(() => {
-        appliedConfigRefresh()
-        deviceRefresh()
-    }, [appliedConfigRefresh, deviceRefresh])
-
-    const loading = useMemo(() => devicesLoading || appliedConfigLoading, [appliedConfigLoading, devicesLoading])
-
-    return { data, refresh, loading, ...rest }
+    return { data, ...rest }
 }

@@ -470,4 +470,8 @@ export const messages = defineMessages({
         id: 'global.success',
         defaultMessage: 'Success',
     },
+    noDevices: {
+        id: 'global.noDevices',
+        defaultMessage: 'No Devices',
+    },
 })

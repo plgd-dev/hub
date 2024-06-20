@@ -77,6 +77,10 @@ export const messages = defineMessages({
         id: 'snippetService.deleteCondition',
         defaultMessage: 'Delete Condition',
     },
+    deleteAppliedConfiguration: {
+        id: 'snippetService.deleteCondition',
+        defaultMessage: 'Delete Applied Configuration',
+    },
     conditionsError: {
         id: 'snippetService.conditionsError',
         defaultMessage: 'Conditions Error',
@@ -376,5 +380,25 @@ export const messages = defineMessages({
     appliedToDevices: {
         id: 'snippetService.appliedToDevices',
         defaultMessage: 'Applied to devices',
+    },
+    configurationName: {
+        id: 'snippetService.configurationName',
+        defaultMessage: 'Configuration name',
+    },
+    configurationVersion: {
+        id: 'snippetService.configurationVersion',
+        defaultMessage: 'Configuration version',
+    },
+    configurationId: {
+        id: 'snippetService.configurationId',
+        defaultMessage: 'Configuration ID',
+    },
+    conditionId: {
+        id: 'snippetService.conditionId',
+        defaultMessage: 'Condition ID',
+    },
+    onDemand: {
+        id: 'snippetService.onDemand',
+        defaultMessage: 'On demand',
     },
 })

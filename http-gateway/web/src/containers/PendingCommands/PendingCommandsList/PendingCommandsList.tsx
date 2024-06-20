@@ -127,6 +127,9 @@ const PendingCommandsList = forwardRef<PendingCommandsListRefType, Props>((props
         }
     }, [loadingPendingCommands]) // eslint-disable-line
 
+    console.log({ isPage })
+    console.log(deviceId)
+
     return (
         <>
             <Table
