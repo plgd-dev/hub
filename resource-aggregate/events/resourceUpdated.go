@@ -1,6 +1,7 @@
 package events
 
 import (
+	"slices"
 	"time"
 
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
@@ -63,6 +64,21 @@ func (e *ResourceUpdated) CopyData(event *ResourceUpdated) {
 	e.EventMetadata = event.GetEventMetadata()
 	e.OpenTelemetryCarrier = event.GetOpenTelemetryCarrier()
 	e.ResourceTypes = event.GetResourceTypes()
+}
+
+func (e *ResourceUpdated) Clone() *ResourceUpdated {
+	if e == nil {
+		return nil
+	}
+	return &ResourceUpdated{
+		ResourceId:           e.GetResourceId().Clone(),
+		Status:               e.GetStatus(),
+		Content:              e.GetContent().Clone(),
+		AuditContext:         e.GetAuditContext().Clone(),
+		EventMetadata:        e.GetEventMetadata().Clone(),
+		OpenTelemetryCarrier: e.GetOpenTelemetryCarrier(),
+		ResourceTypes:        slices.Clone(e.GetResourceTypes()),
+	}
 }
 
 func (e *ResourceUpdated) CheckInitialized() bool {

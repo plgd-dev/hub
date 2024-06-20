@@ -1,0 +1,3 @@
+{{- if and .Values.snippetservice.rbac.enabled .Values.snippetservice.rbac.roleBindingDefitionTpl }}
+{{- tpl .Values.snippetservice.rbac.roleBindingDefitionTpl $ }}
+{{- end }}

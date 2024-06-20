@@ -22,8 +22,9 @@ import (
 const eventTypeResourceStateSnapshotTaken = "resourcestatesnapshottaken"
 
 const (
-	errInvalidVersion         = "invalid version for events"
-	errInvalidCommandMetadata = "invalid command metadata"
+	errInvalidVersion           = "invalid version for events"
+	errResourceChangedNotExists = "resource changed not exists"
+	errInvalidCommandMetadata   = "invalid command metadata"
 )
 
 func (e *ResourceStateSnapshotTaken) AggregateID() string {
@@ -111,7 +112,7 @@ func (e *ResourceStateSnapshotTaken) processValidUntil(v resourceValidUntilValid
 	return true
 }
 
-func (e *ResourceStateSnapshotTaken) checkForDuplicitCorrelationID(correlationID string, now time.Time) error {
+func (e *ResourceStateSnapshotTaken) checkForDuplicityCorrelationID(correlationID string, now time.Time) error {
 	for _, event := range e.GetResourceCreatePendings() {
 		if event.IsExpired(now) {
 			continue
@@ -152,7 +153,7 @@ func (e *ResourceStateSnapshotTaken) handleEventResourceCreatePending(createPend
 	if ok := e.processValidUntil(createPending, now); !ok {
 		return nil
 	}
-	err := e.checkForDuplicitCorrelationID(createPending.GetAuditContext().GetCorrelationId(), now)
+	err := e.checkForDuplicityCorrelationID(createPending.GetAuditContext().GetCorrelationId(), now)
 	if err != nil {
 		return err
 	}
@@ -176,7 +177,7 @@ func (e *ResourceStateSnapshotTaken) handleEventResourceUpdatePending(updatePend
 	if ok := e.processValidUntil(updatePending, now); !ok {
 		return nil
 	}
-	err := e.checkForDuplicitCorrelationID(updatePending.GetAuditContext().GetCorrelationId(), now)
+	err := e.checkForDuplicityCorrelationID(updatePending.GetAuditContext().GetCorrelationId(), now)
 	if err != nil {
 		return err
 	}
@@ -193,7 +194,7 @@ func (e *ResourceStateSnapshotTaken) handleEventResourceRetrievePending(retrieve
 	if ok := e.processValidUntil(retrievePending, now); !ok {
 		return nil
 	}
-	err := e.checkForDuplicitCorrelationID(retrievePending.GetAuditContext().GetCorrelationId(), now)
+	err := e.checkForDuplicityCorrelationID(retrievePending.GetAuditContext().GetCorrelationId(), now)
 	if err != nil {
 		return err
 	}
@@ -210,7 +211,7 @@ func (e *ResourceStateSnapshotTaken) handleEventResourceDeletePending(deletePend
 	if ok := e.processValidUntil(deletePending, now); !ok {
 		return nil
 	}
-	err := e.checkForDuplicitCorrelationID(deletePending.GetAuditContext().GetCorrelationId(), now)
+	err := e.checkForDuplicityCorrelationID(deletePending.GetAuditContext().GetCorrelationId(), now)
 	if err != nil {
 		return err
 	}
@@ -227,14 +228,8 @@ func RemoveIndex(s []int, index int) []int {
 }
 
 func (e *ResourceStateSnapshotTaken) handleEventResourceCreated(created *ResourceCreated) error {
-	index := -1
 	resourceCreatePendings := e.GetResourceCreatePendings()
-	for i, event := range resourceCreatePendings {
-		if event.GetAuditContext().GetCorrelationId() == created.GetAuditContext().GetCorrelationId() {
-			index = i
-			break
-		}
-	}
+	index := findResourceOperationPendingIndex(created.GetAuditContext().GetCorrelationId(), resourceCreatePendings)
 	if index < 0 {
 		return status.Errorf(codes.InvalidArgument, "cannot find resource create pending event with correlationId('%v')", created.GetAuditContext().GetCorrelationId())
 	}
@@ -247,15 +242,18 @@ func (e *ResourceStateSnapshotTaken) handleEventResourceCreated(created *Resourc
 	return nil
 }
 
-func (e *ResourceStateSnapshotTaken) handleEventResourceUpdated(updated *ResourceUpdated) error {
-	index := -1
-	resourceUpdatePendings := e.GetResourceUpdatePendings()
-	for i, event := range resourceUpdatePendings {
-		if event.GetAuditContext().GetCorrelationId() == updated.GetAuditContext().GetCorrelationId() {
-			index = i
-			break
+func findResourceOperationPendingIndex[Op interface{ GetAuditContext() *commands.AuditContext }](correlationID string, ops []Op) int {
+	for i, event := range ops {
+		if event.GetAuditContext().GetCorrelationId() == correlationID {
+			return i
 		}
 	}
+	return -1
+}
+
+func (e *ResourceStateSnapshotTaken) handleEventResourceUpdated(updated *ResourceUpdated) error {
+	resourceUpdatePendings := e.GetResourceUpdatePendings()
+	index := findResourceOperationPendingIndex(updated.GetAuditContext().GetCorrelationId(), resourceUpdatePendings)
 	if index < 0 {
 		return status.Errorf(codes.InvalidArgument, "cannot find resource update pending event with correlationId('%v')", updated.GetAuditContext().GetCorrelationId())
 	}
@@ -269,14 +267,8 @@ func (e *ResourceStateSnapshotTaken) handleEventResourceUpdated(updated *Resourc
 }
 
 func (e *ResourceStateSnapshotTaken) handleEventResourceRetrieved(retrieved *ResourceRetrieved) error {
-	index := -1
 	resourceRetrievePendings := e.GetResourceRetrievePendings()
-	for i, event := range resourceRetrievePendings {
-		if event.GetAuditContext().GetCorrelationId() == retrieved.GetAuditContext().GetCorrelationId() {
-			index = i
-			break
-		}
-	}
+	index := findResourceOperationPendingIndex(retrieved.GetAuditContext().GetCorrelationId(), resourceRetrievePendings)
 	if index < 0 {
 		return status.Errorf(codes.InvalidArgument, "cannot find resource retrieve pending event with correlationId('%v')", retrieved.GetAuditContext().GetCorrelationId())
 	}
@@ -312,26 +304,27 @@ func (e *ResourceStateSnapshotTaken) handleEventResourceChanged(changed *Resourc
 	return false
 }
 
+func (e *ResourceStateSnapshotTaken) findResourceDeletePendingIndex(status commands.Status, correlationID string) (bool, int) {
+	if status == commands.Status_OK || status == commands.Status_ACCEPTED {
+		return true, -1
+	}
+	return false, findResourceOperationPendingIndex(correlationID, e.GetResourceDeletePendings())
+}
+
 func (e *ResourceStateSnapshotTaken) handleEventResourceDeleted(deleted *ResourceDeleted) error {
-	if deleted.GetStatus() == commands.Status_OK || deleted.GetStatus() == commands.Status_ACCEPTED {
+	deleteResource, deletePendingIndex := e.findResourceDeletePendingIndex(deleted.GetStatus(), deleted.GetAuditContext().GetCorrelationId())
+	switch {
+	case deleteResource:
 		e.ResourceCreatePendings = nil
 		e.ResourceRetrievePendings = nil
 		e.ResourceDeletePendings = nil
 		e.ResourceUpdatePendings = nil
-	} else {
-		index := -1
+	case deletePendingIndex >= 0:
 		resourceDeletePendings := e.GetResourceDeletePendings()
-		for i, event := range resourceDeletePendings {
-			if event.GetAuditContext().GetCorrelationId() == deleted.GetAuditContext().GetCorrelationId() {
-				index = i
-				break
-			}
-		}
-		if index < 0 {
-			return status.Errorf(codes.InvalidArgument, "cannot find resource delete pending event with correlationId('%v')", deleted.GetAuditContext().GetCorrelationId())
-		}
-		resourceDeletePendings = append(resourceDeletePendings[:index], resourceDeletePendings[index+1:]...)
+		resourceDeletePendings = append(resourceDeletePendings[:deletePendingIndex], resourceDeletePendings[deletePendingIndex+1:]...)
 		e.ResourceDeletePendings = resourceDeletePendings
+	default:
+		return status.Errorf(codes.InvalidArgument, "cannot find resource delete pending event with correlationId('%v')", deleted.GetAuditContext().GetCorrelationId())
 	}
 	e.ResourceId = deleted.GetResourceId()
 	e.EventMetadata = deleted.GetEventMetadata()
@@ -823,10 +816,66 @@ func (e *ResourceStateSnapshotTakenForCommand) handleCreateResourceRequest(ctx c
 	return []eventstore.Event{&rc}, nil
 }
 
+func (e *ResourceStateSnapshotTakenForCommand) validateCancelPendingCommandsForNotExistingResource(req *commands.CancelPendingCommandsRequest) bool {
+	if len(e.GetResourceUpdatePendings()) == 0 && len(e.GetResourceCreatePendings()) == 0 && len(e.GetResourceDeletePendings()) == 0 {
+		return false
+	}
+	if len(req.GetCorrelationIdFilter()) == 0 {
+		return true
+	}
+	correlationIdFilter := strings.MakeSet(req.GetCorrelationIdFilter()...)
+	for _, event := range e.GetResourceUpdatePendings() {
+		if correlationIdFilter.HasOneOf(event.GetAuditContext().GetCorrelationId()) {
+			return true
+		}
+	}
+	for _, event := range e.GetResourceCreatePendings() {
+		if correlationIdFilter.HasOneOf(event.GetAuditContext().GetCorrelationId()) {
+			return true
+		}
+	}
+	for _, event := range e.GetResourceDeletePendings() {
+		if correlationIdFilter.HasOneOf(event.GetAuditContext().GetCorrelationId()) {
+			return true
+		}
+	}
+	return false
+}
+
+func (e *ResourceStateSnapshotTakenForCommand) validateCommandForNotExistingResource(cmd aggregate.Command) bool {
+	if e.GetLatestResourceChange() != nil {
+		// resource exists
+		return true
+	}
+	switch req := cmd.(type) {
+	case *commands.NotifyResourceChangedRequest:
+		// NotifyResourceChangedRequest can have any version
+		return true
+	case *commands.UpdateResourceRequest:
+		// UpdateResourceRequest can have version 0 when if not exists is set
+		return req.GetForce()
+	case *commands.ConfirmResourceUpdateRequest:
+		return findResourceOperationPendingIndex(req.GetCorrelationId(), e.GetResourceUpdatePendings()) >= 0
+	case *commands.CreateResourceRequest:
+		// CreateResourceRequest can have version 0 when if not exists is set
+		return req.GetForce()
+	case *commands.ConfirmResourceCreateRequest:
+		return findResourceOperationPendingIndex(req.GetCorrelationId(), e.GetResourceCreatePendings()) >= 0
+	case *commands.DeleteResourceRequest:
+		// DeleteResourceRequest can have version 0 when if not exists is set
+		return req.GetForce()
+	case *commands.ConfirmResourceDeleteRequest:
+		deleteResource, deletePending := e.findResourceDeletePendingIndex(req.GetStatus(), req.GetCorrelationId())
+		return deleteResource || deletePending >= 0
+	case *commands.CancelPendingCommandsRequest:
+		return e.validateCancelPendingCommandsForNotExistingResource(req)
+	}
+	return false
+}
+
 func (e *ResourceStateSnapshotTakenForCommand) HandleCommand(ctx context.Context, cmd aggregate.Command, newVersion uint64) ([]eventstore.Event, error) {
-	// only NotifyResourceChangedRequest can have version 0
-	if _, ok := cmd.(*commands.NotifyResourceChangedRequest); !ok && newVersion == 0 {
-		return nil, status.Errorf(codes.NotFound, errInvalidVersion)
+	if !e.validateCommandForNotExistingResource(cmd) {
+		return nil, status.Errorf(codes.NotFound, errResourceChangedNotExists)
 	}
 
 	switch req := cmd.(type) {

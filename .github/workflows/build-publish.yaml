@@ -109,6 +109,10 @@ jobs:
           - name: cert-tool
             directory: tools/cert-tool
             file: tools/cert-tool/Dockerfile
+          - name: snippet-service
+            directory: snippet-service
+            file: .tmp/docker/snippet-service/Dockerfile
+            template-file: tools/docker/Dockerfile.in
     uses: ./.github/workflows/build-publish-cfg.yaml
     with:
       name: ${{ matrix.name }}

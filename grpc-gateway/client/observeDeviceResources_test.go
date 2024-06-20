@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	grpcgwTest "github.com/plgd-dev/hub/v2/grpc-gateway/test"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	test "github.com/plgd-dev/hub/v2/test"
@@ -24,7 +25,7 @@ func TestObserveDeviceResourcesPublish(t *testing.T) {
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
-	c := NewTestClient(t)
+	c := grpcgwTest.NewTestClient(t)
 	defer func() {
 		err := c.Close()
 		require.NoError(t, err)

@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"google.golang.org/grpc/peer"
 )
 
@@ -30,5 +31,13 @@ func (req *DeleteResourceRequest) ToRACommand(ctx context.Context) (*commands.De
 			ConnectionId: connectionID,
 		},
 		ResourceInterface: req.GetResourceInterface(),
+		Force:             req.GetForce(),
 	}, nil
+}
+
+func (x *DeleteResourceResponse) SetData(data *events.ResourceDeleted) {
+	if x == nil {
+		return
+	}
+	x.Data = data
 }

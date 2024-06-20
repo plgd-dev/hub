@@ -166,6 +166,7 @@ message UpdateResourceRequest {
     string resource_interface = 4;
     int64 time_to_live = 5; // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
     CommandMetadata command_metadata = 6;
+    bool force = 7; // if true, the command will be executed even if the resource does not exist
 }
 
 message UpdateResourceResponse {
@@ -306,6 +307,7 @@ message DeleteResourceRequest {
     int64 time_to_live = 3;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
     CommandMetadata command_metadata = 4;
     string resource_interface = 5;
+    bool force = 6; // if true, the command will be executed even if the resource does not exist
 }
 
 message DeleteResourceResponse {
@@ -379,6 +381,7 @@ message CreateResourceRequest {
     Content content = 3;
     int64 time_to_live = 4;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
     CommandMetadata command_metadata = 5;
+    bool force = 6; // if true, the command will be executed even if the resource does not exist
 }
 
 message CreateResourceResponse {
