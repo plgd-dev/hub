@@ -191,6 +191,7 @@ func (h *ResourceUpdater) applyConfigurationToResource(ctx context.Context, reso
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: configurationID,
 		},
+		Force: true,
 	}
 	ctxWithToken := pkgGrpc.CtxWithToken(ctx, token)
 	res, err := h.raClient.UpdateResource(ctxWithToken, upd)
