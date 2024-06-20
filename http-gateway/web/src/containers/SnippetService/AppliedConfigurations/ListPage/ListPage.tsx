@@ -7,7 +7,6 @@ import { getApiErrorMessage } from '@shared-ui/common/utils'
 import StatusPill from '@shared-ui/components/Atomic/StatusPill'
 import Tag from '@shared-ui/components/Atomic/Tag'
 import IconLink from '@shared-ui/components/Atomic/Icon/components/IconLink'
-import { states } from '@shared-ui/components/Atomic/StatusPill/constants'
 import { tagVariants as statusTagVariants } from '@shared-ui/components/Atomic/StatusTag/constants'
 import { tagVariants } from '@shared-ui/components/Atomic/Tag/constants'
 import Tooltip from '@shared-ui/components/Atomic/Tooltip'
@@ -23,7 +22,7 @@ import { messages as g } from '@/containers/Global.i18n'
 import { pages } from '@/routes'
 import PageListTemplate from '@/containers/Common/PageListTemplate/PageListTemplate'
 import { deleteAppliedConfigurationApi } from '@/containers/SnippetService/rest'
-import { APPLIED_CONFIGURATIONS_STATUS } from '@/containers/SnippetService/constants'
+import { getAppliedConfigurationStatusStatus, getAppliedConfigurationStatusValue } from '@/containers/SnippetService/utils'
 
 const ListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
@@ -42,32 +41,8 @@ const ListPage: FC<any> = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [error])
 
-    const getValue = useCallback(
-        (status: number) => {
-            switch (status) {
-                case APPLIED_CONFIGURATIONS_STATUS.ERROR:
-                    return _(g.error)
-                case APPLIED_CONFIGURATIONS_STATUS.PENDING:
-                    return _(g.pending)
-                case APPLIED_CONFIGURATIONS_STATUS.SUCCESS:
-                default:
-                    return _(g.success)
-            }
-        },
-        [_]
-    )
-
-    const getStatus = useCallback((status: number) => {
-        switch (status) {
-            case APPLIED_CONFIGURATIONS_STATUS.ERROR:
-                return states.OFFLINE
-            case APPLIED_CONFIGURATIONS_STATUS.PENDING:
-                return states.OCCUPIED
-            case APPLIED_CONFIGURATIONS_STATUS.SUCCESS:
-            default:
-                return states.ONLINE
-        }
-    }, [])
+    const getValue = useCallback((status: number) => getAppliedConfigurationStatusValue(status, _), [_])
+    const getStatus = useCallback((status: number) => getAppliedConfigurationStatusStatus(status), [])
 
     const columns = useMemo(
         () => [
@@ -87,7 +62,6 @@ const ListPage: FC<any> = () => {
                         {value}
                     </a>
                 ),
-                disableSortBy: true,
             },
             {
                 Header: _(confT.configurationVersion),

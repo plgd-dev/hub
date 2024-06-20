@@ -2,6 +2,7 @@ import { messages as confT } from '@/containers/SnippetService/SnippetService.i1
 import { messages as g } from '@/containers/Global.i18n'
 import { APPLIED_CONFIGURATIONS_STATUS } from '@/containers/SnippetService/constants'
 import { AppliedConfigurationDataType } from '@/containers/SnippetService/ServiceSnippet.types'
+import { states } from '@shared-ui/components/Atomic/StatusPill/constants'
 
 export const getConfigurationsPageListI18n = (_: any) => ({
     singleSelected: _(confT.configuration),
@@ -57,3 +58,27 @@ export const getResourceI18n = (_: any) => ({
     update: _(g.update),
     view: _(g.view),
 })
+
+export const getAppliedConfigurationStatusValue = (status: number, _: any) => {
+    switch (status) {
+        case APPLIED_CONFIGURATIONS_STATUS.ERROR:
+            return _(g.error)
+        case APPLIED_CONFIGURATIONS_STATUS.PENDING:
+            return _(g.pending)
+        case APPLIED_CONFIGURATIONS_STATUS.SUCCESS:
+        default:
+            return _(g.success)
+    }
+}
+
+export const getAppliedConfigurationStatusStatus = (status: number) => {
+    switch (status) {
+        case APPLIED_CONFIGURATIONS_STATUS.ERROR:
+            return states.OFFLINE
+        case APPLIED_CONFIGURATIONS_STATUS.PENDING:
+            return states.OCCUPIED
+        case APPLIED_CONFIGURATIONS_STATUS.SUCCESS:
+        default:
+            return states.ONLINE
+    }
+}

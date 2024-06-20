@@ -1,6 +1,6 @@
 import React, { FC, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { generatePath, useNavigate, useParams } from 'react-router-dom'
+import { generatePath, useParams } from 'react-router-dom'
 import ReactDOM from 'react-dom'
 import cloneDeep from 'lodash/cloneDeep'
 import { useMediaQuery } from 'react-responsive'
@@ -37,7 +37,7 @@ const DetailPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
     const { data: conditionData, loading, error, refresh } = useConditionsDetail(conditionId || '', !!conditionId)
 
-    const { Selector, data } = useVersion({
+    const { Selector, data, setSearchParams } = useVersion({
         i18n: { version: _(g.version), selectVersion: _(confT.selectVersion) },
         versionData: conditionData,
         refresh,
@@ -138,7 +138,7 @@ const DetailPage: FC<any> = () => {
                 { notificationId: notificationId.HUB_SNIPPET_SERVICE_CONDITIONS_DETAIL_PAGE_UPDATE_SUCCESS }
             )
 
-            handleReset()
+            setSearchParams({ version: dataForSave.version })
             refresh()
 
             setPageLoading(false)

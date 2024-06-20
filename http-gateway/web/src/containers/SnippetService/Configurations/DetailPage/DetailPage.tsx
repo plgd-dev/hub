@@ -52,7 +52,7 @@ const DetailPage: FC<any> = () => {
         []
     )
 
-    const { Selector, data } = useVersion({
+    const { Selector, data, setSearchParams } = useVersion({
         i18n: { version: _(g.version), selectVersion: _(confT.selectVersion) },
         versionData: configurationData,
         refresh,
@@ -120,10 +120,9 @@ const DetailPage: FC<any> = () => {
                 { notificationId: notificationId.HUB_SNIPPET_SERVICE_CONFIGURATIONS_DETAIL_PAGE_UPDATE_SUCCESS }
             )
 
-            handleReset()
-            refresh()
+            setSearchParams({ version: dataForSave.version })
 
-            navigate(generatePath(pages.SNIPPET_SERVICE.CONFIGURATIONS.LINK))
+            refresh()
 
             setPageLoading(false)
         } catch (error: any) {
