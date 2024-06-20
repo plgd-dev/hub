@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/go-coap/v3/pkg/cache"
 	"github.com/plgd-dev/go-coap/v3/pkg/runner/periodic"
@@ -359,21 +360,19 @@ func (h *ResourceUpdater) applyConfigurations(ctx context.Context, rc *events.Re
 		return nil
 	}
 
-	// apply configurations
-	// TODO: what to do with multiple configurations?
-	// currently we apply just the first
-	var confWithConditions *configurationWithConditions
-	for i, c := range confsWithConditions {
-		if len(c.configuration.GetResources()) > 0 {
-			confWithConditions = &confsWithConditions[i]
-			break
+	// apply configurations to resources
+	var errs *multierror.Error
+	for _, c := range confsWithConditions {
+		if len(c.configuration.GetResources()) == 0 {
+			h.logger.Errorf("no resources found for configuration(id:%v) for device %s", c.configuration.GetId(), deviceID)
+			continue
+		}
+		err2 := h.applyConfigurationToResources(ctx, owner, deviceID, &c)
+		if err2 != nil {
+			errs = multierror.Append(errs, err2)
 		}
 	}
-
-	if confWithConditions == nil {
-		return nil
-	}
-	return h.applyConfigurationToResources(ctx, owner, deviceID, confWithConditions)
+	return errs.ErrorOrNil()
 }
 
 func (h *ResourceUpdater) finishPendingConfiguration(ctx context.Context, resourceID *commands.ResourceId) {
