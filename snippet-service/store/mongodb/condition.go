@@ -56,60 +56,27 @@ func filterCondition(cond *pb.Condition) bson.M {
 	return filter
 }
 
-func updateLatestCondition(cond *pb.Condition) (bson.M, bson.A) {
-	ts := time.Now().UnixNano()
-	unsetLatest := bson.A{}
-	latest := bson.M{
-		store.VersionKey:            cond.GetVersion(),
-		store.EnabledKey:            cond.GetEnabled(),
-		store.TimestampKey:          ts,
-		store.JqExpressionFilterKey: cond.GetJqExpressionFilter(),
-		store.ApiAccessTokenKey:     cond.GetApiAccessToken(),
-	}
-	if len(cond.GetDeviceIdFilter()) == 0 {
-		unsetLatest = append(unsetLatest, store.DeviceIDFilterKey)
-	} else {
-		latest[store.DeviceIDFilterKey] = cond.GetDeviceIdFilter()
-	}
-	if len(cond.GetResourceTypeFilter()) == 0 {
-		unsetLatest = append(unsetLatest, store.ResourceTypeFilterKey)
-	} else {
-		latest[store.ResourceTypeFilterKey] = cond.GetResourceTypeFilter()
-	}
-	if len(cond.GetResourceHrefFilter()) == 0 {
-		unsetLatest = append(unsetLatest, store.ResourceHrefFilterKey)
-	} else {
-		latest[store.ResourceHrefFilterKey] = cond.GetResourceHrefFilter()
-	}
-	if cond.GetName() != "" {
-		latest[store.NameKey] = cond.GetName()
-	}
-	if cond.GetVersion() == 0 {
-		// if version is not set -> set it to $latest.version + 1
-		latest[store.VersionKey] = incrementLatestVersion()
-	}
-	return latest, unsetLatest
-}
-
 func updateCondition(cond *pb.Condition) mongo.Pipeline {
-	latest, unsetLatest := updateLatestCondition(cond)
-	keys := make([]string, 0, len(latest))
-	for k := range latest {
-		keys = append(keys, k)
-	}
-	setVersions := appendLatestToVersions(keys)
-	p := mongo.Pipeline{
+	pl := mongo.Pipeline{
 		bson.D{{Key: mongodb.Set, Value: bson.M{
-			store.LatestKey: latest,
-		}}},
-		bson.D{{Key: mongodb.Set, Value: bson.M{
-			store.VersionsKey: setVersions,
+			temporaryLatestKey: store.MakeConditionVersion(cond),
 		}}},
 	}
-	if len(unsetLatest) > 0 {
-		p = append(p, bson.D{{Key: mongodb.Unset, Value: unsetLatest}})
+	// if the version is not forced then look at the version of the last latest configuration
+	// and increment it by 1
+	if cond.GetVersion() == 0 {
+		pl = append(pl,
+			bson.D{{Key: mongodb.Set, Value: incrementLatestVersion(temporaryLatestKey + "." + store.VersionKey)}})
 	}
-	return p
+	pl = append(pl,
+		bson.D{{Key: mongodb.Set, Value: bson.M{
+			store.LatestKey: "$" + temporaryLatestKey,
+		}}},
+		bson.D{{Key: mongodb.Unset, Value: bson.A{temporaryLatestKey}}},
+		bson.D{{Key: mongodb.Set, Value: bson.M{
+			store.VersionsKey: appendLatestToVersions(),
+		}}})
+	return pl
 }
 
 func (s *Store) UpdateCondition(ctx context.Context, cond *pb.Condition) (*pb.Condition, error) {
@@ -119,6 +86,7 @@ func (s *Store) UpdateCondition(ctx context.Context, cond *pb.Condition) (*pb.Co
 	}
 
 	filter := filterCondition(newCond)
+	newCond.Timestamp = time.Now().UnixNano()
 	update := updateCondition(newCond)
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After).SetProjection(bson.M{store.VersionsKey: false})
 	result := s.Collection(conditionsCol).FindOneAndUpdate(ctx, filter, update, opts)

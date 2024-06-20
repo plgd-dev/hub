@@ -59,3 +59,13 @@ func (c *Configuration) Clone() *Configuration {
 	}
 	return cfg
 }
+
+func (r *InvokeConfigurationRequest) Validate() error {
+	if r.GetConfigurationId() == "" {
+		return errors.New("missing configuration ID")
+	}
+	if r.GetDeviceId() == "" {
+		return errors.New("missing device ID")
+	}
+	return nil
+}

@@ -222,9 +222,9 @@ func TestService(t *testing.T) {
 	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = pkgGrpc.CtxWithToken(ctx, token)
 
-	// configuration -> /light/1 -> { state: on, power: 42 }
-	conf, err := snippetClient.CreateConfiguration(ctx, &pb.Configuration{
-		Name:  "update light",
+	// configuration1 -> /light/1 -> { state: on }
+	conf1, err := snippetClient.CreateConfiguration(ctx, &pb.Configuration{
+		Name:  "update light state",
 		Owner: oauthService.DeviceUserID,
 		Resources: []*pb.Configuration_Resource{
 			{
@@ -233,6 +233,24 @@ func TestService(t *testing.T) {
 					ContentType: message.AppOcfCbor.String(),
 					Data: hubTest.EncodeToCbor(t, map[string]interface{}{
 						"state": true,
+					}),
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+	require.NotEmpty(t, conf1.GetId())
+
+	// configuration -> /light/1 -> { power: 42 }
+	conf2, err := snippetClient.CreateConfiguration(ctx, &pb.Configuration{
+		Name:  "update light power",
+		Owner: oauthService.DeviceUserID,
+		Resources: []*pb.Configuration_Resource{
+			{
+				Href: hubTest.TestResourceLightInstanceHref("1"),
+				Content: &commands.Content{
+					ContentType: message.AppOcfCbor.String(),
+					Data: hubTest.EncodeToCbor(t, map[string]interface{}{
 						"power": 42,
 					}),
 				},
@@ -240,14 +258,26 @@ func TestService(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
-	require.NotEmpty(t, conf.GetId())
+	require.NotEmpty(t, conf2.GetId())
 
-	// condition for /light/1
+	// condition for conf1
 	_, err = snippetClient.CreateCondition(ctx, &pb.Condition{
-		Name:               "apply update light",
+		Name:               "apply update light state",
 		Owner:              oauthService.DeviceUserID,
 		Enabled:            true,
-		ConfigurationId:    conf.GetId(),
+		ConfigurationId:    conf1.GetId(),
+		DeviceIdFilter:     []string{deviceID},
+		ResourceHrefFilter: []string{hubTest.TestResourceLightInstanceHref("1")},
+		ApiAccessToken:     token,
+	})
+	require.NoError(t, err)
+
+	// condition for conf2
+	_, err = snippetClient.CreateCondition(ctx, &pb.Condition{
+		Name:               "apply update light power",
+		Owner:              oauthService.DeviceUserID,
+		Enabled:            true,
+		ConfigurationId:    conf2.GetId(),
 		DeviceIdFilter:     []string{deviceID},
 		ResourceHrefFilter: []string{hubTest.TestResourceLightInstanceHref("1")},
 		ApiAccessToken:     token,

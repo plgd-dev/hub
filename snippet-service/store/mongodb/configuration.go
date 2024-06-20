@@ -52,33 +52,27 @@ func filterConfiguration(conf *pb.Configuration) bson.M {
 	return filter
 }
 
-func latestConfiguration(conf *pb.Configuration) bson.M {
-	ts := time.Now().UnixNano()
-	latest := bson.M{
-		store.VersionKey:   conf.GetVersion(),
-		store.ResourcesKey: conf.GetResources(),
-		store.TimestampKey: ts,
-	}
-	if conf.GetName() != "" {
-		latest[store.NameKey] = conf.GetName()
-	}
-	if conf.GetVersion() == 0 {
-		// if version is not set -> set it to $latest.version + 1
-		latest[store.VersionKey] = incrementLatestVersion()
-	}
-	return latest
-}
-
 func updateConfiguration(conf *pb.Configuration) mongo.Pipeline {
-	setVersions := appendLatestToVersions([]string{store.NameKey, store.VersionKey, store.ResourcesKey, store.TimestampKey})
-	return mongo.Pipeline{
+	pl := mongo.Pipeline{
 		bson.D{{Key: mongodb.Set, Value: bson.M{
-			store.LatestKey: latestConfiguration(conf),
-		}}},
-		bson.D{{Key: mongodb.Set, Value: bson.M{
-			store.VersionsKey: setVersions,
+			temporaryLatestKey: store.MakeConfigurationVersion(conf),
 		}}},
 	}
+	// if the version is not forced then look at the version of the last latest configuration
+	// and increment it by 1
+	if conf.GetVersion() == 0 {
+		pl = append(pl,
+			bson.D{{Key: mongodb.Set, Value: incrementLatestVersion(temporaryLatestKey + "." + store.VersionKey)}})
+	}
+	pl = append(pl,
+		bson.D{{Key: mongodb.Set, Value: bson.M{
+			store.LatestKey: "$" + temporaryLatestKey,
+		}}},
+		bson.D{{Key: mongodb.Unset, Value: bson.A{temporaryLatestKey}}},
+		bson.D{{Key: mongodb.Set, Value: bson.M{
+			store.VersionsKey: appendLatestToVersions(),
+		}}})
+	return pl
 }
 
 func (s *Store) UpdateConfiguration(ctx context.Context, conf *pb.Configuration) (*pb.Configuration, error) {
@@ -88,6 +82,7 @@ func (s *Store) UpdateConfiguration(ctx context.Context, conf *pb.Configuration)
 	}
 
 	filter := filterConfiguration(newConf)
+	newConf.Timestamp = time.Now().UnixNano()
 	update := updateConfiguration(newConf)
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After).SetProjection(bson.M{store.VersionsKey: false})
 	result := s.Collection(configurationsCol).FindOneAndUpdate(ctx, filter, update, opts)
@@ -112,8 +107,8 @@ func (s *Store) getConfigurationsByID(ctx context.Context, owner string, ids []s
 	return processCursor(ctx, cur, p)
 }
 
-// getLatestConfigurationsByID returns the latest configuration from documents matched by ID
-func (s *Store) getLatestConfigurationsByID(ctx context.Context, owner string, ids []string, p store.ProcessConfigurations) error {
+// GetLatestConfigurationsByID returns the latest configuration from documents matched by ID
+func (s *Store) GetLatestConfigurationsByID(ctx context.Context, owner string, ids []string, p store.ProcessConfigurations) error {
 	opt := options.Find().SetProjection(bson.M{store.VersionsKey: false})
 	cur, err := s.Collection(configurationsCol).Find(ctx, toIdFilterQuery(owner, toIdQuery(ids), false), opt)
 	if err != nil {
@@ -140,7 +135,7 @@ func (s *Store) GetConfigurations(ctx context.Context, owner string, query *pb.G
 	}
 
 	if len(vf.Latest) > 0 {
-		err := s.getLatestConfigurationsByID(ctx, owner, vf.Latest, p)
+		err := s.GetLatestConfigurationsByID(ctx, owner, vf.Latest, p)
 		errors = multierror.Append(errors, err)
 	}
 

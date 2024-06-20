@@ -47,6 +47,13 @@ func (c *AppliedDeviceConfiguration) Validate(isUpdate bool) error {
 	return nil
 }
 
+func MakeRelationTo(id string, version uint64) *AppliedDeviceConfiguration_RelationTo {
+	return &AppliedDeviceConfiguration_RelationTo{
+		Id:      id,
+		Version: version,
+	}
+}
+
 func (r *AppliedDeviceConfiguration_RelationTo) Clone() *AppliedDeviceConfiguration_RelationTo {
 	if r == nil {
 		return nil

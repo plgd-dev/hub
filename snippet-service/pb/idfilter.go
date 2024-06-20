@@ -176,22 +176,41 @@ func PartitionIDFilter(idfilter []*IDFilter) VersionFilter {
 	return vf
 }
 
+func parseVersion(v string) isIDFilter_Version {
+	switch v {
+	case "", "all":
+		return &IDFilter_All{
+			All: true,
+		}
+	case "latest":
+		return &IDFilter_Latest{
+			Latest: true,
+		}
+	default:
+		ver, err := strconv.ParseUint(v, 10, 64)
+		if err != nil {
+			return nil
+		}
+		return &IDFilter_Value{
+			Value: ver,
+		}
+	}
+}
+
 // we are permissive in parsing id filter
 func idFilterFromString(v string) *IDFilter {
 	if len(v) == 0 {
 		return nil
 	}
-	if v[0] == '/' {
+	for len(v) > 0 && v[0] == '/' {
 		v = v[1:]
 	}
 	idHref := strings.SplitN(v, "/", 2)
 	if len(idHref) < 2 {
-		ver, err := strconv.ParseUint(v, 10, 64)
-		if err == nil {
+		ver := parseVersion(v)
+		if ver != nil {
 			return &IDFilter{
-				Version: &IDFilter_Value{
-					Value: ver,
-				},
+				Version: ver,
 			}
 		}
 		return &IDFilter{
@@ -201,32 +220,14 @@ func idFilterFromString(v string) *IDFilter {
 			},
 		}
 	}
-	switch idHref[1] {
-	case "", "all":
-		return &IDFilter{
-			Id: idHref[0],
-			Version: &IDFilter_All{
-				All: true,
-			},
-		}
-	case "latest":
-		return &IDFilter{
-			Id: idHref[0],
-			Version: &IDFilter_Latest{
-				Latest: true,
-			},
-		}
-	default:
-		ver, err := strconv.ParseUint(idHref[1], 10, 64)
-		if err != nil {
-			return nil
-		}
-		return &IDFilter{
-			Id: idHref[0],
-			Version: &IDFilter_Value{
-				Value: ver,
-			},
-		}
+
+	ver := parseVersion(idHref[1])
+	if ver == nil {
+		return nil
+	}
+	return &IDFilter{
+		Id:      idHref[0],
+		Version: ver,
 	}
 }
 

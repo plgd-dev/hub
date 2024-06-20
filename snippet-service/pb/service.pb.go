@@ -770,9 +770,9 @@ type AppliedDeviceConfiguration struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id              string                                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" bson:"_id"`                                                   
-	DeviceId        string                                 `protobuf:"bytes,2,opt,name=device_id,json=deviceId,proto3" json:"device_id,omitempty" bson:"deviceId"`                       
-	ConfigurationId *AppliedDeviceConfiguration_RelationTo `protobuf:"bytes,3,opt,name=configuration_id,json=configurationId,proto3" json:"configuration_id,omitempty" bson:"configurationId"`  
+	Id              string                                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" bson:"_id"`
+	DeviceId        string                                 `protobuf:"bytes,2,opt,name=device_id,json=deviceId,proto3" json:"device_id,omitempty" bson:"deviceId"`
+	ConfigurationId *AppliedDeviceConfiguration_RelationTo `protobuf:"bytes,3,opt,name=configuration_id,json=configurationId,proto3" json:"configuration_id,omitempty" bson:"configurationId"`
 	// Types that are assignable to ExecutedBy:
 	//
 	//	*AppliedDeviceConfiguration_OnDemand
@@ -888,7 +888,7 @@ type AppliedDeviceConfiguration_OnDemand struct {
 }
 
 type AppliedDeviceConfiguration_ConditionId struct {
-	ConditionId *AppliedDeviceConfiguration_RelationTo `protobuf:"bytes,5,opt,name=condition_id,json=conditionId,proto3,oneof" bson:"conditionId"`  
+	ConditionId *AppliedDeviceConfiguration_RelationTo `protobuf:"bytes,5,opt,name=condition_id,json=conditionId,proto3,oneof" bson:"conditionId"`
 }
 
 func (*AppliedDeviceConfiguration_OnDemand) isAppliedDeviceConfiguration_ExecutedBy() {}
@@ -1228,9 +1228,9 @@ type AppliedDeviceConfiguration_Resource struct {
 
 	Href string `protobuf:"bytes,1,opt,name=href,proto3" json:"href,omitempty"`
 	// Reused from invoke command or generated. Can be used to retrieve corresponding pending command.
-	CorrelationId   string                                     `protobuf:"bytes,2,opt,name=correlation_id,json=correlationId,proto3" json:"correlation_id,omitempty" bson:"correlationId"`  
+	CorrelationId   string                                     `protobuf:"bytes,2,opt,name=correlation_id,json=correlationId,proto3" json:"correlation_id,omitempty" bson:"correlationId"`
 	Status          AppliedDeviceConfiguration_Resource_Status `protobuf:"varint,3,opt,name=status,proto3,enum=snippetservice.pb.AppliedDeviceConfiguration_Resource_Status" json:"status,omitempty"`
-	ResourceUpdated *events.ResourceUpdated                    `protobuf:"bytes,4,opt,name=resource_updated,json=resourceUpdated,proto3" json:"resource_updated,omitempty" bson:"resourceUpdated,omitempty"`  
+	ResourceUpdated *events.ResourceUpdated                    `protobuf:"bytes,4,opt,name=resource_updated,json=resourceUpdated,proto3" json:"resource_updated,omitempty" bson:"resourceUpdated,omitempty"`
 }
 
 func (x *AppliedDeviceConfiguration_Resource) Reset() {

@@ -70,7 +70,7 @@ func TestRequestHandlerGetConfigurations(t *testing.T) {
 			wantErr:      true,
 		},
 		{
-			name: "get certain configuration",
+			name: "owner1/id1/version0",
 			args: args{
 				token: oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTest, map[string]interface{}{
 					snippetCfg.APIs.GRPC.Authorization.OwnerClaim: test.Owner(1),
@@ -114,7 +114,7 @@ func TestRequestHandlerGetConfigurations(t *testing.T) {
 				}),
 				uri: test.HTTPURI(snippetHttp.Configurations),
 				httpIDFilter: []string{
-					"//all",
+					"/all",
 				},
 			},
 			wantHTTPCode: http.StatusOK,

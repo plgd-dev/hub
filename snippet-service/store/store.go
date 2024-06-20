@@ -108,6 +108,8 @@ type Store interface {
 	DeleteConfigurations(ctx context.Context, owner string, query *pb.DeleteConfigurationsRequest) (int64, error)
 	// InsertConditions inserts conditions into the database.
 	InsertConfigurations(ctx context.Context, configurations ...*Configuration) error
+	// GetLatestConfigurationsByID finds latest configurations by their IDs.
+	GetLatestConfigurationsByID(ctx context.Context, owner string, ids []string, p ProcessConfigurations) error
 
 	// GetAppliedConfigurations loads applied device configurations from the database.
 	GetAppliedConfigurations(ctx context.Context, owner string, query *pb.GetAppliedDeviceConfigurationsRequest, p ProccessAppliedDeviceConfigurations) error

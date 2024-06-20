@@ -11,6 +11,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+const (
+	temporaryLatestKey = "__latest"
+)
+
 func addMatchCondition(owner string, id string, notEmpty bool) bson.D {
 	match := bson.D{
 		{Key: store.VersionsKey + ".0", Value: bson.M{mongodb.Exists: notEmpty}},
@@ -24,11 +28,7 @@ func addMatchCondition(owner string, id string, notEmpty bool) bson.D {
 	return match
 }
 
-func appendLatestToVersions(fields []string) bson.M {
-	latest := bson.M{}
-	for _, field := range fields {
-		latest[field] = "$" + store.LatestKey + "." + field
-	}
+func appendLatestToVersions() bson.M {
 	return bson.M{
 		"$concatArrays": bson.A{
 			bson.M{
@@ -37,16 +37,18 @@ func appendLatestToVersions(fields []string) bson.M {
 					bson.A{},
 				},
 			},
-			bson.A{latest},
+			bson.A{"$" + store.LatestKey},
 		},
 	}
 }
 
-func incrementLatestVersion() bson.M {
+func incrementLatestVersion(key string) bson.M {
 	return bson.M{
-		"$add": bson.A{
-			bson.M{"$ifNull": bson.A{"$" + store.LatestKey + "." + store.VersionKey, 0}},
-			1,
+		key: bson.M{
+			"$add": bson.A{
+				bson.M{"$ifNull": bson.A{"$" + store.LatestKey + "." + store.VersionKey, 0}},
+				1,
+			},
 		},
 	}
 }

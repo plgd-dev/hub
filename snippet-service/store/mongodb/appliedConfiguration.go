@@ -160,7 +160,7 @@ func (s *Store) updateAppliedConfigurationPendingResources(ctx context.Context, 
 			mongodb.Set: bson.M{
 				store.ResourcesKey + ".$[elem].status": r.Status.String(),
 			},
-			"$unset": bson.M{
+			mongodb.Unset: bson.M{
 				store.ResourcesKey + ".$[elem].resourceUpdated": "",
 			},
 		}

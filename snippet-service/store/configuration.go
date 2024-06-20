@@ -100,3 +100,12 @@ func (c *Configuration) Clone() *Configuration {
 	}
 	return c2
 }
+
+type InvokeConfigurationRequest = pb.InvokeConfigurationRequest
+
+func ValidateInvokeConfigurationRequest(req *InvokeConfigurationRequest) error {
+	if err := req.Validate(); err != nil {
+		return errInvalidArgument(err)
+	}
+	return nil
+}
