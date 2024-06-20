@@ -30,6 +30,7 @@ import DetailHeader from './DetailHeader'
 import { messages as g } from '@/containers/Global.i18n'
 import DetailForm from './DetailForm'
 import { updateConditionApi } from '@/containers/SnippetService/rest'
+import { OptionType } from '@shared-ui/components/Atomic/FormSelect/FormSelect.types'
 
 const DetailPage: FC<any> = () => {
     const { conditionId } = useParams()
@@ -127,6 +128,9 @@ const DetailPage: FC<any> = () => {
             const dataForSave = cloneDeep(formData)
             delete dataForSave.id
 
+            // FormSelect with multiple values
+            dataForSave.deviceIdFilter = dataForSave.deviceIdFilter.map((device: string | OptionType) => (typeof device === 'string' ? device : device.value))
+
             dataForSave.version = (parseInt(dataForSave.version, 10) + 1).toString()
 
             await updateConditionApi(formData.id || '', dataForSave)
@@ -140,9 +144,6 @@ const DetailPage: FC<any> = () => {
             refresh()
 
             setPageLoading(false)
-
-            // temp
-            navigate(generatePath(pages.SNIPPET_SERVICE.CONDITIONS.LINK))
         } catch (error: any) {
             let e = error
             if (!(error instanceof Error)) {

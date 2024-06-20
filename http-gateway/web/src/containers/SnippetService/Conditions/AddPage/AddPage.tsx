@@ -17,6 +17,7 @@ import { messages as confT } from '@/containers/SnippetService/SnippetService.i1
 import notificationId from '@/notificationId'
 import cloneDeep from 'lodash/cloneDeep'
 import { createConditionApi } from '@/containers/SnippetService/rest'
+import { OptionType } from '@shared-ui/components/Atomic/FormSelect/FormSelect.types'
 
 const Step1 = lazy(() => import('./Steps/Step1'))
 const Step2 = lazy(() => import('./Steps/Step2'))
@@ -73,7 +74,7 @@ const AddPage: FC<any> = () => {
             const dataForSave = cloneDeep(formData)
 
             // FormSelect with multiple values
-            dataForSave.deviceIdFilter = dataForSave.deviceIdFilter.map((device: any) => (typeof device === 'string' ? device : device.value))
+            dataForSave.deviceIdFilter = dataForSave.deviceIdFilter.map((device: string | OptionType) => (typeof device === 'string' ? device : device.value))
 
             await createConditionApi(dataForSave)
 

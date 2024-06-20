@@ -106,8 +106,8 @@ export const deleteAppliedDeviceConfigApi = (ids: string[]) => {
         ids,
         cancelRequestDeadlineTimeout,
         'snippet-service-delete-applied-devices-config',
-        'httpIdFilter',
-        '/all',
+        'idFilter',
+        '',
         DELETE_CHUNK_SIZE
     )
 }

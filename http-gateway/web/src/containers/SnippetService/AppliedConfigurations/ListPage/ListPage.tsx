@@ -26,6 +26,8 @@ const ListPage: FC<any> = () => {
     const { data, loading, error, refresh } = useAppliedConfigurationsList()
     const navigate = useNavigate()
 
+    console.log(data)
+
     const breadcrumbs = useMemo(() => [{ label: _(confT.snippetService), link: pages.SNIPPET_SERVICE.LINK }, { label: _(confT.appliedConfiguration) }], [_])
 
     useEffect(() => {
