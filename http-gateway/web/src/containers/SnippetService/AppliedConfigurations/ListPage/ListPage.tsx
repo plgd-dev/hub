@@ -24,7 +24,6 @@ const ListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
 
     const { data, loading, error, refresh } = useAppliedConfigurationsList()
-    console.log(data)
     const navigate = useNavigate()
 
     const breadcrumbs = useMemo(() => [{ label: _(confT.snippetService), link: pages.SNIPPET_SERVICE.LINK }, { label: _(confT.appliedConfiguration) }], [_])

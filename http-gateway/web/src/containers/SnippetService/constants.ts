@@ -14,7 +14,13 @@ export const DEFAULT_CONFIGURATIONS_DATA = {
     timeToLive: '0',
 }
 
-export const DEFAULT_CONDITIONS_DATA = {}
+export const DEFAULT_CONDITIONS_DATA = {
+    name: '',
+    enabled: false,
+    resourceTypeFilter: [],
+    resourceHrefFilter: [],
+    jqExpressionFilter: '',
+}
 
 export const APPLIED_CONFIGURATIONS_STATUS = {
     SUCCESS: 1,

@@ -40,14 +40,16 @@ export const Step2FormComponent: FC<Props> = (props) => {
     const [defaultOptions, setDefaultOptions] = useState<OptionType[]>([])
 
     const deviceIdFilterVal: string[] = watch('deviceIdFilter')
-    const resourceHrefFilter: string[] = watch('resourceHrefFilter')
-    const resourceTypeFilter: string[] = watch('resourceTypeFilter')
+    const resourceHrefFilterVal: string[] = watch('resourceHrefFilter')
+    const resourceTypeFilterVal: string[] = watch('resourceTypeFilter')
     const jqExpressionFilterVal: string = watch('jqExpressionFilter')
 
     const [resourceTypeValue, setResourceTypeValue] = useState<string>('')
     const [resourceHrefValue, setResourceHrefValue] = useState<string>('')
 
     const deviceIdFilter: string[] = useMemo(() => deviceIdFilterVal || [], [deviceIdFilterVal])
+    const resourceHrefFilter: string[] = useMemo(() => resourceHrefFilterVal || [], [resourceHrefFilterVal])
+    const resourceTypeFilter: string[] = useMemo(() => resourceTypeFilterVal || [], [resourceTypeFilterVal])
     const jqExpressionFilter = useMemo(() => jqExpressionFilterVal || '', [jqExpressionFilterVal])
 
     const { data: devicesData, loading } = useDevicesList(isActivePage)
@@ -150,6 +152,7 @@ export const Step2FormComponent: FC<Props> = (props) => {
                             onChange={(e) => setResourceTypeValue(e.target.value)}
                             onKeyPress={(e) => {
                                 if (e.key === 'Enter') {
+                                    e.preventDefault()
                                     const newVal = [...resourceTypeFilter, e.target.value]
                                     setValue('resourceTypeFilter', newVal)
                                     updateField('resourceTypeFilter', newVal)
@@ -185,6 +188,7 @@ export const Step2FormComponent: FC<Props> = (props) => {
                             onChange={(e) => setResourceHrefValue(e.target.value)}
                             onKeyPress={(e) => {
                                 if (e.key === 'Enter') {
+                                    e.preventDefault()
                                     const newVal = [...resourceHrefFilter, e.target.value]
                                     setValue('resourceHrefFilter', newVal)
                                     updateField('resourceHrefFilter', newVal)

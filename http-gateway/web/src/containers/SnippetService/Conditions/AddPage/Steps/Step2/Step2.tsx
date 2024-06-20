@@ -22,7 +22,7 @@ const Step2: FC<Props> = (props) => {
     })
 
     return (
-        <form>
+        <form onSubmit={(e) => e.preventDefault()}>
             <FullPageWizard.Headline>{_(confT.applyFilters)}</FullPageWizard.Headline>
             <FullPageWizard.Description large>{_(confT.createConditionDescription)}</FullPageWizard.Description>
 
