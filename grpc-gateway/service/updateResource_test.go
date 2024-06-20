@@ -460,8 +460,10 @@ func TestUpdateCreateOnNotExistingResource(t *testing.T) {
 					pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
 					pb.SubscribeToEvents_CreateSubscription_RESOURCE_UPDATED,
 					pb.SubscribeToEvents_CreateSubscription_RESOURCE_CREATED,
+					pb.SubscribeToEvents_CreateSubscription_RESOURCE_DELETED,
 					pb.SubscribeToEvents_CreateSubscription_RESOURCE_UPDATE_PENDING,
 					pb.SubscribeToEvents_CreateSubscription_RESOURCE_CREATE_PENDING,
+					pb.SubscribeToEvents_CreateSubscription_RESOURCE_DELETE_PENDING,
 				},
 			},
 		},
@@ -503,9 +505,6 @@ func TestUpdateCreateOnNotExistingResource(t *testing.T) {
 		Async: true,
 	})
 	require.NoError(t, err)
-	ev, err = subClient.Recv()
-	require.NoError(t, err)
-	require.NotNil(t, ev.GetResourceUpdatePending())
 
 	_, err = c.CreateResource(ctx, &pb.CreateResourceRequest{
 		ResourceId: commands.NewResourceID(deviceID, test.TestResourceSwitchesHref),
@@ -517,9 +516,13 @@ func TestUpdateCreateOnNotExistingResource(t *testing.T) {
 		Async: true,
 	})
 	require.NoError(t, err)
-	ev, err = subClient.Recv()
+
+	_, err = c.DeleteResource(ctx, &pb.DeleteResourceRequest{
+		ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
+		Force:      true,
+		Async:      true,
+	})
 	require.NoError(t, err)
-	require.NotNil(t, ev.GetResourceCreatePending())
 
 	pendingCommandsClient, err := c.GetPendingCommands(ctx, &pb.GetPendingCommandsRequest{
 		DeviceIdFilter:         []string{deviceID},
@@ -543,8 +546,13 @@ func TestUpdateCreateOnNotExistingResource(t *testing.T) {
 			require.Equal(t, test.TestResourceLightInstanceHref("1"), ev.GetResourceUpdatePending().GetResourceId().GetHref())
 			numPendingCommands++
 		}
+		if ev.GetResourceDeletePending() != nil {
+			require.Equal(t, deviceID, ev.GetResourceDeletePending().GetResourceId().GetDeviceId())
+			require.Equal(t, test.TestResourceLightInstanceHref("1"), ev.GetResourceDeletePending().GetResourceId().GetHref())
+			numPendingCommands++
+		}
 	}
-	require.Equal(t, 2, numPendingCommands)
+	require.Equal(t, 3, numPendingCommands)
 
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, nil)
 	defer shutdownDevSim()
@@ -553,6 +561,7 @@ func TestUpdateCreateOnNotExistingResource(t *testing.T) {
 	var switchChanged *events.ResourceChanged
 	var lightUpdated *events.ResourceUpdated
 	var switchCreated *events.ResourceCreated
+	var lightDeleted *events.ResourceDeleted
 	for {
 		ev, err2 := subClient.Recv()
 		require.NoError(t, err2)
@@ -577,7 +586,12 @@ func TestUpdateCreateOnNotExistingResource(t *testing.T) {
 				switchCreated = created
 			}
 		}
-		if lightChanged != nil && switchChanged != nil && lightUpdated != nil && switchCreated != nil {
+		if deleted := ev.GetResourceDeleted(); deleted != nil {
+			if deleted.GetResourceId().GetHref() == test.TestResourceLightInstanceHref("1") {
+				lightDeleted = deleted
+			}
+		}
+		if lightChanged != nil && switchChanged != nil && lightUpdated != nil && switchCreated != nil && lightDeleted != nil {
 			break
 		}
 	}
