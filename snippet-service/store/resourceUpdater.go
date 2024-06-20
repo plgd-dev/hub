@@ -364,7 +364,7 @@ func (h *ResourceUpdater) applyConfigurations(ctx context.Context, rc *events.Re
 	var errs *multierror.Error
 	for _, c := range confsWithConditions {
 		if len(c.configuration.GetResources()) == 0 {
-			h.logger.Errorf("no resources found for configuration(id:%v) for device %s", c.configuration.GetId(), deviceID)
+			h.logger.Debugf("no resources found for configuration(id:%v) for device %s", c.configuration.GetId(), deviceID)
 			continue
 		}
 		err2 := h.applyConfigurationToResources(ctx, owner, deviceID, &c)
