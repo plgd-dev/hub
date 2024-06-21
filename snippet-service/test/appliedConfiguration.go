@@ -29,7 +29,7 @@ func AppliedConfigurationID(i int) string {
 	return id
 }
 
-func SetAppliedConfigurationExecutedBy(ac *store.AppliedDeviceConfiguration, i int) {
+func SetAppliedConfigurationExecutedBy(ac *pb.AppliedDeviceConfiguration, i int) {
 	if i%RuntimeConfig.NumConfigurations == 0 {
 		ac.ExecutedBy = pb.MakeExecutedByOnDemand()
 		return
@@ -62,9 +62,9 @@ func AppliedConfigurationResource(t *testing.T, deviceID string, start, n int) [
 	return resources
 }
 
-func getAppliedConfigurations(t *testing.T) map[string]*store.AppliedDeviceConfiguration {
+func getAppliedConfigurations(t *testing.T) map[string]*pb.AppliedDeviceConfiguration {
 	owners := make(map[int]string, RuntimeConfig.NumConfigurations)
-	acs := make(map[string]*store.AppliedDeviceConfiguration)
+	acs := make(map[string]*pb.AppliedDeviceConfiguration)
 	i := 0
 	for d := range RuntimeConfig.numDevices {
 		for c := range RuntimeConfig.NumConfigurations {
@@ -74,7 +74,7 @@ func getAppliedConfigurations(t *testing.T) map[string]*store.AppliedDeviceConfi
 				owners[i%RuntimeConfig.NumConfigurations] = owner
 			}
 			deviceID := DeviceID(d)
-			ac := &store.AppliedDeviceConfiguration{
+			ac := &pb.AppliedDeviceConfiguration{
 				Id:       AppliedConfigurationID(i),
 				DeviceId: deviceID,
 				Owner:    owner,
@@ -93,9 +93,9 @@ func getAppliedConfigurations(t *testing.T) map[string]*store.AppliedDeviceConfi
 	return acs
 }
 
-func AddAppliedConfigurationsToStore(ctx context.Context, t *testing.T, s store.Store) map[string]*store.AppliedDeviceConfiguration {
+func AddAppliedConfigurationsToStore(ctx context.Context, t *testing.T, s store.Store) map[string]*pb.AppliedDeviceConfiguration {
 	acs := getAppliedConfigurations(t)
-	acsToInsert := make([]*store.AppliedDeviceConfiguration, 0, len(acs))
+	acsToInsert := make([]*pb.AppliedDeviceConfiguration, 0, len(acs))
 	for _, c := range acs {
 		acsToInsert = append(acsToInsert, c)
 	}
@@ -104,7 +104,7 @@ func AddAppliedConfigurationsToStore(ctx context.Context, t *testing.T, s store.
 	return acs
 }
 
-func AddAppliedConfigurations(ctx context.Context, t *testing.T, ownerClaim string, ss *service.Service) map[string]*store.AppliedDeviceConfiguration {
+func AddAppliedConfigurations(ctx context.Context, t *testing.T, ownerClaim string, ss *service.Service) map[string]*pb.AppliedDeviceConfiguration {
 	configurations := getAppliedConfigurations(t)
 	for _, c := range configurations {
 		ctxWithToken := pkgGrpc.CtxWithIncomingToken(ctx, GetTokenWithOwnerClaim(t, c.GetOwner(), ownerClaim))

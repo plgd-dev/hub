@@ -700,6 +700,12 @@
         "resourceUpdated": {
           "$ref": "#/definitions/pbResourceUpdated",
           "title": "@gotags: bson:\"resourceUpdated,omitempty\""
+        },
+        "validUntil": {
+          "type": "string",
+          "format": "int64",
+          "description": "@gotags: bson:\"validUntil,omitempty\"",
+          "title": "Unix nanoseconds timestamp for resource in PENDING status, until which the pending update is valid"
         }
       }
     },

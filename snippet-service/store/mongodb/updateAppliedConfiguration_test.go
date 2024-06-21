@@ -198,29 +198,35 @@ func TestStoreUpdateAppliedConfigurationPendingResources(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	err = s.UpdateAppliedConfigurationPendingResources(ctx, &store.UpdateAppliedConfigurationPendingResourceRequest{
-		ID:     id,
-		Owner:  owner,
-		Href:   "/test/1",
-		Status: pb.AppliedDeviceConfiguration_Resource_DONE,
+	err = s.UpdateAppliedConfigurationPendingResource(ctx, owner, store.UpdateAppliedConfigurationPendingResourceRequest{
+		AppliedConfigurationID: id,
+		Resource: &pb.AppliedDeviceConfiguration_Resource{
+			Href:          "/test/1",
+			CorrelationId: "corID1",
+			Status:        pb.AppliedDeviceConfiguration_Resource_DONE,
+		},
 	})
 	require.NoError(t, err)
 
 	// /test/1 is no longer in pending state, so additional update should fail
-	err = s.UpdateAppliedConfigurationPendingResources(ctx, &store.UpdateAppliedConfigurationPendingResourceRequest{
-		ID:     id,
-		Owner:  owner,
-		Href:   "/test/1",
-		Status: pb.AppliedDeviceConfiguration_Resource_TIMEOUT,
+	err = s.UpdateAppliedConfigurationPendingResource(ctx, owner, store.UpdateAppliedConfigurationPendingResourceRequest{
+		AppliedConfigurationID: id,
+		Resource: &pb.AppliedDeviceConfiguration_Resource{
+			Href:          "/test/1",
+			CorrelationId: "corID1",
+			Status:        pb.AppliedDeviceConfiguration_Resource_TIMEOUT,
+		},
 	})
 	require.Error(t, err)
 
 	// mismatched owner
-	err = s.UpdateAppliedConfigurationPendingResources(ctx, &store.UpdateAppliedConfigurationPendingResourceRequest{
-		ID:     id,
-		Owner:  "mismatch",
-		Href:   "/test/2",
-		Status: pb.AppliedDeviceConfiguration_Resource_DONE,
+	err = s.UpdateAppliedConfigurationPendingResource(ctx, "mismatch", store.UpdateAppliedConfigurationPendingResourceRequest{
+		AppliedConfigurationID: id,
+		Resource: &pb.AppliedDeviceConfiguration_Resource{
+			Href:          "/test/2",
+			CorrelationId: "corID2",
+			Status:        pb.AppliedDeviceConfiguration_Resource_DONE,
+		},
 	})
 	require.Error(t, err)
 }

@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
-	"github.com/plgd-dev/hub/v2/snippet-service/store"
 	"github.com/plgd-dev/hub/v2/snippet-service/store/mongodb"
 	"github.com/plgd-dev/hub/v2/snippet-service/test"
 	"github.com/stretchr/testify/require"
@@ -16,9 +15,9 @@ func TestStoreDeleteAppliedConfigurations(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
-	getAppliedConfigurations := func(t *testing.T, s *mongodb.Store, owner string, query *pb.GetAppliedDeviceConfigurationsRequest) []*store.AppliedDeviceConfiguration {
-		var configurations []*store.AppliedDeviceConfiguration
-		err := s.GetAppliedConfigurations(ctx, owner, query, func(c *store.AppliedDeviceConfiguration) error {
+	getAppliedConfigurations := func(t *testing.T, s *mongodb.Store, owner string, query *pb.GetAppliedDeviceConfigurationsRequest) []*pb.AppliedDeviceConfiguration {
+		var configurations []*pb.AppliedDeviceConfiguration
+		err := s.GetAppliedConfigurations(ctx, owner, query, func(c *pb.AppliedDeviceConfiguration) error {
 			configurations = append(configurations, c.Clone())
 			return nil
 		})
@@ -26,9 +25,9 @@ func TestStoreDeleteAppliedConfigurations(t *testing.T) {
 		return configurations
 	}
 
-	getAppliedConfigurationsMap := func(t *testing.T, s *mongodb.Store, owner string, query *pb.GetAppliedDeviceConfigurationsRequest) map[string]*store.AppliedDeviceConfiguration {
+	getAppliedConfigurationsMap := func(t *testing.T, s *mongodb.Store, owner string, query *pb.GetAppliedDeviceConfigurationsRequest) map[string]*pb.AppliedDeviceConfiguration {
 		confs := getAppliedConfigurations(t, s, owner, query)
-		confsMap := make(map[string]*store.AppliedDeviceConfiguration)
+		confsMap := make(map[string]*pb.AppliedDeviceConfiguration)
 		for _, conf := range confs {
 			confsMap[conf.GetId()] = conf
 		}
@@ -43,12 +42,12 @@ func TestStoreDeleteAppliedConfigurations(t *testing.T) {
 		name    string
 		args    args
 		wantErr bool
-		want    func(t *testing.T, s *mongodb.Store, stored map[string]*store.AppliedDeviceConfiguration)
+		want    func(t *testing.T, s *mongodb.Store, stored map[string]*pb.AppliedDeviceConfiguration)
 	}{
 		{
 			name: "all",
 			args: args{},
-			want: func(t *testing.T, s *mongodb.Store, _ map[string]*store.AppliedDeviceConfiguration) {
+			want: func(t *testing.T, s *mongodb.Store, _ map[string]*pb.AppliedDeviceConfiguration) {
 				confs := getAppliedConfigurations(t, s, "", nil)
 				require.Empty(t, confs)
 			},
@@ -58,10 +57,10 @@ func TestStoreDeleteAppliedConfigurations(t *testing.T) {
 			args: args{
 				owner: test.Owner(1),
 			},
-			want: func(t *testing.T, s *mongodb.Store, stored map[string]*store.AppliedDeviceConfiguration) {
+			want: func(t *testing.T, s *mongodb.Store, stored map[string]*pb.AppliedDeviceConfiguration) {
 				confsMap := getAppliedConfigurationsMap(t, s, "", nil)
 				require.NotEmpty(t, confsMap)
-				newStored := make(map[string]*store.AppliedDeviceConfiguration)
+				newStored := make(map[string]*pb.AppliedDeviceConfiguration)
 				for _, conf := range stored {
 					if conf.GetOwner() == test.Owner(1) {
 						continue
@@ -83,10 +82,10 @@ func TestStoreDeleteAppliedConfigurations(t *testing.T) {
 					},
 				},
 			},
-			want: func(t *testing.T, s *mongodb.Store, stored map[string]*store.AppliedDeviceConfiguration) {
+			want: func(t *testing.T, s *mongodb.Store, stored map[string]*pb.AppliedDeviceConfiguration) {
 				confsMap := getAppliedConfigurationsMap(t, s, "", nil)
 				require.NotEmpty(t, confsMap)
-				newStored := make(map[string]*store.AppliedDeviceConfiguration)
+				newStored := make(map[string]*pb.AppliedDeviceConfiguration)
 
 				for _, conf := range stored {
 					confID := conf.GetId()
@@ -114,10 +113,10 @@ func TestStoreDeleteAppliedConfigurations(t *testing.T) {
 					},
 				},
 			},
-			want: func(t *testing.T, s *mongodb.Store, stored map[string]*store.AppliedDeviceConfiguration) {
+			want: func(t *testing.T, s *mongodb.Store, stored map[string]*pb.AppliedDeviceConfiguration) {
 				confsMap := getAppliedConfigurationsMap(t, s, "", nil)
 				require.NotEmpty(t, confsMap)
-				newStored := make(map[string]*store.AppliedDeviceConfiguration)
+				newStored := make(map[string]*pb.AppliedDeviceConfiguration)
 				for _, conf := range stored {
 					confID := conf.GetId()
 					if confID == test.AppliedConfigurationID(2) {

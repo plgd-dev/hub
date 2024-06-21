@@ -136,6 +136,8 @@ message AppliedDeviceConfiguration { //TODO naming
     };
     Status status = 3;
     resourceaggregate.pb.ResourceUpdated resource_updated = 4; // @gotags: bson:"resourceUpdated,omitempty"
+    // Unix nanoseconds timestamp for resource in PENDING status, until which the pending update is valid
+    int64 valid_until = 5; // @gotags: bson:"validUntil,omitempty"
   }
   string id = 1; // @gotags: bson:"_id"
   string device_id = 2; // @gotags: bson:"deviceId"

@@ -10,19 +10,22 @@ import (
 )
 
 const (
-	IDKey                 = "_id"                // must match with Id field tag
-	DeviceIDKey           = "deviceId"           // must match with DeviceId field tag
-	OwnerKey              = "owner"              // must match with Owner field tag
-	LatestKey             = "latest"             // must match with Latest field tag
-	NameKey               = "name"               // must match with Name field tag
-	VersionKey            = "version"            // must match with Version field tag
-	VersionsKey           = "versions"           // must match with Versions field tag
-	ResourcesKey          = "resources"          // must match with Resources field tag
-	ConfigurationIDKey    = "configurationId"    // must match with ConfigurationId field tag
-	ConditionIDKey        = "conditionId"        // must match with ConditionId field tag
-	EnabledKey            = "enabled"            // must match with Enabled field tag
-	TimestampKey          = "timestamp"          // must match with Timestamp field tag
-	ApiAccessTokenKey     = "apiAccessToken"     // must match with ApiAccessToken field tag
+	IDKey              = "_id"             // must match with Id field tag
+	DeviceIDKey        = "deviceId"        // must match with DeviceId field tag
+	OwnerKey           = "owner"           // must match with Owner field tag
+	LatestKey          = "latest"          // must match with Latest field tag
+	NameKey            = "name"            // must match with Name field tag
+	VersionKey         = "version"         // must match with Version field tag
+	VersionsKey        = "versions"        // must match with Versions field tag
+	ResourcesKey       = "resources"       // must match with Resources field tag
+	ConfigurationIDKey = "configurationId" // must match with ConfigurationId field tag
+	ConditionIDKey     = "conditionId"     // must match with ConditionId field tag
+	EnabledKey         = "enabled"         // must match with Enabled field tag
+	TimestampKey       = "timestamp"       // must match with Timestamp field tag
+	StatusKey          = "status"          // must match with Status field tag
+	HrefKey            = "href"            // must match with Href field tag
+
+	ApiAccessTokenKey     = "apiAccessToken"     // must match with Condition.ApiAccessToken field tag
 	DeviceIDFilterKey     = "deviceIdFilter"     // must match with Condition.DeviceIdFilter tag
 	ResourceHrefFilterKey = "resourceHrefFilter" // must match with Condition.ResourceHrefFilter tag
 	JqExpressionFilterKey = "jqExpressionFilter" // must match with Condition.JqExpressionFilter tag
@@ -49,7 +52,7 @@ type Iterator[T any] interface {
 
 type (
 	Process[T any]                      func(v *T) error
-	ProccessAppliedDeviceConfigurations = Process[AppliedDeviceConfiguration]
+	ProccessAppliedDeviceConfigurations = Process[pb.AppliedDeviceConfiguration]
 	ProcessConfigurations               = Process[Configuration]
 	ProcessConditions                   = Process[Condition]
 )
@@ -118,11 +121,11 @@ type Store interface {
 	// CreateAppliedConfiguration creates a new applied device configuration in the database.
 	CreateAppliedConfiguration(ctx context.Context, conf *pb.AppliedDeviceConfiguration) (*pb.AppliedDeviceConfiguration, error)
 	// InsertAppliedConditions inserts applied configurations into the database.
-	InsertAppliedConfigurations(ctx context.Context, configurations ...*AppliedDeviceConfiguration) error
+	InsertAppliedConfigurations(ctx context.Context, configurations ...*pb.AppliedDeviceConfiguration) error
 	// UpdateAppliedConfiguration updates an existing applied device configuration in the database.
 	UpdateAppliedConfiguration(ctx context.Context, conf *pb.AppliedDeviceConfiguration) (*pb.AppliedDeviceConfiguration, error)
 
-	UpdateAppliedConfigurationPendingResources(ctx context.Context, resources ...*UpdateAppliedConfigurationPendingResourceRequest) error
+	UpdateAppliedConfigurationPendingResource(ctx context.Context, owner string, query UpdateAppliedConfigurationPendingResourceRequest) error
 
 	Close(ctx context.Context) error
 }

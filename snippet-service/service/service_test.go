@@ -19,8 +19,11 @@ package service_test
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
+	"io"
 	"testing"
+	"time"
 
 	"github.com/plgd-dev/go-coap/v3/message"
 	grpcgwTest "github.com/plgd-dev/hub/v2/grpc-gateway/test"
@@ -207,6 +210,7 @@ func TestService(t *testing.T) {
 	defer tearDown()
 
 	snippetCfg := test.MakeConfig(t)
+	snippetCfg.Clients.ResourceAggregate.PendingCommandsCheckInterval = time.Millisecond * 500
 	_, shutdownSnippetService := test.New(t, snippetCfg)
 	defer shutdownSnippetService()
 
@@ -222,9 +226,12 @@ func TestService(t *testing.T) {
 	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = pkgGrpc.CtxWithToken(ctx, token)
 
-	// configuration1 -> /light/1 -> { state: on }
+	notExistingResourceHref := "/not/existing"
+	// configuration1
+	// -> /light/1 -> { state: on }
+	// -> /not/existing -> { value: 42 }
 	conf1, err := snippetClient.CreateConfiguration(ctx, &pb.Configuration{
-		Name:  "update light state",
+		Name:  "update",
 		Owner: oauthService.DeviceUserID,
 		Resources: []*pb.Configuration_Resource{
 			{
@@ -235,6 +242,16 @@ func TestService(t *testing.T) {
 						"state": true,
 					}),
 				},
+			},
+			{
+				Href: notExistingResourceHref,
+				Content: &commands.Content{
+					ContentType: message.AppOcfCbor.String(),
+					Data: hubTest.EncodeToCbor(t, map[string]interface{}{
+						"value": 42,
+					}),
+				},
+				TimeToLive: int64(100 * time.Millisecond),
 			},
 		},
 	})
@@ -254,6 +271,7 @@ func TestService(t *testing.T) {
 						"power": 42,
 					}),
 				},
+				TimeToLive: int64(500 * time.Millisecond),
 			},
 		},
 	})
@@ -267,7 +285,7 @@ func TestService(t *testing.T) {
 		Enabled:            true,
 		ConfigurationId:    conf1.GetId(),
 		DeviceIdFilter:     []string{deviceID},
-		ResourceHrefFilter: []string{hubTest.TestResourceLightInstanceHref("1")},
+		ResourceHrefFilter: []string{notExistingResourceHref, hubTest.TestResourceLightInstanceHref("1")},
 		ApiAccessToken:     token,
 	})
 	require.NoError(t, err)
@@ -294,6 +312,13 @@ func TestService(t *testing.T) {
 	_, shutdownDevSim := hubTest.OnboardDevSim(ctx, t, grpcClient.GrpcGatewayClient(), deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, resources)
 	defer shutdownDevSim()
 
+	logger := log.NewLogger(snippetCfg.Log)
+	logger.Info("device onboarded")
+
+	// -> wait for the snippet service to apply configurations
+	// -> wait enough time to timeout pending commands
+	time.Sleep(2 * snippetCfg.Clients.ResourceAggregate.PendingCommandsCheckInterval)
+
 	var got map[interface{}]interface{}
 	err = grpcClient.GetResource(ctx, deviceID, hubTest.TestResourceLightInstanceHref("1"), &got)
 	require.NoError(t, err)
@@ -303,6 +328,68 @@ func TestService(t *testing.T) {
 		"power": uint64(42),
 		"name":  "Light",
 	}, got)
+
+	// check applied configurations
+	getClient, err := snippetClient.GetAppliedConfigurations(ctx, &pb.GetAppliedDeviceConfigurationsRequest{
+		DeviceIdFilter: []string{deviceID},
+		ConfigurationIdFilter: []*pb.IDFilter{
+			{
+				Id: conf1.GetId(),
+				Version: &pb.IDFilter_All{
+					All: true,
+				},
+			},
+			{
+				Id: conf2.GetId(),
+				Version: &pb.IDFilter_All{
+					All: true,
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+	defer func() {
+		_ = getClient.CloseSend()
+	}()
+	appliedConfs := make(map[string]*pb.AppliedDeviceConfiguration)
+	for {
+		appliedConf, errR := getClient.Recv()
+		if errors.Is(errR, io.EOF) {
+			break
+		}
+		require.NoError(t, errR)
+		appliedConfs[appliedConf.GetId()] = appliedConf
+	}
+	require.Len(t, appliedConfs, 2)
+
+	appliedConfResources := make(map[string]*pb.AppliedDeviceConfiguration_Resource)
+	for _, appliedConf := range appliedConfs {
+		for _, r := range appliedConf.GetResources() {
+			id := appliedConf.GetConfigurationId().GetId() + "." + r.GetHref()
+			appliedConfResources[id] = r
+		}
+	}
+	require.Len(t, appliedConfResources, 3)
+
+	notExistingConf1ID := conf1.GetId() + "." + notExistingResourceHref
+	notExistingConf1, ok := appliedConfResources[notExistingConf1ID]
+	require.True(t, ok)
+	require.Equal(t, notExistingResourceHref, notExistingConf1.GetHref())
+	require.Equal(t, pb.AppliedDeviceConfiguration_Resource_TIMEOUT, notExistingConf1.GetStatus())
+	require.Equal(t, commands.Status_ERROR, notExistingConf1.GetResourceUpdated().GetStatus())
+
+	lightConf1ID := conf1.GetId() + "." + hubTest.TestResourceLightInstanceHref("1")
+	lightConf1, ok := appliedConfResources[lightConf1ID]
+	require.True(t, ok)
+	require.Equal(t, hubTest.TestResourceLightInstanceHref("1"), lightConf1.GetHref())
+	require.Equal(t, pb.AppliedDeviceConfiguration_Resource_DONE, lightConf1.GetStatus())
+	require.Equal(t, commands.Status_OK, lightConf1.GetResourceUpdated().GetStatus())
+	lightConf2ID := conf2.GetId() + "." + hubTest.TestResourceLightInstanceHref("1")
+	lightConf2, ok := appliedConfResources[lightConf2ID]
+	require.True(t, ok)
+	require.Equal(t, hubTest.TestResourceLightInstanceHref("1"), lightConf2.GetHref())
+	require.Equal(t, pb.AppliedDeviceConfiguration_Resource_DONE, lightConf2.GetStatus())
+	require.Equal(t, commands.Status_OK, lightConf2.GetResourceUpdated().GetStatus())
 
 	// restore state
 	err = grpcClient.UpdateResource(ctx, deviceID, hubTest.TestResourceLightInstanceHref("1"), map[string]interface{}{

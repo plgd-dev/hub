@@ -19,7 +19,7 @@ func (s *Store) CreateAppliedConfiguration(context.Context, *pb.AppliedDeviceCon
 	return nil, store.ErrNotSupported
 }
 
-func (s *Store) InsertAppliedConfigurations(context.Context, ...*store.AppliedDeviceConfiguration) error {
+func (s *Store) InsertAppliedConfigurations(context.Context, ...*pb.AppliedDeviceConfiguration) error {
 	return store.ErrNotSupported
 }
 
@@ -27,6 +27,6 @@ func (s *Store) UpdateAppliedConfiguration(context.Context, *pb.AppliedDeviceCon
 	return nil, store.ErrNotSupported
 }
 
-func (s *Store) UpdateAppliedConfigurationPendingResources(context.Context, ...*store.UpdateAppliedConfigurationPendingResourceRequest) error {
+func (s *Store) UpdateAppliedConfigurationPendingResource(context.Context, string, store.UpdateAppliedConfigurationPendingResourceRequest) error {
 	return store.ErrNotSupported
 }

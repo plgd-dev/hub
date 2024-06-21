@@ -89,6 +89,9 @@ TODO naming
 @gotags: bson:&#34;correlationId&#34; |
 | status | [AppliedDeviceConfiguration.Resource.Status](#snippetservice-pb-AppliedDeviceConfiguration-Resource-Status) |  |  |
 | resource_updated | [resourceaggregate.pb.ResourceUpdated](#resourceaggregate-pb-ResourceUpdated) |  | @gotags: bson:&#34;resourceUpdated,omitempty&#34; |
+| valid_until | [int64](#int64) |  | Unix nanoseconds timestamp for resource in PENDING status, until which the pending update is valid
+
+@gotags: bson:&#34;validUntil,omitempty&#34; |
 
 
 

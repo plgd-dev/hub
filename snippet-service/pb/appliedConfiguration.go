@@ -88,6 +88,14 @@ func (r *AppliedDeviceConfiguration_Resource) Clone() *AppliedDeviceConfiguratio
 	}
 }
 
+func (r *AppliedDeviceConfiguration_Resource) UnmarshalBSON(data []byte) error {
+	return pkgMongo.UnmarshalProtoBSON(data, r, nil)
+}
+
+func (r *AppliedDeviceConfiguration_Resource) MarshalBSON() ([]byte, error) {
+	return pkgMongo.MarshalProtoBSON(r, nil)
+}
+
 func (c *AppliedDeviceConfiguration) Clone() *AppliedDeviceConfiguration {
 	var executedBy isAppliedDeviceConfiguration_ExecutedBy
 	if c.GetOnDemand() {
@@ -113,20 +121,21 @@ func (c *AppliedDeviceConfiguration) Clone() *AppliedDeviceConfiguration {
 	}
 }
 
-func (c *AppliedDeviceConfiguration) jsonToBSONTag(json map[string]interface{}) {
-	if id, ok := json["id"]; ok {
-		json["_id"] = id
-		delete(json, "id")
+func renameKey(json map[string]interface{}, oldKey, newKey string) {
+	if v, ok := json[oldKey]; ok {
+		json[newKey] = v
+		delete(json, oldKey)
 	}
+}
+
+func (c *AppliedDeviceConfiguration) jsonToBSONTag(json map[string]interface{}) {
+	renameKey(json, "id", "_id")
 	pkgMongo.ConvertStringValueToInt(json, "configurationId.version")
 	pkgMongo.ConvertStringValueToInt(json, "conditionId.version")
 }
 
 func (c *AppliedDeviceConfiguration) bsonToJSONTag(json map[string]interface{}) {
-	if id, ok := json["_id"]; ok {
-		json["id"] = id
-		delete(json, "_id")
-	}
+	renameKey(json, "_id", "id")
 }
 
 func (c *AppliedDeviceConfiguration) UnmarshalBSON(data []byte) error {

@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/hub/v2/pkg/mongodb"
 	"github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
@@ -15,7 +14,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func (s *Store) InsertAppliedConfigurations(ctx context.Context, confs ...*store.AppliedDeviceConfiguration) error {
+func (s *Store) InsertAppliedConfigurations(ctx context.Context, confs ...*pb.AppliedDeviceConfiguration) error {
 	documents := make([]interface{}, 0, len(confs))
 	for _, conf := range confs {
 		documents = append(documents, conf)
@@ -143,58 +142,31 @@ func (s *Store) DeleteAppliedConfigurations(ctx context.Context, owner string, q
 	return res.DeletedCount, nil
 }
 
-func (s *Store) updateAppliedConfigurationPendingResources(ctx context.Context, owner string, requests []*store.UpdateAppliedConfigurationPendingResourceRequest) error {
-	// TODO: this can be rewritten to a single or at least two queries (all DONE hrefs at the same time and same for TIMEOUT)
-	var errs *multierror.Error
-	for _, r := range requests {
-		filter := bson.M{
-			store.ResourcesKey + ".status": pb.AppliedDeviceConfiguration_Resource_PENDING.String(),
-		}
-		if r.ID != "" {
-			filter[store.IDKey] = r.ID
-		}
-		if r.Href != owner {
-			filter[store.OwnerKey] = owner
-		}
-		update := bson.M{
-			mongodb.Set: bson.M{
-				store.ResourcesKey + ".$[elem].status": r.Status.String(),
-			},
-			mongodb.Unset: bson.M{
-				store.ResourcesKey + ".$[elem].resourceUpdated": "",
-			},
-		}
-		optFilters := bson.M{"elem.status": pb.AppliedDeviceConfiguration_Resource_PENDING.String()}
-		if r.Href != "" {
-			optFilters["elem.href"] = r.Href
-		}
-		res, err := s.Collection(appliedConfigurationsCol).UpdateOne(ctx, filter, update, &options.UpdateOptions{
-			ArrayFilters: &options.ArrayFilters{
-				Filters: bson.A{optFilters},
-			},
-		})
-		if err == nil && res.ModifiedCount == 0 {
-			err = fmt.Errorf("no resource with id %v and href %v in pending status", r.ID, r.Href)
-		}
-		errs = multierror.Append(errs, err)
+func (s *Store) UpdateAppliedConfigurationPendingResource(ctx context.Context, owner string, query store.UpdateAppliedConfigurationPendingResourceRequest) error {
+	filter := bson.M{
+		store.IDKey: query.AppliedConfigurationID,
+		store.ResourcesKey + "." + store.StatusKey: pb.AppliedDeviceConfiguration_Resource_PENDING.String(),
 	}
-	return errs.ErrorOrNil()
-}
-
-func (s *Store) UpdateAppliedConfigurationPendingResources(ctx context.Context, resources ...*store.UpdateAppliedConfigurationPendingResourceRequest) error {
-	ownerRequests := make(map[string][]*store.UpdateAppliedConfigurationPendingResourceRequest)
-	for _, r := range resources {
-		if err := r.Validate(); err != nil {
-			return err
-		}
-		ownerRequests[r.Owner] = append(ownerRequests[r.Owner], r)
+	if owner != "" {
+		filter[store.OwnerKey] = owner
 	}
 
-	// TODO: bulk write?
-	var errs *multierror.Error
-	for owner, requests := range ownerRequests {
-		err := s.updateAppliedConfigurationPendingResources(ctx, owner, requests)
-		errs = multierror.Append(errs, err)
+	update := bson.M{
+		mongodb.Set: bson.M{
+			store.ResourcesKey + ".$[elem]": query.Resource,
+		},
 	}
-	return errs.ErrorOrNil()
+	optFilters := bson.M{
+		"elem." + store.HrefKey:   query.Resource.GetHref(),
+		"elem." + store.StatusKey: pb.AppliedDeviceConfiguration_Resource_PENDING.String(),
+	}
+	res, err := s.Collection(appliedConfigurationsCol).UpdateOne(ctx, filter, update, &options.UpdateOptions{
+		ArrayFilters: &options.ArrayFilters{
+			Filters: bson.A{optFilters},
+		},
+	})
+	if err == nil && res.ModifiedCount == 0 {
+		return fmt.Errorf("%w: %w", store.ErrNotFound, fmt.Errorf("no applied configuration(%v) with resource(%v) in pending status", query.AppliedConfigurationID, query.Resource.GetHref()))
+	}
+	return err
 }
