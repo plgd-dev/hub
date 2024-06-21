@@ -331,15 +331,30 @@ func (h *ResourceUpdater) applyConfigurationToResources(ctx context.Context, own
 	return errU
 }
 
+func decodeContent(content *commands.Content) (interface{}, error) {
+	var rcData map[string]any
+	err := commands.DecodeContent(content, &rcData)
+	if err == nil {
+		return rcData, nil
+	}
+	// content could be a single value or an array
+	var rcData2 interface{}
+	err = commands.DecodeContent(content, &rcData2)
+	if err == nil {
+		return rcData2, nil
+	}
+	return nil, fmt.Errorf("cannot decode content: %w", err)
+}
+
 func (h *ResourceUpdater) applyConfigurations(ctx context.Context, rc *events.ResourceChanged) error {
 	owner := rc.GetAuditContext().GetOwner()
 	if owner == "" {
 		return errors.New("owner not set")
 	}
 
-	var rcData map[string]any
-	if err := commands.DecodeContent(rc.GetContent(), &rcData); err != nil {
-		return fmt.Errorf("cannot decode content: %w", err)
+	rcData, err := decodeContent(rc.GetContent())
+	if err != nil {
+		return err
 	}
 
 	eval := func(condition *pb.Condition) bool {
@@ -347,9 +362,9 @@ func (h *ResourceUpdater) applyConfigurations(ctx context.Context, rc *events.Re
 		if jq == "" {
 			return true
 		}
-		ok, err := EvalJQCondition(jq, rcData)
-		if err != nil {
-			h.logger.Error(err)
+		ok, errE := EvalJQCondition(jq, rcData)
+		if errE != nil {
+			h.logger.Error(errE)
 			return false
 		}
 		return ok
