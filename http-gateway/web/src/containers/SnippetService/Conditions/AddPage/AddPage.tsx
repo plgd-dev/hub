@@ -74,7 +74,13 @@ const AddPage: FC<any> = () => {
             const dataForSave = cloneDeep(formData)
 
             // FormSelect with multiple values
-            dataForSave.deviceIdFilter = dataForSave.deviceIdFilter.map((device: string | OptionType) => (typeof device === 'string' ? device : device.value))
+            if (dataForSave.deviceIdFilter) {
+                dataForSave.deviceIdFilter = dataForSave.deviceIdFilter.map((device: string | OptionType) =>
+                    typeof device === 'string' ? device : device.value
+                )
+            } else {
+                dataForSave.deviceIdFilter = []
+            }
 
             await createConditionApi(dataForSave)
 
