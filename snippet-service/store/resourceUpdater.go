@@ -421,7 +421,7 @@ func (h *ResourceUpdater) handleResourceChanged(ctx context.Context, ev eventbus
 		return fmt.Errorf("cannot unmarshal event: %w", err)
 	}
 	if err := h.applyConfigurations(ctx, &changed); err != nil {
-		return fmt.Errorf("cannot apply configurations: %w", err)
+		return fmt.Errorf("cannot apply configurations for event (deviceID: %v, href: %v, resourceTypes: %v): %w", changed.GetResourceId().GetDeviceId(), changed.GetResourceId().GetHref(), changed.GetResourceTypes(), err)
 	}
 	return nil
 }
