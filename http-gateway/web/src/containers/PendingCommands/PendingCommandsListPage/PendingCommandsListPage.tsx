@@ -7,10 +7,10 @@ import PageLayout from '@shared-ui/components/Atomic/PageLayout'
 import Breadcrumbs from '@shared-ui/components/Layout/Header/Breadcrumbs'
 import StatusTag from '@shared-ui/components/Atomic/StatusTag'
 import { TagTypeType } from '@shared-ui/components/Atomic/StatusTag/StatusTag.types'
-import TableActions from '@shared-ui/components/Atomic/TableNew/TableActions'
 import { IconTrash } from '@shared-ui/components/Atomic/Icon'
-import IconArrowRight from '@shared-ui/components/Atomic/Icon/components/IconArrowRight'
 import Footer from '@shared-ui/components/Layout/Footer'
+import IconArrowDetail from '@shared-ui/components/Atomic/Icon/components/IconArrowDetail'
+import TableActionButton from '@shared-ui/components/Organisms/TableActionButton'
 
 import PendingCommandsList from '../PendingCommandsList'
 import { PendingCommandsListRefType } from '@/containers/PendingCommands/PendingCommandsList/PendingCommandsList.types'
@@ -152,24 +152,24 @@ const PendingCommandsListPage = () => {
                     const rowDeviceId = row?.original?.resourceId?.deviceId || row?.original?.deviceId
 
                     return (
-                        <TableActions
+                        <TableActionButton
                             items={[
                                 {
                                     icon: <IconTrash />,
                                     onClick: () => pendingCommandsListRef?.current?.setConfirmModalData({ deviceId: rowDeviceId, href, correlationId }),
                                     id: `delete-row-${rowDeviceId}`,
-                                    tooltipText: _(t.cancel),
+                                    label: _(t.cancel),
                                     hidden: status || hasCommandExpired(validUntil, currentTime),
                                 },
                                 {
-                                    icon: <IconArrowRight />,
+                                    icon: <IconArrowDetail />,
                                     onClick: () =>
                                         pendingCommandsListRef?.current?.setDetailsModalData({
                                             content: row.original.content,
                                             commandType: row.original.commandType,
                                         }),
                                     id: `detail-row-${rowDeviceId}`,
-                                    tooltipText: _(t.details),
+                                    label: _(t.details),
                                 },
                             ]}
                         />

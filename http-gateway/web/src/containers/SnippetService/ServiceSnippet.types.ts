@@ -1,4 +1,4 @@
-import { ResourceContentType, ResourceType } from '@shared-ui/components/Organisms/ResourceToggleCreator/ResourceToggleCreator.types'
+import { ResourceType } from '@shared-ui/components/Organisms/ResourceToggleCreator/ResourceToggleCreator.types'
 
 export type ConfigurationDataType = {
     id: string

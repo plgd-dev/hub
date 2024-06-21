@@ -1,5 +1,4 @@
 import React, { FC, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import { useResizeDetector } from 'react-resize-detector'
 import { useIntl } from 'react-intl'
 import ReactDOM from 'react-dom'
 
@@ -34,9 +33,6 @@ const TableList: FC<Props> = (props) => {
         ...defaultPops,
         ...props,
     }
-    const { ref, height } = useResizeDetector({
-        refreshRate: 500,
-    })
 
     const [isAllSelected, setIsAllSelected] = useState(false)
     const [selected, setSelected] = useState([])
@@ -52,7 +48,6 @@ const TableList: FC<Props> = (props) => {
 
     return (
         <div
-            ref={ref}
             style={{
                 height: '100%',
                 width: '100%',
@@ -62,12 +57,13 @@ const TableList: FC<Props> = (props) => {
             }}
         >
             <Table
+                autoHeight
                 columns={columns}
                 data={validData(data)}
                 defaultPageSize={defaultPageSize ?? DEFAULT_PAGE_SIZE}
                 defaultSortBy={defaultSortBy}
                 globalSearch={globalSearch}
-                height={height}
+                height={undefined}
                 i18n={{
                     search: _(g.search),
                     placeholder: i18n.tablePlaceholder,

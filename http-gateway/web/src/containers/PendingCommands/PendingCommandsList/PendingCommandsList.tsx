@@ -9,12 +9,7 @@ import { WebSocketEventClient, eventFilters } from '@shared-ui/common/services'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 
 import PendingCommandDetailsModal from '../PendingCommandDetailsModal'
-import {
-    PENDING_COMMANDS_DEFAULT_PAGE_SIZE,
-    EMBEDDED_PENDING_COMMANDS_DEFAULT_PAGE_SIZE,
-    NEW_PENDING_COMMAND_WS_KEY,
-    UPDATE_PENDING_COMMANDS_WS_KEY,
-} from '../constants'
+import { EMBEDDED_PENDING_COMMANDS_DEFAULT_PAGE_SIZE, NEW_PENDING_COMMAND_WS_KEY, UPDATE_PENDING_COMMANDS_WS_KEY } from '../constants'
 import { handleEmitNewPendingCommand, handleEmitUpdatedCommandEvents } from '../utils'
 import { usePendingCommandsList } from '../hooks'
 import { cancelPendingCommandApi } from '../rest'
@@ -127,16 +122,13 @@ const PendingCommandsList = forwardRef<PendingCommandsListRefType, Props>((props
         }
     }, [loadingPendingCommands]) // eslint-disable-line
 
-    console.log({ isPage })
-    console.log(deviceId)
-
     return (
         <>
             <Table
                 autoHeight={!deviceId}
                 columns={columns}
-                data={(isPage ? data.slice(0, 10) : data) || []}
-                defaultPageSize={embedded ? EMBEDDED_PENDING_COMMANDS_DEFAULT_PAGE_SIZE : PENDING_COMMANDS_DEFAULT_PAGE_SIZE}
+                data={(isPage ? data : data.slice(0, 10)) || []}
+                defaultPageSize={embedded ? EMBEDDED_PENDING_COMMANDS_DEFAULT_PAGE_SIZE : 1000}
                 defaultSortBy={[
                     {
                         id: 'eventMetadata.timestamp',

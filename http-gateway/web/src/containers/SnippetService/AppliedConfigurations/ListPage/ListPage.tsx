@@ -51,11 +51,11 @@ const ListPage: FC<any> = () => {
                 accessor: 'configurationName',
                 Cell: ({ value, row }: { value: string; row: any }) => (
                     <a
-                        href={generatePath(pages.SNIPPET_SERVICE.CONFIGURATIONS.DETAIL.LINK, { configurationId: row.original.configurationId.id, tab: '' })}
+                        href={generatePath(pages.SNIPPET_SERVICE.APPLIED_CONFIGURATIONS.DETAIL.LINK, { appliedConfigurationId: row.original.id, tab: '' })}
                         onClick={(e) => {
                             e.preventDefault()
                             navigate(
-                                generatePath(pages.SNIPPET_SERVICE.CONFIGURATIONS.DETAIL.LINK, { configurationId: row.original.configurationId.id, tab: '' })
+                                generatePath(pages.SNIPPET_SERVICE.APPLIED_CONFIGURATIONS.DETAIL.LINK, { appliedConfigurationId: row.original.id, tab: '' })
                             )
                         }}
                     >

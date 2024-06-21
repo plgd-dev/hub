@@ -42,7 +42,6 @@ const DetailPage: FC<any> = () => {
     const { data, loading, error } = useAppliedConfigurationDetail(appliedConfigurationId || '', !!appliedConfigurationId)
 
     const [activeItem, setActiveItem] = useState('0')
-    const [pageLoading, setPageLoading] = useState(false)
 
     const { refsByKey, setRef } = useRefs()
     const navigate = useNavigate()
@@ -122,10 +121,10 @@ const DetailPage: FC<any> = () => {
                     configurationId={data?.configurationId?.id || ''}
                     configurationName={data?.configurationName || ''}
                     id={data?.id || ''}
-                    loading={loading || pageLoading}
+                    loading={loading}
                 />
             }
-            loading={loading || pageLoading}
+            loading={loading}
             title={data?.name}
             xPadding={false}
         >

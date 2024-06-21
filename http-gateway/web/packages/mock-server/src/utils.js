@@ -1,4 +1,5 @@
 const { validationResult } = require('express-validator')
+const fs = require('fs-extra')
 
 const checkError = (req, res) => {
     const errors = validationResult(req)
@@ -15,7 +16,20 @@ const loadResponseFromFile = (file, res) => {
     res.sendFile(file, { root: targetDirectory })
 }
 
+const loadResponseStreamFromFile = (file, res) => {
+    const targetDirectory = `${__dirname}/data`
+
+    const dataArray = fs.readJsonSync(`${targetDirectory}/${file}`)
+
+    dataArray.forEach((data, key) => {
+        res.write(JSON.stringify(data) + `${key === dataArray.length - 1 ? '' : '\n\n'}`)
+    })
+
+    res.send()
+}
+
 module.exports = {
     checkError,
     loadResponseFromFile,
+    loadResponseStreamFromFile,
 }

@@ -1,6 +1,6 @@
 const express = require('express')
 const cors = require('cors')
-const { loadResponseFromFile, checkError } = require('./utils')
+const { checkError, loadResponseStreamFromFile } = require('./utils')
 const devices = require('./routes/devices')
 const snippetService = require('./routes/snippet-service')
 const axios = require('axios')
@@ -18,7 +18,7 @@ app.use(
 // ----- PENDING COMMANDS -----
 app.get('/api/v1/pending-commands', function (req, res) {
     console.log(`${req.method}`, req.url)
-    loadResponseFromFile('pending-commands.json', res)
+    loadResponseStreamFromFile('pending-commands.json', res)
 })
 
 app.get('/', () => {

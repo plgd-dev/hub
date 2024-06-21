@@ -265,7 +265,7 @@ export const DetailFromChunk3: FC<Chunk3Props> = (props) => {
             },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [errors.preSharedKey, preSharedKeySettings, register, updateField]
+        [errors?.preSharedKey, preSharedKeySettings, register, updateField]
     )
 
     return (

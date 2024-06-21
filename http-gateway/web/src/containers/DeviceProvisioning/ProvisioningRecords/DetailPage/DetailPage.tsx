@@ -62,7 +62,7 @@ const DetailPage: FC<Props> = (props) => {
     )
 
     return (
-        <div style={{ height: '100%', overflow: 'hidden' }}>
+        <>
             <OverviewRow data={provisioningRecord} />
             <Spacer type='pt-8'>
                 <Row style={{ height: '100%', overflow: 'hidden' }}>
@@ -98,7 +98,7 @@ const DetailPage: FC<Props> = (props) => {
                     </Column>
                 </Row>
             </Spacer>
-        </div>
+        </>
     )
 }
 

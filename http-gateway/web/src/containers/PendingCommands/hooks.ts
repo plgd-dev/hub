@@ -34,7 +34,7 @@ export const usePendingCommandsList = (deviceId?: string) => {
 
     return {
         ...rest,
-        data: convertPendingCommandsList(data),
+        data: data ? convertPendingCommandsList(data) : [],
         updateData,
     }
 }

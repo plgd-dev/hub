@@ -38,7 +38,7 @@ const PageLayout = forwardRef<HTMLDivElement, Props>((props, ref) => {
             collapsed={collapsed}
             footer={
                 <Footer
-                    footerExpanded={footerExpanded}
+                    footerExpanded={window.location.pathname.indexOf('devices') > 0 ? footerExpanded : false}
                     innerPortalTarget={innerPortalTarget}
                     paginationComponent={<div id='paginationPortalTarget'></div>}
                     recentTasksPortal={pendingCommands && <div id='recentTasksPortalTarget'></div>}
@@ -55,7 +55,7 @@ const PageLayout = forwardRef<HTMLDivElement, Props>((props, ref) => {
                         )
                     }
                     setFooterExpanded={setFooterExpanded}
-                    size={size}
+                    size={window.location.pathname.indexOf('devices') > 0 ? size : 'small'}
                 />
             }
             header={notFound ? undefined : rest.header}

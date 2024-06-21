@@ -25,14 +25,9 @@ const Step2: FC<Props> = (props) => {
 
     const [defaultPageSize, setDefaultPageSize] = useState(10)
     const [isAllSelected, setIsAllSelected] = useState(false)
-    const [selected, setSelected] = useState([])
+    const [_selected, setSelected] = useState([])
 
-    const {
-        formState: { errors },
-        watch,
-        updateField,
-        control,
-    } = useForm<Inputs>({ defaultFormData, errorKey: 'step2' })
+    const { watch, updateField, control } = useForm<Inputs>({ defaultFormData, errorKey: 'step2' })
 
     const { data, loading } = useDevicesList(isActivePage)
 
