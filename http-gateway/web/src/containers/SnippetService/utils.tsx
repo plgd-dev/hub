@@ -1,8 +1,14 @@
+import React from 'react'
+
+import { states } from '@shared-ui/components/Atomic/StatusPill/constants'
+import { ResourceType } from '@shared-ui/components/Organisms/ResourceToggleCreator/ResourceToggleCreator.types'
+import StatusTag from '@shared-ui/components/Atomic/StatusTag'
+import { tagVariants as statusTagVariants } from '@shared-ui/components/Atomic/StatusTag/constants'
+
 import { messages as confT } from '@/containers/SnippetService/SnippetService.i18n'
 import { messages as g } from '@/containers/Global.i18n'
 import { APPLIED_CONFIGURATIONS_STATUS } from '@/containers/SnippetService/constants'
 import { AppliedConfigurationDataType } from '@/containers/SnippetService/ServiceSnippet.types'
-import { states } from '@shared-ui/components/Atomic/StatusPill/constants'
 
 export const getConfigurationsPageListI18n = (_: any) => ({
     singleSelected: _(confT.configuration),
@@ -21,20 +27,39 @@ export const getConfigurationsPageListI18n = (_: any) => ({
 
 export const getAppliedDeviceConfigStatus = (appliedDeviceConfig: AppliedConfigurationDataType) => {
     const statuses = appliedDeviceConfig.resources.map((resource) => {
-        if (resource.status === 'PENDING') {
-            return 'PENDING'
+        if (resource.status && ['PENDING', 'TIMEOUT'].includes(resource.status)) {
+            return resource.status
         }
         return resource.resourceUpdated?.status
     })
     let configStatus = APPLIED_CONFIGURATIONS_STATUS.SUCCESS
 
-    if (statuses.includes('ERROR')) {
+    if (statuses.includes('ERROR') || statuses.includes('TIMEOUT')) {
         configStatus = APPLIED_CONFIGURATIONS_STATUS.ERROR
     } else if (statuses.includes('PENDING')) {
         configStatus = APPLIED_CONFIGURATIONS_STATUS.PENDING
     }
 
     return configStatus
+}
+
+export const getResourceStatusTag = (resource: ResourceType) => {
+    switch (resource.status) {
+        case 'PENDING':
+            return <StatusTag variant={statusTagVariants.WARNING}>{resource.status}</StatusTag>
+        case 'TIMEOUT':
+            return <StatusTag variant={statusTagVariants.ERROR}>{resource.status}</StatusTag>
+        case 'DONE':
+        default:
+            switch (resource.resourceUpdated?.status) {
+                case 'OK':
+                    return <StatusTag variant={statusTagVariants.SUCCESS}>{resource.resourceUpdated?.status}</StatusTag>
+                case 'ERROR':
+                default: {
+                    return <StatusTag variant={statusTagVariants.ERROR}>{resource.resourceUpdated?.status}</StatusTag>
+                }
+            }
+    }
 }
 
 export const getResourceI18n = (_: any) => ({

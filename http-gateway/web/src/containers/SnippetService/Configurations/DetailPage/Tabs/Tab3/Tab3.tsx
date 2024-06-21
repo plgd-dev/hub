@@ -43,11 +43,17 @@ const Tab3: FC<Props> = (props) => {
                 accessor: 'configurationName',
                 Cell: ({ value, row }: { value: string; row: any }) => (
                     <a
-                        href={generatePath(pages.SNIPPET_SERVICE.CONFIGURATIONS.DETAIL.LINK, { configurationId: row.original.configurationId.id, tab: '' })}
+                        href={generatePath(pages.SNIPPET_SERVICE.APPLIED_CONFIGURATIONS.DETAIL.LINK, {
+                            appliedConfigurationId: row.original.configurationId.id,
+                            tab: '',
+                        })}
                         onClick={(e) => {
                             e.preventDefault()
                             navigate(
-                                generatePath(pages.SNIPPET_SERVICE.CONFIGURATIONS.DETAIL.LINK, { configurationId: row.original.configurationId.id, tab: '' })
+                                generatePath(pages.SNIPPET_SERVICE.APPLIED_CONFIGURATIONS.DETAIL.LINK, {
+                                    appliedConfigurationId: row.original.configurationId.id,
+                                    tab: '',
+                                })
                             )
                         }}
                     >
@@ -109,7 +115,13 @@ const Tab3: FC<Props> = (props) => {
                     <TableActionButton
                         items={[
                             {
-                                onClick: () => navigate(generatePath(pages.SNIPPET_SERVICE.CONDITIONS.DETAIL.LINK, { conditionId: row.original.id, tab: '' })),
+                                onClick: () =>
+                                    navigate(
+                                        generatePath(pages.SNIPPET_SERVICE.APPLIED_CONFIGURATIONS.DETAIL.LINK, {
+                                            appliedConfigurationId: row.original.id,
+                                            tab: '',
+                                        })
+                                    ),
                                 label: _(g.view),
                                 icon: <IconArrowDetail />,
                             },

@@ -32,7 +32,7 @@ import { pages } from '@/routes'
 import { useAppliedConfigurationDetail } from '@/containers/SnippetService/hooks'
 import notificationId from '@/notificationId'
 import { messages as g } from '@/containers/Global.i18n'
-import { getResourceI18n } from '@/containers/SnippetService/utils'
+import { getResourceI18n, getResourceStatusTag } from '@/containers/SnippetService/utils'
 import DetailHeader from './DetailHeader'
 
 const DetailPage: FC<any> = () => {
@@ -89,17 +89,6 @@ const DetailPage: FC<any> = () => {
         },
         [refs]
     )
-
-    const getStatusTag = (resource: ResourceType) => {
-        switch (resource.resourceUpdated?.status) {
-            case 'SUCCESS':
-                return <StatusTag variant={statusTagVariants.SUCCESS}>{resource.resourceUpdated?.status}</StatusTag>
-            case 'ERROR':
-            default: {
-                return <StatusTag variant={statusTagVariants.ERROR}>{resource.resourceUpdated?.status}</StatusTag>
-            }
-        }
-    }
 
     const resourceI18n = useMemo(() => getResourceI18n(_), [_])
 
@@ -228,7 +217,7 @@ const DetailPage: FC<any> = () => {
                                                             readOnly
                                                             i18n={resourceI18n}
                                                             resourceData={resource}
-                                                            statusTag={getStatusTag(resource)}
+                                                            statusTag={getResourceStatusTag(resource)}
                                                         />
                                                     </Spacer>
                                                 ))}

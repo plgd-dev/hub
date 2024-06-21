@@ -127,7 +127,13 @@ const DetailPage: FC<any> = () => {
             delete dataForSave.id
 
             // FormSelect with multiple values
-            dataForSave.deviceIdFilter = dataForSave.deviceIdFilter.map((device: string | OptionType) => (typeof device === 'string' ? device : device.value))
+            if (dataForSave.deviceIdFilter) {
+                dataForSave.deviceIdFilter = dataForSave.deviceIdFilter.map((device: string | OptionType) =>
+                    typeof device === 'string' ? device : device.value
+                )
+            } else {
+                dataForSave.deviceIdFilter = []
+            }
 
             dataForSave.version = (parseInt(dataForSave.version, 10) + 1).toString()
 
