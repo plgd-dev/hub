@@ -39,7 +39,7 @@ const DetailPage: FC<any> = () => {
 
     const { formatMessage: _ } = useIntl()
     const { data, loading, error } = useAppliedConfigurationDetail(appliedConfigurationId || '', !!appliedConfigurationId)
-
+    console.log(data)
     const [activeItem, setActiveItem] = useState('0')
 
     const { refsByKey, setRef } = useRefs()

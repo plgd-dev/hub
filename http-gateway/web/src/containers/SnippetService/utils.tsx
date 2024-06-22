@@ -54,6 +54,8 @@ export const getResourceStatusTag = (resource: ResourceType) => {
             switch (resource.resourceUpdated?.status) {
                 case 'OK':
                     return <StatusTag variant={statusTagVariants.SUCCESS}>{resource.resourceUpdated?.status}</StatusTag>
+                case 'CANCELED':
+                    return <StatusTag variant={statusTagVariants.WARNING}>{resource.resourceUpdated?.status}</StatusTag>
                 case 'ERROR':
                 default: {
                     return <StatusTag variant={statusTagVariants.ERROR}>{resource.resourceUpdated?.status}</StatusTag>
