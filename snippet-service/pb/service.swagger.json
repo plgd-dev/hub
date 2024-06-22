@@ -510,12 +510,13 @@
     "AppliedDeviceConfigurationResourceStatus": {
       "type": "string",
       "enum": [
+        "UNSPECIFIED",
         "QUEUED",
         "PENDING",
         "DONE",
         "TIMEOUT"
       ],
-      "default": "QUEUED",
+      "default": "UNSPECIFIED",
       "description": " - DONE: If done look to resource_updated if update resource failed for resource aggregate."
     },
     "SnippetServiceInvokeConfigurationBody": {

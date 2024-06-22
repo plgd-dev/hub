@@ -113,7 +113,7 @@ func (h *ResourceUpdater) getConfigurations(ctx context.Context, owner string, c
 			continue
 		}
 		confConditions := confsToConditions[confID]
-		confConditions = append(confConditions, c)
+		confConditions = append(confConditions, c.Clone())
 		confsToConditions[confID] = confConditions
 		idFilter = append(idFilter, &pb.IDFilter{
 			Id: confID,
@@ -164,7 +164,7 @@ func (h *ResourceUpdater) getConfigurations(ctx context.Context, owner string, c
 			return i.GetApiAccessToken() == j.GetApiAccessToken()
 		})
 		confsWithConditions = append(confsWithConditions, configurationWithConditions{
-			configuration: c,
+			configuration: c.Clone(),
 			conditions:    confConditions,
 		})
 		condIDs := make([]string, 0, len(confConditions))
@@ -200,6 +200,7 @@ func (h *ResourceUpdater) applyConfigurationToResource(ctx context.Context, reso
 	}
 	res, err := h.raClient.UpdateResource(ctx, upd)
 	if err != nil {
+		h.logger.Errorf("failed to apply configuration(id:%v) to resource(%v): %w", configurationID, resourceID.GetHref(), err)
 		return 0, err
 	}
 	h.logger.Infof("configuration(id:%v) applied to resource(%v)", configurationID, resourceID.GetHref())
@@ -225,8 +226,9 @@ func (h *ResourceUpdater) findTokenAndApplyConfigurationToResource(ctx context.C
 }
 
 func (h *ResourceUpdater) timeoutAppliedConfigurationPendingResource(ctx context.Context, pd *pendingConfiguration) error {
-	return h.storage.UpdateAppliedConfigurationPendingResource(ctx, pd.owner, UpdateAppliedConfigurationPendingResourceRequest{
+	return h.storage.UpdateAppliedConfigurationResource(ctx, pd.owner, UpdateAppliedConfigurationResourceRequest{
 		AppliedConfigurationID: pd.id,
+		StatusFilter:           []pb.AppliedDeviceConfiguration_Resource_Status{pb.AppliedDeviceConfiguration_Resource_PENDING},
 		Resource: &pb.AppliedDeviceConfiguration_Resource{
 			Href:          pd.resourceID.GetHref(),
 			CorrelationId: pd.correlationID,
@@ -247,6 +249,8 @@ func correlationID(configurationID, correlationID string) string {
 }
 
 func (h *ResourceUpdater) applyConfigurationToResources(ctx context.Context, owner, deviceID string, confWithConditions *configurationWithConditions) error {
+	h.logger.Debugf("applying configuration(id:%v)", confWithConditions.configuration.GetId())
+	firstAppliedCond := confWithConditions.conditions[0]
 	resources := map[string]*pb.AppliedDeviceConfiguration_Resource{}
 	for _, cr := range confWithConditions.configuration.GetResources() {
 		resources[cr.GetHref()] = &pb.AppliedDeviceConfiguration_Resource{
@@ -255,12 +259,11 @@ func (h *ResourceUpdater) applyConfigurationToResources(ctx context.Context, own
 			Status:        pb.AppliedDeviceConfiguration_Resource_QUEUED,
 		}
 	}
-
 	appliedConf, errC := h.storage.CreateAppliedConfiguration(ctx, &pb.AppliedDeviceConfiguration{
 		Owner:           owner,
 		DeviceId:        deviceID,
 		ConfigurationId: pb.MakeRelationTo(confWithConditions.configuration.GetId(), confWithConditions.configuration.GetVersion()),
-		ExecutedBy:      pb.MakeExecutedByConditionId(confWithConditions.conditions[0].GetId(), confWithConditions.conditions[0].GetVersion()),
+		ExecutedBy:      pb.MakeExecutedByConditionId(firstAppliedCond.GetId(), firstAppliedCond.GetVersion()),
 		Resources:       maps.Values(resources),
 		Timestamp:       time.Now().UnixNano(),
 	})
@@ -273,49 +276,47 @@ func (h *ResourceUpdater) applyConfigurationToResources(ctx context.Context, own
 		}
 		return fmt.Errorf("cannot create applied device configuration: %w", errC)
 	}
+	h.logger.Debugf("applied configuration created: %v", appliedConf)
 
+	var errs *multierror.Error
 	var appliedCond appliedCondition
 	for _, cr := range confWithConditions.configuration.GetResources() {
 		href := cr.GetHref()
 		resourceID := &commands.ResourceId{Href: href, DeviceId: deviceID}
 		confID := confWithConditions.configuration.GetId()
 		correlationID := correlationID(appliedConf.GetId(), uuid.NewString())
+		updatedAppliedConf := false
 		var validUntil int64
 		var errA error
 		if appliedCond.id != "" {
 			validUntil, errA = h.applyConfigurationToResource(ctx, resourceID, confID, correlationID, cr, appliedCond.token)
 		} else {
 			validUntil, appliedCond, errA = h.findTokenAndApplyConfigurationToResource(ctx, resourceID, confID, correlationID, cr, confWithConditions.conditions)
-			if errA == nil {
-				appliedConf.ExecutedBy = pb.MakeExecutedByConditionId(appliedCond.id, appliedCond.version)
+			updatedAppliedConf = errA == nil && appliedCond.id != firstAppliedCond.GetId() && appliedCond.version != firstAppliedCond.GetVersion()
+		}
+
+		update := UpdateAppliedConfigurationResourceRequest{
+			AppliedConfigurationID: appliedConf.GetId(),
+			StatusFilter:           []pb.AppliedDeviceConfiguration_Resource_Status{pb.AppliedDeviceConfiguration_Resource_QUEUED},
+			Resource: &pb.AppliedDeviceConfiguration_Resource{
+				Href:          href,
+				CorrelationId: correlationID,
+			},
+		}
+		if updatedAppliedConf {
+			update.AppliedCondition = &pb.AppliedDeviceConfiguration_RelationTo{
+				Id:      appliedCond.id,
+				Version: appliedCond.version,
 			}
 		}
 
-		resource := resources[href]
 		if errA == nil {
-			resource.Status = pb.AppliedDeviceConfiguration_Resource_PENDING
-			resource.ValidUntil = validUntil
-			if validUntil > 0 {
-				h.pendingConfigurations.Store(
-					correlationID, cache.NewElement(
-						&pendingConfiguration{
-							id:            appliedConf.GetId(),
-							owner:         owner,
-							correlationID: correlationID,
-							resourceID:    resourceID,
-						},
-						pkgTime.Unix(0, validUntil),
-						func(d *pendingConfiguration) {
-							h.logger.Infof("timeout for pending resource(%v) update reached", d.resourceID.GetHref())
-							if errT := h.timeoutAppliedConfigurationPendingResource(ctx, d); errT != nil {
-								h.logger.Errorf("failed to timeout pending applied configuration for resource(%v): %w", d.resourceID.GetHref(), errT)
-							}
-						}),
-				)
-			}
+			// update resource status from queued to pending
+			update.Resource.Status = pb.AppliedDeviceConfiguration_Resource_PENDING
+			update.Resource.ValidUntil = validUntil
 		} else {
-			resource.Status = pb.AppliedDeviceConfiguration_Resource_DONE
-			resource.ResourceUpdated = &events.ResourceUpdated{
+			update.Resource.Status = pb.AppliedDeviceConfiguration_Resource_DONE
+			update.Resource.ResourceUpdated = &events.ResourceUpdated{
 				ResourceId: resourceID,
 				Status:     commands.Status_ERROR,
 				Content: &commands.Content{
@@ -324,7 +325,7 @@ func (h *ResourceUpdater) applyConfigurationToResources(ctx context.Context, own
 				},
 				AuditContext: &commands.AuditContext{
 					// UserId:        owner,
-					CorrelationId: resource.GetCorrelationId(),
+					CorrelationId: correlationID,
 					Owner:         owner,
 				},
 				EventMetadata: &events.EventMetadata{
@@ -332,12 +333,34 @@ func (h *ResourceUpdater) applyConfigurationToResources(ctx context.Context, own
 				},
 			}
 		}
-		resources[href] = resource
+		h.logger.Debugf("updating applied configuration(%v) resource(%v) with status(%v)", appliedConf.GetId(), href, update.Resource.GetStatus().String())
+		errU := h.storage.UpdateAppliedConfigurationResource(ctx, owner, update)
+		if errU != nil {
+			h.logger.Errorf("cannot update applied configuration resource: %w", errU)
+			errs = multierror.Append(errs, errU)
+			continue
+		}
+		if validUntil > 0 {
+			h.logger.Debugf("timeout(%v) for pending resource(%v) update scheduled for %v", correlationID, href, time.Unix(0, validUntil))
+			h.pendingConfigurations.Store(
+				correlationID, cache.NewElement(
+					&pendingConfiguration{
+						id:            appliedConf.GetId(),
+						owner:         owner,
+						correlationID: correlationID,
+						resourceID:    resourceID,
+					},
+					pkgTime.Unix(0, validUntil),
+					func(d *pendingConfiguration) {
+						h.logger.Debugf("timeout for pending resource(%v) update reached", d.resourceID.GetHref())
+						if errT := h.timeoutAppliedConfigurationPendingResource(ctx, d); errT != nil {
+							h.logger.Errorf("failed to timeout pending applied configuration for resource(%v): %w", d.resourceID.GetHref(), errT)
+						}
+					}),
+			)
+		}
 	}
-
-	appliedConf.Resources = maps.Values(resources)
-	_, errU := h.storage.UpdateAppliedConfiguration(ctx, appliedConf)
-	return errU
+	return errs.ErrorOrNil()
 }
 
 func decodeContent(content *commands.Content) (interface{}, error) {
@@ -431,7 +454,7 @@ func (h *ResourceUpdater) finishPendingConfiguration(ctx context.Context, update
 		h.logger.Debugf("pending configuration(%v) for resource(%v:%v) update expiration handler removed", pc.Data().id, updated.GetResourceId().GetDeviceId(), updated.GetResourceId().GetHref())
 	}
 	owner := updated.GetAuditContext().GetOwner()
-	return h.storage.UpdateAppliedConfigurationPendingResource(ctx, owner, UpdateAppliedConfigurationPendingResourceRequest{
+	return h.storage.UpdateAppliedConfigurationResource(ctx, owner, UpdateAppliedConfigurationResourceRequest{
 		AppliedConfigurationID: parts[0],
 		Resource: &pb.AppliedDeviceConfiguration_Resource{
 			Href:            updated.GetResourceId().GetHref(),

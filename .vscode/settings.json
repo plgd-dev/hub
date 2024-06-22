@@ -34,6 +34,8 @@
         "TEST_GRPC_GATEWAY_LOG_DUMP_BODY": "false",
         "TEST_IDENTITY_STORE_LOG_LEVEL": "info",
         "TEST_IDENTITY_STORE_LOG_DUMP_BODY": "false",
+        "TEST_SNIPPET_SERVICE_LOG_LEVEL": "info",
+        "TEST_SNIPPET_SERVICE_LOG_DUMP_BODY": "false",
         "TEST_DATABASE": "mongoDB",
         "TEST_BRIDGE_DEVICE_CONFIG": "${workspaceFolder}/.tmp/bridge/config-test.yaml",
         // "TEST_DEVICE_NAME": "bridged-device-0",

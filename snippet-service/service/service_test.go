@@ -201,6 +201,31 @@ func TestServiceNew(t *testing.T) {
 	}
 }
 
+func getAppliedConfigurations(ctx context.Context, t *testing.T, snippetClient pb.SnippetServiceClient, query *pb.GetAppliedDeviceConfigurationsRequest) (map[string]*pb.AppliedDeviceConfiguration, map[string]*pb.AppliedDeviceConfiguration_Resource) {
+	getClient, err := snippetClient.GetAppliedConfigurations(ctx, query)
+	require.NoError(t, err)
+	defer func() {
+		_ = getClient.CloseSend()
+	}()
+	appliedConfs := make(map[string]*pb.AppliedDeviceConfiguration)
+	for {
+		appliedConf, errR := getClient.Recv()
+		if errors.Is(errR, io.EOF) {
+			break
+		}
+		require.NoError(t, errR)
+		appliedConfs[appliedConf.GetId()] = appliedConf
+	}
+	appliedConfResources := make(map[string]*pb.AppliedDeviceConfiguration_Resource)
+	for _, appliedConf := range appliedConfs {
+		for _, r := range appliedConf.GetResources() {
+			id := appliedConf.GetConfigurationId().GetId() + "." + r.GetHref()
+			appliedConfResources[id] = r
+		}
+	}
+	return appliedConfs, appliedConfResources
+}
+
 func TestService(t *testing.T) {
 	deviceID := hubTest.MustFindDeviceByName(hubTest.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
@@ -312,12 +337,39 @@ func TestService(t *testing.T) {
 	_, shutdownDevSim := hubTest.OnboardDevSim(ctx, t, grpcClient.GrpcGatewayClient(), deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, resources)
 	defer shutdownDevSim()
 
+	// -> wait for /conf1 to be applied -> for /not/existing resource this should start-up the timeout timer
+	notExistingConf1ID := conf1.GetId() + "." + notExistingResourceHref
 	logger := log.NewLogger(snippetCfg.Log)
-	logger.Info("device onboarded")
+	var appliedConf1Status pb.AppliedDeviceConfiguration_Resource_Status
+	retryCount := 0
+	for retryCount < 10 {
+		logger.Debugf("check conf1 (retry: %v)", retryCount)
+		appliedConfs, appliedConfResources := getAppliedConfigurations(ctx, t, snippetClient, &pb.GetAppliedDeviceConfigurationsRequest{
+			DeviceIdFilter: []string{deviceID},
+			ConfigurationIdFilter: []*pb.IDFilter{
+				{
+					Id: conf1.GetId(),
+					Version: &pb.IDFilter_All{
+						All: true,
+					},
+				},
+			},
+		})
+		appliedConf1Status = appliedConfResources[notExistingConf1ID].GetStatus()
+		if appliedConf1Status != pb.AppliedDeviceConfiguration_Resource_QUEUED {
+			logger.Infof("conf1 applied to resources: %v", appliedConfs)
+			break
+		}
+		time.Sleep(time.Millisecond * 200)
+		retryCount++
+	}
+	require.NotEqual(t, pb.AppliedDeviceConfiguration_Resource_QUEUED, appliedConf1Status)
 
-	// -> wait for the snippet service to apply configurations
-	// -> wait enough time to timeout pending commands
-	time.Sleep(2 * snippetCfg.Clients.ResourceAggregate.PendingCommandsCheckInterval)
+	if appliedConf1Status != pb.AppliedDeviceConfiguration_Resource_TIMEOUT &&
+		appliedConf1Status != pb.AppliedDeviceConfiguration_Resource_DONE {
+		// -> wait enough time to timeout pending commands
+		time.Sleep(2 * snippetCfg.Clients.ResourceAggregate.PendingCommandsCheckInterval)
+	}
 
 	var got map[interface{}]interface{}
 	err = grpcClient.GetResource(ctx, deviceID, hubTest.TestResourceLightInstanceHref("1"), &got)
@@ -330,48 +382,27 @@ func TestService(t *testing.T) {
 	}, got)
 
 	// check applied configurations
-	getClient, err := snippetClient.GetAppliedConfigurations(ctx, &pb.GetAppliedDeviceConfigurationsRequest{
-		DeviceIdFilter: []string{deviceID},
-		ConfigurationIdFilter: []*pb.IDFilter{
-			{
-				Id: conf1.GetId(),
-				Version: &pb.IDFilter_All{
-					All: true,
+	appliedConfs, appliedConfResources := getAppliedConfigurations(ctx, t, snippetClient,
+		&pb.GetAppliedDeviceConfigurationsRequest{
+			DeviceIdFilter: []string{deviceID},
+			ConfigurationIdFilter: []*pb.IDFilter{
+				{
+					Id: conf1.GetId(),
+					Version: &pb.IDFilter_All{
+						All: true,
+					},
+				},
+				{
+					Id: conf2.GetId(),
+					Version: &pb.IDFilter_All{
+						All: true,
+					},
 				},
 			},
-			{
-				Id: conf2.GetId(),
-				Version: &pb.IDFilter_All{
-					All: true,
-				},
-			},
-		},
-	})
-	require.NoError(t, err)
-	defer func() {
-		_ = getClient.CloseSend()
-	}()
-	appliedConfs := make(map[string]*pb.AppliedDeviceConfiguration)
-	for {
-		appliedConf, errR := getClient.Recv()
-		if errors.Is(errR, io.EOF) {
-			break
-		}
-		require.NoError(t, errR)
-		appliedConfs[appliedConf.GetId()] = appliedConf
-	}
+		})
 	require.Len(t, appliedConfs, 2)
-
-	appliedConfResources := make(map[string]*pb.AppliedDeviceConfiguration_Resource)
-	for _, appliedConf := range appliedConfs {
-		for _, r := range appliedConf.GetResources() {
-			id := appliedConf.GetConfigurationId().GetId() + "." + r.GetHref()
-			appliedConfResources[id] = r
-		}
-	}
 	require.Len(t, appliedConfResources, 3)
 
-	notExistingConf1ID := conf1.GetId() + "." + notExistingResourceHref
 	notExistingConf1, ok := appliedConfResources[notExistingConf1ID]
 	require.True(t, ok)
 	require.Equal(t, notExistingResourceHref, notExistingConf1.GetHref())

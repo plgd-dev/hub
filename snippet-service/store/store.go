@@ -124,8 +124,8 @@ type Store interface {
 	InsertAppliedConfigurations(ctx context.Context, configurations ...*pb.AppliedDeviceConfiguration) error
 	// UpdateAppliedConfiguration updates an existing applied device configuration in the database.
 	UpdateAppliedConfiguration(ctx context.Context, conf *pb.AppliedDeviceConfiguration) (*pb.AppliedDeviceConfiguration, error)
-
-	UpdateAppliedConfigurationPendingResource(ctx context.Context, owner string, query UpdateAppliedConfigurationPendingResourceRequest) error
+	// UpdateAppliedConfigurationResource updates an existing applied device configuration resource in the database.
+	UpdateAppliedConfigurationResource(ctx context.Context, owner string, query UpdateAppliedConfigurationResourceRequest) error
 
 	Close(ctx context.Context) error
 }

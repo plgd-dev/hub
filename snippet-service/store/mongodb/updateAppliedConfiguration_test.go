@@ -155,7 +155,7 @@ func TestStoreUpdateAppliedConfiguration(t *testing.T) {
 	}
 }
 
-func TestStoreUpdateAppliedConfigurationPendingResources(t *testing.T) {
+func TestStoreUpdateAppliedConfigurationResource(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
@@ -198,8 +198,9 @@ func TestStoreUpdateAppliedConfigurationPendingResources(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	err = s.UpdateAppliedConfigurationPendingResource(ctx, owner, store.UpdateAppliedConfigurationPendingResourceRequest{
+	err = s.UpdateAppliedConfigurationResource(ctx, owner, store.UpdateAppliedConfigurationResourceRequest{
 		AppliedConfigurationID: id,
+		StatusFilter:           []pb.AppliedDeviceConfiguration_Resource_Status{pb.AppliedDeviceConfiguration_Resource_PENDING},
 		Resource: &pb.AppliedDeviceConfiguration_Resource{
 			Href:          "/test/1",
 			CorrelationId: "corID1",
@@ -209,8 +210,9 @@ func TestStoreUpdateAppliedConfigurationPendingResources(t *testing.T) {
 	require.NoError(t, err)
 
 	// /test/1 is no longer in pending state, so additional update should fail
-	err = s.UpdateAppliedConfigurationPendingResource(ctx, owner, store.UpdateAppliedConfigurationPendingResourceRequest{
+	err = s.UpdateAppliedConfigurationResource(ctx, owner, store.UpdateAppliedConfigurationResourceRequest{
 		AppliedConfigurationID: id,
+		StatusFilter:           []pb.AppliedDeviceConfiguration_Resource_Status{pb.AppliedDeviceConfiguration_Resource_PENDING},
 		Resource: &pb.AppliedDeviceConfiguration_Resource{
 			Href:          "/test/1",
 			CorrelationId: "corID1",
@@ -220,8 +222,9 @@ func TestStoreUpdateAppliedConfigurationPendingResources(t *testing.T) {
 	require.Error(t, err)
 
 	// mismatched owner
-	err = s.UpdateAppliedConfigurationPendingResource(ctx, "mismatch", store.UpdateAppliedConfigurationPendingResourceRequest{
+	err = s.UpdateAppliedConfigurationResource(ctx, "mismatch", store.UpdateAppliedConfigurationResourceRequest{
 		AppliedConfigurationID: id,
+		StatusFilter:           []pb.AppliedDeviceConfiguration_Resource_Status{pb.AppliedDeviceConfiguration_Resource_PENDING},
 		Resource: &pb.AppliedDeviceConfiguration_Resource{
 			Href:          "/test/2",
 			CorrelationId: "corID2",

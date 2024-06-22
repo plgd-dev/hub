@@ -81,7 +81,7 @@ func MakeConfig(t require.TestingT) service.Config {
 	var cfg service.Config
 
 	cfg.HubID = config.HubID()
-	cfg.Log = log.MakeDefaultConfig()
+	cfg.Log = config.MakeLogConfig(t, "TEST_SNIPPET_SERVICE_LOG_LEVEL", "TEST_SNIPPET_SERVICE_LOG_DUMP_BODY")
 
 	cfg.APIs = MakeAPIsConfig()
 	cfg.Clients = MakeClientsConfig()

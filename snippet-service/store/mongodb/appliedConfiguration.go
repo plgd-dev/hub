@@ -142,23 +142,42 @@ func (s *Store) DeleteAppliedConfigurations(ctx context.Context, owner string, q
 	return res.DeletedCount, nil
 }
 
-func (s *Store) UpdateAppliedConfigurationPendingResource(ctx context.Context, owner string, query store.UpdateAppliedConfigurationPendingResourceRequest) error {
+func (s *Store) UpdateAppliedConfigurationResource(ctx context.Context, owner string, query store.UpdateAppliedConfigurationResourceRequest) error {
 	filter := bson.M{
 		store.IDKey: query.AppliedConfigurationID,
-		store.ResourcesKey + "." + store.StatusKey: pb.AppliedDeviceConfiguration_Resource_PENDING.String(),
 	}
+	statusFilter := bson.A{}
+	if len(query.StatusFilter) > 0 {
+		for _, status := range query.StatusFilter {
+			statusFilter = append(statusFilter, status.String())
+		}
+		filter[store.ResourcesKey] = bson.M{"$elemMatch": bson.M{
+			store.HrefKey:   query.Resource.GetHref(),
+			store.StatusKey: bson.M{mongodb.In: statusFilter},
+		}}
+	}
+
 	if owner != "" {
 		filter[store.OwnerKey] = owner
 	}
 
-	update := bson.M{
-		mongodb.Set: bson.M{
-			store.ResourcesKey + ".$[elem]": query.Resource,
-		},
+	set := bson.M{
+		store.TimestampKey:              time.Now().UnixNano(),
+		store.ResourcesKey + ".$[elem]": query.Resource,
 	}
+	if query.AppliedCondition != nil {
+		set[store.ConditionRelationIDKey] = query.AppliedCondition.GetId()
+		set[store.ConditionRelationVersionKey] = query.AppliedCondition.GetVersion()
+	}
+	update := bson.M{
+		mongodb.Set: set,
+	}
+
 	optFilters := bson.M{
-		"elem." + store.HrefKey:   query.Resource.GetHref(),
-		"elem." + store.StatusKey: pb.AppliedDeviceConfiguration_Resource_PENDING.String(),
+		"elem." + store.HrefKey: query.Resource.GetHref(),
+	}
+	if len(statusFilter) > 0 {
+		optFilters["elem."+store.StatusKey] = bson.M{mongodb.In: statusFilter}
 	}
 	res, err := s.Collection(appliedConfigurationsCol).UpdateOne(ctx, filter, update, &options.UpdateOptions{
 		ArrayFilters: &options.ArrayFilters{
@@ -166,7 +185,7 @@ func (s *Store) UpdateAppliedConfigurationPendingResource(ctx context.Context, o
 		},
 	})
 	if err == nil && res.ModifiedCount == 0 {
-		return fmt.Errorf("%w: %w", store.ErrNotFound, fmt.Errorf("no applied configuration(%v) with resource(%v) in pending status", query.AppliedConfigurationID, query.Resource.GetHref()))
+		return fmt.Errorf("%w: %w", store.ErrNotFound, fmt.Errorf("no applied configuration(%v) with resource(%v)", query.AppliedConfigurationID, query.Resource.GetHref()))
 	}
 	return err
 }

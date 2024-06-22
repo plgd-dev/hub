@@ -351,10 +351,11 @@ TODO: /configurations/123?version=latest
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| QUEUED | 0 |  |
-| PENDING | 1 |  |
-| DONE | 2 | If done look to resource_updated if update resource failed for resource aggregate. |
-| TIMEOUT | 3 |  |
+| UNSPECIFIED | 0 |  |
+| QUEUED | 1 |  |
+| PENDING | 2 |  |
+| DONE | 3 | If done look to resource_updated if update resource failed for resource aggregate. |
+| TIMEOUT | 4 |  |
 
 
  

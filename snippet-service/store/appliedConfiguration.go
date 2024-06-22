@@ -15,12 +15,14 @@ func ValidateAppliedConfiguration(c *pb.AppliedDeviceConfiguration, isUpdate boo
 	return nil
 }
 
-type UpdateAppliedConfigurationPendingResourceRequest struct {
+type UpdateAppliedConfigurationResourceRequest struct {
 	AppliedConfigurationID string
+	AppliedCondition       *pb.AppliedDeviceConfiguration_RelationTo
+	StatusFilter           []pb.AppliedDeviceConfiguration_Resource_Status
 	Resource               *pb.AppliedDeviceConfiguration_Resource
 }
 
-func (u *UpdateAppliedConfigurationPendingResourceRequest) Validate() error {
+func (u *UpdateAppliedConfigurationResourceRequest) Validate() error {
 	if _, err := uuid.Parse(u.AppliedConfigurationID); err != nil {
 		return errInvalidArgument(fmt.Errorf("invalid ID(%v): %w", u.AppliedConfigurationID, err))
 	}
@@ -29,10 +31,6 @@ func (u *UpdateAppliedConfigurationPendingResourceRequest) Validate() error {
 	}
 	if err := u.Resource.Validate(); err != nil {
 		return errInvalidArgument(err)
-	}
-	if u.Resource.GetStatus() != pb.AppliedDeviceConfiguration_Resource_DONE &&
-		u.Resource.GetStatus() != pb.AppliedDeviceConfiguration_Resource_TIMEOUT {
-		return errInvalidArgument(fmt.Errorf("invalid status(%v)", u.Resource.GetStatus().String()))
 	}
 	return nil
 }

@@ -27,6 +27,6 @@ func (s *Store) UpdateAppliedConfiguration(context.Context, *pb.AppliedDeviceCon
 	return nil, store.ErrNotSupported
 }
 
-func (s *Store) UpdateAppliedConfigurationPendingResource(context.Context, string, store.UpdateAppliedConfigurationPendingResourceRequest) error {
+func (s *Store) UpdateAppliedConfigurationResource(context.Context, string, store.UpdateAppliedConfigurationResourceRequest) error {
 	return store.ErrNotSupported
 }

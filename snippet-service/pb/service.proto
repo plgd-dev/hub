@@ -129,10 +129,11 @@ message AppliedDeviceConfiguration { //TODO naming
     // Reused from invoke command or generated. Can be used to retrieve corresponding pending command.
     string correlation_id = 2; // @gotags: bson:"correlationId"
     enum Status {
-      QUEUED = 0;
-      PENDING = 1;
-      DONE = 2; // If done look to resource_updated if update resource failed for resource aggregate.
-      TIMEOUT = 3;
+      UNSPECIFIED = 0;
+      QUEUED = 1;
+      PENDING = 2;
+      DONE = 3; // If done look to resource_updated if update resource failed for resource aggregate.
+      TIMEOUT = 4;
     };
     Status status = 3;
     resourceaggregate.pb.ResourceUpdated resource_updated = 4; // @gotags: bson:"resourceUpdated,omitempty"
