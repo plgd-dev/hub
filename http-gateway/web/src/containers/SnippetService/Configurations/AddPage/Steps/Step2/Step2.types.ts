@@ -6,4 +6,5 @@ export type Props = {
 
 export type Inputs = {
     allDevices: boolean
+    deviceIds: string[]
 }

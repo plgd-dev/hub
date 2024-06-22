@@ -12,6 +12,7 @@ import Table from '@shared-ui/components/Atomic/TableNew'
 import Loadable from '@shared-ui/components/Atomic/Loadable'
 import StepButtons from '@shared-ui/components/Templates/FullPageWizard/StepButtons'
 import { FormContext } from '@shared-ui/common/context/FormContext'
+import Button from '@shared-ui/components/Atomic/Button'
 
 import { Props, Inputs } from './Step2.types'
 import { messages as g } from '@/containers/Global.i18n'
@@ -24,9 +25,6 @@ const Step2: FC<Props> = (props) => {
     const { setStep } = useContext(FormContext)
 
     const [defaultPageSize, setDefaultPageSize] = useState(10)
-    const [isAllSelected, setIsAllSelected] = useState(false)
-    const [_selected, setSelected] = useState([])
-
     const { watch, updateField, control } = useForm<Inputs>({ defaultFormData, errorKey: 'step2' })
 
     const { data, loading } = useDevicesList(isActivePage)
@@ -100,20 +98,30 @@ const Step2: FC<Props> = (props) => {
 
                 <FullPageWizard.GroupHeadline>{_(g.setDevices)}</FullPageWizard.GroupHeadline>
 
-                <Loadable condition={!loading}>
-                    <Table
-                        columns={columns}
-                        data={data || []}
-                        defaultPageSize={defaultPageSize}
-                        i18n={{
-                            search: _(g.search),
-                            placeholder: _(confT.noDevices),
-                        }}
-                        onRowsSelect={(isAllRowsSelected, selection) => {
-                            isAllRowsSelected !== isAllSelected && setIsAllSelected && setIsAllSelected(isAllRowsSelected)
-                            setSelected(selection)
-                        }}
-                    />
+                <Loadable condition={!loading && data}>
+                    <>
+                        <Table
+                            columns={columns}
+                            data={data || []}
+                            defaultPageSize={defaultPageSize}
+                            i18n={{
+                                search: _(g.search),
+                                placeholder: _(confT.noDevices),
+                            }}
+                            onRowsSelect={(_isAllRowsSelected, selection) => {
+                                updateField('deviceIds', selection)
+                            }}
+                            primaryAttribute='id'
+                        />
+
+                        {data?.length > 10 && defaultPageSize === 10 && (
+                            <Spacer type='pt-6'>
+                                <Button fullWidth htmlType='button' onClick={() => setDefaultPageSize(1000)}>
+                                    {_(g.showMore)}
+                                </Button>
+                            </Spacer>
+                        )}
+                    </>
                 </Loadable>
             </ShowAnimate>
 

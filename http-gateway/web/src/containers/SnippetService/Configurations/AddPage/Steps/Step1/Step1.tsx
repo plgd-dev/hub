@@ -101,7 +101,7 @@ const Step1: FC<any> = (props) => {
 
                 {resources &&
                     resources.map((resource, key) => (
-                        <Spacer key={key} type='mb-2'>
+                        <Spacer key={`resource-#${key}`} type='mb-2'>
                             <ResourceToggleCreator
                                 defaultOpen={isEqual(resource, defaultResourceData)}
                                 i18n={resourceI18n}

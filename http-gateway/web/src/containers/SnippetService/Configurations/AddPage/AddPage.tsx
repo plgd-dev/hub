@@ -66,7 +66,10 @@ const AddPage: FC<any> = () => {
             const dataForSave = cloneDeep(formData)
 
             delete dataForSave.id
+
+            // future feature
             delete dataForSave.allDevices
+            delete dataForSave.deviceIds
 
             // reformat resources for save
             dataForSave.resources = formData.resources.map((resource: ResourceType) => ({

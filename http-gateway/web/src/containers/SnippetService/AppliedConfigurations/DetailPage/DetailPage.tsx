@@ -23,7 +23,6 @@ import ResourceToggleCreator from '@shared-ui/components/Organisms/ResourceToggl
 import StatusTag from '@shared-ui/components/Atomic/StatusTag'
 import { tagVariants as statusTagVariants } from '@shared-ui/components/Atomic/StatusTag/constants'
 import { tagVariants } from '@shared-ui/components/Atomic/Tag/constants'
-import { ResourceType } from '@shared-ui/components/Organisms/ResourceToggleCreator/ResourceToggleCreator.types'
 import Tag from '@shared-ui/components/Atomic/Tag'
 import IconLink from '@shared-ui/components/Atomic/Icon/components/IconLink'
 
