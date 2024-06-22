@@ -31,6 +31,7 @@ import DetailHeader from './DetailHeader'
 import { messages as g } from '@/containers/Global.i18n'
 import DetailForm from './DetailForm'
 import { updateConditionApi } from '@/containers/SnippetService/rest'
+import { dirtyFormState } from '@/store/recoil.store'
 
 const DetailPage: FC<any> = () => {
     const { conditionId } = useParams()
@@ -115,6 +116,7 @@ const DetailPage: FC<any> = () => {
     const { handleReset, context, resetIndex, dirty, formData, hasError } = useFormData({
         defaultFormState,
         data,
+        dirtyFormState,
         i18n: { promptDefaultMessage: _(g.promptDefaultMessage), default: _(g.default) },
     })
 

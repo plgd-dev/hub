@@ -24,6 +24,7 @@ import DetailHeader from './DetailHeader'
 import testId from '@/testId'
 import { messages as g } from '@/containers/Global.i18n'
 import { updateResourceConfigApi } from '@/containers/SnippetService/rest'
+import { dirtyFormState } from '@/store/recoil.store'
 
 const Tab1 = lazy(() => import('./Tabs/Tab1'))
 const Tab2 = lazy(() => import('./Tabs/Tab2'))
@@ -61,6 +62,7 @@ const DetailPage: FC<any> = () => {
     const { handleReset, context, resetIndex, dirty, formData, hasError } = useFormData({
         defaultFormState,
         data,
+        dirtyFormState,
         i18n: { promptDefaultMessage: _(g.promptDefaultMessage), default: _(g.default) },
     })
 
