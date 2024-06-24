@@ -12,6 +12,8 @@ global:
   defaultCommandTimeToLive: "10s"
   # -- Use database. Supported values: "mongoDB", "cqlDB"
   useDatabase: "mongoDB"
+  # -- MongoDB URI
+  mongoUri: ""
   # -- OAuth authority
   authority:
   # -- OAuth audience
