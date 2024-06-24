@@ -17,6 +17,7 @@ import {
 } from '@/containers/SnippetService/ServiceSnippet.types'
 import { DeviceDataType } from '@/containers/Devices/Devices.types'
 import { StreamApiReturnType } from '@shared-ui/common/types/API.types'
+import { UseFormWatch } from 'react-hook-form'
 
 const getConfig = () => security.getGeneralConfig() as SecurityConfig
 const getWellKnow = () => security.getWellKnownConfig()
@@ -197,4 +198,19 @@ export const useAppliedConfigurationDetail = (id: string, requestActive = false)
     }, [listData])
 
     return { data, ...rest }
+}
+
+export const useConditionFilterValidation = ({ watch }: { watch: UseFormWatch<any> }) => {
+    const deviceIdFilterVal: string[] = watch('deviceIdFilter')
+    const resourceHrefFilterVal: string[] = watch('resourceHrefFilter')
+    const resourceTypeFilterVal: string[] = watch('resourceTypeFilter')
+
+    const deviceIdFilter: string[] = useMemo(() => deviceIdFilterVal || [], [deviceIdFilterVal])
+    const resourceHrefFilter: string[] = useMemo(() => resourceHrefFilterVal || [], [resourceHrefFilterVal])
+    const resourceTypeFilter: string[] = useMemo(() => resourceTypeFilterVal || [], [resourceTypeFilterVal])
+
+    return useMemo(
+        () => !(deviceIdFilter.length > 0 || resourceHrefFilter.length > 0 || resourceTypeFilter.length > 0),
+        [deviceIdFilter.length, resourceHrefFilter.length, resourceTypeFilter.length]
+    )
 }

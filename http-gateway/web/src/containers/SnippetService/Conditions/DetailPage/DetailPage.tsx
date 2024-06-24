@@ -45,6 +45,7 @@ const DetailPage: FC<any> = () => {
     })
 
     const [pageLoading, setPageLoading] = useState(false)
+    const [filterError, setFilterError] = useState(false)
     const [activeItem, setActiveItem] = useState('0')
 
     const { refsByKey, setRef } = useRefs()
@@ -214,6 +215,7 @@ const DetailPage: FC<any> = () => {
                                             accessToken: (element: HTMLElement) => setRef(element, '5'),
                                         }}
                                         resetIndex={resetIndex}
+                                        setFilterError={setFilterError}
                                     />
                                 </Loadable>
                             </FormContext.Provider>
@@ -226,7 +228,7 @@ const DetailPage: FC<any> = () => {
                 ReactDOM.createPortal(
                     <BottomPanel
                         actionPrimary={
-                            <Button disabled={hasError} loading={loading} loadingText={_(g.loading)} onClick={onSubmit} variant='primary'>
+                            <Button disabled={hasError || filterError} loading={loading} loadingText={_(g.loading)} onClick={onSubmit} variant='primary'>
                                 {_(g.saveChanges)}
                             </Button>
                         }

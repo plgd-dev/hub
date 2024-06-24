@@ -9,6 +9,7 @@ export type Props = {
         general: (element: HTMLDivElement) => void
     }
     resetIndex: number
+    setFilterError?: (error: boolean) => void
 }
 
 export type Inputs = {

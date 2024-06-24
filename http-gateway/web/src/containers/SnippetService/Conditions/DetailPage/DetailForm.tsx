@@ -4,6 +4,7 @@ import { generatePath, useNavigate } from 'react-router-dom'
 import get from 'lodash/get'
 import { Controller } from 'react-hook-form'
 import pick from 'lodash/pick'
+import isFunction from 'lodash/isFunction'
 
 import Spacer from '@shared-ui/components/Atomic/Spacer'
 import Headline from '@shared-ui/components/Atomic/Headline'
@@ -24,9 +25,10 @@ import { messages as confT } from '@/containers/SnippetService/SnippetService.i1
 import { pages } from '@/routes'
 import { formatText } from '@/containers/PendingCommands/DateFormat'
 import { Step2FormComponent } from '@/containers/SnippetService/Conditions/FomComponents'
+import { useConditionFilterValidation } from '@/containers/SnippetService/hooks'
 
 const DetailForm: FC<Props> = (props) => {
-    const { formData, refs, resetIndex } = props
+    const { formData, refs, resetIndex, setFilterError } = props
     const { formatMessage: _, formatDate, formatTime } = useIntl()
     const schema = useValidationsSchema('tab1')
 
@@ -51,6 +53,12 @@ const DetailForm: FC<Props> = (props) => {
             reset()
         }
     }, [reset, resetIndex])
+
+    const invalidFilters = useConditionFilterValidation({ watch })
+
+    useEffect(() => {
+        isFunction(setFilterError) && setFilterError(invalidFilters)
+    }, [invalidFilters, setFilterError])
 
     return (
         <>

@@ -1,4 +1,4 @@
-import React, { FC, useContext, useMemo } from 'react'
+import React, { FC, useContext } from 'react'
 import { useIntl } from 'react-intl'
 
 import FullPageWizard from '@shared-ui/components/Templates/FullPageWizard'
@@ -10,6 +10,7 @@ import { messages as confT } from '@/containers/SnippetService/SnippetService.i1
 import { messages as g } from '@/containers/Global.i18n'
 import { Props, Inputs } from './Step2.types'
 import { Step2FormComponent } from '@/containers/SnippetService/Conditions/FomComponents'
+import { useConditionFilterValidation } from '@/containers/SnippetService/hooks'
 
 const Step2: FC<Props> = (props) => {
     const { defaultFormData, isActivePage } = props
@@ -21,18 +22,7 @@ const Step2: FC<Props> = (props) => {
         errorKey: 'tab2',
     })
 
-    const deviceIdFilterVal: string[] = watch('deviceIdFilter')
-    const resourceHrefFilterVal: string[] = watch('resourceHrefFilter')
-    const resourceTypeFilterVal: string[] = watch('resourceTypeFilter')
-
-    const deviceIdFilter: string[] = useMemo(() => deviceIdFilterVal || [], [deviceIdFilterVal])
-    const resourceHrefFilter: string[] = useMemo(() => resourceHrefFilterVal || [], [resourceHrefFilterVal])
-    const resourceTypeFilter: string[] = useMemo(() => resourceTypeFilterVal || [], [resourceTypeFilterVal])
-
-    const disableNext = useMemo(
-        () => !(deviceIdFilter.length > 0 || resourceHrefFilter.length > 0 || resourceTypeFilter.length > 0),
-        [deviceIdFilter.length, resourceHrefFilter.length, resourceTypeFilter.length]
-    )
+    const invalidFilters = useConditionFilterValidation({ watch })
 
     return (
         <form onSubmit={(e) => e.preventDefault()}>
@@ -47,7 +37,7 @@ const Step2: FC<Props> = (props) => {
             <Step2FormComponent isActivePage={isActivePage} setValue={setValue} updateField={updateField} watch={watch} />
 
             <StepButtons
-                disableNext={disableNext}
+                disableNext={invalidFilters}
                 i18n={{
                     back: _(g.back),
                     continue: _(g.continue),
