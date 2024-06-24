@@ -1,4 +1,4 @@
-import React, { FC, useContext } from 'react'
+import React, { FC, useContext, useMemo } from 'react'
 import { useIntl } from 'react-intl'
 
 import FullPageWizard from '@shared-ui/components/Templates/FullPageWizard'
@@ -21,6 +21,19 @@ const Step2: FC<Props> = (props) => {
         errorKey: 'tab2',
     })
 
+    const deviceIdFilterVal: string[] = watch('deviceIdFilter')
+    const resourceHrefFilterVal: string[] = watch('resourceHrefFilter')
+    const resourceTypeFilterVal: string[] = watch('resourceTypeFilter')
+
+    const deviceIdFilter: string[] = useMemo(() => deviceIdFilterVal || [], [deviceIdFilterVal])
+    const resourceHrefFilter: string[] = useMemo(() => resourceHrefFilterVal || [], [resourceHrefFilterVal])
+    const resourceTypeFilter: string[] = useMemo(() => resourceTypeFilterVal || [], [resourceTypeFilterVal])
+
+    const disableNext = useMemo(
+        () => !(deviceIdFilter.length > 0 || resourceHrefFilter.length > 0 || resourceTypeFilter.length > 0),
+        [deviceIdFilter.length, resourceHrefFilter.length, resourceTypeFilter.length]
+    )
+
     return (
         <form onSubmit={(e) => e.preventDefault()}>
             <FullPageWizard.Headline>{_(confT.applyFilters)}</FullPageWizard.Headline>
@@ -34,7 +47,7 @@ const Step2: FC<Props> = (props) => {
             <Step2FormComponent isActivePage={isActivePage} setValue={setValue} updateField={updateField} watch={watch} />
 
             <StepButtons
-                disableNext={false}
+                disableNext={disableNext}
                 i18n={{
                     back: _(g.back),
                     continue: _(g.continue),

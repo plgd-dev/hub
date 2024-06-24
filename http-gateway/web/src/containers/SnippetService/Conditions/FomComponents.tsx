@@ -10,6 +10,8 @@ import FormSelect from '@shared-ui/components/Atomic/FormSelect'
 import { OptionType } from '@shared-ui/components/Atomic/FormSelect/FormSelect.types'
 import StatusTag from '@shared-ui/components/Atomic/StatusTag'
 import FormInput from '@shared-ui/components/Atomic/FormInput'
+import Button from '@shared-ui/components/Atomic/Button'
+import IconPlus from '@shared-ui/components/Atomic/Icon/components/IconPlus'
 
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as confT } from '@/containers/SnippetService/SnippetService.i18n'
@@ -145,23 +147,43 @@ export const Step2FormComponent: FC<Props> = (props) => {
                     }
                     title={_(confT.resourceTypeFilter)}
                 >
-                    <FormGroup id='resourceTypeFilter'>
-                        <FormLabel text={_(confT.addManualData)} />
-                        <FormInput
-                            compactFormComponentsView={false}
-                            onChange={(e) => setResourceTypeValue(e.target.value)}
-                            onKeyPress={(e) => {
-                                if (e.key === 'Enter') {
-                                    e.preventDefault()
-                                    const newVal = [...resourceTypeFilter, e.target.value]
-                                    setValue('resourceTypeFilter', newVal)
-                                    updateField('resourceTypeFilter', newVal)
-                                    setResourceTypeValue('')
-                                }
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
+                        <FormGroup id='resourceTypeFilter' marginBottom={false} style={{ flex: '1 1 auto' }}>
+                            <FormLabel text={_(confT.addManualData)} />
+                            <FormInput
+                                compactFormComponentsView={false}
+                                onChange={(e) => setResourceTypeValue(e.target.value)}
+                                onKeyPress={(e) => {
+                                    if (e.key === 'Enter' && e.target.value !== '') {
+                                        e.preventDefault()
+                                        const newVal = [...resourceTypeFilter, e.target.value]
+                                        setValue('resourceTypeFilter', newVal)
+                                        updateField('resourceTypeFilter', newVal)
+                                        setResourceTypeValue('')
+                                    }
+                                }}
+                                value={resourceTypeValue}
+                            />
+                        </FormGroup>
+                        <Button
+                            disabled={resourceTypeValue === ''}
+                            icon={<IconPlus />}
+                            onClick={() => {
+                                const newVal = [...resourceTypeFilter, resourceTypeValue]
+                                setValue('resourceTypeFilter', newVal)
+                                updateField('resourceTypeFilter', newVal)
+                                setResourceTypeValue('')
                             }}
-                            value={resourceTypeValue}
-                        />
-                    </FormGroup>
+                            size='small'
+                            style={{
+                                position: 'relative',
+                                bottom: '2px',
+                            }}
+                            variant='secondary'
+                        >
+                            {_(g.add)}
+                        </Button>
+                    </div>
                 </ConditionFilter>
             </Spacer>
 
@@ -181,23 +203,43 @@ export const Step2FormComponent: FC<Props> = (props) => {
                     }
                     title={_(confT.resourceHrefFilter)}
                 >
-                    <FormGroup id='resourceHrefFilter'>
-                        <FormLabel text={_(confT.addManualData)} />
-                        <FormInput
-                            compactFormComponentsView={false}
-                            onChange={(e) => setResourceHrefValue(e.target.value)}
-                            onKeyPress={(e) => {
-                                if (e.key === 'Enter') {
-                                    e.preventDefault()
-                                    const newVal = [...resourceHrefFilter, e.target.value]
-                                    setValue('resourceHrefFilter', newVal)
-                                    updateField('resourceHrefFilter', newVal)
-                                    setResourceHrefValue('')
-                                }
+                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
+                        <FormGroup id='resourceHrefFilter' marginBottom={false} style={{ flex: '1 1 auto' }}>
+                            <FormLabel text={_(confT.addManualData)} />
+                            <FormInput
+                                compactFormComponentsView={false}
+                                onChange={(e) => setResourceHrefValue(e.target.value)}
+                                onKeyPress={(e) => {
+                                    if (e.key === 'Enter' && e.target.value !== '') {
+                                        e.preventDefault()
+                                        const newVal = [...resourceHrefFilter, e.target.value]
+                                        setValue('resourceHrefFilter', newVal)
+                                        updateField('resourceHrefFilter', newVal)
+                                        setResourceHrefValue('')
+                                    }
+                                }}
+                                value={resourceHrefValue}
+                            />
+                        </FormGroup>
+                        <Button
+                            disabled={resourceHrefValue === ''}
+                            icon={<IconPlus />}
+                            onClick={() => {
+                                const newVal = [...resourceHrefFilter, resourceHrefValue]
+                                setValue('resourceHrefFilter', newVal)
+                                updateField('resourceHrefFilter', newVal)
+                                setResourceHrefValue('')
                             }}
-                            value={resourceHrefValue}
-                        />
-                    </FormGroup>
+                            size='small'
+                            style={{
+                                position: 'relative',
+                                bottom: '2px',
+                            }}
+                            variant='secondary'
+                        >
+                            {_(g.add)}
+                        </Button>
+                    </div>
                 </ConditionFilter>
             </Spacer>
 

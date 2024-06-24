@@ -16,7 +16,7 @@ export const DEFAULT_CONFIGURATIONS_DATA = {
 
 export const DEFAULT_CONDITIONS_DATA = {
     name: '',
-    enabled: false,
+    enabled: true,
     deviceIdFilter: [],
     resourceTypeFilter: [],
     resourceHrefFilter: [],

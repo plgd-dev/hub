@@ -4,7 +4,7 @@ export type Props = {
 }
 
 export type Inputs = {
-    deviceIds: string[]
+    deviceIdFilter: string[]
     resourceHrefFilter: string[]
     resourceTypeFilter: string[]
     jqExpressionFilter: string
