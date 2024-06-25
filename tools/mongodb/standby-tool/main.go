@@ -22,10 +22,33 @@ type StandbyConfig struct {
 	Delays  time.Duration `yaml:"delays"`
 }
 
+func (c *StandbyConfig) Validate() error {
+	if len(c.Members) == 0 {
+		return errors.New("members - no standby members found")
+	}
+	if c.Delays < 0 {
+		return errors.New("delays - must be greater than or equal to 0")
+	}
+	return nil
+}
+
 type SecondaryConfig struct {
 	Delays   time.Duration `yaml:"delays"`
 	Votes    int           `yaml:"votes"`
 	Priority int           `yaml:"priority"`
+}
+
+func (c *SecondaryConfig) Validate() error {
+	if c.Delays < 0 {
+		return errors.New("delays - must be greater than or equal to 0")
+	}
+	if c.Votes < 0 {
+		return errors.New("votes - must be greater than or equal to 0")
+	}
+	if c.Priority < 0 {
+		return errors.New("priority - must be greater than or equal to 0")
+	}
+	return nil
 }
 
 type ReplicaSetConfig struct {
@@ -33,6 +56,19 @@ type ReplicaSetConfig struct {
 	MaxWaitsForReady int             `yaml:"maxWaitsForReady"`
 	Standby          StandbyConfig   `yaml:"standby"`
 	Secondary        SecondaryConfig `yaml:"secondary"`
+}
+
+func (c *ReplicaSetConfig) Validate() error {
+	if err := c.Standby.Validate(); err != nil {
+		return fmt.Errorf("standby.%w", err)
+	}
+	if err := c.Secondary.Validate(); err != nil {
+		return fmt.Errorf("secondary.%w", err)
+	}
+	if c.MaxWaitsForReady < 1 {
+		return errors.New("maxWaitsForReady - must be greater than 1")
+	}
+	return nil
 }
 
 type TLSConfig struct {
@@ -60,10 +96,10 @@ func (c Config) String() string {
 
 func (c *Config) Validate() error {
 	if c.Mode != "standby" && c.Mode != "active" {
-		return errors.New("invalid .mode value, must be either 'standby' or 'active'")
+		return fmt.Errorf("invalid .mode value(%v), must be either 'standby' or 'active'", c.Mode)
 	}
-	if len(c.ReplicaSet.Standby.Members) == 0 {
-		return errors.New("no standby members found")
+	if err := c.ReplicaSet.Validate(); err != nil {
+		return fmt.Errorf("replicaSet.%w", err)
 	}
 	if err := c.Log.Validate(); err != nil {
 		return fmt.Errorf("log: %w", err)
