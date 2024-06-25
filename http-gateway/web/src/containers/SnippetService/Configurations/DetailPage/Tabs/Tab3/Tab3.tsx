@@ -45,14 +45,14 @@ const Tab3: FC<Props> = (props) => {
                 Cell: ({ value, row }: { value: string; row: any }) => (
                     <a
                         href={generatePath(pages.SNIPPET_SERVICE.APPLIED_CONFIGURATIONS.DETAIL.LINK, {
-                            appliedConfigurationId: row.original.configurationId.id,
+                            appliedConfigurationId: row.original.id,
                             tab: '',
                         })}
                         onClick={(e) => {
                             e.preventDefault()
                             navigate(
                                 generatePath(pages.SNIPPET_SERVICE.APPLIED_CONFIGURATIONS.DETAIL.LINK, {
-                                    appliedConfigurationId: row.original.configurationId.id,
+                                    appliedConfigurationId: row.original.id,
                                     tab: '',
                                 })
                             )
