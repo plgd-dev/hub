@@ -1,12 +1,14 @@
 import { ResourceType } from '@shared-ui/components/Organisms/ResourceToggleCreator/ResourceToggleCreator.types'
+import { APPLIED_CONFIGURATIONS_STATUS } from '@/containers/SnippetService/constants'
 
 export type ConfigurationDataType = {
-    id: string
+    id?: string
     name: string
     owner: string
-    resources?: ResourceType[] | null
+    resources: ResourceType[]
     timestamp: string
     version: string
+    timeToLive?: string
 }
 
 export type ConditionDataType = {
@@ -18,6 +20,8 @@ export type ConditionDataType = {
     jqExpressionFilter: string
     name: string
     owner: string
+    resourceHrefFilter?: string[]
+    resourceTypeFilter?: string[]
     timestamp: string
     version: string
 }
@@ -46,3 +50,5 @@ export type AppliedConfigurationDataEnhancedType = AppliedConfigurationDataType 
     configurationName?: string
     conditionName?: string | number
 }
+
+export type AppliedConfigurationStatusType = (typeof APPLIED_CONFIGURATIONS_STATUS)[keyof typeof APPLIED_CONFIGURATIONS_STATUS]

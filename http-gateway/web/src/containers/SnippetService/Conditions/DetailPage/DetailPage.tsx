@@ -1,19 +1,12 @@
-import React, { FC, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import React, { FC, lazy, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
-import { generatePath, useParams } from 'react-router-dom'
+import { generatePath, useNavigate, useParams } from 'react-router-dom'
 import ReactDOM from 'react-dom'
 import cloneDeep from 'lodash/cloneDeep'
-import { useMediaQuery } from 'react-responsive'
 
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
 import Loadable from '@shared-ui/components/Atomic/Loadable'
-import Column from '@shared-ui/components/Atomic/Grid/Column'
-import Spacer from '@shared-ui/components/Atomic/Spacer'
-import ContentMenu from '@shared-ui/components/Atomic/ContentMenu'
-import Row from '@shared-ui/components/Atomic/Grid/Row'
-import { ItemType, SubItemItem } from '@shared-ui/components/Atomic/ContentMenu/ContentMenu.types'
-import { useRefs } from '@shared-ui/common/hooks/useRefs'
 import { useFormData, useIsMounted } from '@shared-ui/common/hooks'
 import { FormContext } from '@shared-ui/common/context/FormContext'
 import BottomPanel from '@shared-ui/components/Layout/BottomPanel/BottomPanel'
@@ -21,6 +14,7 @@ import Button from '@shared-ui/components/Atomic/Button'
 import AppContext from '@shared-ui/app/share/AppContext'
 import { useVersion } from '@shared-ui/common/hooks/use-version'
 import { OptionType } from '@shared-ui/components/Atomic/FormSelect/FormSelect.types'
+import Tabs from '@shared-ui/components/Atomic/Tabs'
 
 import { useConditionsDetail } from '@/containers/SnippetService/hooks'
 import PageLayout from '@/containers/Common/PageLayout'
@@ -29,14 +23,20 @@ import { pages } from '@/routes'
 import notificationId from '@/notificationId'
 import DetailHeader from './DetailHeader'
 import { messages as g } from '@/containers/Global.i18n'
-import DetailForm from './DetailForm'
 import { updateConditionApi } from '@/containers/SnippetService/rest'
 import { dirtyFormState } from '@/store/recoil.store'
+import testId from '@/testId'
+
+const Tab1 = lazy(() => import('./Tabs/Tab1'))
+const Tab2 = lazy(() => import('./Tabs/Tab2'))
+const Tab3 = lazy(() => import('./Tabs/Tab3'))
 
 const DetailPage: FC<any> = () => {
-    const { conditionId } = useParams()
+    const { conditionId, tab: tabRoute } = useParams()
     const { formatMessage: _ } = useIntl()
     const { data: conditionData, loading, error, refresh } = useConditionsDetail(conditionId || '', !!conditionId)
+
+    const tab = tabRoute || ''
 
     const { Selector, data, setSearchParams } = useVersion({
         i18n: { version: _(g.version), selectVersion: _(confT.selectVersion) },
@@ -46,11 +46,12 @@ const DetailPage: FC<any> = () => {
 
     const [pageLoading, setPageLoading] = useState(false)
     const [filterError, setFilterError] = useState(false)
-    const [activeItem, setActiveItem] = useState('0')
+    const [notFound, setNotFound] = useState(false)
+    const [activeTabItem, setActiveTabItem] = useState(tab ? pages.SNIPPET_SERVICE.CONDITIONS.DETAIL.TABS.indexOf(tab) : 0)
 
-    const { refsByKey, setRef } = useRefs()
     const { collapsed } = useContext(AppContext)
     const isMounted = useIsMounted()
+    const navigate = useNavigate()
 
     const breadcrumbs = useMemo(
         () => [
@@ -72,51 +73,32 @@ const DetailPage: FC<any> = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [error])
 
-    const menu = useMemo(
-        () => [
-            { id: '0', link: '#general', title: _(g.general) },
-            {
-                id: '10',
-                link: '#filters',
-                title: _(g.filters),
-                children: [
-                    { id: '1', link: '#filtersDeviceId', title: _(g.deviceId) },
-                    { id: '2', link: '#filtersResourcesType', title: _(confT.resourceType) },
-                    { id: '3', link: '#filterHref', title: _(g.href) },
-                    { id: '4', link: '#filterJqExpression', title: _(confT.JqExpression) },
-                ],
-            },
-            { id: '5', link: '#APIAccessToken', title: _(confT.APIAccessToken) },
-        ],
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        [data]
-    )
-
-    const refs = Object.values(refsByKey).filter(Boolean)
-
-    const handleItemClick = useCallback(
-        (item: ItemType | SubItemItem) => {
-            setActiveItem(item.id)
-            const id = parseInt(item.id)
-            const element = refs[id] as HTMLElement
-
-            setTimeout(() => {
-                element?.scrollIntoView({ behavior: 'smooth' })
-            }, 0)
-        },
-        [refs]
-    )
+    useEffect(() => {
+        if (pages.SNIPPET_SERVICE.CONDITIONS.DETAIL.TABS.indexOf(tab) === -1 || conditionData?.length === 0) {
+            setNotFound(true)
+        }
+    }, [conditionData?.length, tab])
 
     const defaultFormState = useMemo(
         () => ({
             tab1: false,
+            tab2: false,
+            tab3: false,
         }),
         []
     )
 
+    const handleTabChange = useCallback((i: number) => {
+        setActiveTabItem(i)
+
+        navigate(generatePath(pages.SNIPPET_SERVICE.CONDITIONS.DETAIL.LINK, { conditionId, tab: pages.SNIPPET_SERVICE.CONDITIONS.DETAIL.TABS[i] }))
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
     const { handleReset, context, resetIndex, dirty, formData, hasError } = useFormData({
         defaultFormState,
         data,
+        defaultData: data,
         dirtyFormState,
         i18n: { promptDefaultMessage: _(g.promptDefaultMessage), default: _(g.default) },
     })
@@ -164,65 +146,51 @@ const DetailPage: FC<any> = () => {
         }
     }
 
-    const isDesktopOrLaptop = useMediaQuery(
-        {
-            query: '(min-width: 1200px)',
-        },
-        undefined,
-        () => {}
-    )
-
     return (
         <PageLayout
             breadcrumbs={breadcrumbs}
             header={<DetailHeader id={conditionId!} loading={loading || pageLoading} name={data?.name} />}
             headlineCustomContent={<Selector />}
             loading={loading || pageLoading}
+            notFound={notFound}
             title={data?.name}
             xPadding={false}
         >
-            <Spacer style={{ height: '100%', overflow: 'hidden' }} type='pt-4 pl-10'>
-                <Row
-                    style={
-                        isDesktopOrLaptop
-                            ? { height: '100%' }
-                            : { display: 'flex', flexDirection: 'column', flexWrap: 'nowrap', overflow: 'hidden', height: '100%' }
-                    }
-                >
-                    <Column xl={3}>
-                        <Spacer type={`mb-4${isDesktopOrLaptop ? '' : ' pr-10'}`}>
-                            <ContentMenu
-                                activeItem={activeItem}
-                                handleItemClick={handleItemClick}
-                                handleSubItemClick={(subItem, parentItem) => handleItemClick(subItem)}
-                                menu={menu}
-                            />
-                        </Spacer>
-                    </Column>
-                    {isDesktopOrLaptop && <Column xl={1}></Column>}
-                    <Column style={isDesktopOrLaptop ? { height: '100%' } : { flex: '1 1 auto', overflow: 'hidden' }} xl={8}>
-                        <Spacer style={{ height: '100%', overflow: 'auto' }} type='pr-10'>
-                            <FormContext.Provider value={context}>
-                                <Loadable condition={!!formData && !loading && !!data && Object.keys(data).length > 0 && Object.keys(formData).length > 0}>
-                                    <DetailForm
-                                        formData={formData}
-                                        refs={{
-                                            general: (element: HTMLElement) => setRef(element, '0'),
-                                            filterDeviceId: (element: HTMLElement) => setRef(element, '1'),
-                                            filterResourceType: (element: HTMLElement) => setRef(element, '2'),
-                                            filterResourceHref: (element: HTMLElement) => setRef(element, '3'),
-                                            filterJqExpression: (element: HTMLElement) => setRef(element, '4'),
-                                            accessToken: (element: HTMLElement) => setRef(element, '5'),
-                                        }}
-                                        resetIndex={resetIndex}
-                                        setFilterError={setFilterError}
-                                    />
-                                </Loadable>
-                            </FormContext.Provider>
-                        </Spacer>
-                    </Column>
-                </Row>
-            </Spacer>
+            <FormContext.Provider value={context}>
+                <Loadable condition={!!formData && !loading && !!data && Object.keys(data).length > 0 && Object.keys(formData).length > 0}>
+                    {/* <DetailForm formData={formData} resetIndex={resetIndex} setFilterError={setFilterError} />*/}
+                    <Tabs
+                        fullHeight
+                        innerPadding
+                        isAsync
+                        activeItem={activeTabItem}
+                        onItemChange={handleTabChange}
+                        style={{
+                            height: '100%',
+                        }}
+                        tabs={[
+                            {
+                                name: _(confT.generalAndResources),
+                                id: 0,
+                                dataTestId: testId.snippetService.conditions.detail.tabGeneral,
+                                content: <Tab1 defaultFormData={formData} resetIndex={resetIndex} />,
+                            },
+                            {
+                                name: _(confT.conditions),
+                                id: 1,
+                                dataTestId: testId.snippetService.conditions.detail.tabFilters,
+                                content: <Tab2 defaultFormData={formData} resetIndex={resetIndex} setFilterError={setFilterError} />,
+                            },
+                            {
+                                name: _(confT.appliedConfiguration),
+                                id: 2,
+                                dataTestId: testId.snippetService.conditions.detail.tabApiAccessToken,
+                                content: <Tab3 defaultFormData={formData} resetIndex={resetIndex} />,
+                            },
+                        ]}
+                    />
+                </Loadable>
+            </FormContext.Provider>
             {isMounted &&
                 document.querySelector('#modal-root') &&
                 ReactDOM.createPortal(

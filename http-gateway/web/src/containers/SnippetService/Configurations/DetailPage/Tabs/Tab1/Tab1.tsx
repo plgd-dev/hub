@@ -2,6 +2,7 @@ import React, { FC, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
 import { useResizeDetector } from 'react-resize-detector'
 import isEqual from 'lodash/isEqual'
+import isFunction from 'lodash/isFunction'
 
 import Headline from '@shared-ui/components/Atomic/Headline'
 import Button, { buttonSizes, buttonVariants } from '@shared-ui/components/Atomic/Button'
@@ -23,11 +24,12 @@ import { messages as confT } from '../../../../SnippetService.i18n'
 import { useValidationsSchema } from '../../validationSchema'
 import { Props, Inputs, ResourceTypeEnhanced } from './Tab1.types'
 import JsonConfigModal from '@/containers/SnippetService/Configurations/DetailPage/JsonConfigModal'
+import { hasConfigurationResourceError, hasInvalidConfigurationResource } from '@/containers/SnippetService/utils'
 
 const { NS } = commandTimeoutUnits
 
 const Tab1: FC<Props> = (props) => {
-    const { defaultFormData, resetIndex, loading, isActiveTab } = props
+    const { defaultFormData, resetIndex, loading, isActiveTab, setResourcesError } = props
     const { formatMessage: _ } = useIntl()
 
     const schema = useValidationsSchema('tab1')
@@ -49,18 +51,28 @@ const Tab1: FC<Props> = (props) => {
     const [deleteResource, setDeleteResource] = useState<ResourceTypeEnhanced | undefined>(undefined)
 
     useEffect(() => {
+        if (defaultFormData) {
+            reset(defaultFormData)
+        }
         if (resetIndex) {
-            reset()
+            reset(defaultFormData)
             setResources(defaultFormData.resources)
         }
         if (defaultFormData.resources && !isEqual(defaultFormData.resources, resources)) {
             setResources(defaultFormData.resources)
         }
-    }, [defaultFormData.resources, reset, resetIndex, resources])
+    }, [defaultFormData, defaultFormData.resources, reset, resetIndex, resources])
 
     const { ref, height } = useResizeDetector({
         refreshRate: 500,
     })
+
+    const hasInvalidResource = useMemo(() => hasInvalidConfigurationResource(resources), [resources])
+    const hasResourcesError = useMemo(() => hasConfigurationResourceError(resources), [resources])
+
+    useEffect(() => {
+        isFunction(setResourcesError) && setResourcesError(hasResourcesError || hasInvalidResource)
+    }, [hasInvalidResource, hasResourcesError, setResourcesError])
 
     const columns = useMemo(
         () => [
@@ -135,11 +147,7 @@ const Tab1: FC<Props> = (props) => {
                             attribute: _(g.name),
                             value: (
                                 <FormGroup error={errors.name ? _(g.requiredField, { field: _(g.name) }) : undefined} id='name'>
-                                    <FormInput
-                                        {...register('name', { required: true, validate: (val) => val !== '' })}
-                                        onBlur={(e) => updateField('name', e.target.value)}
-                                        placeholder={_(g.name)}
-                                    />
+                                    <FormInput {...register('name')} onBlur={(e) => updateField('name', e.target.value)} placeholder={_(g.name)} />
                                 </FormGroup>
                             ),
                         },
@@ -169,7 +177,7 @@ const Tab1: FC<Props> = (props) => {
                     height={height}
                     i18n={{
                         search: '',
-                        placeholder: _(confT.noConfigurations),
+                        placeholder: _(confT.noResourcesFound),
                     }}
                     loading={loading}
                     paginationPortalTargetId={isActiveTab ? 'paginationPortalTarget' : undefined}

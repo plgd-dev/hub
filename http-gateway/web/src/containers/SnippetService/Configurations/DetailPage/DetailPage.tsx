@@ -2,7 +2,6 @@ import React, { FC, lazy, useCallback, useContext, useEffect, useMemo, useState 
 import { useIntl } from 'react-intl'
 import { generatePath, useNavigate, useParams } from 'react-router-dom'
 import ReactDOM from 'react-dom'
-import cloneDeep from 'lodash/cloneDeep'
 
 import { getApiErrorMessage } from '@shared-ui/common/utils'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
@@ -25,6 +24,7 @@ import testId from '@/testId'
 import { messages as g } from '@/containers/Global.i18n'
 import { updateResourceConfigApi } from '@/containers/SnippetService/rest'
 import { dirtyFormState } from '@/store/recoil.store'
+import { formatConfigurationResources } from '@/containers/SnippetService/utils'
 
 const Tab1 = lazy(() => import('./Tabs/Tab1'))
 const Tab2 = lazy(() => import('./Tabs/Tab2'))
@@ -62,6 +62,7 @@ const DetailPage: FC<any> = () => {
     const { handleReset, context, resetIndex, dirty, formData, hasError } = useFormData({
         defaultFormState,
         data,
+        defaultData: data,
         dirtyFormState,
         i18n: { promptDefaultMessage: _(g.promptDefaultMessage), default: _(g.default) },
     })
@@ -111,8 +112,7 @@ const DetailPage: FC<any> = () => {
 
         try {
             // DATA FOR SAVE
-            const dataForSave = cloneDeep(formData)
-            delete dataForSave.id
+            const dataForSave = formatConfigurationResources(formData)
             dataForSave.version = (parseInt(dataForSave.version, 10) + 1).toString()
 
             await updateResourceConfigApi(formData.id, dataForSave)

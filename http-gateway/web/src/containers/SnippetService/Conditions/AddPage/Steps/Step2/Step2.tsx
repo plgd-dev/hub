@@ -5,6 +5,7 @@ import FullPageWizard from '@shared-ui/components/Templates/FullPageWizard'
 import { FormContext } from '@shared-ui/common/context/FormContext'
 import StepButtons from '@shared-ui/components/Templates/FullPageWizard/StepButtons'
 import { useForm } from '@shared-ui/common/hooks'
+import Spacer from '@shared-ui/components/Atomic/Spacer'
 
 import { messages as confT } from '@/containers/SnippetService/SnippetService.i18n'
 import { messages as g } from '@/containers/Global.i18n'
@@ -34,7 +35,9 @@ const Step2: FC<Props> = (props) => {
 
             <FullPageWizard.GroupHeadline>{_(g.filters)}</FullPageWizard.GroupHeadline>
 
-            <Step2FormComponent isActivePage={isActivePage} setValue={setValue} updateField={updateField} watch={watch} />
+            <Spacer type='pt-6'>
+                <Step2FormComponent isActivePage={isActivePage} setValue={setValue} updateField={updateField} watch={watch} />
+            </Spacer>
 
             <StepButtons
                 disableNext={invalidFilters}

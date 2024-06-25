@@ -1,3 +1,5 @@
+import { ConditionDataType, ConfigurationDataType } from '@/containers/SnippetService/ServiceSnippet.types'
+
 export const SnippetServiceApiEndpoints = {
     CONFIGURATIONS: '/snippet-service/api/v1/configurations',
     CONFIGURATIONS_APPLIED: '/snippet-service/api/v1/configurations/applied',
@@ -8,13 +10,13 @@ export const SnippetServiceApiEndpoints = {
 // (if there is more snippetServiceIds then the provided number, it creates more chunks of a maximum of this number)
 export const DELETE_CHUNK_SIZE = 50
 
-export const DEFAULT_CONFIGURATIONS_DATA = {
+export const DEFAULT_CONFIGURATIONS_DATA: Partial<ConfigurationDataType> = {
     name: '',
     resources: [],
     timeToLive: '0',
 }
 
-export const DEFAULT_CONDITIONS_DATA = {
+export const DEFAULT_CONDITIONS_DATA: Partial<ConditionDataType> = {
     name: '',
     enabled: true,
     deviceIdFilter: [],
@@ -24,7 +26,9 @@ export const DEFAULT_CONDITIONS_DATA = {
 }
 
 export const APPLIED_CONFIGURATIONS_STATUS = {
-    SUCCESS: 1,
-    PENDING: 0,
-    ERROR: -1,
-}
+    ERROR: 'Error',
+    PENDING: 'Pending',
+    CANCELED: 'Canceled',
+    TIMEOUT: 'Timeout',
+    OK: 'Ok',
+} as const

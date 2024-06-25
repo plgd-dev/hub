@@ -22,12 +22,6 @@ type Props = {
     setValue: any
     updateField: any
     watch: any
-    refs?: {
-        filterDeviceId: (element: HTMLDivElement) => void
-        filterJqExpression: (element: HTMLDivElement) => void
-        filterResourceHref: (element: HTMLDivElement) => void
-        filterResourceType: (element: HTMLDivElement) => void
-    }
 }
 
 const defaultProps: Partial<Props> = {
@@ -35,7 +29,7 @@ const defaultProps: Partial<Props> = {
 }
 
 export const Step2FormComponent: FC<Props> = (props) => {
-    const { isActivePage, refs, watch, setValue, updateField } = { ...defaultProps, ...props }
+    const { isActivePage, watch, setValue, updateField } = { ...defaultProps, ...props }
     const { formatMessage: _ } = useIntl()
 
     const [options, setOptions] = useState<OptionType[]>([])
@@ -66,72 +60,70 @@ export const Step2FormComponent: FC<Props> = (props) => {
 
     return (
         <>
-            <Spacer ref={refs?.filterDeviceId} type='pt-6'>
-                <Loadable condition={!loading}>
-                    <ConditionFilter
-                        listName={_(confT.listOfSelectedDevices)}
-                        listOfItems={deviceIdFilter.map((id) => options?.find((o) => o.value === id)?.label || id)}
-                        onItemDelete={(key) => {
-                            const newItems = deviceIdFilter.filter((_, i) => i !== key)
-                            setValue('deviceIdFilter', newItems)
-                            updateField('deviceIdFilter', newItems)
-                        }}
-                        status={
-                            <StatusTag lowercase={false} variant={deviceIdFilter.length > 0 ? 'success' : 'normal'}>
-                                {deviceIdFilter.length > 0 ? _(g.setUp) : _(g.notSet)}
-                            </StatusTag>
-                        }
-                        title={_(confT.deviceIdFilter)}
-                    >
-                        <FormGroup id='deviceIdFilter'>
-                            <FormLabel text={_(confT.selectDevices)} />
-                            <FormSelect
-                                checkboxOptions
-                                creatable
-                                isMulti
-                                footerLinksLeft={[
-                                    {
-                                        title: _(g.reset),
-                                        onClick: () => {
-                                            setOptions(defaultOptions)
-                                            setValue('deviceIdFilter', [])
-                                        },
+            <Loadable condition={!loading}>
+                <ConditionFilter
+                    listName={_(confT.listOfSelectedDevices)}
+                    listOfItems={deviceIdFilter.map((id) => options?.find((o) => o.value === id)?.label || id)}
+                    onItemDelete={(key) => {
+                        const newItems = deviceIdFilter.filter((_, i) => i !== key)
+                        setValue('deviceIdFilter', newItems)
+                        updateField('deviceIdFilter', newItems)
+                    }}
+                    status={
+                        <StatusTag lowercase={false} variant={deviceIdFilter.length > 0 ? 'success' : 'normal'}>
+                            {deviceIdFilter.length > 0 ? _(g.setUp) : _(g.notSet)}
+                        </StatusTag>
+                    }
+                    title={_(confT.deviceIdFilter)}
+                >
+                    <FormGroup id='deviceIdFilter'>
+                        <FormLabel text={_(confT.selectDevices)} />
+                        <FormSelect
+                            checkboxOptions
+                            creatable
+                            isMulti
+                            footerLinksLeft={[
+                                {
+                                    title: _(g.reset),
+                                    onClick: () => {
+                                        setOptions(defaultOptions)
+                                        setValue('deviceIdFilter', [])
                                     },
-                                    {
-                                        title: _(g.done),
-                                        variant: 'primary',
-                                        onClick: (values: OptionType[]) => {
-                                            const value = values.map((v) => v.value)
-                                            setValue('deviceIdFilter', value)
-                                            updateField('deviceIdFilter', value)
-                                        },
+                                },
+                                {
+                                    title: _(g.done),
+                                    variant: 'primary',
+                                    onClick: (values: OptionType[]) => {
+                                        const value = values.map((v) => v.value)
+                                        setValue('deviceIdFilter', value)
+                                        updateField('deviceIdFilter', value)
                                     },
-                                ]}
-                                i18n={{
-                                    itemSelected: _(g.deviceSelected),
-                                    itemsSelected: _(g.devicesSelected),
-                                }}
-                                menuPortalTarget={document.getElementById('modal-root')}
-                                menuZIndex={100}
-                                name='deviceIdFilter'
-                                onChange={(values: OptionType[]) => {
-                                    const value = values.map((v) => v.value)
-                                    setValue('deviceIdFilter', value)
-                                    updateField('deviceIdFilter', values)
-                                }}
-                                onCreateOption={(value: string | number) => {
-                                    setOptions((prev) => [...prev, { value: value.toString(), label: value.toString() }])
-                                }}
-                                options={options}
-                                placeholder={_(g.selectOrCreate)}
-                                value={value}
-                            />
-                        </FormGroup>
-                    </ConditionFilter>
-                </Loadable>
-            </Spacer>
+                                },
+                            ]}
+                            i18n={{
+                                itemSelected: _(g.deviceSelected),
+                                itemsSelected: _(g.devicesSelected),
+                            }}
+                            menuPortalTarget={document.getElementById('modal-root')}
+                            menuZIndex={100}
+                            name='deviceIdFilter'
+                            onChange={(values: OptionType[]) => {
+                                const value = values.map((v) => v.value)
+                                setValue('deviceIdFilter', value)
+                                updateField('deviceIdFilter', values)
+                            }}
+                            onCreateOption={(value: string | number) => {
+                                setOptions((prev) => [...prev, { value: value.toString(), label: value.toString() }])
+                            }}
+                            options={options}
+                            placeholder={_(g.selectOrCreate)}
+                            value={value}
+                        />
+                    </FormGroup>
+                </ConditionFilter>
+            </Loadable>
 
-            <Spacer ref={refs?.filterResourceType} type='pt-2'>
+            <Spacer type='pt-2'>
                 <ConditionFilter
                     listName={_(confT.listOfSelectedResourceType)}
                     listOfItems={resourceTypeFilter}
@@ -187,7 +179,7 @@ export const Step2FormComponent: FC<Props> = (props) => {
                 </ConditionFilter>
             </Spacer>
 
-            <Spacer ref={refs?.filterResourceHref} type='pt-2'>
+            <Spacer type='pt-2'>
                 <ConditionFilter
                     listName={_(confT.listOfSelectedHrefFilter)}
                     listOfItems={resourceHrefFilter}
@@ -243,7 +235,7 @@ export const Step2FormComponent: FC<Props> = (props) => {
                 </ConditionFilter>
             </Spacer>
 
-            <Spacer ref={refs?.filterJqExpression} type='pt-2'>
+            <Spacer type='pt-2'>
                 <ConditionFilter
                     listName={_(confT.listOfSelectedJqExpression)}
                     status={

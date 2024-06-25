@@ -148,6 +148,7 @@ export const pages = {
             LINK: '/snippet-service/conditions',
             DETAIL: {
                 LINK: '/snippet-service/conditions/:conditionId',
+                TABS: ['', 'filters', 'api-access-token'],
             },
             ADD: {
                 LINK: '/snippet-service/conditions/add/:tab',
@@ -162,6 +163,7 @@ export const pages = {
             },
             DETAIL: {
                 LINK: '/snippet-service/applied-configurations/:appliedConfigurationId',
+                TABS: ['', 'list-of-resources'],
             },
         },
     },
@@ -408,8 +410,6 @@ export const noLayoutPages = [
     '/device-provisioning/linked-hubs/link-new-hub/:step',
     '/device-provisioning/enrollment-groups/new-enrollment-group',
     '/device-provisioning/enrollment-groups/new-enrollment-group/:step',
-    '/snippet-service/configurations/add/:tab',
-    '/snippet-service/configurations/add',
     '/snippet-service/conditions/add/:tab',
     '/snippet-service/conditions/add',
 ]
@@ -428,8 +428,6 @@ export const NoLayoutRoutes = () => (
         <Route element={withSuspense(<LinkNewHubPage />)} path='/device-provisioning/linked-hubs/link-new-hub/:step' />
         <Route element={withSuspense(<NewEnrollmentGroupsPage />)} path='/device-provisioning/enrollment-groups/new-enrollment-group' />
         <Route element={withSuspense(<NewEnrollmentGroupsPage />)} path='/device-provisioning/enrollment-groups/new-enrollment-group/:step' />
-        <Route element={withSuspense(<ConfigurationAddPage />)} path='/snippet-service/configurations/add/:step' />
-        <Route element={withSuspense(<ConfigurationAddPage />)} path='/snippet-service/configurations/add' />
         <Route element={withSuspense(<ConditionsAddPage />)} path='/snippet-service/conditions/add/:step' />
         <Route element={withSuspense(<ConditionsAddPage />)} path='/snippet-service/conditions/add' />
     </RoutesGroup>
@@ -495,6 +493,7 @@ export const Routes = () => {
             <Route path='snippet-service'>
                 {/* ***** RESOURCES CONFIGURATION ***** */}
                 <Route path='configurations'>
+                    <Route element={withSuspense(<ConfigurationAddPage />)} path='add' />
                     <Route element={withSuspense(<ConfigurationDetailPage />)} path=':configurationId/:tab' />
                     <Route element={withSuspense(<ConfigurationDetailPage />)} path=':configurationId' />
                     <Route element={withSuspense(<ConfigurationListPage />)} path='' />

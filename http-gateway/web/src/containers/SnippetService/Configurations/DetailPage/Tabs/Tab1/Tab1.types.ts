@@ -5,10 +5,12 @@ export type Props = {
     isActiveTab: boolean
     loading: boolean
     resetIndex?: number
+    setResourcesError?: (error: boolean) => void
 }
 
 export type Inputs = {
     name: string
+    resources: ResourceType[]
 }
 
 export type ResourceTypeEnhanced = ResourceType & { id: number }

@@ -1,4 +1,6 @@
 import React from 'react'
+import cloneDeep from 'lodash/cloneDeep'
+import isEmpty from 'lodash/isEmpty'
 
 import { states } from '@shared-ui/components/Atomic/StatusPill/constants'
 import { ResourceType } from '@shared-ui/components/Organisms/ResourceToggleCreator/ResourceToggleCreator.types'
@@ -8,7 +10,7 @@ import { tagVariants as statusTagVariants } from '@shared-ui/components/Atomic/S
 import { messages as confT } from '@/containers/SnippetService/SnippetService.i18n'
 import { messages as g } from '@/containers/Global.i18n'
 import { APPLIED_CONFIGURATIONS_STATUS } from '@/containers/SnippetService/constants'
-import { AppliedConfigurationDataType } from '@/containers/SnippetService/ServiceSnippet.types'
+import { AppliedConfigurationDataType, AppliedConfigurationStatusType } from '@/containers/SnippetService/ServiceSnippet.types'
 
 export const getConfigurationsPageListI18n = (_: any) => ({
     singleSelected: _(confT.configuration),
@@ -26,21 +28,27 @@ export const getConfigurationsPageListI18n = (_: any) => ({
 })
 
 export const getAppliedDeviceConfigStatus = (appliedDeviceConfig: AppliedConfigurationDataType) => {
-    const statuses = appliedDeviceConfig.resources.map((resource) => {
-        if (resource.status && ['PENDING', 'TIMEOUT'].includes(resource.status)) {
-            return resource.status
-        }
-        return resource.resourceUpdated?.status
-    })
-    let configStatus = APPLIED_CONFIGURATIONS_STATUS.SUCCESS
+    const statuses = appliedDeviceConfig.resources.map((resource) => getResourceStatus(resource))
 
-    if (statuses.includes('ERROR') || statuses.includes('TIMEOUT')) {
-        configStatus = APPLIED_CONFIGURATIONS_STATUS.ERROR
+    if (statuses.includes('ERROR')) {
+        return APPLIED_CONFIGURATIONS_STATUS.ERROR
+    } else if (statuses.includes('TIMEOUT')) {
+        return APPLIED_CONFIGURATIONS_STATUS.TIMEOUT
     } else if (statuses.includes('PENDING')) {
-        configStatus = APPLIED_CONFIGURATIONS_STATUS.PENDING
+        return APPLIED_CONFIGURATIONS_STATUS.PENDING
+    } else if (statuses.includes('CANCELED')) {
+        return APPLIED_CONFIGURATIONS_STATUS.CANCELED
     }
 
-    return configStatus
+    return APPLIED_CONFIGURATIONS_STATUS.OK
+}
+
+export const getResourceStatus = (resource: ResourceType) => {
+    if (resource.status && ['PENDING', 'TIMEOUT'].includes(resource.status)) {
+        return resource.status
+    }
+
+    return resource.resourceUpdated?.status
 }
 
 export const getResourceStatusTag = (resource: ResourceType) => {
@@ -69,6 +77,7 @@ export const getResourceI18n = (_: any) => ({
     addContent: _(confT.addContent),
     editContent: _(confT.editContent),
     viewContent: _(confT.viewContent),
+    cancel: _(g.cancel),
     close: _(g.close),
     compactView: _(g.compactView),
     content: _(g.content),
@@ -86,26 +95,79 @@ export const getResourceI18n = (_: any) => ({
     view: _(g.view),
 })
 
-export const getAppliedConfigurationStatusValue = (status: number, _: any) => {
+export const getAppliedConfigurationStatusValue = (status: AppliedConfigurationStatusType, _: any) => {
     switch (status) {
         case APPLIED_CONFIGURATIONS_STATUS.ERROR:
             return _(g.error)
+        case APPLIED_CONFIGURATIONS_STATUS.CANCELED:
+            return _(g.canceled)
+        case APPLIED_CONFIGURATIONS_STATUS.TIMEOUT:
+            return _(g.timeout)
         case APPLIED_CONFIGURATIONS_STATUS.PENDING:
             return _(g.pending)
-        case APPLIED_CONFIGURATIONS_STATUS.SUCCESS:
+        case APPLIED_CONFIGURATIONS_STATUS.OK:
         default:
             return _(g.success)
     }
 }
 
-export const getAppliedConfigurationStatusStatus = (status: number) => {
+export const getAppliedConfigurationStatusStatus = (status: AppliedConfigurationStatusType) => {
     switch (status) {
         case APPLIED_CONFIGURATIONS_STATUS.ERROR:
+        case APPLIED_CONFIGURATIONS_STATUS.TIMEOUT:
             return states.OFFLINE
         case APPLIED_CONFIGURATIONS_STATUS.PENDING:
+        case APPLIED_CONFIGURATIONS_STATUS.CANCELED:
             return states.OCCUPIED
-        case APPLIED_CONFIGURATIONS_STATUS.SUCCESS:
+        case APPLIED_CONFIGURATIONS_STATUS.OK:
         default:
             return states.ONLINE
     }
+}
+
+export const formatConfigurationResources = (data: any) => {
+    const dataForSave = cloneDeep(data)
+    delete dataForSave?.id
+
+    if (dataForSave.resources) {
+        dataForSave.resources = dataForSave.resources.map((resource: ResourceType) => ({
+            ...resource,
+            content: {
+                data: btoa(resource.content.toString()),
+                contentType: 'application/json',
+                coapContentFormat: -1,
+            },
+        }))
+    } else {
+        dataForSave.resources = []
+    }
+
+    return dataForSave
+}
+
+export const hasInvalidConfigurationResource = (resources: ResourceType[]) =>
+    resources?.some(
+        (resource) =>
+            resource.href === '' ||
+            resource.timeToLive === '' ||
+            resource.content === '{}' ||
+            (typeof resource.content === 'object' ? isEmpty(resource.content) : !resource.content)
+    )
+
+export const hasConfigurationResourceError = (resources: ResourceType[]) => {
+    const hrefs: string[] = []
+    let er = false
+
+    if (resources.length === 0) {
+        return true
+    }
+
+    resources.forEach((resource, index) => {
+        if (hrefs.includes(resource.href)) {
+            er = true
+        }
+        hrefs.push(resource.href)
+    })
+
+    return er
 }

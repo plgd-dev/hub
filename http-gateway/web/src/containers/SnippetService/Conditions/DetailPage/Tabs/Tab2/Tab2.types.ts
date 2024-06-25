@@ -1,15 +1,14 @@
+import { ConditionDataType } from '@/containers/SnippetService/ServiceSnippet.types'
+
 export type Props = {
-    formData: any
+    defaultFormData: Partial<ConditionDataType>
     resetIndex: number
     setFilterError?: (error: boolean) => void
 }
 
 export type Inputs = {
-    name: string
-    enabled: boolean
     jqExpressionFilter: string
     resourceHrefFilter: string[]
     resourceTypeFilter: string[]
     deviceIdFilter: string[]
-    apiAccessToken: string
 }

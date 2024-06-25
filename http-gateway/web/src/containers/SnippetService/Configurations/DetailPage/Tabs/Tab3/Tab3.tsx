@@ -22,6 +22,7 @@ import { messages as confT } from '@/containers/SnippetService/SnippetService.i1
 import { messages as g } from '@/containers/Global.i18n'
 import { pages } from '@/routes'
 import { getAppliedConfigurationStatusStatus, getAppliedConfigurationStatusValue } from '@/containers/SnippetService/utils'
+import { AppliedConfigurationStatusType } from '@/containers/SnippetService/ServiceSnippet.types'
 
 const Tab3: FC<Props> = (props) => {
     const { data, loading, isActiveTab } = props
@@ -33,8 +34,8 @@ const Tab3: FC<Props> = (props) => {
         refreshRate: 500,
     })
 
-    const getValue = useCallback((status: number) => getAppliedConfigurationStatusValue(status, _), [_])
-    const getStatus = useCallback((status: number) => getAppliedConfigurationStatusStatus(status), [])
+    const getValue = useCallback((status: AppliedConfigurationStatusType) => getAppliedConfigurationStatusValue(status, _), [_])
+    const getStatus = useCallback((status: AppliedConfigurationStatusType) => getAppliedConfigurationStatusStatus(status), [])
 
     const columns = useMemo(
         () => [
@@ -81,7 +82,7 @@ const Tab3: FC<Props> = (props) => {
             {
                 Header: _(g.status),
                 accessor: 'status',
-                Cell: ({ value }: { value: number }) => <StatusPill label={getValue(value)} status={getStatus(value)} />,
+                Cell: ({ value }: { value: AppliedConfigurationStatusType }) => <StatusPill label={getValue(value)} status={getStatus(value)} />,
             },
             {
                 Header: _(confT.condition),

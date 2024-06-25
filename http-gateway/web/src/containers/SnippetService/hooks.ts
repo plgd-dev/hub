@@ -158,7 +158,7 @@ export const useAppliedConfigurationsList = (filter = '', requestActive = true):
     )
 
     useEffect(() => {
-        if (!loading && configurationsData && appliedConfigData && configurationsData && conditionsData) {
+        if (configurationsData && appliedConfigData && configurationsData && conditionsData) {
             const appliedDeviceConfig = appliedConfigData.map((appliedConfig: AppliedConfigurationDataType) => {
                 return {
                     ...appliedConfig,
@@ -188,16 +188,20 @@ export const useAppliedConfigurationsList = (filter = '', requestActive = true):
 
 export const useAppliedConfigurationDetail = (id: string, requestActive = false): StreamApiReturnType<AppliedConfigurationDataEnhancedType> => {
     const [data, setData] = useState(null)
+    const [loading, setLoading] = useState(true)
 
-    const { data: listData, ...rest } = useAppliedConfigurationsList(`?idFilter=${id}`, requestActive)
+    const { data: listData, loading: listDataLoading, ...rest } = useAppliedConfigurationsList(`?idFilter=${id}`, requestActive)
 
     useEffect(() => {
         if (listData) {
-            setData(listData[0])
+            if (listData.length > 0) {
+                setData(listData[0])
+            }
+            setLoading(false)
         }
     }, [listData])
 
-    return { data, ...rest }
+    return { data, loading, ...rest }
 }
 
 export const useConditionFilterValidation = ({ watch }: { watch: UseFormWatch<any> }) => {

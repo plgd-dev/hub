@@ -142,9 +142,8 @@ const JsonConfigModal: FC<Props> = (props) => {
         isFunction(onSubmit) &&
             onSubmit({
                 href,
-                timeToLive: ttl,
+                timeToLive: ttl.toString(),
                 content: jsonData,
-                id: resource?.id,
             })
     }
 

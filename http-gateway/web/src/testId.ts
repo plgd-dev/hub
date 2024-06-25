@@ -104,6 +104,9 @@ const testId = {
                 deleteButton: 'hub-snippet-service-conditions-detail-delete-button',
                 deleteButtonConfirm: 'hub-snippet-service-conditions-detail-delete-button-confirm',
                 deleteButtonCancel: 'hub-snippet-service-conditions-detail-delete-button-cancel',
+                tabGeneral: 'hub-snippet-service-conditions-detail-tab-general',
+                tabFilters: 'hub-snippet-service-conditions-detail-tab-filters',
+                tabApiAccessToken: 'hub-snippet-service-conditions-detail-tab-api-access-token',
             },
         },
         appliedConfigurations: {
@@ -111,6 +114,8 @@ const testId = {
                 deleteButton: 'hub-snippet-service-applied-configurations-detail-delete-button',
                 deleteButtonConfirm: 'hub-snippet-service-applied-configurations-detail-delete-button-confirm',
                 deleteButtonCancel: 'hub-snippet-service-applied-configurations-detail-delete-button-cancel',
+                tabGeneral: 'hub-snippet-service-applied-configurations-detail-tab-general',
+                tabListOfResources: 'hub-snippet-service-applied-configurations-detail-tab-list-of-resources',
             },
         },
     },

@@ -23,6 +23,7 @@ import { pages } from '@/routes'
 import PageListTemplate from '@/containers/Common/PageListTemplate/PageListTemplate'
 import { deleteAppliedConfigurationApi } from '@/containers/SnippetService/rest'
 import { getAppliedConfigurationStatusStatus, getAppliedConfigurationStatusValue } from '@/containers/SnippetService/utils'
+import { AppliedConfigurationStatusType } from '@/containers/SnippetService/ServiceSnippet.types'
 
 const ListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
@@ -41,8 +42,8 @@ const ListPage: FC<any> = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [error])
 
-    const getValue = useCallback((status: number) => getAppliedConfigurationStatusValue(status, _), [_])
-    const getStatus = useCallback((status: number) => getAppliedConfigurationStatusStatus(status), [])
+    const getValue = useCallback((status: AppliedConfigurationStatusType) => getAppliedConfigurationStatusValue(status, _), [_])
+    const getStatus = useCallback((status: AppliedConfigurationStatusType) => getAppliedConfigurationStatusStatus(status), [])
 
     const columns = useMemo(
         () => [
@@ -83,7 +84,7 @@ const ListPage: FC<any> = () => {
             {
                 Header: _(g.status),
                 accessor: 'status',
-                Cell: ({ value }: { value: number }) => <StatusPill label={getValue(value)} status={getStatus(value)} />,
+                Cell: ({ value }: { value: AppliedConfigurationStatusType }) => <StatusPill label={getValue(value)} status={getStatus(value)} />,
             },
             {
                 Header: _(confT.condition),
@@ -103,6 +104,7 @@ const ListPage: FC<any> = () => {
                             >
                                 <IconLink />
                                 <Spacer type='pl-2'>{value}</Spacer>
+                                <Spacer type='ml-2'>(v.{row.original?.conditionId.version})</Spacer>
                             </Tag>
                         )
                     }

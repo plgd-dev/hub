@@ -401,4 +401,16 @@ export const messages = defineMessages({
         id: 'snippetService.onDemand',
         defaultMessage: 'On demand',
     },
+    createNewConfiguration: {
+        id: 'snippetService.createNewConfiguration',
+        defaultMessage: 'Create new Configuration',
+    },
+    noResourcesFound: {
+        id: 'snippetService.noResourcesFound',
+        defaultMessage: 'No Resources found',
+    },
+    cancelCommandError: {
+        id: 'snippetService.cancelCommandError',
+        defaultMessage: 'Pending command cancel error',
+    },
 })

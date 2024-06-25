@@ -474,4 +474,8 @@ export const messages = defineMessages({
         id: 'global.noDevices',
         defaultMessage: 'No Devices',
     },
+    canceled: {
+        id: 'global.canceled',
+        defaultMessage: 'Canceled',
+    },
 })

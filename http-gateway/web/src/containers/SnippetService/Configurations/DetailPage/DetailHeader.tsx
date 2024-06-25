@@ -4,6 +4,7 @@ import { generatePath, useNavigate } from 'react-router-dom'
 
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
+import { DeleteInformationType } from '@shared-ui/components/Atomic/Modal/components/DeleteModal/DeleteModal.types'
 
 import { messages as g } from '@/containers/Global.i18n'
 import DetailHeaderLayout from '@/containers/Common/DetailHeaderLayout'
@@ -12,7 +13,6 @@ import { deleteConfigurationsApi } from '@/containers/SnippetService/rest'
 import testId from '@/testId'
 import notificationId from '@/notificationId'
 import { pages } from '@/routes'
-import { DeleteInformationType } from '@shared-ui/components/Atomic/Modal/components/DeleteModal/DeleteModal.types'
 
 type Props = {
     id: string
