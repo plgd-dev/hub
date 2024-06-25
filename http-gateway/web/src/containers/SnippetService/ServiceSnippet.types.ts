@@ -26,6 +26,10 @@ export type ConditionDataType = {
     version: string
 }
 
+export type ConditionDataEnhancedType = ConditionDataType & {
+    configurationName?: string
+}
+
 export type AppliedConfigurationDataType = {
     conditionId?: {
         id: string

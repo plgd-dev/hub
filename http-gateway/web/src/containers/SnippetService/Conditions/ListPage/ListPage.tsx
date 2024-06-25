@@ -11,6 +11,7 @@ import Tag from '@shared-ui/components/Atomic/Tag'
 import { tagVariants } from '@shared-ui/components/Atomic/Tag/constants'
 import StatusPill from '@shared-ui/components/Atomic/StatusPill'
 import { states } from '@shared-ui/components/Atomic/StatusPill/constants'
+import Spacer from '@shared-ui/components/Atomic/Spacer'
 
 import PageLayout from '@/containers/Common/PageLayout'
 import { messages as confT } from '../../SnippetService.i18n'
@@ -26,6 +27,7 @@ const ListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
 
     const { data, loading, error, refresh } = useConditionsList()
+
     const navigate = useNavigate()
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -83,7 +85,7 @@ const ListPage: FC<any> = () => {
                         variant={tagVariants.BLUE}
                     >
                         <IconLink />
-                        &nbsp;{_(confT.configLink)}
+                        <Spacer type='ml-2'>{row.original.configurationName}</Spacer>
                     </Tag>
                 ),
                 disableSortBy: true,

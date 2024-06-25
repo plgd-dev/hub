@@ -1,7 +1,7 @@
-import { ConditionDataType } from '@/containers/SnippetService/ServiceSnippet.types'
+import { ConditionDataEnhancedType } from '@/containers/SnippetService/ServiceSnippet.types'
 
 export type Props = {
-    defaultFormData: Partial<ConditionDataType>
+    defaultFormData: Partial<ConditionDataEnhancedType>
     resetIndex: number
 }
 

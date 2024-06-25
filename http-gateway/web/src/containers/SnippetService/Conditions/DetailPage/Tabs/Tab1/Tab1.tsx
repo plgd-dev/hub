@@ -7,13 +7,13 @@ import { Controller } from 'react-hook-form'
 import { messages as g } from '@/containers/Global.i18n'
 import FormGroup from '@shared-ui/components/Atomic/FormGroup'
 import FormInput from '@shared-ui/components/Atomic/FormInput'
-
 import Switch from '@shared-ui/components/Atomic/Switch'
 import { useForm } from '@shared-ui/common/hooks'
 import { tagVariants } from '@shared-ui/components/Atomic/Tag/constants'
 import IconLink from '@shared-ui/components/Atomic/Icon/components/IconLink'
 import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
 import Tag from '@shared-ui/components/Atomic/Tag'
+import Spacer from '@shared-ui/components/Atomic/Spacer'
 
 import { pages } from '@/routes'
 import { messages as confT } from '@/containers/SnippetService/SnippetService.i18n'
@@ -103,7 +103,8 @@ const Tab1: FC<Props> = (props) => {
                             }
                             variant={tagVariants.BLUE}
                         >
-                            <IconLink /> &nbsp;{_(confT.configLink)}
+                            <IconLink />
+                            <Spacer type='ml-2'>{defaultFormData.configurationName}</Spacer>
                         </Tag>
                     ),
                 },
