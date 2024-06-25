@@ -147,7 +147,8 @@ export const pages = {
         CONDITIONS: {
             LINK: '/snippet-service/conditions',
             DETAIL: {
-                LINK: '/snippet-service/conditions/:conditionId',
+                LINK: '/snippet-service/conditions/:conditionId/:tab',
+                LINK_NO_TABS: '/snippet-service/conditions/:conditionId',
                 TABS: ['', 'filters', 'api-access-token'],
             },
             ADD: {
@@ -162,7 +163,8 @@ export const pages = {
                 STEPS: ['', 'apply-to-devices'],
             },
             DETAIL: {
-                LINK: '/snippet-service/applied-configurations/:appliedConfigurationId',
+                LINK: '/snippet-service/applied-configurations/:appliedConfigurationId/:tab',
+                LINK_NO_TABS: '/snippet-service/applied-configurations/:appliedConfigurationId',
                 TABS: ['', 'list-of-resources'],
             },
         },
@@ -316,7 +318,11 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                         id: '112',
                         title: <MenuTranslate id='menuConditions' />,
                         link: '/conditions',
-                        paths: [pages.SNIPPET_SERVICE.CONDITIONS.LINK, pages.SNIPPET_SERVICE.CONDITIONS.DETAIL.LINK],
+                        paths: [
+                            pages.SNIPPET_SERVICE.CONDITIONS.LINK,
+                            pages.SNIPPET_SERVICE.CONDITIONS.DETAIL.LINK,
+                            pages.SNIPPET_SERVICE.CONDITIONS.DETAIL.LINK_NO_TABS,
+                        ],
                     },
                     {
                         id: '113',
@@ -325,6 +331,7 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                         paths: [
                             pages.SNIPPET_SERVICE.APPLIED_CONFIGURATIONS.LINK,
                             pages.SNIPPET_SERVICE.APPLIED_CONFIGURATIONS.DETAIL.LINK,
+                            pages.SNIPPET_SERVICE.APPLIED_CONFIGURATIONS.DETAIL.LINK_NO_TABS,
                             pages.SNIPPET_SERVICE.APPLIED_CONFIGURATIONS.ADD.LINK,
                         ],
                     },
@@ -501,12 +508,14 @@ export const Routes = () => {
 
                 {/* ***** CONDITIONS ***** */}
                 <Route path='conditions'>
+                    <Route element={withSuspense(<ConditionsDetailPage />)} path=':conditionId/:tab' />
                     <Route element={withSuspense(<ConditionsDetailPage />)} path=':conditionId' />
                     <Route element={withSuspense(<ConditionsListPage />)} path='' />
                 </Route>
 
                 {/* ***** APPLIED RESOURCES CONFIGURATION ***** */}
                 <Route path='applied-configurations'>
+                    <Route element={withSuspense(<AppliedConfigurationDetailPage />)} path=':appliedConfigurationId/:tab' />
                     <Route element={withSuspense(<AppliedConfigurationDetailPage />)} path=':appliedConfigurationId' />
                     <Route element={withSuspense(<AppliedConfigurationListPage />)} path='' />
                 </Route>
