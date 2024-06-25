@@ -44,6 +44,7 @@ func NewResourceSubscriber(ctx context.Context, config natsClient.Config, fileWa
 		return nil, fmt.Errorf("cannot create resource subscriber: %w", err)
 	}
 
+	// TODO: use the same subscriptionID for instances that share the same subscription
 	subscriptionID := uuid.NewString()
 	const owner = "*"
 	subjectResourceChanged := isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent,

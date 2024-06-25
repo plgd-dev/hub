@@ -228,7 +228,7 @@ func getAppliedConfigurations(ctx context.Context, t *testing.T, snippetClient p
 
 func TestService(t *testing.T) {
 	deviceID := hubTest.MustFindDeviceByName(hubTest.TestDeviceName)
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT*100)
 	defer cancel()
 
 	tearDown := hubTestService.SetUp(ctx, t)

@@ -176,7 +176,10 @@ func (s *SnippetServiceServer) InvokeConfiguration(req *pb.InvokeConfigurationRe
 	if err != nil {
 		return s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotInvokeConfiguration(err)))
 	}
-	return s.resourceUpdater.InvokeConfiguration(srv.Context(), owner, req)
+	// TODO: the query parameter must match the req.ConfigurationId
+	return s.resourceUpdater.InvokeConfiguration(srv.Context(), owner, req, func(c *pb.AppliedDeviceConfiguration) error {
+		return srv.Send(c)
+	})
 }
 
 func errCannotCreateCondition(err error) error {

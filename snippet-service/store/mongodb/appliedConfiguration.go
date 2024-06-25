@@ -2,6 +2,7 @@ package mongodb
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
 	"github.com/plgd-dev/hub/v2/snippet-service/store"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -142,50 +144,119 @@ func (s *Store) DeleteAppliedConfigurations(ctx context.Context, owner string, q
 	return res.DeletedCount, nil
 }
 
-func (s *Store) UpdateAppliedConfigurationResource(ctx context.Context, owner string, query store.UpdateAppliedConfigurationResourceRequest) error {
+func (s *Store) UpdateAppliedConfigurationResource(ctx context.Context, owner string, query store.UpdateAppliedConfigurationResourceRequest) (*pb.AppliedDeviceConfiguration, error) {
 	filter := bson.M{
-		store.IDKey: query.AppliedConfigurationID,
+		store.IDKey:                              query.AppliedConfigurationID,
+		store.ResourcesKey + "." + store.HrefKey: query.Resource.GetHref(),
+	}
+	if owner != "" {
+		filter[store.OwnerKey] = owner
 	}
 	statusFilter := bson.A{}
 	if len(query.StatusFilter) > 0 {
 		for _, status := range query.StatusFilter {
 			statusFilter = append(statusFilter, status.String())
 		}
-		filter[store.ResourcesKey] = bson.M{"$elemMatch": bson.M{
-			store.HrefKey:   query.Resource.GetHref(),
-			store.StatusKey: bson.M{mongodb.In: statusFilter},
-		}}
 	}
 
-	if owner != "" {
-		filter[store.OwnerKey] = owner
+	matchResourceCond := func(alias string) bson.M {
+		cond := bson.M{"$eq": bson.A{"$$" + alias + "." + store.HrefKey, query.Resource.GetHref()}}
+		if len(statusFilter) > 0 {
+			cond = bson.M{
+				"$and": bson.A{
+					cond,
+					bson.M{"$in": bson.A{"$$" + alias + "." + store.StatusKey, statusFilter}},
+				},
+			}
+		}
+		return cond
 	}
 
+	updatedTimestamp := time.Now().UnixNano()
+	update := mongo.Pipeline{
+		// check if we have a resource with the given href and status
+		bson.D{{Key: mongodb.Set, Value: bson.M{
+			"__matchFound": bson.M{"$gt": bson.A{
+				bson.M{
+					"$size": bson.M{
+						"$filter": bson.M{
+							"input": "$" + store.ResourcesKey,
+							"as":    "elem",
+							"cond":  matchResourceCond("elem"),
+						},
+					},
+				}, 0,
+			}},
+		}}},
+	}
+	// replace the resource with the new one
+	update = append(update, bson.D{{Key: mongodb.Set, Value: bson.M{
+		store.ResourcesKey: bson.M{
+			"$map": bson.M{
+				"input": "$" + store.ResourcesKey,
+				"as":    "elem",
+				"in": bson.M{
+					"$cond": bson.M{
+						"if":   matchResourceCond("elem"),
+						"then": query.Resource,
+						"else": "$$elem",
+					},
+				},
+			},
+		},
+	}}})
+
+	// update the timestamp and the condition relation if we have a matched resource
 	set := bson.M{
-		store.TimestampKey:              time.Now().UnixNano(),
-		store.ResourcesKey + ".$[elem]": query.Resource,
+		store.TimestampKey: bson.M{
+			"$cond": bson.M{
+				"if":   "$__matchFound",
+				"then": updatedTimestamp,
+				"else": "$" + store.TimestampKey,
+			},
+		},
 	}
 	if query.AppliedCondition != nil {
-		set[store.ConditionRelationIDKey] = query.AppliedCondition.GetId()
-		set[store.ConditionRelationVersionKey] = query.AppliedCondition.GetVersion()
-	}
-	update := bson.M{
-		mongodb.Set: set,
+		set[store.ConditionRelationIDKey] = bson.M{
+			"$cond": bson.M{
+				"if":   "$__matchFound",
+				"then": query.AppliedCondition.GetId(),
+				"else": "$" + store.ConditionRelationIDKey,
+			},
+		}
+		set[store.ConditionRelationVersionKey] = bson.M{
+			"$cond": bson.M{
+				"if":   "$__matchFound",
+				"then": query.AppliedCondition.GetVersion(),
+				"else": "$" + store.ConditionRelationVersionKey,
+			},
+		}
 	}
 
-	optFilters := bson.M{
-		"elem." + store.HrefKey: query.Resource.GetHref(),
+	// update the timestamp and the condition relation if we have a matched resource
+	update = append(update, bson.D{{Key: mongodb.Set, Value: set}})
+
+	// remove the __matchFound field
+	update = append(update, bson.D{{Key: mongodb.Unset, Value: bson.A{"__matchFound"}}})
+
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	result := s.Collection(appliedConfigurationsCol).FindOneAndUpdate(ctx, filter, update, opts)
+	if result.Err() != nil {
+		if errors.Is(result.Err(), mongo.ErrNoDocuments) {
+			return nil, fmt.Errorf("%w: %w", store.ErrNotFound, fmt.Errorf("no applied configuration(%v) with resource(%v)", query.AppliedConfigurationID, query.Resource.GetHref()))
+		}
+		return nil, result.Err()
 	}
-	if len(statusFilter) > 0 {
-		optFilters["elem."+store.StatusKey] = bson.M{mongodb.In: statusFilter}
+
+	updatedAppliedCfg := pb.AppliedDeviceConfiguration{}
+	err := result.Decode(&updatedAppliedCfg)
+	if err != nil {
+		return nil, err
 	}
-	res, err := s.Collection(appliedConfigurationsCol).UpdateOne(ctx, filter, update, &options.UpdateOptions{
-		ArrayFilters: &options.ArrayFilters{
-			Filters: bson.A{optFilters},
-		},
-	})
-	if err == nil && res.ModifiedCount == 0 {
-		return fmt.Errorf("%w: %w", store.ErrNotFound, fmt.Errorf("no applied configuration(%v) with resource(%v)", query.AppliedConfigurationID, query.Resource.GetHref()))
+	// check timestamp to know whether the resource was updated or not
+	if updatedAppliedCfg.GetTimestamp() != updatedTimestamp {
+		return nil, fmt.Errorf("%w: %w", store.ErrNotModified, fmt.Errorf("applied configuration(%v) was not updated", query.AppliedConfigurationID))
 	}
-	return err
+
+	return &updatedAppliedCfg, err
 }

@@ -36,8 +36,6 @@ func TestRequestHandlerUpdateConfiguration(t *testing.T) {
 	_, shutdownHttp := snippetTest.SetUp(t)
 	defer shutdownHttp()
 
-	token := oauthTest.GetDefaultAccessToken(t)
-
 	conn, err := grpc.NewClient(config.SNIPPET_SERVICE_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
@@ -54,6 +52,7 @@ func TestRequestHandlerUpdateConfiguration(t *testing.T) {
 			makeTestResource(t, "/test/1", 1),
 		},
 	}
+	token := oauthTest.GetDefaultAccessToken(t)
 	_, err = c.CreateConfiguration(pkgGrpc.CtxWithToken(ctx, token), conf)
 	require.NoError(t, err)
 

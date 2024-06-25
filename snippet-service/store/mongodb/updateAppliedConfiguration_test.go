@@ -186,7 +186,7 @@ func TestStoreUpdateAppliedConfigurationResource(t *testing.T) {
 		},
 	}
 	owner := "owner1"
-	_, err := s.CreateAppliedConfiguration(ctx, &pb.AppliedDeviceConfiguration{
+	appliedConf, err := s.CreateAppliedConfiguration(ctx, &pb.AppliedDeviceConfiguration{
 		Id:       id,
 		DeviceId: "dev1",
 		ConfigurationId: &pb.AppliedDeviceConfiguration_RelationTo{
@@ -198,7 +198,7 @@ func TestStoreUpdateAppliedConfigurationResource(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	err = s.UpdateAppliedConfigurationResource(ctx, owner, store.UpdateAppliedConfigurationResourceRequest{
+	updatedAppliedConf, err := s.UpdateAppliedConfigurationResource(ctx, owner, store.UpdateAppliedConfigurationResourceRequest{
 		AppliedConfigurationID: id,
 		StatusFilter:           []pb.AppliedDeviceConfiguration_Resource_Status{pb.AppliedDeviceConfiguration_Resource_PENDING},
 		Resource: &pb.AppliedDeviceConfiguration_Resource{
@@ -208,9 +208,12 @@ func TestStoreUpdateAppliedConfigurationResource(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
+	wantAppliedConf := appliedConf.Clone()
+	wantAppliedConf.Resources[0].Status = pb.AppliedDeviceConfiguration_Resource_DONE
+	test.CmpAppliedDeviceConfiguration(t, wantAppliedConf, updatedAppliedConf, true)
 
 	// /test/1 is no longer in pending state, so additional update should fail
-	err = s.UpdateAppliedConfigurationResource(ctx, owner, store.UpdateAppliedConfigurationResourceRequest{
+	_, err = s.UpdateAppliedConfigurationResource(ctx, owner, store.UpdateAppliedConfigurationResourceRequest{
 		AppliedConfigurationID: id,
 		StatusFilter:           []pb.AppliedDeviceConfiguration_Resource_Status{pb.AppliedDeviceConfiguration_Resource_PENDING},
 		Resource: &pb.AppliedDeviceConfiguration_Resource{
@@ -219,10 +222,10 @@ func TestStoreUpdateAppliedConfigurationResource(t *testing.T) {
 			Status:        pb.AppliedDeviceConfiguration_Resource_TIMEOUT,
 		},
 	})
-	require.Error(t, err)
+	require.ErrorIs(t, err, store.ErrNotModified)
 
 	// mismatched owner
-	err = s.UpdateAppliedConfigurationResource(ctx, "mismatch", store.UpdateAppliedConfigurationResourceRequest{
+	_, err = s.UpdateAppliedConfigurationResource(ctx, "mismatch", store.UpdateAppliedConfigurationResourceRequest{
 		AppliedConfigurationID: id,
 		StatusFilter:           []pb.AppliedDeviceConfiguration_Resource_Status{pb.AppliedDeviceConfiguration_Resource_PENDING},
 		Resource: &pb.AppliedDeviceConfiguration_Resource{

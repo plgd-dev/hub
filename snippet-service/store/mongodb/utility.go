@@ -81,7 +81,7 @@ func getVersionsPipeline(pl mongo.Pipeline, versions []uint64, latest, exclude b
 }
 
 func getPipeline(owner, id string, versions []uint64) mongo.Pipeline {
-	pl := mongo.Pipeline{bson.D{{Key: "$match", Value: addMatchCondition(owner, id, true)}}}
+	pl := mongo.Pipeline{bson.D{{Key: mongodb.Match, Value: addMatchCondition(owner, id, true)}}}
 	project := bson.M{
 		store.LatestKey: false,
 	}

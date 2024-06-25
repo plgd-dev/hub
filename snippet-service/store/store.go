@@ -60,6 +60,7 @@ type (
 var (
 	ErrNotSupported    = errors.New("not supported")
 	ErrNotFound        = errors.New("not found")
+	ErrNotModified     = errors.New("not modified")
 	ErrInvalidArgument = errors.New("invalid argument")
 )
 
@@ -125,7 +126,7 @@ type Store interface {
 	// UpdateAppliedConfiguration updates an existing applied device configuration in the database.
 	UpdateAppliedConfiguration(ctx context.Context, conf *pb.AppliedDeviceConfiguration) (*pb.AppliedDeviceConfiguration, error)
 	// UpdateAppliedConfigurationResource updates an existing applied device configuration resource in the database.
-	UpdateAppliedConfigurationResource(ctx context.Context, owner string, query UpdateAppliedConfigurationResourceRequest) error
+	UpdateAppliedConfigurationResource(ctx context.Context, owner string, query UpdateAppliedConfigurationResourceRequest) (*pb.AppliedDeviceConfiguration, error)
 
 	Close(ctx context.Context) error
 }

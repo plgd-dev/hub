@@ -90,7 +90,7 @@ func (s *Store) UpdateConfiguration(ctx context.Context, conf *pb.Configuration)
 		return nil, result.Err()
 	}
 
-	updatedCfg := &store.Configuration{}
+	updatedCfg := store.Configuration{}
 	err = result.Decode(&updatedCfg)
 	if err != nil {
 		return nil, err
