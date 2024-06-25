@@ -172,11 +172,12 @@ func (s *Store) UpdateAppliedConfigurationResource(ctx context.Context, owner st
 		return cond
 	}
 
+	const matchFoundKey = "__matchFound"
 	updatedTimestamp := time.Now().UnixNano()
 	update := mongo.Pipeline{
 		// check if we have a resource with the given href and status
 		bson.D{{Key: mongodb.Set, Value: bson.M{
-			"__matchFound": bson.M{"$gt": bson.A{
+			matchFoundKey: bson.M{"$gt": bson.A{
 				bson.M{
 					"$size": bson.M{
 						"$filter": bson.M{
@@ -210,7 +211,7 @@ func (s *Store) UpdateAppliedConfigurationResource(ctx context.Context, owner st
 	set := bson.M{
 		store.TimestampKey: bson.M{
 			"$cond": bson.M{
-				"if":   "$__matchFound",
+				"if":   "$" + matchFoundKey,
 				"then": updatedTimestamp,
 				"else": "$" + store.TimestampKey,
 			},
@@ -219,14 +220,14 @@ func (s *Store) UpdateAppliedConfigurationResource(ctx context.Context, owner st
 	if query.AppliedCondition != nil {
 		set[store.ConditionRelationIDKey] = bson.M{
 			"$cond": bson.M{
-				"if":   "$__matchFound",
+				"if":   "$" + matchFoundKey,
 				"then": query.AppliedCondition.GetId(),
 				"else": "$" + store.ConditionRelationIDKey,
 			},
 		}
 		set[store.ConditionRelationVersionKey] = bson.M{
 			"$cond": bson.M{
-				"if":   "$__matchFound",
+				"if":   "$" + matchFoundKey,
 				"then": query.AppliedCondition.GetVersion(),
 				"else": "$" + store.ConditionRelationVersionKey,
 			},
@@ -237,7 +238,7 @@ func (s *Store) UpdateAppliedConfigurationResource(ctx context.Context, owner st
 	update = append(update, bson.D{{Key: mongodb.Set, Value: set}})
 
 	// remove the __matchFound field
-	update = append(update, bson.D{{Key: mongodb.Unset, Value: bson.A{"__matchFound"}}})
+	update = append(update, bson.D{{Key: mongodb.Unset, Value: bson.A{matchFoundKey}}})
 
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
 	result := s.Collection(appliedConfigurationsCol).FindOneAndUpdate(ctx, filter, update, opts)

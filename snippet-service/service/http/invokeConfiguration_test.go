@@ -121,6 +121,21 @@ func TestRequestHandlerInvokeConfiguration(t *testing.T) {
 				Owner: oauthService.DeviceUserID,
 			},
 		},
+		{
+			name: "error - duplicit invocation of conf1",
+			args: args{
+				id: conf.GetId(),
+				invoke: &snippetPb.InvokeConfigurationRequest{
+					ConfigurationId: conf.GetId(),
+					DeviceId:        "dev1",
+					CorrelationId:   correlationID1,
+				},
+				token: token,
+			},
+			wantErr:      true,
+			wantHTTPCode: http.StatusInternalServerError,
+		},
+		// TODO: force
 	}
 
 	for _, tt := range tests {

@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"errors"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
@@ -260,6 +261,19 @@ func CmpAppliedDeviceConfiguration(t *testing.T, want, got *pb.AppliedDeviceConf
 		want.Timestamp = got.GetTimestamp()
 	}
 	require.Len(t, got.GetResources(), len(want.GetResources()))
+
+	normalizeResources := func(resources []*pb.AppliedDeviceConfiguration_Resource) []*pb.AppliedDeviceConfiguration_Resource {
+		resources = slices.CompactFunc(resources, func(i, j *pb.AppliedDeviceConfiguration_Resource) bool {
+			return i.GetHref() == j.GetHref()
+		})
+		slices.SortFunc(resources, func(i, j *pb.AppliedDeviceConfiguration_Resource) int {
+			return strings.Compare(i.GetHref(), j.GetHref())
+		})
+		return resources
+	}
+	want.Resources = normalizeResources(want.GetResources())
+	got.Resources = normalizeResources(got.GetResources())
+
 	for i := range want.GetResources() {
 		wantResource := want.GetResources()[i]
 		gotResource := got.GetResources()[i]

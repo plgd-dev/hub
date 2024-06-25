@@ -25,7 +25,6 @@ import (
 	raService "github.com/plgd-dev/hub/v2/resource-aggregate/service"
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
 	"go.opentelemetry.io/otel/trace"
-	"golang.org/x/exp/maps"
 	"google.golang.org/grpc/codes"
 )
 
@@ -117,9 +116,10 @@ type executionResult struct {
 	validUntil int64
 	condition  appliedCondition
 	executedBy executeByType
+	err        error
 }
 
-func (e *execution) setExecutedBy(ac *pb.AppliedDeviceConfiguration) {
+func (e execution) setExecutedBy(ac *pb.AppliedDeviceConfiguration) {
 	if e.executeBy == executeByTypeOnDemand {
 		ac.ExecutedBy = pb.MakeExecutedByOnDemand()
 		return
@@ -132,33 +132,33 @@ func (e *execution) setExecutedBy(ac *pb.AppliedDeviceConfiguration) {
 	ac.ExecutedBy = pb.MakeExecutedByConditionId(firstCondition.GetId(), firstCondition.GetVersion())
 }
 
-func (h *ResourceUpdater) applyExecution(ctx context.Context, execution execution, resourceID *commands.ResourceId, configurationID, correlationID string, cr *pb.Configuration_Resource) (executionResult, error) {
+func (h *ResourceUpdater) applyExecution(ctx context.Context, execution execution, resourceID *commands.ResourceId, configurationID, correlationID string, cr *pb.Configuration_Resource) executionResult {
 	if execution.executeBy == executeByTypeOnDemand {
 		// TODO
-		return executionResult{}, nil
+		return executionResult{}
 	}
 
 	if execution.condition.id != "" {
 		validUntil, err := h.applyConfigurationToResource(ctx, resourceID, configurationID, correlationID, cr, execution.condition.token)
 		if err != nil {
-			return executionResult{}, err
+			return executionResult{err: err}
 		}
 		return executionResult{
 			validUntil: validUntil,
 			condition:  execution.condition,
 			executedBy: executeByTypeCondition,
-		}, nil
+		}
 	}
 
 	validUntil, appliedCond, err := h.findTokenAndApplyConfigurationToResource(ctx, resourceID, configurationID, correlationID, cr, execution.conditions)
 	if err != nil {
-		return executionResult{}, err
+		return executionResult{err: err}
 	}
 	return executionResult{
 		validUntil: validUntil,
 		condition:  appliedCond,
 		executedBy: executeByTypeCondition,
-	}, nil
+	}
 }
 
 type configurationWithExecution struct {
@@ -324,98 +324,115 @@ func resourceCorrelationID(ids ...string) string {
 	return cID
 }
 
-func (h *ResourceUpdater) applyConfigurationToResources(ctx context.Context, owner, deviceID, correlationID string, confWithExecution *configurationWithExecution) (*pb.AppliedDeviceConfiguration, error) {
-	h.logger.Debugf("applying configuration(id:%v)", confWithExecution.configuration.GetId())
-	appliedConfID := uuid.NewString()
-	resources := map[string]*pb.AppliedDeviceConfiguration_Resource{}
-	for _, cr := range confWithExecution.configuration.GetResources() {
+func getAppliedConfigurationResources(resources []*pb.Configuration_Resource, appliedConfID, correlationID string) ([]*pb.AppliedDeviceConfiguration_Resource, map[string]string) {
+	updatedResources := make([]*pb.AppliedDeviceConfiguration_Resource, 0, len(resources))
+	updatedResourceCorIDs := make(map[string]string)
+	for _, cr := range resources {
 		hrefCorrelationID := uuid.NewString()
 		resCorrelationID := resourceCorrelationID(appliedConfID, hrefCorrelationID, correlationID)
-		resources[cr.GetHref()] = &pb.AppliedDeviceConfiguration_Resource{
+		updatedResourceCorIDs[cr.GetHref()] = resCorrelationID
+		updatedResources = append(updatedResources, &pb.AppliedDeviceConfiguration_Resource{
 			Href:          cr.GetHref(),
 			CorrelationId: resCorrelationID,
 			Status:        pb.AppliedDeviceConfiguration_Resource_QUEUED,
+		})
+	}
+	return updatedResources, updatedResourceCorIDs
+}
+
+func getUpdateAppliedConfigurationResourceRequest(appliedConfID, confID, owner, correlationID string, resourceID *commands.ResourceId, execution executionResult, setExecutionConditionID bool) UpdateAppliedConfigurationResourceRequest {
+	update := UpdateAppliedConfigurationResourceRequest{
+		AppliedConfigurationID: appliedConfID,
+		StatusFilter:           []pb.AppliedDeviceConfiguration_Resource_Status{pb.AppliedDeviceConfiguration_Resource_QUEUED},
+		Resource: &pb.AppliedDeviceConfiguration_Resource{
+			Href:          resourceID.GetHref(),
+			CorrelationId: correlationID,
+		},
+	}
+	if execution.err == nil {
+		// update resource status from queued to pending
+		update.Resource.Status = pb.AppliedDeviceConfiguration_Resource_PENDING
+		update.Resource.ValidUntil = execution.validUntil
+		if setExecutionConditionID {
+			update.AppliedCondition = &pb.AppliedDeviceConfiguration_RelationTo{
+				Id:      execution.condition.id,
+				Version: execution.condition.version,
+			}
 		}
+		return update
 	}
 
+	update.Resource.Status = pb.AppliedDeviceConfiguration_Resource_DONE
+	update.Resource.ResourceUpdated = &events.ResourceUpdated{
+		ResourceId: resourceID,
+		Status:     commands.Status_ERROR,
+		Content: &commands.Content{
+			Data:        []byte(execution.err.Error()),
+			ContentType: message.TextPlain.String(),
+		},
+		AuditContext: &commands.AuditContext{
+			// UserId:        owner,
+			CorrelationId: correlationID,
+			Owner:         owner,
+		},
+		EventMetadata: &events.EventMetadata{
+			ConnectionId: confID,
+		},
+	}
+	return update
+}
+
+func (h *ResourceUpdater) scheduleAppliedConfigurationPendingResourceTimeout(ctx context.Context, pd *pendingConfiguration, validUntil int64) {
+	h.logger.Debugf("timeout(%v) for pending resource(%v) update scheduled for %v", pd.correlationID, pd.resourceID.GetHref(), time.Unix(0, validUntil))
+	h.pendingConfigurations.Store(
+		pd.correlationID, cache.NewElement(
+			pd,
+			pkgTime.Unix(0, validUntil),
+			func(d *pendingConfiguration) {
+				h.logger.Debugf("timeout for pending resource(%v) update reached", d.resourceID.GetHref())
+				if errT := h.timeoutAppliedConfigurationPendingResource(ctx, d); errT != nil {
+					h.logger.Errorf("failed to timeout pending applied configuration for resource(%v): %w", d.resourceID.GetHref(), errT)
+				}
+			}),
+	)
+}
+
+func (h *ResourceUpdater) applyConfigurationToResources(ctx context.Context, owner, deviceID, correlationID string, confWithExecution *configurationWithExecution) (*pb.AppliedDeviceConfiguration, error) {
+	h.logger.Debugf("applying configuration(id:%v)", confWithExecution.configuration.GetId())
+	appliedConfID := uuid.NewString()
+	resources, resourcesCorIDs := getAppliedConfigurationResources(confWithExecution.configuration.GetResources(), appliedConfID, correlationID)
 	create := &pb.AppliedDeviceConfiguration{
 		Id:              appliedConfID,
 		Owner:           owner,
 		DeviceId:        deviceID,
 		ConfigurationId: pb.MakeRelationTo(confWithExecution.configuration.GetId(), confWithExecution.configuration.GetVersion()),
-		Resources:       maps.Values(resources),
+		Resources:       resources,
 		Timestamp:       time.Now().UnixNano(),
 	}
 	confWithExecution.execution.setExecutedBy(create)
 
 	appliedConf, errC := h.storage.CreateAppliedConfiguration(ctx, create)
 	if errC != nil {
-		if IsDuplicateKeyError(errC) {
-			// applied configuration already exists
-			h.logger.Debugf("applied configuration already exists for device(%s) and configuration(%s): %v", deviceID,
-				confWithExecution.configuration.GetId(), errC)
-			return nil, nil
-		}
 		return nil, fmt.Errorf("cannot create applied device configuration: %w", errC)
 	}
 	h.logger.Debugf("applied configuration created: %v", appliedConf)
 
 	var errs *multierror.Error
-	// var appliedCond appliedCondition
 	for _, cr := range confWithExecution.configuration.GetResources() {
 		href := cr.GetHref()
 		resourceID := &commands.ResourceId{Href: href, DeviceId: deviceID}
 		confID := confWithExecution.configuration.GetId()
-		resCorrelationID := resources[href].GetCorrelationId()
-		updatedAppliedConfCondID := false
-		exRes, err := h.applyExecution(ctx, confWithExecution.execution, resourceID, confID, resCorrelationID, cr)
-		if err == nil {
-			if exRes.executedBy == executeByTypeCondition {
-				updatedAppliedConfCondID = exRes.condition.id != confWithExecution.execution.condition.id
-				// update for next iteration
-				confWithExecution.execution.condition = exRes.condition
-			}
+		resCorrelationID := resourcesCorIDs[href]
+		exRes := h.applyExecution(ctx, confWithExecution.execution, resourceID, confID, resCorrelationID, cr)
+		updateExecutionConditionID := false
+		if exRes.executedBy == executeByTypeCondition && exRes.condition.id != appliedConf.GetConditionId().GetId() {
+			// update for next iteration
+			confWithExecution.execution.condition = exRes.condition
+			updateExecutionConditionID = true
 		}
-
-		update := UpdateAppliedConfigurationResourceRequest{
-			AppliedConfigurationID: appliedConf.GetId(),
-			StatusFilter:           []pb.AppliedDeviceConfiguration_Resource_Status{pb.AppliedDeviceConfiguration_Resource_QUEUED},
-			Resource: &pb.AppliedDeviceConfiguration_Resource{
-				Href:          href,
-				CorrelationId: resCorrelationID,
-			},
-		}
-		if updatedAppliedConfCondID {
-			update.AppliedCondition = &pb.AppliedDeviceConfiguration_RelationTo{
-				Id:      exRes.condition.id,
-				Version: exRes.condition.version,
-			}
-		}
-
-		if err == nil {
-			// update resource status from queued to pending
-			update.Resource.Status = pb.AppliedDeviceConfiguration_Resource_PENDING
-			update.Resource.ValidUntil = exRes.validUntil
-		} else {
-			update.Resource.Status = pb.AppliedDeviceConfiguration_Resource_DONE
-			update.Resource.ResourceUpdated = &events.ResourceUpdated{
-				ResourceId: resourceID,
-				Status:     commands.Status_ERROR,
-				Content: &commands.Content{
-					Data:        []byte(err.Error()),
-					ContentType: message.TextPlain.String(),
-				},
-				AuditContext: &commands.AuditContext{
-					// UserId:        owner,
-					CorrelationId: resCorrelationID,
-					Owner:         owner,
-				},
-				EventMetadata: &events.EventMetadata{
-					ConnectionId: confID,
-				},
-			}
-		}
+		update := getUpdateAppliedConfigurationResourceRequest(appliedConf.GetId(), confID, owner, resCorrelationID, resourceID, exRes, updateExecutionConditionID)
 		h.logger.Debugf("updating applied configuration(%v) resource(%v) with status(%v)", appliedConf.GetId(), href, update.Resource.GetStatus().String())
+		var err error
 		// TODO: need to distinguish between:
 		//  - if the appliedConfiguration doesnt exists -> it was removed by forced InvokeConfiguration -> exit
 		//  - if the resource is not in queued status -> it was already updated by other goroutine -> skip
@@ -426,23 +443,12 @@ func (h *ResourceUpdater) applyConfigurationToResources(ctx context.Context, own
 			continue
 		}
 		if exRes.validUntil > 0 {
-			h.logger.Debugf("timeout(%v) for pending resource(%v) update scheduled for %v", resCorrelationID, href, time.Unix(0, exRes.validUntil))
-			h.pendingConfigurations.Store(
-				resCorrelationID, cache.NewElement(
-					&pendingConfiguration{
-						id:            appliedConf.GetId(),
-						owner:         owner,
-						correlationID: resCorrelationID,
-						resourceID:    resourceID,
-					},
-					pkgTime.Unix(0, exRes.validUntil),
-					func(d *pendingConfiguration) {
-						h.logger.Debugf("timeout for pending resource(%v) update reached", d.resourceID.GetHref())
-						if errT := h.timeoutAppliedConfigurationPendingResource(ctx, d); errT != nil {
-							h.logger.Errorf("failed to timeout pending applied configuration for resource(%v): %w", d.resourceID.GetHref(), errT)
-						}
-					}),
-			)
+			h.scheduleAppliedConfigurationPendingResourceTimeout(ctx, &pendingConfiguration{
+				id:            appliedConf.GetId(),
+				owner:         owner,
+				correlationID: resCorrelationID,
+				resourceID:    resourceID,
+			}, exRes.validUntil)
 		}
 	}
 	return appliedConf, errs.ErrorOrNil()
@@ -514,9 +520,15 @@ func (h *ResourceUpdater) applyConfigurationsByConditions(ctx context.Context, r
 			h.logger.Debugf("no resources found for configuration(id:%v) for device %s", c.configuration.GetId(), deviceID)
 			continue
 		}
-		_, err2 := h.applyConfigurationToResources(ctx, owner, deviceID, "", &c)
-		if err2 != nil {
-			errs = multierror.Append(errs, err2)
+		_, errA := h.applyConfigurationToResources(ctx, owner, deviceID, "", &c)
+		if IsDuplicateKeyError(errA) {
+			// applied configuration already exists
+			h.logger.Debugf("applied configuration already exists for device(%s) and configuration(%s): %v", deviceID,
+				c.configuration.GetId(), errA)
+			continue
+		}
+		if errA != nil {
+			errs = multierror.Append(errs, errA)
 		}
 	}
 	return errs.ErrorOrNil()
