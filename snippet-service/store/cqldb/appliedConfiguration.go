@@ -15,8 +15,8 @@ func (s *Store) DeleteAppliedConfigurations(context.Context, string, *pb.DeleteA
 	return 0, store.ErrNotSupported
 }
 
-func (s *Store) CreateAppliedConfiguration(context.Context, *pb.AppliedDeviceConfiguration) (*pb.AppliedDeviceConfiguration, error) {
-	return nil, store.ErrNotSupported
+func (s *Store) CreateAppliedConfiguration(context.Context, *pb.AppliedDeviceConfiguration, bool) (*pb.AppliedDeviceConfiguration, *pb.AppliedDeviceConfiguration, error) {
+	return nil, nil, store.ErrNotSupported
 }
 
 func (s *Store) InsertAppliedConfigurations(context.Context, ...*pb.AppliedDeviceConfiguration) error {

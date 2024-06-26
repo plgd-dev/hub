@@ -21,23 +21,66 @@ func (s *Store) InsertAppliedConfigurations(ctx context.Context, confs ...*pb.Ap
 	for _, conf := range confs {
 		documents = append(documents, conf)
 	}
+	s.writeLock.RLock()
+	defer s.writeLock.RUnlock()
 	_, err := s.Collection(appliedConfigurationsCol).InsertMany(ctx, documents)
 	return err
 }
 
-func (s *Store) CreateAppliedConfiguration(ctx context.Context, adc *pb.AppliedDeviceConfiguration) (*pb.AppliedDeviceConfiguration, error) {
+func (s *Store) replaceAppliedConfiguration(ctx context.Context, newAdc *pb.AppliedDeviceConfiguration) (*pb.AppliedDeviceConfiguration, *pb.AppliedDeviceConfiguration, error) {
+	var replacedAdc *pb.AppliedDeviceConfiguration
+	filter := bson.M{
+		store.OwnerKey:                   newAdc.GetOwner(),
+		store.DeviceIDKey:                newAdc.GetDeviceId(),
+		store.ConfigurationRelationIDKey: newAdc.GetConfigurationId().GetId(),
+	}
+	result := s.Collection(appliedConfigurationsCol).FindOneAndDelete(ctx, filter)
+	if result.Err() == nil {
+		replacedAdc = &pb.AppliedDeviceConfiguration{}
+		if err := result.Decode(replacedAdc); err != nil {
+			return nil, nil, err
+		}
+	}
+	if result.Err() != nil && !errors.Is(result.Err(), mongo.ErrNoDocuments) {
+		return nil, nil, result.Err()
+	}
+	if _, err := s.Collection(appliedConfigurationsCol).InsertOne(ctx, newAdc); err != nil {
+		return nil, nil, err
+	}
+	return newAdc, replacedAdc, nil
+}
+
+func (s *Store) CreateAppliedConfiguration(ctx context.Context, adc *pb.AppliedDeviceConfiguration, force bool) (*pb.AppliedDeviceConfiguration, *pb.AppliedDeviceConfiguration, error) {
 	if err := store.ValidateAppliedConfiguration(adc, false); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	newAdc := adc.Clone()
 	if newAdc.GetId() == "" {
 		newAdc.Id = uuid.NewString()
 	}
 	newAdc.Timestamp = time.Now().UnixNano()
-	if _, err := s.Collection(appliedConfigurationsCol).InsertOne(ctx, newAdc); err != nil {
-		return nil, err
+	if force {
+		// we need to synchronize the write operation for this scenario:
+		//// goroutine 1)
+		////   - create applied configuration(force=true)
+		////   - deletes applied configuration with deviceID1 and configurationID2
+		////   - gets rescheduled
+		//// goroutine 2)
+		////   - create applied configuration(force=false)
+		////   - this should fail because the force parameter is false and the applied configuration already exists, but goroutine 1
+		////     has not yet inserted the new applied configuration
+		//// we fix this by synchronizing the other operations with the multistep replace by using a rw lock
+		s.writeLock.Lock()
+		defer s.writeLock.Unlock()
+		return s.replaceAppliedConfiguration(ctx, newAdc)
 	}
-	return newAdc, nil
+	// multiple non-forced inserts are OK, because it is properly handled by the unique indexes
+	s.writeLock.RLock()
+	defer s.writeLock.RUnlock()
+	if _, err := s.Collection(appliedConfigurationsCol).InsertOne(ctx, newAdc); err != nil {
+		return nil, nil, err
+	}
+	return newAdc, nil, nil
 }
 
 func (s *Store) UpdateAppliedConfiguration(ctx context.Context, adc *pb.AppliedDeviceConfiguration) (*pb.AppliedDeviceConfiguration, error) {
@@ -49,13 +92,17 @@ func (s *Store) UpdateAppliedConfiguration(ctx context.Context, adc *pb.AppliedD
 	filter := bson.M{
 		store.IDKey:    newAdc.GetId(),
 		store.OwnerKey: newAdc.GetOwner(),
+		// TODO: should we also match configurationID, deviceID or is update allowed to change those?
 	}
 	newAdc.Timestamp = time.Now().UnixNano()
 	opts := options.FindOneAndReplace().SetReturnDocument(options.After)
+	s.writeLock.RLock()
 	result := s.Collection(appliedConfigurationsCol).FindOneAndReplace(ctx, filter, newAdc, opts)
 	if result.Err() != nil {
+		s.writeLock.RUnlock()
 		return nil, result.Err()
 	}
+	s.writeLock.RUnlock()
 	updatedAdc := pb.AppliedDeviceConfiguration{}
 	if err = result.Decode(&updatedAdc); err != nil {
 		return nil, err
@@ -129,14 +176,19 @@ func (s *Store) GetAppliedConfigurations(ctx context.Context, owner string, quer
 	configurationIdFilter := pb.PartitionIDFilter(query.GetConfigurationIdFilter())
 	conditionIdFilter := pb.PartitionIDFilter(query.GetConditionIdFilter())
 	filter := toAppliedDeviceConfigurationsQuery(owner, query.GetIdFilter(), query.GetDeviceIdFilter(), configurationIdFilter, conditionIdFilter)
+	s.writeLock.RLock()
 	cur, err := s.Collection(appliedConfigurationsCol).Find(ctx, filter)
 	if err != nil {
+		s.writeLock.RUnlock()
 		return err
 	}
+	s.writeLock.RUnlock()
 	return processCursor(ctx, cur, p)
 }
 
 func (s *Store) DeleteAppliedConfigurations(ctx context.Context, owner string, query *pb.DeleteAppliedDeviceConfigurationsRequest) (int64, error) {
+	s.writeLock.RLock()
+	defer s.writeLock.RUnlock()
 	res, err := s.Collection(appliedConfigurationsCol).DeleteMany(ctx, toAppliedDeviceConfigurationsQuery(owner, query.GetIdFilter(), nil, pb.VersionFilter{}, pb.VersionFilter{}))
 	if err != nil {
 		return 0, err
@@ -241,13 +293,17 @@ func (s *Store) UpdateAppliedConfigurationResource(ctx context.Context, owner st
 	update = append(update, bson.D{{Key: mongodb.Unset, Value: bson.A{matchFoundKey}}})
 
 	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	s.writeLock.RLock()
 	result := s.Collection(appliedConfigurationsCol).FindOneAndUpdate(ctx, filter, update, opts)
 	if result.Err() != nil {
 		if errors.Is(result.Err(), mongo.ErrNoDocuments) {
+			s.writeLock.RUnlock()
 			return nil, fmt.Errorf("%w: %w", store.ErrNotFound, fmt.Errorf("no applied configuration(%v) with resource(%v)", query.AppliedConfigurationID, query.Resource.GetHref()))
 		}
+		s.writeLock.RUnlock()
 		return nil, result.Err()
 	}
+	s.writeLock.RUnlock()
 
 	updatedAppliedCfg := pb.AppliedDeviceConfiguration{}
 	err := result.Decode(&updatedAppliedCfg)

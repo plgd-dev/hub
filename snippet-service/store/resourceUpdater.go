@@ -109,6 +109,7 @@ type appliedCondition struct {
 type execution struct {
 	condition  appliedCondition
 	conditions []*pb.Condition
+	force      bool
 	executeBy  executeByType
 }
 
@@ -382,6 +383,10 @@ func getUpdateAppliedConfigurationResourceRequest(appliedConfID, confID, owner, 
 	return update
 }
 
+func (h *ResourceUpdater) cancelPendingResourceUpdates(appliedConf *pb.AppliedDeviceConfiguration) {
+	h.logger.Debugf("canceling pending resource operations for replaced configuration(%s)", appliedConf.GetId())
+}
+
 func (h *ResourceUpdater) scheduleAppliedConfigurationPendingResourceTimeout(ctx context.Context, pd *pendingConfiguration, validUntil int64) {
 	h.logger.Debugf("timeout(%v) for pending resource(%v) update scheduled for %v", pd.correlationID, pd.resourceID.GetHref(), time.Unix(0, validUntil))
 	h.pendingConfigurations.Store(
@@ -411,9 +416,23 @@ func (h *ResourceUpdater) applyConfigurationToResources(ctx context.Context, own
 	}
 	confWithExecution.execution.setExecutedBy(create)
 
-	appliedConf, errC := h.storage.CreateAppliedConfiguration(ctx, create)
+	if confWithExecution.execution.force {
+		// TODO
+		// if force FindOneAndReplace + upsert=true
+		// -> cancel pending commands
+		//// -> get pending commands and cancel them
+		//// -> remove from h.pendingConfigurations
+		// FindOneAndReplace
+		//// think about: what if the applied configuration is already in progress?
+		return nil, nil
+	}
+
+	appliedConf, oldAppliedConf, errC := h.storage.CreateAppliedConfiguration(ctx, create, confWithExecution.execution.force)
 	if errC != nil {
 		return nil, fmt.Errorf("cannot create applied device configuration: %w", errC)
+	}
+	if oldAppliedConf != nil {
+		h.cancelPendingResourceUpdates(oldAppliedConf)
 	}
 	h.logger.Debugf("applied configuration created: %v", appliedConf)
 
@@ -616,20 +635,11 @@ func (h *ResourceUpdater) applyConfigurationOnDemand(ctx context.Context, conf *
 		return nil, nil
 	}
 
-	if force {
-		// TODO
-		// if force FindOneAndReplace + upsert=true
-		// -> cancel pending commands
-		//// -> get pending commands and cancel them
-		//// -> remove from h.pendingConfigurations
-		// FindOneAndReplace
-		//// think about: what if the applied configuration is already in progress?
-		return nil, nil
-	}
 	return h.applyConfigurationToResources(ctx, owner, deviceID, correlationID, &configurationWithExecution{
 		configuration: conf,
 		execution: execution{
 			executeBy: executeByTypeOnDemand,
+			force:     force,
 		},
 	})
 }

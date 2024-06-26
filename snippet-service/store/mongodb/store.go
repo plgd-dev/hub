@@ -3,6 +3,7 @@ package mongodb
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
@@ -18,6 +19,8 @@ import (
 
 type Store struct {
 	*pkgMongo.Store
+
+	writeLock sync.RWMutex
 }
 
 const (

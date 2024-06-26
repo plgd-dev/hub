@@ -302,7 +302,7 @@ func (s *SnippetServiceServer) CreateAppliedConfiguration(ctx context.Context, c
 	}
 
 	configuration.Owner = owner
-	c, err := s.store.CreateAppliedConfiguration(ctx, configuration)
+	c, _, err := s.store.CreateAppliedConfiguration(ctx, configuration, false)
 	if err != nil {
 		return nil, s.logger.LogAndReturnError(status.Errorf(getGRPCErrorCode(err), "%v", errCannotCreateAppliedConfiguration(err)))
 	}

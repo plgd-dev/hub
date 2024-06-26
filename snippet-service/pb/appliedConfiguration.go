@@ -30,7 +30,7 @@ func (c *AppliedDeviceConfiguration) Validate(isUpdate bool) error {
 	if c.GetDeviceId() == "" {
 		return errors.New("missing deviceID")
 	}
-	if c.GetConfigurationId() == nil || c.GetConfigurationId().GetId() == "" {
+	if c.GetConfigurationId().GetId() == "" {
 		return errors.New("invalid configurationID")
 	}
 	if c.GetExecutedBy() == nil {

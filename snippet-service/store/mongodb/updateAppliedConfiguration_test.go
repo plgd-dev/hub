@@ -31,7 +31,7 @@ func TestStoreUpdateAppliedConfiguration(t *testing.T) {
 		},
 	}
 	owner := "owner1"
-	appliedConf, err := s.CreateAppliedConfiguration(ctx, &pb.AppliedDeviceConfiguration{
+	appliedConf, _, err := s.CreateAppliedConfiguration(ctx, &pb.AppliedDeviceConfiguration{
 		Id:       id,
 		DeviceId: "dev1",
 		ConfigurationId: &pb.AppliedDeviceConfiguration_RelationTo{
@@ -40,10 +40,10 @@ func TestStoreUpdateAppliedConfiguration(t *testing.T) {
 		ExecutedBy: pb.MakeExecutedByConditionId(condID, 0),
 		Resources:  resources,
 		Owner:      owner,
-	})
+	}, false)
 	require.NoError(t, err)
 
-	appliedConf2, err := s.CreateAppliedConfiguration(ctx, &pb.AppliedDeviceConfiguration{
+	appliedConf2, _, err := s.CreateAppliedConfiguration(ctx, &pb.AppliedDeviceConfiguration{
 		Id:       uuid.NewString(),
 		DeviceId: "dev2",
 		ConfigurationId: &pb.AppliedDeviceConfiguration_RelationTo{
@@ -52,7 +52,7 @@ func TestStoreUpdateAppliedConfiguration(t *testing.T) {
 		ExecutedBy: pb.MakeExecutedByConditionId(condID, 0),
 		Resources:  resources,
 		Owner:      owner,
-	})
+	}, false)
 	require.NoError(t, err)
 
 	type args struct {
@@ -186,7 +186,7 @@ func TestStoreUpdateAppliedConfigurationResource(t *testing.T) {
 		},
 	}
 	owner := "owner1"
-	appliedConf, err := s.CreateAppliedConfiguration(ctx, &pb.AppliedDeviceConfiguration{
+	appliedConf, _, err := s.CreateAppliedConfiguration(ctx, &pb.AppliedDeviceConfiguration{
 		Id:       id,
 		DeviceId: "dev1",
 		ConfigurationId: &pb.AppliedDeviceConfiguration_RelationTo{
@@ -195,7 +195,7 @@ func TestStoreUpdateAppliedConfigurationResource(t *testing.T) {
 		ExecutedBy: pb.MakeExecutedByConditionId(condID, 0),
 		Resources:  resources,
 		Owner:      owner,
-	})
+	}, false)
 	require.NoError(t, err)
 
 	updatedAppliedConf, err := s.UpdateAppliedConfigurationResource(ctx, owner, store.UpdateAppliedConfigurationResourceRequest{
