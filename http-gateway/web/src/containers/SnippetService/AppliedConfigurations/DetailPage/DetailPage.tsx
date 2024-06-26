@@ -25,7 +25,7 @@ const DetailPage: FC<any> = () => {
     const { appliedConfigurationId, tab: tabRoute } = useParams()
 
     const { formatMessage: _ } = useIntl()
-    const { data, loading, error } = useAppliedConfigurationDetail(appliedConfigurationId || '', !!appliedConfigurationId)
+    const { data, loading, error, refresh } = useAppliedConfigurationDetail(appliedConfigurationId || '', !!appliedConfigurationId)
 
     const tab = tabRoute || ''
 
@@ -77,13 +77,16 @@ const DetailPage: FC<any> = () => {
         try {
             setCanceling(true)
 
-            if (resource.resourceUpdated && resource.correlationId) {
-                const { deviceId, href } = resource.resourceUpdated.resourceId
+            const { correlationId, href } = resource
+
+            if (href && data?.deviceId) {
                 await cancelPendingCommandApi({
-                    deviceId,
+                    deviceId: data?.deviceId || '',
                     href,
-                    correlationId: resource.correlationId,
+                    correlationId,
                 })
+
+                refresh()
             }
 
             setCanceling(false)
