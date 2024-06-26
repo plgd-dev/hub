@@ -81,7 +81,9 @@ const ListPage: FC<any> = () => {
                 accessor: 'configurationId',
                 Cell: ({ value, row }: { value: string; row: any }) => (
                     <Tag
-                        onClick={() => navigate(generatePath(pages.SNIPPET_SERVICE.CONFIGURATIONS.DETAIL.LINK, { configurationId: row.original.id, tab: '' }))}
+                        onClick={() =>
+                            navigate(generatePath(pages.SNIPPET_SERVICE.CONFIGURATIONS.DETAIL.LINK, { configurationId: row.original.configurationId, tab: '' }))
+                        }
                         variant={tagVariants.BLUE}
                     >
                         <IconLink />
