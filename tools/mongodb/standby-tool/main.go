@@ -33,15 +33,11 @@ func (c *StandbyConfig) Validate() error {
 }
 
 type SecondaryConfig struct {
-	Delays   time.Duration `yaml:"delays"`
-	Votes    int           `yaml:"votes"`
-	Priority int           `yaml:"priority"`
+	Votes    int `yaml:"votes"`
+	Priority int `yaml:"priority"`
 }
 
 func (c *SecondaryConfig) Validate() error {
-	if c.Delays < 0 {
-		return errors.New("delays - must be greater than or equal to 0")
-	}
 	if c.Votes < 0 {
 		return errors.New("votes - must be greater than or equal to 0")
 	}
@@ -473,7 +469,7 @@ func (app *App) isSecondaryMemberConfigured(member string, config primitive.M) b
 			!memberMap["hidden"].(bool) &&
 			memberMap["priority"].(float64) > 0 &&
 			memberMap["votes"].(int32) > 0 &&
-			float64(memberMap["secondaryDelaySecs"].(int64)) == app.Config.ReplicaSet.Secondary.Delays.Seconds() {
+			memberMap["secondaryDelaySecs"].(int64) == int64(0) {
 			return true
 		}
 	}
@@ -494,7 +490,7 @@ func (app *App) updateSecondaryMemberConfig(member string, config primitive.M) (
 			memberMap["hidden"] = false
 			memberMap["priority"] = float64(app.Config.ReplicaSet.Secondary.Priority)
 			memberMap["votes"] = int32(app.Config.ReplicaSet.Secondary.Votes)
-			memberMap["secondaryDelaySecs"] = int64(app.Config.ReplicaSet.Secondary.Delays.Seconds())
+			memberMap["secondaryDelaySecs"] = 0
 		}
 		newMembers = append(newMembers, memberMap)
 	}

@@ -32,7 +32,7 @@ func parseArgs() MongoArgs {
 	var args MongoArgs
 
 	flag.BoolVar(&args.TLS, "tls", false, "Enable TLS")
-	flag.BoolVar(&args.TLS, "directConnection", false, "Direct connection")
+	flag.BoolVar(&args.DirectConnection, "directConnection", false, "Direct connection")
 	flag.StringVar(&args.TLSCertificateKeyFile, "tlsCertificateKeyFile", "", "Path to the TLS certificate key file")
 	flag.StringVar(&args.TLSCAFile, "tlsCAFile", "", "Path to the TLS CA file")
 	flag.StringVar(&args.Eval, "eval", "", "MongoDB eval command")

@@ -139,8 +139,6 @@ mongodb:
         priority: 10
         # Set number of votes for the secondary members
         votes: 1
-        # Set the delay for syncing the secondary members with the primary member
-        delaysSeconds: 0
     # - TLS configuration for mongodb-standby-tool to connect to the MongoDB replica set
     clients:
       storage:

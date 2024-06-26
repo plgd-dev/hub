@@ -19,14 +19,12 @@ replicaSet:
     # List of the MongoDB members in the replica set which are used as backup members
     members: []
     # Set the delay for syncing the standby members with the secondary/primary members
-    delaysSeconds: 360
+    delays: 360s
   secondary:
     # Used to configure the secondary members priority
     priority: 10
     # Set number of votes for the secondary members
     votes: 1
-    # Set the delay for syncing the secondary members with the primary member
-    delaysSeconds: 0
 clients:
   storage:
     mongoDB:

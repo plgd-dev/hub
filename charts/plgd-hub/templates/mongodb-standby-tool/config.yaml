@@ -22,7 +22,7 @@ data:
       forceUpdate: {{ $standbyTool.replicaSet.forceUpdate }}
       maxWaitsForReady: {{ $standbyTool.replicaSet.maxWaitsForReady }}
       standby:
-        # List of the MongoDB members in the replica set which are used as backup members
+        # List of the MongoDB members in the replica set which are used as hidden and secondary members
         members:
           {{- range $standbyTool.replicaSet.standby.members }}
           - {{printf "%s" . }}
@@ -34,8 +34,6 @@ data:
         priority: {{ $standbyTool.replicaSet.secondary.priority }}
         # Set number of votes for the secondary members
         votes: {{ $standbyTool.replicaSet.secondary.votes }}
-        # Set the delay for syncing the secondary members with the primary member
-        delaysSeconds: {{ $standbyTool.replicaSet.secondary.delaysSeconds }}
     clients:
       storage:
         mongoDB:

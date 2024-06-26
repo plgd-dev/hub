@@ -1,6 +1,5 @@
 {{- $clientCertName := include "plgd-hub.coapgateway.clientCertName" . }}
 {{- if and $clientCertName .Values.certmanager.enabled .Values.coapgateway.enabled }}
-{{- $serviceDns := include "plgd-hub.coapgateway.fullname" . }}
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
