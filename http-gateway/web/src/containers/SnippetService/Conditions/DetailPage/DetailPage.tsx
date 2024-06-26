@@ -170,19 +170,19 @@ const DetailPage: FC<any> = () => {
                         }}
                         tabs={[
                             {
-                                name: _(confT.generalAndResources),
+                                name: _(g.general),
                                 id: 0,
                                 dataTestId: testId.snippetService.conditions.detail.tabGeneral,
                                 content: <Tab1 defaultFormData={formData} resetIndex={resetIndex} />,
                             },
                             {
-                                name: _(confT.conditions),
+                                name: _(g.filters),
                                 id: 1,
                                 dataTestId: testId.snippetService.conditions.detail.tabFilters,
                                 content: <Tab2 defaultFormData={formData} resetIndex={resetIndex} setFilterError={setFilterError} />,
                             },
                             {
-                                name: _(confT.appliedConfiguration),
+                                name: _(confT.APIAccessToken),
                                 id: 2,
                                 dataTestId: testId.snippetService.conditions.detail.tabApiAccessToken,
                                 content: <Tab3 defaultFormData={formData} resetIndex={resetIndex} />,
