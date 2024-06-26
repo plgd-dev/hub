@@ -117,4 +117,16 @@ export const messages = defineMessages({
         id: 'pendingCommands.initiator',
         defaultMessage: 'Initiator',
     },
+    pendingCommand: {
+        id: 'pendingCommands.pendingCommand',
+        defaultMessage: `{count} pending command`,
+    },
+    pendingCommands: {
+        id: 'pendingCommands.pendingCommands',
+        defaultMessage: `{count} pending commands`,
+    },
+    cancelSelected: {
+        id: 'pendingCommands.cancelSelected',
+        defaultMessage: `Cancel selected`,
+    },
 })

@@ -14,16 +14,16 @@ import TableActionButton from '@shared-ui/components/Organisms/TableActionButton
 
 import PendingCommandsList from '../PendingCommandsList'
 import { PendingCommandsListRefType } from '@/containers/PendingCommands/PendingCommandsList/PendingCommandsList.types'
-import { PENDING_COMMANDS_LIST_REFRESH_INTERVAL_MS } from '@/containers/PendingCommands/constants'
 import { messages as t } from '@/containers/PendingCommands/PendingCommands.i18n'
 import DateFormat from '@/containers/PendingCommands/DateFormat'
 import { getPendingCommandStatusColorAndLabel, hasCommandExpired } from '@/containers/PendingCommands/utils'
+import { useCurrentTime } from '@/containers/PendingCommands/hooks'
 
 const PendingCommandsListPage = () => {
     const { formatMessage: _ } = useIntl()
     const [loading, setLoading] = useState(false)
     const [domReady, setDomReady] = useState(false)
-    const [currentTime, setCurrentTime] = useState(Date.now())
+    const { currentTime } = useCurrentTime()
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const breadcrumbs = useMemo(() => [{ label: _(menuT.pendingCommands), link: '/' }], [])
@@ -32,13 +32,6 @@ const PendingCommandsListPage = () => {
 
     useEffect(() => {
         setDomReady(true)
-        const timeout = setInterval(() => {
-            setCurrentTime(Date.now())
-        }, PENDING_COMMANDS_LIST_REFRESH_INTERVAL_MS)
-
-        return () => {
-            clearInterval(timeout)
-        }
     }, [])
 
     const columns = useMemo(

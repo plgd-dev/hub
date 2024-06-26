@@ -413,4 +413,16 @@ export const messages = defineMessages({
         id: 'snippetService.cancelCommandError',
         defaultMessage: 'Pending command cancel error',
     },
+    cancelCommandsError: {
+        id: 'snippetService.cancelCommandsError',
+        defaultMessage: 'Pending commands cancel error',
+    },
+    cancelCommandsSuccess: {
+        id: 'snippetService.cancelCommandsSuccess',
+        defaultMessage: 'Selected commands canceled',
+    },
+    cancelCommandsSuccessMessage: {
+        id: 'snippetService.cancelCommandsSuccess',
+        defaultMessage: 'Selected commands were successfully canceled',
+    },
 })
