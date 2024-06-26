@@ -229,7 +229,7 @@ mongodb:
   initContainers:
     # workaround for https://github.com/bitnami/charts/issues/10264, https://jira.mongodb.org/browse/MONGOSH-1240
     - name: mongo-binary
-      image: ghcr.io/plgd-dev/hub/mongodb-admin-tool:vnext-pr1311
+      image: ghcr.io/plgd-dev/hub/mongodb-admin-tool:latest
       imagePullPolicy: "Always"
       volumeMounts:
         - name: mongodb-crt
