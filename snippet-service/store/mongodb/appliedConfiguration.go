@@ -16,7 +16,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func (s *Store) InsertAppliedConfigurations(ctx context.Context, confs ...*pb.AppliedDeviceConfiguration) error {
+func (s *Store) InsertAppliedConfigurations(ctx context.Context, confs ...*pb.AppliedConfiguration) error {
 	documents := make([]interface{}, 0, len(confs))
 	for _, conf := range confs {
 		documents = append(documents, conf)
@@ -27,8 +27,8 @@ func (s *Store) InsertAppliedConfigurations(ctx context.Context, confs ...*pb.Ap
 	return err
 }
 
-func (s *Store) replaceAppliedConfiguration(ctx context.Context, newAdc *pb.AppliedDeviceConfiguration) (*pb.AppliedDeviceConfiguration, *pb.AppliedDeviceConfiguration, error) {
-	var replacedAdc *pb.AppliedDeviceConfiguration
+func (s *Store) replaceAppliedConfiguration(ctx context.Context, newAdc *pb.AppliedConfiguration) (*pb.AppliedConfiguration, *pb.AppliedConfiguration, error) {
+	var replacedAdc *pb.AppliedConfiguration
 	filter := bson.M{
 		store.OwnerKey:                   newAdc.GetOwner(),
 		store.DeviceIDKey:                newAdc.GetDeviceId(),
@@ -36,7 +36,7 @@ func (s *Store) replaceAppliedConfiguration(ctx context.Context, newAdc *pb.Appl
 	}
 	result := s.Collection(appliedConfigurationsCol).FindOneAndDelete(ctx, filter)
 	if result.Err() == nil {
-		replacedAdc = &pb.AppliedDeviceConfiguration{}
+		replacedAdc = &pb.AppliedConfiguration{}
 		if err := result.Decode(replacedAdc); err != nil {
 			return nil, nil, err
 		}
@@ -50,7 +50,7 @@ func (s *Store) replaceAppliedConfiguration(ctx context.Context, newAdc *pb.Appl
 	return newAdc, replacedAdc, nil
 }
 
-func (s *Store) CreateAppliedConfiguration(ctx context.Context, adc *pb.AppliedDeviceConfiguration, force bool) (*pb.AppliedDeviceConfiguration, *pb.AppliedDeviceConfiguration, error) {
+func (s *Store) CreateAppliedConfiguration(ctx context.Context, adc *pb.AppliedConfiguration, force bool) (*pb.AppliedConfiguration, *pb.AppliedConfiguration, error) {
 	if err := store.ValidateAppliedConfiguration(adc, false); err != nil {
 		return nil, nil, err
 	}
@@ -83,7 +83,7 @@ func (s *Store) CreateAppliedConfiguration(ctx context.Context, adc *pb.AppliedD
 	return newAdc, nil, nil
 }
 
-func (s *Store) UpdateAppliedConfiguration(ctx context.Context, adc *pb.AppliedDeviceConfiguration) (*pb.AppliedDeviceConfiguration, error) {
+func (s *Store) UpdateAppliedConfiguration(ctx context.Context, adc *pb.AppliedConfiguration) (*pb.AppliedConfiguration, error) {
 	err := store.ValidateAppliedConfiguration(adc, true)
 	if err != nil {
 		return nil, err
@@ -103,7 +103,7 @@ func (s *Store) UpdateAppliedConfiguration(ctx context.Context, adc *pb.AppliedD
 		return nil, result.Err()
 	}
 	s.writeLock.RUnlock()
-	updatedAdc := pb.AppliedDeviceConfiguration{}
+	updatedAdc := pb.AppliedConfiguration{}
 	if err = result.Decode(&updatedAdc); err != nil {
 		return nil, err
 	}
@@ -172,7 +172,7 @@ func toAppliedDeviceConfigurationsQuery(owner string, idFilter, deviceIdFilter [
 	return toFilterQuery(mongodb.And, filters)
 }
 
-func (s *Store) GetAppliedConfigurations(ctx context.Context, owner string, query *pb.GetAppliedDeviceConfigurationsRequest, p store.ProccessAppliedDeviceConfigurations) error {
+func (s *Store) GetAppliedConfigurations(ctx context.Context, owner string, query *pb.GetAppliedConfigurationsRequest, p store.ProccessAppliedDeviceConfigurations) error {
 	configurationIdFilter := pb.PartitionIDFilter(query.GetConfigurationIdFilter())
 	conditionIdFilter := pb.PartitionIDFilter(query.GetConditionIdFilter())
 	filter := toAppliedDeviceConfigurationsQuery(owner, query.GetIdFilter(), query.GetDeviceIdFilter(), configurationIdFilter, conditionIdFilter)
@@ -186,7 +186,7 @@ func (s *Store) GetAppliedConfigurations(ctx context.Context, owner string, quer
 	return processCursor(ctx, cur, p)
 }
 
-func (s *Store) DeleteAppliedConfigurations(ctx context.Context, owner string, query *pb.DeleteAppliedDeviceConfigurationsRequest) (int64, error) {
+func (s *Store) DeleteAppliedConfigurations(ctx context.Context, owner string, query *pb.DeleteAppliedConfigurationsRequest) (int64, error) {
 	s.writeLock.RLock()
 	defer s.writeLock.RUnlock()
 	res, err := s.Collection(appliedConfigurationsCol).DeleteMany(ctx, toAppliedDeviceConfigurationsQuery(owner, query.GetIdFilter(), nil, pb.VersionFilter{}, pb.VersionFilter{}))
@@ -196,7 +196,7 @@ func (s *Store) DeleteAppliedConfigurations(ctx context.Context, owner string, q
 	return res.DeletedCount, nil
 }
 
-func (s *Store) UpdateAppliedConfigurationResource(ctx context.Context, owner string, query store.UpdateAppliedConfigurationResourceRequest) (*pb.AppliedDeviceConfiguration, error) {
+func (s *Store) UpdateAppliedConfigurationResource(ctx context.Context, owner string, query store.UpdateAppliedConfigurationResourceRequest) (*pb.AppliedConfiguration, error) {
 	filter := bson.M{
 		store.IDKey:                              query.AppliedConfigurationID,
 		store.ResourcesKey + "." + store.HrefKey: query.Resource.GetHref(),
@@ -305,7 +305,7 @@ func (s *Store) UpdateAppliedConfigurationResource(ctx context.Context, owner st
 	}
 	s.writeLock.RUnlock()
 
-	updatedAppliedCfg := pb.AppliedDeviceConfiguration{}
+	updatedAppliedCfg := pb.AppliedConfiguration{}
 	err := result.Decode(&updatedAppliedCfg)
 	if err != nil {
 		return nil, err

@@ -8,7 +8,7 @@ import (
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
 )
 
-func ValidateAppliedConfiguration(c *pb.AppliedDeviceConfiguration, isUpdate bool) error {
+func ValidateAppliedConfiguration(c *pb.AppliedConfiguration, isUpdate bool) error {
 	if err := c.Validate(isUpdate); err != nil {
 		return errInvalidArgument(err)
 	}
@@ -17,9 +17,9 @@ func ValidateAppliedConfiguration(c *pb.AppliedDeviceConfiguration, isUpdate boo
 
 type UpdateAppliedConfigurationResourceRequest struct {
 	AppliedConfigurationID string
-	AppliedCondition       *pb.AppliedDeviceConfiguration_RelationTo
-	StatusFilter           []pb.AppliedDeviceConfiguration_Resource_Status
-	Resource               *pb.AppliedDeviceConfiguration_Resource
+	AppliedCondition       *pb.AppliedConfiguration_RelationTo
+	StatusFilter           []pb.AppliedConfiguration_Resource_Status
+	Resource               *pb.AppliedConfiguration_Resource
 }
 
 func (u *UpdateAppliedConfigurationResourceRequest) Validate() error {

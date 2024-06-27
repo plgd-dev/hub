@@ -15,9 +15,9 @@ func TestStoreDeleteAppliedConfigurations(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
-	getAppliedConfigurations := func(t *testing.T, s *mongodb.Store, owner string, query *pb.GetAppliedDeviceConfigurationsRequest) []*pb.AppliedDeviceConfiguration {
-		var configurations []*pb.AppliedDeviceConfiguration
-		err := s.GetAppliedConfigurations(ctx, owner, query, func(c *pb.AppliedDeviceConfiguration) error {
+	getAppliedConfigurations := func(t *testing.T, s *mongodb.Store, owner string, query *pb.GetAppliedConfigurationsRequest) []*pb.AppliedConfiguration {
+		var configurations []*pb.AppliedConfiguration
+		err := s.GetAppliedConfigurations(ctx, owner, query, func(c *pb.AppliedConfiguration) error {
 			configurations = append(configurations, c.Clone())
 			return nil
 		})
@@ -25,9 +25,9 @@ func TestStoreDeleteAppliedConfigurations(t *testing.T) {
 		return configurations
 	}
 
-	getAppliedConfigurationsMap := func(t *testing.T, s *mongodb.Store, owner string, query *pb.GetAppliedDeviceConfigurationsRequest) map[string]*pb.AppliedDeviceConfiguration {
+	getAppliedConfigurationsMap := func(t *testing.T, s *mongodb.Store, owner string, query *pb.GetAppliedConfigurationsRequest) map[string]*pb.AppliedConfiguration {
 		confs := getAppliedConfigurations(t, s, owner, query)
-		confsMap := make(map[string]*pb.AppliedDeviceConfiguration)
+		confsMap := make(map[string]*pb.AppliedConfiguration)
 		for _, conf := range confs {
 			confsMap[conf.GetId()] = conf
 		}
@@ -36,18 +36,18 @@ func TestStoreDeleteAppliedConfigurations(t *testing.T) {
 
 	type args struct {
 		owner string
-		query *pb.DeleteAppliedDeviceConfigurationsRequest
+		query *pb.DeleteAppliedConfigurationsRequest
 	}
 	tests := []struct {
 		name    string
 		args    args
 		wantErr bool
-		want    func(t *testing.T, s *mongodb.Store, stored map[string]*pb.AppliedDeviceConfiguration)
+		want    func(t *testing.T, s *mongodb.Store, stored map[string]*pb.AppliedConfiguration)
 	}{
 		{
 			name: "all",
 			args: args{},
-			want: func(t *testing.T, s *mongodb.Store, _ map[string]*pb.AppliedDeviceConfiguration) {
+			want: func(t *testing.T, s *mongodb.Store, _ map[string]*pb.AppliedConfiguration) {
 				confs := getAppliedConfigurations(t, s, "", nil)
 				require.Empty(t, confs)
 			},
@@ -57,10 +57,10 @@ func TestStoreDeleteAppliedConfigurations(t *testing.T) {
 			args: args{
 				owner: test.Owner(1),
 			},
-			want: func(t *testing.T, s *mongodb.Store, stored map[string]*pb.AppliedDeviceConfiguration) {
+			want: func(t *testing.T, s *mongodb.Store, stored map[string]*pb.AppliedConfiguration) {
 				confsMap := getAppliedConfigurationsMap(t, s, "", nil)
 				require.NotEmpty(t, confsMap)
-				newStored := make(map[string]*pb.AppliedDeviceConfiguration)
+				newStored := make(map[string]*pb.AppliedConfiguration)
 				for _, conf := range stored {
 					if conf.GetOwner() == test.Owner(1) {
 						continue
@@ -73,7 +73,7 @@ func TestStoreDeleteAppliedConfigurations(t *testing.T) {
 		{
 			name: "id{1,3,4,5}",
 			args: args{
-				query: &pb.DeleteAppliedDeviceConfigurationsRequest{
+				query: &pb.DeleteAppliedConfigurationsRequest{
 					IdFilter: []string{
 						test.AppliedConfigurationID(1),
 						test.AppliedConfigurationID(3),
@@ -82,10 +82,10 @@ func TestStoreDeleteAppliedConfigurations(t *testing.T) {
 					},
 				},
 			},
-			want: func(t *testing.T, s *mongodb.Store, stored map[string]*pb.AppliedDeviceConfiguration) {
+			want: func(t *testing.T, s *mongodb.Store, stored map[string]*pb.AppliedConfiguration) {
 				confsMap := getAppliedConfigurationsMap(t, s, "", nil)
 				require.NotEmpty(t, confsMap)
-				newStored := make(map[string]*pb.AppliedDeviceConfiguration)
+				newStored := make(map[string]*pb.AppliedConfiguration)
 
 				for _, conf := range stored {
 					confID := conf.GetId()
@@ -104,7 +104,7 @@ func TestStoreDeleteAppliedConfigurations(t *testing.T) {
 			name: "owner2/id2",
 			args: args{
 				owner: test.Owner(2),
-				query: &pb.DeleteAppliedDeviceConfigurationsRequest{
+				query: &pb.DeleteAppliedConfigurationsRequest{
 					IdFilter: []string{
 						test.AppliedConfigurationID(2),
 						// Ids not owned by owner2 should not be deleted
@@ -113,10 +113,10 @@ func TestStoreDeleteAppliedConfigurations(t *testing.T) {
 					},
 				},
 			},
-			want: func(t *testing.T, s *mongodb.Store, stored map[string]*pb.AppliedDeviceConfiguration) {
+			want: func(t *testing.T, s *mongodb.Store, stored map[string]*pb.AppliedConfiguration) {
 				confsMap := getAppliedConfigurationsMap(t, s, "", nil)
 				require.NotEmpty(t, confsMap)
-				newStored := make(map[string]*pb.AppliedDeviceConfiguration)
+				newStored := make(map[string]*pb.AppliedConfiguration)
 				for _, conf := range stored {
 					confID := conf.GetId()
 					if confID == test.AppliedConfigurationID(2) {

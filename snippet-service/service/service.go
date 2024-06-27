@@ -160,12 +160,6 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	})
 
 	snippetService := grpcService.NewSnippetServiceServer(dbStorage, resourceUpdater, config.APIs.GRPC.Authorization.OwnerClaim, config.HubID, logger)
-	closerFn.AddFunc(func() {
-		errC := snippetService.Close(ctx)
-		if errC != nil {
-			log.Errorf("failed to close grpc %s server: %w", serviceName, errC)
-		}
-	})
 
 	grpcService, grpcServiceClose, err := newGrpcService(ctx, config.APIs.GRPC, snippetService, fileWatcher, logger, tracerProvider)
 	if err != nil {

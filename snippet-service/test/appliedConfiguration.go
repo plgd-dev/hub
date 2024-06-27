@@ -29,7 +29,7 @@ func AppliedConfigurationID(i int) string {
 	return id
 }
 
-func SetAppliedConfigurationExecutedBy(ac *pb.AppliedDeviceConfiguration, i int) {
+func SetAppliedConfigurationExecutedBy(ac *pb.AppliedConfiguration, i int) {
 	if i%RuntimeConfig.NumConfigurations == 0 {
 		ac.ExecutedBy = pb.MakeExecutedByOnDemand()
 		return
@@ -37,16 +37,16 @@ func SetAppliedConfigurationExecutedBy(ac *pb.AppliedDeviceConfiguration, i int)
 	ac.ExecutedBy = pb.MakeExecutedByConditionId(ConditionID(i), uint64(i%RuntimeConfig.NumConditions))
 }
 
-func AppliedConfigurationResource(t *testing.T, deviceID string, start, n int) []*pb.AppliedDeviceConfiguration_Resource {
-	resources := make([]*pb.AppliedDeviceConfiguration_Resource, 0, n)
+func AppliedConfigurationResource(t *testing.T, deviceID string, start, n int) []*pb.AppliedConfiguration_Resource {
+	resources := make([]*pb.AppliedConfiguration_Resource, 0, n)
 	for i := start; i < start+n; i++ {
 		correlationID := "corID" + strconv.Itoa(i)
-		resource := &pb.AppliedDeviceConfiguration_Resource{
+		resource := &pb.AppliedConfiguration_Resource{
 			Href:          hubTest.TestResourceLightInstanceHref(strconv.Itoa(i)),
 			CorrelationId: correlationID,
-			Status:        pb.AppliedDeviceConfiguration_Resource_Status(i % 4),
+			Status:        pb.AppliedConfiguration_Resource_Status(i % 4),
 		}
-		if resource.GetStatus() == pb.AppliedDeviceConfiguration_Resource_DONE {
+		if resource.GetStatus() == pb.AppliedConfiguration_Resource_DONE {
 			resource.ResourceUpdated = pbTest.MakeResourceUpdated(t,
 				deviceID,
 				resource.GetHref(),
@@ -62,9 +62,9 @@ func AppliedConfigurationResource(t *testing.T, deviceID string, start, n int) [
 	return resources
 }
 
-func getAppliedConfigurations(t *testing.T) map[string]*pb.AppliedDeviceConfiguration {
+func getAppliedConfigurations(t *testing.T) map[string]*pb.AppliedConfiguration {
 	owners := make(map[int]string, RuntimeConfig.NumConfigurations)
-	acs := make(map[string]*pb.AppliedDeviceConfiguration)
+	acs := make(map[string]*pb.AppliedConfiguration)
 	i := 0
 	for d := range RuntimeConfig.numDevices {
 		for c := range RuntimeConfig.NumConfigurations {
@@ -74,11 +74,11 @@ func getAppliedConfigurations(t *testing.T) map[string]*pb.AppliedDeviceConfigur
 				owners[i%RuntimeConfig.NumConfigurations] = owner
 			}
 			deviceID := DeviceID(d)
-			ac := &pb.AppliedDeviceConfiguration{
+			ac := &pb.AppliedConfiguration{
 				Id:       AppliedConfigurationID(i),
 				DeviceId: deviceID,
 				Owner:    owner,
-				ConfigurationId: &pb.AppliedDeviceConfiguration_RelationTo{
+				ConfigurationId: &pb.AppliedConfiguration_RelationTo{
 					Id:      ConfigurationID(c),
 					Version: uint64(i % RuntimeConfig.NumConfigurations),
 				},
@@ -93,9 +93,9 @@ func getAppliedConfigurations(t *testing.T) map[string]*pb.AppliedDeviceConfigur
 	return acs
 }
 
-func AddAppliedConfigurationsToStore(ctx context.Context, t *testing.T, s store.Store) map[string]*pb.AppliedDeviceConfiguration {
+func AddAppliedConfigurationsToStore(ctx context.Context, t *testing.T, s store.Store) map[string]*pb.AppliedConfiguration {
 	acs := getAppliedConfigurations(t)
-	acsToInsert := make([]*pb.AppliedDeviceConfiguration, 0, len(acs))
+	acsToInsert := make([]*pb.AppliedConfiguration, 0, len(acs))
 	for _, c := range acs {
 		acsToInsert = append(acsToInsert, c)
 	}
@@ -104,7 +104,7 @@ func AddAppliedConfigurationsToStore(ctx context.Context, t *testing.T, s store.
 	return acs
 }
 
-func AddAppliedConfigurations(ctx context.Context, t *testing.T, ownerClaim string, ss *service.Service) map[string]*pb.AppliedDeviceConfiguration {
+func AddAppliedConfigurations(ctx context.Context, t *testing.T, ownerClaim string, ss *service.Service) map[string]*pb.AppliedConfiguration {
 	configurations := getAppliedConfigurations(t)
 	for _, c := range configurations {
 		ctxWithToken := pkgGrpc.CtxWithIncomingToken(ctx, GetTokenWithOwnerClaim(t, c.GetOwner(), ownerClaim))

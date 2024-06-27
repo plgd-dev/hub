@@ -27,15 +27,15 @@ func TestStoreCreateAppliedConfiguration(t *testing.T) {
 	deviceID := "deviceID1"
 	confID1 := uuid.NewString()
 	condID1 := uuid.NewString()
-	executedBy1 := &pb.AppliedDeviceConfiguration_ConditionId{
-		ConditionId: &pb.AppliedDeviceConfiguration_RelationTo{
+	executedBy1 := &pb.AppliedConfiguration_ConditionId{
+		ConditionId: &pb.AppliedConfiguration_RelationTo{
 			Id: condID1,
 		},
 	}
-	resource1 := &pb.AppliedDeviceConfiguration_Resource{
+	resource1 := &pb.AppliedConfiguration_Resource{
 		Href:          "/test/1",
 		CorrelationId: "correlationID1",
-		Status:        pb.AppliedDeviceConfiguration_Resource_DONE,
+		Status:        pb.AppliedConfiguration_Resource_DONE,
 		ResourceUpdated: &events.ResourceUpdated{
 			ResourceId: commands.NewResourceID(deviceID, hubTest.TestResourceLightInstanceHref("1")),
 			Content: &commands.Content{
@@ -47,44 +47,44 @@ func TestStoreCreateAppliedConfiguration(t *testing.T) {
 		},
 	}
 
-	_, _, err := s.CreateAppliedConfiguration(ctx, &pb.AppliedDeviceConfiguration{
+	_, _, err := s.CreateAppliedConfiguration(ctx, &pb.AppliedConfiguration{
 		Id:              appliedConfID1,
 		Owner:           owner,
 		DeviceId:        deviceID,
-		ConfigurationId: &pb.AppliedDeviceConfiguration_RelationTo{Id: confID1},
+		ConfigurationId: &pb.AppliedConfiguration_RelationTo{Id: confID1},
 		ExecutedBy:      executedBy1,
-		Resources:       []*pb.AppliedDeviceConfiguration_Resource{resource1},
+		Resources:       []*pb.AppliedConfiguration_Resource{resource1},
 	}, false)
 	require.NoError(t, err)
 
 	appliedConfID2 := uuid.NewString()
 	confID2 := uuid.NewString()
-	executedBy2 := &pb.AppliedDeviceConfiguration_OnDemand{
+	executedBy2 := &pb.AppliedConfiguration_OnDemand{
 		OnDemand: true,
 	}
-	resource2 := &pb.AppliedDeviceConfiguration_Resource{
+	resource2 := &pb.AppliedConfiguration_Resource{
 		Href:          "/test/2",
 		CorrelationId: "correlationID2",
-		Status:        pb.AppliedDeviceConfiguration_Resource_TIMEOUT,
+		Status:        pb.AppliedConfiguration_Resource_TIMEOUT,
 	}
 	appliedConfID3 := uuid.NewString()
 	appliedConfID4 := uuid.NewString()
 	confID3 := uuid.NewString()
 
 	type args struct {
-		adc   *pb.AppliedDeviceConfiguration
+		adc   *pb.AppliedConfiguration
 		force bool
 	}
 	tests := []struct {
 		name    string
 		args    args
 		wantErr bool
-		want    *pb.AppliedDeviceConfiguration
+		want    *pb.AppliedConfiguration
 	}{
 		{
 			name: "invalid ID",
 			args: args{
-				adc: &pb.AppliedDeviceConfiguration{
+				adc: &pb.AppliedConfiguration{
 					Id: "invalid",
 				},
 			},
@@ -93,7 +93,7 @@ func TestStoreCreateAppliedConfiguration(t *testing.T) {
 		{
 			name: "missing owner",
 			args: args{
-				adc: &pb.AppliedDeviceConfiguration{
+				adc: &pb.AppliedConfiguration{
 					Id: appliedConfID2,
 				},
 			},
@@ -102,7 +102,7 @@ func TestStoreCreateAppliedConfiguration(t *testing.T) {
 		{
 			name: "missing deviceID",
 			args: args{
-				adc: &pb.AppliedDeviceConfiguration{
+				adc: &pb.AppliedConfiguration{
 					Id:    appliedConfID2,
 					Owner: owner,
 				},
@@ -112,7 +112,7 @@ func TestStoreCreateAppliedConfiguration(t *testing.T) {
 		{
 			name: "missing configuration",
 			args: args{
-				adc: &pb.AppliedDeviceConfiguration{
+				adc: &pb.AppliedConfiguration{
 					Id:       appliedConfID2,
 					Owner:    owner,
 					DeviceId: deviceID,
@@ -123,11 +123,11 @@ func TestStoreCreateAppliedConfiguration(t *testing.T) {
 		{
 			name: "invalid configurationID",
 			args: args{
-				adc: &pb.AppliedDeviceConfiguration{
+				adc: &pb.AppliedConfiguration{
 					Id:              appliedConfID2,
 					Owner:           owner,
 					DeviceId:        deviceID,
-					ConfigurationId: &pb.AppliedDeviceConfiguration_RelationTo{},
+					ConfigurationId: &pb.AppliedConfiguration_RelationTo{},
 				},
 			},
 			wantErr: true,
@@ -135,11 +135,11 @@ func TestStoreCreateAppliedConfiguration(t *testing.T) {
 		{
 			name: "missing executedBy",
 			args: args{
-				adc: &pb.AppliedDeviceConfiguration{
+				adc: &pb.AppliedConfiguration{
 					Id:              appliedConfID2,
 					Owner:           owner,
 					DeviceId:        deviceID,
-					ConfigurationId: &pb.AppliedDeviceConfiguration_RelationTo{Id: confID2},
+					ConfigurationId: &pb.AppliedConfiguration_RelationTo{Id: confID2},
 				},
 			},
 			wantErr: true,
@@ -147,11 +147,11 @@ func TestStoreCreateAppliedConfiguration(t *testing.T) {
 		{
 			name: "missing resources",
 			args: args{
-				adc: &pb.AppliedDeviceConfiguration{
+				adc: &pb.AppliedConfiguration{
 					Id:              appliedConfID2,
 					Owner:           owner,
 					DeviceId:        deviceID,
-					ConfigurationId: &pb.AppliedDeviceConfiguration_RelationTo{Id: confID2},
+					ConfigurationId: &pb.AppliedConfiguration_RelationTo{Id: confID2},
 					ExecutedBy:      executedBy2,
 				},
 			},
@@ -160,13 +160,13 @@ func TestStoreCreateAppliedConfiguration(t *testing.T) {
 		{
 			name: "invalid resource - missing href",
 			args: args{
-				adc: &pb.AppliedDeviceConfiguration{
+				adc: &pb.AppliedConfiguration{
 					Id:              appliedConfID2,
 					Owner:           owner,
 					DeviceId:        deviceID,
-					ConfigurationId: &pb.AppliedDeviceConfiguration_RelationTo{Id: confID2},
+					ConfigurationId: &pb.AppliedConfiguration_RelationTo{Id: confID2},
 					ExecutedBy:      executedBy2,
-					Resources: []*pb.AppliedDeviceConfiguration_Resource{
+					Resources: []*pb.AppliedConfiguration_Resource{
 						{},
 					},
 				},
@@ -176,13 +176,13 @@ func TestStoreCreateAppliedConfiguration(t *testing.T) {
 		{
 			name: "invalid resource - missing correlationID",
 			args: args{
-				adc: &pb.AppliedDeviceConfiguration{
+				adc: &pb.AppliedConfiguration{
 					Id:              appliedConfID2,
 					Owner:           owner,
 					DeviceId:        deviceID,
-					ConfigurationId: &pb.AppliedDeviceConfiguration_RelationTo{Id: confID2},
+					ConfigurationId: &pb.AppliedConfiguration_RelationTo{Id: confID2},
 					ExecutedBy:      executedBy2,
-					Resources: []*pb.AppliedDeviceConfiguration_Resource{
+					Resources: []*pb.AppliedConfiguration_Resource{
 						{
 							Href: "/href",
 						},
@@ -194,13 +194,13 @@ func TestStoreCreateAppliedConfiguration(t *testing.T) {
 		{
 			name: "duplicate ID",
 			args: args{
-				adc: &pb.AppliedDeviceConfiguration{
+				adc: &pb.AppliedConfiguration{
 					Id:              appliedConfID1,
 					Owner:           owner,
 					DeviceId:        "deviceID2",
-					ConfigurationId: &pb.AppliedDeviceConfiguration_RelationTo{Id: uuid.NewString()},
+					ConfigurationId: &pb.AppliedConfiguration_RelationTo{Id: uuid.NewString()},
 					ExecutedBy:      executedBy2,
-					Resources:       []*pb.AppliedDeviceConfiguration_Resource{resource1},
+					Resources:       []*pb.AppliedConfiguration_Resource{resource1},
 				},
 			},
 			wantErr: true,
@@ -208,13 +208,13 @@ func TestStoreCreateAppliedConfiguration(t *testing.T) {
 		{
 			name: "duplicate deviceID + configurationID",
 			args: args{
-				adc: &pb.AppliedDeviceConfiguration{
+				adc: &pb.AppliedConfiguration{
 					Id:              uuid.NewString(),
 					Owner:           owner,
 					DeviceId:        deviceID,
-					ConfigurationId: &pb.AppliedDeviceConfiguration_RelationTo{Id: confID1},
+					ConfigurationId: &pb.AppliedConfiguration_RelationTo{Id: confID1},
 					ExecutedBy:      executedBy1,
-					Resources:       []*pb.AppliedDeviceConfiguration_Resource{resource1},
+					Resources:       []*pb.AppliedConfiguration_Resource{resource1},
 				},
 			},
 			wantErr: true,
@@ -222,66 +222,66 @@ func TestStoreCreateAppliedConfiguration(t *testing.T) {
 		{
 			name: "new",
 			args: args{
-				adc: &pb.AppliedDeviceConfiguration{
+				adc: &pb.AppliedConfiguration{
 					Id:              appliedConfID2,
 					Owner:           owner,
 					DeviceId:        deviceID,
-					ConfigurationId: &pb.AppliedDeviceConfiguration_RelationTo{Id: confID2},
+					ConfigurationId: &pb.AppliedConfiguration_RelationTo{Id: confID2},
 					ExecutedBy:      executedBy2,
-					Resources:       []*pb.AppliedDeviceConfiguration_Resource{resource2},
+					Resources:       []*pb.AppliedConfiguration_Resource{resource2},
 				},
 			},
-			want: &pb.AppliedDeviceConfiguration{
+			want: &pb.AppliedConfiguration{
 				Id:              appliedConfID2,
 				Owner:           owner,
 				DeviceId:        deviceID,
-				ConfigurationId: &pb.AppliedDeviceConfiguration_RelationTo{Id: confID2},
+				ConfigurationId: &pb.AppliedConfiguration_RelationTo{Id: confID2},
 				ExecutedBy:      executedBy2,
-				Resources:       []*pb.AppliedDeviceConfiguration_Resource{resource2},
+				Resources:       []*pb.AppliedConfiguration_Resource{resource2},
 			},
 		},
 		{
 			name: "force duplicate deviceID + configurationID",
 			args: args{
-				adc: &pb.AppliedDeviceConfiguration{
+				adc: &pb.AppliedConfiguration{
 					Id:              appliedConfID3,
 					Owner:           owner,
 					DeviceId:        deviceID,
-					ConfigurationId: &pb.AppliedDeviceConfiguration_RelationTo{Id: confID1},
+					ConfigurationId: &pb.AppliedConfiguration_RelationTo{Id: confID1},
 					ExecutedBy:      executedBy2,
-					Resources:       []*pb.AppliedDeviceConfiguration_Resource{resource2},
+					Resources:       []*pb.AppliedConfiguration_Resource{resource2},
 				},
 				force: true,
 			},
-			want: &pb.AppliedDeviceConfiguration{
+			want: &pb.AppliedConfiguration{
 				Id:              appliedConfID3,
 				Owner:           owner,
 				DeviceId:        deviceID,
-				ConfigurationId: &pb.AppliedDeviceConfiguration_RelationTo{Id: confID1},
+				ConfigurationId: &pb.AppliedConfiguration_RelationTo{Id: confID1},
 				ExecutedBy:      executedBy2,
-				Resources:       []*pb.AppliedDeviceConfiguration_Resource{resource2},
+				Resources:       []*pb.AppliedConfiguration_Resource{resource2},
 			},
 		},
 		{
 			name: "new (force)",
 			args: args{
-				adc: &pb.AppliedDeviceConfiguration{
+				adc: &pb.AppliedConfiguration{
 					Id:              appliedConfID4,
 					Owner:           owner,
 					DeviceId:        deviceID,
-					ConfigurationId: &pb.AppliedDeviceConfiguration_RelationTo{Id: confID3},
+					ConfigurationId: &pb.AppliedConfiguration_RelationTo{Id: confID3},
 					ExecutedBy:      executedBy2,
-					Resources:       []*pb.AppliedDeviceConfiguration_Resource{resource2},
+					Resources:       []*pb.AppliedConfiguration_Resource{resource2},
 				},
 				force: true,
 			},
-			want: &pb.AppliedDeviceConfiguration{
+			want: &pb.AppliedConfiguration{
 				Id:              appliedConfID4,
 				Owner:           owner,
 				DeviceId:        deviceID,
-				ConfigurationId: &pb.AppliedDeviceConfiguration_RelationTo{Id: confID3},
+				ConfigurationId: &pb.AppliedConfiguration_RelationTo{Id: confID3},
 				ExecutedBy:      executedBy2,
-				Resources:       []*pb.AppliedDeviceConfiguration_Resource{resource2},
+				Resources:       []*pb.AppliedConfiguration_Resource{resource2},
 			},
 		},
 		{
@@ -289,13 +289,13 @@ func TestStoreCreateAppliedConfiguration(t *testing.T) {
 			// however, the owner must match
 			name: "fail force duplicate deviceID + configurationID - mismatched owner",
 			args: args{
-				adc: &pb.AppliedDeviceConfiguration{
+				adc: &pb.AppliedConfiguration{
 					Id:              uuid.NewString(),
 					Owner:           "mismatched",
 					DeviceId:        deviceID,
-					ConfigurationId: &pb.AppliedDeviceConfiguration_RelationTo{Id: confID1},
+					ConfigurationId: &pb.AppliedConfiguration_RelationTo{Id: confID1},
 					ExecutedBy:      executedBy2,
-					Resources:       []*pb.AppliedDeviceConfiguration_Resource{resource2},
+					Resources:       []*pb.AppliedConfiguration_Resource{resource2},
 				},
 			},
 			wantErr: true,

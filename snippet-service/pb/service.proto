@@ -123,7 +123,7 @@ message DeleteConfigurationsRequest {
 }
 message DeleteConfigurationsResponse { int64 count = 1; }
 
-message AppliedDeviceConfiguration { //TODO naming 
+message AppliedConfiguration { //TODO naming 
   message Resource {
     string href = 1;
     // Reused from invoke command or generated. Can be used to retrieve corresponding pending command.
@@ -164,7 +164,11 @@ message InvokeConfigurationRequest {
   string correlation_id = 4; // propagated down to the resource update command
 }
 
-message GetAppliedDeviceConfigurationsRequest { //TODO Naming
+message InvokeConfigurationResponse {
+  string applied_configuration_id = 1;
+}
+
+message GetAppliedConfigurationsRequest {
   repeated string id_filter = 1;
   repeated string device_id_filter = 2;
   repeated IDFilter configuration_id_filter = 3;
@@ -175,8 +179,8 @@ message GetAppliedDeviceConfigurationsRequest { //TODO Naming
   repeated string http_condition_id_filter = 6 [ deprecated = true ];
 }
 
-message DeleteAppliedDeviceConfigurationsRequest { repeated string id_filter = 1; }
-message DeleteAppliedDeviceConfigurationsResponse { int64 count = 1; }
+message DeleteAppliedConfigurationsRequest { repeated string id_filter = 1; }
+message DeleteAppliedConfigurationsResponse { int64 count = 1; }
 
 service SnippetService {
   rpc CreateCondition(Condition) returns (Condition) {
@@ -258,7 +262,7 @@ service SnippetService {
   }
 
   // streaming process of update configuration to invoker
-  rpc InvokeConfiguration(InvokeConfigurationRequest) returns (stream AppliedDeviceConfiguration) {
+  rpc InvokeConfiguration(InvokeConfigurationRequest) returns (InvokeConfigurationResponse) {
     option (google.api.http) = {
       post: "/snippet-service/api/v1/configurations/{configuration_id}";
       body: "*";
@@ -268,7 +272,7 @@ service SnippetService {
     };
   }
  
-  rpc GetAppliedConfigurations(GetAppliedDeviceConfigurationsRequest) returns (stream AppliedDeviceConfiguration) {
+  rpc GetAppliedConfigurations(GetAppliedConfigurationsRequest) returns (stream AppliedConfiguration) {
     option (google.api.http) = {
       get: "/snippet-service/api/v1/configurations/applied";
     };
@@ -277,7 +281,7 @@ service SnippetService {
     };
   }
 
-  rpc DeleteAppliedConfigurations(DeleteAppliedDeviceConfigurationsRequest) returns (DeleteAppliedDeviceConfigurationsResponse) {
+  rpc DeleteAppliedConfigurations(DeleteAppliedConfigurationsRequest) returns (DeleteAppliedConfigurationsResponse) {
     option (google.api.http) = {
       delete: "/snippet-service/api/v1/configurations/applied";
     };
@@ -288,14 +292,14 @@ service SnippetService {
 }
 
 // Trigger resource changed event from NATs.
-// 1. Check if condition is satisfied.
-// 2. Invoke configuration with ID.
-// 3. If the configuration has already been applied to the device, skip applying the configuration.
-// 4. Create applied configuration with ConfigurationId and for each resource with resourceId, QUEUED status, valid until the theoretical maximum timeout.
-// 5. Iterate over resources and
-// 6.   Set start time, valid until, and status to IN PROGRESS.
-// 7.   Register NATs for resource changed event.
-// 8.   If the resource has not been published yet (href, resource types not exist), set status to WAITING RESOURCE and wait for resource changed event until timeout.
-// 9.   If getting resource content fails or not found, set status to WAITING RESOURCE and wait for resource changed event until timeout.
-// 10.  If timeout occurs, set status to TIMEOUT.
-// 11.  Otherwise, set status to IN PROGRESS and update resource with new content. If the update fails, set status to FAIL; otherwise, set status to DONE.
+// 1.  Check if condition is satisfied.
+// 2.  Invoke configuration with ID.
+// 3.  If the configuration has already been applied to the device, skip applying the configuration.
+// 4.  Create applied configuration with ConfigurationId and for each resource with resourceId, QUEUED status, valid until the theoretical maximum timeout.
+// 5.  Iterate over resources and
+// 6.  Set start time, valid until, and status to IN PROGRESS.
+// 7.  Register NATs for resource changed event.
+// 8.  If the resource has not been published yet (href, resource types not exist), set status to WAITING RESOURCE and wait for resource changed event until timeout.
+// 9.  If getting resource content fails or not found, set status to WAITING RESOURCE and wait for resource changed event until timeout.
+// 10. If timeout occurs, set status to TIMEOUT.
+// 11. Otherwise, set status to IN PROGRESS and update resource with new content. If the update fails, set status to FAIL; otherwise, set status to DONE.

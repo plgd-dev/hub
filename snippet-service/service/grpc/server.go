@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/plgd-dev/hub/v2/pkg/log"
-	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
 	"github.com/plgd-dev/hub/v2/snippet-service/store"
 	"google.golang.org/grpc/codes"
@@ -35,7 +35,7 @@ func NewSnippetServiceServer(store store.Store, resourceUpdater *store.ResourceU
 }
 
 func (s *SnippetServiceServer) checkOwner(ctx context.Context, owner string) (string, error) {
-	ownerFromToken, err := grpc.OwnerFromTokenMD(ctx, s.ownerClaim)
+	ownerFromToken, err := pkgGrpc.OwnerFromTokenMD(ctx, s.ownerClaim)
 	if err != nil {
 		return "", err
 	}
@@ -168,22 +168,27 @@ func (s *SnippetServiceServer) DeleteConfigurations(ctx context.Context, req *pb
 }
 
 func errCannotInvokeConfiguration(err error) error {
-	return fmt.Errorf("cannot invaoke configuration: %w", err)
+	return fmt.Errorf("cannot invoke configuration: %w", err)
 }
 
-func (s *SnippetServiceServer) InvokeConfiguration(req *pb.InvokeConfigurationRequest, srv pb.SnippetService_InvokeConfigurationServer) error {
-	owner, err := s.checkOwner(srv.Context(), "")
+func (s *SnippetServiceServer) InvokeConfiguration(ctx context.Context, req *pb.InvokeConfigurationRequest) (*pb.InvokeConfigurationResponse, error) {
+	owner, err := s.checkOwner(ctx, "")
 	if err != nil {
-		return s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotInvokeConfiguration(err)))
+		return nil, s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotInvokeConfiguration(err)))
+	}
+	token, errT := pkgGrpc.TokenFromMD(ctx)
+	// we must have token for communication by raClient
+	if errT != nil {
+		return nil, s.logger.LogAndReturnError(status.Errorf(codes.Internal, "%v", errCannotInvokeConfiguration(errT)))
 	}
 	// TODO: the query parameter must match the req.ConfigurationId
-	err = s.resourceUpdater.InvokeConfiguration(srv.Context(), owner, req, func(c *pb.AppliedDeviceConfiguration) error {
-		return srv.Send(c)
-	})
+	appliedConf, err := s.resourceUpdater.InvokeConfiguration(ctx, token, owner, req)
 	if err != nil {
-		return s.logger.LogAndReturnError(status.Errorf(codes.Internal, "%v", errCannotInvokeConfiguration(err)))
+		return nil, s.logger.LogAndReturnError(status.Errorf(codes.Internal, "%v", errCannotInvokeConfiguration(err)))
 	}
-	return nil
+	return &pb.InvokeConfigurationResponse{
+		AppliedConfigurationId: appliedConf.GetId(),
+	}, nil
 }
 
 func errCannotCreateCondition(err error) error {
@@ -295,7 +300,7 @@ func errCannotCreateAppliedConfiguration(err error) error {
 	return fmt.Errorf("cannot create applied configuration: %w", err)
 }
 
-func (s *SnippetServiceServer) CreateAppliedConfiguration(ctx context.Context, configuration *pb.AppliedDeviceConfiguration) (*pb.AppliedDeviceConfiguration, error) {
+func (s *SnippetServiceServer) CreateAppliedConfiguration(ctx context.Context, configuration *pb.AppliedConfiguration) (*pb.AppliedConfiguration, error) {
 	owner, err := s.checkOwner(ctx, configuration.GetOwner())
 	if err != nil {
 		return nil, s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotCreateAppliedConfiguration(err)))
@@ -313,7 +318,7 @@ func errCannotGetAppliedConfigurations(err error) error {
 	return fmt.Errorf("cannot get applied configurations: %w", err)
 }
 
-func (s *SnippetServiceServer) GetAppliedConfigurations(req *pb.GetAppliedDeviceConfigurationsRequest, srv pb.SnippetService_GetAppliedConfigurationsServer) error {
+func (s *SnippetServiceServer) GetAppliedConfigurations(req *pb.GetAppliedConfigurationsRequest, srv pb.SnippetService_GetAppliedConfigurationsServer) error {
 	owner, err := s.checkOwner(srv.Context(), "")
 	if err != nil {
 		return s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotGetAppliedConfigurations(err)))
@@ -322,7 +327,7 @@ func (s *SnippetServiceServer) GetAppliedConfigurations(req *pb.GetAppliedDevice
 	req.ConditionIdFilter = append(req.GetConditionIdFilter(), req.ConvertHTTPConditionIdFilter()...)
 	req.ConfigurationIdFilter = append(req.GetConfigurationIdFilter(), req.ConvertHTTPConfigurationIdFilter()...)
 
-	err = s.store.GetAppliedConfigurations(srv.Context(), owner, req, func(c *pb.AppliedDeviceConfiguration) error {
+	err = s.store.GetAppliedConfigurations(srv.Context(), owner, req, func(c *pb.AppliedConfiguration) error {
 		return srv.Send(c)
 	})
 	if err != nil {
@@ -335,7 +340,7 @@ func errCannotDeleteAppliedConfigurations(err error) error {
 	return fmt.Errorf("cannot delete applied configurations: %w", err)
 }
 
-func (s *SnippetServiceServer) DeleteAppliedConfigurations(ctx context.Context, req *pb.DeleteAppliedDeviceConfigurationsRequest) (*pb.DeleteAppliedDeviceConfigurationsResponse, error) {
+func (s *SnippetServiceServer) DeleteAppliedConfigurations(ctx context.Context, req *pb.DeleteAppliedConfigurationsRequest) (*pb.DeleteAppliedConfigurationsResponse, error) {
 	owner, err := s.checkOwner(ctx, "")
 	if err != nil {
 		return nil, s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotDeleteAppliedConfigurations(err)))
@@ -344,11 +349,7 @@ func (s *SnippetServiceServer) DeleteAppliedConfigurations(ctx context.Context, 
 	if err != nil {
 		return nil, s.logger.LogAndReturnError(status.Errorf(codes.Internal, "%v", errCannotDeleteAppliedConfigurations(err)))
 	}
-	return &pb.DeleteAppliedDeviceConfigurationsResponse{
+	return &pb.DeleteAppliedConfigurationsResponse{
 		Count: count,
 	}, nil
-}
-
-func (s *SnippetServiceServer) Close(ctx context.Context) error {
-	return s.store.Close(ctx)
 }
