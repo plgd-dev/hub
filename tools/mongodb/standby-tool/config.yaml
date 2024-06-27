@@ -14,7 +14,7 @@ replicaSet:
   # Update the replica set configuration with force flag
   forceUpdate: false
   # Set the maximum number of retries for members to be ready
-  maxReadyWaits: 10
+  maxReadyWaits: 30
   standby:
     # List of the MongoDB members in the replica set which are used as backup members
     members: []

@@ -128,7 +128,7 @@ mongodb:
       # -- Update the replica set configuration with force flag
       forceUpdate: false
       # -- Set the maximum number of waits for becomes members ready.
-      maxWaitsForReady: 10
+      maxWaitsForReady: 30
       standby:
         # List of the MongoDB members in the replica set which are used as backup members
         members: []
