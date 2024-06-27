@@ -35,7 +35,7 @@ data:
           timeout: {{ .apis.grpc.keepAlive.timeout }}
         tls:
           {{- $tls := .apis.grpc.tls }}
-          {{- include "plgd-hub.certificateConfig" (list $ $tls $resourceAggregateCertPath) | indent 8 }}
+          {{- include "plgd-hub.internalCertificateConfig" (list $ $tls $resourceAggregateCertPath) | indent 8 }}
           clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
         authorization:
           {{- $authorization := .apis.grpc.authorization }}
@@ -58,7 +58,7 @@ data:
           jetstream: {{ .clients.eventBus.nats.jetstream }}
           tls:
             {{- $natsTls := .clients.eventBus.nats.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $natsTls $resourceAggregateCertPath) | indent 10 }}
+            {{- include "plgd-hub.internalCertificateConfig" (list $ $natsTls $resourceAggregateCertPath) | indent 10 }}
             useSystemCAPool: {{ .clients.eventBus.nats.tls.useSystemCAPool }}
       eventStore:
         defaultCommandTimeToLive: {{ .clients.eventStore.defaultCommandTimeToLive | default $.Values.global.defaultCommandTimeToLive | quote }}
@@ -73,7 +73,7 @@ data:
           maxConnIdleTime: {{ .clients.eventStore.mongoDB.maxConnIdleTime }}
           tls:
             {{- $mongoTls := .clients.eventStore.mongoDB.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $mongoTls $resourceAggregateCertPath) | indent 10 }}
+            {{- include "plgd-hub.internalCertificateConfig" (list $ $mongoTls $resourceAggregateCertPath) | indent 10 }}
             useSystemCAPool: {{ .clients.eventStore.mongoDB.tls.useSystemCAPool }}
         cqlDB:
           hosts:
@@ -94,7 +94,7 @@ data:
               {{- toYaml .clients.eventStore.cqlDB.keyspace.replication | nindent 14 }}
           tls:
             {{- $cqlDbTls := .clients.eventStore.cqlDB.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $cqlDbTls $resourceAggregateCertPath ) | indent 10 }}
+            {{- include "plgd-hub.internalCertificateConfig" (list $ $cqlDbTls $resourceAggregateCertPath ) | indent 10 }}
             useSystemCAPool: {{ .clients.eventStore.cqlDB.tls.useSystemCAPool }}
       identityStore:
         grpc:
@@ -108,7 +108,7 @@ data:
             permitWithoutStream: {{ .clients.identityStore.grpc.keepAlive.permitWithoutStream }}
           tls:
             {{- $authClientTls := .clients.identityStore.grpc.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $authClientTls $resourceAggregateCertPath) | indent 10 }}
+            {{- include "plgd-hub.internalCertificateConfig" (list $ $authClientTls $resourceAggregateCertPath) | indent 10 }}
             useSystemCAPool: {{ .clients.identityStore.grpc.tls.useSystemCAPool }}
       {{- include "plgd-hub.openTelemetryExporterConfig" (list $ $resourceAggregateCertPath) | nindent 6 }}
   {{- end }}

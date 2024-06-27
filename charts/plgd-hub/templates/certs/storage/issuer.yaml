@@ -1,0 +1,20 @@
+{{- if and .Values.certmanager.enabled }}
+{{- $name := .Values.certmanager.storage.issuer.name }}
+{{- $kind := .Values.certmanager.storage.issuer.kind }}
+{{- $spec := .Values.certmanager.storage.issuer.spec }}
+{{- if and $name $kind $spec }}
+apiVersion: cert-manager.io/v1
+kind: {{ .Values.certmanager.storage.issuer.kind  }}
+metadata:
+  name: {{ .Values.certmanager.storage.issuer.name  }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plgd-hub.labels" . | nindent 4 }}
+  {{- with .Values.certmanager.storage.issuer.annotations }}
+  annotations:
+    {{- . | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+{{- .Values.certmanager.storage.issuer.spec | toYaml | nindent 2 }}
+{{- end }}
+{{- end }}

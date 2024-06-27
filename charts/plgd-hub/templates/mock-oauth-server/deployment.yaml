@@ -15,7 +15,7 @@ metadata:
   {{- . | toYaml | nindent 4 }}
   {{- end }}
 spec:
-  replicas: {{ .Values.mockoauthserver.replicas }}
+  replicas: {{ include "plgd-hub.replicas" (list $ .Values.mockoauthserver.replicas) }}
   selector:
     matchLabels:
       {{- include "plgd-hub.mockoauthserver.selectorLabels" . | nindent 6 }}
@@ -99,6 +99,7 @@ spec:
             - name: service-crt
               mountPath: {{ $rdServiceCert }}
             {{- end }}
+            {{- include "plgd-hub.extraCAPoolMount" (list . .Values.extraCAPool.internal) | nindent 12 }}
             {{- with .Values.mockoauthserver.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -115,6 +116,7 @@ spec:
           secret:
             secretName: {{ include "plgd-hub.mockoauthserver.serviceCertName" . }}
         {{- end }}
+        {{- include "plgd-hub.extraCAPoolVolume" (list . .Values.extraCAPool.internal) | nindent 8 }}
         {{- with .Values.mockoauthserver.extraVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}

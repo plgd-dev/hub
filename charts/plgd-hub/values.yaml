@@ -12,12 +12,16 @@ global:
   defaultCommandTimeToLive: "10s"
   # -- Use database. Supported values: "mongoDB", "cqlDB"
   useDatabase: "mongoDB"
+  # -- MongoDB URI
+  mongoUri: ""
   # -- OAuth authority
   authority:
   # -- OAuth audience
   audience: ""
   # -- Enable *.{{ global.domain }} for all external domain
   enableWildCartCert: true
+  # -- Sets cloud to standby mode
+  standby: false
   # -- Global OAuth configuration used by multiple services
   oauth:
    device: []
@@ -30,8 +34,16 @@ global:
    web:
     clientID:
     scopes: [ "openid" ]
-  # -- Custom CA certificate for authorization endpoint in PEM format
-  authorizationCAPool:
+  # -- Custom CA certificates
+  extraCAPool:
+    # -- Custom CA certificate for authorization endpoint in PEM format 
+    authorization: "{{ include \"plgd-hub.oldGlobalAuthorizationCAPool\" . }}"
+    # -- Custom CA certificate for internal endpoints in PEM format
+    internal:
+    # -- Custom CA certificate for storage(database) endpoints in PEM format
+    storage:
+    # -- Custom CA certificate for coap endpoints in PEM format
+    coap:
   # -- Global Open Telemetry exporter configuration
   openTelemetryExporter:
       # -- Enable OTLP gRPC exporter
@@ -71,7 +83,6 @@ nats:
   monitor:
     enabled: false
 
-
 # -- External mongodb-replica dependency setup
 mongodb:
   enabled: true
@@ -89,6 +100,111 @@ mongodb:
     debug: true
   tls:
     enabled: false
+  standbyTool:
+    # -- Create standby job
+    enabled: false
+    # -- Log section
+    log:
+      # -- Logging enabled from level 
+      level: info
+      # -- Dump grpc messages
+      dumpBody: false
+      # -- The supported values are: "json", "console"
+      encoding: json
+      stacktrace:
+          # -- Log stacktrace
+          enabled: false
+          # -- Stacktrace from level
+          level: warn
+      encoderConfig:
+          # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
+          timeEncoder: rfc3339nano
+    # -- Mode of standby job. Supported values: "active", "standby"
+    mode: standby
+    # -- Name of component. Used in label selectors
+    name: mongodb-standby-tool
+    # -- Standby members of replica set
+    replicaSet:
+      # -- Update the replica set configuration with force flag
+      forceUpdate: false
+      # -- Set the maximum number of waits for becomes members ready.
+      maxWaitsForReady: 30
+      standby:
+        # List of the MongoDB members in the replica set which are used as backup members
+        members: []
+        # Set the delay for syncing the standby members with the secondary/primary members
+        delays: 10m
+      secondary:
+        # Used to configure the secondary members priority
+        priority: 10
+        # Set number of votes for the secondary members
+        votes: 1
+    # - TLS configuration for mongodb-standby-tool to connect to the MongoDB replica set
+    clients:
+      storage:
+        mongoDB:
+          # -- Timeout for connection to MongoDB and read/write operations
+          timeout: 30s
+          tls:
+            # -- Path to the CA certificate file
+            caPool:
+            # -- The certFile and keyFile are the paths to the TLS certificate pair files
+            certFile:
+            # -- The keyFile are the paths to the TLS certificate pair files
+            keyFile:
+            # -- Path to the CA certificate file
+            useSystemCAPool: false
+    # -- Full name to override
+    fullnameOverride:
+    image:
+      # -- Image registry
+      registry: ghcr.io/
+      # -- Image repository
+      repository: plgd-dev/hub/mongodb-standby-tool
+      # -- Image tag.
+      tag:
+      # -- Image pull policy
+      pullPolicy: Always
+      # -- Image pull secrets
+      imagePullSecrets: {}
+      # -- RBAC configuration
+    rbac:
+      # Create RBAC config
+      enabled: false
+      # -- Name of mongodb-standby SA
+      serviceAccountName: mongodb-standby-tool
+      # -- template definition for Role/binding etc..
+      roleBindingDefitionTpl:
+    # -- Additional labels for mongodb-standby job
+    jobLabels: {}
+    # -- Additional annotations for mongodb-standby job
+    jobAnnotations: {}
+    # -- Annotations for mongodb-standby pod
+    podAnnotations: {}
+    # -- Pod security context
+    podSecurityContext: {}
+    # -- Security context for pod
+    securityContext: {}
+    # -- Resources limit
+    resources: {}
+    # -- Node selector
+    nodeSelector: {}
+    # -- Affinity definition
+    affinity: {}
+    # -- Toleration definition
+    tolerations: {}
+    # -- Optional extra volumes
+    extraVolumes: {}
+    # -- Optional extra volume mounts
+    extraVolumeMounts: {}
+    # -- Job configuration
+    config:
+      # -- Job configuration file
+      fileName: config.yaml
+      # -- Job configuration volume name
+      volume: config
+      # -- Configuration mount path
+      mountPath: /config
   extraEnvVars:
     - name: MONGODB_EXTRA_FLAGS
       value: "--tlsMode=requireTLS --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem"
@@ -99,30 +215,42 @@ mongodb:
       mountPath: "/certs"
     - name: mongodb-cm-crt
       mountPath: "/certs-original"
+    - name: mongodb-extra-ca-pool
+      mountPath: "/certs/extra/storage"
   extraVolumes:
     - name: mongodb-crt
       emptyDir: {}
     - name: mongodb-cm-crt
       secret:
         secretName: mongodb-cm-crt
+    - name: mongodb-extra-ca-pool
+      secret:
+        secretName: mongodb-extra-ca-pool  
   initContainers:
     # workaround for https://github.com/bitnami/charts/issues/10264, https://jira.mongodb.org/browse/MONGOSH-1240
     - name: mongo-binary
-      image: docker.io/bitnami/mongodb:5.0.10-debian-11-r3
-      imagePullPolicy: "IfNotPresent"
+      image: ghcr.io/plgd-dev/hub/mongodb-admin-tool:vnext
+      imagePullPolicy: "Always"
       volumeMounts:
         - name: mongodb-crt
           mountPath: "/certs"
         - name: mongodb-cm-crt
           mountPath: "/certs-original"
+        - name: mongodb-extra-ca-pool
+          mountPath: "/certs/extra/storage"
+      securityContext:
+        runAsUser: 1001
+        runAsGroup: 1001
       command:
         - sh
         - "-c"
         - |
           /bin/bash <<'EOF'
           #!/bin/bash
-          cp /opt/bitnami/mongodb/bin/mongo /certs/mongo
+          cp /usr/local/bin/mongodb-admin-tool /certs
           echo '
+          #!/bin/bash
+          set -e
           INIT=0
           while [[ $# -gt 0 ]]; do
             case $1 in
@@ -136,7 +264,9 @@ mongodb:
           CERT_CRT=/certs-original/tls.crt
           CERT_SHA256=/certs/cert.sha256.$(sha256sum -z ${CERT_CRT} | cut -d " " -f 1)
           CA=/certs-original/ca.crt
-          CA_SHA256=/certs/ca.sha256.$(sha256sum -z ${CA} | cut -d " " -f 1)
+          EXTRA_CA=/certs/extra/storage/ca.crt
+          CA_SHA256=$(cat ${CA} ${EXTRA_CA} | sha256sum -z | cut -d " " -f 1)
+          CA_FILE_SHA256=/certs/ca.sha256.$CA_SHA256
           ROTATE_CERTIFICATES=0
           if [ ! -f ${CERT_SHA256} ]; then
             rm -f /certs/cert.sha256.*
@@ -146,10 +276,10 @@ mongodb:
             ROTATE_CERTIFICATES=1
           fi
 
-          if [ ! -f ${CA_SHA256} ]; then
+          if [ ! -f ${CA_FILE_SHA256} ]; then
             rm -f /certs/ca.sha256.*
-            cp ${CA} /certs/ca.pem
-            touch ${CA_SHA256}
+            cat ${CA} ${EXTRA_CA} > /certs/ca.pem
+            touch ${CA_FILE_SHA256}
             ROTATE_CERTIFICATES=1
           fi
 
@@ -159,13 +289,13 @@ mongodb:
 
           if [ "${ROTATE_CERTIFICATES}" == "1" ]; then
             echo "Rotating certificates"
-            /certs/mongo --tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem --eval db.adminCommand\("{rotateCertificates: 1, message: \"Rotating certificates\"}"\)
+            /certs/mongodb-admin-tool --tls --directConnection --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem --eval db.adminCommand\("{rotateCertificates: 1, message: \"Rotating certificates\"}"\)
           else
             echo "Ping database"
-            /certs/mongo --tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem --eval db.adminCommand\(\"ping\"\)
+            /certs/mongodb-admin-tool --tls --directConnection --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem --eval db.adminCommand\(\"ping\"\)
           fi
           ' > /certs/livenessProbe.sh
-          chmod u+x /certs/livenessProbe.sh
+          chmod uga+x /certs/livenessProbe.sh
           /certs/livenessProbe.sh --init
           EOF
   livenessProbe:
@@ -190,7 +320,7 @@ mongodb:
         - -ec
         - |
           TLS_OPTIONS='--tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem'
-          /certs/mongo $TLS_OPTIONS --eval 'db.hello().isWritablePrimary || db.hello().secondary' | grep -q 'true'
+          mongosh $TLS_OPTIONS --eval 'db.hello().isWritablePrimary || db.hello().secondary' | grep -q 'true'
     initialDelaySeconds: 10
     periodSeconds: 20
     timeoutSeconds: 10
@@ -330,6 +460,31 @@ certmanager:
         algorithm:
         # -- Certificate key size
         size:
+  storage:
+    # -- Storage issuer. In case you want to create your own issuer for storage certs (mongodb, scylla). In case if it is not set, the internal or default issuer will be used.
+    issuer:
+      # -- Labels
+      labels: {}
+      # -- Annotations
+      annotations: {}
+      # -- Name
+      name:
+      # -- Kind of internal issuer
+      kind:
+      # -- Group of internal issuer
+      group:
+      # -- cert-manager issuer spec
+      spec:
+    cert:
+      # -- Certificate duration
+      duration:
+      # -- Certificate renew before
+      renewBefore:
+      key:
+        # -- Certificate key algorithm
+        algorithm:
+        # -- Certificate key size
+        size:
   coap:
     issuer:
       # -- Labels
@@ -379,16 +534,64 @@ certmanager:
         # -- Certificate key size
         size:
 
-# -- Configuration parameters for authorizationCaPool
-extraAuthorizationCAPool:
-  # -- Name of secret for storing custom auth ca pool
-  name: authorization-ca-pool
-  # -- Mount path for custom auth ca pool
-  mountPath: /certs/extra
-  # -- Name of file for custom auth ca pool
-  fileName: ca.crt
-
-
+# -- Configuration parameters for extraCAPool used by services and clients
+extraCAPool:
+  # -- Authorization CAPool section to verify the OAuth service certificate.
+  authorization:
+    # -- Enable extra authorization ca pool
+    enabled: "{{ include \"plgd-hub.extraCAPoolAuthorizationEnabled\" . }}"
+    # -- Volume and Mount name
+    name: authorization-ca-pool
+    # -- Mount path for custom auth ca pool
+    mountPath: /certs/extra/authorization
+    # set configMapName in order to mount an existing configMap to dir
+    configMapName:
+    # set secretName in order to mount an existing secretName to dir
+    secretName: "{{ include \"plgd-hub.oldExtraCAPoolAuthorizationSecretName\" . }}"
+    # key in the configMap or secret that contains the CA Certificate or Bundle
+    key: "{{ include \"plgd-hub.oldExtraCAPoolAuthorizationFileName\" . }}"
+  # -- Internal CAPool section to verify internal and storage services certificates by plgd services
+  internal:
+    # -- Enable extra internal ca pool
+    enabled: "{{ include \"plgd-hub.extraCAPoolInternalEnabled\" . }}"
+    # -- Volume and Mount name
+    name: internal-ca-pool
+    # -- Mount path for custom internal ca pool
+    mountPath: /certs/extra/internal
+    # set configMapName in order to mount an existing configMap to dir
+    configMapName:
+    # set secretName in order to mount an existing secretName to dir
+    secretName: internal-ca-pool
+    # key in the configMap or secret that contains the CA Certificate or Bundle
+    key: ca.crt
+  # -- Storage CAPool section to verify internal and storage services certificates by storage services
+  storage:
+    # -- Enable extra storage ca pool
+    enabled: "{{ include \"plgd-hub.extraCAPoolStorageEnabled\" . }}"
+    # -- Volume and Mount name
+    name: storage-ca-pool
+    # -- Mount path for custom storage ca pool
+    mountPath: /certs/extra/storage
+    # set configMapName in order to mount an existing configMap to dir
+    configMapName:
+    # set secretName in order to mount an existing secretName to dir
+    secretName: storage-ca-pool
+    # key in the configMap or secret that contains the CA Certificate or Bundle
+    key: ca.crt
+  # -- CoAP CAPool section to verify device certificate by coap-gateway
+  coap:
+    # -- Enable extra coap ca pool
+    enabled: "{{ include \"plgd-hub.extraCAPoolCoapEnabled\" . }}"
+    # -- Volume and Mount name
+    name: coap-ca-pool
+    # -- Mount path for custom coap ca pool
+    mountPath: /certs/extra/coap
+    # set configMapName in order to mount an existing configMap to dir
+    configMapName:
+    # set secretName in order to mount an existing secretName to dir
+    secretName: coap-ca-pool
+    # key in the configMap or secret that contains the CA Certificate or Bundle
+    key: ca.crt
 
 resourcedirectory:
   # -- Enable resource-directory service

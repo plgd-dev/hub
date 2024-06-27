@@ -1,11 +1,12 @@
-{{- if .Values.global.authorizationCAPool }}
+{{- $secretData := include "plgd-hub.resolveTemplateString" (list . .Values.global.extraCAPool.authorization) }}
+{{- if $secretData }}
 apiVersion: v1
 kind: Secret
 metadata:
-  name: {{ .Values.extraAuthorizationCAPool.name }}
+  name: {{ include "plgd-hub.resolveTemplateString" (list . .Values.extraCAPool.authorization.secretName) }}
   namespace: {{ $.Release.Namespace }}
   labels:
     {{- include "plgd-hub.labels" $ | nindent 4 }}
 data:
-  {{ .Values.extraAuthorizationCAPool.fileName }}: {{ .Values.global.authorizationCAPool | b64enc }}
+  {{ include "plgd-hub.resolveTemplateString" (list . .Values.extraCAPool.authorization.key) }}: {{ $secretData | b64enc }}
 {{- end }}
