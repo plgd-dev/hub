@@ -503,7 +503,7 @@ func (app *App) updateSecondaryMemberConfig(member string, config primitive.M) (
 			memberMap["hidden"] = false
 			memberMap["priority"] = float64(app.Config.ReplicaSet.Secondary.Priority)
 			memberMap["votes"] = int32(app.Config.ReplicaSet.Secondary.Votes)
-			memberMap["secondaryDelaySecs"] = 0
+			memberMap["secondaryDelaySecs"] = int32(0)
 		}
 		newMembers = append(newMembers, memberMap)
 	}
@@ -579,7 +579,7 @@ func (app *App) updateHiddenMemberConfig(member string, config primitive.M) (pri
 			memberMap["hidden"] = true
 			memberMap["priority"] = int32(0)
 			memberMap["votes"] = int32(0)
-			memberMap["secondaryDelaySecs"] = int32(app.Config.ReplicaSet.Standby.Delays)
+			memberMap["secondaryDelaySecs"] = int32(app.Config.ReplicaSet.Standby.Delays.Seconds())
 		}
 		newMembers = append(newMembers, memberMap)
 	}
