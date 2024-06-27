@@ -15,7 +15,7 @@ metadata:
   {{- . | toYaml | nindent 4 }}
   {{- end }}
 spec:
-  replicas: {{ .Values.grpcgateway.replicas }}
+  replicas: {{ include "plgd-hub.replicas" (list $ .Values.grpcgateway.replicas) }}
   selector:
     matchLabels:
       {{- include "plgd-hub.grpcgateway.selectorLabels" . | nindent 6 }}
@@ -84,10 +84,8 @@ spec:
             - name: service-crt
               mountPath: {{ $cert }}
             {{- end }}
-            {{- if .Values.global.authorizationCAPool }}
-            - name: {{ .Values.extraAuthorizationCAPool.name }}
-              mountPath: {{ .Values.extraAuthorizationCAPool.mountPath }}
-            {{- end }}
+            {{- include "plgd-hub.extraCAPoolMount" (list . .Values.extraCAPool.authorization) | nindent 12 }}
+            {{- include "plgd-hub.extraCAPoolMount" (list . .Values.extraCAPool.internal) | nindent 12 }}
             {{- with .Values.grpcgateway.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -103,11 +101,8 @@ spec:
           secret:
             secretName: {{ include "plgd-hub.grpcgateway.serviceCertName" . }}
         {{- end }}
-        {{- if .Values.global.authorizationCAPool }}
-        - name: {{ .Values.extraAuthorizationCAPool.name }}
-          secret:
-            secretName: {{ .Values.extraAuthorizationCAPool.name }}
-        {{- end }}
+        {{- include "plgd-hub.extraCAPoolVolume" (list . .Values.extraCAPool.authorization) | nindent 8 }}
+        {{- include "plgd-hub.extraCAPoolVolume" (list . .Values.extraCAPool.internal) | nindent 8 }}
         {{- with .Values.grpcgateway.extraVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}

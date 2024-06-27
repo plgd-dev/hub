@@ -1,0 +1,3 @@
+{{- if and (include "plgd-hub.mongodb-standby-tool.enabled" .) .Values.mongodb.standbyTool.rbac.roleBindingDefitionTpl }}
+{{- tpl .Values.mongodb.standbyTool.rbac.roleBindingDefitionTpl $ }}
+{{- end }}

@@ -1,25 +1,27 @@
-{{- if and .Values.mongodb.enabled .Values.certmanager.enabled }}
+{{- $clientCertName := include "plgd-hub.coapgateway.clientCertName" . }}
+{{- if and $clientCertName .Values.certmanager.enabled .Values.coapgateway.enabled }}
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: mongodb-cm-crt
+  name: {{ $clientCertName }}
   namespace: {{ .Release.Namespace }}
   labels:
     {{- include "plgd-hub.labels" . | nindent 4 }}
+    {{- with .Values.certmanager.internal.labels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+  {{- with .Values.certmanager.internal.annotations }}
+  annotations:
+  {{- . | toYaml | nindent 4 }}
+  {{- end }}
 spec:
-  secretName: mongodb-cm-crt
+  secretName: {{ $clientCertName }}
+  commonName: {{ $clientCertName | quote }}
   privateKey:
     algorithm: {{ .Values.certmanager.internal.cert.key.algorithm | default .Values.certmanager.default.cert.key.algorithm }}
     size: {{ .Values.certmanager.internal.cert.key.size | default .Values.certmanager.default.cert.key.size }}
   usages:
     - client auth
-    - server auth
-  ipAddresses:
-    - "127.0.0.1"
-  dnsNames:
-    - "localhost"
-    - "mongodb-headless.{{ .Release.Namespace }}.svc.{{ $.Values.cluster.dns }}"
-    - "*.mongodb-headless.{{ .Release.Namespace }}.svc.{{ $.Values.cluster.dns }}"
   duration: {{ .Values.certmanager.internal.cert.duration | default .Values.certmanager.default.cert.duration }}
   renewBefore: {{ .Values.certmanager.internal.cert.renewBefore | default .Values.certmanager.default.cert.renewBefore }}
   issuerRef:

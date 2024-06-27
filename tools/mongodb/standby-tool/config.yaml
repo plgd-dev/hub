@@ -1,0 +1,37 @@
+log:
+  level: info
+  encoding: json
+  stacktrace:
+    enabled: false
+    level: warn
+  encoderConfig:
+    timeEncoder: rfc3339nano
+# Set the running mode of the tool. Supported modes are "standby" and "active"
+# - standby: all members in the replica set are available and members in the standby list are set as hidden, without votes, priority and with a delay
+# - active: standby members are set as secondary members with votes, priority and without delay and other members are set as hidden, without votes, priority and with a delay
+mode: "standby"
+replicaSet:
+  # Update the replica set configuration with force flag
+  forceUpdate: false
+  # Set the maximum number of retries for members to be ready
+  maxReadyWaits: 30
+  standby:
+    # List of the MongoDB members in the replica set which are used as backup members
+    members: []
+    # Set the delay for syncing the standby members with the secondary/primary members
+    delays: 360s
+  secondary:
+    # Used to configure the secondary members priority
+    priority: 10
+    # Set number of votes for the secondary members
+    votes: 1
+clients:
+  storage:
+    mongoDB:
+      timeout: 20s
+      tls:
+        # Enable or disable TLS
+        enabled: true          
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"

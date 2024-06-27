@@ -34,7 +34,7 @@ data:
           timeout: {{ .apis.grpc.keepAlive.timeout }}
         tls:
           {{- $tls := .apis.grpc.tls }}
-          {{- include "plgd-hub.certificateConfig" (list $ $tls $identityStoreCertPath ) | indent 8 }}
+          {{- include "plgd-hub.internalCertificateConfig" (list $ $tls $identityStoreCertPath ) | indent 8 }}
           clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
         authorization:
           {{- $authorization := .apis.grpc.authorization }}
@@ -57,7 +57,7 @@ data:
           flusherTimeout: {{ .clients.eventBus.nats.flusherTimeout | quote }}
           tls:
             {{- $natsTls := .clients.eventBus.nats.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $natsTls $identityStoreCertPath ) | indent 10 }}
+            {{- include "plgd-hub.internalCertificateConfig" (list $ $natsTls $identityStoreCertPath ) | indent 10 }}
             useSystemCAPool: false
       storage:
         use: {{ include "plgd-hub.useDatabase" (list $ . .clients.storage.use)  | quote }}
@@ -68,7 +68,7 @@ data:
           maxConnIdleTime: {{ .clients.storage.mongoDB.maxConnIdleTime }}
           tls:
             {{- $mongoDbTls := .clients.storage.mongoDB.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $mongoDbTls $identityStoreCertPath ) | indent 10 }}
+            {{- include "plgd-hub.internalCertificateConfig" (list $ $mongoDbTls $identityStoreCertPath ) | indent 10 }}
             useSystemCAPool: {{ .clients.storage.mongoDB.tls.useSystemCAPool }}
         cqlDB:
           hosts:
@@ -89,7 +89,7 @@ data:
               {{- toYaml .clients.storage.cqlDB.keyspace.replication | nindent 14 }}
           tls:
             {{- $cqlDbTls := .clients.storage.cqlDB.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $cqlDbTls $identityStoreCertPath ) | indent 10 }}
+            {{- include "plgd-hub.internalCertificateConfig" (list $ $cqlDbTls $identityStoreCertPath ) | indent 10 }}
             useSystemCAPool: {{ .clients.storage.cqlDB.tls.useSystemCAPool }}
       {{- include "plgd-hub.openTelemetryExporterConfig" (list $ $identityStoreCertPath) | nindent 6 }}
   {{- end }}
