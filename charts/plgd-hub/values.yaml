@@ -133,7 +133,7 @@ mongodb:
         # List of the MongoDB members in the replica set which are used as backup members
         members: []
         # Set the delay for syncing the standby members with the secondary/primary members
-        delaysSeconds: 360
+        delays: 10m
       secondary:
         # Used to configure the secondary members priority
         priority: 10

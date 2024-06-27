@@ -28,7 +28,7 @@ data:
           - {{printf "%s" . }}
           {{- end }}
         # Set the delay for syncing the standby members with the secondary/primary members
-        delaysSeconds: {{ $standbyTool.replicaSet.standby.delaysSeconds }}
+        delays: {{ $standbyTool.replicaSet.standby.delays }}
       secondary:
         # Used to configure the secondary members priority
         priority: {{ $standbyTool.replicaSet.secondary.priority }}
