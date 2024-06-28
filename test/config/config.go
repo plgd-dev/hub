@@ -244,9 +244,13 @@ func MakeEventsStoreCqlDBConfig() *cqldb.Config {
 
 func MakeAuthorizationConfig() validator.Config {
 	return validator.Config{
-		Authority: http.HTTPS_SCHEME + OAUTH_SERVER_HOST,
-		Audience:  http.HTTPS_SCHEME + OAUTH_MANAGER_AUDIENCE,
-		HTTP:      MakeHttpClientConfig(),
+		Audience: http.HTTPS_SCHEME + OAUTH_MANAGER_AUDIENCE,
+		Endpoints: []validator.AuthorityConfig{
+			{
+				Address: http.HTTPS_SCHEME + OAUTH_SERVER_HOST,
+				HTTP:    MakeHttpClientConfig(),
+			},
+		},
 	}
 }
 

@@ -101,7 +101,7 @@ func TestRequestHandlerRetrieveDevicesSubscription(t *testing.T) {
 			},
 			wantCode:        http.StatusUnauthorized,
 			wantContentType: textPlain,
-			want:            "invalid token: could not parse token: token has invalid claims: inaccessible uri",
+			want:            "unknown issuer",
 		},
 		{
 			name: "non-existing subID",

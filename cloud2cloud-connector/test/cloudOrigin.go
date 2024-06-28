@@ -41,14 +41,14 @@ func SetUpCloudWithConnector(t *testing.T) (tearDown func()) {
 
 	idCfg := idService.MakeConfig(t)
 	idCfg.APIs.GRPC.Addr = IDENTITY_STORE_HOST
-	idCfg.APIs.GRPC.Authorization.Authority = http.HTTPS_SCHEME + OAUTH_HOST
+	idCfg.APIs.GRPC.Authorization.Config.Endpoints[0].Address = http.HTTPS_SCHEME + OAUTH_HOST
 	idCfg.Clients.Storage.MongoDB.Database = C2C_CONNECTOR_DB
 	idCfg.Clients.Eventbus.NATS.URL = C2C_CONNECTOR_NATS_URL
 	idShutdown := idService.New(t, idCfg)
 
 	raCfg := raService.MakeConfig(t)
 	raCfg.APIs.GRPC.Addr = RESOURCE_AGGREGATE_HOST
-	raCfg.APIs.GRPC.Authorization.Authority = http.HTTPS_SCHEME + OAUTH_HOST
+	raCfg.APIs.GRPC.Authorization.Config.Endpoints[0].Address = http.HTTPS_SCHEME + OAUTH_HOST
 	raCfg.Clients.Eventstore.Connection.Use = database.MongoDB
 	raCfg.Clients.Eventstore.Connection.MongoDB.Embedded.Database = C2C_CONNECTOR_DB
 	raCfg.Clients.IdentityStore.Connection.Addr = IDENTITY_STORE_HOST
@@ -57,7 +57,7 @@ func SetUpCloudWithConnector(t *testing.T) (tearDown func()) {
 
 	rdCfg := rdService.MakeConfig(t)
 	rdCfg.APIs.GRPC.Addr = RESOURCE_DIRECTORY_HOST
-	rdCfg.APIs.GRPC.Authorization.Authority = http.HTTPS_SCHEME + OAUTH_HOST
+	rdCfg.APIs.GRPC.Authorization.Config.Endpoints[0].Address = http.HTTPS_SCHEME + OAUTH_HOST
 	rdCfg.Clients.Eventstore.Connection.Use = database.MongoDB
 	rdCfg.Clients.Eventstore.Connection.MongoDB.Embedded.Database = C2C_CONNECTOR_DB
 	rdCfg.Clients.Eventbus.NATS.URL = C2C_CONNECTOR_NATS_URL
@@ -67,7 +67,7 @@ func SetUpCloudWithConnector(t *testing.T) (tearDown func()) {
 	grpcCfg := grpcService.MakeConfig(t)
 	grpcCfg.APIs.GRPC.Addr = GRPC_GATEWAY_HOST
 	grpcCfg.APIs.GRPC.TLS.ClientCertificateRequired = false
-	grpcCfg.APIs.GRPC.Authorization.Authority = http.HTTPS_SCHEME + OAUTH_HOST
+	grpcCfg.APIs.GRPC.Authorization.Config.Endpoints[0].Address = http.HTTPS_SCHEME + OAUTH_HOST
 	grpcCfg.Clients.Eventbus.NATS.URL = C2C_CONNECTOR_NATS_URL
 	grpcCfg.Clients.ResourceAggregate.Connection.Addr = RESOURCE_AGGREGATE_HOST
 	grpcCfg.Clients.ResourceDirectory.Connection.Addr = RESOURCE_DIRECTORY_HOST

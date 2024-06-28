@@ -41,9 +41,13 @@ type Server struct {
 
 func toValidator(c oauth2.Config) validator.Config {
 	return validator.Config{
-		Authority: c.Authority,
-		Audience:  c.Audience,
-		HTTP:      c.HTTP,
+		Audience: c.Audience,
+		Endpoints: []validator.AuthorityConfig{
+			{
+				Address: c.Authority,
+				HTTP:    c.HTTP,
+			},
+		},
 	}
 }
 

@@ -104,7 +104,7 @@ func TestRequestHandlerRetrieveDeviceSubscription(t *testing.T) {
 			},
 			wantCode:        http.StatusUnauthorized,
 			wantContentType: textPlain,
-			want:            "inaccessible uri",
+			want:            "unknown issuer",
 		},
 		{
 			name: "invalid subID",
