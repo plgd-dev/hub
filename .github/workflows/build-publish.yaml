@@ -109,6 +109,12 @@ jobs:
           - name: cert-tool
             directory: tools/cert-tool
             file: tools/cert-tool/Dockerfile
+          - name: mongodb-standby-tool
+            directory: tools/mongodb/standby-tool
+            file: tools/mongodb/standby-tool/Dockerfile
+          - name: mongodb-admin-tool
+            directory: tools/mongodb/admin-tool
+            file: tools/mongodb/admin-tool/Dockerfile
           - name: snippet-service
             directory: snippet-service
             file: .tmp/docker/snippet-service/Dockerfile

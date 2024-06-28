@@ -2,7 +2,7 @@
 Expand the name of the chart.
 */}}
 {{- define "plgd-hub.name" -}}
-{{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
+{{- default .Chart.Name .Values.nameOverride | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
@@ -76,6 +76,57 @@ If release name contains chart name it will be used as a full name.
 {{- end }}
 {{- end }}
 
+
+{{- define "plgd-hub.certificateConfigWithExtraCAPool" }}
+  {{- $ := index . 0 }}
+  {{- $certDefinition := index . 1 }}
+  {{- $certPath := index . 2 }}
+  {{- $useCAPool := index . 3 }}
+  {{- $caPool := "" }}
+  {{- if $certDefinition.caPool }}
+  {{- $caPool = printf "%s" $certDefinition.caPool | quote }}
+  {{- else if $.Values.certmanager.enabled }}
+  {{- $caPool = printf "%s/ca.crt" $certPath | quote }}
+  {{- end }}
+  {{- $extraCAPool := include "plgd-hub.extraCAPoolConfig" (list $ $useCAPool) }}
+  caPool:
+    - {{ $caPool }}
+    {{- if $extraCAPool }}
+    {{ $extraCAPool }}
+    {{- end }}
+  {{- if $certDefinition.keyFile }}
+  keyFile: {{ printf "%s" $certDefinition.keyFile | quote }}
+  {{- else if $.Values.certmanager.enabled }}
+  keyFile: {{ printf "%s/tls.key" $certPath  | quote  }}
+  {{- end }}
+  {{- if $certDefinition.certFile }}
+  certFile: {{ printf "%s" $certDefinition.certFile | quote }}
+  {{- else if $.Values.certmanager.enabled }}
+  certFile: {{ printf "%s/tls.crt" $certPath | quote }}
+  {{- end }}
+{{- end }}
+
+{{- define "plgd-hub.internalCertificateConfig" }}
+{{- $ := index . 0 }}
+{{- $certDefinition := index . 1 }}
+{{- $certPath := index . 2 }}
+{{- include "plgd-hub.certificateConfigWithExtraCAPool" (list $ $certDefinition $certPath $.Values.extraCAPool.internal) }}
+{{- end }}
+
+{{- define "plgd-hub.coapCertificateConfig" }}
+{{- $ := index . 0 }}
+{{- $certDefinition := index . 1 }}
+{{- $certPath := index . 2 }}
+{{- include "plgd-hub.certificateConfigWithExtraCAPool" (list $ $certDefinition $certPath $.Values.extraCAPool.coap) }}
+{{- end }}
+
+{{- define "plgd-hub.storageCertificateConfig" }}
+{{- $ := index . 0 }}
+{{- $certDefinition := index . 1 }}
+{{- $certPath := index . 2 }}
+{{- include "plgd-hub.certificateConfigWithExtraCAPool" (list $ $certDefinition $certPath $.Values.extraCAPool.storage) }}
+{{- end }}
+
 {{- define "plgd-hub.certificateConfig" }}
   {{- $ := index . 0 }}
   {{- $certDefinition := index . 1 }}
@@ -98,34 +149,11 @@ If release name contains chart name it will be used as a full name.
 {{- end }}
 
 {{- define "plgd-hub.authorizationCaCertificateConfig" }}
-  {{- $ := index . 0 }}
-  {{- $certDefinition := index . 1 }}
-  {{- $certPath := index . 2 }}
-  {{- $caPool := list (printf "%s/%s" $.Values.extraAuthorizationCAPool.mountPath $.Values.extraAuthorizationCAPool.fileName | quote) (printf "%s/ca.crt" $certPath | quote) }}
-  {{- if $certDefinition.caPool }}
-  caPool: {{ printf "%s" $certDefinition.caPool | quote }}
-  {{- else if $.Values.certmanager.enabled }}
-  {{- if $.Values.global.authorizationCAPool }}
-  caPool:
-    {{- range $caPool }}
-    - {{ printf "%s" . }}
-    {{- end }}
-  {{- else }}
-  caPool: {{ printf "%s/ca.crt" $certPath | quote  }}
-  {{- end }}
-  {{- end }}
-  {{- if $certDefinition.keyFile }}
-  keyFile: {{ printf "%s" $certDefinition.keyFile | quote }}
-  {{- else if $.Values.certmanager.enabled }}
-  keyFile: {{ printf "%s/tls.key" $certPath  | quote  }}
-  {{- end }}
-  {{- if $certDefinition.certFile }}
-  certFile: {{ printf "%s" $certDefinition.certFile | quote }}
-  {{- else if $.Values.certmanager.enabled }}
-  certFile: {{ printf "%s/tls.crt" $certPath | quote }}
-  {{- end }}
+{{- $ := index . 0 }}
+{{- $certDefinition := index . 1 }}
+{{- $certPath := index . 2 }}
+{{- include "plgd-hub.certificateConfigWithExtraCAPool" (list $ $certDefinition $certPath $.Values.extraCAPool.authorization) }}
 {{- end }}
-
 
 {{- define "plgd-hub.authorizationConfig" }}
   {{- $ := index . 0 }}
@@ -153,8 +181,6 @@ If release name contains chart name it will be used as a full name.
   audience:{{ printf " " }}{{ printf "" | quote }}
   {{- end }}
 {{- end }}
-
-
 
 {{- define "plgd-hub.createInternalCertByCm" }}
     {{- $natsTls := .Values.coapgateway.clients.eventBus.nats.tls.certFile }}
@@ -417,3 +443,147 @@ openTelemetryCollector:
   {{- printf "mongoDB" }}
   {{- end }}
 {{- end }}
+
+{{- define "plgd-hub.replicas" -}}
+  {{- $ := index . 0 -}}
+  {{- $useReplicas := index . 1 }}
+  {{- if $.Values.global.standby -}}
+  0
+  {{- else -}}
+  {{- $useReplicas -}}
+  {{- end -}}
+{{- end -}}
+
+{{- define "plgd-hub.extraCAPoolAuthorizationEnabled" -}}
+{{- $ := . }}
+{{- if include "plgd-hub.resolveTemplateString" (list . $.Values.global.extraCAPool.authorization) -}}
+true
+{{- else -}}
+{{- printf "" }}
+{{- end -}}
+{{- end -}}
+
+{{- define "plgd-hub.extraCAPoolInternalEnabled" -}}
+{{- $ := . }}
+{{- if include "plgd-hub.resolveTemplateString" (list . $.Values.global.extraCAPool.internal) -}}
+true
+{{- else -}}
+{{- printf "" }}
+{{- end -}}
+{{- end -}}
+
+{{- define "plgd-hub.extraCAPoolStorageEnabled" -}}
+{{- $ := . }}
+{{- if include "plgd-hub.resolveTemplateString" (list . $.Values.global.extraCAPool.storage) -}}
+true
+{{- else -}}
+{{- printf "" }}
+{{- end -}}
+{{- end -}}
+
+{{- define "plgd-hub.extraCAPoolCoapEnabled" -}}
+{{- $ := . }}
+{{- if include "plgd-hub.resolveTemplateString" (list . $.Values.global.extraCAPool.coap) -}}
+true
+{{- else -}}
+{{- printf "" }}
+{{- end -}}
+{{- end -}}
+
+{{- define "plgd-hub.extraCAPoolVolume" -}}
+{{- $ := index . 0 -}}
+{{- $useCAPool := index . 1 }}
+{{- with $useCAPool -}}
+{{- $enabled := include "plgd-hub.resolveTemplateString" (list $ .enabled) -}}
+{{- if and $enabled (or .configMapName .secretName) -}}
+- name: {{ .name | quote }}
+{{- if .configMapName }}
+  configMap:
+    name: {{ include "plgd-hub.resolveTemplateString" (list $ .configMapName) }}
+{{- else if .secretName }}
+  secret:
+    secretName: {{ include "plgd-hub.resolveTemplateString" (list $ .secretName) }}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "plgd-hub.extraCAPoolMount" -}}
+{{- $ := index . 0 -}}
+{{- $useCAPool := index . 1 -}}
+{{- with $useCAPool -}}
+{{- $enabled := include "plgd-hub.resolveTemplateString" (list $ .enabled) -}}
+{{- if and $enabled (or .configMapName .secretName) -}}
+- name: {{ .name | quote }}
+  mountPath: {{ .mountPath | quote }}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "plgd-hub.extraCAPoolConfig" }}
+{{- $ := index . 0 -}}
+{{- $useCAPool := index . 1 }}
+{{- with $useCAPool -}}
+{{- $enabled := include "plgd-hub.resolveTemplateString" (list $ .enabled) -}}
+{{- if and $enabled (or .configMapName .secretName) -}}
+- {{ printf "%s/%s" .mountPath (include "plgd-hub.resolveTemplateString" (list $ .key) ) | quote }}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- define "plgd-hub.isTemplateString" }}
+{{- $ret := "" }}
+{{- if typeIs "string" . -}}
+{{- if and (hasPrefix "{{" .) (hasSuffix "}}" .) -}}
+{{- $ret = "true" }}
+{{- end }}
+{{- end }}
+{{- printf $ret }}
+{{- end }}
+
+{{- define "plgd-hub.resolveTemplateString" }}
+{{- $ := index . 0 -}}
+{{- $string := index . 1 }}
+{{- $ret := "" }}
+{{- if include "plgd-hub.isTemplateString" $string -}}
+{{- $ret = tpl $string $ -}}
+{{- else -}}
+{{- $ret = $string -}}
+{{- end }}
+{{- if $ret }}
+{{- $ret }}
+{{- else }}
+{{- printf "" }}
+{{- end }}
+{{- end }}
+
+{{- define "plgd-hub.oldExtraCAPoolAuthorizationFileName" }}
+{{- $ := . -}}
+{{- $fileName := "ca.crt" -}}
+{{- if $.Values.extraAuthorizationCAPool -}}
+{{- if $.Values.extraAuthorizationCAPool.fileName -}}
+{{- $fileName = $.Values.extraAuthorizationCAPool.fileName -}}
+{{- end -}}
+{{- end -}}
+{{- printf "%s" $fileName }}
+{{- end -}}
+
+{{- define "plgd-hub.oldExtraCAPoolAuthorizationSecretName" }}
+{{- $ := . -}}
+{{- $secretName := "authorization-ca-pool" -}}
+{{- if $.Values.extraAuthorizationCAPool -}}
+{{- if $.Values.extraAuthorizationCAPool.name -}}
+{{- $secretName = $.Values.extraAuthorizationCAPool.name -}}
+{{- end -}}
+{{- end -}}
+{{- printf "%s" $secretName }}
+{{- end -}}
+
+{{- define "plgd-hub.oldGlobalAuthorizationCAPool" }}
+{{- $ := . -}}
+{{- $ca := "" -}}
+{{- if $.Values.global.authorizationCAPool -}}
+{{- $ca = $.Values.global.authorizationCAPool -}}
+{{- end -}}
+{{- printf "%s" $ca }}
+{{- end -}}

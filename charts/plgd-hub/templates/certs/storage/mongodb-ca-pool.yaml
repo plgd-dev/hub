@@ -1,0 +1,13 @@
+# workaround for mongodb helm chart
+{{- $secretData := include "plgd-hub.resolveTemplateString" (list . .Values.global.extraCAPool.storage) }}
+{{- if  .Values.mongodb.enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mongodb-extra-ca-pool
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "plgd-hub.labels" $ | nindent 4 }}
+data:
+  ca.crt: {{ $secretData | b64enc }}
+{{- end }}
