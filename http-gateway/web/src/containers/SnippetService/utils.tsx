@@ -20,6 +20,7 @@ export const getConfigurationsPageListI18n = (_: any) => ({
     name: _(g.name),
     cancel: _(g.cancel),
     action: _(g.action),
+    invoke: _(g.invoke),
     delete: _(g.delete),
     loading: _(g.loading),
     deleteModalSubtitle: _(g.undoneAction),

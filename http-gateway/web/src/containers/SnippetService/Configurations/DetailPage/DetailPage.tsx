@@ -22,9 +22,10 @@ import notificationId from '@/notificationId'
 import DetailHeader from './DetailHeader'
 import testId from '@/testId'
 import { messages as g } from '@/containers/Global.i18n'
-import { updateResourceConfigApi } from '@/containers/SnippetService/rest'
+import { invokeConfigurationApi, updateResourceConfigApi } from '@/containers/SnippetService/rest'
 import { dirtyFormState } from '@/store/recoil.store'
 import { formatConfigurationResources } from '@/containers/SnippetService/utils'
+import InvokeModal from '@/containers/SnippetService/Configurations/InvokeModal'
 
 const Tab1 = lazy(() => import('./Tabs/Tab1'))
 const Tab2 = lazy(() => import('./Tabs/Tab2'))
@@ -70,6 +71,8 @@ const DetailPage: FC<any> = () => {
     const [pageLoading, setPageLoading] = useState(false)
     const [notFound, setNotFound] = useState(false)
     const [activeTabItem, setActiveTabItem] = useState(tab ? pages.SNIPPET_SERVICE.CONFIGURATIONS.DETAIL.TABS.indexOf(tab) : 0)
+    const [showInvoke, setShowInvoke] = useState<string | undefined>(undefined)
+    const [invoking, setInvoking] = useState(false)
 
     const isMounted = useIsMounted()
     const navigate = useNavigate()
@@ -107,6 +110,44 @@ const DetailPage: FC<any> = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
+    const handleInvoke = async (deviceIds: string[], force: boolean) => {
+        setInvoking(true)
+
+        try {
+            if (showInvoke) {
+                const results = deviceIds.map((deviceId) => {
+                    return invokeConfigurationApi(showInvoke, {
+                        deviceId,
+                        force,
+                    })
+                })
+
+                await Promise.all(results).then(() => {
+                    Notification.success(
+                        {
+                            title: _(confT.conditionInvokeSuccess),
+                            message: _(confT.conditionInvokeSuccessMessage),
+                        },
+                        { notificationId: notificationId.HUB_SNIPPET_SERVICE_CONFIGURATIONS_DETAIL_PAGE_INVOKE_SUCCESS }
+                    )
+
+                    setInvoking(false)
+                    setShowInvoke(undefined)
+                })
+            }
+        } catch (error: any) {
+            let e = error
+            if (!(error instanceof Error)) {
+                e = new Error(error)
+            }
+            Notification.error(
+                { title: _(confT.conditionInvokeError), message: e.message },
+                { notificationId: notificationId.HUB_SNIPPET_SERVICE_CONFIGURATIONS_DETAIL_PAGE_INVOKE_ERROR }
+            )
+            setInvoking(false)
+        }
+    }
+
     const onSubmit = async () => {
         setPageLoading(true)
 
@@ -119,7 +160,7 @@ const DetailPage: FC<any> = () => {
 
             Notification.success(
                 { title: _(confT.configurationUpdated), message: _(confT.configurationUpdatedMessage) },
-                { notificationId: notificationId.HUB_SNIPPET_SERVICE_CONFIGURATIONS_DETAIL_PAGE_UPDATE_SUCCESS }
+                { notificationId: notificationId.HUB_SNIPPET_SERVICE_CONFIGURATIONS_DETAIL_PAGE_INVOKE_SUCCESS }
             )
 
             setSearchParams({ version: dataForSave.version })
@@ -141,14 +182,16 @@ const DetailPage: FC<any> = () => {
     }
 
     const loadingState = useMemo(
-        () => loading || conditionsLoading || appliedConfigurationLoading || pageLoading,
-        [loading, conditionsLoading, appliedConfigurationLoading, pageLoading]
+        () => loading || conditionsLoading || appliedConfigurationLoading || pageLoading || invoking,
+        [loading, conditionsLoading, appliedConfigurationLoading, pageLoading, invoking]
     )
 
     return (
         <PageLayout
             breadcrumbs={breadcrumbs}
-            header={<DetailHeader id={configurationId!} loading={loadingState} name={data?.name} refresh={refresh} />}
+            header={
+                <DetailHeader id={configurationId!} loading={loadingState} name={data?.name} refresh={refresh} setShowInvoke={() => setShowInvoke(data.id)} />
+            }
             headlineCustomContent={<Selector />}
             loading={loadingState}
             notFound={notFound}
@@ -196,6 +239,7 @@ const DetailPage: FC<any> = () => {
                     />
                 </Loadable>
             </FormContext.Provider>
+            <InvokeModal handleClose={() => setShowInvoke(undefined)} handleInvoke={handleInvoke} show={!!showInvoke} />
             {isMounted &&
                 document.querySelector('#modal-root') &&
                 ReactDOM.createPortal(

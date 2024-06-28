@@ -37,6 +37,21 @@ export const updateResourceConfigApi = (id: string, body: any) => {
     )
 }
 
+export const invokeConfigurationApi = (id: string, body: any) => {
+    const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
+    const url = getWellKnow()?.ui?.snippetService || httpGatewayAddress
+
+    return withTelemetry(
+        () =>
+            fetchApi(`${url}${SnippetServiceApiEndpoints.CONFIGURATIONS}/${id}`, {
+                method: 'POST',
+                cancelRequestDeadlineTimeout,
+                body,
+            }),
+        `invoke-configurations-${id}-${body.deviceId}`
+    )
+}
+
 export const createConditionApi = (body: any) => {
     const { httpGatewayAddress, cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
     const url = getWellKnow()?.ui?.snippetService || httpGatewayAddress

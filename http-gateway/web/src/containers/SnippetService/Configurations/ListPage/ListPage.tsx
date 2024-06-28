@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useMemo } from 'react'
+import React, { FC, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
 import { generatePath, useNavigate } from 'react-router-dom'
 
@@ -14,15 +14,19 @@ import notificationId from '@/notificationId'
 import { messages as g } from '@/containers/Global.i18n'
 import { pages } from '@/routes'
 import PageListTemplate from '@/containers/Common/PageListTemplate/PageListTemplate'
-import { deleteConfigurationsApi } from '@/containers/SnippetService/rest'
+import { deleteConfigurationsApi, invokeConfigurationApi } from '@/containers/SnippetService/rest'
 import { getConfigurationsPageListI18n } from '@/containers/SnippetService/utils'
 import DateFormat from '@/containers/PendingCommands/DateFormat'
+import InvokeModal from '@/containers/SnippetService/Configurations/InvokeModal'
 
 const ListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
 
     const { data, loading, error, refresh } = useConfigurationList()
     const navigate = useNavigate()
+
+    const [showInvoke, setShowInvoke] = useState<string | undefined>(undefined)
+    const [pageLoading, setPageLoading] = useState(false)
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const breadcrumbs = useMemo(() => [{ label: _(confT.snippetService), link: pages.SNIPPET_SERVICE.LINK }, { label: _(confT.configurations) }], [])
@@ -73,6 +77,45 @@ const ListPage: FC<any> = () => {
         []
     )
 
+    const handleInvoke = async (deviceIds: string[], force: boolean) => {
+        setPageLoading(true)
+
+        try {
+            if (showInvoke) {
+                const results = deviceIds.map((deviceId) => {
+                    return invokeConfigurationApi(showInvoke, {
+                        deviceId,
+                        force,
+                    })
+                })
+
+                await Promise.all(results).then(() => {
+                    setPageLoading(false)
+
+                    Notification.success(
+                        {
+                            title: _(confT.conditionInvokeSuccess),
+                            message: _(confT.conditionInvokeSuccessMessage),
+                        },
+                        { notificationId: notificationId.HUB_SNIPPET_SERVICE_CONFIGURATIONS_LIST_PAGE_INVOKE_SUCCESS }
+                    )
+
+                    setShowInvoke(undefined)
+                })
+            }
+        } catch (error: any) {
+            let e = error
+            if (!(error instanceof Error)) {
+                e = new Error(error)
+            }
+            Notification.error(
+                { title: _(confT.conditionInvokeError), message: e.message },
+                { notificationId: notificationId.HUB_SNIPPET_SERVICE_CONFIGURATIONS_LIST_PAGE_INVOKE_ERROR }
+            )
+            setPageLoading(false)
+        }
+    }
+
     return (
         <PageLayout
             breadcrumbs={breadcrumbs}
@@ -85,7 +128,7 @@ const ListPage: FC<any> = () => {
                     {_(confT.configuration)}
                 </Button>
             }
-            loading={loading}
+            loading={loading || pageLoading}
             title={_(confT.configurations)}
         >
             <PageListTemplate
@@ -107,8 +150,10 @@ const ListPage: FC<any> = () => {
                     )
                 }}
                 onDetailClick={(id: string) => navigate(generatePath(pages.SNIPPET_SERVICE.CONFIGURATIONS.DETAIL.LINK, { configurationId: id, tab: '' }))}
+                onInvoke={(id: string) => setShowInvoke(id)}
                 refresh={() => refresh()}
             />
+            <InvokeModal handleClose={() => setShowInvoke(undefined)} handleInvoke={handleInvoke} show={!!showInvoke} />
         </PageLayout>
     )
 }

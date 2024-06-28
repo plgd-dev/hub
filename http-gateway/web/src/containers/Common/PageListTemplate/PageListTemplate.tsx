@@ -1,9 +1,12 @@
 import React, { FC, useCallback, useMemo, useState } from 'react'
 import TableList from '@/containers/Common/TableList/TableList'
 import pick from 'lodash/pick'
+import isFunction from 'lodash/isFunction'
 
 import TableActionButton from '@shared-ui/components/Organisms/TableActionButton'
-import { IconArrowDetail, IconTrash } from '@shared-ui/components/Atomic/Icon'
+import IconArrowDetail from '@shared-ui/components/Atomic/Icon/components/IconArrowDetail'
+import IconIntegrations from '@shared-ui/components/Atomic/Icon/components/IconIntegrations'
+import IconTrash from '@shared-ui/components/Atomic/Icon/components/IconTrash'
 import DeleteModal from '@shared-ui/components/Atomic/Modal/components/DeleteModal'
 
 import { Props, defaultProps } from './PageListTemplate.types'
@@ -17,6 +20,7 @@ const PageListTemplate: FC<Props> = (props) => {
         deleteApiMethod,
         onDeletionSuccess,
         onDeletionError,
+        onInvoke,
         refresh,
         i18n,
         onDetailClick,
@@ -73,6 +77,15 @@ const PageListTemplate: FC<Props> = (props) => {
                 Cell: ({ row }: any) => (
                     <TableActionButton
                         items={[
+                            ...(isFunction(onInvoke) && i18n.invoke
+                                ? [
+                                      {
+                                          onClick: () => onInvoke(row.original.id),
+                                          label: i18n.invoke,
+                                          icon: <IconIntegrations />,
+                                      },
+                                  ]
+                                : []),
                             {
                                 onClick: () => handleOpenDeleteModal(false, [row.original.id]),
                                 label: i18n.delete,

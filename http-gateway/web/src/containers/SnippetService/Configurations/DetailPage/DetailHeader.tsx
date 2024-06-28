@@ -13,10 +13,14 @@ import { deleteConfigurationsApi } from '@/containers/SnippetService/rest'
 import testId from '@/testId'
 import notificationId from '@/notificationId'
 import { pages } from '@/routes'
+import Button from '@shared-ui/components/Atomic/Button'
+import IconIntegrations from '@shared-ui/components/Atomic/Icon/components/IconIntegrations'
+import isFunction from 'lodash/isFunction'
 
 type Props = {
     id: string
     refresh: () => void
+    setShowInvoke: () => void
     loading?: boolean
     name?: string
 }
@@ -28,6 +32,13 @@ const DetailHeader: FC<Props> = (props) => {
 
     return (
         <DetailHeaderLayout
+            customButton={
+                isFunction(props.setShowInvoke) ? (
+                    <Button icon={<IconIntegrations />} onClick={props.setShowInvoke} variant='tertiary'>
+                        {_(g.invoke)}
+                    </Button>
+                ) : undefined
+            }
             deleteApiMethod={deleteConfigurationsApi}
             deleteInformation={
                 [props.name ? { label: _(g.name), value: props.name } : undefined, { label: _(g.id), value: props.id }].filter(

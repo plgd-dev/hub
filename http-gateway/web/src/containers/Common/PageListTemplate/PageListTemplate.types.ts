@@ -10,6 +10,7 @@ export type Props = {
         loading: string
         cancel: string
         id: string
+        invoke?: string
         deleteModalSubtitle: string
         deleteModalTitle: (selected: number) => string
         view: string
@@ -21,6 +22,7 @@ export type Props = {
     onDeletionError: (e: any) => void
     onDeletionSuccess: () => void
     onDetailClick: (id: string) => void
+    onInvoke?: (id: string) => void
     refresh: () => void
 }
 

@@ -8,7 +8,7 @@ import DeleteModal from '@shared-ui/components/Atomic/Modal/components/DeleteMod
 import { Props } from './DetailHeaderLayout.types'
 
 const DetailHeaderLayout: FC<Props> = (props) => {
-    const { deleteApiMethod, deleteInformation, id, i18n, loading, onDeleteSuccess, onDeleteError, testIds } = props
+    const { customButton, deleteApiMethod, deleteInformation, id, i18n, loading, onDeleteSuccess, onDeleteError, testIds } = props
 
     const [deleteModal, setDeleteModal] = useState(false)
     const [deleting, setDeleting] = useState(false)
@@ -32,7 +32,8 @@ const DetailHeaderLayout: FC<Props> = (props) => {
     }, [deleteApiMethod, id, onDeleteError, onDeleteSuccess])
 
     return (
-        <div style={{ display: 'flex', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {customButton}
             <Button
                 dataTestId={testIds?.deleteButton}
                 disabled={loading}

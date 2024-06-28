@@ -478,4 +478,8 @@ export const messages = defineMessages({
         id: 'global.canceled',
         defaultMessage: 'Canceled',
     },
+    invoke: {
+        id: 'global.invoke',
+        defaultMessage: 'Invoke',
+    },
 })

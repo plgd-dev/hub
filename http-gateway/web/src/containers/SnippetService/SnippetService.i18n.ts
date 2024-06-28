@@ -425,4 +425,20 @@ export const messages = defineMessages({
         id: 'snippetService.cancelCommandsSuccess',
         defaultMessage: 'Selected commands were successfully canceled',
     },
+    conditionInvokeError: {
+        id: 'snippetService.conditionInvokeError',
+        defaultMessage: 'Condition Invoke Error',
+    },
+    conditionInvokeSuccess: {
+        id: 'snippetService.conditionInvokeSuccess',
+        defaultMessage: 'Condition Invoke Success',
+    },
+    conditionInvokeSuccessMessage: {
+        id: 'snippetService.conditionInvokeSuccessMessage',
+        defaultMessage: 'Selected Condition was successfully invoked',
+    },
+    force: {
+        id: 'snippetService.force',
+        defaultMessage: 'Force',
+    },
 })
