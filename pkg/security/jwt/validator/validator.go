@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/plgd-dev/hub/v2/pkg/fn"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/http/client"
@@ -15,9 +16,9 @@ import (
 
 // Validator Client.
 type Validator struct {
-	http                *client.Client
-	validator           *jwtValidator.Validator
-	openIDConfiguration openid.Config
+	validator            *jwtValidator.Validator
+	openIDConfigurations []openid.Config
+	onClose              fn.FuncList
 
 	// TODO check audience at token
 	audience string
@@ -26,33 +27,41 @@ type Validator struct {
 // AddCloseFunc adds a function to be called by the Close method.
 // This eliminates the need for wrapping the Client.
 func (v *Validator) AddCloseFunc(f func()) {
-	v.http.AddCloseFunc(f)
+	v.onClose.AddFunc(f)
 }
 
 func (v *Validator) Close() {
-	v.http.Close()
+	v.onClose.Execute()
 }
 
 func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*Validator, error) {
-	httpClient, err := client.New(config.HTTP, fileWatcher, logger, tracerProvider)
-	if err != nil {
-		return nil, fmt.Errorf("cannot create cert manager: %w", err)
-	}
+	keys := jwtValidator.NewMultiKeyCache()
+	var onClose fn.FuncList
+	openIDConfigurations := make([]openid.Config, 0, len(config.Endpoints))
+	for _, authority := range config.Endpoints {
+		httpClient, err := client.New(authority.HTTP, fileWatcher, logger, tracerProvider)
+		if err != nil {
+			return nil, fmt.Errorf("cannot create cert manager: %w", err)
+		}
 
-	ctx, cancel := context.WithTimeout(ctx, config.HTTP.Timeout)
-	defer cancel()
+		ctx2, cancel := context.WithTimeout(ctx, authority.HTTP.Timeout)
+		defer cancel()
 
-	openIDCfg, err := openid.GetConfiguration(ctx, httpClient.HTTP(), config.Authority)
-	if err != nil {
-		httpClient.Close()
-		return nil, fmt.Errorf("cannot get openId configuration: %w", err)
+		openIDCfg, err := openid.GetConfiguration(ctx2, httpClient.HTTP(), authority.Address)
+		if err != nil {
+			onClose.Execute()
+			httpClient.Close()
+			return nil, fmt.Errorf("cannot get openId configuration: %w", err)
+		}
+		onClose.AddFunc(httpClient.Close)
+		keys.Add(openIDCfg.Issuer, openIDCfg.JWKSURL, httpClient.HTTP())
+		openIDConfigurations = append(openIDConfigurations, openIDCfg)
 	}
 
 	return &Validator{
-		http:                httpClient,
-		openIDConfiguration: openIDCfg,
-		audience:            config.Audience,
-		validator:           jwtValidator.NewValidator(jwtValidator.NewKeyCache(openIDCfg.JWKSURL, httpClient.HTTP())),
+		openIDConfigurations: openIDConfigurations,
+		validator:            jwtValidator.NewValidator(keys),
+		audience:             config.Audience,
 	}, nil
 }
 
@@ -60,8 +69,8 @@ func (v *Validator) Parse(token string) (jwt.MapClaims, error) {
 	return v.validator.Parse(token)
 }
 
-func (v *Validator) OpenIDConfiguration() openid.Config {
-	return v.openIDConfiguration
+func (v *Validator) OpenIDConfiguration() []openid.Config {
+	return v.openIDConfigurations
 }
 
 func (v *Validator) ParseWithClaims(token string, claims jwt.Claims) error {
