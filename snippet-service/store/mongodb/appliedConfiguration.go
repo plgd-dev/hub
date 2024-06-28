@@ -197,6 +197,9 @@ func (s *Store) DeleteAppliedConfigurations(ctx context.Context, owner string, q
 }
 
 func (s *Store) UpdateAppliedConfigurationResource(ctx context.Context, owner string, query store.UpdateAppliedConfigurationResourceRequest) (*pb.AppliedConfiguration, error) {
+	if err := query.Validate(); err != nil {
+		return nil, err
+	}
 	filter := bson.M{
 		store.IDKey:                              query.AppliedConfigurationID,
 		store.ResourcesKey + "." + store.HrefKey: query.Resource.GetHref(),

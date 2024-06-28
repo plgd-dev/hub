@@ -28,6 +28,7 @@ func TestStoreUpdateAppliedConfiguration(t *testing.T) {
 		{
 			Href:          "/test/1",
 			CorrelationId: "corID",
+			Status:        pb.AppliedConfiguration_Resource_QUEUED,
 		},
 	}
 	owner := "owner1"
@@ -197,6 +198,61 @@ func TestStoreUpdateAppliedConfigurationResource(t *testing.T) {
 		Owner:      owner,
 	}, false)
 	require.NoError(t, err)
+
+	// error - missing applied configuration ID
+	_, err = s.UpdateAppliedConfigurationResource(ctx, owner, store.UpdateAppliedConfigurationResourceRequest{
+		Resource: &pb.AppliedConfiguration_Resource{
+			Href:          "/test/1",
+			CorrelationId: "corID1",
+			Status:        pb.AppliedConfiguration_Resource_DONE,
+		},
+	})
+	require.Error(t, err)
+
+	// error - missing resource
+	_, err = s.UpdateAppliedConfigurationResource(ctx, owner, store.UpdateAppliedConfigurationResourceRequest{
+		AppliedConfigurationID: id,
+	})
+	require.Error(t, err)
+
+	// error - missing resource href
+	_, err = s.UpdateAppliedConfigurationResource(ctx, owner, store.UpdateAppliedConfigurationResourceRequest{
+		AppliedConfigurationID: id,
+		Resource: &pb.AppliedConfiguration_Resource{
+			CorrelationId: "corID1",
+			Status:        pb.AppliedConfiguration_Resource_DONE,
+		},
+	})
+	require.Error(t, err)
+
+	// error - missing resource correlationID
+	_, err = s.UpdateAppliedConfigurationResource(ctx, owner, store.UpdateAppliedConfigurationResourceRequest{
+		AppliedConfigurationID: id,
+		Resource: &pb.AppliedConfiguration_Resource{
+			Href:   "/test/1",
+			Status: pb.AppliedConfiguration_Resource_DONE,
+		},
+	})
+	require.Error(t, err)
+
+	// error - invalid resource status
+	_, err = s.UpdateAppliedConfigurationResource(ctx, owner, store.UpdateAppliedConfigurationResourceRequest{
+		AppliedConfigurationID: id,
+		Resource: &pb.AppliedConfiguration_Resource{
+			Href:          "/test/1",
+			CorrelationId: "corID1",
+		},
+	})
+	require.Error(t, err)
+	_, err = s.UpdateAppliedConfigurationResource(ctx, owner, store.UpdateAppliedConfigurationResourceRequest{
+		AppliedConfigurationID: id,
+		Resource: &pb.AppliedConfiguration_Resource{
+			Href:          "/test/1",
+			CorrelationId: "corID1",
+			Status:        pb.AppliedConfiguration_Resource_UNSPECIFIED,
+		},
+	})
+	require.Error(t, err)
 
 	updatedAppliedConf, err := s.UpdateAppliedConfigurationResource(ctx, owner, store.UpdateAppliedConfigurationResourceRequest{
 		AppliedConfigurationID: id,

@@ -25,6 +25,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/plgd-dev/device/v2/schema/configuration"
 	"github.com/plgd-dev/go-coap/v3/message"
 	grpcgwTest "github.com/plgd-dev/hub/v2/grpc-gateway/test"
 	"github.com/plgd-dev/hub/v2/pkg/config/database"
@@ -283,7 +284,7 @@ func TestService(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, conf1.GetId())
 
-	// configuration -> /light/1 -> { power: 42 }
+	// configuration2 -> /light/1 -> { power: 42 }
 	conf2, err := snippetClient.CreateConfiguration(ctx, &pb.Configuration{
 		Name:  "update light power",
 		Owner: oauthService.DeviceUserID,
@@ -303,9 +304,39 @@ func TestService(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, conf2.GetId())
 
-	// condition for conf1
+	// configuration3 -> /oc/con-> {n: "updated name"}
+	conf3, err := snippetClient.CreateConfiguration(ctx, &pb.Configuration{
+		Name:  "update oc/con",
+		Owner: oauthService.DeviceUserID,
+		Resources: []*pb.Configuration_Resource{
+			{
+				Href: configuration.ResourceURI,
+				Content: &commands.Content{
+					ContentType: message.AppOcfCbor.String(),
+					Data: hubTest.EncodeToCbor(t, map[string]interface{}{
+						"n": "updated name",
+					}),
+				},
+				TimeToLive: int64(500 * time.Millisecond),
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	// skipped condition for conf1 - missing ApiAccessToken -> will be skipped during evaluation
 	_, err = snippetClient.CreateCondition(ctx, &pb.Condition{
-		Name:               "apply update light state",
+		Name:               "skipped update light state",
+		Owner:              oauthService.DeviceUserID,
+		Enabled:            true,
+		ConfigurationId:    conf1.GetId(),
+		DeviceIdFilter:     []string{deviceID},
+		ResourceHrefFilter: []string{hubTest.TestResourceLightInstanceHref("1")},
+	})
+	require.NoError(t, err)
+
+	// valid condition for conf1
+	cond1, err := snippetClient.CreateCondition(ctx, &pb.Condition{
+		Name:               "update light state",
 		Owner:              oauthService.DeviceUserID,
 		Enabled:            true,
 		ConfigurationId:    conf1.GetId(),
@@ -315,15 +346,65 @@ func TestService(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	// condition for conf2
+	// invalid condition for conf1 - invalid ApiAccessToken
 	_, err = snippetClient.CreateCondition(ctx, &pb.Condition{
-		Name:               "apply update light power",
+		Name:               "fail update light state",
+		Owner:              oauthService.DeviceUserID,
+		Enabled:            true,
+		ConfigurationId:    conf1.GetId(),
+		DeviceIdFilter:     []string{deviceID},
+		ResourceHrefFilter: []string{notExistingResourceHref, hubTest.TestResourceLightInstanceHref("1")},
+		ApiAccessToken:     "an invalid token",
+	})
+	require.NoError(t, err)
+
+	// condition for conf2
+	cond2, err := snippetClient.CreateCondition(ctx, &pb.Condition{
+		Name:               "update light power",
 		Owner:              oauthService.DeviceUserID,
 		Enabled:            true,
 		ConfigurationId:    conf2.GetId(),
 		DeviceIdFilter:     []string{deviceID},
 		ResourceHrefFilter: []string{hubTest.TestResourceLightInstanceHref("1")},
 		ApiAccessToken:     token,
+	})
+	require.NoError(t, err)
+
+	// disabled condition for conf3
+	_, err = snippetClient.CreateCondition(ctx, &pb.Condition{
+		Name:               "disabled update device name",
+		Owner:              oauthService.DeviceUserID,
+		Enabled:            false,
+		ConfigurationId:    conf3.GetId(),
+		DeviceIdFilter:     []string{deviceID},
+		ResourceHrefFilter: []string{configuration.ResourceURI},
+		ApiAccessToken:     token,
+	})
+	require.NoError(t, err)
+	// jq evaluated to false -> non matching name
+	_, err = snippetClient.CreateCondition(ctx, &pb.Condition{
+		Name:               "jq evaluated to false",
+		Owner:              oauthService.DeviceUserID,
+		Enabled:            true,
+		ConfigurationId:    conf3.GetId(),
+		DeviceIdFilter:     []string{deviceID},
+		ResourceHrefFilter: []string{configuration.ResourceURI},
+		ApiAccessToken:     token,
+		JqExpressionFilter: ".n !== \"" + hubTest.TestDeviceName + "\"",
+	})
+	require.NoError(t, err)
+	// invalid condition for conf3 - invalid ApiAccessToken
+	// -> this condition will be tried, but will fail, because of the invalid token,
+	// but since no other condition is available, the resource update will be set to failed state
+	_, err = snippetClient.CreateCondition(ctx, &pb.Condition{
+		Name:               "fail update device name",
+		Owner:              oauthService.DeviceUserID,
+		Enabled:            true,
+		ConfigurationId:    conf3.GetId(),
+		DeviceIdFilter:     []string{deviceID},
+		ResourceHrefFilter: []string{configuration.ResourceURI},
+		ApiAccessToken:     "an invalid token",
+		JqExpressionFilter: ".n == \"" + hubTest.TestDeviceName + "\"",
 	})
 	require.NoError(t, err)
 
@@ -398,8 +479,15 @@ func TestService(t *testing.T) {
 				},
 			},
 		})
-	require.Len(t, appliedConfs, 2)
-	require.Len(t, appliedConfResources, 3)
+	require.Len(t, appliedConfs, 3)
+	require.Len(t, appliedConfResources, 4)
+
+	appliedConfByConfID := make(map[string]*pb.AppliedConfiguration)
+	for _, appliedConf := range appliedConfs {
+		appliedConfByConfID[appliedConf.GetConfigurationId().GetId()] = appliedConf
+	}
+	require.Equal(t, cond1.GetId(), appliedConfByConfID[conf1.GetId()].GetConditionId().GetId())
+	require.Equal(t, cond2.GetId(), appliedConfByConfID[conf2.GetId()].GetConditionId().GetId())
 
 	notExistingConf1, ok := appliedConfResources[notExistingConf1ID]
 	require.True(t, ok)
@@ -420,6 +508,13 @@ func TestService(t *testing.T) {
 	require.Equal(t, pb.AppliedConfiguration_Resource_DONE, lightConf2.GetStatus())
 	require.Equal(t, commands.Status_OK, lightConf2.GetResourceUpdated().GetStatus())
 
+	conConf3ID := conf3.GetId() + "." + configuration.ResourceURI
+	conConf3, ok := appliedConfResources[conConf3ID]
+	require.True(t, ok)
+	require.Equal(t, configuration.ResourceURI, conConf3.GetHref())
+	require.Equal(t, pb.AppliedConfiguration_Resource_DONE, conConf3.GetStatus())
+	require.Equal(t, commands.Status_ERROR, conConf3.GetResourceUpdated().GetStatus())
+
 	// restore state
 	err = grpcClient.UpdateResource(ctx, deviceID, hubTest.TestResourceLightInstanceHref("1"), map[string]interface{}{
 		"state": false,
@@ -430,7 +525,7 @@ func TestService(t *testing.T) {
 
 func TestServiceCleanUp(t *testing.T) {
 	deviceID := hubTest.MustFindDeviceByName(hubTest.TestDeviceName)
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT*100)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
 	tearDown := hubTestService.SetUp(ctx, t)

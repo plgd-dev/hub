@@ -194,7 +194,7 @@ func (h *ResourceUpdater) applyExecution(ctx context.Context, execution executio
 	return executionResult{
 		validUntil: validUntil,
 		condition:  appliedCond,
-		executedBy: executeByTypeFindCondition,
+		executedBy: executeByTypeCondition,
 	}
 }
 
@@ -203,7 +203,7 @@ type configurationWithExecution struct {
 	execution     execution
 }
 
-func (h *ResourceUpdater) getConfigurations(ctx context.Context, owner string, conditions []*pb.Condition) ([]configurationWithExecution, error) {
+func (h *ResourceUpdater) getConfigurationsByConditions(ctx context.Context, owner string, conditions []*pb.Condition) ([]configurationWithExecution, error) {
 	confsToConditions := make(map[string][]*pb.Condition)
 	idFilter := make([]*pb.IDFilter, 0, len(conditions))
 	for _, c := range conditions {
@@ -282,6 +282,18 @@ func (h *ResourceUpdater) getConfigurations(ctx context.Context, owner string, c
 	}
 
 	return confsWithConditions, nil
+}
+
+func (h *ResourceUpdater) getConfigurations(ctx context.Context, owner, deviceID, resourceHref string, resourceTypes []string, eval evaluateCondition) ([]configurationWithExecution, error) {
+	// get matching conditions
+	conditions, err := h.getConditions(ctx, owner, deviceID, resourceHref, resourceTypes, eval)
+	if err != nil {
+		return nil, err
+	}
+	h.logger.Debugf("found %v conditions for resource changed event(deviceID:%v, href:%v, resourceTypes %v)", len(conditions), deviceID, resourceHref, resourceTypes)
+
+	// get configurations with tokens
+	return h.getConfigurationsByConditions(ctx, owner, conditions)
 }
 
 func (h *ResourceUpdater) applyConfigurationToResource(ctx context.Context, resourceID *commands.ResourceId, configurationID, correlationID string, cr *pb.Configuration_Resource, token string) (int64, error) {
@@ -569,15 +581,7 @@ func (h *ResourceUpdater) applyConfigurationsByConditions(ctx context.Context, r
 	deviceID := resourceID.GetDeviceId()
 	resourceHref := resourceID.GetHref()
 	resourceTypes := rc.GetResourceTypes()
-	// get matching conditions
-	conditions, err := h.getConditions(ctx, owner, deviceID, resourceHref, resourceTypes, eval)
-	if err != nil {
-		return err
-	}
-	h.logger.Debugf("found %v conditions for resource changed event(deviceID:%v, href:%v, resourceTypes %v)", len(conditions), deviceID, resourceHref, resourceTypes)
-
-	// get configurations with tokens
-	confsWithConditions, err := h.getConfigurations(ctx, owner, conditions)
+	confsWithConditions, err := h.getConfigurations(ctx, owner, deviceID, resourceHref, resourceTypes, eval)
 	if err != nil {
 		return err
 	}

@@ -107,7 +107,7 @@ func waitForAppliedConfigurations(ctx context.Context, t *testing.T, snippetClie
 
 func TestRequestHandlerInvokeConfiguration(t *testing.T) {
 	deviceID := hubTest.MustFindDeviceByName(hubTest.TestDeviceName)
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT*100)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
 	tearDown := service.SetUp(ctx, t)

@@ -15,6 +15,9 @@ func (r *AppliedConfiguration_Resource) Validate() error {
 	if r.GetCorrelationId() == "" {
 		return errors.New("missing correlationID")
 	}
+	if r.GetStatus() == AppliedConfiguration_Resource_UNSPECIFIED {
+		return errors.New("invalid status")
+	}
 	return nil
 }
 

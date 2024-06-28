@@ -44,7 +44,7 @@ func AppliedConfigurationResource(t *testing.T, deviceID string, start, n int) [
 		resource := &pb.AppliedConfiguration_Resource{
 			Href:          hubTest.TestResourceLightInstanceHref(strconv.Itoa(i)),
 			CorrelationId: correlationID,
-			Status:        pb.AppliedConfiguration_Resource_Status(i % 4),
+			Status:        pb.AppliedConfiguration_Resource_Status(1 + i%4),
 		}
 		if resource.GetStatus() == pb.AppliedConfiguration_Resource_DONE {
 			resource.ResourceUpdated = pbTest.MakeResourceUpdated(t,
