@@ -8,6 +8,8 @@ import (
 	"io"
 	"net/http"
 	"slices"
+	"strconv"
+	"sync"
 	"testing"
 	"time"
 
@@ -21,6 +23,7 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
 	snippetHttp "github.com/plgd-dev/hub/v2/snippet-service/service/http"
+	"github.com/plgd-dev/hub/v2/snippet-service/store"
 	snippetTest "github.com/plgd-dev/hub/v2/snippet-service/test"
 	hubTest "github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
@@ -29,6 +32,7 @@ import (
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/maps"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -103,6 +107,42 @@ func waitForAppliedConfigurations(ctx context.Context, t *testing.T, snippetClie
 		retryCount++
 	}
 	return appliedConfResources
+}
+
+func getPendingCommands(ctx context.Context, t *testing.T, c grpcGwPb.GrpcGatewayClient, deviceID string) map[string][]*grpcGwPb.PendingCommand {
+	pendingCommandsClient, err := c.GetPendingCommands(ctx, &grpcGwPb.GetPendingCommandsRequest{
+		DeviceIdFilter:         []string{deviceID},
+		IncludeHiddenResources: true,
+	})
+	require.NoError(t, err)
+	pendingCommands := make(map[string][]*grpcGwPb.PendingCommand)
+	for {
+		ev, err2 := pendingCommandsClient.Recv()
+		if errors.Is(err2, io.EOF) {
+			break
+		}
+		require.NoError(t, err2)
+		var id string
+		switch c := ev.GetCommand().(type) {
+		case *grpcGwPb.PendingCommand_DeviceMetadataUpdatePending:
+			id = c.DeviceMetadataUpdatePending.GetAuditContext().GetCorrelationId()
+		case *grpcGwPb.PendingCommand_ResourceCreatePending:
+			id = c.ResourceCreatePending.GetAuditContext().GetCorrelationId()
+		case *grpcGwPb.PendingCommand_ResourceDeletePending:
+			id = c.ResourceDeletePending.GetAuditContext().GetCorrelationId()
+		case *grpcGwPb.PendingCommand_ResourceRetrievePending:
+			id = c.ResourceRetrievePending.GetAuditContext().GetCorrelationId()
+		case *grpcGwPb.PendingCommand_ResourceUpdatePending:
+			id = c.ResourceUpdatePending.GetAuditContext().GetCorrelationId()
+		}
+
+		appliedConfID, _, _, ok := store.SplitCorrelationID(id)
+		if !ok {
+			continue
+		}
+		pendingCommands[appliedConfID] = append(pendingCommands[appliedConfID], ev)
+	}
+	return pendingCommands
 }
 
 func TestRequestHandlerInvokeConfiguration(t *testing.T) {
@@ -309,4 +349,97 @@ func TestRequestHandlerInvokeConfiguration(t *testing.T) {
 		DeviceIdFilter: []string{deviceID},
 	})
 	require.Len(t, appliedConfs, 1)
+}
+
+func TestParallelRequestHandlerInvokeConfiguration(t *testing.T) {
+	deviceID := hubTest.MustFindDeviceByName(hubTest.TestDeviceName)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	defer cancel()
+
+	tearDown := service.SetUp(ctx, t)
+	defer tearDown()
+
+	token := oauthTest.GetDefaultAccessToken(t)
+	ctxWithToken := pkgGrpc.CtxWithToken(ctx, token)
+
+	grpcClient := grpcgwTest.NewTestClient(t)
+	defer func() {
+		errC := grpcClient.Close()
+		require.NoError(t, errC)
+	}()
+	_, shutdownDevSim := hubTest.OnboardDevSim(ctxWithToken, t, grpcClient.GrpcGatewayClient(), deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, hubTest.GetAllBackendResourceLinks())
+	defer shutdownDevSim()
+
+	snippetCfg := snippetTest.MakeConfig(t)
+	_, shutdownHttp := snippetTest.New(t, snippetCfg)
+	defer shutdownHttp()
+
+	conn, err := grpc.NewClient(config.SNIPPET_SERVICE_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: hubTest.GetRootCertificatePool(t),
+	})))
+	require.NoError(t, err)
+	defer func() {
+		_ = conn.Close()
+	}()
+	snippetClient := pb.NewSnippetServiceClient(conn)
+
+	// multiple resources, so the iteration is more time consuming and parallel invocations should occur
+	resourcesCount := 10
+	resources := make([]*pb.Configuration_Resource, 0, resourcesCount)
+	for i := range resourcesCount {
+		href := "/not/existing/" + strconv.Itoa(i+1)
+		resources = append(resources, &pb.Configuration_Resource{
+			Href: href,
+			Content: &commands.Content{
+				ContentType: message.AppOcfCbor.String(),
+				Data: hubTest.EncodeToCbor(t, map[string]interface{}{
+					"value": i,
+				}),
+			},
+		})
+	}
+
+	conf, err := snippetClient.CreateConfiguration(ctxWithToken, &pb.Configuration{
+		Owner:     oauthService.DeviceUserID,
+		Resources: resources,
+	})
+	require.NoError(t, err)
+
+	type invocationResult struct {
+		appliedConfID string
+		code          int
+		err           error
+	}
+	parallelCount := 3
+	results := make([]invocationResult, parallelCount)
+	wg := sync.WaitGroup{}
+	wg.Add(parallelCount)
+	for i := range parallelCount {
+		go func(id int) {
+			defer wg.Done()
+			got, code, err := invokeConfiguration(ctxWithToken, t, conf.GetId(), token, &pb.InvokeConfigurationRequest{
+				ConfigurationId: conf.GetId(),
+				DeviceId:        deviceID,
+				Force:           true,
+			})
+			appliedConfID := got.GetAppliedConfigurationId()
+			results[id] = invocationResult{appliedConfID: appliedConfID, code: code, err: err}
+		}(i)
+	}
+	wg.Wait()
+
+	pendingCommands := getPendingCommands(ctxWithToken, t, grpcClient.GrpcGatewayClient(), deviceID)
+	// only pending commands for the last applied configuration should be present, all others should be canceled
+	require.Len(t, pendingCommands, 1)
+	key := maps.Keys(pendingCommands)[0]
+	for _, r := range results {
+		if r.appliedConfID != key {
+			require.Equal(t, http.StatusInternalServerError, r.code)
+			require.Error(t, r.err)
+			continue
+		}
+		require.Equal(t, http.StatusOK, r.code)
+		require.NoError(t, r.err)
+		require.Len(t, pendingCommands[key], resourcesCount)
+	}
 }

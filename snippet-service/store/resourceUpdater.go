@@ -373,6 +373,22 @@ func resourceCorrelationID(ids ...string) string {
 	return cID
 }
 
+// 1) "appliedConfigurationID.resourceCorrelationID" if the configuration was applied by a condition
+// 2) "appliedConfigurationID.resourceCorrelationID{. InvokeConfiguration correlationID}" if the configuration was applied on demand by InvokeConfiguration
+func SplitCorrelationID(correlationID string) (string, string, string, bool) {
+	parts := strings.Split(correlationID, ".")
+	if len(parts) < 2 || len(parts) > 3 {
+		return "", "", "", false
+	}
+	appliedConfID := parts[0]
+	resourceCorrelationID := parts[1]
+	customCorrelationID := ""
+	if len(parts) > 2 {
+		customCorrelationID = parts[2]
+	}
+	return appliedConfID, resourceCorrelationID, customCorrelationID, true
+}
+
 func getAppliedConfigurationResources(resources []*pb.Configuration_Resource, appliedConfID, correlationID string) ([]*pb.AppliedConfiguration_Resource, map[string]string) {
 	updatedResources := make([]*pb.AppliedConfiguration_Resource, 0, len(resources))
 	updatedResourceCorIDs := make(map[string]string)
@@ -434,6 +450,22 @@ func getUpdateAppliedConfigurationResourceRequest(appliedConfID, confID, owner, 
 	return update
 }
 
+func (h *ResourceUpdater) cancelPendingResourceUpdate(ctx context.Context, resourceID *commands.ResourceId, correlationID, configurationID string) {
+	cancelReq := &commands.CancelPendingCommandsRequest{
+		ResourceId:          resourceID,
+		CorrelationIdFilter: []string{correlationID},
+		CommandMetadata: &commands.CommandMetadata{
+			ConnectionId: configurationID,
+		},
+	}
+	_, err := h.raClient.CancelPendingCommands(ctx, cancelReq)
+	if err != nil {
+		h.logger.Debugf("failed to cancel pending resource(%v) update: %v", resourceID.ToString(), err)
+	} else {
+		h.logger.Debugf("pending resource(%v) update canceled", resourceID.ToString())
+	}
+}
+
 func (h *ResourceUpdater) cancelPendingResourceUpdates(appliedConf *pb.AppliedConfiguration, token string) {
 	h.logger.Debugf("canceling pending resource operations for replaced configuration(%s)", appliedConf.GetId())
 
@@ -441,23 +473,10 @@ func (h *ResourceUpdater) cancelPendingResourceUpdates(appliedConf *pb.AppliedCo
 		if res.GetStatus() != pb.AppliedConfiguration_Resource_PENDING {
 			continue
 		}
-
-		resourceID := &commands.ResourceId{DeviceId: appliedConf.GetDeviceId(), Href: res.GetHref()}
-		cancelReq := &commands.CancelPendingCommandsRequest{
-			ResourceId:          resourceID,
-			CorrelationIdFilter: []string{res.GetCorrelationId()},
-			CommandMetadata: &commands.CommandMetadata{
-				ConnectionId: appliedConf.GetConfigurationId().GetId(),
-			},
-		}
 		// since we are using the Force flag in the UpdateResourceRequest, we need to cancel the pending commands,
 		// otherwise commands for not existing resources will remain in the pending state forever
-		_, err := h.raClient.CancelPendingCommands(pkgGrpc.CtxWithToken(h.ctx, token), cancelReq)
-		if err != nil {
-			h.logger.Debugf("failed to cancel pending resource(%v) update: %v", resourceID.ToString(), err)
-		} else {
-			h.logger.Debugf("pending resource(%v) update canceled", resourceID.ToString())
-		}
+		resourceID := &commands.ResourceId{DeviceId: appliedConf.GetDeviceId(), Href: res.GetHref()}
+		h.cancelPendingResourceUpdate(pkgGrpc.CtxWithToken(h.ctx, token), resourceID, res.GetCorrelationId(), appliedConf.GetConfigurationId().GetId())
 	}
 }
 
@@ -515,15 +534,22 @@ func (h *ResourceUpdater) applyConfigurationToResources(ctx context.Context, own
 		update := getUpdateAppliedConfigurationResourceRequest(appliedConf.GetId(), confID, owner, resCorrelationID, resourceID, exRes, updateExecutionConditionID)
 		h.logger.Debugf("updating applied configuration(%v) resource(%v) with status(%v)", appliedConf.GetId(), href, update.Resource.GetStatus().String())
 		var err error
-		// TODO: need to distinguish between:
-		//  - if the appliedConfiguration doesnt exists -> it was removed by forced InvokeConfiguration -> exit
-		//  - if the resource is not in queued status -> it was already updated by other goroutine -> skip
-		appliedConf, err = h.storage.UpdateAppliedConfigurationResource(ctx, owner, update)
+		updatedAppliedConf, err := h.storage.UpdateAppliedConfigurationResource(ctx, owner, update)
 		if err != nil {
+			if errors.Is(err, ErrNotFound) { // the appliedConfiguration doesnt exists -> it was removed by forced InvokeConfiguration from other thread
+				ctxWithToken := ctx
+				if exRes.token() != "" {
+					ctxWithToken = pkgGrpc.CtxWithToken(ctx, exRes.token())
+				}
+				h.cancelPendingResourceUpdate(ctxWithToken, resourceID, resCorrelationID, confID)
+				return nil, err
+			}
+			// the resource is not in queued status -> it was already updated by other goroutine -> skip
 			h.logger.Errorf("cannot update applied configuration resource: %w", err)
 			errs = multierror.Append(errs, err)
 			continue
 		}
+		appliedConf = updatedAppliedConf
 		if exRes.validUntil > 0 {
 			h.scheduleAppliedConfigurationPendingResourceTimeout(&pendingConfiguration{
 				id:              appliedConf.GetId(),
@@ -618,20 +644,18 @@ func isValidUUID(s string) bool {
 func (h *ResourceUpdater) finishPendingConfiguration(ctx context.Context, updated *events.ResourceUpdated) error {
 	correlationID := updated.GetAuditContext().GetCorrelationId()
 	// correlationID from snippet-service is in the form of
-	// 1) "appliedConfigurationID.resourceCorrelationID" if the configuration was applied by a condition
-	// 2) "appliedConfigurationID.resourceCorrelationID{. InvokeConfiguration correlationID}" if the configuration was applied on demand by InvokeConfiguration
-	parts := strings.Split(correlationID, ".")
-	if len(parts) < 2 || !isValidUUID(parts[0]) {
+	appliedConfID, resourcesCorrelationID, _, ok := SplitCorrelationID(correlationID)
+	if !ok || !isValidUUID(appliedConfID) || !isValidUUID(resourcesCorrelationID) {
 		return nil
 	}
-	h.logger.Debugf("finishing pending configuration(%v) for resource(%v:%v): %v", parts[0], updated.GetResourceId().GetDeviceId(), updated.GetResourceId().GetHref(), updated)
+	h.logger.Debugf("finishing pending configuration(%v) for resource(%v:%v): %v", appliedConfID, updated.GetResourceId().GetDeviceId(), updated.GetResourceId().GetHref(), updated)
 	pc, ok := h.pendingConfigurations.LoadAndDelete(correlationID)
 	if ok {
 		h.logger.Debugf("pending configuration(%v) for resource(%v:%v) update expiration handler removed", pc.Data().id, updated.GetResourceId().GetDeviceId(), updated.GetResourceId().GetHref())
 	}
 	owner := updated.GetAuditContext().GetOwner()
 	_, err := h.storage.UpdateAppliedConfigurationResource(ctx, owner, UpdateAppliedConfigurationResourceRequest{
-		AppliedConfigurationID: parts[0],
+		AppliedConfigurationID: appliedConfID,
 		Resource: &pb.AppliedConfiguration_Resource{
 			Href:            updated.GetResourceId().GetHref(),
 			CorrelationId:   correlationID,
@@ -741,20 +765,8 @@ func (h *ResourceUpdater) Close() error {
 	var errs *multierror.Error
 	for _, e := range elements {
 		pc := e.Data()
-		cancelReq := &commands.CancelPendingCommandsRequest{
-			ResourceId:          pc.resourceID,
-			CorrelationIdFilter: []string{pc.correlationID},
-			CommandMetadata: &commands.CommandMetadata{
-				ConnectionId: pc.configurationID,
-			},
-		}
-		_, err := h.raClient.CancelPendingCommands(pkgGrpc.CtxWithToken(h.ctx, pc.token), cancelReq)
-		if err != nil {
-			h.logger.Debugf("failed to cancel pending resource(%v) update: %v", pc.resourceID.ToString(), err)
-		} else {
-			h.logger.Debugf("pending resource(%v) update canceled", pc.resourceID.ToString())
-		}
-		_, err = h.storage.UpdateAppliedConfigurationResource(h.ctx, pc.owner, UpdateAppliedConfigurationResourceRequest{
+		h.cancelPendingResourceUpdate(pkgGrpc.CtxWithToken(h.ctx, pc.token), pc.resourceID, pc.correlationID, pc.configurationID)
+		_, err := h.storage.UpdateAppliedConfigurationResource(h.ctx, pc.owner, UpdateAppliedConfigurationResourceRequest{
 			AppliedConfigurationID: pc.id,
 			StatusFilter:           []pb.AppliedConfiguration_Resource_Status{pb.AppliedConfiguration_Resource_PENDING},
 			Resource: &pb.AppliedConfiguration_Resource{
