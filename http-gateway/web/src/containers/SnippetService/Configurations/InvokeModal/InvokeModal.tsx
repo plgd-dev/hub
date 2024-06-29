@@ -83,21 +83,29 @@ const InvokeModal: FC<Props> = (props) => {
                 rightColSize={2}
                 rows={value.map((item, key) => ({
                     attribute: <span css={styles.listItem}>{item.label}</span>,
-                    value: <IconTrash css={styles.listIcon} onClick={() => setValue(value.filter((val) => val.value === item.value))} />,
+                    value: <IconTrash css={styles.listIcon} onClick={() => setValue(value.filter((val) => val.value !== item.value))} />,
                 }))}
             />
 
-            <FormGroup id='force'>
-                <FormLabel text={_(confT.force)} />
-                <div>
-                    <Switch
-                        checked={force}
-                        onChange={(e) => {
-                            setForce(e.target.checked)
-                        }}
-                    />
-                </div>
-            </FormGroup>
+            <SimpleStripTable
+                noSidePadding
+                lastRowBorder={false}
+                leftColSize={10}
+                rightColSize={2}
+                rows={[
+                    {
+                        attribute: _(confT.force),
+                        value: (
+                            <Switch
+                                checked={force}
+                                onChange={(e) => {
+                                    setForce(e.target.checked)
+                                }}
+                            />
+                        ),
+                    },
+                ]}
+            />
         </div>
     )
 
@@ -116,6 +124,7 @@ const InvokeModal: FC<Props> = (props) => {
                 },
                 {
                     label: _(g.invoke),
+                    disabled: value.length === 0,
                     onClick: () => {
                         handleInvoke(
                             value.map((val) => val.value.toString()),
