@@ -7,6 +7,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/http/client"
+	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2/oauth"
 	"github.com/plgd-dev/hub/v2/pkg/security/openid"
 	"go.opentelemetry.io/otel/trace"
@@ -20,7 +21,7 @@ type provider interface {
 }
 
 // NewPlgdProvider creates OAuth client
-func NewPlgdProvider(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, ownerClaim, deviceIDClaim string) (*PlgdProvider, error) {
+func NewPlgdProvider(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, ownerClaim, deviceIDClaim string, validator *jwt.Validator) (*PlgdProvider, error) {
 	config.ResponseMode = "query"
 	config.AccessType = "offline"
 	config.ResponseType = "code"
@@ -44,7 +45,7 @@ func NewPlgdProvider(ctx context.Context, config Config, fileWatcher *fsnotify.W
 	config.TokenURL = oidcfg.TokenURL
 	var p provider
 	if config.GrantType == oauth.ClientCredentials {
-		p = NewClientCredentialsPlgdProvider(config, httpClient, oidcfg.JWKSURL, ownerClaim, deviceIDClaim)
+		p = NewClientCredentialsPlgdProvider(config, httpClient, oidcfg.JWKSURL, ownerClaim, deviceIDClaim, validator)
 	} else {
 		p = NewAuthCodePlgdProvider(config, httpClient)
 	}

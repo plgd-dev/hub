@@ -24,7 +24,7 @@ func getPlgdProvider(t *testing.T, cfg oauth2.Config, ownerClaim, deviceIDclaim 
 		require.NoError(t, errC)
 	}()
 
-	provider, err := oauth2.NewPlgdProvider(context.Background(), cfg, fileWatcher, logger, noop.NewTracerProvider(), ownerClaim, deviceIDclaim)
+	provider, err := oauth2.NewPlgdProvider(context.Background(), cfg, fileWatcher, logger, noop.NewTracerProvider(), ownerClaim, deviceIDclaim, nil)
 	require.NoError(t, err)
 	return provider
 }

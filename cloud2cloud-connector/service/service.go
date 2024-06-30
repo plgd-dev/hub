@@ -53,15 +53,15 @@ func toValidator(c oauth2.Config) validator.Config {
 
 const serviceName = "cloud2cloud-connector"
 
-func newAuthInterceptor(ctx context.Context, config validator.Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (kitNetHttp.Interceptor, func(), error) {
-	var fl fn.FuncList
-
-	validator, err := validator.New(ctx, config, fileWatcher, logger, tracerProvider)
+func newValidator(ctx context.Context, config validator.Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*validator.Validator, error) {
+	v, err := validator.New(ctx, config, fileWatcher, logger, tracerProvider)
 	if err != nil {
-		return nil, nil, fmt.Errorf("cannot create validator: %w", err)
+		return nil, fmt.Errorf("cannot create validator: %w", err)
 	}
-	fl.AddFunc(validator.Close)
+	return v, nil
+}
 
+func newAuthInterceptor(ctx context.Context, validator *validator.Validator) kitNetHttp.Interceptor {
 	authRules := kitNetHttp.NewDefaultAuthorizationRules(uri.API)
 
 	whiteList := []kitNetHttp.RequestMatcher{
@@ -80,7 +80,7 @@ func newAuthInterceptor(ctx context.Context, config validator.Config, fileWatche
 	}
 	auth := kitNetHttp.NewInterceptorWithValidator(validator, authRules, whiteList...)
 
-	return auth, fl.ToFunction(), nil
+	return auth
 }
 
 func newIdentityStoreClient(config IdentityStoreConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (pbIS.IdentityStoreClient, func(), error) {
@@ -248,7 +248,13 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	}
 	listener.AddCloseFunc(closeStore)
 
-	provider, err := oauth2.NewPlgdProvider(ctx, config.APIs.HTTP.Authorization.Config, fileWatcher, logger, tracerProvider, "", "")
+	validator, err := validator.New(ctx, toValidator(config.APIs.HTTP.Authorization.Config), fileWatcher, logger, tracerProvider)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create validator: %w", err)
+	}
+	listener.AddCloseFunc(validator.Close)
+
+	provider, err := oauth2.NewPlgdProvider(ctx, config.APIs.HTTP.Authorization.Config, fileWatcher, logger, tracerProvider, "", "", validator.GetParser())
 	if err != nil {
 		cleanUp.Execute()
 		return nil, fmt.Errorf("cannot create device provider: %w", err)
@@ -260,12 +266,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 
 	requestHandler := NewRequestHandler(config.APIs.HTTP.Authorization.OwnerClaim, provider, subMgr, store, taskProcessor.Trigger, tracerProvider)
 
-	auth, closeAuth, err := newAuthInterceptor(ctx, toValidator(config.APIs.HTTP.Authorization.Config), fileWatcher, logger, tracerProvider)
-	if err != nil {
-		cleanUp.Execute()
-		return nil, fmt.Errorf("cannot create auth interceptor: %w", err)
-	}
-	listener.AddCloseFunc(closeAuth)
+	auth := newAuthInterceptor(ctx, validator)
 
 	httpHandler, err := NewHTTP(requestHandler, auth, logger)
 	if err != nil {
