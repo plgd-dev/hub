@@ -34,6 +34,10 @@ func (v *Validator) Close() {
 	v.onClose.Execute()
 }
 
+func (v *Validator) GetParser() *jwtValidator.Validator {
+	return v.validator
+}
+
 func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*Validator, error) {
 	keys := jwtValidator.NewMultiKeyCache()
 	var onClose fn.FuncList

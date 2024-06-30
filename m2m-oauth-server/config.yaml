@@ -1,0 +1,71 @@
+log:
+    level: info
+    encoding: json
+    stacktrace:
+        enabled: false
+        level: warn
+    encoderConfig:
+        timeEncoder: rfc3339nano
+    dumpBody: false
+apis:
+  http:
+    address: "0.0.0.0:9100"
+    readTimeout: 8s
+    readHeaderTimeout: 4s
+    writeTimeout: 16s
+    idleTimeout: 30s
+    tls:
+      caPool: "/secrets/public/rootca.crt"
+      keyFile: "/secrets/private/cert.key"
+      certFile: "/secrets/public/cert.crt"
+      clientCertificateRequired: true
+clients:
+  openTelemetryCollector:
+    grpc:
+      enabled: false
+      address: ""
+      sendMsgSize: 4194304
+      recvMsgSize: 4194304
+      keepAlive:
+        time: 10s
+        timeout: 20s
+        permitWithoutStream: true
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false
+oauthSigner:
+    accessTokenKeyFile: "/secrets/private/accessToken.key"
+    domain:
+    ownerClaim: sub
+    deviceIDClaim:
+    clients:
+        - id: serviceClient
+          secret: 
+          requireDeviceID: false
+          requireOwner: false
+          accessTokenLifetime: 0s
+          allowedGrantTypes:
+            - client_credentials
+          allowedAudiences: []
+          allowedScopes: []
+        - id: snippetServiceClient
+          secret: 
+          requireDeviceID: false
+          requireOwner: true
+          accessTokenLifetime: 0s
+          allowedGrantTypes:
+            - client_credentials
+          allowedAudiences: []
+          allowedScopes: []
+        - id: deviceProvisioningServiceClient
+          secret:
+          requireDeviceID: true
+          requireOwner: true
+          accessTokenLifetime: 0s
+          allowedGrantTypes:
+            - client_credentials
+          allowedAudiences: []
+          allowedScopes: []
+

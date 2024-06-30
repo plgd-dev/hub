@@ -36,6 +36,7 @@ import (
 	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 	"github.com/plgd-dev/hub/v2/pkg/opentelemetry/otelcoap"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
+	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
 	"github.com/plgd-dev/hub/v2/pkg/service"
 	"github.com/plgd-dev/hub/v2/pkg/sync/task/queue"
@@ -198,12 +199,12 @@ func (s *Service) onInactivityConnection(cc mux.Conn) {
 	}
 }
 
-func newProviders(ctx context.Context, config AuthorizationConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (map[string]*oauth2.PlgdProvider, *oauth2.PlgdProvider, func(), error) {
+func newProviders(ctx context.Context, config AuthorizationConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, validator *jwt.Validator) (map[string]*oauth2.PlgdProvider, *oauth2.PlgdProvider, func(), error) {
 	var closeProviders fn.FuncList
 	var firstProvider *oauth2.PlgdProvider
 	providers := make(map[string]*oauth2.PlgdProvider, 4)
 	for _, p := range config.Providers {
-		provider, err := oauth2.NewPlgdProvider(ctx, p.Config, fileWatcher, logger, tracerProvider, config.OwnerClaim, config.DeviceIDClaim)
+		provider, err := oauth2.NewPlgdProvider(ctx, p.Config, fileWatcher, logger, tracerProvider, config.OwnerClaim, config.DeviceIDClaim, validator)
 		if err != nil {
 			closeProviders.Execute()
 			return nil, nil, nil, fmt.Errorf("cannot create device provider: %w", err)
@@ -283,7 +284,14 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	}
 	nats.AddCloseFunc(closeCertificateAuthorityClient)
 
-	providers, firstProvider, closeProviders, err := newProviders(ctx, config.APIs.COAP.Authorization, fileWatcher, logger, tracerProvider)
+	validator, err := validator.New(ctx, config.APIs.COAP.Authorization.Authority, fileWatcher, logger, tracerProvider)
+	if err != nil {
+		nats.Close()
+		return nil, fmt.Errorf("cannot create jwt validator: %w", err)
+	}
+	nats.AddCloseFunc(validator.Close)
+
+	providers, firstProvider, closeProviders, err := newProviders(ctx, config.APIs.COAP.Authorization, fileWatcher, logger, tracerProvider, validator.GetParser())
 	if err != nil {
 		nats.Close()
 		return nil, fmt.Errorf("cannot create device providers error: %w", err)
@@ -294,10 +302,6 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		nats.Close()
 		return nil, errors.New("device providers are empty")
 	}
-
-	keyCache := jwt.NewKeyCache(firstProvider.OpenID.JWKSURL, firstProvider.HTTP())
-
-	jwtValidator := jwt.NewValidator(keyCache)
 
 	ownerCache := idClient.NewOwnerCache(config.APIs.COAP.Authorization.OwnerClaim, config.APIs.COAP.OwnerCacheExpiration, nats.GetConn(), isClient, func(err error) {
 		logger.Errorf("ownerCache error: %w", err)
@@ -327,7 +331,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		taskQueue:          queue,
 		resourceSubscriber: resourceSubscriber,
 		providers:          providers,
-		jwtValidator:       jwtValidator,
+		jwtValidator:       validator.GetParser(),
 
 		ctx: ctx,
 

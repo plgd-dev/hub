@@ -33,7 +33,7 @@ func TestExchangeCacheExecute(t *testing.T) {
 
 	cfg := config.MakeDeviceAuthorization()
 	cfg.ClientID = oauthTest.ClientTestRestrictedAuth
-	provider, err := oauth2.NewPlgdProvider(context.Background(), cfg, fileWatcher, logger, noop.NewTracerProvider(), "", "")
+	provider, err := oauth2.NewPlgdProvider(context.Background(), cfg, fileWatcher, logger, noop.NewTracerProvider(), "", "", nil)
 	require.NoError(t, err)
 
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
