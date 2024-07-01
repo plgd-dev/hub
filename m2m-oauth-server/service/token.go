@@ -242,7 +242,7 @@ func (requestHandler *RequestHandler) validateTokenRequest(ctx context.Context, 
 	if err := validateClientAssertionType(clientCfg, tokenReq); err != nil {
 		return err
 	}
-	if err := requestHandler.validateClientAssertion(ctx, clientCfg, tokenReq); err != nil {
+	if err := requestHandler.validateClientAssertion(ctx, tokenReq); err != nil {
 		return err
 	}
 	if err := validateAudience(clientCfg, tokenReq); err != nil {
@@ -303,7 +303,7 @@ func validateClientAssertionType(clientCfg *Client, tokenReq *tokenRequest) erro
 	return nil
 }
 
-func (requestHandler *RequestHandler) validateClientAssertion(ctx context.Context, clientCfg *Client, tokenReq *tokenRequest) error {
+func (requestHandler *RequestHandler) validateClientAssertion(ctx context.Context, tokenReq *tokenRequest) error {
 	if tokenReq.ClientAssertionType == "" {
 		return nil
 	}

@@ -53,15 +53,7 @@ func toValidator(c oauth2.Config) validator.Config {
 
 const serviceName = "cloud2cloud-connector"
 
-func newValidator(ctx context.Context, config validator.Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*validator.Validator, error) {
-	v, err := validator.New(ctx, config, fileWatcher, logger, tracerProvider)
-	if err != nil {
-		return nil, fmt.Errorf("cannot create validator: %w", err)
-	}
-	return v, nil
-}
-
-func newAuthInterceptor(ctx context.Context, validator *validator.Validator) kitNetHttp.Interceptor {
+func newAuthInterceptor(validator *validator.Validator) kitNetHttp.Interceptor {
 	authRules := kitNetHttp.NewDefaultAuthorizationRules(uri.API)
 
 	whiteList := []kitNetHttp.RequestMatcher{
@@ -266,7 +258,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 
 	requestHandler := NewRequestHandler(config.APIs.HTTP.Authorization.OwnerClaim, provider, subMgr, store, taskProcessor.Trigger, tracerProvider)
 
-	auth := newAuthInterceptor(ctx, validator)
+	auth := newAuthInterceptor(validator)
 
 	httpHandler, err := NewHTTP(requestHandler, auth, logger)
 	if err != nil {

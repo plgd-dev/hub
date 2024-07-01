@@ -7,12 +7,11 @@ import (
 
 	"github.com/plgd-dev/hub/v2/pkg/net/http/client"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
-	pkgJwt "github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"golang.org/x/oauth2"
 )
 
 // NewPlgdProvider creates OAuth client
-func NewClientCredentialsPlgdProvider(config Config, httpClient *client.Client, jwksURL string, ownerClaim, deviceIDClaim string, validator *jwt.Validator) *ClientCredentialsPlgdProvider {
+func NewClientCredentialsPlgdProvider(config Config, httpClient *client.Client, ownerClaim, deviceIDClaim string, validator *jwt.Validator) *ClientCredentialsPlgdProvider {
 	return &ClientCredentialsPlgdProvider{
 		Config:        config,
 		HTTPClient:    httpClient,
@@ -28,22 +27,22 @@ type ClientCredentialsPlgdProvider struct {
 	HTTPClient    *client.Client
 	ownerClaim    string
 	deviceIDClaim string
-	jwtValidator  *pkgJwt.Validator
+	jwtValidator  *jwt.Validator
 }
 
-func (p *ClientCredentialsPlgdProvider) parseToken(ctx context.Context, accessToken string) (pkgJwt.Claims, error) {
+func (p *ClientCredentialsPlgdProvider) parseToken(ctx context.Context, accessToken string) (jwt.Claims, error) {
 	if p.jwtValidator != nil {
 		claims, err := p.jwtValidator.ParseWithContext(ctx, accessToken)
 		if err != nil {
 			return nil, fmt.Errorf("cannot verify authorization code: %w", err)
 		}
-		return pkgJwt.Claims(claims), nil
+		return jwt.Claims(claims), nil
 	}
-	claims, err := pkgJwt.ParseToken(accessToken)
+	claims, err := jwt.ParseToken(accessToken)
 	if err != nil {
 		return nil, fmt.Errorf("cannot parse authorization code: %w", err)
 	}
-	return pkgJwt.Claims(claims), nil
+	return claims, nil
 }
 
 // Exchange Auth Code for Access Token via OAuth
