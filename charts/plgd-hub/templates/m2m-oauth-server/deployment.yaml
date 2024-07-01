@@ -62,8 +62,8 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          image: {{ include "plgd-hub.image" (list . .Values.httpgateway) | quote }}
-          imagePullPolicy: {{ .Values.httpgateway.image.pullPolicy }}
+          image: {{ include "plgd-hub.image" (list . .Values.m2moauthserver) | quote }}
+          imagePullPolicy: {{ .Values.m2moauthserver.image.pullPolicy }}
           {{- if .Values.m2moauthserver.command }}
           command:
           {{- range .Values.m2moauthserver.command  }}
