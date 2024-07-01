@@ -28,6 +28,7 @@ spec:
       labels:
         {{- include "plgd-hub.m2moauthserver.selectorLabels" . | nindent 8 }}
     spec:
+      automountServiceAccountToken: false
       {{- with .Values.m2moauthserver.securityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
