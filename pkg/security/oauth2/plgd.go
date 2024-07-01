@@ -45,7 +45,7 @@ func NewPlgdProvider(ctx context.Context, config Config, fileWatcher *fsnotify.W
 	config.TokenURL = oidcfg.TokenURL
 	var p provider
 	if config.GrantType == oauth.ClientCredentials {
-		p = NewClientCredentialsPlgdProvider(config, httpClient, oidcfg.JWKSURL, ownerClaim, deviceIDClaim, validator)
+		p = NewClientCredentialsPlgdProvider(config, httpClient, ownerClaim, deviceIDClaim, validator)
 	} else {
 		p = NewAuthCodePlgdProvider(config, httpClient)
 	}
