@@ -10,6 +10,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/pkg/net/http/server"
 	"github.com/plgd-dev/hub/v2/pkg/net/listener"
+	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
 )
 
 type AsymmetricKey struct {
@@ -27,25 +28,49 @@ const (
 	GrantTypeClientCredentials GrantType = "client_credentials"
 )
 
-type Authority struct{}
+type PrivateKeyJWTConfig struct {
+	Enabled       bool             `yaml:"enabled"`
+	Authorization validator.Config `yaml:"authorization,omitempty"`
+}
+
+func (c *PrivateKeyJWTConfig) Validate() error {
+	if !c.Enabled {
+		return nil
+	}
+	if err := c.Authorization.Validate(); err != nil {
+		return fmt.Errorf("authorization.%w", err)
+	}
+	return nil
+}
 
 type Client struct {
-	ID                  string        `yaml:"id"`
-	ClientSecret        string        `yaml:"secret"`
-	RequireDeviceID     bool          `yaml:"requireDeviceID"`
-	RequireOwner        bool          `yaml:"requireOwner"`
-	AccessTokenLifetime time.Duration `yaml:"accessTokenLifetime"`
-	AllowedGrantTypes   []GrantType   `yaml:"allowedGrantTypes"`
-	AllowedAudiences    []string      `yaml:"allowedAudiences"`
-	AllowedScopes       []string      `yaml:"allowedScopes"`
+	ID                  string              `yaml:"id"`
+	SecretFile          urischeme.URIScheme `yaml:"secretFile"`
+	RequireDeviceID     bool                `yaml:"requireDeviceID"`
+	RequireOwner        bool                `yaml:"requireOwner"`
+	AccessTokenLifetime time.Duration       `yaml:"accessTokenLifetime"`
+	AllowedGrantTypes   []GrantType         `yaml:"allowedGrantTypes"`
+	AllowedAudiences    []string            `yaml:"allowedAudiences"`
+	AllowedScopes       []string            `yaml:"allowedScopes"`
+	PrivateKeyJWT       PrivateKeyJWTConfig `yaml:"privateKeyJWT"`
+
+	// runtime
+	secret string `yaml:"-"`
 }
 
 func (c *Client) Validate(ownerClaim, deviceIDClaim string) error {
 	if c.ID == "" {
 		return fmt.Errorf("id('%v')", c.ID)
 	}
-	if c.ClientSecret == "" {
-		return fmt.Errorf("secret('%v')", c.ClientSecret)
+	if !c.PrivateKeyJWT.Enabled {
+		if c.SecretFile == "" {
+			return fmt.Errorf("secretFile('%v') - one of [secretFile, privateKeyJWT] need to be set", c.SecretFile)
+		}
+		data, err := c.SecretFile.Read()
+		if err != nil {
+			return fmt.Errorf("secretFile('%v') - %w", c.SecretFile, err)
+		}
+		c.secret = string(data)
 	}
 	if len(c.AllowedGrantTypes) == 0 {
 		return fmt.Errorf("allowedGrantTypes('%v')", c.AllowedGrantTypes)
@@ -62,6 +87,9 @@ func (c *Client) Validate(ownerClaim, deviceIDClaim string) error {
 	}
 	if c.RequireOwner && ownerClaim == "" {
 		return fmt.Errorf("requireOwner('%v') - oauthSigner.ownerClaim('%v') is empty", c.RequireOwner, ownerClaim)
+	}
+	if err := c.PrivateKeyJWT.Validate(); err != nil {
+		return fmt.Errorf("privateKeyJWT.%w", err)
 	}
 	return nil
 }

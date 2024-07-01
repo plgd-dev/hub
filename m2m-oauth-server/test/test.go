@@ -33,7 +33,7 @@ const (
 
 var ServiceOAuthClient = service.Client{
 	ID:                  "serviceClient",
-	ClientSecret:        "serviceClientSecret",
+	SecretFile:          "data:,serviceClientSecret",
 	RequireDeviceID:     false,
 	RequireOwner:        false,
 	AccessTokenLifetime: 0,
@@ -42,20 +42,24 @@ var ServiceOAuthClient = service.Client{
 	AllowedScopes:       nil,
 }
 
-var SnippetServiceOAuthClient = service.Client{
-	ID:                  "snippetServiceClient",
-	ClientSecret:        "snippetServiceClientSecret",
+var JWTPrivateKeyOAuthClient = service.Client{
+	ID:                  "JWTPrivateKeyClient",
+	SecretFile:          "data:,JWTPrivateKeyClientSecret",
 	RequireDeviceID:     false,
 	RequireOwner:        true,
 	AccessTokenLifetime: 0,
 	AllowedGrantTypes:   []service.GrantType{service.GrantTypeClientCredentials},
 	AllowedAudiences:    nil,
 	AllowedScopes:       nil,
+	PrivateKeyJWT: service.PrivateKeyJWTConfig{
+		Enabled:       true,
+		Authorization: config.MakeAuthorizationConfig(),
+	},
 }
 
 var DeviceProvisioningServiceOAuthClient = service.Client{
 	ID:                  "deviceProvisioningServiceClient",
-	ClientSecret:        "deviceProvisioningServiceClientSecret",
+	SecretFile:          "data:,deviceProvisioningServiceClientSecret",
 	RequireDeviceID:     true,
 	RequireOwner:        true,
 	AccessTokenLifetime: 0,
@@ -66,7 +70,7 @@ var DeviceProvisioningServiceOAuthClient = service.Client{
 
 var OAuthClients = service.OAuthClientsConfig{
 	&ServiceOAuthClient,
-	&SnippetServiceOAuthClient,
+	&JWTPrivateKeyOAuthClient,
 	&DeviceProvisioningServiceOAuthClient,
 }
 
@@ -124,7 +128,9 @@ func New(t require.TestingT, cfg service.Config) func() {
 func GetSecret(t require.TestingT, clientID string) string {
 	for _, c := range OAuthClients {
 		if c.ID == clientID {
-			return c.ClientSecret
+			data, err := c.SecretFile.Read()
+			require.NoError(t, err)
+			return string(data)
 		}
 	}
 	require.FailNow(t, "client not found")
@@ -200,6 +206,7 @@ type AccessTokenOptions struct {
 	DeviceID     string
 	GrantType    string
 	Audience     string
+	JWT          string
 }
 
 func WithAccessTokenOptions(options AccessTokenOptions) func(opts *AccessTokenOptions) {
@@ -250,11 +257,17 @@ func WithAccessTokenHost(host string) func(opts *AccessTokenOptions) {
 	}
 }
 
+func WithAccessTokenJWT(jwt string) func(opts *AccessTokenOptions) {
+	return func(opts *AccessTokenOptions) {
+		opts.JWT = jwt
+	}
+}
+
 func GetAccessToken(t require.TestingT, expectedCode int, opts ...func(opts *AccessTokenOptions)) map[string]string {
 	options := AccessTokenOptions{
 		Host:         config.M2M_OAUTH_SERVER_HTTP_HOST,
 		ClientID:     ServiceOAuthClient.ID,
-		ClientSecret: ServiceOAuthClient.ClientSecret,
+		ClientSecret: GetSecret(t, ServiceOAuthClient.ID),
 		GrantType:    string(service.GrantTypeClientCredentials),
 	}
 	for _, o := range opts {
@@ -271,11 +284,21 @@ func GetAccessToken(t require.TestingT, expectedCode int, opts ...func(opts *Acc
 	if options.DeviceID != "" {
 		reqBody[uri.DeviceIDKey] = options.DeviceID
 	}
+	if options.Audience != "" {
+		reqBody[uri.AudienceKey] = options.Audience
+	}
+	if options.JWT != "" {
+		reqBody[uri.ClientAssertionKey] = options.JWT
+		reqBody[uri.ClientAssertionTypeKey] = uri.ClientAssertionTypeJWT
+	}
 	d, err := json.Encode(reqBody)
 	require.NoError(t, err)
 
 	getReq := NewRequestBuilder(http.MethodPost, options.Host, uri.Token, bytes.NewReader(d)).Build()
 	getReq.SetBasicAuth(options.ClientID, options.ClientSecret)
+
+	fmt.Printf("getReq: %s\n", d)
+
 	res := HTTPDo(t, getReq, false)
 	defer func() {
 		_ = res.Body.Close()

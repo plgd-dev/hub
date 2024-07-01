@@ -42,17 +42,7 @@ data:
           clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
         authorization:
           {{- $authorization := .apis.grpc.authorization }}
-          {{- include "plgd-hub.authorizationConfig" (list $ $authorization "grpcgateway" ) | indent 8 }}
-          http:
-            maxIdleConns: {{ .apis.grpc.authorization.http.maxIdleConns }}
-            maxConnsPerHost: {{ .apis.grpc.authorization.http.maxIdleConnsPerHost }}
-            maxIdleConnsPerHost: {{ .apis.grpc.authorization.http.maxIdleConnsPerHost }}
-            idleConnTimeout: {{ .apis.grpc.authorization.http.idleConnTimeout }}
-            timeout: {{ .apis.grpc.authorization.http.timeout }}
-            tls:
-              {{- $grpcTls := .apis.grpc.authorization.http.tls }}
-              {{- include "plgd-hub.authorizationCaCertificateConfig" (list $ $grpcTls $grpcGatewayCertPath ) | indent 12 }}
-              useSystemCAPool: {{ .apis.grpc.authorization.http.tls.useSystemCAPool }}
+          {{- include "plgd-hub.authorizationConfig" (list $ $authorization "grpcgateway.apis.grpc.authorization" $grpcGatewayCertPath ) | indent 8 }}
     clients:
       eventBus:
         goPoolSize: {{ .clients.eventBus.goPoolSize }}

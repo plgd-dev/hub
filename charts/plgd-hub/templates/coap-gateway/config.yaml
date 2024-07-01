@@ -56,10 +56,10 @@ data:
           identityPropertiesRequired: {{ .apis.coap.tls.identityPropertiesRequired }}
           {{- end }}
         authorization:
-          ownerClaim: {{ .apis.coap.authorization.ownerClaim | default $.Values.global.ownerClaim | quote }}
           {{- if .apis.coap.authorization.deviceIdClaim | default $.Values.global.deviceIdClaim | quote }}
           deviceIDClaim: {{ .apis.coap.authorization.deviceIdClaim | default $.Values.global.deviceIdClaim | quote }}
           {{- end }}
+          {{- include "plgd-hub.authorizationConfig" (list $ .apis.coap.authorization "coapgateway.apis.coap.authorization" $coapGatewayClientCertPath ) | indent 8 }}
           providers:
           {{- $providers := $.Values.mockoauthserver.oauth }}
           {{- if not $.Values.mockoauthserver.enabled }}
