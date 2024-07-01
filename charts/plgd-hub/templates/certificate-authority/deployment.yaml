@@ -51,7 +51,7 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          image: {{ include "plgd-hub.certificateauthority.image" . | quote }}
+          image: {{ include "plgd-hub.image" (list . .Values.certificateauthority) | quote }}
           imagePullPolicy: {{ .Values.certificateauthority.image.pullPolicy }}
           {{- if .Values.certificateauthority.command }}
           command:

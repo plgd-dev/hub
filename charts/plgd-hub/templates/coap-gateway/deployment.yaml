@@ -51,7 +51,7 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          image: {{ include "plgd-hub.coapgateway.image" . | quote }}
+          image: {{ include "plgd-hub.image" (list . .Values.coapgateway) | quote }}
           imagePullPolicy: {{ .Values.coapgateway.image.pullPolicy }}
           {{- if .Values.coapgateway.command }}
           command:

@@ -1,10 +1,3 @@
-{{- define  "plgd-hub.identitystore.image" -}}
-    {{- $registryName :=  .Values.identitystore.image.registry | default "" -}}
-    {{- $repositoryName := .Values.identitystore.image.repository -}}
-    {{- $tag := .Values.identitystore.image.tag | default .Chart.AppVersion | toString -}}
-    {{- printf "%s%s:%s" $registryName $repositoryName  $tag -}}
-{{- end -}}
-
 {{- define  "plgd-hub.identitystore.configName" -}}
     {{- $fullName :=  include "plgd-hub.identitystore.fullname" . -}}
     {{- printf "%s-cfg" $fullName }}

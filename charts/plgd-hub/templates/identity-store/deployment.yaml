@@ -50,7 +50,7 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          image: {{ include "plgd-hub.identitystore.image" . | quote }}
+          image: {{ include "plgd-hub.image" (list . .Values.identitystore) | quote }}
           imagePullPolicy: {{ .Values.identitystore.image.pullPolicy }}
           {{- if .Values.identitystore.command }}
           command:

@@ -11,13 +11,6 @@
 {{- end }}
 {{- end }}
 
-{{- define  "plgd-hub.resourcedirectory.image" -}}
-    {{- $registryName := .Values.resourcedirectory.image.registry | default "" -}}
-    {{- $repositoryName := .Values.resourcedirectory.image.repository -}}
-    {{- $tag := .Values.resourcedirectory.image.tag | default .Chart.AppVersion | toString -}}
-    {{- printf "%s%s:%s" $registryName $repositoryName  $tag -}}
-{{- end -}}
-
 {{- define  "plgd-hub.resourcedirectory.configName" -}}
     {{- $fullName :=  include "plgd-hub.resourcedirectory.fullname" . -}}
     {{- printf "%s-cfg" $fullName }}

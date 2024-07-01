@@ -663,3 +663,12 @@ true
 {{- end -}}
 {{- printf "%s" $ca }}
 {{- end -}}
+
+{{- define  "plgd-hub.image" -}}
+{{- $ := index . 0 -}}
+{{- $service := index . 1 }}
+{{- $registryName := $service.image.registry | default "" -}}
+{{- $repositoryName := $service.image.repository -}}
+{{- $tag := $service.image.tag | default $.Values.global.image.tag | default $.Chart.AppVersion | toString -}}
+{{- printf "%s%s:%s" $registryName $repositoryName  $tag -}}
+{{- end -}}
