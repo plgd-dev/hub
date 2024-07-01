@@ -1,6 +1,7 @@
 export type Props = {
     columns: any
     data: any
+    dataTestId?: string
     defaultPageSize?: number
     defaultSortBy: {
         id: string

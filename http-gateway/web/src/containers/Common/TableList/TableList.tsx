@@ -18,6 +18,7 @@ const TableList: FC<Props> = (props) => {
     const {
         columns,
         data,
+        dataTestId,
         defaultPageSize,
         defaultSortBy,
         globalSearch,
@@ -60,6 +61,7 @@ const TableList: FC<Props> = (props) => {
                 autoHeight
                 columns={columns}
                 data={validData(data)}
+                dataTestId={dataTestId}
                 defaultPageSize={defaultPageSize ?? DEFAULT_PAGE_SIZE}
                 defaultSortBy={defaultSortBy}
                 globalSearch={globalSearch}

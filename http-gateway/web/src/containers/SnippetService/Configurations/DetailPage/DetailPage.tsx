@@ -55,6 +55,7 @@ const DetailPage: FC<any> = () => {
     )
 
     const { Selector, data, setSearchParams } = useVersion({
+        dataTestId: testId.snippetService.configurations.detail.versionSelector,
         i18n: { version: _(g.version), selectVersion: _(confT.selectVersion) },
         versionData: configurationData,
         refresh,

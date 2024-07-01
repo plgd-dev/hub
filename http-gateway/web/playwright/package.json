@@ -8,7 +8,7 @@
     "test": "npx playwright test",
     "test:ui": "npx playwright test --ui",
     "test:debug": "npx playwright test --debug",
-    "test:r": "npx playwright test devices/detail.spec.ts --debug --update-snapshots"
+    "test:r": "npx playwright test snippet-service/list.spec.ts --debug --update-snapshots"
   },
   "keywords": [],
   "author": "",

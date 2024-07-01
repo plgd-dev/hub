@@ -24,6 +24,7 @@ const PageListTemplate: FC<Props> = (props) => {
         refresh,
         i18n,
         onDetailClick,
+        tableDataTestId,
     } = { ...defaultProps, ...props }
 
     const [selected, setSelected] = useState<string[]>([])
@@ -111,6 +112,7 @@ const PageListTemplate: FC<Props> = (props) => {
             <TableList
                 columns={columns}
                 data={data}
+                dataTestId={tableDataTestId}
                 defaultSortBy={[
                     {
                         id: 'name',

@@ -24,6 +24,7 @@ export type Props = {
     onDetailClick: (id: string) => void
     onInvoke?: (id: string) => void
     refresh: () => void
+    tableDataTestId?: string
 }
 
 export const defaultProps: Partial<Props> = {

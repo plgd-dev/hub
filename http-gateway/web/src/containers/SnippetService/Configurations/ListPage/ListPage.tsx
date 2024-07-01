@@ -18,6 +18,7 @@ import { deleteConfigurationsApi, invokeConfigurationApi } from '@/containers/Sn
 import { getConfigurationsPageListI18n } from '@/containers/SnippetService/utils'
 import DateFormat from '@/containers/PendingCommands/DateFormat'
 import InvokeModal from '@/containers/SnippetService/Configurations/InvokeModal'
+import testId from '@/testId'
 
 const ListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
@@ -152,6 +153,7 @@ const ListPage: FC<any> = () => {
                 onDetailClick={(id: string) => navigate(generatePath(pages.SNIPPET_SERVICE.CONFIGURATIONS.DETAIL.LINK, { configurationId: id, tab: '' }))}
                 onInvoke={(id: string) => setShowInvoke(id)}
                 refresh={() => refresh()}
+                tableDataTestId={testId.snippetService.configurations.list.table}
             />
             <InvokeModal handleClose={() => setShowInvoke(undefined)} handleInvoke={handleInvoke} show={!!showInvoke} />
         </PageLayout>

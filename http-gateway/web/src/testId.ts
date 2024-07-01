@@ -4,6 +4,10 @@ const testId = {
     },
     menu: {
         devices: 'hub-menu-item-devices',
+        snippetService: {
+            link: 'hub-menu-item-snippet-service',
+            configurations: 'hub-menu-item-snippet-service-configurations',
+        },
     },
     devices: {
         detail: {
@@ -90,6 +94,9 @@ const testId = {
     },
     snippetService: {
         configurations: {
+            list: {
+                table: 'hub-snippet-service-configurations-list-table',
+            },
             detail: {
                 deleteButton: 'hub-snippet-service-configurations-detail-delete-button',
                 deleteButtonConfirm: 'hub-snippet-service-configurations-detail-delete-button-confirm',
@@ -97,6 +104,7 @@ const testId = {
                 tabGeneral: 'hub-snippet-service-configurations-detail-tab-general',
                 tabConditions: 'hub-snippet-service-configurations-detail-tab-conditions',
                 tabAppliedConfiguration: 'hub-snippet-service-configurations-detail-tab-applied-configuration',
+                versionSelector: 'hub-snippet-service-configurations-detail-version-selector',
             },
         },
         conditions: {

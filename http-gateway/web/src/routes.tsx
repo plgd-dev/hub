@@ -299,14 +299,15 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                 title: <MenuTranslate id='menuSnippetService' />,
                 link: pages.SNIPPET_SERVICE.LINK,
                 paths: [pages.SNIPPET_SERVICE.LINK],
-
                 exact: true,
+                dataTestId: testId.menu.snippetService.link,
                 visibility: menuConfig.menuSnippetService || true,
                 children: [
                     {
                         id: '111',
                         title: <MenuTranslate id='menuConfigurations' />,
                         link: '/configurations',
+                        dataTestId: testId.menu.snippetService.configurations,
                         paths: [
                             pages.SNIPPET_SERVICE.CONFIGURATIONS.LINK,
                             pages.SNIPPET_SERVICE.CONFIGURATIONS.DETAIL.LINK_NO_TABS,
