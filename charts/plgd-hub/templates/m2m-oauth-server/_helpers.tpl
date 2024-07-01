@@ -37,11 +37,7 @@
 {{- end }}
 
 {{- define "plgd-hub.m2moauthserver.uri" -}}
-  {{- if .Values.m2moauthserver.domain }}
-    {{- printf "https://%s" .Values.m2moauthserver.domain }}
-  {{- else }}
-    {{- printf "https://m2m-auth.%s" .Values.global.domain }}
-  {{- end }}
+{{- printf "https://%s" (include "plgd-hub.m2moauthserver.ingressDomain" .) }}
 {{- end }}
 
 
@@ -49,7 +45,7 @@
   {{- if .Values.m2moauthserver.domain }}
     {{- printf "%s" .Values.m2moauthserver.domain }}
   {{- else }}
-    {{- printf "%s" .Values.global.domain }}
+    {{- printf "m2m-auth.%s" .Values.global.domain }}
   {{- end }}
 {{- end }}
 

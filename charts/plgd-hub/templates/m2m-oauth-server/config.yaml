@@ -57,8 +57,17 @@ data:
             enabled: {{ .privateKeyJWT.enabled }}
             {{- if .privateKeyJWT.enabled }}
             authorization:
-              {{- $authorization := .privateKeyJWT.authorization }}
-              {{- include "plgd-hub.authorizationConfig" (list $ $authorization (printf "m2moauthserver.oauthSigner.clients[%v].privateKeyJWT.authorization" $idx) $oauthServerCertPath) | indent 12 }}
+              {{- $authorization := include "plgd-hub.basicAuthorizationConfig" (list $ .privateKeyJWT.authorization (printf "m2moauthserver.oauthSigner.clients[%v].privateKeyJWT.authorization" $idx) $oauthServerCertPath) | fromYaml }}
+              {{- if $authorization.audience }}
+              audience: {{ $authorization.audience | quote }}
+              {{- end }}
+              endpoints:
+              {{- range $authorization.endpoints }}
+              {{- if not (eq .address (include "plgd-hub.m2moauthserver.uri" $)) }}
+                - address: {{ .address | quote }}
+                  http: {{- .http | toYaml | nindent 20}}
+              {{- end }}
+              {{- end }}
             {{- end }}
         {{- end }}
     clients:

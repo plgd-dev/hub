@@ -227,7 +227,7 @@ tls:
   {{- $authorization := index . 1 }}
   {{- $prefix := index . 2 }}
   {{- $certPath := index . 3 }}
-  ownerClaim:{{ printf " " }}{{ required (printf "%s.authorization.ownerClaim or global.ownerClaim is required " $prefix) ( $authorization.ownerClaim | default $.Values.global.ownerClaim ) | quote }}
+  ownerClaim: {{ required (printf "%s.authorization.ownerClaim or global.ownerClaim is required " $prefix) ( $authorization.ownerClaim | default $.Values.global.ownerClaim ) | quote }}
   {{- include "plgd-hub.basicAuthorizationConfig" (list $ $authorization $prefix $certPath) }}
 {{- end }}
 
