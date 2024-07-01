@@ -62,9 +62,9 @@ func AppliedConfigurationResource(t *testing.T, deviceID string, start, n int) [
 	return resources
 }
 
-func getAppliedConfigurations(t *testing.T) map[string]*pb.AppliedConfiguration {
+func getAppliedConfigurations(t *testing.T) map[string]*store.AppliedConfiguration {
 	owners := make(map[int]string, RuntimeConfig.NumConfigurations)
-	acs := make(map[string]*pb.AppliedConfiguration)
+	acs := make(map[string]*store.AppliedConfiguration)
 	i := 0
 	for d := range RuntimeConfig.numDevices {
 		for c := range RuntimeConfig.NumConfigurations {
@@ -74,7 +74,7 @@ func getAppliedConfigurations(t *testing.T) map[string]*pb.AppliedConfiguration 
 				owners[i%RuntimeConfig.NumConfigurations] = owner
 			}
 			deviceID := DeviceID(d)
-			ac := &pb.AppliedConfiguration{
+			ac := store.MakeAppliedConfiguration(&pb.AppliedConfiguration{
 				Id:       AppliedConfigurationID(i),
 				DeviceId: deviceID,
 				Owner:    owner,
@@ -84,18 +84,18 @@ func getAppliedConfigurations(t *testing.T) map[string]*pb.AppliedConfiguration 
 				},
 				Resources: AppliedConfigurationResource(t, deviceID, i%16, (i%5)+1),
 				Timestamp: time.Now().UnixNano(),
-			}
-			SetAppliedConfigurationExecutedBy(ac, i)
-			acs[ac.GetId()] = ac
+			})
+			SetAppliedConfigurationExecutedBy(ac.GetAppliedConfiguration(), i)
+			acs[ac.GetId()] = &ac
 			i++
 		}
 	}
 	return acs
 }
 
-func AddAppliedConfigurationsToStore(ctx context.Context, t *testing.T, s store.Store) map[string]*pb.AppliedConfiguration {
+func AddAppliedConfigurationsToStore(ctx context.Context, t *testing.T, s store.Store) map[string]*store.AppliedConfiguration {
 	acs := getAppliedConfigurations(t)
-	acsToInsert := make([]*pb.AppliedConfiguration, 0, len(acs))
+	acsToInsert := make([]*store.AppliedConfiguration, 0, len(acs))
 	for _, c := range acs {
 		acsToInsert = append(acsToInsert, c)
 	}
@@ -104,13 +104,14 @@ func AddAppliedConfigurationsToStore(ctx context.Context, t *testing.T, s store.
 	return acs
 }
 
-func AddAppliedConfigurations(ctx context.Context, t *testing.T, ownerClaim string, ss *service.Service) map[string]*pb.AppliedConfiguration {
+func AddAppliedConfigurations(ctx context.Context, t *testing.T, ownerClaim string, ss *service.Service) map[string]*store.AppliedConfiguration {
 	configurations := getAppliedConfigurations(t)
 	for _, c := range configurations {
 		ctxWithToken := pkgGrpc.CtxWithIncomingToken(ctx, GetTokenWithOwnerClaim(t, c.GetOwner(), ownerClaim))
-		newConf, err := ss.SnippetServiceServer().CreateAppliedConfiguration(ctxWithToken, c)
+		newConf, err := ss.SnippetServiceServer().CreateAppliedConfiguration(ctxWithToken, c.GetAppliedConfiguration())
 		require.NoError(t, err)
-		configurations[newConf.GetId()] = newConf
+		c.Timestamp = newConf.GetTimestamp()
+		configurations[newConf.GetId()] = c
 	}
 	return configurations
 }

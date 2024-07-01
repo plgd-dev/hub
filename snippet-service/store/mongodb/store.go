@@ -3,7 +3,6 @@ package mongodb
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
@@ -19,8 +18,6 @@ import (
 
 type Store struct {
 	*pkgMongo.Store
-
-	writeLock sync.RWMutex
 }
 
 const (
@@ -28,6 +25,13 @@ const (
 	configurationsCol        = "configurations"
 	appliedConfigurationsCol = "appliedConfigurations"
 )
+
+var idUniqueIndex = mongo.IndexModel{
+	Keys: bson.D{
+		{Key: store.IDKey, Value: 1},
+	},
+	Options: options.Index().SetUnique(true),
+}
 
 var deviceIDConfigurationIDUniqueIndex = mongo.IndexModel{
 	Keys: bson.D{
@@ -46,7 +50,7 @@ func New(ctx context.Context, cfg *Config, fileWatcher *fsnotify.Watcher, logger
 	m, err := pkgMongo.NewStoreWithCollections(ctx, &cfg.Mongo, certManager.GetTLSConfig(), tracerProvider, map[string][]mongo.IndexModel{
 		conditionsCol:            nil,
 		configurationsCol:        nil,
-		appliedConfigurationsCol: {deviceIDConfigurationIDUniqueIndex},
+		appliedConfigurationsCol: {idUniqueIndex, deviceIDConfigurationIDUniqueIndex},
 	})
 	if err != nil {
 		certManager.Close()

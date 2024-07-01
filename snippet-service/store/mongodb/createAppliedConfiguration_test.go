@@ -47,7 +47,7 @@ func TestStoreCreateAppliedConfiguration(t *testing.T) {
 		},
 	}
 
-	_, _, err := s.CreateAppliedConfiguration(ctx, &pb.AppliedConfiguration{
+	appliedConf1, _, err := s.CreateAppliedConfiguration(ctx, &pb.AppliedConfiguration{
 		Id:              appliedConfID1,
 		Owner:           owner,
 		DeviceId:        deviceID,
@@ -76,10 +76,11 @@ func TestStoreCreateAppliedConfiguration(t *testing.T) {
 		force bool
 	}
 	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
-		want    *pb.AppliedConfiguration
+		name         string
+		args         args
+		wantErr      bool
+		want         *pb.AppliedConfiguration
+		wantReplaced *pb.AppliedConfiguration
 	}{
 		{
 			name: "invalid ID",
@@ -261,6 +262,7 @@ func TestStoreCreateAppliedConfiguration(t *testing.T) {
 				ExecutedBy:      executedBy2,
 				Resources:       []*pb.AppliedConfiguration_Resource{resource2},
 			},
+			wantReplaced: appliedConf1,
 		},
 		{
 			name: "new (force)",
@@ -304,12 +306,18 @@ func TestStoreCreateAppliedConfiguration(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, _, err := s.CreateAppliedConfiguration(ctx, tt.args.adc, tt.args.force)
+			got, gotReplaced, err := s.CreateAppliedConfiguration(ctx, tt.args.adc, tt.args.force)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
 			}
 			require.NoError(t, err)
+			if tt.wantReplaced != nil {
+				require.NotNil(t, gotReplaced)
+				test.CmpAppliedDeviceConfiguration(t, tt.wantReplaced, gotReplaced, true)
+			} else {
+				require.Nil(t, gotReplaced)
+			}
 			test.CmpAppliedDeviceConfiguration(t, tt.want, got, true)
 		})
 	}

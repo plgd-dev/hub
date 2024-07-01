@@ -10,7 +10,8 @@ import (
 )
 
 const (
-	IDKey              = "_id"             // must match with Id field tag
+	RecordIDKey        = "_id"
+	IDKey              = "id"              // must match with Id field tag
 	DeviceIDKey        = "deviceId"        // must match with DeviceId field tag
 	OwnerKey           = "owner"           // must match with Owner field tag
 	LatestKey          = "latest"          // must match with Latest field tag
@@ -51,10 +52,10 @@ type Iterator[T any] interface {
 }
 
 type (
-	Process[T any]                      func(v *T) error
-	ProccessAppliedDeviceConfigurations = Process[pb.AppliedConfiguration]
-	ProcessConfigurations               = Process[Configuration]
-	ProcessConditions                   = Process[Condition]
+	Process[T any]                func(v *T) error
+	ProccessAppliedConfigurations = Process[AppliedConfiguration]
+	ProcessConfigurations         = Process[Configuration]
+	ProcessConditions             = Process[Condition]
 )
 
 var (
@@ -116,7 +117,7 @@ type Store interface {
 	GetLatestConfigurationsByID(ctx context.Context, owner string, ids []string, p ProcessConfigurations) error
 
 	// GetAppliedConfigurations loads applied device configurations from the database.
-	GetAppliedConfigurations(ctx context.Context, owner string, query *pb.GetAppliedConfigurationsRequest, p ProccessAppliedDeviceConfigurations) error
+	GetAppliedConfigurations(ctx context.Context, owner string, query *pb.GetAppliedConfigurationsRequest, p ProccessAppliedConfigurations) error
 	// DeleteAppliedConfigurations deletes applied device configurations from the database.
 	DeleteAppliedConfigurations(ctx context.Context, owner string, query *pb.DeleteAppliedConfigurationsRequest) (int64, error)
 	// CreateAppliedConfiguration creates a new applied device configuration in the database.
@@ -126,7 +127,7 @@ type Store interface {
 	// The first return value is the created applied device configuration. The second return value is the applied device configuration that was replaced if the force flag was set to true.
 	CreateAppliedConfiguration(ctx context.Context, conf *pb.AppliedConfiguration, force bool) (*pb.AppliedConfiguration, *pb.AppliedConfiguration, error)
 	// InsertAppliedConditions inserts applied configurations into the database.
-	InsertAppliedConfigurations(ctx context.Context, configurations ...*pb.AppliedConfiguration) error
+	InsertAppliedConfigurations(ctx context.Context, configurations ...*AppliedConfiguration) error
 	// UpdateAppliedConfiguration updates an existing applied device configuration in the database.
 	UpdateAppliedConfiguration(ctx context.Context, conf *pb.AppliedConfiguration) (*pb.AppliedConfiguration, error)
 	// UpdateAppliedConfigurationResource updates an existing applied device configuration resource in the database.

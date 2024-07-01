@@ -99,13 +99,17 @@ func (r *AppliedConfiguration_Resource) MarshalBSON() ([]byte, error) {
 	return pkgMongo.MarshalProtoBSON(r, nil)
 }
 
-func (c *AppliedConfiguration) Clone() *AppliedConfiguration {
+func (c *AppliedConfiguration) CloneExecutedBy() isAppliedConfiguration_ExecutedBy {
 	var executedBy isAppliedConfiguration_ExecutedBy
 	if c.GetOnDemand() {
 		executedBy = MakeExecutedByOnDemand()
 	} else if rt := c.GetConditionId(); rt != nil {
 		executedBy = MakeExecutedByConditionId(rt.GetId(), rt.GetVersion())
 	}
+	return executedBy
+}
+
+func (c *AppliedConfiguration) CloneAppliedConfiguration_Resources() []*AppliedConfiguration_Resource {
 	var resources []*AppliedConfiguration_Resource
 	if len(c.GetResources()) > 0 {
 		resources = make([]*AppliedConfiguration_Resource, 0, len(c.GetResources()))
@@ -113,36 +117,24 @@ func (c *AppliedConfiguration) Clone() *AppliedConfiguration {
 			resources = append(resources, r.Clone())
 		}
 	}
+	return resources
+}
+
+func (c *AppliedConfiguration) Clone() *AppliedConfiguration {
 	return &AppliedConfiguration{
 		Id:              c.GetId(),
 		DeviceId:        c.GetDeviceId(),
 		ConfigurationId: c.GetConfigurationId().Clone(),
-		ExecutedBy:      executedBy,
-		Resources:       resources,
+		ExecutedBy:      c.CloneExecutedBy(),
+		Resources:       c.CloneAppliedConfiguration_Resources(),
 		Owner:           c.GetOwner(),
 		Timestamp:       c.GetTimestamp(),
 	}
 }
 
-func renameKey(json map[string]interface{}, oldKey, newKey string) {
-	if v, ok := json[oldKey]; ok {
-		json[newKey] = v
-		delete(json, oldKey)
-	}
-}
-
 func (c *AppliedConfiguration) jsonToBSONTag(json map[string]interface{}) {
-	renameKey(json, "id", "_id")
 	pkgMongo.ConvertStringValueToInt(json, "configurationId.version")
 	pkgMongo.ConvertStringValueToInt(json, "conditionId.version")
-}
-
-func (c *AppliedConfiguration) bsonToJSONTag(json map[string]interface{}) {
-	renameKey(json, "_id", "id")
-}
-
-func (c *AppliedConfiguration) UnmarshalBSON(data []byte) error {
-	return pkgMongo.UnmarshalProtoBSON(data, c, c.bsonToJSONTag)
 }
 
 func (c *AppliedConfiguration) MarshalBSON() ([]byte, error) {

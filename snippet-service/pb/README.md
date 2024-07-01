@@ -41,16 +41,16 @@
 <a name="snippetservice-pb-AppliedConfiguration"></a>
 
 ### AppliedConfiguration
-TODO naming
+
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  | @gotags: bson:&#34;_id&#34; |
+| id | [string](#string) |  |  |
 | device_id | [string](#string) |  | @gotags: bson:&#34;deviceId&#34; |
 | configuration_id | [AppliedConfiguration.RelationTo](#snippetservice-pb-AppliedConfiguration-RelationTo) |  | @gotags: bson:&#34;configurationId&#34; |
 | on_demand | [bool](#bool) |  |  |
-| condition_id | [AppliedConfiguration.RelationTo](#snippetservice-pb-AppliedConfiguration-RelationTo) |  | @gotags: bson:&#34;conditionId&#34; //TODO Naming |
+| condition_id | [AppliedConfiguration.RelationTo](#snippetservice-pb-AppliedConfiguration-RelationTo) |  | @gotags: bson:&#34;conditionId&#34; |
 | resources | [AppliedConfiguration.Resource](#snippetservice-pb-AppliedConfiguration-Resource) | repeated | TODO naming |
 | owner | [string](#string) |  |  |
 | timestamp | [int64](#int64) |  | Unix timestamp in ns when the applied device configuration has been created/updated |

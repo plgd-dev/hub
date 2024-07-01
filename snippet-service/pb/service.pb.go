@@ -773,7 +773,7 @@ type AppliedConfiguration struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id              string                           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" bson:"_id"`
+	Id              string                           `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	DeviceId        string                           `protobuf:"bytes,2,opt,name=device_id,json=deviceId,proto3" json:"device_id,omitempty" bson:"deviceId"`
 	ConfigurationId *AppliedConfiguration_RelationTo `protobuf:"bytes,3,opt,name=configuration_id,json=configurationId,proto3" json:"configuration_id,omitempty" bson:"configurationId"`
 	// Types that are assignable to ExecutedBy:

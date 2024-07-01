@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
+	"github.com/plgd-dev/hub/v2/snippet-service/store"
 	"github.com/plgd-dev/hub/v2/snippet-service/store/mongodb"
 	"github.com/plgd-dev/hub/v2/snippet-service/test"
 	"github.com/stretchr/testify/require"
@@ -17,8 +18,8 @@ func TestStoreDeleteAppliedConfigurations(t *testing.T) {
 
 	getAppliedConfigurations := func(t *testing.T, s *mongodb.Store, owner string, query *pb.GetAppliedConfigurationsRequest) []*pb.AppliedConfiguration {
 		var configurations []*pb.AppliedConfiguration
-		err := s.GetAppliedConfigurations(ctx, owner, query, func(c *pb.AppliedConfiguration) error {
-			configurations = append(configurations, c.Clone())
+		err := s.GetAppliedConfigurations(ctx, owner, query, func(c *store.AppliedConfiguration) error {
+			configurations = append(configurations, c.GetAppliedConfiguration().Clone())
 			return nil
 		})
 		require.NoError(t, err)
@@ -140,7 +141,11 @@ func TestStoreDeleteAppliedConfigurations(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
-			tt.want(t, s, inserted)
+			stored := make(map[string]*pb.AppliedConfiguration)
+			for id, conf := range inserted {
+				stored[id] = conf.GetAppliedConfiguration()
+			}
+			tt.want(t, s, stored)
 		})
 	}
 }

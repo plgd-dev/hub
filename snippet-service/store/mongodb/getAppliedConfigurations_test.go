@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
+	"github.com/plgd-dev/hub/v2/snippet-service/store"
 	"github.com/plgd-dev/hub/v2/snippet-service/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
@@ -26,12 +27,12 @@ func TestStoreGetAppliedConfigurations(t *testing.T) {
 		name    string
 		args    args
 		wantErr bool
-		want    func(*pb.AppliedConfiguration) bool
+		want    func(*store.AppliedConfiguration) bool
 	}{
 		{
 			name: "all",
 			args: args{},
-			want: func(*pb.AppliedConfiguration) bool {
+			want: func(*store.AppliedConfiguration) bool {
 				return true
 			},
 		},
@@ -40,7 +41,7 @@ func TestStoreGetAppliedConfigurations(t *testing.T) {
 			args: args{
 				owner: test.Owner(0),
 			},
-			want: func(ac *pb.AppliedConfiguration) bool {
+			want: func(ac *store.AppliedConfiguration) bool {
 				return ac.GetOwner() == test.Owner(0)
 			},
 		},
@@ -58,7 +59,7 @@ func TestStoreGetAppliedConfigurations(t *testing.T) {
 					},
 				},
 			},
-			want: func(ac *pb.AppliedConfiguration) bool {
+			want: func(ac *store.AppliedConfiguration) bool {
 				acID := ac.GetId()
 				return acID == test.AppliedConfigurationID(1) || acID == test.AppliedConfigurationID(3) || acID == test.AppliedConfigurationID(5)
 			},
@@ -78,7 +79,7 @@ func TestStoreGetAppliedConfigurations(t *testing.T) {
 					},
 				},
 			},
-			want: func(ac *pb.AppliedConfiguration) bool {
+			want: func(ac *store.AppliedConfiguration) bool {
 				acID := ac.GetId()
 				return (ac.GetOwner() == test.Owner(1)) &&
 					(acID == test.AppliedConfigurationID(0) || acID == test.AppliedConfigurationID(1) || acID == test.AppliedConfigurationID(2) ||
@@ -98,7 +99,7 @@ func TestStoreGetAppliedConfigurations(t *testing.T) {
 					},
 				},
 			},
-			want: func(ac *pb.AppliedConfiguration) bool {
+			want: func(ac *store.AppliedConfiguration) bool {
 				acDeviceID := ac.GetDeviceId()
 				return acDeviceID == test.DeviceID(0) || acDeviceID == test.DeviceID(2)
 			},
@@ -119,7 +120,7 @@ func TestStoreGetAppliedConfigurations(t *testing.T) {
 					},
 				},
 			},
-			want: func(ac *pb.AppliedConfiguration) bool {
+			want: func(ac *store.AppliedConfiguration) bool {
 				acID := ac.GetId()
 				acDeviceID := ac.GetDeviceId()
 				return ac.GetOwner() == test.Owner(2) &&
@@ -142,7 +143,7 @@ func TestStoreGetAppliedConfigurations(t *testing.T) {
 					},
 				},
 			},
-			want: func(ac *pb.AppliedConfiguration) bool {
+			want: func(ac *store.AppliedConfiguration) bool {
 				return ac.GetOwner() == test.Owner(0)
 			},
 		},
@@ -173,7 +174,7 @@ func TestStoreGetAppliedConfigurations(t *testing.T) {
 					},
 				},
 			},
-			want: func(ac *pb.AppliedConfiguration) bool {
+			want: func(ac *store.AppliedConfiguration) bool {
 				acConfID := ac.GetConfigurationId().GetId()
 				return ac.GetOwner() == test.Owner(1) &&
 					(acConfID == test.ConfigurationID(1) || acConfID == test.ConfigurationID(3) || acConfID == test.ConfigurationID(7))
@@ -203,7 +204,7 @@ func TestStoreGetAppliedConfigurations(t *testing.T) {
 				},
 			},
 
-			want: func(ac *pb.AppliedConfiguration) bool {
+			want: func(ac *store.AppliedConfiguration) bool {
 				acConfVersion := ac.GetConfigurationId().GetVersion()
 				return acConfVersion == 1 || acConfVersion == 3 || acConfVersion == 7
 			},
@@ -228,7 +229,7 @@ func TestStoreGetAppliedConfigurations(t *testing.T) {
 					},
 				},
 			},
-			want: func(ac *pb.AppliedConfiguration) bool {
+			want: func(ac *store.AppliedConfiguration) bool {
 				if ac.GetOwner() != test.Owner(0) {
 					return false
 				}
@@ -253,7 +254,7 @@ func TestStoreGetAppliedConfigurations(t *testing.T) {
 					},
 				},
 			},
-			want: func(ac *pb.AppliedConfiguration) bool {
+			want: func(ac *store.AppliedConfiguration) bool {
 				return ac.GetOwner() == test.Owner(1)
 			},
 		},
@@ -290,7 +291,7 @@ func TestStoreGetAppliedConfigurations(t *testing.T) {
 					},
 				},
 			},
-			want: func(ac *pb.AppliedConfiguration) bool {
+			want: func(ac *store.AppliedConfiguration) bool {
 				acCondID := ac.GetConditionId().GetId()
 				return ac.GetOwner() == test.Owner(2) &&
 					(acCondID == test.ConditionID(0) || acCondID == test.ConditionID(4) || acCondID == test.ConditionID(8) || acCondID == test.ConditionID(12))
@@ -316,7 +317,7 @@ func TestStoreGetAppliedConfigurations(t *testing.T) {
 					},
 				},
 			},
-			want: func(ac *pb.AppliedConfiguration) bool {
+			want: func(ac *store.AppliedConfiguration) bool {
 				acCondVersion := ac.GetConditionId().GetVersion()
 				acDeviceID := ac.GetDeviceId()
 				return (ac.GetOwner() == test.Owner(0)) && ((acCondVersion == 7 || acCondVersion == 9) ||
@@ -359,7 +360,7 @@ func TestStoreGetAppliedConfigurations(t *testing.T) {
 					},
 				},
 			},
-			want: func(ac *pb.AppliedConfiguration) bool {
+			want: func(ac *store.AppliedConfiguration) bool {
 				acID := ac.GetId()
 				acDeviceID := ac.GetDeviceId()
 				acConfID := ac.GetConfigurationId().GetId()
@@ -377,8 +378,8 @@ func TestStoreGetAppliedConfigurations(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			appliedConfigurations := make(map[string]*pb.AppliedConfiguration)
-			err := s.GetAppliedConfigurations(ctx, tt.args.owner, tt.args.query, func(c *pb.AppliedConfiguration) error {
-				appliedConfigurations[c.GetId()] = c.Clone()
+			err := s.GetAppliedConfigurations(ctx, tt.args.owner, tt.args.query, func(c *store.AppliedConfiguration) error {
+				appliedConfigurations[c.GetId()] = c.GetAppliedConfiguration().Clone()
 				return nil
 			})
 			if tt.wantErr {
@@ -390,7 +391,7 @@ func TestStoreGetAppliedConfigurations(t *testing.T) {
 			stored := make(map[string]*pb.AppliedConfiguration)
 			for _, ac := range appliedConfs {
 				if tt.want(ac) {
-					stored[ac.GetId()] = ac
+					stored[ac.GetId()] = ac.GetAppliedConfiguration()
 				}
 			}
 			require.Len(t, appliedConfigurations, len(stored))

@@ -43,8 +43,8 @@ func (s *Store) CreateCondition(ctx context.Context, cond *pb.Condition) (*pb.Co
 
 func filterCondition(cond *pb.Condition) bson.M {
 	filter := bson.M{
-		store.IDKey:    cond.GetId(),
-		store.OwnerKey: cond.GetOwner(),
+		store.RecordIDKey: cond.GetId(),
+		store.OwnerKey:    cond.GetOwner(),
 	}
 	if cond.GetConfigurationId() != "" {
 		filter[store.ConfigurationIDKey] = cond.GetConfigurationId()
@@ -113,7 +113,7 @@ func (s *Store) getConditionsByID(ctx context.Context, owner string, ids []strin
 
 func toIdOrConfIdQuery(ids, confIds []string) bson.M {
 	filter := make([]bson.M, 0, 2)
-	idFilter := inArrayQuery(store.IDKey, ids)
+	idFilter := inArrayQuery(store.RecordIDKey, ids)
 	if len(idFilter) > 0 {
 		filter = append(filter, idFilter)
 	}

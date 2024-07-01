@@ -639,8 +639,7 @@
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "@gotags: bson:\"_id\""
+          "type": "string"
         },
         "deviceId": {
           "type": "string",
@@ -655,7 +654,7 @@
         },
         "conditionId": {
           "$ref": "#/definitions/AppliedConfigurationRelationTo",
-          "title": "@gotags: bson:\"conditionId\" //TODO Naming"
+          "title": "@gotags: bson:\"conditionId\""
         },
         "resources": {
           "type": "array",
@@ -673,8 +672,7 @@
           "format": "int64",
           "title": "Unix timestamp in ns when the applied device configuration has been created/updated"
         }
-      },
-      "title": "TODO naming"
+      }
     },
     "pbAppliedConfigurationResource": {
       "type": "object",

@@ -123,7 +123,7 @@ message DeleteConfigurationsRequest {
 }
 message DeleteConfigurationsResponse { int64 count = 1; }
 
-message AppliedConfiguration { //TODO naming 
+message AppliedConfiguration {
   message Resource {
     string href = 1;
     // Reused from invoke command or generated. Can be used to retrieve corresponding pending command.
@@ -140,7 +140,7 @@ message AppliedConfiguration { //TODO naming
     // Unix nanoseconds timestamp for resource in PENDING status, until which the pending update is valid
     int64 valid_until = 5; // @gotags: bson:"validUntil,omitempty"
   }
-  string id = 1; // @gotags: bson:"_id"
+  string id = 1;
   string device_id = 2; // @gotags: bson:"deviceId"
   message RelationTo { //TODO naming
     string id = 1;
@@ -149,7 +149,7 @@ message AppliedConfiguration { //TODO naming
   RelationTo configuration_id = 3; // @gotags: bson:"configurationId"
   oneof executed_by {
     bool on_demand = 4;
-    RelationTo condition_id = 5; // @gotags: bson:"conditionId" //TODO Naming
+    RelationTo condition_id = 5; // @gotags: bson:"conditionId"
   }
   repeated Resource resources = 6; //TODO naming
   string owner = 7;

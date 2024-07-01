@@ -7,7 +7,7 @@ import (
 	"github.com/plgd-dev/hub/v2/snippet-service/store"
 )
 
-func (s *Store) GetAppliedConfigurations(context.Context, string, *pb.GetAppliedConfigurationsRequest, store.ProccessAppliedDeviceConfigurations) error {
+func (s *Store) GetAppliedConfigurations(context.Context, string, *pb.GetAppliedConfigurationsRequest, store.ProccessAppliedConfigurations) error {
 	return store.ErrNotSupported
 }
 
@@ -19,7 +19,7 @@ func (s *Store) CreateAppliedConfiguration(context.Context, *pb.AppliedConfigura
 	return nil, nil, store.ErrNotSupported
 }
 
-func (s *Store) InsertAppliedConfigurations(context.Context, ...*pb.AppliedConfiguration) error {
+func (s *Store) InsertAppliedConfigurations(context.Context, ...*store.AppliedConfiguration) error {
 	return store.ErrNotSupported
 }
 

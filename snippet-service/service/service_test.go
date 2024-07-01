@@ -39,6 +39,7 @@ import (
 	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
 	"github.com/plgd-dev/hub/v2/snippet-service/service"
+	"github.com/plgd-dev/hub/v2/snippet-service/store"
 	storeConfig "github.com/plgd-dev/hub/v2/snippet-service/store/config"
 	storeCqlDB "github.com/plgd-dev/hub/v2/snippet-service/store/cqldb"
 	storeMongo "github.com/plgd-dev/hub/v2/snippet-service/store/mongodb"
@@ -600,8 +601,8 @@ func TestServiceCleanUp(t *testing.T) {
 	appliedConfs := make(map[string]*pb.AppliedConfiguration)
 	err = s.GetAppliedConfigurations(ctx, oauthService.DeviceUserID, &pb.GetAppliedConfigurationsRequest{
 		IdFilter: []string{resp.GetAppliedConfigurationId()},
-	}, func(appliedConf *pb.AppliedConfiguration) error {
-		appliedConfs[appliedConf.GetId()] = appliedConf
+	}, func(appliedConf *store.AppliedConfiguration) error {
+		appliedConfs[appliedConf.GetId()] = appliedConf.GetAppliedConfiguration().Clone()
 		return nil
 	})
 	require.NoError(t, err)

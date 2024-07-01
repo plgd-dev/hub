@@ -327,8 +327,8 @@ func (s *SnippetServiceServer) GetAppliedConfigurations(req *pb.GetAppliedConfig
 	req.ConditionIdFilter = append(req.GetConditionIdFilter(), req.ConvertHTTPConditionIdFilter()...)
 	req.ConfigurationIdFilter = append(req.GetConfigurationIdFilter(), req.ConvertHTTPConfigurationIdFilter()...)
 
-	err = s.store.GetAppliedConfigurations(srv.Context(), owner, req, func(c *pb.AppliedConfiguration) error {
-		return srv.Send(c)
+	err = s.store.GetAppliedConfigurations(srv.Context(), owner, req, func(c *store.AppliedConfiguration) error {
+		return srv.Send(c.GetAppliedConfiguration())
 	})
 	if err != nil {
 		return s.logger.LogAndReturnError(status.Errorf(codes.Internal, "%v", errCannotGetAppliedConfigurations(err)))

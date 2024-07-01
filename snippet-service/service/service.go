@@ -66,6 +66,7 @@ func newStore(ctx context.Context, config StorageConfig, fileWatcher *fsnotify.W
 		return nil, nil, fmt.Errorf("cannot create cron job: %w", err)
 	}
 	_, err = s.NewJob(gocron.CronJob(config.CleanUpRecords, config.ExtendCronParserBySeconds), gocron.NewTask(func() {
+		//  db.CancelExpiredPendingCommands(ctx, time.Now())
 		/*
 			_, errDel := db.DeleteNonDeviceExpiredRecords(ctx, time.Now())
 			if errDel != nil && !errors.Is(errDel, store.ErrNotSupported) {

@@ -165,8 +165,8 @@ func TestRequestHandlerGetAppliedConfigurations(t *testing.T) {
 
 			stored := make(map[string]*pb.AppliedConfiguration)
 			for _, ac := range appliedConfs {
-				if tt.want(ac) {
-					stored[ac.GetId()] = ac
+				if tt.want(ac.GetAppliedConfiguration()) {
+					stored[ac.GetId()] = ac.GetAppliedConfiguration().Clone()
 				}
 			}
 			require.Len(t, receivedConfs, len(stored))
