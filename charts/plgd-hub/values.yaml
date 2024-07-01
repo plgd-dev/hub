@@ -90,6 +90,9 @@ global:
         keyFile:
         certFile:
         useSystemCAPool: false
+  # -- Set image.tag for all services
+  image:
+    tag:
 
 # -- Extra deploy. Resolved as template
 extraDeploy:

@@ -50,7 +50,7 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          image: {{ include "plgd-hub.httpgateway.image" . | quote }}
+          image: {{ include "plgd-hub.image" (list . .Values.httpgateway) | quote }}
           imagePullPolicy: {{ .Values.httpgateway.image.pullPolicy }}
           {{- if .Values.httpgateway.command }}
           command:

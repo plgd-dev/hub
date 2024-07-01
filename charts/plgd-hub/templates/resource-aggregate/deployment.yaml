@@ -50,7 +50,7 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          image: {{ include "plgd-hub.resourceaggregate.image" . | quote }}
+          image: {{ include "plgd-hub.image" (list . .Values.resourceaggregate) | quote }}
           imagePullPolicy: {{ .Values.resourceaggregate.image.pullPolicy }}
           {{- if .Values.resourceaggregate.command }}
           command:

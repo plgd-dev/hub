@@ -11,13 +11,6 @@
 {{- end }}
 {{- end }}
 
-{{- define  "plgd-hub.m2moauthserver.image" -}}
-    {{- $registryName := .Values.m2moauthserver.image.registry | default "" -}}
-    {{- $repositoryName := .Values.m2moauthserver.image.repository -}}
-    {{- $tag := .Values.m2moauthserver.image.tag | default .Chart.AppVersion | toString -}}
-    {{- printf "%s%s:%s" $registryName $repositoryName  $tag -}}
-{{- end -}}
-
 {{- define  "plgd-hub.m2moauthserver.configName" -}}
     {{- $fullName :=  include "plgd-hub.m2moauthserver.fullname" . -}}
     {{- printf "%s-cfg" $fullName }}
