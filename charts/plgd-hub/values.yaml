@@ -2569,8 +2569,8 @@ m2moauthserver:
     # -- Ingress path
     paths:
       - /m2m-oauth-server/oauth/token
-      - /.well-known/m2m-oauth-server/jwks.json
-      - /.well-known/m2m-oauth-server/openid-configuration
+      - /m2m-oauth-server/.well-known/jwks.json
+      - /m2m-oauth-server/.well-known/openid-configuration
     allowHeaders: "Authortity,Method,Path,Scheme,Accept,Accept-Encoding,Accept-Language,Content-Type,auth0-client,Origin,Refer,Sec-Fetch-Dest,Sec-Fetch-Mode,Sec-Fetch-Site,Authorization,DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range"
   # -- m2m-oauth-server service yaml config section
   config:
