@@ -16,17 +16,22 @@ import (
 	"github.com/plgd-dev/go-coap/v3/pkg/cache"
 	"github.com/plgd-dev/go-coap/v3/pkg/runner/periodic"
 	"github.com/plgd-dev/hub/v2/m2m-oauth-server/uri"
+	"github.com/plgd-dev/hub/v2/pkg/fn"
+	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // RequestHandler for handling incoming request
 type RequestHandler struct {
-	config             *Config
-	authRestriction    *cache.Cache[string, struct{}]
-	accessTokenKey     interface{}
-	accessTokenJwkKey  jwk.Key
-	refreshRestriction *cache.Cache[string, struct{}]
+	config                  *Config
+	authRestriction         *cache.Cache[string, struct{}]
+	accessTokenKey          interface{}
+	accessTokenJwkKey       jwk.Key
+	refreshRestriction      *cache.Cache[string, struct{}]
+	privateKeyJWTValidators map[string]*validator.Validator
 }
 
 func createJwkKey(privateKey interface{}) (jwk.Key, error) {
@@ -63,10 +68,11 @@ func createJwkKey(privateKey interface{}) (jwk.Key, error) {
 }
 
 // NewRequestHandler factory for new RequestHandler
-func NewRequestHandler(ctx context.Context, config *Config, accessTokenKey interface{}) (*RequestHandler, error) {
+func NewRequestHandler(ctx context.Context, config *Config, accessTokenKey interface{}, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*RequestHandler, func(), error) {
 	accessTokenJwkKey, err := createJwkKey(accessTokenKey)
+	var closer fn.FuncList
 	if err != nil {
-		return nil, fmt.Errorf("cannot create jwk for idToken: %w", err)
+		return nil, nil, fmt.Errorf("cannot create jwk for idToken: %w", err)
 	}
 	authRestriction := cache.NewCache[string, struct{}]()
 	refreshRestriction := cache.NewCache[string, struct{}]()
@@ -77,13 +83,28 @@ func NewRequestHandler(ctx context.Context, config *Config, accessTokenKey inter
 		return true
 	})
 
+	privateKeyJWTValidators := make(map[string]*validator.Validator, len(config.OAuthSigner.Clients))
+	for _, c := range config.OAuthSigner.Clients {
+		if !c.PrivateKeyJWT.Enabled {
+			continue
+		}
+		validator, err := validator.New(ctx, c.PrivateKeyJWT.Authorization, fileWatcher, logger, tracerProvider)
+		if err != nil {
+			closer.Execute()
+			return nil, nil, fmt.Errorf("cannot create validator: %w", err)
+		}
+		privateKeyJWTValidators[c.ID] = validator
+		closer.AddFunc(validator.Close)
+	}
+
 	return &RequestHandler{
-		config:             config,
-		authRestriction:    authRestriction,
-		accessTokenJwkKey:  accessTokenJwkKey,
-		accessTokenKey:     accessTokenKey,
-		refreshRestriction: refreshRestriction,
-	}, nil
+		config:                  config,
+		authRestriction:         authRestriction,
+		accessTokenJwkKey:       accessTokenJwkKey,
+		accessTokenKey:          accessTokenKey,
+		refreshRestriction:      refreshRestriction,
+		privateKeyJWTValidators: privateKeyJWTValidators,
+	}, closer.Execute, nil
 }
 
 // NewHTTP returns HTTP handler

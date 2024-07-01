@@ -1,0 +1,131 @@
+{{- if .Values.m2moauthserver.enabled }}
+{{- $rdServiceCert := "/certs" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "plgd-hub.m2moauthserver.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plgd-hub.labels" . | nindent 4 }}
+    {{- with .Values.m2moauthserver.deploymentLabels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+  {{- with .Values.m2moauthserver.deploymentAnnotations }}
+  annotations:
+  {{- . | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ include "plgd-hub.replicas" (list $ .Values.m2moauthserver.replicas) }}
+  selector:
+    matchLabels:
+      {{- include "plgd-hub.m2moauthserver.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.m2moauthserver.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "plgd-hub.m2moauthserver.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.m2moauthserver.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.m2moauthserver.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      restartPolicy: {{ .Values.m2moauthserver.restartPolicy }}
+      initContainers:
+        - name: init-sign-keys
+          image: docker.io/bitnami/nginx:1.19.10-debian-10-r63
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            - |
+              /bin/bash <<'EOF'
+              if [ ! -f "{{ $.Values.m2moauthserver.oauthSigner.accessTokenKeyFile }}" ]; then
+                  openssl ecparam -name prime256v1 -genkey -noout -out {{ $.Values.m2moauthserver.oauthSigner.accessTokenKeyFile }}
+                  
+              fi
+              chmod 0644 {{ $.Values.m2moauthserver.oauthSigner.accessTokenKeyFile }}
+              EOF
+          volumeMounts:
+            - mountPath: /keys
+              name: keys
+      containers:
+        - name: {{ .Values.m2moauthserver.name }}
+          {{- with .Values.m2moauthserver.podSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: {{ include "plgd-hub.m2moauthserver.image" . | quote }}
+          imagePullPolicy: {{ .Values.httpgateway.image.pullPolicy }}
+          {{- if .Values.m2moauthserver.command }}
+          command:
+          {{- range .Values.m2moauthserver.command  }}
+            - {{ . | quote }}
+          {{- end }}
+          {{- end}}
+          args:
+            - "--config"
+            - {{  printf "%s/%s" .Values.m2moauthserver.config.mountPath .Values.m2moauthserver.config.fileName | quote }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.m2moauthserver.port }}
+              protocol: TCP
+          {{- with .Values.m2moauthserver.livenessProbe }}
+          livenessProbe:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.m2moauthserver.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.m2moauthserver.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: {{ .Values.m2moauthserver.config.volume }}
+              mountPath: {{ .Values.m2moauthserver.config.mountPath }}
+            {{- if ( include "plgd-hub.m2moauthserver.createServiceCertByCm" . ) }}
+            - name: service-crt
+              mountPath: {{ $rdServiceCert }}
+            {{- end }}
+            {{- include "plgd-hub.extraCAPoolMount" (list . .Values.extraCAPool.internal) | nindent 12 }}
+            {{- with .Values.m2moauthserver.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+            - name: keys
+              mountPath: /keys
+      volumes:
+        - name: keys
+          emptyDir: {}
+        - name: {{ .Values.m2moauthserver.config.volume }}
+          configMap:
+            name: {{ include "plgd-hub.m2moauthserver.configName" . }}
+        {{- if ( include "plgd-hub.m2moauthserver.createServiceCertByCm" . ) }}
+        - name: service-crt
+          secret:
+            secretName: {{ include "plgd-hub.m2moauthserver.serviceCertName" . }}
+        {{- end }}
+        {{- include "plgd-hub.extraCAPoolVolume" (list . .Values.extraCAPool.internal) | nindent 8 }}
+        {{- with .Values.m2moauthserver.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.m2moauthserver.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.m2moauthserver.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.m2moauthserver.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

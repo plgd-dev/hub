@@ -12,7 +12,7 @@ import (
 	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 )
 
-const serviceName = "mock-oauth-server"
+const serviceName = "m2m-oauth-server"
 
 // Server handle HTTP request
 type Service struct {
@@ -50,11 +50,12 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		return nil, fmt.Errorf("cannot load private accessTokenKeyFile(%v): %w", config.OAuthSigner.AccessTokenKeyFile, err)
 	}
 
-	requestHandler, err := NewRequestHandler(ctx, &config, accessTokenPrivateKeyI)
+	requestHandler, closeHandler, err := NewRequestHandler(ctx, &config, accessTokenPrivateKeyI, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		closeListener()
 		return nil, fmt.Errorf("cannot create request handler: %w", err)
 	}
+	listener.AddCloseFunc(closeHandler)
 
 	httpServer := http.Server{
 		Handler:           kitNetHttp.OpenTelemetryNewHandler(NewHTTP(requestHandler, logger), serviceName, tracerProvider),

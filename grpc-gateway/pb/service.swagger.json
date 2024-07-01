@@ -1570,28 +1570,6 @@
         }
       }
     },
-    "pbDeviceOAuthClient": {
-      "type": "object",
-      "properties": {
-        "clientId": {
-          "type": "string",
-          "title": "@gotags: yaml:\"clientID\""
-        },
-        "audience": {
-          "type": "string"
-        },
-        "scopes": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "providerName": {
-          "type": "string",
-          "title": "@gotags: yaml:\"providerName\""
-        }
-      }
-    },
     "pbEndpointInformation": {
       "type": "object",
       "properties": {
@@ -1713,10 +1691,13 @@
           "title": "cfg for UI http-gateway"
         },
         "webOauthClient": {
-          "$ref": "#/definitions/pbWebOAuthClient"
+          "$ref": "#/definitions/pbOAuthClient"
         },
         "deviceOauthClient": {
-          "$ref": "#/definitions/pbDeviceOAuthClient"
+          "$ref": "#/definitions/pbOAuthClient"
+        },
+        "m2mOauthClient": {
+          "$ref": "#/definitions/pbOAuthClient"
         },
         "ui": {
           "$ref": "#/definitions/pbUIConfiguration"
@@ -1735,6 +1716,41 @@
         },
         "value": {
           "type": "string"
+        }
+      }
+    },
+    "pbOAuthClient": {
+      "type": "object",
+      "properties": {
+        "clientId": {
+          "type": "string",
+          "title": "@gotags: yaml:\"clientID\""
+        },
+        "audience": {
+          "type": "string"
+        },
+        "scopes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "providerName": {
+          "type": "string",
+          "title": "@gotags: yaml:\"providerName\""
+        },
+        "useJwtPrivateKey": {
+          "type": "boolean",
+          "title": "@gotags: yaml:\"useJWTPrivateKey\""
+        },
+        "authority": {
+          "type": "string"
+        },
+        "grantTypes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
@@ -2300,24 +2316,6 @@
         }
       },
       "title": "UI visibility configuration\nIf true - show UI element, if false - hide UI element"
-    },
-    "pbWebOAuthClient": {
-      "type": "object",
-      "properties": {
-        "clientId": {
-          "type": "string",
-          "title": "@gotags: yaml:\"clientID\""
-        },
-        "audience": {
-          "type": "string"
-        },
-        "scopes": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
     },
     "protobufAny": {
       "type": "object",

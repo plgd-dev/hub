@@ -25,6 +25,7 @@ func TestRequestHandlerGetHubConfiguration(t *testing.T) {
 	expected.CurrentTime = 0
 	expected.WebOauthClient = httpCfg.UI.WebConfiguration.WebOAuthClient.ToProto()
 	expected.DeviceOauthClient = httpCfg.UI.WebConfiguration.DeviceOAuthClient.ToProto()
+	expected.M2MOauthClient = httpCfg.UI.WebConfiguration.M2MOAuthClient.ToProto()
 	expected.HttpGatewayAddress = httpCfg.UI.WebConfiguration.HTTPGatewayAddress
 	expected.Ui = &pb.UIConfiguration{
 		Visibility:                httpCfg.UI.WebConfiguration.Visibility.ToProto(),

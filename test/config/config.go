@@ -44,20 +44,21 @@ const (
 	CERTIFICATE_AUTHORITY_HOST      = "localhost:20011"
 	CERTIFICATE_AUTHORITY_HTTP_HOST = "localhost:20012"
 	// M2M_OAUTH_SERVER_HOST           = "localhost:20013" // for grpc
-	M2M_OAUTH_SERVER_HTTP_HOST   = "localhost:20014"
-	GRPC_GW_HOST                 = "localhost:20005"
-	C2C_CONNECTOR_HOST           = "localhost:20006"
-	C2C_CONNECTOR_DB             = "cloud2cloudConnector"
-	C2C_GW_HOST                  = "localhost:20007"
-	C2C_GW_DB                    = "cloud2cloudGateway"
-	OAUTH_SERVER_HOST            = "localhost:20009"
-	TEST_TIMEOUT                 = time.Second * 30
-	OAUTH_MANAGER_CLIENT_ID      = "test"
-	OAUTH_MANAGER_AUDIENCE       = "localhost"
-	HTTP_GW_HOST                 = "localhost:20010"
-	DEVICE_PROVIDER              = "plgd"
-	OPENTELEMETRY_COLLECTOR_HOST = "localhost:55690"
-	TRUE_STRING                  = "true"
+	M2M_OAUTH_SERVER_HTTP_HOST      = "localhost:20014"
+	GRPC_GW_HOST                    = "localhost:20005"
+	C2C_CONNECTOR_HOST              = "localhost:20006"
+	C2C_CONNECTOR_DB                = "cloud2cloudConnector"
+	C2C_GW_HOST                     = "localhost:20007"
+	C2C_GW_DB                       = "cloud2cloudGateway"
+	OAUTH_SERVER_HOST               = "localhost:20009"
+	TEST_TIMEOUT                    = time.Second * 30
+	OAUTH_MANAGER_CLIENT_ID         = "test"
+	OAUTH_MANAGER_AUDIENCE          = "localhost"
+	HTTP_GW_HOST                    = "localhost:20010"
+	DEVICE_PROVIDER                 = "plgd"
+	OPENTELEMETRY_COLLECTOR_HOST    = "localhost:55690"
+	TRUE_STRING                     = "true"
+	M2M_OAUTH_PRIVATE_KEY_CLIENT_ID = "JWTPrivateKeyClient"
 )
 
 var (

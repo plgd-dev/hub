@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 	"github.com/lestrrat-go/jwx/v2/jwt"
 	"github.com/plgd-dev/hub/v2/m2m-oauth-server/uri"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	pkgJwt "github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/kit/v2/codec/json"
 )
 
@@ -126,18 +128,16 @@ func (requestHandler *RequestHandler) tokenOptions(w http.ResponseWriter, r *htt
 }
 
 type tokenRequest struct {
-	ClientID     string    `json:"client_id"`
-	CodeVerifier string    `json:"code_verifier"`
-	GrantType    GrantType `json:"grant_type"`
-	RedirectURI  string    `json:"redirect_uri"`
-	Code         string    `json:"code"`
-	Username     string    `json:"username"`
-	Password     string    `json:"password"`
-	Audience     string    `json:"audience"`
-	RefreshToken string    `json:"refresh_token"`
-	DeviceID     string    `json:"https://plgd.dev/deviceId"`
-	Owner        string    `json:"https://plgd.dev/owner"`
-	Subject      string    `json:"sub"`
+	ClientID            string    `json:"client_id"`
+	GrantType           GrantType `json:"grant_type"`
+	Username            string    `json:"username"`
+	Password            string    `json:"password"`
+	Audience            string    `json:"audience"`
+	DeviceID            string    `json:"https://plgd.dev/deviceId"`
+	Owner               string    `json:"https://plgd.dev/owner"`
+	Subject             string    `json:"sub"`
+	ClientAssertionType string    `json:"client_assertion_type"`
+	ClientAssertion     string    `json:"client_assertion"`
 
 	host          string
 	scopes        string
@@ -152,6 +152,8 @@ func (requestHandler *RequestHandler) getToken(w http.ResponseWriter, r *http.Re
 	audience := r.URL.Query().Get(uri.AudienceKey)
 	deviceID := r.URL.Query().Get(uri.DeviceIDKey)
 	owner := r.URL.Query().Get(uri.OwnerKey)
+	clientAssertionType := r.URL.Query().Get(uri.ClientAssertionTypeKey)
+	clientAssertion := r.URL.Query().Get(uri.ClientAssertionKey)
 	var ok bool
 	if clientID == "" {
 		clientID, _, ok = r.BasicAuth()
@@ -161,16 +163,18 @@ func (requestHandler *RequestHandler) getToken(w http.ResponseWriter, r *http.Re
 		}
 	}
 	tr := tokenRequest{
-		ClientID:  clientID,
-		GrantType: GrantTypeClientCredentials,
-		Audience:  audience,
-		DeviceID:  deviceID,
-		Owner:     owner,
+		ClientID:            clientID,
+		GrantType:           GrantTypeClientCredentials,
+		Audience:            audience,
+		DeviceID:            deviceID,
+		Owner:               owner,
+		ClientAssertionType: clientAssertionType,
+		ClientAssertion:     clientAssertion,
 
 		host:      r.Host,
 		tokenType: AccessTokenType_JWT,
 	}
-	requestHandler.processResponse(w, tr)
+	requestHandler.processResponse(r.Context(), w, tr)
 }
 
 func (requestHandler *RequestHandler) getDomain() string {
@@ -197,6 +201,8 @@ func (requestHandler *RequestHandler) postToken(w http.ResponseWriter, r *http.R
 		tokenReq.Owner = r.PostFormValue(uri.OwnerKey)
 		tokenReq.DeviceID = r.PostFormValue(uri.DeviceIDKey)
 		tokenReq.Subject = r.PostFormValue(uri.SubjectKey)
+		tokenReq.ClientAssertionType = r.PostFormValue(uri.ClientAssertionTypeKey)
+		tokenReq.ClientAssertion = r.PostFormValue(uri.ClientAssertionKey)
 	} else {
 		err := json.ReadFrom(r.Body, &tokenReq)
 		if err != nil {
@@ -209,7 +215,7 @@ func (requestHandler *RequestHandler) postToken(w http.ResponseWriter, r *http.R
 		tokenReq.ClientID = clientID
 		tokenReq.Password = password
 	}
-	requestHandler.processResponse(w, tokenReq)
+	requestHandler.processResponse(r.Context(), w, tokenReq)
 }
 
 func sliceContains[T comparable](s []T, sub []T) bool {
@@ -226,32 +232,110 @@ func sliceContains[T comparable](s []T, sub []T) bool {
 	return len(check) == 0
 }
 
-func (requestHandler *RequestHandler) validateTokenRequest(clientCfg *Client, tokenReq tokenRequest) error {
-	if clientCfg == nil {
-		return fmt.Errorf("client(%v) not found", tokenReq.ClientID)
+func (requestHandler *RequestHandler) validateTokenRequest(ctx context.Context, clientCfg *Client, tokenReq *tokenRequest) error {
+	if err := validateGrantType(clientCfg, tokenReq); err != nil {
+		return err
 	}
-	if clientCfg.ClientSecret != "" && clientCfg.ClientSecret != tokenReq.Password {
-		return errors.New("invalid client secret")
+	if err := validateClient(clientCfg, tokenReq); err != nil {
+		return err
 	}
-	if !sliceContains(clientCfg.AllowedGrantTypes, []GrantType{tokenReq.GrantType}) {
-		return fmt.Errorf("invalid grant type(%v)", tokenReq.GrantType)
+	if err := validateClientAssertionType(clientCfg, tokenReq); err != nil {
+		return err
 	}
-	if !sliceContains(clientCfg.AllowedAudiences, []string{tokenReq.Audience}) {
-		return fmt.Errorf("invalid audience(%v)", tokenReq.Audience)
+	if err := requestHandler.validateClientAssertion(ctx, clientCfg, tokenReq); err != nil {
+		return err
 	}
-	if clientCfg.RequireDeviceID && tokenReq.DeviceID == "" {
-		return errors.New("deviceID is required")
+	if err := validateAudience(clientCfg, tokenReq); err != nil {
+		return err
 	}
-	if clientCfg.RequireOwner && tokenReq.Owner == "" {
-		return errors.New("owner is required")
+	if err := validateDeviceID(clientCfg, tokenReq); err != nil {
+		return err
+	}
+	if err := validateOwner(clientCfg, tokenReq); err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func (requestHandler *RequestHandler) processResponse(w http.ResponseWriter, tokenReq tokenRequest) {
+func validateClient(clientCfg *Client, tokenReq *tokenRequest) error {
+	if clientCfg == nil {
+		return fmt.Errorf("client(%v) not found", tokenReq.ClientID)
+	}
+	if clientCfg.secret != "" && !clientCfg.PrivateKeyJWT.Enabled && clientCfg.secret != tokenReq.Password {
+		return errors.New("invalid client secret")
+	}
+	return nil
+}
+
+func validateGrantType(clientCfg *Client, tokenReq *tokenRequest) error {
+	if !sliceContains(clientCfg.AllowedGrantTypes, []GrantType{tokenReq.GrantType}) {
+		return fmt.Errorf("invalid grant type(%v)", tokenReq.GrantType)
+	}
+	return nil
+}
+
+func validateAudience(clientCfg *Client, tokenReq *tokenRequest) error {
+	if !sliceContains(clientCfg.AllowedAudiences, []string{tokenReq.Audience}) {
+		return fmt.Errorf("invalid audience(%v)", tokenReq.Audience)
+	}
+	return nil
+}
+
+func validateDeviceID(clientCfg *Client, tokenReq *tokenRequest) error {
+	if clientCfg.RequireDeviceID && tokenReq.DeviceID == "" {
+		return errors.New("deviceID is required")
+	}
+	return nil
+}
+
+func validateOwner(clientCfg *Client, tokenReq *tokenRequest) error {
+	if clientCfg.RequireOwner && tokenReq.Owner == "" {
+		return errors.New("owner is required")
+	}
+	return nil
+}
+
+func validateClientAssertionType(clientCfg *Client, tokenReq *tokenRequest) error {
+	if tokenReq.ClientAssertionType != "" && clientCfg.PrivateKeyJWT.Enabled && tokenReq.ClientAssertionType != uri.ClientAssertionTypeJWT {
+		return errors.New("invalid client assertion type")
+	}
+	return nil
+}
+
+func (requestHandler *RequestHandler) validateClientAssertion(ctx context.Context, clientCfg *Client, tokenReq *tokenRequest) error {
+	if tokenReq.ClientAssertionType == "" {
+		return nil
+	}
+	v, ok := requestHandler.privateKeyJWTValidators[tokenReq.ClientID]
+	if !ok {
+		return errors.New("invalid client assertion")
+	}
+	token, err := v.GetParser().ParseWithContext(ctx, tokenReq.ClientAssertion)
+	if err != nil {
+		return fmt.Errorf("invalid client assertion: %w", err)
+	}
+	claims := pkgJwt.Claims(token)
+	owner, err := claims.GetOwner(requestHandler.config.OAuthSigner.OwnerClaim)
+	if err != nil {
+		return fmt.Errorf("invalid client assertion - claim owner: %w", err)
+	}
+	tokenReq.Owner = owner
+	sub, err := claims.GetSubject()
+	if err != nil {
+		return fmt.Errorf("invalid client assertion - claim sub: %w", err)
+	}
+	tokenReq.Subject = sub
+	deviceID, err := claims.GetDeviceID(requestHandler.config.OAuthSigner.DeviceIDClaim)
+	if err == nil {
+		tokenReq.DeviceID = deviceID
+	}
+	return nil
+}
+
+func (requestHandler *RequestHandler) processResponse(ctx context.Context, w http.ResponseWriter, tokenReq tokenRequest) {
 	clientCfg := requestHandler.config.OAuthSigner.Clients.Find(tokenReq.ClientID)
-	if err := requestHandler.validateTokenRequest(clientCfg, tokenReq); err != nil {
+	if err := requestHandler.validateTokenRequest(ctx, clientCfg, &tokenReq); err != nil {
 		writeError(w, err, http.StatusBadRequest)
 		return
 	}

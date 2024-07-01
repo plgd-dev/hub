@@ -20,18 +20,27 @@ func MakeWebConfigurationConfig() service.WebConfiguration {
 		Authority:                 testHttp.HTTPS_SCHEME + config.OAUTH_SERVER_HOST,
 		HTTPGatewayAddress:        testHttp.HTTPS_SCHEME + config.HTTP_GW_HOST,
 		DeviceProvisioningService: testHttp.HTTPS_SCHEME + config.HTTP_GW_HOST,
-		WebOAuthClient: service.BasicOAuthClient{
-			ClientID: config.OAUTH_MANAGER_CLIENT_ID,
-			Audience: config.OAUTH_MANAGER_AUDIENCE,
-			Scopes:   []string{"openid", "offline_access"},
+		WebOAuthClient: service.OAuthClient{
+			Authority:  testHttp.HTTPS_SCHEME + config.OAUTH_SERVER_HOST,
+			ClientID:   config.OAUTH_MANAGER_CLIENT_ID,
+			Audience:   config.OAUTH_MANAGER_AUDIENCE,
+			Scopes:     []string{"openid", "offline_access"},
+			GrantTypes: []string{"authorization_code", "refresh_token"},
 		},
-		DeviceOAuthClient: service.DeviceOAuthClient{
-			BasicOAuthClient: service.BasicOAuthClient{
-				ClientID: config.OAUTH_MANAGER_CLIENT_ID,
-				Audience: config.OAUTH_MANAGER_AUDIENCE,
-				Scopes:   []string{"profile", "openid", "offline_access"},
-			},
+		DeviceOAuthClient: service.OAuthClient{
+			Authority:    testHttp.HTTPS_SCHEME + config.OAUTH_SERVER_HOST,
+			ClientID:     config.OAUTH_MANAGER_CLIENT_ID,
+			Audience:     config.OAUTH_MANAGER_AUDIENCE,
+			Scopes:       []string{"profile", "openid", "offline_access"},
 			ProviderName: config.DEVICE_PROVIDER,
+			GrantTypes:   []string{"authorization_code", "refresh_token"},
+		},
+		M2MOAuthClient: service.OAuthClient{
+			Authority:        testHttp.HTTPS_SCHEME + config.M2M_OAUTH_SERVER_HTTP_HOST,
+			ClientID:         config.M2M_OAUTH_PRIVATE_KEY_CLIENT_ID,
+			Audience:         config.OAUTH_MANAGER_AUDIENCE,
+			GrantTypes:       []string{"client_credentials"},
+			UseJWTPrivateKey: true,
 		},
 	}
 }
