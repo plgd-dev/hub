@@ -37,7 +37,7 @@
 {{- end }}
 
 {{- define "plgd-hub.m2moauthserver.uri" -}}
-{{- printf "https://%s" (include "plgd-hub.m2moauthserver.ingressDomain" .) }}
+{{- printf "https://%s/m2m-oauth-server" (include "plgd-hub.m2moauthserver.ingressDomain" .) }}
 {{- end }}
 
 

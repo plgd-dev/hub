@@ -18,6 +18,6 @@ const (
 	ClientAssertionKey     = "client_assertion"
 
 	Token               = "/m2m-oauth-server/oauth/token"
-	JWKs                = "/.well-known/m2m-oauth-server/jwks.json"
-	OpenIDConfiguration = "/.well-known/m2m-oauth-server/openid-configuration"
+	JWKs                = "/m2m-oauth-server/.well-known/jwks.json"
+	OpenIDConfiguration = "/m2m-oauth-server/.well-known/openid-configuration"
 )
