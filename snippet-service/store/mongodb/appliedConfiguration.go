@@ -1,0 +1,319 @@
+package mongodb
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/plgd-dev/hub/v2/pkg/mongodb"
+	"github.com/plgd-dev/hub/v2/pkg/strings"
+	"github.com/plgd-dev/hub/v2/snippet-service/pb"
+	"github.com/plgd-dev/hub/v2/snippet-service/store"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+)
+
+func (s *Store) InsertAppliedConfigurations(ctx context.Context, confs ...*pb.AppliedDeviceConfiguration) error {
+	documents := make([]interface{}, 0, len(confs))
+	for _, conf := range confs {
+		documents = append(documents, conf)
+	}
+	s.writeLock.RLock()
+	defer s.writeLock.RUnlock()
+	_, err := s.Collection(appliedConfigurationsCol).InsertMany(ctx, documents)
+	return err
+}
+
+func (s *Store) replaceAppliedConfiguration(ctx context.Context, newAdc *pb.AppliedDeviceConfiguration) (*pb.AppliedDeviceConfiguration, *pb.AppliedDeviceConfiguration, error) {
+	var replacedAdc *pb.AppliedDeviceConfiguration
+	filter := bson.M{
+		store.OwnerKey:                   newAdc.GetOwner(),
+		store.DeviceIDKey:                newAdc.GetDeviceId(),
+		store.ConfigurationRelationIDKey: newAdc.GetConfigurationId().GetId(),
+	}
+	result := s.Collection(appliedConfigurationsCol).FindOneAndDelete(ctx, filter)
+	if result.Err() == nil {
+		replacedAdc = &pb.AppliedDeviceConfiguration{}
+		if err := result.Decode(replacedAdc); err != nil {
+			return nil, nil, err
+		}
+	}
+	if result.Err() != nil && !errors.Is(result.Err(), mongo.ErrNoDocuments) {
+		return nil, nil, result.Err()
+	}
+	if _, err := s.Collection(appliedConfigurationsCol).InsertOne(ctx, newAdc); err != nil {
+		return nil, nil, err
+	}
+	return newAdc, replacedAdc, nil
+}
+
+func (s *Store) CreateAppliedConfiguration(ctx context.Context, adc *pb.AppliedDeviceConfiguration, force bool) (*pb.AppliedDeviceConfiguration, *pb.AppliedDeviceConfiguration, error) {
+	if err := store.ValidateAppliedConfiguration(adc, false); err != nil {
+		return nil, nil, err
+	}
+	newAdc := adc.Clone()
+	if newAdc.GetId() == "" {
+		newAdc.Id = uuid.NewString()
+	}
+	newAdc.Timestamp = time.Now().UnixNano()
+	if force {
+		// we need to synchronize the write operation for this scenario:
+		//// goroutine 1)
+		////   - create applied configuration(force=true)
+		////   - deletes applied configuration with deviceID1 and configurationID2
+		////   - gets rescheduled
+		//// goroutine 2)
+		////   - create applied configuration(force=false)
+		////   - this should fail because the force parameter is false and the applied configuration already exists, but goroutine 1
+		////     has not yet inserted the new applied configuration
+		//// we fix this by synchronizing the other operations with the multistep replace by using a rw lock
+		s.writeLock.Lock()
+		defer s.writeLock.Unlock()
+		return s.replaceAppliedConfiguration(ctx, newAdc)
+	}
+	// multiple non-forced inserts are OK, because it is properly handled by the unique indexes
+	s.writeLock.RLock()
+	defer s.writeLock.RUnlock()
+	if _, err := s.Collection(appliedConfigurationsCol).InsertOne(ctx, newAdc); err != nil {
+		return nil, nil, err
+	}
+	return newAdc, nil, nil
+}
+
+func (s *Store) UpdateAppliedConfiguration(ctx context.Context, adc *pb.AppliedDeviceConfiguration) (*pb.AppliedDeviceConfiguration, error) {
+	err := store.ValidateAppliedConfiguration(adc, true)
+	if err != nil {
+		return nil, err
+	}
+	newAdc := adc.Clone()
+	filter := bson.M{
+		store.IDKey:    newAdc.GetId(),
+		store.OwnerKey: newAdc.GetOwner(),
+		// TODO: should we also match configurationID, deviceID or is update allowed to change those?
+	}
+	newAdc.Timestamp = time.Now().UnixNano()
+	opts := options.FindOneAndReplace().SetReturnDocument(options.After)
+	s.writeLock.RLock()
+	result := s.Collection(appliedConfigurationsCol).FindOneAndReplace(ctx, filter, newAdc, opts)
+	if result.Err() != nil {
+		s.writeLock.RUnlock()
+		return nil, result.Err()
+	}
+	s.writeLock.RUnlock()
+	updatedAdc := pb.AppliedDeviceConfiguration{}
+	if err = result.Decode(&updatedAdc); err != nil {
+		return nil, err
+	}
+	return &updatedAdc, nil
+}
+
+func toAppliedDeviceConfigurationsVersionFilter(idKey, versionsKey string, vf pb.VersionFilter) interface{} {
+	filters := make([]interface{}, 0, 2)
+	if len(vf.All) > 0 {
+		// all ids
+		if vf.All[0] == "" {
+			return bson.M{idKey: bson.M{mongodb.Exists: true}}
+		}
+		cidFilter := inArrayQuery(idKey, vf.All)
+		if cidFilter != nil {
+			filters = append(filters, cidFilter)
+		}
+	}
+	versionFilters := make([]interface{}, 0, len(vf.Versions))
+	for id, versions := range vf.Versions {
+		version := bson.M{
+			versionsKey: bson.M{mongodb.In: versions},
+		}
+		if id != "" {
+			version[idKey] = id
+		}
+		// id must match and version must be in the list of versions
+		versionFilters = append(versionFilters, version)
+	}
+	if len(versionFilters) > 0 {
+		filters = append(filters, toFilter(mongodb.Or, versionFilters))
+	}
+	return toFilter(mongodb.Or, filters)
+}
+
+func toAppliedDeviceConfigurationsIdFilter(idFilter, deviceIdFilter []string, configurationIdFilter, conditionIdFilter pb.VersionFilter) interface{} {
+	filters := make([]interface{}, 0, 4)
+	idf := inArrayQuery(store.IDKey, strings.Unique(idFilter))
+	if idf != nil {
+		filters = append(filters, idf)
+	}
+	dif := inArrayQuery(store.DeviceIDKey, strings.Unique(deviceIdFilter))
+	if dif != nil {
+		filters = append(filters, dif)
+	}
+	confif := toAppliedDeviceConfigurationsVersionFilter(store.ConfigurationRelationIDKey, store.ConfigurationRelationVersionKey, configurationIdFilter)
+	if confif != nil {
+		filters = append(filters, confif)
+	}
+	condif := toAppliedDeviceConfigurationsVersionFilter(store.ConditionRelationIDKey, store.ConditionRelationVersionKey, conditionIdFilter)
+	if condif != nil {
+		filters = append(filters, condif)
+	}
+	return toFilter(mongodb.Or, filters)
+}
+
+func toAppliedDeviceConfigurationsQuery(owner string, idFilter, deviceIdFilter []string, configurationIdFilter, conditionIdFilter pb.VersionFilter) interface{} {
+	filters := make([]interface{}, 0, 2)
+	if owner != "" {
+		filters = append(filters, bson.D{{Key: store.OwnerKey, Value: owner}})
+	}
+	idfilters := toAppliedDeviceConfigurationsIdFilter(idFilter, deviceIdFilter, configurationIdFilter, conditionIdFilter)
+	if idfilters != nil {
+		filters = append(filters, idfilters)
+	}
+	return toFilterQuery(mongodb.And, filters)
+}
+
+func (s *Store) GetAppliedConfigurations(ctx context.Context, owner string, query *pb.GetAppliedDeviceConfigurationsRequest, p store.ProccessAppliedDeviceConfigurations) error {
+	configurationIdFilter := pb.PartitionIDFilter(query.GetConfigurationIdFilter())
+	conditionIdFilter := pb.PartitionIDFilter(query.GetConditionIdFilter())
+	filter := toAppliedDeviceConfigurationsQuery(owner, query.GetIdFilter(), query.GetDeviceIdFilter(), configurationIdFilter, conditionIdFilter)
+	s.writeLock.RLock()
+	cur, err := s.Collection(appliedConfigurationsCol).Find(ctx, filter)
+	if err != nil {
+		s.writeLock.RUnlock()
+		return err
+	}
+	s.writeLock.RUnlock()
+	return processCursor(ctx, cur, p)
+}
+
+func (s *Store) DeleteAppliedConfigurations(ctx context.Context, owner string, query *pb.DeleteAppliedDeviceConfigurationsRequest) (int64, error) {
+	s.writeLock.RLock()
+	defer s.writeLock.RUnlock()
+	res, err := s.Collection(appliedConfigurationsCol).DeleteMany(ctx, toAppliedDeviceConfigurationsQuery(owner, query.GetIdFilter(), nil, pb.VersionFilter{}, pb.VersionFilter{}))
+	if err != nil {
+		return 0, err
+	}
+	return res.DeletedCount, nil
+}
+
+func (s *Store) UpdateAppliedConfigurationResource(ctx context.Context, owner string, query store.UpdateAppliedConfigurationResourceRequest) (*pb.AppliedDeviceConfiguration, error) {
+	filter := bson.M{
+		store.IDKey:                              query.AppliedConfigurationID,
+		store.ResourcesKey + "." + store.HrefKey: query.Resource.GetHref(),
+	}
+	if owner != "" {
+		filter[store.OwnerKey] = owner
+	}
+	statusFilter := bson.A{}
+	if len(query.StatusFilter) > 0 {
+		for _, status := range query.StatusFilter {
+			statusFilter = append(statusFilter, status.String())
+		}
+	}
+
+	matchResourceCond := func(alias string) bson.M {
+		cond := bson.M{"$eq": bson.A{"$$" + alias + "." + store.HrefKey, query.Resource.GetHref()}}
+		if len(statusFilter) > 0 {
+			cond = bson.M{
+				"$and": bson.A{
+					cond,
+					bson.M{"$in": bson.A{"$$" + alias + "." + store.StatusKey, statusFilter}},
+				},
+			}
+		}
+		return cond
+	}
+
+	const matchFoundKey = "__matchFound"
+	updatedTimestamp := time.Now().UnixNano()
+	update := mongo.Pipeline{
+		// check if we have a resource with the given href and status
+		bson.D{{Key: mongodb.Set, Value: bson.M{
+			matchFoundKey: bson.M{"$gt": bson.A{
+				bson.M{
+					"$size": bson.M{
+						"$filter": bson.M{
+							"input": "$" + store.ResourcesKey,
+							"as":    "elem",
+							"cond":  matchResourceCond("elem"),
+						},
+					},
+				}, 0,
+			}},
+		}}},
+	}
+	// replace the resource with the new one
+	update = append(update, bson.D{{Key: mongodb.Set, Value: bson.M{
+		store.ResourcesKey: bson.M{
+			"$map": bson.M{
+				"input": "$" + store.ResourcesKey,
+				"as":    "elem",
+				"in": bson.M{
+					"$cond": bson.M{
+						"if":   matchResourceCond("elem"),
+						"then": query.Resource,
+						"else": "$$elem",
+					},
+				},
+			},
+		},
+	}}})
+
+	// update the timestamp and the condition relation if we have a matched resource
+	set := bson.M{
+		store.TimestampKey: bson.M{
+			"$cond": bson.M{
+				"if":   "$" + matchFoundKey,
+				"then": updatedTimestamp,
+				"else": "$" + store.TimestampKey,
+			},
+		},
+	}
+	if query.AppliedCondition != nil {
+		set[store.ConditionRelationIDKey] = bson.M{
+			"$cond": bson.M{
+				"if":   "$" + matchFoundKey,
+				"then": query.AppliedCondition.GetId(),
+				"else": "$" + store.ConditionRelationIDKey,
+			},
+		}
+		set[store.ConditionRelationVersionKey] = bson.M{
+			"$cond": bson.M{
+				"if":   "$" + matchFoundKey,
+				"then": query.AppliedCondition.GetVersion(),
+				"else": "$" + store.ConditionRelationVersionKey,
+			},
+		}
+	}
+
+	// update the timestamp and the condition relation if we have a matched resource
+	update = append(update, bson.D{{Key: mongodb.Set, Value: set}})
+
+	// remove the __matchFound field
+	update = append(update, bson.D{{Key: mongodb.Unset, Value: bson.A{matchFoundKey}}})
+
+	opts := options.FindOneAndUpdate().SetReturnDocument(options.After)
+	s.writeLock.RLock()
+	result := s.Collection(appliedConfigurationsCol).FindOneAndUpdate(ctx, filter, update, opts)
+	if result.Err() != nil {
+		if errors.Is(result.Err(), mongo.ErrNoDocuments) {
+			s.writeLock.RUnlock()
+			return nil, fmt.Errorf("%w: %w", store.ErrNotFound, fmt.Errorf("no applied configuration(%v) with resource(%v)", query.AppliedConfigurationID, query.Resource.GetHref()))
+		}
+		s.writeLock.RUnlock()
+		return nil, result.Err()
+	}
+	s.writeLock.RUnlock()
+
+	updatedAppliedCfg := pb.AppliedDeviceConfiguration{}
+	err := result.Decode(&updatedAppliedCfg)
+	if err != nil {
+		return nil, err
+	}
+	// check timestamp to know whether the resource was updated or not
+	if updatedAppliedCfg.GetTimestamp() != updatedTimestamp {
+		return nil, fmt.Errorf("%w: %w", store.ErrNotModified, fmt.Errorf("applied configuration(%v) was not updated", query.AppliedConfigurationID))
+	}
+
+	return &updatedAppliedCfg, err
+}

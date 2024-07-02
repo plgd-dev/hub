@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/plgd-dev/go-coap/v3/message"
@@ -14,7 +15,6 @@ import (
 	grpcgwClient "github.com/plgd-dev/hub/v2/grpc-gateway/client"
 	"github.com/plgd-dev/hub/v2/identity-store/events"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
-	"github.com/plgd-dev/hub/v2/pkg/strings"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
@@ -173,7 +173,7 @@ func subscribeToDeviceEvents(client *session, owner, deviceID string) error {
 		if evt.GetOwner() != owner {
 			return
 		}
-		if !strings.Contains(evt.GetDeviceIds(), deviceID) {
+		if !slices.Contains(evt.GetDeviceIds(), deviceID) {
 			return
 		}
 		client.Close()

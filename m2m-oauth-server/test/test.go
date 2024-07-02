@@ -54,7 +54,7 @@ var JWTPrivateKeyOAuthClient = service.Client{
 	AllowedScopes:       nil,
 	PrivateKeyJWT: service.PrivateKeyJWTConfig{
 		Enabled:       true,
-		Authorization: config.MakeAuthorizationConfig(),
+		Authorization: config.MakeValidatorConfig(),
 	},
 }
 

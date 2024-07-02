@@ -67,6 +67,8 @@ message UpdateResourceRequest {
   string resource_interface = 3;
   int64 time_to_live = 4;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
   Content content = 2;
+  bool force = 5; // if true, the command will be executed even if the resource does not exist
+  bool async = 6; // if true, the command will finish immediately after pending event is created
 }
 
 message UpdateResourceResponse {
@@ -220,6 +222,8 @@ message DeleteResourceRequest {
   resourceaggregate.pb.ResourceId resource_id = 1;
   int64 time_to_live = 2;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
   string resource_interface = 3;
+  bool force = 4; // if true, the command will be executed even if the resource does not exist
+  bool async = 5; // if true, the command will finish immediately after pending event is created
 }
 
 message DeleteResourceResponse {
@@ -230,6 +234,8 @@ message CreateResourceRequest {
   resourceaggregate.pb.ResourceId resource_id = 1;
   Content content = 2;
   int64 time_to_live = 3;  // command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms).
+  bool force = 4; // if true, the command will be executed even if the resource does not exist
+  bool async = 5; // if true, the command will finish immediately after pending event is created
 }
 
 message CreateResourceResponse {

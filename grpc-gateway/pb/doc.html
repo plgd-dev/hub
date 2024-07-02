@@ -841,6 +841,20 @@
                   <td><p>command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms). </p></td>
                 </tr>
               
+                <tr>
+                  <td>force</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td></td>
+                  <td><p>if true, the command will be executed even if the resource does not exist </p></td>
+                </tr>
+              
+                <tr>
+                  <td>async</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td></td>
+                  <td><p>if true, the command will finish immediately after pending event is created </p></td>
+                </tr>
+              
             </tbody>
           </table>
 
@@ -949,6 +963,20 @@
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>force</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td></td>
+                  <td><p>if true, the command will be executed even if the resource does not exist </p></td>
+                </tr>
+              
+                <tr>
+                  <td>async</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td></td>
+                  <td><p>if true, the command will finish immediately after pending event is created </p></td>
                 </tr>
               
             </tbody>
@@ -1951,6 +1979,20 @@
                   <td><p> </p></td>
                 </tr>
               
+                <tr>
+                  <td>force</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td></td>
+                  <td><p>if true, the command will be executed even if the resource does not exist </p></td>
+                </tr>
+              
+                <tr>
+                  <td>async</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td></td>
+                  <td><p>if true, the command will finish immediately after pending event is created </p></td>
+                </tr>
+              
             </tbody>
           </table>
 
@@ -2483,6 +2525,13 @@
                   <td><p>New resource ID filter. For HTTP requests, use it multiple times as a query parameter like &#34;resourceIdFilter={deviceID}{href}&#34;. </p></td>
                 </tr>
               
+                <tr>
+                  <td>include_hidden_resources</td>
+                  <td><a href="#bool">bool</a></td>
+                  <td></td>
+                  <td><p>Get all pending commands for all resources, even if the resource is not published. </p></td>
+                </tr>
+              
             </tbody>
           </table>
 
@@ -2887,6 +2936,13 @@
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p>Address to device provisioning service HTTP API in format https://host:port </p></td>
+                </tr>
+              
+                <tr>
+                  <td>snippet_service</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Address to snippet service HTTP API in format https://host:port </p></td>
                 </tr>
               
             </tbody>

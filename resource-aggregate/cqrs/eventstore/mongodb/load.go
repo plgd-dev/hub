@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
@@ -177,7 +178,7 @@ func (r *queryResolver) set(query eventstore.VersionQuery) error {
 	if query.GroupID == "" {
 		return fmt.Errorf("invalid GroupID('%v')", query.GroupID)
 	}
-	if query.AggregateID == "" {
+	if query.AggregateID == "" || query.AggregateID == uuid.Nil.String() {
 		return fmt.Errorf("invalid AggregateID('%v')", query.AggregateID)
 	}
 	r.aggregateVersions[query.AggregateID] = query.Version
@@ -337,7 +338,7 @@ func snapshotQueriesToMongoQuery(groupID string, queries []eventstore.SnapshotQu
 	resourceQueries := make([]bson.D, 0, 32)
 	typeQueries := make([]bson.D, 0, 32)
 	for _, q := range queries {
-		if q.AggregateID == "" && len(q.Types) == 0 {
+		if (q.AggregateID == "" || q.AggregateID == uuid.Nil.String()) && len(q.Types) == 0 {
 			opts.SetHint(groupIDQueryIndex)
 			return []mongoQuery{
 				{
@@ -348,13 +349,13 @@ func snapshotQueriesToMongoQuery(groupID string, queries []eventstore.SnapshotQu
 				},
 			}
 		}
-		if q.AggregateID == "" && len(q.Types) > 0 {
+		if (q.AggregateID == "" || q.AggregateID == uuid.Nil.String()) && len(q.Types) > 0 {
 			optsTypes.SetHint(groupIDTypesQueryIndex)
 			typeQueries = append(typeQueries, bson.D{{Key: groupIDKey, Value: groupID}, {Key: typesKey, Value: bson.M{"$all": q.Types}}, {Key: isActiveKey, Value: true}})
 			continue
 		}
 
-		if q.AggregateID != "" {
+		if q.AggregateID != "" && q.AggregateID != uuid.Nil.String() {
 			opts.SetHint(groupIDaggregateIDQueryIndex)
 			resourceQueries = append(resourceQueries, bson.D{{Key: groupIDKey, Value: groupID}, {Key: aggregateIDKey, Value: q.AggregateID}, {Key: isActiveKey, Value: true}})
 		}
@@ -422,7 +423,7 @@ func uniqueQueryWithEmptyAggregateID(queries []eventstore.SnapshotQuery, query e
 
 func uniqueQueryHandleAtIndex(queries []eventstore.SnapshotQuery, query eventstore.SnapshotQuery, idx int) ([]eventstore.SnapshotQuery, bool) {
 	q := queries[idx]
-	if q.AggregateID == "" && len(q.Types) == 0 || resourceTypesIsSubset(q.Types, query.Types) {
+	if (q.AggregateID == "" || q.AggregateID == uuid.Nil.String()) && len(q.Types) == 0 || resourceTypesIsSubset(q.Types, query.Types) {
 		return queries, true // No need to add more specific one if there's a general query
 	}
 
@@ -446,7 +447,7 @@ func uniqueQueryHandleAtIndex(queries []eventstore.SnapshotQuery, query eventsto
 }
 
 func uniqueQuery(queries []eventstore.SnapshotQuery, query eventstore.SnapshotQuery) []eventstore.SnapshotQuery {
-	if query.AggregateID == "" {
+	if query.AggregateID == "" || query.AggregateID == uuid.Nil.String() {
 		return uniqueQueryWithEmptyAggregateID(queries, query)
 	}
 

@@ -53,6 +53,7 @@ data:
       webConfiguration:
         httpGatewayAddress: {{ .ui.webConfiguration.httpGatewayAddress | default ( printf "https://%s" ( include "plgd-hub.httpgateway.apiDomain" $)) | quote }}
         deviceProvisioningService: {{ .ui.webConfiguration.deviceProvisioningService | default ( include "plgd-hub.httpgateway.dpsApiDomain" $) | quote }}
+        snippetService: {{ .ui.webConfiguration.snippetService | default ( include "plgd-hub.httpgateway.snippetServiceApiDomain" $) | quote }}
         {{- if not $.Values.mockoauthserver.enabled }}
         webOAuthClient:
           authority: {{ required ".ui.webConfiguration.webOAuthClient.authority or global.authority is required" ( .ui.webConfiguration.webOAuthClient.authority | default $.Values.global.authority ) | quote }}
