@@ -2588,7 +2588,7 @@ m2moauthserver:
     # -- Name of private key file
     fileName: private.key
     # -- Name of secret
-    secretName: private-key
+    secretName: m2m-private-key
     # -- Volume name
     volume: private-key
     # -- Mount path
