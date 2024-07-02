@@ -1,0 +1,58 @@
+[
+  {
+    "result": {
+      "certificateAuthority": {
+        "grpc": {
+          "address": "csr.try.plgd.cloud:443",
+          "keepAlive": {
+            "time": "10000000000",
+            "timeout": "20000000000",
+            "permitWithoutStream": true
+          },
+          "tls": {
+            "cert": "/certs/client/tls.crt",
+            "useSystemCaPool": true,
+            "caPool": [
+              "/certs/client/ca.crt"
+            ],
+            "key": "/certs/client/tls.key"
+          }
+        }
+      },
+      "authorization": {
+        "provider": {
+          "clientSecret": "/secrets/enrollmentgroups/hubs/oauth/4f0d3d81-0e09-4f1e-9706-0997488011af/clientsecret",
+          "http": {
+            "maxIdleConns": 16,
+            "maxConnsPerHost": 32,
+            "maxIdleConnsPerHost": 16,
+            "idleConnTimeout": "30000000000",
+            "timeout": "10000000000",
+            "tls": {
+              "caPool": [
+                "/certs/client/ca.crt"
+              ],
+              "key": "/certs/client/tls.key",
+              "cert": "/certs/client/tls.crt",
+              "useSystemCaPool": true
+            }
+          },
+          "name": "plgd.dps",
+          "authority": "https://auth.plgd.cloud/realms/shared",
+          "clientId": "p2elIQo8ZOQZ7pSgAfi0JyebeE6uwWNK",
+          "scopes": [
+            "openid"
+          ]
+        },
+        "ownerClaim": "owner-id"
+      },
+      "name": "1c10a3b6-287c-11ec-ac2d-13054959c274",
+      "hubId": "1c10a3b6-287c-11ec-ac2d-13054959c274",
+      "owner": "beb32777-9680-4f42-8761-350eebe76a85",
+      "id": "1c10a3b6-287c-11ec-ac2d-13054959c274",
+      "gateways": [
+        "coaps+tcp://try.plgd.cloud:5684"
+      ]
+    }
+  }
+]

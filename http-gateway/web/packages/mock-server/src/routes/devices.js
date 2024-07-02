@@ -160,14 +160,14 @@ router.get('/api/v1/resource-links', deviceIdCheck, (req, res) => {
     }
 })
 
-router.get('/api/v1/provisioning-records', deviceIdCheck, (req, res) => {
-    try {
-        checkError(req, res)
-        loadResponseFromFile(path.join('devices', 'detail', `${req.query['deviceIdFilter']}-provisioning-records.json`), res)
-    } catch (e) {
-        res.status(500).send(escapeHtml(e.toString()))
-    }
-})
+// router.get('/api/v1/provisioning-records', deviceIdCheck, (req, res) => {
+//     try {
+//         checkError(req, res)
+//         loadResponseFromFile(path.join('devices', 'detail', `${req.query['deviceIdFilter']}-provisioning-records.json`), res)
+//     } catch (e) {
+//         res.status(500).send(escapeHtml(e.toString()))
+//     }
+// })
 
 router.get('/api/v1/signing/records', deviceIdCheck, (req, res) => {
     try {

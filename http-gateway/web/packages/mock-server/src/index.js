@@ -1,9 +1,11 @@
 const express = require('express')
 const cors = require('cors')
-const { checkError, loadResponseStreamFromFile } = require('./utils')
-const devices = require('./routes/devices')
-const snippetService = require('./routes/snippet-service')
 const axios = require('axios')
+const { checkError, loadResponseStreamFromFile } = require('./utils')
+
+const devices = require('./routes/devices')
+const dps = require('./routes/dps')
+const snippetService = require('./routes/snippet-service')
 
 const app = express()
 const port = 8181
@@ -53,6 +55,7 @@ app.get('/repos/plgd-dev/hub/releases/latest', (req, res) => {
 })
 
 app.use(devices)
+app.use(dps)
 app.use('/snippet-service', snippetService)
 
 app.listen(port, () => {
