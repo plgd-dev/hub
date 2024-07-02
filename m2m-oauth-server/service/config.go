@@ -52,7 +52,7 @@ type Client struct {
 	AllowedGrantTypes   []GrantType         `yaml:"allowedGrantTypes"`
 	AllowedAudiences    []string            `yaml:"allowedAudiences"`
 	AllowedScopes       []string            `yaml:"allowedScopes"`
-	PrivateKeyJWT       PrivateKeyJWTConfig `yaml:"privateKeyJWT"`
+	JWTPrivateKey       PrivateKeyJWTConfig `yaml:"jwtPrivateKey"`
 
 	// runtime
 	secret string `yaml:"-"`
@@ -62,7 +62,7 @@ func (c *Client) Validate(ownerClaim, deviceIDClaim string) error {
 	if c.ID == "" {
 		return fmt.Errorf("id('%v')", c.ID)
 	}
-	if !c.PrivateKeyJWT.Enabled {
+	if !c.JWTPrivateKey.Enabled {
 		if c.SecretFile == "" {
 			return fmt.Errorf("secretFile('%v') - one of [secretFile, privateKeyJWT] need to be set", c.SecretFile)
 		}
@@ -88,7 +88,7 @@ func (c *Client) Validate(ownerClaim, deviceIDClaim string) error {
 	if c.RequireOwner && ownerClaim == "" {
 		return fmt.Errorf("requireOwner('%v') - oauthSigner.ownerClaim('%v') is empty", c.RequireOwner, ownerClaim)
 	}
-	if err := c.PrivateKeyJWT.Validate(); err != nil {
+	if err := c.JWTPrivateKey.Validate(); err != nil {
 		return fmt.Errorf("privateKeyJWT.%w", err)
 	}
 	return nil
@@ -162,16 +162,16 @@ func (c *HTTPConfig) Validate() error {
 }
 
 type OAuthSignerConfig struct {
-	AccessTokenKeyFile urischeme.URIScheme `yaml:"accessTokenKeyFile" json:"accessTokenKeyFile"`
-	Domain             string              `yaml:"domain" json:"domain"`
-	OwnerClaim         string              `yaml:"ownerClaim" json:"ownerClaim"`
-	DeviceIDClaim      string              `yaml:"deviceIDClaim" json:"deviceIDClaim"`
-	Clients            OAuthClientsConfig  `yaml:"clients" json:"clients"`
+	PrivateKeyFile urischeme.URIScheme `yaml:"privateKeyFile" json:"privateKeyFile"`
+	Domain         string              `yaml:"domain" json:"domain"`
+	OwnerClaim     string              `yaml:"ownerClaim" json:"ownerClaim"`
+	DeviceIDClaim  string              `yaml:"deviceIDClaim" json:"deviceIDClaim"`
+	Clients        OAuthClientsConfig  `yaml:"clients" json:"clients"`
 }
 
 func (c *OAuthSignerConfig) Validate() error {
-	if c.AccessTokenKeyFile == "" {
-		return fmt.Errorf("accessTokenKeyFile('%v')", c.AccessTokenKeyFile)
+	if c.PrivateKeyFile == "" {
+		return fmt.Errorf("privateKeyFile('%v')", c.PrivateKeyFile)
 	}
 	if c.Domain == "" {
 		return fmt.Errorf("domain('%v')", c.Domain)

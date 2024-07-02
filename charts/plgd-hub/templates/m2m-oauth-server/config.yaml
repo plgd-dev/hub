@@ -28,7 +28,7 @@ data:
           {{- include "plgd-hub.internalCertificateConfig" (list $ $tls $oauthServerCertPath ) | indent 8 }}
           clientCertificateRequired: {{ .apis.http.tls.clientCertificateRequired }}
     oauthSigner:
-      accessTokenKeyFile: {{ .oauthSigner.accessTokenKeyFile | quote }}
+      privateKeyFile: {{ include "plgd-hub.m2moauthserver.getPrivateKeyFile" $ }}
       domain: {{ include "plgd-hub.m2moauthserver.ingressDomain" $ }}
       ownerClaim: {{ .oauthSigner.ownerClaim | default $.Values.global.ownerClaim | quote }}
       {{- if .oauthSigner.deviceIdClaim | default $.Values.global.deviceIdClaim | quote }}
@@ -53,11 +53,11 @@ data:
             {{- range .allowedScopes }}
             - {{ . | quote }}
             {{- end }}
-          privateKeyJWT:
-            enabled: {{ .privateKeyJWT.enabled }}
-            {{- if .privateKeyJWT.enabled }}
+          jwtPrivateKey:
+            enabled: {{ .jwtPrivateKey.enabled }}
+            {{- if .jwtPrivateKey.enabled }}
             authorization:
-              {{- $authorization := include "plgd-hub.basicAuthorizationConfig" (list $ .privateKeyJWT.authorization (printf "m2moauthserver.oauthSigner.clients[%v].privateKeyJWT.authorization" $idx) $oauthServerCertPath) | fromYaml }}
+              {{- $authorization := include "plgd-hub.basicAuthorizationConfig" (list $ .jwtPrivateKey.authorization (printf "m2moauthserver.oauthSigner.clients[%v].jwtPrivateKey.authorization" $idx) $oauthServerCertPath) | fromYaml }}
               {{- if $authorization.audience }}
               audience: {{ $authorization.audience | quote }}
               {{- end }}

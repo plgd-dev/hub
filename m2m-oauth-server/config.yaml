@@ -36,7 +36,7 @@ clients:
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
 oauthSigner:
-    accessTokenKeyFile: "/secrets/private/accessToken.key"
+    privateKeyFile: "/secrets/private/private.key"
     domain:
     ownerClaim: sub
     deviceIDClaim:
