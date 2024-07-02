@@ -57,7 +57,6 @@ func TestConfig_Validate(t *testing.T) {
 				HTTP: func() *client.Config {
 					c := config.MakeHttpClientConfig()
 					return &c
-
 				}(),
 			},
 		},
