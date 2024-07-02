@@ -124,7 +124,7 @@ jobs:
           echo "version=$version" >> $GITHUB_OUTPUT
 
       - name: First try to build and push docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         # This needs to be true to proceed to the next step of failure
         continue-on-error: true
         # You need to specify an id to be able to tell what the status of this action was
@@ -149,7 +149,7 @@ jobs:
       - name: Second try to build and push docker image when first build fails
         # Only run this step if step 1 fails. It knows that step one failed because we specified an `id` for the first step
         if: steps.BuildAndPush1.outcome == 'failure'
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./
           platforms: linux/amd64,linux/arm64
