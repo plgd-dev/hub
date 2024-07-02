@@ -47,7 +47,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	accessTokenPrivateKeyI, err := LoadPrivateKey(config.OAuthSigner.PrivateKeyFile)
 	if err != nil {
 		closeListener()
-		return nil, fmt.Errorf("cannot load private accessTokenKeyFile(%v): %w", config.OAuthSigner.PrivateKeyFile, err)
+		return nil, fmt.Errorf("cannot load private privateKeyFile(%v): %w", config.OAuthSigner.PrivateKeyFile, err)
 	}
 
 	requestHandler, closeHandler, err := NewRequestHandler(ctx, &config, accessTokenPrivateKeyI, fileWatcher, logger, tracerProvider)
