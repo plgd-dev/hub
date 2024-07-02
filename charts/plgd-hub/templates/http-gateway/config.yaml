@@ -102,7 +102,7 @@ data:
           {{- end }}
         {{- end }}
         {{- if $.Values.m2moauthserver.enabled }}
-        {{- $m2mClient := include "plgd-hub.m2moauthserver.getJWTPrivateKeyClient" $.Values.m2moauthserver.oauthSigner.clients | fromYaml }}
+        {{- $m2mClient := include "plgd-hub.m2moauthserver.getJwtPrivateKeyClient" $.Values.m2moauthserver.oauthSigner.clients | fromYaml }}
         {{- if $m2mClient }}
         m2mOAuthClient:
           authority: {{ include "plgd-hub.m2moauthserver.uri" $ | quote }}
@@ -120,7 +120,7 @@ data:
           {{- range $m2mClient.allowedGrantTypes }}
             - {{ . | quote }}
           {{- end }}
-          useJWTPrivateKey: {{ $m2mClient.privateKeyJWT.enabled }}
+          useJWTPrivateKey: {{ $m2mClient.jwtPrivateKey.enabled }}
         {{- end }}
         {{- end }}
         visibility:

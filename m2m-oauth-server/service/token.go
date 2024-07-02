@@ -225,7 +225,7 @@ func validateClient(clientCfg *Client, tokenReq *tokenRequest) error {
 	if clientCfg == nil {
 		return fmt.Errorf("client(%v) not found", tokenReq.ClientID)
 	}
-	if clientCfg.secret != "" && !clientCfg.PrivateKeyJWT.Enabled && clientCfg.secret != tokenReq.Password {
+	if clientCfg.secret != "" && !clientCfg.JWTPrivateKey.Enabled && clientCfg.secret != tokenReq.Password {
 		return errors.New("invalid client secret")
 	}
 	return nil
@@ -260,7 +260,7 @@ func validateOwner(clientCfg *Client, tokenReq *tokenRequest) error {
 }
 
 func validateClientAssertionType(clientCfg *Client, tokenReq *tokenRequest) error {
-	if tokenReq.ClientAssertionType != "" && clientCfg.PrivateKeyJWT.Enabled && tokenReq.ClientAssertionType != uri.ClientAssertionTypeJWT {
+	if tokenReq.ClientAssertionType != "" && clientCfg.JWTPrivateKey.Enabled && tokenReq.ClientAssertionType != uri.ClientAssertionTypeJWT {
 		return errors.New("invalid client assertion type")
 	}
 	return nil
