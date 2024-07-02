@@ -12,9 +12,14 @@ import (
 
 	"github.com/plgd-dev/device/v2/pkg/security/generateCertificate"
 	"github.com/plgd-dev/hub/v2/certificate-authority/pb"
+	caTest "github.com/plgd-dev/hub/v2/certificate-authority/test"
+	m2mOauthTest "github.com/plgd-dev/hub/v2/m2m-oauth-server/test"
+	m2mOauthUri "github.com/plgd-dev/hub/v2/m2m-oauth-server/uri"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
+	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/require"
@@ -109,9 +114,16 @@ func TestCertificateAuthorityServerSignCSRWithDifferentPublicKeys(t *testing.T) 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	defer cancel()
 
-	tearDown := service.SetUp(ctx, t)
+	cfg := caTest.MakeConfig(t)
+	cfg.APIs.GRPC.Authorization.Endpoints = append(cfg.APIs.GRPC.Authorization.Endpoints, validator.AuthorityConfig{
+		Address: "https://" + config.M2M_OAUTH_SERVER_HTTP_HOST + m2mOauthUri.Base,
+		HTTP:    config.MakeHttpClientConfig(),
+	})
+
+	tearDown := service.SetUp(ctx, t, service.WithCAConfig(cfg))
 	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
+
+	ctx = kitNetGrpc.CtxWithToken(ctx, m2mOauthTest.GetDefaultAccessToken(t, m2mOauthTest.WithAccessTokenOwner(oauthService.DeviceUserID)))
 
 	conn, err := grpc.NewClient(config.CERTIFICATE_AUTHORITY_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),

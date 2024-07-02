@@ -14,6 +14,8 @@ import (
 	grpcgwTest "github.com/plgd-dev/hub/v2/grpc-gateway/test"
 	isService "github.com/plgd-dev/hub/v2/identity-store/service"
 	isTest "github.com/plgd-dev/hub/v2/identity-store/test"
+	m2mOauthService "github.com/plgd-dev/hub/v2/m2m-oauth-server/service"
+	m2mOauthTest "github.com/plgd-dev/hub/v2/m2m-oauth-server/test"
 	"github.com/plgd-dev/hub/v2/pkg/cqldb"
 	"github.com/plgd-dev/hub/v2/pkg/fn"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
@@ -99,13 +101,14 @@ func ClearDB(ctx context.Context, t require.TestingT) {
 }
 
 type Config struct {
-	COAPGW coapgw.Config
-	RD     rdService.Config
-	GRPCGW grpcgwConfig.Config
-	RA     raService.Config
-	IS     isService.Config
-	CA     ca.Config
-	OAUTH  oauthService.Config
+	COAPGW   coapgw.Config
+	RD       rdService.Config
+	GRPCGW   grpcgwConfig.Config
+	RA       raService.Config
+	IS       isService.Config
+	CA       ca.Config
+	OAUTH    oauthService.Config
+	M2MOAUTH m2mOauthService.Config
 }
 
 func WithCOAPGWConfig(coapgwCfg coapgw.Config) SetUpOption {
@@ -150,17 +153,24 @@ func WithOAuthConfig(oauth oauthService.Config) SetUpOption {
 	}
 }
 
+func WithM2MOAuthConfig(oauth m2mOauthService.Config) SetUpOption {
+	return func(cfg *Config) {
+		cfg.M2MOAUTH = oauth
+	}
+}
+
 type SetUpOption = func(cfg *Config)
 
 func SetUp(ctx context.Context, t require.TestingT, opts ...SetUpOption) (tearDown func()) {
 	config := Config{
-		COAPGW: coapgwTest.MakeConfig(t),
-		RD:     rdTest.MakeConfig(t),
-		GRPCGW: grpcgwTest.MakeConfig(t),
-		RA:     raTest.MakeConfig(t),
-		IS:     isTest.MakeConfig(t),
-		CA:     caService.MakeConfig(t),
-		OAUTH:  oauthTest.MakeConfig(t),
+		COAPGW:   coapgwTest.MakeConfig(t),
+		RD:       rdTest.MakeConfig(t),
+		GRPCGW:   grpcgwTest.MakeConfig(t),
+		RA:       raTest.MakeConfig(t),
+		IS:       isTest.MakeConfig(t),
+		CA:       caService.MakeConfig(t),
+		OAUTH:    oauthTest.MakeConfig(t),
+		M2MOAUTH: m2mOauthTest.MakeConfig(t),
 	}
 
 	for _, o := range opts {
@@ -169,6 +179,7 @@ func SetUp(ctx context.Context, t require.TestingT, opts ...SetUpOption) (tearDo
 
 	ClearDB(ctx, t)
 	oauthShutdown := oauthTest.New(t, config.OAUTH)
+	m2mTearDown := m2mOauthTest.New(t, config.M2MOAUTH)
 	isShutdown := isTest.New(t, config.IS)
 	raShutdown := raTest.New(t, config.RA)
 	rdShutdown := rdTest.New(t, config.RD)
@@ -188,6 +199,7 @@ func SetUp(ctx context.Context, t require.TestingT, opts ...SetUpOption) (tearDo
 		rdShutdown()
 		raShutdown()
 		isShutdown()
+		m2mTearDown()
 		oauthShutdown()
 
 		// wait for all services to be closed

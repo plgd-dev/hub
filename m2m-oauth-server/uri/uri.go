@@ -17,7 +17,8 @@ const (
 	ClientAssertionTypeJWT = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
 	ClientAssertionKey     = "client_assertion"
 
-	Token               = "/m2m-oauth-server/oauth/token"
-	JWKs                = "/m2m-oauth-server/.well-known/jwks.json"
-	OpenIDConfiguration = "/m2m-oauth-server/.well-known/openid-configuration"
+	Base                = "/m2m-oauth-server"
+	Token               = Base + "/oauth/token"
+	JWKs                = Base + "/.well-known/jwks.json"
+	OpenIDConfiguration = Base + "/.well-known/openid-configuration"
 )
