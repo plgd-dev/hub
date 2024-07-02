@@ -19,7 +19,7 @@ global:
   # -- OAuth audience
   audience: ""
   # -- M2M OAuth JWT private key
-  m2mJwtPrivateKey: ""
+  m2mPrivateKey: ""
   # -- Default OAuth authorization for all services
   authorization:
     audience: "{{ include \"plgd-hub.globalAudience\" . }}"
@@ -2582,15 +2582,15 @@ m2moauthserver:
     mountPath: /config
   # -- Port for service and POD
   port: 9100
-  jwtPrivateKey:
+  privateKey:
     # -- Set deployment to use secret for private key
     enabled: false
     # -- Name of private key file
-    fileName: jwt-private.key
+    fileName: private.key
     # -- Name of secret
-    secretName: jwt-private-key
+    secretName: private-key
     # -- Volume name
-    volume: jwt-private-key
+    volume: private-key
     # -- Mount path
     mountPath: /secrets
   log:
@@ -2620,7 +2620,7 @@ m2moauthserver:
         certFile:
         clientCertificateRequired: false
   oauthSigner:
-    accessTokenKeyFile: "/keys/accessToken.key"
+    privateKeyFile:
     domain:
     ownerClaim:
     deviceIDClaim:
@@ -2633,7 +2633,7 @@ m2moauthserver:
           - client_credentials
         allowedAudiences: []
         allowedScopes: []
-        privateKeyJWT:
+        jwtPrivateKey:
           enabled: true
           authorization:
             audience:

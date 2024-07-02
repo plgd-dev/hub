@@ -314,7 +314,7 @@ define RUN-DOCKER
 		-e TEST_ROOT_CA_KEY=/certs/root_ca.key \
 		-e TEST_OAUTH_SERVER_ID_TOKEN_PRIVATE_KEY=/privKeys/idTokenKey.pem \
 		-e TEST_OAUTH_SERVER_ACCESS_TOKEN_PRIVATE_KEY=/privKeys/accessTokenKey.pem \
-		-e M2M_OAUTH_SERVER_ACCESS_TOKEN_PRIVATE_KEY=/privKeys/m2mAccessTokenKey.pem \
+		-e M2M_OAUTH_SERVER_PRIVATE_KEY=/privKeys/m2mAccessTokenKey.pem \
 		-e TEST_HTTP_GW_WWW_ROOT=/usr/local/www \
 		-e TEST_BRIDGE_DEVICE_CONFIG=/bridge/config-docker.yaml \
 		hub-test \

@@ -38,6 +38,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       restartPolicy: {{ .Values.m2moauthserver.restartPolicy }}
+      {{- if not (include "plgd-hub.m2moauthserver.privateKeySecretEnabled" $) }}
       initContainers:
         - name: init-sign-keys
           image: docker.io/bitnami/nginx:1.19.10-debian-10-r63
@@ -47,25 +48,16 @@ spec:
             - -c
             - |
               /bin/bash <<'EOF'
-              if [ ! -f "{{ $.Values.m2moauthserver.oauthSigner.accessTokenKeyFile }}" ]; then
-                  openssl ecparam -name prime256v1 -genkey -noout -out {{ $.Values.m2moauthserver.oauthSigner.accessTokenKeyFile }}
+              FILENAME="{{- include "plgd-hub.m2moauthserver.getPrivateKeyFile" $ }}"
+              if [ ! -f "{{ $.Values.m2moauthserver.oauthSigner.privateKeyFile }}" ]; then
+                  openssl ecparam -name prime256v1 -genkey -noout -out $FILENAME
               fi
-              {{- if include "plgd-hub.m2moauthserver.jwtPrivateKeyEnabled" $ }}
-              SECRET_FILENAME="{{ $.Values.m2moauthserver.jwtPrivateKey.mountPath }}/{{ $.Values.m2moauthserver.jwtPrivateKey.fileName }}"
-              if [ -s $SECRET_FILENAME ]; then
-                  cp $SECRET_FILENAME {{ $.Values.m2moauthserver.oauthSigner.accessTokenKeyFile }}
-              fi
-              {{- end }}
-              chmod 0444 {{ $.Values.m2moauthserver.oauthSigner.accessTokenKeyFile }}
+              chmod 0444 $FILENAME
               EOF
           volumeMounts:
-            - mountPath: /keys
+            - mountPath: {{ dir (include "plgd-hub.m2moauthserver.getPrivateKeyFile" $) }}
               name: keys
-            {{- if include "plgd-hub.m2moauthserver.jwtPrivateKeyEnabled" $ }}
-            - name: {{ .Values.m2moauthserver.jwtPrivateKey.volume }}
-              mountPath: {{ .Values.m2moauthserver.jwtPrivateKey.mountPath }}
-              readOnly: true
-            {{- end }}
+      {{- end }}
       containers:
         - name: {{ .Values.m2moauthserver.name }}
           {{- with .Values.m2moauthserver.podSecurityContext }}
@@ -110,20 +102,22 @@ spec:
             {{- with .Values.m2moauthserver.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
-            - name: keys
-              mountPath: /keys
-            {{- if include "plgd-hub.m2moauthserver.jwtPrivateKeyEnabled" $ }}
-            - name: {{ .Values.m2moauthserver.jwtPrivateKey.volume }}
-              mountPath: {{ .Values.m2moauthserver.jwtPrivateKey.mountPath }}
+            {{- if include "plgd-hub.m2moauthserver.privateKeySecretEnabled" $ }}
+            - name: {{ .Values.m2moauthserver.privateKey.volume }}
+              mountPath: {{ .Values.m2moauthserver.privateKey.mountPath }}
               readOnly: true
+            {{- else }}
+            - name: keys
+              mountPath: {{ dir (include "plgd-hub.m2moauthserver.getPrivateKeyFile" $) }}
             {{- end }}
       volumes:
+        {{- if include "plgd-hub.m2moauthserver.privateKeySecretEnabled" $ }}
+        - name: {{ .Values.m2moauthserver.privateKey.volume }}
+          secret:
+            secretName: {{ .Values.m2moauthserver.privateKey.secretName }}
+        {{- else }}
         - name: keys
           emptyDir: {}
-        {{- if include "plgd-hub.m2moauthserver.jwtPrivateKeyEnabled" $ }}
-        - name: {{ .Values.m2moauthserver.jwtPrivateKey.volume }}
-          secret:
-            secretName: {{ .Values.m2moauthserver.jwtPrivateKey.secretName }}
         {{- end }}
         - name: {{ .Values.m2moauthserver.config.volume }}
           configMap:

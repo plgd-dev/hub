@@ -85,10 +85,10 @@ func NewRequestHandler(ctx context.Context, config *Config, accessTokenKey inter
 
 	privateKeyJWTValidators := make(map[string]*validator.Validator, len(config.OAuthSigner.Clients))
 	for _, c := range config.OAuthSigner.Clients {
-		if !c.PrivateKeyJWT.Enabled {
+		if !c.JWTPrivateKey.Enabled {
 			continue
 		}
-		validator, err := validator.New(ctx, c.PrivateKeyJWT.Authorization, fileWatcher, logger, tracerProvider)
+		validator, err := validator.New(ctx, c.JWTPrivateKey.Authorization, fileWatcher, logger, tracerProvider)
 		if err != nil {
 			closer.Execute()
 			return nil, nil, fmt.Errorf("cannot create validator: %w", err)

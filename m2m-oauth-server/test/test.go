@@ -52,7 +52,7 @@ var JWTPrivateKeyOAuthClient = service.Client{
 	AllowedGrantTypes:   []service.GrantType{service.GrantTypeClientCredentials},
 	AllowedAudiences:    nil,
 	AllowedScopes:       nil,
-	PrivateKeyJWT: service.PrivateKeyJWTConfig{
+	JWTPrivateKey: service.PrivateKeyJWTConfig{
 		Enabled:       true,
 		Authorization: config.MakeAuthorizationConfig(),
 	},
@@ -87,7 +87,7 @@ func MakeConfig(t require.TestingT) service.Config {
 		Config: config.MakeOpenTelemetryCollectorClient(),
 	}
 
-	cfg.OAuthSigner.AccessTokenKeyFile = urischeme.URIScheme(os.Getenv("M2M_OAUTH_SERVER_ACCESS_TOKEN_PRIVATE_KEY"))
+	cfg.OAuthSigner.PrivateKeyFile = urischeme.URIScheme(os.Getenv("M2M_OAUTH_SERVER_PRIVATE_KEY"))
 	cfg.OAuthSigner.Domain = config.M2M_OAUTH_SERVER_HTTP_HOST
 	cfg.OAuthSigner.Clients = OAuthClients
 	cfg.OAuthSigner.OwnerClaim = OwnerClaim

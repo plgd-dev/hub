@@ -55,20 +55,31 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 
-{{- define "plgd-hub.m2moauthserver.getJWTPrivateKeyClient" -}}
+{{- define "plgd-hub.m2moauthserver.getJwtPrivateKeyClient" -}}
 {{- $clientID := dict }}
 {{- range . }}
-{{- if .privateKeyJWT.enabled }}
+{{- if .jwtPrivateKey.enabled }}
 {{- $clientID = . }}
 {{- end }}
 {{- end }}
 {{- $clientID | toYaml }}
 {{- end }}
 
-{{- define "plgd-hub.m2moauthserver.jwtPrivateKeyEnabled" -}}
-{{- if or .Values.global.m2mJwtPrivateKey .Values.m2moauthserver.jwtPrivateKey.enabled -}}
+{{- define "plgd-hub.m2moauthserver.privateKeySecretEnabled" -}}
+{{- if or .Values.global.m2mPrivateKey .Values.m2moauthserver.privateKey.enabled }}
 true
-{{- else -}}
+{{- else }}
 {{- printf "" }}
-{{- end -}}
+{{- end }}
+{{- end }}
+
+{{- define "plgd-hub.m2moauthserver.getPrivateKeyFile" -}}
+{{- $privateKeyFile := .Values.m2moauthserver.oauthSigner.privateKeyFile }}
+{{- if and (not $privateKeyFile) (include "plgd-hub.m2moauthserver.privateKeySecretEnabled" $) }}
+{{- $privateKeyFile = printf "%s/%s" .Values.m2moauthserver.privateKey.mountPath .Values.m2moauthserver.privateKey.fileName }}
+{{- end }}
+{{- if and (not $privateKeyFile) }}
+{{- $privateKeyFile = "/keys/private.key" }}
+{{- end }}
+{{- printf "%s" $privateKeyFile }}
 {{- end -}}
