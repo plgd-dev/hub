@@ -56,6 +56,7 @@ func TestGetToken(t *testing.T) {
 				GrantType:    string(service.GrantTypeClientCredentials),
 				Host:         config.M2M_OAUTH_SERVER_HTTP_HOST,
 				Owner:        owner,
+				PostForm:     true,
 			},
 			wantCode: http.StatusOK,
 			want: want{

@@ -121,12 +121,6 @@ func generateAccessToken(clientCfg *Client, tokenReq tokenRequest, key interface
 	return string(payload), expires, nil
 }
 
-func (requestHandler *RequestHandler) tokenOptions(w http.ResponseWriter, r *http.Request) {
-	if err := jsonResponseWriter(w, r); err != nil {
-		log.Errorf("failed to write response: %v", err)
-	}
-}
-
 type tokenRequest struct {
 	ClientID            string    `json:"client_id"`
 	GrantType           GrantType `json:"grant_type"`
@@ -144,37 +138,6 @@ type tokenRequest struct {
 	ownerClaim    string
 	deviceIDClaim string
 	tokenType     AccessTokenType
-}
-
-// used by acquire service token
-func (requestHandler *RequestHandler) getToken(w http.ResponseWriter, r *http.Request) {
-	clientID := r.URL.Query().Get(uri.ClientIDKey)
-	audience := r.URL.Query().Get(uri.AudienceKey)
-	deviceID := r.URL.Query().Get(uri.DeviceIDKey)
-	owner := r.URL.Query().Get(uri.OwnerKey)
-	clientAssertionType := r.URL.Query().Get(uri.ClientAssertionTypeKey)
-	clientAssertion := r.URL.Query().Get(uri.ClientAssertionKey)
-	var ok bool
-	if clientID == "" {
-		clientID, _, ok = r.BasicAuth()
-		if !ok {
-			writeError(w, errors.New("authorization header is not set"), http.StatusBadRequest)
-			return
-		}
-	}
-	tr := tokenRequest{
-		ClientID:            clientID,
-		GrantType:           GrantTypeClientCredentials,
-		Audience:            audience,
-		DeviceID:            deviceID,
-		Owner:               owner,
-		ClientAssertionType: clientAssertionType,
-		ClientAssertion:     clientAssertion,
-
-		host:      r.Host,
-		tokenType: AccessTokenType_JWT,
-	}
-	requestHandler.processResponse(r.Context(), w, tr)
 }
 
 func (requestHandler *RequestHandler) getDomain() string {

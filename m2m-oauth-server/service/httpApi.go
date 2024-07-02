@@ -113,13 +113,9 @@ func NewHTTP(requestHandler *RequestHandler, logger log.Logger) http.Handler {
 	r.Use(kitHttp.CreateLoggingMiddleware(kitHttp.WithLogger(logger)))
 	r.StrictSlash(true)
 
-	// get JWKs
 	r.HandleFunc(uri.JWKs, requestHandler.getJWKs).Methods(http.MethodGet)
 	r.HandleFunc(uri.OpenIDConfiguration, requestHandler.getOpenIDConfiguration).Methods(http.MethodGet)
-
-	r.HandleFunc(uri.Token, requestHandler.tokenOptions).Methods(http.MethodOptions)
 	r.HandleFunc(uri.Token, requestHandler.postToken).Methods(http.MethodPost)
-	r.HandleFunc(uri.Token, requestHandler.getToken).Methods(http.MethodGet)
 
 	return r
 }
