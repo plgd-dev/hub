@@ -64,3 +64,11 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 {{- $clientID | toYaml }}
 {{- end }}
+
+{{- define "plgd-hub.m2moauthserver.jwtPrivateKeyEnabled" -}}
+{{- if or .Values.global.m2mJwtPrivateKey .Values.m2moauthserver.jwtPrivateKey.enabled -}}
+true
+{{- else -}}
+{{- printf "" }}
+{{- end -}}
+{{- end -}}
