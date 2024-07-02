@@ -19,9 +19,6 @@ func (c Config) Validate() error {
 	if c.TokenURL == "" {
 		return fmt.Errorf("token_endpoint('%v')", c.TokenURL)
 	}
-	if c.AuthURL == "" {
-		return fmt.Errorf("authorization_endpoint('%v')", c.AuthURL)
-	}
 	if c.Issuer == "" {
 		return fmt.Errorf("issuer('%v')", c.Issuer)
 	}
