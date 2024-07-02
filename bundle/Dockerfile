@@ -81,6 +81,14 @@ RUN go build \
     -o "/go/bin/$service" \
     ./cmd/service
 
+#oauth-server
+ARG service=m2m-oauth-server
+WORKDIR $root_directory/$service
+RUN go build \
+    -ldflags "-linkmode external -extldflags -static -X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" \
+    -o "/go/bin/$service" \
+    ./cmd/service
+
 #cloud2cloud-gateway
 ARG service=cloud2cloud-gateway
 WORKDIR $root_directory/$service
@@ -160,6 +168,8 @@ COPY --from=build /go/bin/nats-server /usr/local/bin/nats-server
 COPY --from=build /go/bin/nats /usr/local/bin/nats
 COPY --from=build /go/src/github.com/plgd-dev/hub/bundle/jetstream.json /configs/jetstream.json
 COPY --from=build /go/bin/oauth-server /usr/local/bin/oauth-server
+COPY --from=build /go/bin/m2m-oauth-server /usr/local/bin/m2m-oauth-server
+COPY --from=build /go/src/github.com/plgd-dev/hub/m2m-oauth-server/config.yaml /configs/m2m-oauth-server.yaml
 COPY --from=build /go/src/github.com/plgd-dev/hub/test/oauth-server/config.yaml /configs/oauth-server.yaml
 COPY http-gateway/web/build /usr/local/var/www
 COPY --from=build /go/bin/cloud2cloud-gateway /usr/local/bin/cloud2cloud-gateway
@@ -222,6 +232,7 @@ ENV NATS_PORT=10001
 ENV SCYLLA_SMP=1
 ENV SCYLLA_DEVELOPER_MODE=true
 ENV SCYLLA_PORT=29142
+ENV M2M_OAUTH_SERVER_PORT=9080
 
 # OAuth
 ENV DEVICE_PROVIDER=plgd
