@@ -20,11 +20,7 @@ const Tab4: FC<Props> = (props) => {
         [id, navigate]
     )
 
-    return (
-        <div style={{ margin: '0 -40px' }}>
-            <DetailPage currentTab={section} onItemClick={handleItemClick} provisioningRecord={provisioningRecords} />
-        </div>
-    )
+    return <DetailPage currentTab={section} onItemClick={handleItemClick} provisioningRecord={provisioningRecords} />
 }
 
 Tab4.displayName = 'Tab4'

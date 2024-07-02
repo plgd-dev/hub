@@ -350,4 +350,136 @@ export const messages = defineMessages({
         id: 'global.invalidNumber',
         defaultMessage: 'Invalid number',
     },
+    undoneAction: {
+        id: 'global.undoneAction',
+        defaultMessage: 'This action cannot be undone.',
+    },
+    general: {
+        id: 'global.general',
+        defaultMessage: 'General',
+    },
+    listOfResources: {
+        id: 'global.listOfResources',
+        defaultMessage: 'List of Resources',
+    },
+    href: {
+        id: 'global.href',
+        defaultMessage: 'Href',
+    },
+    timeToLive: {
+        id: 'global.timeToLive',
+        defaultMessage: 'Time to live',
+    },
+    second: {
+        id: 'global.second',
+        defaultMessage: 'second',
+    },
+    fullView: {
+        id: 'global.fullView',
+        defaultMessage: 'Full View',
+    },
+    compactView: {
+        id: 'global.compactView',
+        defaultMessage: 'Compact View',
+    },
+    deleteResource: {
+        id: 'global.deleteResource',
+        defaultMessage: 'Delete Resource',
+    },
+    lastModified: {
+        id: 'global.lastModified',
+        defaultMessage: 'Last Modified',
+    },
+    link: {
+        id: 'global.link',
+        defaultMessage: 'Link',
+    },
+    enabled: {
+        id: 'global.enabled',
+        defaultMessage: 'Enabled',
+    },
+    disabled: {
+        id: 'global.disabled',
+        defaultMessage: 'Disabled',
+    },
+    filters: {
+        id: 'global.filters',
+        defaultMessage: 'Filters',
+    },
+    deviceId: {
+        id: 'global.deviceId',
+        defaultMessage: 'Device ID',
+    },
+    selectOrCreate: {
+        id: 'global.selectOrCreate',
+        defaultMessage: 'Select or type to create',
+    },
+    setUp: {
+        id: 'global.setUp',
+        defaultMessage: 'Set Up',
+    },
+    notSet: {
+        id: 'global.notSet',
+        defaultMessage: 'Not Set',
+    },
+    deviceName: {
+        id: 'global.deviceName',
+        defaultMessage: 'Device name',
+    },
+    keepAlive: {
+        id: 'global.keepAlive',
+        defaultMessage: 'Keep alive',
+    },
+    content: {
+        id: 'global.content',
+        defaultMessage: 'Content',
+    },
+    duration: {
+        id: 'global.duration',
+        defaultMessage: 'Duration',
+    },
+    add: {
+        id: 'global.add',
+        defaultMessage: 'Add',
+    },
+    setDevices: {
+        id: 'global.setDevices',
+        defaultMessage: 'Set Devices',
+    },
+    createAndSave: {
+        id: 'global.createAndSave',
+        defaultMessage: 'Create and Save',
+    },
+    deviceSelected: {
+        id: 'global.deviceSelected',
+        defaultMessage: 'device selected',
+    },
+    devicesSelected: {
+        id: 'global.devicesSelected',
+        defaultMessage: 'devices selected',
+    },
+    error: {
+        id: 'global.error',
+        defaultMessage: 'Error',
+    },
+    pending: {
+        id: 'global.pending',
+        defaultMessage: 'Pending',
+    },
+    success: {
+        id: 'global.success',
+        defaultMessage: 'Success',
+    },
+    noDevices: {
+        id: 'global.noDevices',
+        defaultMessage: 'No Devices',
+    },
+    canceled: {
+        id: 'global.canceled',
+        defaultMessage: 'Canceled',
+    },
+    invoke: {
+        id: 'global.invoke',
+        defaultMessage: 'Invoke',
+    },
 })

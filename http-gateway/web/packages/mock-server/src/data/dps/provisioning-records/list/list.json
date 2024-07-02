@@ -1,0 +1,501 @@
+[
+  {
+    "result": {
+      "enrollmentGroupId": "4f0d3d81-0e09-4f1e-9706-0997488011af",
+      "creationDate": "1716652467413672050",
+      "attestation": {
+        "date": "1719474938251929779",
+        "x509": {
+          "certificatePem": "-----BEGIN CERTIFICATE-----\nMIIBgjCCASmgAwIBAgIQdYzG5cWdt18FWrG0WxBqNzAKBggqhkjOPQQDAjAUMRIw\nEAYDVQQDEwlNZmdSb290Q0EwIBcNMjMxMTA2MDcyNzU5WhgPMjEyMzEwMTMwNzI3\nNTlaMBIxEDAOBgNVBAMTB01mZ0NlcnQwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNC\nAAQMkz/uQi1sbMmuxgagH/A5II6CcxZz9sWpSjuxLEqPNEbL021yUaQX6/U2GBYs\npFVWzGPWIog30mgGq/jvDyQKo10wWzAfBgNVHSMEGDAWgBRchhQ5bzFpRdMG/NMg\nyH20R+5UzzAMBgNVHRMEBTADAQEAMAsGA1UdDwQEAwIDiDAdBgNVHSUEFjAUBggr\nBgEFBQcDAgYIKwYBBQUHAwEwCgYIKoZIzj0EAwIDRwAwRAIgbqEU4iOhHpD4YnjC\nO5J8lTIw+RbZ+r9uZD1K2fz4ZfkCIGFzidJQAmBSPVvEdK4X4CSf76BjEoRwXxm2\nKaeI8Vkl\n-----END CERTIFICATE-----\n",
+          "commonName": "MfgCert"
+        }
+      },
+      "cloud": {
+        "status": {
+          "coapCode": 68,
+          "date": "1719474938285092512"
+        },
+        "providerName": "plgd.dps",
+        "gateways": [
+          {
+            "id": "1c10a3b6-287c-11ec-ac2d-13054959c274",
+            "uri": "coaps+tcp://try.plgd.cloud:5684"
+          }
+        ],
+        "selectedGateway": 0
+      },
+      "owner": "beb32777-9680-4f42-8761-350eebe76a85",
+      "id": "69f23484-171a-56a9-b300-89cd3007a70c",
+      "deviceId": "d9dde79c-3916-433b-4789-ca10aad6fc4a",
+      "credential": {
+        "status": {
+          "date": "1719474938324358862",
+          "coapCode": 68
+        },
+        "identityCertificatePem": "-----BEGIN CERTIFICATE-----\nMIIBpDCCAUmgAwIBAgIRAPJNdAgYEQhNPjTxlF3/1v0wCgYIKoZIzj0EAwIwEjEQ\nMA4GA1UEAxMHcGxnZC1jYTAeFw0yNDA2MjcwNjU1MzhaFw0yNTA1MjUxNzAyNTFa\nMDQxMjAwBgNVBAMTKXV1aWQ6ZDlkZGU3OWMtMzkxNi00MzNiLTQ3ODktY2ExMGFh\nZDZmYzRhMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEaWg0Wurmnrl8LTvARHc+\nCu8eiLBIsKXp/RALqr2htsFK0jlkStpuxMWfSofbTiY/8gD1YmM3Q833CL0Sg+C5\nZaNeMFwwDgYDVR0PAQH/BAQDAgOIMCkGA1UdJQQiMCAGCCsGAQUFBwMCBggrBgEF\nBQcDAQYKKwYBBAGC3nwBBjAfBgNVHSMEGDAWgBQjPUu64s8tgK2IYgEQbrTl+w0z\n2jAKBggqhkjOPQQDAgNJADBGAiEA/bvt26yZJozHeXJGusuH4HLZd4eAkQy7Bc9x\nSmt3UukCIQDx9g2DUPECP/20MV18FKkitUAN3Ed4tB/gmX17tCBuQw==\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nMIIBkDCCATagAwIBAgIQFq/ergts3Jlaxk3N92FfzTAKBggqhkjOPQQDAjAdMRsw\nGQYDVQQDExJyb290LmNhLnBsZ2QuY2xvdWQwHhcNMjQwNTI1MTcwMjUxWhcNMjUw\nNTI1MTcwMjUxWjASMRAwDgYDVQQDEwdwbGdkLWNhMFkwEwYHKoZIzj0CAQYIKoZI\nzj0DAQcDQgAE5s5zak9SL6OCMM49iyJYpNvnHly3UVdTe4jaAxmMS2YM63e68Cix\nevhl849SzCnpoD9yJzFA2HmhEc82IVt66KNjMGEwDgYDVR0PAQH/BAQDAgGGMA8G\nA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFCM9S7rizy2ArYhiARButOX7DTPaMB8G\nA1UdIwQYMBaAFELK01Gtmvz99kTvIM5idzOLxerIMAoGCCqGSM49BAMCA0gAMEUC\nIG4Cnqkb+atbFIAeTFyIR4v3ABi0CjPub07xnt/bvN6FAiEAxgyW5sibfw7z3/xc\nQnA0w68sKmVRZhvfUNMYkqbk/2w=\n-----END CERTIFICATE-----\n",
+        "credentials": [
+          {
+            "type": [
+              "ASYMMETRIC_SIGNING_WITH_CERTIFICATE"
+            ],
+            "publicData": {
+              "data": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJwRENDQVVtZ0F3SUJBZ0lSQVBKTmRBZ1lFUWhOUGpUeGxGMy8xdjB3Q2dZSUtvWkl6ajBFQXdJd0VqRVEKTUE0R0ExVUVBeE1IY0d4blpDMWpZVEFlRncweU5EQTJNamN3TmpVMU16aGFGdzB5TlRBMU1qVXhOekF5TlRGYQpNRFF4TWpBd0JnTlZCQU1US1hWMWFXUTZaRGxrWkdVM09XTXRNemt4TmkwME16TmlMVFEzT0RrdFkyRXhNR0ZoClpEWm1ZelJoTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFYVdnMFd1cm1ucmw4TFR2QVJIYysKQ3U4ZWlMQklzS1hwL1JBTHFyMmh0c0ZLMGpsa1N0cHV4TVdmU29mYlRpWS84Z0QxWW1NM1E4MzNDTDBTZytDNQpaYU5lTUZ3d0RnWURWUjBQQVFIL0JBUURBZ09JTUNrR0ExVWRKUVFpTUNBR0NDc0dBUVVGQndNQ0JnZ3JCZ0VGCkJRY0RBUVlLS3dZQkJBR0MzbndCQmpBZkJnTlZIU01FR0RBV2dCUWpQVXU2NHM4dGdLMklZZ0VRYnJUbCt3MHoKMmpBS0JnZ3Foa2pPUFFRREFnTkpBREJHQWlFQS9idnQyNnlaSm96SGVYSkd1c3VINEhMWmQ0ZUFrUXk3QmM5eApTbXQzVXVrQ0lRRHg5ZzJEVVBFQ1AvMjBNVjE4RktraXRVQU4zRWQ0dEIvZ21YMTd0Q0J1UXc9PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCi0tLS0tQkVHSU4gQ0VSVElGSUNBVEUtLS0tLQpNSUlCa0RDQ0FUYWdBd0lCQWdJUUZxL2VyZ3RzM0psYXhrM045MkZmelRBS0JnZ3Foa2pPUFFRREFqQWRNUnN3CkdRWURWUVFERXhKeWIyOTBMbU5oTG5Cc1oyUXVZMnh2ZFdRd0hoY05NalF3TlRJMU1UY3dNalV4V2hjTk1qVXcKTlRJMU1UY3dNalV4V2pBU01SQXdEZ1lEVlFRREV3ZHdiR2RrTFdOaE1Ga3dFd1lIS29aSXpqMENBUVlJS29aSQp6ajBEQVFjRFFnQUU1czV6YWs5U0w2T0NNTTQ5aXlKWXBOdm5IbHkzVVZkVGU0amFBeG1NUzJZTTYzZTY4Q2l4CmV2aGw4NDlTekNucG9EOXlKekZBMkhtaEVjODJJVnQ2NktOak1HRXdEZ1lEVlIwUEFRSC9CQVFEQWdHR01BOEcKQTFVZEV3RUIvd1FGTUFNQkFmOHdIUVlEVlIwT0JCWUVGQ005UzdyaXp5MkFyWWhpQVJCdXRPWDdEVFBhTUI4RwpBMVVkSXdRWU1CYUFGRUxLMDFHdG12ejk5a1R2SU01aWR6T0x4ZXJJTUFvR0NDcUdTTTQ5QkFNQ0EwZ0FNRVVDCklHNENucWtiK2F0YkZJQWVURnlJUjR2M0FCaTBDalB1YjA3eG50L2J2TjZGQWlFQXhneVc1c2liZnc3ejMveGMKUW5BMHc2OHNLbVZSWmh2ZlVOTVlrcWJrLzJ3PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==",
+              "encoding": "PEM"
+            },
+            "id": "0",
+            "subject": "d9dde79c-3916-433b-4789-ca10aad6fc4a",
+            "usage": "CERT"
+          },
+          {
+            "subject": "beb32777-9680-4f42-8761-350eebe76a85",
+            "usage": "TRUST_CA",
+            "id": "0",
+            "type": [
+              "ASYMMETRIC_SIGNING_WITH_CERTIFICATE"
+            ],
+            "publicData": {
+              "data": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJmVENDQVNPZ0F3SUJBZ0lSQUlwR0Jrb0U2ZXdwdFJMT1FaMXZrb1V3Q2dZSUtvWkl6ajBFQXdJd0hURWIKTUJrR0ExVUVBeE1TY205dmRDNWpZUzV3Ykdka0xtTnNiM1ZrTUNBWERUSXpNVEF4T1RBNE5EZ3hOVm9ZRHpJeApNak13T1RJMU1EZzBPREUxV2pBZE1Sc3dHUVlEVlFRREV4SnliMjkwTG1OaExuQnNaMlF1WTJ4dmRXUXdXVEFUCkJnY3Foa2pPUFFJQkJnZ3Foa2pPUFFNQkJ3TkNBQVFtMHgrMTZCdWt2ditIV0FlcnkvMG8vVlFBTzhib3hzNHcKT2lhWFRybDBhbi9iUkR6REFwc1J2cDY5SHdJY2haS0FjZTVPQ3JkZFNpVVJOdDZRZWYwQ28wSXdRREFPQmdOVgpIUThCQWY4RUJBTUNBUVl3RHdZRFZSMFRBUUgvQkFVd0F3RUIvekFkQmdOVkhRNEVGZ1FVUXNyVFVhMmEvUDMyClJPOGd6bUozTTR2RjZzZ3dDZ1lJS29aSXpqMEVBd0lEU0FBd1JRSWdOMHBnS1N4d2RvUklkV1RxaTdUcDd0eVAKb05LNERxeElsWWJuRUlJb3BlZ0NJUURsd2FUMmg2RUtaM1R3SHFBcTU1UXl3TDM3RzJwdjVKOE03dDFFcVBnQQpZQT09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K",
+              "encoding": "PEM"
+            }
+          }
+        ]
+      },
+      "acl": {
+        "status": {
+          "coapCode": 69,
+          "date": "1719474938340859252"
+        },
+        "accessControlList": [
+          {
+            "permissions": [
+              "CREATE",
+              "READ",
+              "WRITE",
+              "DELETE",
+              "NOTIFY"
+            ],
+            "resources": [
+              {
+                "href": "/CoapCloudConfResURI",
+                "interfaces": [
+                  "*"
+                ],
+                "wildcard": "NONE"
+              },
+              {
+                "href": "/oic/sec/sp",
+                "interfaces": [
+                  "*"
+                ],
+                "wildcard": "NONE"
+              },
+              {
+                "href": "/x.plgd.dev/time",
+                "interfaces": [
+                  "*"
+                ],
+                "wildcard": "NONE"
+              },
+              {
+                "href": "/oc/con",
+                "interfaces": [
+                  "*"
+                ],
+                "wildcard": "NONE"
+              },
+              {
+                "href": "/oc/swu",
+                "interfaces": [
+                  "*"
+                ],
+                "wildcard": "NONE"
+              },
+              {
+                "interfaces": [
+                  "*"
+                ],
+                "wildcard": "NONE",
+                "href": "/oic/mnt"
+              },
+              {
+                "href": "/x.plgd.dev/time",
+                "interfaces": [
+                  "*"
+                ],
+                "wildcard": "NONE"
+              },
+              {
+                "interfaces": [
+                  "*"
+                ],
+                "wildcard": "NONCFG_ALL"
+              }
+            ],
+            "deviceSubject": {
+              "deviceId": "beb32777-9680-4f42-8761-350eebe76a85"
+            }
+          },
+          {
+            "connectionSubject": {
+              "type": "ANON_CLEAR"
+            },
+            "permissions": [
+              "READ"
+            ],
+            "resources": [
+              {
+                "href": "/oic/d",
+                "interfaces": [
+                  "*"
+                ],
+                "wildcard": "NONE"
+              },
+              {
+                "interfaces": [
+                  "*"
+                ],
+                "wildcard": "NONE",
+                "href": "/oic/p"
+              },
+              {
+                "href": "/oic/res",
+                "interfaces": [
+                  "*"
+                ],
+                "wildcard": "NONE"
+              },
+              {
+                "href": "/oic/sec/sdi",
+                "interfaces": [
+                  "*"
+                ],
+                "wildcard": "NONE"
+              },
+              {
+                "wildcard": "NONE",
+                "href": "/oic/sec/doxm",
+                "interfaces": [
+                  "*"
+                ]
+              }
+            ]
+          },
+          {
+            "deviceSubject": {
+              "deviceId": "1c10a3b6-287c-11ec-ac2d-13054959c274"
+            },
+            "permissions": [
+              "CREATE",
+              "READ",
+              "WRITE",
+              "DELETE",
+              "NOTIFY"
+            ],
+            "resources": [
+              {
+                "href": "/oc/con",
+                "interfaces": [
+                  "*"
+                ],
+                "wildcard": "NONE"
+              },
+              {
+                "href": "/oc/swu",
+                "interfaces": [
+                  "*"
+                ],
+                "wildcard": "NONE"
+              },
+              {
+                "interfaces": [
+                  "*"
+                ],
+                "wildcard": "NONE",
+                "href": "/oic/mnt"
+              },
+              {
+                "href": "/x.plgd.dev/time",
+                "interfaces": [
+                  "*"
+                ],
+                "wildcard": "NONE"
+              },
+              {
+                "interfaces": [
+                  "*"
+                ],
+                "wildcard": "NONCFG_ALL"
+              }
+            ]
+          }
+        ]
+      },
+      "ownership": {
+        "status": {
+          "coapCode": 69,
+          "date": "1719474938266133666"
+        },
+        "owner": "beb32777-9680-4f42-8761-350eebe76a85"
+      },
+      "plgdTime": {
+        "date": "1719474938192355476",
+        "coapCode": 69
+      },
+      "localEndpoints": [
+        "coap://10.110.110.12:41885",
+        "coaps://10.110.110.12:49997",
+        "coap+tcp://10.110.110.12:35389",
+        "coaps+tcp://10.110.110.12:33711"
+      ]
+    }
+  },{
+  "result": {
+    "attestation": {
+      "date": "1717157743336135946",
+      "x509": {
+        "commonName": "MfgCert1",
+        "certificatePem": "-----BEGIN CERTIFICATE-----\nMIIBhTCCASugAwIBAgIRAJ+UC+MPMl6jc9FVeHZEgB4wCgYIKoZIzj0EAwIwFDES\nMBAGA1UEAxMJTWZnUm9vdENBMCAXDTIzMTIxMTEyNTIwMVoYDzIxMjMxMTE3MTI1\nMjAxWjATMREwDwYDVQQDEwhNZmdDZXJ0MTBZMBMGByqGSM49AgEGCCqGSM49AwEH\nA0IABFU2BHkqcNsiN68hGoFGzk+QtK78su3HpObu0U6Yhq5tnbGffQ4oTcel4Lhx\nlW5FHWUPI/l2LV9Ej/i3DSaurs6jXTBbMB8GA1UdIwQYMBaAFFyGFDlvMWlF0wb8\n0yDIfbRH7lTPMAwGA1UdEwQFMAMBAQAwCwYDVR0PBAQDAgOIMB0GA1UdJQQWMBQG\nCCsGAQUFBwMCBggrBgEFBQcDATAKBggqhkjOPQQDAgNIADBFAiBM31BMFp/ImqVt\nwH55aaqYSYp00pabSyIbKwFle6B+2wIhAMqXjZ3zoEECNU7zUo/hpYPTqanak2t6\ndPVwtlKcRlPx\n-----END CERTIFICATE-----\n"
+      }
+    },
+    "cloud": {
+      "gateways": [
+        {
+          "uri": "coaps+tcp://try.plgd.cloud:5684",
+          "id": "1c10a3b6-287c-11ec-ac2d-13054959c274"
+        }
+      ],
+      "selectedGateway": 0,
+      "status": {
+        "coapCode": 68,
+        "date": "1717157743426800468"
+      },
+      "providerName": "plgd.dps"
+    },
+    "ownership": {
+      "status": {
+        "date": "1717157743352900277",
+        "coapCode": 69
+      },
+      "owner": "beb32777-9680-4f42-8761-350eebe76a85"
+    },
+    "plgdTime": {
+      "date": "1717157743283612068",
+      "coapCode": 69
+    },
+    "id": "4a0d78b2-9a21-557d-ab08-bb4eaccfcbb0",
+    "deviceId": "bcd30976-10e4-4145-5282-eb50ee55dfae",
+    "creationDate": "1716656687662199144",
+    "localEndpoints": [
+      "coap://10.110.110.12:45396",
+      "coaps://10.110.110.12:52852",
+      "coap+tcp://10.110.110.12:51863",
+      "coaps+tcp://10.110.110.12:38145"
+    ],
+    "owner": "beb32777-9680-4f42-8761-350eebe76a85",
+    "enrollmentGroupId": "4f0d3d81-0e09-4f1e-9706-0997488011af",
+    "credential": {
+      "identityCertificatePem": "-----BEGIN CERTIFICATE-----\nMIIBojCCAUigAwIBAgIQIm1TIO0PH7O+w+LXTfV1KTAKBggqhkjOPQQDAjASMRAw\nDgYDVQQDEwdwbGdkLWNhMB4XDTI0MDUzMTExMTU0M1oXDTI1MDUyNTE3MDI1MVow\nNDEyMDAGA1UEAxMpdXVpZDpiY2QzMDk3Ni0xMGU0LTQxNDUtNTI4Mi1lYjUwZWU1\nNWRmYWUwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAQK9W+P4MDWdABFVSgZOWnW\nDGEkU8abmg2zVW1MlGPZF4YKpKWEUIoqeVxpm5D/yKtzG15uuvx3U2oU3UbRGL5t\no14wXDAOBgNVHQ8BAf8EBAMCA4gwKQYDVR0lBCIwIAYIKwYBBQUHAwIGCCsGAQUF\nBwMBBgorBgEEAYLefAEGMB8GA1UdIwQYMBaAFCM9S7rizy2ArYhiARButOX7DTPa\nMAoGCCqGSM49BAMCA0gAMEUCIBMdkdXzDBJgThKP3Q1hTV/XzigwlSe7+YlXoINl\ngW8DAiEA7f9ghvAZzBbep1sMDmcTFFLquzAPNsRBSCkSquyYUNQ=\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nMIIBkDCCATagAwIBAgIQFq/ergts3Jlaxk3N92FfzTAKBggqhkjOPQQDAjAdMRsw\nGQYDVQQDExJyb290LmNhLnBsZ2QuY2xvdWQwHhcNMjQwNTI1MTcwMjUxWhcNMjUw\nNTI1MTcwMjUxWjASMRAwDgYDVQQDEwdwbGdkLWNhMFkwEwYHKoZIzj0CAQYIKoZI\nzj0DAQcDQgAE5s5zak9SL6OCMM49iyJYpNvnHly3UVdTe4jaAxmMS2YM63e68Cix\nevhl849SzCnpoD9yJzFA2HmhEc82IVt66KNjMGEwDgYDVR0PAQH/BAQDAgGGMA8G\nA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFCM9S7rizy2ArYhiARButOX7DTPaMB8G\nA1UdIwQYMBaAFELK01Gtmvz99kTvIM5idzOLxerIMAoGCCqGSM49BAMCA0gAMEUC\nIG4Cnqkb+atbFIAeTFyIR4v3ABi0CjPub07xnt/bvN6FAiEAxgyW5sibfw7z3/xc\nQnA0w68sKmVRZhvfUNMYkqbk/2w=\n-----END CERTIFICATE-----\n",
+      "credentials": [
+        {
+          "publicData": {
+            "data": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJvakNDQVVpZ0F3SUJBZ0lRSW0xVElPMFBIN08rdytMWFRmVjFLVEFLQmdncWhrak9QUVFEQWpBU01SQXcKRGdZRFZRUURFd2R3Ykdka0xXTmhNQjRYRFRJME1EVXpNVEV4TVRVME0xb1hEVEkxTURVeU5URTNNREkxTVZvdwpOREV5TURBR0ExVUVBeE1wZFhWcFpEcGlZMlF6TURrM05pMHhNR1UwTFRReE5EVXROVEk0TWkxbFlqVXdaV1UxCk5XUm1ZV1V3V1RBVEJnY3Foa2pPUFFJQkJnZ3Foa2pPUFFNQkJ3TkNBQVFLOVcrUDRNRFdkQUJGVlNnWk9XblcKREdFa1U4YWJtZzJ6VlcxTWxHUFpGNFlLcEtXRVVJb3FlVnhwbTVEL3lLdHpHMTV1dXZ4M1Uyb1UzVWJSR0w1dApvMTR3WERBT0JnTlZIUThCQWY4RUJBTUNBNGd3S1FZRFZSMGxCQ0l3SUFZSUt3WUJCUVVIQXdJR0NDc0dBUVVGCkJ3TUJCZ29yQmdFRUFZTGVmQUVHTUI4R0ExVWRJd1FZTUJhQUZDTTlTN3JpenkyQXJZaGlBUkJ1dE9YN0RUUGEKTUFvR0NDcUdTTTQ5QkFNQ0EwZ0FNRVVDSUJNZGtkWHpEQkpnVGhLUDNRMWhUVi9Yemlnd2xTZTcrWWxYb0lObApnVzhEQWlFQTdmOWdodkFaekJiZXAxc01EbWNURkZMcXV6QVBOc1JCU0NrU3F1eVlVTlE9Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0KLS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJrRENDQVRhZ0F3SUJBZ0lRRnEvZXJndHMzSmxheGszTjkyRmZ6VEFLQmdncWhrak9QUVFEQWpBZE1Sc3cKR1FZRFZRUURFeEp5YjI5MExtTmhMbkJzWjJRdVkyeHZkV1F3SGhjTk1qUXdOVEkxTVRjd01qVXhXaGNOTWpVdwpOVEkxTVRjd01qVXhXakFTTVJBd0RnWURWUVFERXdkd2JHZGtMV05oTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJCnpqMERBUWNEUWdBRTVzNXphazlTTDZPQ01NNDlpeUpZcE52bkhseTNVVmRUZTRqYUF4bU1TMllNNjNlNjhDaXgKZXZobDg0OVN6Q25wb0Q5eUp6RkEySG1oRWM4MklWdDY2S05qTUdFd0RnWURWUjBQQVFIL0JBUURBZ0dHTUE4RwpBMVVkRXdFQi93UUZNQU1CQWY4d0hRWURWUjBPQkJZRUZDTTlTN3JpenkyQXJZaGlBUkJ1dE9YN0RUUGFNQjhHCkExVWRJd1FZTUJhQUZFTEswMUd0bXZ6OTlrVHZJTTVpZHpPTHhlcklNQW9HQ0NxR1NNNDlCQU1DQTBnQU1FVUMKSUc0Q25xa2IrYXRiRklBZVRGeUlSNHYzQUJpMENqUHViMDd4bnQvYnZONkZBaUVBeGd5VzVzaWJmdzd6My94YwpRbkEwdzY4c0ttVlJaaHZmVU5NWWtxYmsvMnc9Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K",
+            "encoding": "PEM"
+          },
+          "subject": "bcd30976-10e4-4145-5282-eb50ee55dfae",
+          "usage": "CERT",
+          "id": "0",
+          "type": [
+            "ASYMMETRIC_SIGNING_WITH_CERTIFICATE"
+          ]
+        },
+        {
+          "id": "0",
+          "type": [
+            "ASYMMETRIC_SIGNING_WITH_CERTIFICATE"
+          ],
+          "subject": "beb32777-9680-4f42-8761-350eebe76a85",
+          "usage": "TRUST_CA",
+          "publicData": {
+            "data": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJmVENDQVNPZ0F3SUJBZ0lSQUlwR0Jrb0U2ZXdwdFJMT1FaMXZrb1V3Q2dZSUtvWkl6ajBFQXdJd0hURWIKTUJrR0ExVUVBeE1TY205dmRDNWpZUzV3Ykdka0xtTnNiM1ZrTUNBWERUSXpNVEF4T1RBNE5EZ3hOVm9ZRHpJeApNak13T1RJMU1EZzBPREUxV2pBZE1Sc3dHUVlEVlFRREV4SnliMjkwTG1OaExuQnNaMlF1WTJ4dmRXUXdXVEFUCkJnY3Foa2pPUFFJQkJnZ3Foa2pPUFFNQkJ3TkNBQVFtMHgrMTZCdWt2ditIV0FlcnkvMG8vVlFBTzhib3hzNHcKT2lhWFRybDBhbi9iUkR6REFwc1J2cDY5SHdJY2haS0FjZTVPQ3JkZFNpVVJOdDZRZWYwQ28wSXdRREFPQmdOVgpIUThCQWY4RUJBTUNBUVl3RHdZRFZSMFRBUUgvQkFVd0F3RUIvekFkQmdOVkhRNEVGZ1FVUXNyVFVhMmEvUDMyClJPOGd6bUozTTR2RjZzZ3dDZ1lJS29aSXpqMEVBd0lEU0FBd1JRSWdOMHBnS1N4d2RvUklkV1RxaTdUcDd0eVAKb05LNERxeElsWWJuRUlJb3BlZ0NJUURsd2FUMmg2RUtaM1R3SHFBcTU1UXl3TDM3RzJwdjVKOE03dDFFcVBnQQpZQT09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K",
+            "encoding": "PEM"
+          }
+        }
+      ],
+      "status": {
+        "date": "1717157743461436598",
+        "coapCode": 68
+      }
+    },
+    "acl": {
+      "status": {
+        "date": "1717157743480774484",
+        "coapCode": 69
+      },
+      "accessControlList": [
+        {
+          "permissions": [
+            "CREATE",
+            "READ",
+            "WRITE",
+            "DELETE",
+            "NOTIFY"
+          ],
+          "resources": [
+            {
+              "href": "/CoapCloudConfResURI",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "href": "/oic/sec/sp",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "href": "/x.plgd.dev/time",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "href": "/oc/con",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "href": "/oc/swu",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE",
+              "href": "/oic/mnt"
+            },
+            {
+              "wildcard": "NONE",
+              "href": "/x.plgd.dev/time",
+              "interfaces": [
+                "*"
+              ]
+            },
+            {
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONCFG_ALL"
+            }
+          ],
+          "deviceSubject": {
+            "deviceId": "beb32777-9680-4f42-8761-350eebe76a85"
+          }
+        },
+        {
+          "connectionSubject": {
+            "type": "ANON_CLEAR"
+          },
+          "permissions": [
+            "READ"
+          ],
+          "resources": [
+            {
+              "href": "/oic/d",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "href": "/oic/p",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE",
+              "href": "/oic/res"
+            },
+            {
+              "href": "/oic/sec/sdi",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE",
+              "href": "/oic/sec/doxm"
+            }
+          ]
+        },
+        {
+          "deviceSubject": {
+            "deviceId": "1c10a3b6-287c-11ec-ac2d-13054959c274"
+          },
+          "permissions": [
+            "CREATE",
+            "READ",
+            "WRITE",
+            "DELETE",
+            "NOTIFY"
+          ],
+          "resources": [
+            {
+              "href": "/oc/con",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "wildcard": "NONE",
+              "href": "/oc/swu",
+              "interfaces": [
+                "*"
+              ]
+            },
+            {
+              "href": "/oic/mnt",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "wildcard": "NONE",
+              "href": "/x.plgd.dev/time",
+              "interfaces": [
+                "*"
+              ]
+            },
+            {
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONCFG_ALL"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
+]

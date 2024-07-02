@@ -5,8 +5,9 @@ import { FooterSizeType } from '@shared-ui/components/Layout/Footer/Footer.types
 export type Props = PageLayoutProps & {
     breadcrumbs: BreadcrumbItem[]
     deviceId?: string
+    innerPortalTarget?: any
     notFound?: boolean
     pendingCommands?: boolean
-    innerPortalTarget?: any
     size?: FooterSizeType
+    tableLayout?: boolean
 }

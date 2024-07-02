@@ -62,7 +62,7 @@ const DetailPage: FC<Props> = (props) => {
     )
 
     return (
-        <div style={{ height: '100%', overflow: 'hidden' }}>
+        <>
             <OverviewRow data={provisioningRecord} />
             <Spacer type='pt-8'>
                 <Row style={{ height: '100%', overflow: 'hidden' }}>
@@ -78,7 +78,8 @@ const DetailPage: FC<Props> = (props) => {
                             />
                         </Spacer>
                     </Column>
-                    <Column style={{ height: '100%' }} xl={9}>
+                    <Column style={{ height: '100%' }} xl={1}></Column>
+                    <Column style={{ height: '100%' }} xl={8}>
                         <Loadable condition={!!provisioningRecord}>
                             <ContentSwitch activeItem={parseInt(activeItem, 10)}>
                                 <Tab1
@@ -97,7 +98,7 @@ const DetailPage: FC<Props> = (props) => {
                     </Column>
                 </Row>
             </Spacer>
-        </div>
+        </>
     )
 }
 

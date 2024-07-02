@@ -29,7 +29,7 @@ const LinkedHubsListPage: FC<any> = () => {
     const navigate = useNavigate()
 
     const [selected, setSelected] = useState<string[]>([])
-    const [unselectRowsToken, setUnselectRowsToken] = useState(1)
+    const [unselectRowsToken, setUnselectRowsToken] = useState(0)
     const [deleting, setDeleting] = useState(false)
 
     // eslint-disable-next-line react-hooks/exhaustive-deps

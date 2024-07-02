@@ -565,14 +565,6 @@ export const messages = defineMessages({
         id: 'devices.lastTimeOnline',
         defaultMessage: 'Last time online',
     },
-    fullView: {
-        id: 'devices.fullView',
-        defaultMessage: 'Full View',
-    },
-    compactView: {
-        id: 'devices.compactView',
-        defaultMessage: 'Compact View',
-    },
     certificateName: {
         id: 'devices.certificateName',
         defaultMessage: 'Certificate name',

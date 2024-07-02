@@ -1,0 +1,17 @@
+{
+  "result": {
+    "id": "4f0d3d81-0e09-4f1e-9706-0997488011af",
+    "owner": "beb32777-9680-4f42-8761-350eebe76a85",
+    "attestationMechanism": {
+      "x509": {
+        "certificateChain": "/secrets/enrollmentgroups/x509/4f0d3d81-0e09-4f1e-9706-0997488011af/certificatechain.crt",
+        "leadCertificateName": "MfgRootCA",
+        "expiredCertificateEnabled": false
+      }
+    },
+    "hubIds": [
+      "1c10a3b6-287c-11ec-ac2d-13054959c274"
+    ],
+    "name": "4f0d3d81-0e09-4f1e-9706-0997488011af"
+  }
+}

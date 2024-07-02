@@ -8,6 +8,12 @@ import { dateFormat, timeFormatLong } from '../constants'
 
 const time = converter.time
 
+export const formatText = (value: string | number, formatDate: any, formatTime: any) => {
+    const date = new Date(time(value).from('ns').to('ms').value)
+
+    return `${formatDate(date, dateFormat as Intl.DateTimeFormatOptions)} ${formatTime(date, timeFormatLong as Intl.DateTimeFormatOptions)}`
+}
+
 const DateFormat: FC<Props> = (props) => {
     const { prefixTest, rawValue, value } = props
     const { formatDate, formatTime } = useIntl()
