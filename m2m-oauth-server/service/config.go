@@ -179,6 +179,11 @@ func (c *OAuthSignerConfig) Validate() error {
 	if len(c.Clients) == 0 {
 		return fmt.Errorf("clients('%v')", c.Clients)
 	}
+	for idx, client := range c.Clients {
+		if err := client.Validate(c.OwnerClaim, c.DeviceIDClaim); err != nil {
+			return fmt.Errorf("clients[%v].%w", idx, err)
+		}
+	}
 	return nil
 }
 

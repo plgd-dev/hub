@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -207,6 +208,7 @@ type AccessTokenOptions struct {
 	GrantType    string
 	Audience     string
 	JWT          string
+	PostForm     bool
 }
 
 func WithAccessTokenOptions(options AccessTokenOptions) func(opts *AccessTokenOptions) {
@@ -263,6 +265,20 @@ func WithAccessTokenJWT(jwt string) func(opts *AccessTokenOptions) {
 	}
 }
 
+func WithPostFrom(enabled bool) func(opts *AccessTokenOptions) {
+	return func(opts *AccessTokenOptions) {
+		opts.PostForm = enabled
+	}
+}
+
+func mapToURLValues(data map[string]interface{}) url.Values {
+	values := url.Values{}
+	for key, value := range data {
+		values.Add(key, strings.TrimSpace(strings.ReplaceAll(strings.TrimSpace(fmt.Sprintf("%v", value)), " ", "%20")))
+	}
+	return values
+}
+
 func GetAccessToken(t require.TestingT, expectedCode int, opts ...func(opts *AccessTokenOptions)) map[string]string {
 	options := AccessTokenOptions{
 		Host:         config.M2M_OAUTH_SERVER_HTTP_HOST,
@@ -291,13 +307,20 @@ func GetAccessToken(t require.TestingT, expectedCode int, opts ...func(opts *Acc
 		reqBody[uri.ClientAssertionKey] = options.JWT
 		reqBody[uri.ClientAssertionTypeKey] = uri.ClientAssertionTypeJWT
 	}
-	d, err := json.Encode(reqBody)
-	require.NoError(t, err)
+	var data []byte
+	if options.PostForm {
+		data = []byte(mapToURLValues(reqBody).Encode())
+	} else {
+		var err error
+		data, err = json.Encode(reqBody)
+		require.NoError(t, err)
+	}
 
-	getReq := NewRequestBuilder(http.MethodPost, options.Host, uri.Token, bytes.NewReader(d)).Build()
+	getReq := NewRequestBuilder(http.MethodPost, options.Host, uri.Token, bytes.NewReader(data)).Build()
 	getReq.SetBasicAuth(options.ClientID, options.ClientSecret)
-
-	fmt.Printf("getReq: %s\n", d)
+	if options.PostForm {
+		getReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	}
 
 	res := HTTPDo(t, getReq, false)
 	defer func() {
@@ -306,7 +329,7 @@ func GetAccessToken(t require.TestingT, expectedCode int, opts ...func(opts *Acc
 	require.Equal(t, expectedCode, res.StatusCode)
 	if expectedCode == http.StatusOK {
 		var body map[string]string
-		err = json.ReadFrom(res.Body, &body)
+		err := json.ReadFrom(res.Body, &body)
 		require.NoError(t, err)
 		token := body[uri.AccessTokenKey]
 		require.NotEmpty(t, token)
