@@ -77,6 +77,16 @@ func TestGetToken(t *testing.T) {
 			},
 		},
 		{
+			name: "invalid client",
+			args: m2mOauthServerTest.AccessTokenOptions{
+				ClientID:  "invalid client",
+				GrantType: string(service.GrantTypeClientCredentials),
+				Host:      config.M2M_OAUTH_SERVER_HTTP_HOST,
+				JWT:       invalidToken,
+			},
+			wantCode: http.StatusBadRequest,
+		},
+		{
 			name: "snippetServiceToken - invalid JWT",
 			args: m2mOauthServerTest.AccessTokenOptions{
 				ClientID:  m2mOauthServerTest.JWTPrivateKeyOAuthClient.ID,

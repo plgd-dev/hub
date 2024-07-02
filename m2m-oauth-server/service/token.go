@@ -298,6 +298,10 @@ func (requestHandler *RequestHandler) validateClientAssertion(ctx context.Contex
 
 func (requestHandler *RequestHandler) processResponse(ctx context.Context, w http.ResponseWriter, tokenReq tokenRequest) {
 	clientCfg := requestHandler.config.OAuthSigner.Clients.Find(tokenReq.ClientID)
+	if clientCfg == nil {
+		writeError(w, fmt.Errorf("client(%v) not found", tokenReq.ClientID), http.StatusBadRequest)
+		return
+	}
 	if err := requestHandler.validateTokenRequest(ctx, clientCfg, &tokenReq); err != nil {
 		writeError(w, err, http.StatusBadRequest)
 		return
