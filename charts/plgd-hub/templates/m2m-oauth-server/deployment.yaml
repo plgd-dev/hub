@@ -49,13 +49,23 @@ spec:
               /bin/bash <<'EOF'
               if [ ! -f "{{ $.Values.m2moauthserver.oauthSigner.accessTokenKeyFile }}" ]; then
                   openssl ecparam -name prime256v1 -genkey -noout -out {{ $.Values.m2moauthserver.oauthSigner.accessTokenKeyFile }}
-                  
               fi
-              chmod 0644 {{ $.Values.m2moauthserver.oauthSigner.accessTokenKeyFile }}
+              {{- if include "plgd-hub.m2moauthserver.jwtPrivateKeyEnabled" $ }}
+              SECRET_FILENAME="{{ $.Values.m2moauthserver.jwtPrivateKey.mountPath }}/{{ $.Values.m2moauthserver.jwtPrivateKey.fileName }}"
+              if [ -s $SECRET_FILENAME ]; then
+                  cp $SECRET_FILENAME {{ $.Values.m2moauthserver.oauthSigner.accessTokenKeyFile }}
+              fi
+              {{- end }}
+              chmod 0444 {{ $.Values.m2moauthserver.oauthSigner.accessTokenKeyFile }}
               EOF
           volumeMounts:
             - mountPath: /keys
               name: keys
+            {{- if include "plgd-hub.m2moauthserver.jwtPrivateKeyEnabled" $ }}
+            - name: {{ .Values.m2moauthserver.jwtPrivateKey.volume }}
+              mountPath: {{ .Values.m2moauthserver.jwtPrivateKey.mountPath }}
+              readOnly: true
+            {{- end }}
       containers:
         - name: {{ .Values.m2moauthserver.name }}
           {{- with .Values.m2moauthserver.podSecurityContext }}
@@ -102,9 +112,19 @@ spec:
             {{- end }}
             - name: keys
               mountPath: /keys
+            {{- if include "plgd-hub.m2moauthserver.jwtPrivateKeyEnabled" $ }}
+            - name: {{ .Values.m2moauthserver.jwtPrivateKey.volume }}
+              mountPath: {{ .Values.m2moauthserver.jwtPrivateKey.mountPath }}
+              readOnly: true
+            {{- end }}
       volumes:
         - name: keys
           emptyDir: {}
+        {{- if include "plgd-hub.m2moauthserver.jwtPrivateKeyEnabled" $ }}
+        - name: {{ .Values.m2moauthserver.jwtPrivateKey.volume }}
+          secret:
+            secretName: {{ .Values.m2moauthserver.jwtPrivateKey.secretName }}
+        {{- end }}
         - name: {{ .Values.m2moauthserver.config.volume }}
           configMap:
             name: {{ include "plgd-hub.m2moauthserver.configName" . }}
