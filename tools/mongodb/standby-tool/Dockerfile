@@ -19,7 +19,7 @@ RUN CGO_ENABLED=0 go build \
     -o /go/bin/mongodb-standby-tool \
     ./
 
-FROM alpine:3.19 AS security-provider
+FROM alpine:3.20 AS security-provider
 RUN addgroup -S nonroot \
     && adduser -S nonroot -G nonroot
 RUN apk add -U --no-cache ca-certificates
