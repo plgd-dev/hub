@@ -20,7 +20,7 @@ func addMatchCondition(owner string, id string, notEmpty bool) bson.D {
 		{Key: store.VersionsKey + ".0", Value: bson.M{mongodb.Exists: notEmpty}},
 	}
 	if id != "" {
-		match = append(match, bson.E{Key: store.IDKey, Value: id})
+		match = append(match, bson.E{Key: store.RecordIDKey, Value: id})
 	}
 	if owner != "" {
 		match = append(match, bson.E{Key: store.OwnerKey, Value: owner})
@@ -105,7 +105,7 @@ func inArrayQuery(key string, values []string) bson.M {
 }
 
 func toIdQuery(ids []string) bson.M {
-	return inArrayQuery(store.IDKey, ids)
+	return inArrayQuery(store.RecordIDKey, ids)
 }
 
 func toFilter(op string, filters []interface{}) interface{} {

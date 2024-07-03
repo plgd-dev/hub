@@ -331,7 +331,7 @@ func local_request_SnippetService_UpdateConfiguration_0(ctx context.Context, mar
 
 }
 
-func request_SnippetService_InvokeConfiguration_0(ctx context.Context, marshaler runtime.Marshaler, client SnippetServiceClient, req *http.Request, pathParams map[string]string) (SnippetService_InvokeConfigurationClient, runtime.ServerMetadata, error) {
+func request_SnippetService_InvokeConfiguration_0(ctx context.Context, marshaler runtime.Marshaler, client SnippetServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq InvokeConfigurationRequest
 	var metadata runtime.ServerMetadata
 
@@ -356,16 +356,38 @@ func request_SnippetService_InvokeConfiguration_0(ctx context.Context, marshaler
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "configuration_id", err)
 	}
 
-	stream, err := client.InvokeConfiguration(ctx, &protoReq)
-	if err != nil {
-		return nil, metadata, err
+	msg, err := client.InvokeConfiguration(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_SnippetService_InvokeConfiguration_0(ctx context.Context, marshaler runtime.Marshaler, server SnippetServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq InvokeConfigurationRequest
+	var metadata runtime.ServerMetadata
+
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	header, err := stream.Header()
-	if err != nil {
-		return nil, metadata, err
+
+	var (
+		val string
+		ok  bool
+		err error
+		_   = err
+	)
+
+	val, ok = pathParams["configuration_id"]
+	if !ok {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "missing parameter %s", "configuration_id")
 	}
-	metadata.HeaderMD = header
-	return stream, metadata, nil
+
+	protoReq.ConfigurationId, err = runtime.String(val)
+	if err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "configuration_id", err)
+	}
+
+	msg, err := server.InvokeConfiguration(ctx, &protoReq)
+	return msg, metadata, err
 
 }
 
@@ -374,7 +396,7 @@ var (
 )
 
 func request_SnippetService_GetAppliedConfigurations_0(ctx context.Context, marshaler runtime.Marshaler, client SnippetServiceClient, req *http.Request, pathParams map[string]string) (SnippetService_GetAppliedConfigurationsClient, runtime.ServerMetadata, error) {
-	var protoReq GetAppliedDeviceConfigurationsRequest
+	var protoReq GetAppliedConfigurationsRequest
 	var metadata runtime.ServerMetadata
 
 	if err := req.ParseForm(); err != nil {
@@ -402,7 +424,7 @@ var (
 )
 
 func request_SnippetService_DeleteAppliedConfigurations_0(ctx context.Context, marshaler runtime.Marshaler, client SnippetServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq DeleteAppliedDeviceConfigurationsRequest
+	var protoReq DeleteAppliedConfigurationsRequest
 	var metadata runtime.ServerMetadata
 
 	if err := req.ParseForm(); err != nil {
@@ -418,7 +440,7 @@ func request_SnippetService_DeleteAppliedConfigurations_0(ctx context.Context, m
 }
 
 func local_request_SnippetService_DeleteAppliedConfigurations_0(ctx context.Context, marshaler runtime.Marshaler, server SnippetServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq DeleteAppliedDeviceConfigurationsRequest
+	var protoReq DeleteAppliedConfigurationsRequest
 	var metadata runtime.ServerMetadata
 
 	if err := req.ParseForm(); err != nil {
@@ -604,10 +626,28 @@ func RegisterSnippetServiceHandlerServer(ctx context.Context, mux *runtime.Serve
 	})
 
 	mux.Handle("POST", pattern_SnippetService_InvokeConfiguration_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
-		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-		return
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		var err error
+		var annotatedContext context.Context
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/snippetservice.pb.SnippetService/InvokeConfiguration", runtime.WithHTTPPathPattern("/snippet-service/api/v1/configurations/{configuration_id}"))
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_SnippetService_InvokeConfiguration_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
+		if err != nil {
+			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_SnippetService_InvokeConfiguration_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
 	})
 
 	mux.Handle("GET", pattern_SnippetService_GetAppliedConfigurations_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
@@ -877,7 +917,7 @@ func RegisterSnippetServiceHandlerClient(ctx context.Context, mux *runtime.Serve
 			return
 		}
 
-		forward_SnippetService_InvokeConfiguration_0(annotatedContext, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
+		forward_SnippetService_InvokeConfiguration_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -969,7 +1009,7 @@ var (
 
 	forward_SnippetService_UpdateConfiguration_0 = runtime.ForwardResponseMessage
 
-	forward_SnippetService_InvokeConfiguration_0 = runtime.ForwardResponseStream
+	forward_SnippetService_InvokeConfiguration_0 = runtime.ForwardResponseMessage
 
 	forward_SnippetService_GetAppliedConfigurations_0 = runtime.ForwardResponseStream
 

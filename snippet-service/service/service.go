@@ -66,6 +66,7 @@ func newStore(ctx context.Context, config StorageConfig, fileWatcher *fsnotify.W
 		return nil, nil, fmt.Errorf("cannot create cron job: %w", err)
 	}
 	_, err = s.NewJob(gocron.CronJob(config.CleanUpRecords, config.ExtendCronParserBySeconds), gocron.NewTask(func() {
+		//  db.CancelExpiredPendingCommands(ctx, time.Now())
 		/*
 			_, errDel := db.DeleteNonDeviceExpiredRecords(ctx, time.Now())
 			if errDel != nil && !errors.Is(errDel, store.ErrNotSupported) {
@@ -160,12 +161,6 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	})
 
 	snippetService := grpcService.NewSnippetServiceServer(dbStorage, resourceUpdater, config.APIs.GRPC.Authorization.OwnerClaim, config.HubID, logger)
-	closerFn.AddFunc(func() {
-		errC := snippetService.Close(ctx)
-		if errC != nil {
-			log.Errorf("failed to close grpc %s server: %w", serviceName, errC)
-		}
-	})
 
 	grpcService, grpcServiceClose, err := newGrpcService(ctx, config.APIs.GRPC, snippetService, fileWatcher, logger, tracerProvider)
 	if err != nil {

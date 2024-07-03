@@ -44,7 +44,7 @@ func TestRequestHandlerGetAppliedConfigurations(t *testing.T) {
 		args         args
 		wantHTTPCode int
 		wantErr      bool
-		want         func(*pb.AppliedDeviceConfiguration) bool
+		want         func(*pb.AppliedConfiguration) bool
 	}{
 		{
 			name: "missing owner",
@@ -64,7 +64,7 @@ func TestRequestHandlerGetAppliedConfigurations(t *testing.T) {
 				}),
 			},
 			wantHTTPCode: http.StatusOK,
-			want: func(ac *pb.AppliedDeviceConfiguration) bool {
+			want: func(ac *pb.AppliedConfiguration) bool {
 				return ac.GetOwner() == test.Owner(1)
 			},
 		},
@@ -80,7 +80,7 @@ func TestRequestHandlerGetAppliedConfigurations(t *testing.T) {
 				},
 			},
 			wantHTTPCode: http.StatusOK,
-			want: func(ac *pb.AppliedDeviceConfiguration) bool {
+			want: func(ac *pb.AppliedConfiguration) bool {
 				acID := ac.GetId()
 				return ac.GetOwner() == test.Owner(0) &&
 					(acID == test.AppliedConfigurationID(0) || acID == test.AppliedConfigurationID(1) ||
@@ -100,7 +100,7 @@ func TestRequestHandlerGetAppliedConfigurations(t *testing.T) {
 				},
 			},
 			wantHTTPCode: http.StatusOK,
-			want: func(ac *pb.AppliedDeviceConfiguration) bool {
+			want: func(ac *pb.AppliedConfiguration) bool {
 				acConfID := ac.GetConfigurationId().GetId()
 				acConfVersion := ac.GetConfigurationId().GetVersion()
 				return ac.GetOwner() == test.Owner(2) &&
@@ -121,7 +121,7 @@ func TestRequestHandlerGetAppliedConfigurations(t *testing.T) {
 				},
 			},
 			wantHTTPCode: http.StatusOK,
-			want: func(ac *pb.AppliedDeviceConfiguration) bool {
+			want: func(ac *pb.AppliedConfiguration) bool {
 				acCondID := ac.GetConditionId().GetId()
 				acCondVersion := ac.GetConditionId().GetVersion()
 				return ac.GetOwner() == test.Owner(0) &&
@@ -148,9 +148,9 @@ func TestRequestHandlerGetAppliedConfigurations(t *testing.T) {
 			}()
 			require.Equal(t, tt.wantHTTPCode, resp.StatusCode)
 
-			receivedConfs := make(map[string]*pb.AppliedDeviceConfiguration)
+			receivedConfs := make(map[string]*pb.AppliedConfiguration)
 			for {
-				var value pb.AppliedDeviceConfiguration
+				var value pb.AppliedConfiguration
 				err := httpTest.Unmarshal(resp.StatusCode, resp.Body, &value)
 				if errors.Is(err, io.EOF) {
 					break
@@ -163,10 +163,10 @@ func TestRequestHandlerGetAppliedConfigurations(t *testing.T) {
 				receivedConfs[value.GetId()] = &value
 			}
 
-			stored := make(map[string]*pb.AppliedDeviceConfiguration)
+			stored := make(map[string]*pb.AppliedConfiguration)
 			for _, ac := range appliedConfs {
-				if tt.want(ac) {
-					stored[ac.GetId()] = ac
+				if tt.want(ac.GetAppliedConfiguration()) {
+					stored[ac.GetId()] = ac.GetAppliedConfiguration().Clone()
 				}
 			}
 			require.Len(t, receivedConfs, len(stored))

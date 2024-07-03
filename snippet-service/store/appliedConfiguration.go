@@ -5,21 +5,60 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func ValidateAppliedConfiguration(c *pb.AppliedDeviceConfiguration, isUpdate bool) error {
+func ValidateAppliedConfiguration(c *pb.AppliedConfiguration, isUpdate bool) error {
 	if err := c.Validate(isUpdate); err != nil {
 		return errInvalidArgument(err)
 	}
 	return nil
 }
 
+type AppliedConfiguration struct {
+	RecordID string `bson:"_id"`
+	pb.AppliedConfiguration
+}
+
+func MakeAppliedConfiguration(c *pb.AppliedConfiguration) AppliedConfiguration {
+	return AppliedConfiguration{
+		AppliedConfiguration: pb.AppliedConfiguration{
+			Id:              c.GetId(),
+			DeviceId:        c.GetDeviceId(),
+			ConfigurationId: c.GetConfigurationId().Clone(),
+			ExecutedBy:      c.CloneExecutedBy(),
+			Resources:       c.CloneAppliedConfiguration_Resources(),
+			Owner:           c.GetOwner(),
+			Timestamp:       c.GetTimestamp(),
+		},
+	}
+}
+
+func (c *AppliedConfiguration) GetAppliedConfiguration() *pb.AppliedConfiguration {
+	if c == nil {
+		return nil
+	}
+	return &c.AppliedConfiguration
+}
+
+func (c *AppliedConfiguration) UnmarshalBSON(data []byte) error {
+	update := func(json map[string]interface{}) {
+		recordID, ok := json[RecordIDKey]
+		if ok {
+			c.RecordID = recordID.(primitive.ObjectID).Hex()
+		}
+		delete(json, RecordIDKey)
+	}
+	return pkgMongo.UnmarshalProtoBSON(data, &c.AppliedConfiguration, update)
+}
+
 type UpdateAppliedConfigurationResourceRequest struct {
 	AppliedConfigurationID string
-	AppliedCondition       *pb.AppliedDeviceConfiguration_RelationTo
-	StatusFilter           []pb.AppliedDeviceConfiguration_Resource_Status
-	Resource               *pb.AppliedDeviceConfiguration_Resource
+	AppliedCondition       *pb.AppliedConfiguration_RelationTo
+	StatusFilter           []pb.AppliedConfiguration_Resource_Status
+	Resource               *pb.AppliedConfiguration_Resource
 }
 
 func (u *UpdateAppliedConfigurationResourceRequest) Validate() error {

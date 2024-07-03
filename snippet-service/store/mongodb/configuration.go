@@ -42,8 +42,8 @@ func (s *Store) CreateConfiguration(ctx context.Context, conf *pb.Configuration)
 
 func filterConfiguration(conf *pb.Configuration) bson.M {
 	filter := bson.M{
-		store.IDKey:    conf.GetId(),
-		store.OwnerKey: conf.GetOwner(),
+		store.RecordIDKey: conf.GetId(),
+		store.OwnerKey:    conf.GetOwner(),
 	}
 	if conf.GetVersion() != 0 {
 		// if is set -> it must be higher than the $latest.version

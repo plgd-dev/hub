@@ -24,17 +24,18 @@ func TestStoreUpdateAppliedConfiguration(t *testing.T) {
 	id := uuid.NewString()
 	confID := uuid.NewString()
 	condID := uuid.NewString()
-	resources := []*pb.AppliedDeviceConfiguration_Resource{
+	resources := []*pb.AppliedConfiguration_Resource{
 		{
 			Href:          "/test/1",
 			CorrelationId: "corID",
+			Status:        pb.AppliedConfiguration_Resource_QUEUED,
 		},
 	}
 	owner := "owner1"
-	appliedConf, _, err := s.CreateAppliedConfiguration(ctx, &pb.AppliedDeviceConfiguration{
+	appliedConf, _, err := s.CreateAppliedConfiguration(ctx, &pb.AppliedConfiguration{
 		Id:       id,
 		DeviceId: "dev1",
-		ConfigurationId: &pb.AppliedDeviceConfiguration_RelationTo{
+		ConfigurationId: &pb.AppliedConfiguration_RelationTo{
 			Id: confID,
 		},
 		ExecutedBy: pb.MakeExecutedByConditionId(condID, 0),
@@ -43,10 +44,10 @@ func TestStoreUpdateAppliedConfiguration(t *testing.T) {
 	}, false)
 	require.NoError(t, err)
 
-	appliedConf2, _, err := s.CreateAppliedConfiguration(ctx, &pb.AppliedDeviceConfiguration{
+	appliedConf2, _, err := s.CreateAppliedConfiguration(ctx, &pb.AppliedConfiguration{
 		Id:       uuid.NewString(),
 		DeviceId: "dev2",
-		ConfigurationId: &pb.AppliedDeviceConfiguration_RelationTo{
+		ConfigurationId: &pb.AppliedConfiguration_RelationTo{
 			Id: confID,
 		},
 		ExecutedBy: pb.MakeExecutedByConditionId(condID, 0),
@@ -56,18 +57,18 @@ func TestStoreUpdateAppliedConfiguration(t *testing.T) {
 	require.NoError(t, err)
 
 	type args struct {
-		update *pb.AppliedDeviceConfiguration
+		update *pb.AppliedConfiguration
 	}
 	tests := []struct {
 		name    string
 		args    args
-		want    func(*pb.AppliedDeviceConfiguration)
+		want    func(*pb.AppliedConfiguration)
 		wantErr bool
 	}{
 		{
 			name: "missing Id",
 			args: args{
-				update: func() *pb.AppliedDeviceConfiguration {
+				update: func() *pb.AppliedConfiguration {
 					c := appliedConf.Clone()
 					c.Id = ""
 					return c
@@ -78,7 +79,7 @@ func TestStoreUpdateAppliedConfiguration(t *testing.T) {
 		{
 			name: "non-existing Id",
 			args: args{
-				update: func() *pb.AppliedDeviceConfiguration {
+				update: func() *pb.AppliedConfiguration {
 					c := appliedConf.Clone()
 					c.Id = uuid.NewString()
 					return c
@@ -89,7 +90,7 @@ func TestStoreUpdateAppliedConfiguration(t *testing.T) {
 		{
 			name: "non-matching owner",
 			args: args{
-				update: func() *pb.AppliedDeviceConfiguration {
+				update: func() *pb.AppliedConfiguration {
 					c := appliedConf.Clone()
 					c.Owner = "owner2"
 					return c
@@ -100,7 +101,7 @@ func TestStoreUpdateAppliedConfiguration(t *testing.T) {
 		{
 			name: "duplicit deviceID+configurationID",
 			args: args{
-				update: func() *pb.AppliedDeviceConfiguration {
+				update: func() *pb.AppliedConfiguration {
 					c := appliedConf.Clone()
 					c.Id = appliedConf2.GetId()
 					return c
@@ -111,25 +112,25 @@ func TestStoreUpdateAppliedConfiguration(t *testing.T) {
 		{
 			name: "valid",
 			args: args{
-				update: &pb.AppliedDeviceConfiguration{
+				update: &pb.AppliedConfiguration{
 					Id:       appliedConf.GetId(),
 					Owner:    appliedConf.GetOwner(),
 					DeviceId: "dev2",
-					ConfigurationId: &pb.AppliedDeviceConfiguration_RelationTo{
+					ConfigurationId: &pb.AppliedConfiguration_RelationTo{
 						Id:      uuid.NewString(),
 						Version: appliedConf.GetConfigurationId().GetVersion() + 1,
 					},
 					ExecutedBy: pb.MakeExecutedByOnDemand(),
-					Resources: []*pb.AppliedDeviceConfiguration_Resource{
+					Resources: []*pb.AppliedConfiguration_Resource{
 						{
 							Href:          "/test/2",
 							CorrelationId: "corID2",
-							Status:        pb.AppliedDeviceConfiguration_Resource_PENDING,
+							Status:        pb.AppliedConfiguration_Resource_PENDING,
 						},
 					},
 				},
 			},
-			want: func(updated *pb.AppliedDeviceConfiguration) {
+			want: func(updated *pb.AppliedConfiguration) {
 				require.Equal(t, appliedConf.GetId(), updated.GetId())
 				require.Equal(t, "dev2", updated.GetDeviceId())
 				require.Equal(t, appliedConf.GetOwner(), updated.GetOwner())
@@ -137,7 +138,7 @@ func TestStoreUpdateAppliedConfiguration(t *testing.T) {
 				require.Len(t, updated.GetResources(), 1)
 				require.Equal(t, "/test/2", updated.GetResources()[0].GetHref())
 				require.Equal(t, "corID2", updated.GetResources()[0].GetCorrelationId())
-				require.Equal(t, pb.AppliedDeviceConfiguration_Resource_PENDING, updated.GetResources()[0].GetStatus())
+				require.Equal(t, pb.AppliedConfiguration_Resource_PENDING, updated.GetResources()[0].GetStatus())
 			},
 		},
 	}
@@ -165,16 +166,16 @@ func TestStoreUpdateAppliedConfigurationResource(t *testing.T) {
 	id := uuid.NewString()
 	confID := uuid.NewString()
 	condID := uuid.NewString()
-	resources := []*pb.AppliedDeviceConfiguration_Resource{
+	resources := []*pb.AppliedConfiguration_Resource{
 		{
 			Href:          "/test/1",
 			CorrelationId: "corID1",
-			Status:        pb.AppliedDeviceConfiguration_Resource_PENDING,
+			Status:        pb.AppliedConfiguration_Resource_PENDING,
 		},
 		{
 			Href:          "/test/2",
 			CorrelationId: "corID2",
-			Status:        pb.AppliedDeviceConfiguration_Resource_PENDING,
+			Status:        pb.AppliedConfiguration_Resource_PENDING,
 			ResourceUpdated: &events.ResourceUpdated{
 				ResourceId: &commands.ResourceId{DeviceId: "deviceID", Href: "/test/2"},
 			},
@@ -182,14 +183,14 @@ func TestStoreUpdateAppliedConfigurationResource(t *testing.T) {
 		{
 			Href:          "/test/3",
 			CorrelationId: "corID3",
-			Status:        pb.AppliedDeviceConfiguration_Resource_QUEUED,
+			Status:        pb.AppliedConfiguration_Resource_QUEUED,
 		},
 	}
 	owner := "owner1"
-	appliedConf, _, err := s.CreateAppliedConfiguration(ctx, &pb.AppliedDeviceConfiguration{
+	appliedConf, _, err := s.CreateAppliedConfiguration(ctx, &pb.AppliedConfiguration{
 		Id:       id,
 		DeviceId: "dev1",
-		ConfigurationId: &pb.AppliedDeviceConfiguration_RelationTo{
+		ConfigurationId: &pb.AppliedConfiguration_RelationTo{
 			Id: confID,
 		},
 		ExecutedBy: pb.MakeExecutedByConditionId(condID, 0),
@@ -198,28 +199,83 @@ func TestStoreUpdateAppliedConfigurationResource(t *testing.T) {
 	}, false)
 	require.NoError(t, err)
 
-	updatedAppliedConf, err := s.UpdateAppliedConfigurationResource(ctx, owner, store.UpdateAppliedConfigurationResourceRequest{
-		AppliedConfigurationID: id,
-		StatusFilter:           []pb.AppliedDeviceConfiguration_Resource_Status{pb.AppliedDeviceConfiguration_Resource_PENDING},
-		Resource: &pb.AppliedDeviceConfiguration_Resource{
+	// error - missing applied configuration ID
+	_, err = s.UpdateAppliedConfigurationResource(ctx, owner, store.UpdateAppliedConfigurationResourceRequest{
+		Resource: &pb.AppliedConfiguration_Resource{
 			Href:          "/test/1",
 			CorrelationId: "corID1",
-			Status:        pb.AppliedDeviceConfiguration_Resource_DONE,
+			Status:        pb.AppliedConfiguration_Resource_DONE,
+		},
+	})
+	require.Error(t, err)
+
+	// error - missing resource
+	_, err = s.UpdateAppliedConfigurationResource(ctx, owner, store.UpdateAppliedConfigurationResourceRequest{
+		AppliedConfigurationID: id,
+	})
+	require.Error(t, err)
+
+	// error - missing resource href
+	_, err = s.UpdateAppliedConfigurationResource(ctx, owner, store.UpdateAppliedConfigurationResourceRequest{
+		AppliedConfigurationID: id,
+		Resource: &pb.AppliedConfiguration_Resource{
+			CorrelationId: "corID1",
+			Status:        pb.AppliedConfiguration_Resource_DONE,
+		},
+	})
+	require.Error(t, err)
+
+	// error - missing resource correlationID
+	_, err = s.UpdateAppliedConfigurationResource(ctx, owner, store.UpdateAppliedConfigurationResourceRequest{
+		AppliedConfigurationID: id,
+		Resource: &pb.AppliedConfiguration_Resource{
+			Href:   "/test/1",
+			Status: pb.AppliedConfiguration_Resource_DONE,
+		},
+	})
+	require.Error(t, err)
+
+	// error - invalid resource status
+	_, err = s.UpdateAppliedConfigurationResource(ctx, owner, store.UpdateAppliedConfigurationResourceRequest{
+		AppliedConfigurationID: id,
+		Resource: &pb.AppliedConfiguration_Resource{
+			Href:          "/test/1",
+			CorrelationId: "corID1",
+		},
+	})
+	require.Error(t, err)
+	_, err = s.UpdateAppliedConfigurationResource(ctx, owner, store.UpdateAppliedConfigurationResourceRequest{
+		AppliedConfigurationID: id,
+		Resource: &pb.AppliedConfiguration_Resource{
+			Href:          "/test/1",
+			CorrelationId: "corID1",
+			Status:        pb.AppliedConfiguration_Resource_UNSPECIFIED,
+		},
+	})
+	require.Error(t, err)
+
+	updatedAppliedConf, err := s.UpdateAppliedConfigurationResource(ctx, owner, store.UpdateAppliedConfigurationResourceRequest{
+		AppliedConfigurationID: id,
+		StatusFilter:           []pb.AppliedConfiguration_Resource_Status{pb.AppliedConfiguration_Resource_PENDING},
+		Resource: &pb.AppliedConfiguration_Resource{
+			Href:          "/test/1",
+			CorrelationId: "corID1",
+			Status:        pb.AppliedConfiguration_Resource_DONE,
 		},
 	})
 	require.NoError(t, err)
 	wantAppliedConf := appliedConf.Clone()
-	wantAppliedConf.Resources[0].Status = pb.AppliedDeviceConfiguration_Resource_DONE
+	wantAppliedConf.Resources[0].Status = pb.AppliedConfiguration_Resource_DONE
 	test.CmpAppliedDeviceConfiguration(t, wantAppliedConf, updatedAppliedConf, true)
 
 	// /test/1 is no longer in pending state, so additional update should fail
 	_, err = s.UpdateAppliedConfigurationResource(ctx, owner, store.UpdateAppliedConfigurationResourceRequest{
 		AppliedConfigurationID: id,
-		StatusFilter:           []pb.AppliedDeviceConfiguration_Resource_Status{pb.AppliedDeviceConfiguration_Resource_PENDING},
-		Resource: &pb.AppliedDeviceConfiguration_Resource{
+		StatusFilter:           []pb.AppliedConfiguration_Resource_Status{pb.AppliedConfiguration_Resource_PENDING},
+		Resource: &pb.AppliedConfiguration_Resource{
 			Href:          "/test/1",
 			CorrelationId: "corID1",
-			Status:        pb.AppliedDeviceConfiguration_Resource_TIMEOUT,
+			Status:        pb.AppliedConfiguration_Resource_TIMEOUT,
 		},
 	})
 	require.ErrorIs(t, err, store.ErrNotModified)
@@ -227,11 +283,11 @@ func TestStoreUpdateAppliedConfigurationResource(t *testing.T) {
 	// mismatched owner
 	_, err = s.UpdateAppliedConfigurationResource(ctx, "mismatch", store.UpdateAppliedConfigurationResourceRequest{
 		AppliedConfigurationID: id,
-		StatusFilter:           []pb.AppliedDeviceConfiguration_Resource_Status{pb.AppliedDeviceConfiguration_Resource_PENDING},
-		Resource: &pb.AppliedDeviceConfiguration_Resource{
+		StatusFilter:           []pb.AppliedConfiguration_Resource_Status{pb.AppliedConfiguration_Resource_PENDING},
+		Resource: &pb.AppliedConfiguration_Resource{
 			Href:          "/test/2",
 			CorrelationId: "corID2",
-			Status:        pb.AppliedDeviceConfiguration_Resource_DONE,
+			Status:        pb.AppliedConfiguration_Resource_DONE,
 		},
 	})
 	require.Error(t, err)

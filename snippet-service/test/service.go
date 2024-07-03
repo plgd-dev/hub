@@ -10,6 +10,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/mongodb"
 	"github.com/plgd-dev/hub/v2/snippet-service/service"
+	"github.com/plgd-dev/hub/v2/snippet-service/store"
 	storeConfig "github.com/plgd-dev/hub/v2/snippet-service/store/config"
 	storeCqlDB "github.com/plgd-dev/hub/v2/snippet-service/store/cqldb"
 	storeMongo "github.com/plgd-dev/hub/v2/snippet-service/store/mongodb"
@@ -119,6 +120,14 @@ func New(t require.TestingT, cfg service.Config) (*service.Service, func()) {
 		err = fileWatcher.Close()
 		require.NoError(t, err)
 	}
+}
+
+func NewStore(t require.TestingT) (store.Store, func()) {
+	cfg := MakeConfig(t)
+	if cfg.Clients.Storage.Embedded.Use == database.CqlDB {
+		return nil, nil
+	}
+	return NewMongoStore(t)
 }
 
 func NewMongoStore(t require.TestingT) (*storeMongo.Store, func()) {

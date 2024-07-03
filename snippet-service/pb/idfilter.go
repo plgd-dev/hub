@@ -254,11 +254,11 @@ func (r *GetConfigurationsRequest) ConvertHTTPIDFilter() []*IDFilter {
 	return IDFilterFromString(r.GetHttpIdFilter())
 }
 
-func (r *GetAppliedDeviceConfigurationsRequest) ConvertHTTPConfigurationIdFilter() []*IDFilter {
+func (r *GetAppliedConfigurationsRequest) ConvertHTTPConfigurationIdFilter() []*IDFilter {
 	return IDFilterFromString(r.GetHttpConfigurationIdFilter())
 }
 
-func (r *GetAppliedDeviceConfigurationsRequest) ConvertHTTPConditionIdFilter() []*IDFilter {
+func (r *GetAppliedConfigurationsRequest) ConvertHTTPConditionIdFilter() []*IDFilter {
 	return IDFilterFromString(r.GetHttpConditionIdFilter())
 }
 

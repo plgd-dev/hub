@@ -46,13 +46,13 @@ func TestRequestHandlerDeleteAppliedConfigurations(t *testing.T) {
 	}()
 	ssc := pb.NewSnippetServiceClient(conn)
 
-	getConfigurations := func(ctxWithToken context.Context) map[string]*pb.AppliedDeviceConfiguration {
-		getClient, errG := ssc.GetAppliedConfigurations(ctxWithToken, &pb.GetAppliedDeviceConfigurationsRequest{})
+	getConfigurations := func(ctxWithToken context.Context) map[string]*pb.AppliedConfiguration {
+		getClient, errG := ssc.GetAppliedConfigurations(ctxWithToken, &pb.GetAppliedConfigurationsRequest{})
 		require.NoError(t, errG)
 		defer func() {
 			_ = getClient.CloseSend()
 		}()
-		confs := make(map[string]*pb.AppliedDeviceConfiguration)
+		confs := make(map[string]*pb.AppliedConfiguration)
 		for {
 			conf, errR := getClient.Recv()
 			if errors.Is(errR, io.EOF) {
@@ -140,7 +140,7 @@ func TestRequestHandlerDeleteAppliedConfigurations(t *testing.T) {
 			}()
 			require.Equal(t, tt.wantHTTPCode, resp.StatusCode)
 
-			var deleteResp pb.DeleteAppliedDeviceConfigurationsResponse
+			var deleteResp pb.DeleteAppliedConfigurationsResponse
 			err := httpTest.Unmarshal(resp.StatusCode, resp.Body, &deleteResp)
 			if tt.wantErr {
 				require.Error(t, err)
