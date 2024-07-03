@@ -1,4 +1,4 @@
-package store
+package updater
 
 import (
 	"cmp"
@@ -9,78 +9,64 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-co-op/gocron/v2"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/go-coap/v3/message"
-	"github.com/plgd-dev/go-coap/v3/pkg/cache"
-	"github.com/plgd-dev/go-coap/v3/pkg/runner/periodic"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
-	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	raService "github.com/plgd-dev/hub/v2/resource-aggregate/service"
+	"github.com/plgd-dev/hub/v2/snippet-service/jq"
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
+	"github.com/plgd-dev/hub/v2/snippet-service/store"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc/codes"
 )
 
-type pendingConfiguration struct {
-	id              string
-	configurationID string
-	owner           string
-	correlationID   string
-	token           string
-	resourceID      *commands.ResourceId
-}
-
 type ResourceUpdater struct {
-	ctx                   context.Context
-	storage               Store
-	raConn                *grpcClient.Client
-	raClient              raService.ResourceAggregateClient
-	pendingConfigurations *cache.Cache[string, *pendingConfiguration]
-	logger                log.Logger
+	ctx       context.Context
+	storage   store.Store
+	raConn    *grpcClient.Client
+	raClient  raService.ResourceAggregateClient
+	scheduler gocron.Scheduler
+	logger    log.Logger
 }
 
-func newPendingConfigurationsCache(ctx context.Context, interval time.Duration) *cache.Cache[string, *pendingConfiguration] {
-	c := cache.NewCache[string, *pendingConfiguration]()
-	add := periodic.New(ctx.Done(), interval)
-	add(func(now time.Time) bool {
-		c.CheckExpirations(now)
-		return true
-	})
-	return c
-}
-
-func NewResourceUpdater(ctx context.Context, config grpcClient.Config, pendingCommandsCheckInterval time.Duration, storage Store, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*ResourceUpdater, error) {
-	raConn, err := grpcClient.New(config, fileWatcher, logger, tracerProvider)
+func NewResourceUpdater(ctx context.Context, config ResourceUpdaterConfig, storage store.Store, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*ResourceUpdater, error) {
+	raConn, err := grpcClient.New(config.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, fmt.Errorf("cannot connect to resource aggregate: %w", err)
 	}
 
-	return &ResourceUpdater{
-		ctx:                   ctx,
-		storage:               storage,
-		raConn:                raConn,
-		raClient:              raService.NewResourceAggregateClient(raConn.GRPC()),
-		pendingConfigurations: newPendingConfigurationsCache(ctx, pendingCommandsCheckInterval),
-		logger:                logger,
-	}, nil
+	ru := &ResourceUpdater{
+		ctx:      ctx,
+		storage:  storage,
+		raConn:   raConn,
+		raClient: raService.NewResourceAggregateClient(raConn.GRPC()),
+		logger:   logger,
+	}
+	scheduler, err := NewExpiredUpdatesChecker(config.CleanUpExpiredUpdates, config.ExtendCronParserBySeconds, ru)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create scheduler: %w", err)
+	}
+	ru.scheduler = scheduler
+	return ru, nil
 }
 
 type evaluateCondition = func(condition *pb.Condition) bool
 
 func (h *ResourceUpdater) getConditions(ctx context.Context, owner, deviceID, resourceHref string, resourceTypes []string, eval evaluateCondition) ([]*pb.Condition, error) {
 	conditions := make([]*pb.Condition, 0, 4)
-	err := h.storage.GetLatestEnabledConditions(ctx, owner, &GetLatestConditionsQuery{
+	err := h.storage.GetLatestEnabledConditions(ctx, owner, &store.GetLatestConditionsQuery{
 		DeviceID:           deviceID,
 		ResourceHref:       resourceHref,
 		ResourceTypeFilter: resourceTypes,
-	}, func(v *Condition) error {
+	}, func(v *store.Condition) error {
 		c, errG := v.GetLatest()
 		if errG != nil {
 			return fmt.Errorf("cannot get condition: %w", errG)
@@ -96,70 +82,6 @@ func (h *ResourceUpdater) getConditions(ctx context.Context, owner, deviceID, re
 		return nil, fmt.Errorf("cannot get latest conditions: %w", err)
 	}
 	return conditions, nil
-}
-
-type executeByType int
-
-const (
-	executeByTypeFindCondition executeByType = iota
-	executeByTypeCondition
-	executeByTypeOnDemand
-)
-
-type appliedCondition struct {
-	id      string
-	version uint64
-	token   string
-}
-
-type appliedOnDemand struct {
-	token string
-}
-
-type execution struct {
-	condition  appliedCondition // executedBy = executeByTypeCondition
-	conditions []*pb.Condition  // executedBy = executeByTypeFindCondition
-	onDemand   appliedOnDemand  // executedBy = executeByTypeOnDemand
-	force      bool
-	executeBy  executeByType
-}
-
-func (e execution) token() string {
-	if e.executeBy == executeByTypeOnDemand {
-		return e.onDemand.token
-	}
-	if e.executeBy == executeByTypeCondition {
-		return e.condition.token
-	}
-	return ""
-}
-
-func (e execution) setExecutedBy(ac *pb.AppliedConfiguration) {
-	if e.executeBy == executeByTypeOnDemand {
-		ac.ExecutedBy = pb.MakeExecutedByOnDemand()
-		return
-	}
-	if e.condition.id != "" {
-		ac.ExecutedBy = pb.MakeExecutedByConditionId(e.condition.id, e.condition.version)
-		return
-	}
-	firstCondition := e.conditions[0]
-	ac.ExecutedBy = pb.MakeExecutedByConditionId(firstCondition.GetId(), firstCondition.GetVersion())
-}
-
-type executionResult struct {
-	validUntil int64
-	condition  appliedCondition // executedBy = executeByTypeCondition or executeByTypeFindCondition
-	onDemand   appliedOnDemand  // executedBy = executeByTypeOnDemand
-	executedBy executeByType
-	err        error
-}
-
-func (er executionResult) token() string {
-	if er.executedBy == executeByTypeOnDemand {
-		return er.onDemand.token
-	}
-	return er.condition.token
 }
 
 func (h *ResourceUpdater) applyExecution(ctx context.Context, execution execution, resourceID *commands.ResourceId, configurationID, correlationID string, cr *pb.Configuration_Resource) executionResult {
@@ -236,7 +158,7 @@ func (h *ResourceUpdater) getConfigurationsByConditions(ctx context.Context, own
 	configurations := make([]*pb.Configuration, 0, 4)
 	err := h.storage.GetConfigurations(ctx, owner, &pb.GetConfigurationsRequest{
 		IdFilter: idFilter,
-	}, func(v *Configuration) error {
+	}, func(v *store.Configuration) error {
 		c, errG := v.GetLatest()
 		if errG != nil {
 			return fmt.Errorf("cannot get configuration: %w", errG)
@@ -338,26 +260,6 @@ func (h *ResourceUpdater) findTokenAndApplyConfigurationToResource(ctx context.C
 	return 0, appliedCondition{}, errors.New("cannot apply configuration: no valid token found")
 }
 
-func (h *ResourceUpdater) timeoutAppliedConfigurationPendingResource(ctx context.Context, pd *pendingConfiguration) error {
-	_, err := h.storage.UpdateAppliedConfigurationResource(ctx, pd.owner, UpdateAppliedConfigurationResourceRequest{
-		AppliedConfigurationID: pd.id,
-		StatusFilter:           []pb.AppliedConfiguration_Resource_Status{pb.AppliedConfiguration_Resource_PENDING},
-		Resource: &pb.AppliedConfiguration_Resource{
-			Href:          pd.resourceID.GetHref(),
-			CorrelationId: pd.correlationID,
-			Status:        pb.AppliedConfiguration_Resource_TIMEOUT,
-			ResourceUpdated: &events.ResourceUpdated{
-				ResourceId: &commands.ResourceId{
-					DeviceId: pd.resourceID.GetDeviceId(),
-					Href:     pd.resourceID.GetHref(),
-				},
-				Status: commands.Status_ERROR,
-			},
-		},
-	})
-	return err
-}
-
 func resourceCorrelationID(ids ...string) string {
 	cID := ""
 	for _, id := range ids {
@@ -423,8 +325,8 @@ func makeResourceUpdatedWithError(confID, owner, correlationID string, resourceI
 	}
 }
 
-func getUpdateAppliedConfigurationResourceRequest(appliedConfID, confID, owner, correlationID string, resourceID *commands.ResourceId, execution executionResult, setExecutionConditionID bool) UpdateAppliedConfigurationResourceRequest {
-	update := UpdateAppliedConfigurationResourceRequest{
+func getUpdateAppliedConfigurationResourceRequest(appliedConfID, confID, owner, correlationID string, resourceID *commands.ResourceId, execution executionResult, setExecutionConditionID bool) store.UpdateAppliedConfigurationResourceRequest {
+	update := store.UpdateAppliedConfigurationResourceRequest{
 		AppliedConfigurationID: appliedConfID,
 		StatusFilter:           []pb.AppliedConfiguration_Resource_Status{pb.AppliedConfiguration_Resource_QUEUED},
 		Resource: &pb.AppliedConfiguration_Resource{
@@ -480,21 +382,6 @@ func (h *ResourceUpdater) cancelPendingResourceUpdates(appliedConf *pb.AppliedCo
 	}
 }
 
-func (h *ResourceUpdater) scheduleAppliedConfigurationPendingResourceTimeout(pd *pendingConfiguration, validUntil int64) {
-	h.logger.Debugf("timeout(%v) for pending resource(%v) update scheduled for %v", pd.correlationID, pd.resourceID.GetHref(), time.Unix(0, validUntil))
-	h.pendingConfigurations.Store(
-		pd.correlationID, cache.NewElement(
-			pd,
-			pkgTime.Unix(0, validUntil),
-			func(d *pendingConfiguration) {
-				h.logger.Debugf("timeout for pending resource(%v) update reached", d.resourceID.GetHref())
-				if errT := h.timeoutAppliedConfigurationPendingResource(h.ctx, d); errT != nil {
-					h.logger.Errorf("failed to timeout pending applied configuration for resource(%v): %w", d.resourceID.GetHref(), errT)
-				}
-			}),
-	)
-}
-
 func (h *ResourceUpdater) applyConfigurationToResources(ctx context.Context, owner, deviceID, correlationID string, confWithExecution *configurationWithExecution) (*pb.AppliedConfiguration, error) {
 	h.logger.Debugf("applying configuration(id:%v)", confWithExecution.configuration.GetId())
 	appliedConfID := uuid.NewString()
@@ -536,7 +423,7 @@ func (h *ResourceUpdater) applyConfigurationToResources(ctx context.Context, own
 		var err error
 		updatedAppliedConf, err := h.storage.UpdateAppliedConfigurationResource(ctx, owner, update)
 		if err != nil {
-			if errors.Is(err, ErrNotFound) { // the appliedConfiguration doesnt exists -> it was removed by forced InvokeConfiguration from other thread
+			if errors.Is(err, store.ErrNotFound) { // the appliedConfiguration doesnt exists -> it was removed by forced InvokeConfiguration from other thread
 				ctxWithToken := ctx
 				if exRes.token() != "" {
 					ctxWithToken = pkgGrpc.CtxWithToken(ctx, exRes.token())
@@ -550,16 +437,6 @@ func (h *ResourceUpdater) applyConfigurationToResources(ctx context.Context, own
 			continue
 		}
 		appliedConf = updatedAppliedConf
-		if exRes.validUntil > 0 {
-			h.scheduleAppliedConfigurationPendingResourceTimeout(&pendingConfiguration{
-				id:              appliedConf.GetId(),
-				configurationID: confID,
-				owner:           owner,
-				correlationID:   resCorrelationID,
-				token:           exRes.token(),
-				resourceID:      resourceID,
-			}, exRes.validUntil)
-		}
 	}
 	return appliedConf, errs.ErrorOrNil()
 }
@@ -591,11 +468,11 @@ func (h *ResourceUpdater) applyConfigurationsByConditions(ctx context.Context, r
 	}
 
 	eval := func(condition *pb.Condition) bool {
-		jq := condition.GetJqExpressionFilter()
-		if jq == "" {
+		jqe := condition.GetJqExpressionFilter()
+		if jqe == "" {
 			return true
 		}
-		ok, errE := EvalJQCondition(jq, rcData)
+		ok, errE := jq.EvalJQCondition(jqe, rcData)
 		if errE != nil {
 			h.logger.Error(errE)
 			return false
@@ -623,7 +500,7 @@ func (h *ResourceUpdater) applyConfigurationsByConditions(ctx context.Context, r
 			continue
 		}
 		_, errA := h.applyConfigurationToResources(ctx, owner, deviceID, "", &c)
-		if IsDuplicateKeyError(errA) {
+		if store.IsDuplicateKeyError(errA) {
 			// applied configuration already exists
 			h.logger.Debugf("applied configuration already exists for device(%s) and configuration(%s): %v", deviceID,
 				c.configuration.GetId(), errA)
@@ -648,13 +525,9 @@ func (h *ResourceUpdater) finishPendingConfiguration(ctx context.Context, update
 	if !ok || !isValidUUID(appliedConfID) || !isValidUUID(resourcesCorrelationID) {
 		return nil
 	}
-	h.logger.Debugf("finishing pending configuration(%v) for resource(%v:%v): %v", appliedConfID, updated.GetResourceId().GetDeviceId(), updated.GetResourceId().GetHref(), updated)
-	pc, ok := h.pendingConfigurations.LoadAndDelete(correlationID)
-	if ok {
-		h.logger.Debugf("pending configuration(%v) for resource(%v:%v) update expiration handler removed", pc.Data().id, updated.GetResourceId().GetDeviceId(), updated.GetResourceId().GetHref())
-	}
+	h.logger.Debugf("finishing pending configuration(%v) update for resource(%v:%v): %v", appliedConfID, updated.GetResourceId().GetDeviceId(), updated.GetResourceId().GetHref(), updated)
 	owner := updated.GetAuditContext().GetOwner()
-	_, err := h.storage.UpdateAppliedConfigurationResource(ctx, owner, UpdateAppliedConfigurationResourceRequest{
+	_, err := h.storage.UpdateAppliedConfigurationResource(ctx, owner, store.UpdateAppliedConfigurationResourceRequest{
 		AppliedConfigurationID: appliedConfID,
 		Resource: &pb.AppliedConfiguration_Resource{
 			Href:            updated.GetResourceId().GetHref(),
@@ -663,7 +536,7 @@ func (h *ResourceUpdater) finishPendingConfiguration(ctx context.Context, update
 			ResourceUpdated: updated,
 		},
 	})
-	if updated.GetStatus() == commands.Status_CANCELED && errors.Is(err, ErrNotFound) {
+	if updated.GetStatus() == commands.Status_CANCELED && errors.Is(err, store.ErrNotFound) {
 		// the pending update was canceled by h.cancelPendingResourceUpdates and the configuration was removed
 		return nil
 	}
@@ -686,7 +559,7 @@ func (h *ResourceUpdater) handleResourceUpdated(ctx context.Context, ev eventbus
 	if err := ev.Unmarshal(&updated); err != nil {
 		return fmt.Errorf("cannot unmarshal ResourceUpdated event: %w", err)
 	}
-	if err := h.finishPendingConfiguration(ctx, &updated); err != nil && !errors.Is(err, ErrNotFound) {
+	if err := h.finishPendingConfiguration(ctx, &updated); err != nil && !errors.Is(err, store.ErrNotFound) {
 		return fmt.Errorf("failed to finish pending applied configuration for resource(%v): %w", updated.GetResourceId().GetHref(), err)
 	}
 	return nil
@@ -734,12 +607,12 @@ func (h *ResourceUpdater) applyConfigurationOnDemand(ctx context.Context, conf *
 }
 
 func (h *ResourceUpdater) InvokeConfiguration(ctx context.Context, token, owner string, req *pb.InvokeConfigurationRequest) (*pb.AppliedConfiguration, error) {
-	if err := ValidateInvokeConfigurationRequest(req); err != nil {
+	if err := store.ValidateInvokeConfigurationRequest(req); err != nil {
 		return nil, err
 	}
 	// find configuration
 	var confs []*pb.Configuration
-	err := h.storage.GetLatestConfigurationsByID(ctx, owner, []string{req.GetConfigurationId()}, func(v *Configuration) error {
+	err := h.storage.GetLatestConfigurationsByID(ctx, owner, []string{req.GetConfigurationId()}, func(v *store.Configuration) error {
 		c, err := v.GetLatest()
 		if err != nil {
 			return err
@@ -760,27 +633,63 @@ func (h *ResourceUpdater) InvokeConfiguration(ctx context.Context, token, owner 
 	return appliedConf, nil
 }
 
-func (h *ResourceUpdater) Close() error {
-	elements := h.pendingConfigurations.LoadAndDeleteAll()
-	var errs *multierror.Error
-	for _, e := range elements {
-		pc := e.Data()
-		h.cancelPendingResourceUpdate(pkgGrpc.CtxWithToken(h.ctx, pc.token), pc.resourceID, pc.correlationID, pc.configurationID)
-		_, err := h.storage.UpdateAppliedConfigurationResource(h.ctx, pc.owner, UpdateAppliedConfigurationResourceRequest{
-			AppliedConfigurationID: pc.id,
-			StatusFilter:           []pb.AppliedConfiguration_Resource_Status{pb.AppliedConfiguration_Resource_PENDING},
-			Resource: &pb.AppliedConfiguration_Resource{
-				Href:            pc.resourceID.GetHref(),
-				CorrelationId:   pc.correlationID,
-				Status:          pb.AppliedConfiguration_Resource_DONE,
-				ResourceUpdated: makeResourceUpdatedWithError(pc.configurationID, pc.owner, pc.correlationID, pc.resourceID, errors.New("pending resource update canceled")),
+func (h *ResourceUpdater) timeoutAppliedConfigurationPendingResource(ctx context.Context, owner, appliedConfigurationID, correlationID string, resourceID *commands.ResourceId) {
+	_, err := h.storage.UpdateAppliedConfigurationResource(ctx, owner, store.UpdateAppliedConfigurationResourceRequest{
+		AppliedConfigurationID: appliedConfigurationID,
+		StatusFilter:           []pb.AppliedConfiguration_Resource_Status{pb.AppliedConfiguration_Resource_PENDING},
+		Resource: &pb.AppliedConfiguration_Resource{
+			Href:          resourceID.GetHref(),
+			CorrelationId: correlationID,
+			Status:        pb.AppliedConfiguration_Resource_TIMEOUT,
+			ResourceUpdated: &events.ResourceUpdated{
+				ResourceId: &commands.ResourceId{
+					DeviceId: resourceID.GetDeviceId(),
+					Href:     resourceID.GetHref(),
+				},
+				Status: commands.Status_ERROR,
 			},
-		})
-		if err != nil {
-			h.logger.Debugf("failed to update applied configuration resource(%v): %v", pc.resourceID.ToString(), err)
-		} else {
-			h.logger.Debugf("applied configuration resource(%v) canceled", pc.resourceID.ToString())
+		},
+	})
+	if err != nil {
+		h.logger.Errorf("failed to timeout pending applied configuration for resource(%v): %w", resourceID.GetHref(), err)
+	}
+}
+
+func (h *ResourceUpdater) TimeoutPendingResourceUpdates() {
+	h.logger.Debug("checking pending resource updates for timeout")
+	// get expired pending updates from the database
+	var pendingUpdates []*store.AppliedConfiguration
+	_, err := h.storage.GetExpiredAppliedConfigurationResourceUpdates(h.ctx, func(ac *store.AppliedConfiguration) error {
+		pendingUpdates = append(pendingUpdates, ac)
+		return nil
+	})
+	if err != nil {
+		h.logger.Errorf("cannot get expired pending resource updates: %v", err)
+		return
+	}
+	if len(pendingUpdates) == 0 {
+		return
+	}
+
+	ctx := h.ctx
+	// cancel pending updates
+	for _, ac := range pendingUpdates {
+		for _, res := range ac.GetResources() {
+			if res.GetStatus() != pb.AppliedConfiguration_Resource_PENDING {
+				continue
+			}
+			resourceID := &commands.ResourceId{DeviceId: ac.GetDeviceId(), Href: res.GetHref()}
+			h.logger.Debugf("timeout for pending resource(%v) update reached", resourceID.GetHref())
+			h.timeoutAppliedConfigurationPendingResource(ctx, ac.GetOwner(), ac.GetId(), res.GetCorrelationId(), resourceID)
 		}
+	}
+}
+
+func (h *ResourceUpdater) Close() error {
+	var errs *multierror.Error
+	if h.scheduler != nil {
+		err := h.scheduler.Shutdown()
+		errs = multierror.Append(errs, err)
 	}
 	err := h.raConn.Close()
 	errs = multierror.Append(errs, err)

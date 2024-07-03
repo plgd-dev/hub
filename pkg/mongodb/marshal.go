@@ -12,7 +12,7 @@ import (
 
 type updateJSON = func(map[string]interface{})
 
-func ConvertStringValueToInt(json map[string]interface{}, path string) {
+func ConvertStringValueToInt64(json map[string]interface{}, path string) {
 	pos := strings.Index(path, ".")
 	if pos == -1 {
 		valueI, ok := json[path]
@@ -36,11 +36,24 @@ func ConvertStringValueToInt(json map[string]interface{}, path string) {
 	if !ok {
 		return
 	}
+	elemArray, ok := elem.([]interface{})
+	if ok {
+		for i, elem := range elemArray {
+			elemMap, ok2 := elem.(map[string]interface{})
+			if !ok2 {
+				continue
+			}
+			ConvertStringValueToInt64(elemMap, path[pos+1:])
+			elemArray[i] = elemMap
+		}
+		json[elemPath] = elemArray
+		return
+	}
 	elemMap, ok := elem.(map[string]interface{})
 	if !ok {
 		return
 	}
-	ConvertStringValueToInt(elemMap, path[pos+1:])
+	ConvertStringValueToInt64(elemMap, path[pos+1:])
 	json[elemPath] = elemMap
 }
 

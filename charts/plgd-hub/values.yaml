@@ -2508,8 +2508,8 @@ snippetservice:
           keyFile:
           certFile:
           useSystemCAPool: false
-    resourceAggregate:
-      pendingCommandsCheckInterval: 1m
+    resourceUpdater:
+      cleanUpExpiredUpdates: "0 * * * *"
       grpc:
         address: ""
         sendMsgSize: 4194304

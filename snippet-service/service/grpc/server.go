@@ -9,6 +9,7 @@ import (
 	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
 	"github.com/plgd-dev/hub/v2/snippet-service/store"
+	"github.com/plgd-dev/hub/v2/snippet-service/updater"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -18,13 +19,13 @@ type SnippetServiceServer struct {
 	pb.UnimplementedSnippetServiceServer
 
 	store           store.Store
-	resourceUpdater *store.ResourceUpdater
+	resourceUpdater *updater.ResourceUpdater
 	ownerClaim      string
 	hubID           string
 	logger          log.Logger
 }
 
-func NewSnippetServiceServer(store store.Store, resourceUpdater *store.ResourceUpdater, ownerClaim string, hubID string, logger log.Logger) *SnippetServiceServer {
+func NewSnippetServiceServer(store store.Store, resourceUpdater *updater.ResourceUpdater, ownerClaim string, hubID string, logger log.Logger) *SnippetServiceServer {
 	return &SnippetServiceServer{
 		store:           store,
 		resourceUpdater: resourceUpdater,

@@ -39,11 +39,11 @@ import (
 	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
 	"github.com/plgd-dev/hub/v2/snippet-service/service"
-	"github.com/plgd-dev/hub/v2/snippet-service/store"
 	storeConfig "github.com/plgd-dev/hub/v2/snippet-service/store/config"
 	storeCqlDB "github.com/plgd-dev/hub/v2/snippet-service/store/cqldb"
 	storeMongo "github.com/plgd-dev/hub/v2/snippet-service/store/mongodb"
 	"github.com/plgd-dev/hub/v2/snippet-service/test"
+	"github.com/plgd-dev/hub/v2/snippet-service/updater"
 	hubTest "github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/service"
@@ -88,10 +88,8 @@ func TestServiceNew(t *testing.T) {
 			name: "invalid DB",
 			cfg: service.Config{
 				Clients: service.ClientsConfig{
-					Storage: service.StorageConfig{
-						Embedded: storeConfig.Config{
-							Use: "invalid",
-						},
+					Storage: storeConfig.Config{
+						Use: "invalid",
 					},
 				},
 			},
@@ -101,13 +99,11 @@ func TestServiceNew(t *testing.T) {
 			name: "invalid mongoDB config",
 			cfg: service.Config{
 				Clients: service.ClientsConfig{
-					Storage: service.StorageConfig{
-						Embedded: storeConfig.Config{
-							Use: database.MongoDB,
-							MongoDB: &storeMongo.Config{
-								Mongo: mongodb.Config{
-									URI: "invalid",
-								},
+					Storage: storeConfig.Config{
+						Use: database.MongoDB,
+						MongoDB: &storeMongo.Config{
+							Mongo: mongodb.Config{
+								URI: "invalid",
 							},
 						},
 					},
@@ -119,23 +115,12 @@ func TestServiceNew(t *testing.T) {
 			name: "invalid cqlDB config",
 			cfg: service.Config{
 				Clients: service.ClientsConfig{
-					Storage: service.StorageConfig{
-						Embedded: storeConfig.Config{
-							Use:   database.CqlDB,
-							CqlDB: &storeCqlDB.Config{},
-						},
+					Storage: storeConfig.Config{
+						Use:   database.CqlDB,
+						CqlDB: &storeCqlDB.Config{},
 					},
 				},
 			},
-			wantErr: true,
-		},
-		{
-			name: "invalid CronJob config",
-			cfg: func() service.Config {
-				cfg := test.MakeConfig(t)
-				cfg.Clients.Storage.CleanUpRecords = "invalid"
-				return cfg
-			}(),
 			wantErr: true,
 		},
 		{
@@ -151,7 +136,7 @@ func TestServiceNew(t *testing.T) {
 			name: "invalid resource aggregate client config",
 			cfg: func() service.Config {
 				cfg := test.MakeConfig(t)
-				cfg.Clients.ResourceAggregate = service.ResourceAggregateConfig{}
+				cfg.Clients.ResourceUpdater = updater.ResourceUpdaterConfig{}
 				return cfg
 			}(),
 			wantErr: true,
@@ -237,7 +222,9 @@ func TestService(t *testing.T) {
 	defer tearDown()
 
 	snippetCfg := test.MakeConfig(t)
-	snippetCfg.Clients.ResourceAggregate.PendingCommandsCheckInterval = time.Millisecond * 500
+	const interval = time.Second
+	snippetCfg.Clients.ResourceUpdater.CleanUpExpiredUpdates = "*/1 * * * * *"
+	snippetCfg.Clients.ResourceUpdater.ExtendCronParserBySeconds = true
 	_, shutdownSnippetService := test.New(t, snippetCfg)
 	defer shutdownSnippetService()
 
@@ -448,7 +435,7 @@ func TestService(t *testing.T) {
 	if appliedConf1Status != pb.AppliedConfiguration_Resource_TIMEOUT &&
 		appliedConf1Status != pb.AppliedConfiguration_Resource_DONE {
 		// -> wait enough time to timeout pending commands
-		time.Sleep(2 * snippetCfg.Clients.ResourceAggregate.PendingCommandsCheckInterval)
+		time.Sleep(2 * interval)
 	}
 
 	var got map[interface{}]interface{}
@@ -522,95 +509,4 @@ func TestService(t *testing.T) {
 		"power": uint64(0),
 	}, nil)
 	require.NoError(t, err)
-}
-
-func TestServiceCleanUp(t *testing.T) {
-	deviceID := hubTest.MustFindDeviceByName(hubTest.TestDeviceName)
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
-	defer cancel()
-
-	tearDown := hubTestService.SetUp(ctx, t)
-	defer tearDown()
-
-	needsShutdown := true
-	snippetCfg := test.MakeConfig(t)
-	_, shutdownSnippetService := test.New(t, snippetCfg)
-	defer func() {
-		if needsShutdown {
-			needsShutdown = false
-			shutdownSnippetService()
-		}
-	}()
-
-	snippetClientConn, err := grpc.NewClient(config.SNIPPET_SERVICE_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
-		RootCAs: hubTest.GetRootCertificatePool(t),
-	})))
-	require.NoError(t, err)
-	defer func() {
-		_ = snippetClientConn.Close()
-	}()
-	snippetClient := pb.NewSnippetServiceClient(snippetClientConn)
-
-	ctx = pkgGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
-
-	grpcClient := grpcgwTest.NewTestClient(t)
-	defer func() {
-		err = grpcClient.Close()
-		require.NoError(t, err)
-	}()
-	_, shutdownDevSim := hubTest.OnboardDevSim(ctx, t, grpcClient.GrpcGatewayClient(), deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, hubTest.GetAllBackendResourceLinks())
-	defer shutdownDevSim()
-
-	notExistingResourceHref := "/not/existing"
-	// configuration
-	// -> /not/existing -> { value: 42 }
-	conf, err := snippetClient.CreateConfiguration(ctx, &pb.Configuration{
-		Name:  "update",
-		Owner: oauthService.DeviceUserID,
-		Resources: []*pb.Configuration_Resource{
-			{
-				Href: notExistingResourceHref,
-				Content: &commands.Content{
-					ContentType: message.AppOcfCbor.String(),
-					Data: hubTest.EncodeToCbor(t, map[string]interface{}{
-						"value": 42,
-					}),
-				},
-				TimeToLive: int64(5 * time.Minute), // will not timeout during test
-			},
-		},
-	})
-	require.NoError(t, err)
-	require.NotEmpty(t, conf.GetId())
-
-	// invoke configuration with long TimeToLive
-	resp, err := snippetClient.InvokeConfiguration(ctx, &pb.InvokeConfigurationRequest{
-		ConfigurationId: conf.GetId(),
-		DeviceId:        deviceID,
-	})
-	require.NoError(t, err)
-
-	// stop service
-	shutdownSnippetService()
-	needsShutdown = false
-
-	// check that all configurations are either in timeout or done state
-	s, cleanUpStore := test.NewStore(t)
-	defer cleanUpStore()
-
-	appliedConfs := make(map[string]*pb.AppliedConfiguration)
-	err = s.GetAppliedConfigurations(ctx, oauthService.DeviceUserID, &pb.GetAppliedConfigurationsRequest{
-		IdFilter: []string{resp.GetAppliedConfigurationId()},
-	}, func(appliedConf *store.AppliedConfiguration) error {
-		appliedConfs[appliedConf.GetId()] = appliedConf.GetAppliedConfiguration().Clone()
-		return nil
-	})
-	require.NoError(t, err)
-	require.Len(t, appliedConfs, 1)
-	appliedConf, ok := appliedConfs[resp.GetAppliedConfigurationId()]
-	require.True(t, ok)
-	for _, r := range appliedConf.GetResources() {
-		status := r.GetStatus()
-		require.True(t, pb.AppliedConfiguration_Resource_TIMEOUT == status || pb.AppliedConfiguration_Resource_DONE == status)
-	}
 }

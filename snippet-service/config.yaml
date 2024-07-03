@@ -114,7 +114,8 @@ clients:
       keyFile: "/secrets/private/cert.key"
       certFile: "/secrets/public/cert.crt"
       useSystemCAPool: false
-  resourceAggregate:
+  resourceUpdater:
+    cleanUpExpiredUpdates: "0 * * * *"
     grpc:
       address: ""
       sendMsgSize: 4194304
@@ -128,4 +129,3 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
-    pendingCommandsCheckInterval: 1m

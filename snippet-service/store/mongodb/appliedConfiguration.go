@@ -85,11 +85,11 @@ func (s *Store) UpdateAppliedConfiguration(ctx context.Context, adc *pb.AppliedC
 	if result.Err() != nil {
 		return nil, result.Err()
 	}
-	updatedAdc := pb.AppliedConfiguration{}
+	updatedAdc := store.AppliedConfiguration{}
 	if err = result.Decode(&updatedAdc); err != nil {
 		return nil, err
 	}
-	return &updatedAdc, nil
+	return updatedAdc.GetAppliedConfiguration(), nil
 }
 
 func toAppliedDeviceConfigurationsVersionFilter(idKey, versionsKey string, vf pb.VersionFilter) interface{} {
@@ -292,4 +292,41 @@ func (s *Store) UpdateAppliedConfigurationResource(ctx context.Context, owner st
 	}
 
 	return updatedAppliedCfg.GetAppliedConfiguration(), nil
+}
+
+func (s *Store) GetExpiredAppliedConfigurationResourceUpdates(ctx context.Context, p store.ProccessAppliedConfigurations) (int64, error) {
+	validUntil := time.Now().UnixNano()
+	pl := mongo.Pipeline{
+		// match resources that have a resource in pending state and expired
+		bson.D{{Key: mongodb.Match, Value: bson.M{
+			store.ResourcesKey: bson.M{
+				"$elemMatch": bson.M{
+					store.StatusKey:  pb.AppliedConfiguration_Resource_PENDING.String(),
+					store.ValidUntil: bson.M{"$lte": validUntil},
+				},
+			},
+		}}},
+	}
+	// project only the resources that are expired
+	pl = append(pl, bson.D{{Key: mongodb.Set, Value: bson.M{
+		store.ResourcesKey: bson.M{
+			"$filter": bson.M{
+				"input": "$" + store.ResourcesKey,
+				"as":    "elem",
+				"cond": bson.M{
+					mongodb.And: bson.A{
+						bson.M{"$eq": bson.A{"$$elem." + store.StatusKey, pb.AppliedConfiguration_Resource_PENDING.String()}},
+						bson.M{"$gt": bson.A{"$$elem." + store.ValidUntil, 0}},
+						bson.M{"$lte": bson.A{"$$elem." + store.ValidUntil, validUntil}},
+					},
+				},
+			},
+		},
+	}}})
+
+	cur, err := s.Collection(appliedConfigurationsCol).Aggregate(ctx, pl)
+	if err != nil {
+		return 0, err
+	}
+	return validUntil, processCursor(ctx, cur, p)
 }

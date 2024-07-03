@@ -30,3 +30,7 @@ func (s *Store) UpdateAppliedConfiguration(context.Context, *pb.AppliedConfigura
 func (s *Store) UpdateAppliedConfigurationResource(context.Context, string, store.UpdateAppliedConfigurationResourceRequest) (*pb.AppliedConfiguration, error) {
 	return nil, store.ErrNotSupported
 }
+
+func (s *Store) GetExpiredAppliedConfigurationResourceUpdates(context.Context, store.ProccessAppliedConfigurations) (int64, error) {
+	return 0, store.ErrNotSupported
+}
