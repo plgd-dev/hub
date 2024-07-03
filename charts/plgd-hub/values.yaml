@@ -2659,34 +2659,6 @@ mockoauthserver:
       ingress.kubernetes.io/force-ssl-redirect: "true"
       nginx.ingress.kubernetes.io/enable-cors: "true"
       cert-manager.io/private-key-rotation-policy: always
-      nginx.ingress.kubernetes.io/configuration-snippet: |
-        more_set_headers "Host $host";
-        more_set_headers "X-Forwarded-Host $host";
-        more_set_headers "X-Forwarded-Proto $scheme";
-        set $cors "true";
-        if ($request_method = 'OPTIONS') {
-          set $cors "${cors}options";
-        }
-        if ($cors = "trueoptions") {
-          add_header 'Access-Control-Allow-Origin' "$http_origin";
-          add_header 'Access-Control-Allow-Credentials' 'true';
-          add_header 'Access-Control-Allow-Methods' 'GET, PUT, POST, DELETE, PATCH, OPTIONS';
-          add_header 'Access-Control-Allow-Headers' '{{ .Values.mockoauthserver.ingress.allowHeaders }}';
-          add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range';
-          add_header 'Access-Control-Max-Age' 1728000;
-          add_header 'Content-Type' 'text/plain charset=UTF-8';
-          add_header 'Content-Length' 0;
-          return 204;
-        }
-        if ($request_method = 'POST') {
-        add_header 'Access-Control-Allow-Credentials' 'true';
-        }
-        if ($request_method = 'PUT') {
-        add_header 'Access-Control-Allow-Credentials' 'true';
-        }
-        if ($request_method = 'GET') {
-            add_header 'Access-Control-Allow-Credentials' 'true';
-        }
     # -- Custom map of Ingress annotation
     customAnnotations: {}
     # -- Ingress path
@@ -2811,7 +2783,7 @@ m2moauthserver:
   extraVolumes: {}
   # -- Optional extra volume mounts
   extraVolumeMounts: {}
-  # -- Domain for   apiDomain: Default: m2m-auth.{{ global.domain }}
+  # -- Domain for oauth. Default {{ global.domain }}
   domain:
   ingress:
     # -- Enable ingress
@@ -2834,7 +2806,7 @@ m2moauthserver:
           add_header 'Access-Control-Allow-Origin' "$http_origin";
           add_header 'Access-Control-Allow-Credentials' 'true';
           add_header 'Access-Control-Allow-Methods' 'GET, PUT, POST, DELETE, PATCH, OPTIONS';
-          add_header 'Access-Control-Allow-Headers' '{{ .Values.mockoauthserver.ingress.allowHeaders }}';
+          add_header 'Access-Control-Allow-Headers' '{{ .Values.m2moauthserver.ingress.allowHeaders }}';
           add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range';
           add_header 'Access-Control-Max-Age' 1728000;
           add_header 'Content-Type' 'text/plain charset=UTF-8';
