@@ -1,4 +1,4 @@
-{{- if .Values.m2moauthserver.enabled -}}
+{{- if include "plgd-hub.m2moauthserver.enabled" . -}}
 apiVersion: v1
 kind: Service
 metadata:
