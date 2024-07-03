@@ -1,4 +1,4 @@
-{{- if .Values.m2moauthserver.enabled }}
+{{- if include "plgd-hub.m2moauthserver.enabled" . }}
 {{- $oauthServerCertPath := "/certs" }}
 apiVersion: v1
 kind: ConfigMap
@@ -36,8 +36,18 @@ data:
       {{- end }}
       clients:
         {{- range $idx := .oauthSigner.clients }}
+        {{- $createClient := "" }}
+        {{- if include "plgd-hub.resolveTemplateString" (list $ .secretFile) }}
+        {{- $createClient = "true" }}
+        {{- end }}
+        {{- if .jwtPrivateKey }}
+        {{- if .jwtPrivateKey.enabled }}
+        {{- $createClient = "true" }}
+        {{- end }}
+        {{- end }}
+        {{- if $createClient}}
         - id: {{ .id }}
-          secretFile: {{ .secretFile }}
+          secretFile: {{ include "plgd-hub.resolveTemplateString" (list $ .secretFile) }}
           requireDeviceID: {{ .requireDeviceID }}
           requireOwner: {{ .requireOwner  }}
           accessTokenLifetime: {{ .accessTokenLifetime }}
@@ -53,9 +63,10 @@ data:
             {{- range .allowedScopes }}
             - {{ . | quote }}
             {{- end }}
+          {{- if .jwtPrivateKey }}
+          {{- if .jwtPrivateKey.enabled }}
           jwtPrivateKey:
             enabled: {{ .jwtPrivateKey.enabled }}
-            {{- if .jwtPrivateKey.enabled }}
             authorization:
               {{- $authorization := include "plgd-hub.basicAuthorizationConfig" (list $ .jwtPrivateKey.authorization (printf "m2moauthserver.oauthSigner.clients[%v].jwtPrivateKey.authorization" $idx) $oauthServerCertPath) | fromYaml }}
               {{- if $authorization.audience }}
@@ -68,7 +79,9 @@ data:
                   http: {{- .http | toYaml | nindent 20}}
               {{- end }}
               {{- end }}
-            {{- end }}
+          {{- end }}
+          {{- end }}
+        {{- end }}
         {{- end }}
     clients:
       {{- include "plgd-hub.openTelemetryExporterConfig" (list $ $oauthServerCertPath) | nindent 6 }}

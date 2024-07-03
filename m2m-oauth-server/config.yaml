@@ -41,31 +41,3 @@ oauthSigner:
     ownerClaim: sub
     deviceIDClaim:
     clients:
-        - id: serviceClient
-          secret: 
-          requireDeviceID: false
-          requireOwner: false
-          accessTokenLifetime: 0s
-          allowedGrantTypes:
-            - client_credentials
-          allowedAudiences: []
-          allowedScopes: []
-        - id: snippetServiceClient
-          secret: 
-          requireDeviceID: false
-          requireOwner: true
-          accessTokenLifetime: 0s
-          allowedGrantTypes:
-            - client_credentials
-          allowedAudiences: []
-          allowedScopes: []
-        - id: deviceProvisioningServiceClient
-          secret:
-          requireDeviceID: true
-          requireOwner: true
-          accessTokenLifetime: 0s
-          allowedGrantTypes:
-            - client_credentials
-          allowedAudiences: []
-          allowedScopes: []
-

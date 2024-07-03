@@ -12,9 +12,9 @@ message OAuthClient {
 	string audience = 2;
 	repeated string scopes = 3;
     string provider_name = 4; // @gotags: yaml:"providerName"
-    bool use_jwt_private_key = 5; // @gotags: yaml:"useJWTPrivateKey"
+    string client_assertion_type = 5; // @gotags: yaml:"clientAssertionType"
     string authority = 6;
-    repeated string grant_types = 7;
+    string grant_type = 7; // @gotags: yaml:"grantType"
 }
 
 message BuildInfo {

@@ -658,7 +658,7 @@ true
 {{- define "plgd-hub.m2mOAuthServerAuthority" }}
 {{- $ := . -}}
 {{- $ca := "" -}}
-{{- if $.Values.m2moauthserver.enabled -}}
+{{- if include "plgd-hub.m2moauthserver.enabled" $ -}}
 {{- $ca = include "plgd-hub.m2moauthserver.uri" $ }}
 {{- end -}}
 {{- printf "%s" $ca }}

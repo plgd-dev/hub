@@ -10,7 +10,7 @@ import (
 
 func (requestHandler *RequestHandler) getOpenIDConfiguration(w http.ResponseWriter, _ *http.Request) {
 	v := openid.Config{
-		Issuer:   requestHandler.getDomain() + "/",
+		Issuer:   requestHandler.getDomain(),
 		TokenURL: requestHandler.getDomain() + uri.Token,
 		JWKSURL:  requestHandler.getDomain() + uri.JWKs,
 	}

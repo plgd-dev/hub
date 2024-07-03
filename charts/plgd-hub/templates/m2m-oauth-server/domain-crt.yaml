@@ -1,5 +1,5 @@
 {{- $createServiceCert := include "plgd-hub.m2moauthserver.domainCertName" . }}
-{{- if and $createServiceCert .Values.certmanager.enabled .Values.m2moauthserver.enabled (not $.Values.global.enableWildCartCert ) }}
+{{- if and $createServiceCert .Values.certmanager.enabled (include "plgd-hub.m2moauthserver.enabled" .) (not $.Values.global.enableWildCartCert ) }}
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:

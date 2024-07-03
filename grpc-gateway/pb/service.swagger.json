@@ -1788,18 +1788,16 @@
           "type": "string",
           "title": "@gotags: yaml:\"providerName\""
         },
-        "useJwtPrivateKey": {
-          "type": "boolean",
-          "title": "@gotags: yaml:\"useJWTPrivateKey\""
+        "clientAssertionType": {
+          "type": "string",
+          "title": "@gotags: yaml:\"clientAssertionType\""
         },
         "authority": {
           "type": "string"
         },
-        "grantTypes": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
+        "grantType": {
+          "type": "string",
+          "title": "@gotags: yaml:\"grantType\""
         }
       }
     },

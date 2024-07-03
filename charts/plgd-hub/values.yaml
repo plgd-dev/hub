@@ -18,8 +18,12 @@ global:
   authority:
   # -- OAuth audience
   audience: ""
-  # -- M2M OAuth JWT private key
-  m2mPrivateKey: ""
+  # -- M2M OAuth server
+  m2mOAuthServer:
+    # -- private key to sign JWT m2m tokens 
+    privateKey: ""
+    # -- service secret to sign JWT m2m tokens for the oauth service client
+    clientServiceSecret: ""
   # -- Default OAuth authorization for all services
   authorization:
     audience: "{{ include \"plgd-hub.globalAudience\" . }}"
@@ -48,7 +52,7 @@ global:
             caPool:
             keyFile:
             certFile:
-            useSystemCAPool: false
+            useSystemCAPool: true
   # -- Enable *.{{ global.domain }} for all external domain
   enableWildCartCert: true
   # -- Sets cloud to standby mode
@@ -1753,6 +1757,8 @@ httpgateway:
         clientID:
         audience:
         scopes: []
+        grantType: 
+        clientAssertionType:
       visibility:
         mainSidebar:
           certificates : true
@@ -2870,7 +2876,18 @@ m2moauthserver:
     # -- Volume name
     volume: private-key
     # -- Mount path
-    mountPath: /secrets
+    mountPath: /secrets/keys
+  clientServiceSecret:
+    # -- Set deployment to use secret for service secret
+    enabled: false
+    # -- Name of private key file
+    fileName: secret.dat
+    # -- Name of secret
+    secretName: m2m-service-secret
+    # -- Volume name
+    volume: service-secret
+    # -- Mount path
+    mountPath: /secrets/clients/service
   log:
     # -- Logging enabled from level 
     level: info
@@ -2916,3 +2933,13 @@ m2moauthserver:
           authorization:
             audience:
             endpoints:
+      - id: "service"
+        secretFile: "{{ include \"plgd-hub.m2moauthserver.getClientServiceSecretFile\" . }}"
+        requireOwner: false
+        requireDeviceID: false
+        accessTokenLifetime: 0s
+        allowedGrantTypes:
+          - client_credentials
+        allowedAudiences: []
+        allowedScopes: []
+

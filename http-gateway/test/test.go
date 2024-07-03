@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/plgd-dev/hub/v2/http-gateway/service"
+	"github.com/plgd-dev/hub/v2/m2m-oauth-server/uri"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
@@ -22,11 +23,11 @@ func MakeWebConfigurationConfig() service.WebConfiguration {
 		DeviceProvisioningService: testHttp.HTTPS_SCHEME + config.HTTP_GW_HOST,
 		SnippetService:            testHttp.HTTPS_SCHEME + config.SNIPPET_SERVICE_HTTP_HOST,
 		WebOAuthClient: service.OAuthClient{
-			Authority:  testHttp.HTTPS_SCHEME + config.OAUTH_SERVER_HOST,
-			ClientID:   config.OAUTH_MANAGER_CLIENT_ID,
-			Audience:   config.OAUTH_MANAGER_AUDIENCE,
-			Scopes:     []string{"openid", "offline_access"},
-			GrantTypes: []string{"authorization_code", "refresh_token"},
+			Authority: testHttp.HTTPS_SCHEME + config.OAUTH_SERVER_HOST,
+			ClientID:  config.OAUTH_MANAGER_CLIENT_ID,
+			Audience:  config.OAUTH_MANAGER_AUDIENCE,
+			Scopes:    []string{"openid", "offline_access"},
+			GrantType: "authorization_code",
 		},
 		DeviceOAuthClient: service.OAuthClient{
 			Authority:    testHttp.HTTPS_SCHEME + config.OAUTH_SERVER_HOST,
@@ -34,14 +35,14 @@ func MakeWebConfigurationConfig() service.WebConfiguration {
 			Audience:     config.OAUTH_MANAGER_AUDIENCE,
 			Scopes:       []string{"profile", "openid", "offline_access"},
 			ProviderName: config.DEVICE_PROVIDER,
-			GrantTypes:   []string{"authorization_code", "refresh_token"},
+			GrantType:    "authorization_code",
 		},
 		M2MOAuthClient: service.OAuthClient{
-			Authority:        testHttp.HTTPS_SCHEME + config.M2M_OAUTH_SERVER_HTTP_HOST,
-			ClientID:         config.M2M_OAUTH_PRIVATE_KEY_CLIENT_ID,
-			Audience:         config.OAUTH_MANAGER_AUDIENCE,
-			GrantTypes:       []string{"client_credentials"},
-			UseJWTPrivateKey: true,
+			Authority:           testHttp.HTTPS_SCHEME + config.M2M_OAUTH_SERVER_HTTP_HOST,
+			ClientID:            config.M2M_OAUTH_PRIVATE_KEY_CLIENT_ID,
+			Audience:            config.OAUTH_MANAGER_AUDIENCE,
+			GrantType:           "client_credentials",
+			ClientAssertionType: uri.ClientAssertionTypeJWT,
 		},
 	}
 }

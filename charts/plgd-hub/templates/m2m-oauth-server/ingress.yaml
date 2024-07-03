@@ -1,4 +1,4 @@
-{{- if and .Values.m2moauthserver.enabled .Values.m2moauthserver.ingress.enabled }}
+{{- if and (include "plgd-hub.m2moauthserver.enabled" .) .Values.m2moauthserver.ingress.enabled }}
 {{- $fullname := include "plgd-hub.m2moauthserver.fullname" . }}
 {{- $domainCrt := include "plgd-hub.m2moauthserver.domainCertName" . }}
 {{- $port := .Values.m2moauthserver.port }}
