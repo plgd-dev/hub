@@ -36,6 +36,16 @@ data:
       {{- end }}
       clients:
         {{- range $idx := .oauthSigner.clients }}
+        {{- $createClient := "" }}
+        {{- if include "plgd-hub.resolveTemplateString" (list $ .secretFile) }}
+        {{- $createClient = "true" }}
+        {{- end }}
+        {{- if .jwtPrivateKey }}
+        {{- if .jwtPrivateKey.enabled }}
+        {{- $createClient = "true" }}
+        {{- end }}
+        {{- end }}
+        {{- if $createClient}}
         - id: {{ .id }}
           secretFile: {{ include "plgd-hub.resolveTemplateString" (list $ .secretFile) }}
           requireDeviceID: {{ .requireDeviceID }}
@@ -71,6 +81,7 @@ data:
               {{- end }}
           {{- end }}
           {{- end }}
+        {{- end }}
         {{- end }}
     clients:
       {{- include "plgd-hub.openTelemetryExporterConfig" (list $ $oauthServerCertPath) | nindent 6 }}
