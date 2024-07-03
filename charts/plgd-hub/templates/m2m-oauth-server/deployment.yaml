@@ -1,4 +1,4 @@
-{{- if .Values.m2moauthserver.enabled }}
+{{- if include "plgd-hub.m2moauthserver.enabled" . }}
 {{- $rdServiceCert := "/certs" }}
 apiVersion: apps/v1
 kind: Deployment
@@ -38,26 +38,6 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       restartPolicy: {{ .Values.m2moauthserver.restartPolicy }}
-      {{- if not (include "plgd-hub.m2moauthserver.privateKeySecretEnabled" $) }}
-      initContainers:
-        - name: init-sign-keys
-          image: docker.io/bitnami/nginx:1.19.10-debian-10-r63
-          imagePullPolicy: IfNotPresent
-          command:
-            - sh
-            - -c
-            - |
-              /bin/bash <<'EOF'
-              FILENAME="{{- include "plgd-hub.m2moauthserver.getPrivateKeyFile" $ }}"
-              if [ ! -f "{{ $.Values.m2moauthserver.oauthSigner.privateKeyFile }}" ]; then
-                  openssl ecparam -name prime256v1 -genkey -noout -out $FILENAME
-              fi
-              chmod 0444 $FILENAME
-              EOF
-          volumeMounts:
-            - mountPath: {{ dir (include "plgd-hub.m2moauthserver.getPrivateKeyFile" $) }}
-              name: keys
-      {{- end }}
       containers:
         - name: {{ .Values.m2moauthserver.name }}
           {{- with .Values.m2moauthserver.podSecurityContext }}
@@ -106,18 +86,22 @@ spec:
             - name: {{ .Values.m2moauthserver.privateKey.volume }}
               mountPath: {{ .Values.m2moauthserver.privateKey.mountPath }}
               readOnly: true
-            {{- else }}
-            - name: keys
-              mountPath: {{ dir (include "plgd-hub.m2moauthserver.getPrivateKeyFile" $) }}
+            {{- end }}
+            {{- if include "plgd-hub.m2moauthserver.clientServiceSecretEnabled" $ }}
+            - name: {{ .Values.m2moauthserver.clientServiceSecret.volume }}
+              mountPath: {{ .Values.m2moauthserver.clientServiceSecret.mountPath }}
+              readOnly: true
             {{- end }}
       volumes:
         {{- if include "plgd-hub.m2moauthserver.privateKeySecretEnabled" $ }}
         - name: {{ .Values.m2moauthserver.privateKey.volume }}
           secret:
             secretName: {{ .Values.m2moauthserver.privateKey.secretName }}
-        {{- else }}
-        - name: keys
-          emptyDir: {}
+        {{- end }}
+        {{- if include "plgd-hub.m2moauthserver.clientServiceSecretEnabled" $ }}
+        - name: {{ .Values.m2moauthserver.clientServiceSecret.volume }}
+          secret:
+            secretName: {{ .Values.m2moauthserver.clientServiceSecret.secretName }}
         {{- end }}
         - name: {{ .Values.m2moauthserver.config.volume }}
           configMap:

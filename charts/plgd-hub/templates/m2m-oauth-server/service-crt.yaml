@@ -1,5 +1,5 @@
 {{- $createServiceCert := include "plgd-hub.m2moauthserver.serviceCertName" . }}
-{{- if and $createServiceCert .Values.certmanager.enabled .Values.m2moauthserver.enabled }}
+{{- if and $createServiceCert .Values.certmanager.enabled (include "plgd-hub.m2moauthserver.enabled" .) }}
 {{- $serviceCertName := include "plgd-hub.m2moauthserver.serviceCertName" . }}
 {{- $serviceDns := include "plgd-hub.m2moauthserver.fullname" . }}
 apiVersion: cert-manager.io/v1
