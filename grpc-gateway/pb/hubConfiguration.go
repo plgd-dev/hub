@@ -14,12 +14,12 @@ func (r *OAuthClient) Clone() *OAuthClient {
 		return nil
 	}
 	return &OAuthClient{
-		ClientId:         r.GetClientId(),
-		Audience:         r.GetAudience(),
-		Scopes:           copySlice(r.GetScopes()),
-		ProviderName:     r.GetProviderName(),
-		GrantTypes:       copySlice(r.GetGrantTypes()),
-		UseJwtPrivateKey: r.GetUseJwtPrivateKey(),
-		Authority:        r.GetAuthority(),
+		ClientId:            r.GetClientId(),
+		Audience:            r.GetAudience(),
+		Scopes:              copySlice(r.GetScopes()),
+		ProviderName:        r.GetProviderName(),
+		GrantType:           r.GetGrantType(),
+		ClientAssertionType: r.GetClientAssertionType(),
+		Authority:           r.GetAuthority(),
 	}
 }

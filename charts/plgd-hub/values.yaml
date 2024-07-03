@@ -48,7 +48,7 @@ global:
             caPool:
             keyFile:
             certFile:
-            useSystemCAPool: false
+            useSystemCAPool: true
   # -- Enable *.{{ global.domain }} for all external domain
   enableWildCartCert: true
   # -- Sets cloud to standby mode
@@ -1752,6 +1752,8 @@ httpgateway:
         clientID:
         audience:
         scopes: []
+        grantType: 
+        clientAssertionType:
       visibility:
         mainSidebar:
           certificates : true

@@ -1031,9 +1031,9 @@ Certain filters perform a logical &#34;or&#34; operation among the elements of t
 | audience | [string](#string) |  |  |
 | scopes | [string](#string) | repeated |  |
 | provider_name | [string](#string) |  | @gotags: yaml:&#34;providerName&#34; |
-| use_jwt_private_key | [bool](#bool) |  | @gotags: yaml:&#34;useJWTPrivateKey&#34; |
+| client_assertion_type | [string](#string) |  | @gotags: yaml:&#34;clientAssertionType&#34; |
 | authority | [string](#string) |  |  |
-| grant_types | [string](#string) | repeated |  |
+| grant_type | [string](#string) |  | @gotags: yaml:&#34;grantType&#34; |
 
 
 

@@ -108,24 +108,24 @@ func (c *ClientsConfig) Validate() error {
 }
 
 type OAuthClient struct {
-	Authority        string   `yaml:"authority" json:"authority,omitempty"`
-	ClientID         string   `yaml:"clientID" json:"clientId"`
-	Audience         string   `yaml:"audience" json:"audience"`
-	Scopes           []string `yaml:"scopes" json:"scopes"`
-	ProviderName     string   `json:"providerName" yaml:"providerName,omitempty"`
-	GrantTypes       []string `json:"grantTypes" yaml:"grantTypes"`
-	UseJWTPrivateKey bool     `json:"useJWTPrivateKey" yaml:"useJWTPrivateKey"`
+	Authority           string   `yaml:"authority" json:"authority,omitempty"`
+	ClientID            string   `yaml:"clientID" json:"clientId"`
+	Audience            string   `yaml:"audience" json:"audience"`
+	Scopes              []string `yaml:"scopes" json:"scopes"`
+	ProviderName        string   `json:"providerName" yaml:"providerName,omitempty"`
+	GrantType           string   `json:"grantType" yaml:"grantType"`
+	ClientAssertionType string   `json:"clientAssertionType" yaml:"clientAssertionType"`
 }
 
 func (c *OAuthClient) ToProto() *pb.OAuthClient {
 	return &pb.OAuthClient{
-		ClientId:         c.ClientID,
-		Audience:         c.Audience,
-		Scopes:           c.Scopes,
-		ProviderName:     c.ProviderName,
-		GrantTypes:       c.GrantTypes,
-		UseJwtPrivateKey: c.UseJWTPrivateKey,
-		Authority:        c.Authority,
+		ClientId:            c.ClientID,
+		Audience:            c.Audience,
+		Scopes:              c.Scopes,
+		ProviderName:        c.ProviderName,
+		GrantType:           c.GrantType,
+		ClientAssertionType: c.ClientAssertionType,
+		Authority:           c.Authority,
 	}
 }
 
