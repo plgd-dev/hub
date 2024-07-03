@@ -685,7 +685,7 @@ done
 
 # m2m-oauth-server
 echo "starting m2m-oauth-server"
-
+yq --version
 ## setup cfg
 if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "/data/m2m-oauth-server.yaml" ]; then
 cat /configs/m2m-oauth-server.yaml | yq e "\
@@ -700,16 +700,26 @@ cat /configs/m2m-oauth-server.yaml | yq e "\
   .oauthSigner.clients[0].allowedGrantTypes[0] = \"client_credentials\" |
   .oauthSigner.clients[0].jwtPrivateKey.enabled = true |
   .oauthSigner.clients[0].jwtPrivateKey.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
+  .oauthSigner.clients[0].jwtPrivateKey.authorization.http.maxIdleConns = 16 |
+  .oauthSigner.clients[0].jwtPrivateKey.authorization.http.maxConnsPerHost = 32 |
+  .oauthSigner.clients[0].jwtPrivateKey.authorization.http.maxIdleConnsPerHost = 16 |
+  .oauthSigner.clients[0].jwtPrivateKey.authorization.http.idleConnTimeout = \"30s\" |
+  .oauthSigner.clients[0].jwtPrivateKey.authorization.http.timeout = \"10s\" |
   .oauthSigner.clients[0].jwtPrivateKey.authorization.http.tls.useSystemCAPool = true |
+  .oauthSigner.clients[0].jwtPrivateKey.authorization.http.tls.certFile = \"${INTERNAL_CERT_DIR_PATH}/${GRPC_INTERNAL_CERT_NAME}\" |
+  .oauthSigner.clients[0].jwtPrivateKey.authorization.http.tls.keyFile = \"${INTERNAL_CERT_DIR_PATH}/${GRPC_INTERNAL_CERT_KEY_NAME}\" |
+  .oauthSigner.clients[0].jwtPrivateKey.authorization.http.tls.caPool = \"${CA_POOL}\" |
   .oauthSigner.clients[0].jwtPrivateKey.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
   .clients.openTelemetryCollector.grpc.enabled = ${OPEN_TELEMETRY_EXPORTER_ENABLED} |
   .clients.openTelemetryCollector.grpc.address = \"${OPEN_TELEMETRY_EXPORTER_ADDRESS}\" |
   .clients.openTelemetryCollector.grpc.tls.caPool = \"${OPEN_TELEMETRY_EXPORTER_CA_POOL}\" |
   .clients.openTelemetryCollector.grpc.tls.keyFile = \"${OPEN_TELEMETRY_EXPORTER_KEY_FILE}\" |
   .clients.openTelemetryCollector.grpc.tls.certFile = \"${OPEN_TELEMETRY_EXPORTER_CERT_FILE}\" |
-  .clients.openTelemetryCollector.grpc.tls.useSystemCAPool = true |
+  .clients.openTelemetryCollector.grpc.tls.useSystemCAPool = true
 " - > /data/m2m-oauth-server.yaml
 fi
+
+echo "running m2m-oauth-server"
 
 m2m-oauth-server --config /data/m2m-oauth-server.yaml >$LOGS_PATH/m2m-oauth-server.log 2>&1 &
 status=$?
@@ -1103,7 +1113,12 @@ cat /configs/http-gateway.yaml | yq e "\
   .ui.webConfiguration.deviceOAuthClient.clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
   .ui.webConfiguration.deviceOAuthClient.scopes = [ \"${DEVICE_OAUTH_SCOPES}\" ] |
   .ui.webConfiguration.deviceOAuthClient.audience = \"${DEVICE_OAUTH_AUDIENCE}\" |
-  .ui.webConfiguration.deviceOAuthClient.providerName = \"${DEVICE_PROVIDER}\"
+  .ui.webConfiguration.deviceOAuthClient.providerName = \"${DEVICE_PROVIDER}\" |
+  .ui.webConfiguration.m2mOAuthClient.clientID = \"jwt-private-key\" |
+  .ui.webConfiguration.m2mOAuthClient.authority = \"https://${DOMAIN}/m2m-oauth-server\" |
+  .ui.webConfiguration.m2mOAuthClient.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
+  .ui.webConfiguration.m2mOAuthClient.grantType = \"client_credentials\" |
+  .ui.webConfiguration.m2mOAuthClient.clientAssertionType = \"urn:ietf:params:oauth:client-assertion-type:jwt-bearer\"
 " - > /data/http-gateway.yaml
 fi
 

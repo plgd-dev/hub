@@ -41,4 +41,3 @@ oauthSigner:
     ownerClaim: sub
     deviceIDClaim:
     clients:
-
