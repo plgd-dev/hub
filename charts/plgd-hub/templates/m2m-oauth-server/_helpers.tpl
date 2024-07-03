@@ -45,7 +45,7 @@
   {{- if .Values.m2moauthserver.domain }}
     {{- printf "%s" .Values.m2moauthserver.domain }}
   {{- else }}
-    {{- printf "m2m-auth.%s" .Values.global.domain }}
+    {{- printf "%s" .Values.global.domain }}
   {{- end }}
 {{- end }}
 
