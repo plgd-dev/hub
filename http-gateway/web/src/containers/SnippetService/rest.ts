@@ -1,6 +1,7 @@
 import { fetchApi, security } from '@shared-ui/common/services'
 import { deleteByChunks } from '@shared-ui/common/services/api-utils'
 import { withTelemetry } from '@shared-ui/common/services/opentelemetry'
+import { FetchApiReturnType } from '@shared-ui/common/types/API.types'
 
 import { SecurityConfig } from '@/containers/App/App.types'
 import { DELETE_CHUNK_SIZE, SnippetServiceApiEndpoints } from '@/containers/SnippetService/constants'
@@ -125,4 +126,43 @@ export const deleteAppliedConfigurationApi = (ids: string[]) => {
         '',
         DELETE_CHUNK_SIZE
     )
+}
+
+export const getOauthToken: () => Promise<string> = async () => {
+    const { cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
+    const { unauthorizedCallback, m2mOauthClient } = security.getWellKnownConfig()
+
+    return new Promise((resolve, reject) => {
+        withTelemetry(
+            () =>
+                fetchApi(`${m2mOauthClient.authority}/.well-known/openid-configuration`, {
+                    useToken: false,
+                }),
+            'get-m2mOauthClient-wellKnow-configuration'
+        )
+            .then((result: FetchApiReturnType<{ issuer: string; jwks_uri: string; token_endpoint: string }>) => {
+                if (result.data) {
+                    withTelemetry(
+                        () =>
+                            fetchApi(result?.data?.token_endpoint, {
+                                method: 'POST',
+                                cancelRequestDeadlineTimeout,
+                                unauthorizedCallback,
+                                body: {
+                                    client_assertion: security.getAccessToken(),
+                                    client_assertion_type: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer', // hardcoded
+                                    client_id: m2mOauthClient.clientId,
+                                    grant_type: 'client_credentials', // hardcoded
+                                },
+                            }),
+                        'get-m2mOauthClient-token'
+                    ).then((result: FetchApiReturnType<{ access_token: string; scope: string; token_type: string }>) => {
+                        resolve(result.data?.access_token || '')
+                    })
+                }
+            })
+            .catch((error: any) => {
+                console.error(error)
+            })
+    })
 }

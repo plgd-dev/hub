@@ -482,4 +482,8 @@ export const messages = defineMessages({
         id: 'global.invoke',
         defaultMessage: 'Invoke',
     },
+    generate: {
+        id: 'global.generate',
+        defaultMessage: 'Generate',
+    },
 })

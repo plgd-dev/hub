@@ -441,4 +441,12 @@ export const messages = defineMessages({
         id: 'snippetService.force',
         defaultMessage: 'Force',
     },
+    conditionTokenError: {
+        id: 'snippetService.conditionTokenError',
+        defaultMessage: 'Get Condition Token Error',
+    },
+    generateNewToken: {
+        id: 'snippetService.generateNewToken',
+        defaultMessage: 'Generate new token',
+    },
 })
