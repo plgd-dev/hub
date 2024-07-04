@@ -249,8 +249,8 @@ func MakeAuthorizationConfig() validator.Config {
 		Audience: http.HTTPS_SCHEME + OAUTH_MANAGER_AUDIENCE,
 		Endpoints: []validator.AuthorityConfig{
 			{
-				Address: http.HTTPS_SCHEME + OAUTH_SERVER_HOST,
-				HTTP:    MakeHttpClientConfig(),
+				Authority: http.HTTPS_SCHEME + OAUTH_SERVER_HOST,
+				HTTP:      MakeHttpClientConfig(),
 			},
 		},
 	}

@@ -7,13 +7,13 @@ import (
 )
 
 type AuthorityConfig struct {
-	Address string        `yaml:"address" json:"address"`
-	HTTP    client.Config `yaml:"http" json:"http"`
+	Authority string        `yaml:"authority" json:"authority"`
+	HTTP      client.Config `yaml:"http" json:"http"`
 }
 
 func (c *AuthorityConfig) Validate() error {
-	if c.Address == "" {
-		return fmt.Errorf("address('%v')", c.Address)
+	if c.Authority == "" {
+		return fmt.Errorf("authority('%v')", c.Authority)
 	}
 	if err := c.HTTP.Validate(); err != nil {
 		return fmt.Errorf("http.%w", err)
@@ -34,8 +34,8 @@ func (c *Config) Validate() error {
 			return fmt.Errorf("endpoints('%v') - are empty", c.Endpoints)
 		}
 		c.Endpoints = []AuthorityConfig{{
-			Address: *c.Authority,
-			HTTP:    *c.HTTP,
+			Authority: *c.Authority,
+			HTTP:      *c.HTTP,
 		}}
 		c.Authority = nil
 		c.HTTP = nil

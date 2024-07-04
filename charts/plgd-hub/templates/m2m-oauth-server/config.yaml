@@ -74,8 +74,8 @@ data:
               {{- end }}
               endpoints:
               {{- range $authorization.endpoints }}
-              {{- if not (eq .address (include "plgd-hub.m2moauthserver.uri" $)) }}
-                - address: {{ .address | quote }}
+              {{- if not (eq .authority (include "plgd-hub.m2moauthserver.uri" $)) }}
+                - authority: {{ .authority | quote }}
                   http: {{- .http | toYaml | nindent 20}}
               {{- end }}
               {{- end }}

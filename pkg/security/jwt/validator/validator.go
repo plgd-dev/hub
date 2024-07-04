@@ -51,7 +51,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		ctx2, cancel := context.WithTimeout(ctx, authority.HTTP.Timeout)
 		defer cancel()
 
-		openIDCfg, err := openid.GetConfiguration(ctx2, httpClient.HTTP(), authority.Address)
+		openIDCfg, err := openid.GetConfiguration(ctx2, httpClient.HTTP(), authority.Authority)
 		if err != nil {
 			onClose.Execute()
 			httpClient.Close()

@@ -200,9 +200,9 @@ tls:
   audience: {{ include "plgd-hub.resolveTemplateString" (list $  $audience) }}
   endpoints:
     {{- range $endpoints }}
-    {{- $address := include "plgd-hub.resolveTemplateString" (list $ .address) }}
-    {{- if $address }}
-    - address: {{ include "plgd-hub.resolveTemplateString" (list $ .address) }}
+    {{- $authority := include "plgd-hub.resolveTemplateString" (list $ .authority) }}
+    {{- if $authority }}
+    - authority: {{ include "plgd-hub.resolveTemplateString" (list $ .authority) }}
       http:
         {{- include "plgd-hub.httpConfig" (list $ .http $certPath ) | indent 8 }}
     {{- end }}
@@ -211,11 +211,11 @@ tls:
   audience: {{ include "plgd-hub.resolveTemplateString" (list $  $audience) }}
   endpoints:
     {{- range $endpoints }}
-    {{- $address := include "plgd-hub.resolveTemplateString" (list $ .address) }}
-    {{- if not $address }}
-    {{- $address = include "plgd-hub.mockoauthserver.uri" $ }}
+    {{- $authority := include "plgd-hub.resolveTemplateString" (list $ .authority) }}
+    {{- if not $authority }}
+    {{- $authority = include "plgd-hub.mockoauthserver.uri" $ }}
     {{- end }}
-    - address: {{ $address }}
+    - authority: {{ $authority }}
       http:
         {{- include "plgd-hub.httpConfig" (list $ .http $certPath ) | indent 8 }}
     {{- end }}
