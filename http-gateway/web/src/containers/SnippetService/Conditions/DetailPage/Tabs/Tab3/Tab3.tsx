@@ -65,7 +65,7 @@ const Tab3: FC<Props> = (props) => {
 
             Notification.error(
                 { title: _(confT.conditionTokenError), message: e.message },
-                { notificationId: notificationId.HUB_SNIPPET_SERVICE_CONDITIONS_DETAIL_PAGE_UPDATE_ERROR }
+                { notificationId: notificationId.HUB_SNIPPET_SERVICE_CONDITIONS_DETAIL_GET_TOKEN_ERROR }
             )
 
             setLoading(false)
