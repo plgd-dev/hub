@@ -11,6 +11,7 @@ import (
 
 	"github.com/plgd-dev/go-coap/v3/pkg/cache"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	pkgStrings "github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/hub/v2/test/oauth-server/uri"
 	"github.com/plgd-dev/kit/v2/codec/json"
@@ -170,7 +171,7 @@ func writeWebMessage(w http.ResponseWriter, code, state, domain string) {
 		</body>
 	</html>`
 	w.WriteHeader(http.StatusOK)
-	w.Header().Set(contentTypeHeaderKey, "text/html;charset=UTF-8")
+	w.Header().Set(pkgHttp.ContentTypeHeaderKey, "text/html;charset=UTF-8")
 	if _, err = w.Write([]byte(body)); err != nil {
 		log.Errorf("failed to write response body: %v", err)
 	}
@@ -203,7 +204,7 @@ func writeConsentScreen(w http.ResponseWriter, redirectURI, scope, state, code s
 	</html>`
 
 	w.WriteHeader(http.StatusOK)
-	w.Header().Set(contentTypeHeaderKey, "text/html;charset=UTF-8")
+	w.Header().Set(pkgHttp.ContentTypeHeaderKey, "text/html;charset=UTF-8")
 	if _, err := w.Write([]byte(body)); err != nil {
 		writeError(w, err, http.StatusBadRequest)
 	}

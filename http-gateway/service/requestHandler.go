@@ -22,11 +22,11 @@ import (
 
 // RequestHandler for handling incoming request
 type RequestHandler struct {
-	client       *client.Client
-	config       *Config
-	mux          *runtime.ServeMux
-	openIDConfig openid.Config
-	logger       log.Logger
+	client        *client.Client
+	config        *Config
+	mux           *runtime.ServeMux
+	openIDConfigs []openid.Config
+	logger        log.Logger
 }
 
 func matchPrefixAndSplitURIPath(requestURI, prefix string) []string {
@@ -169,12 +169,12 @@ func (requestHandler *RequestHandler) setupUIHandler(r *mux.Router) {
 }
 
 // NewHTTP returns HTTP handler
-func NewRequestHandler(config *Config, r *mux.Router, client *client.Client, openIDConfig openid.Config, logger log.Logger) (*RequestHandler, error) {
+func NewRequestHandler(config *Config, r *mux.Router, client *client.Client, openIDConfigs []openid.Config, logger log.Logger) (*RequestHandler, error) {
 	requestHandler := &RequestHandler{
-		client:       client,
-		config:       config,
-		openIDConfig: openIDConfig,
-		logger:       logger,
+		client:        client,
+		config:        config,
+		openIDConfigs: openIDConfigs,
+		logger:        logger,
 		mux: serverMux.New(
 			runtime.WithMarshalerOption(ApplicationSubscribeToEventsMIMEWildcard, newSubscribeToEventsMarshaler(serverMux.NewJsonMarshaler())),
 			runtime.WithMarshalerOption(ApplicationSubscribeToEventsProtoJsonContentType, serverMux.NewJsonpbMarshaler()),

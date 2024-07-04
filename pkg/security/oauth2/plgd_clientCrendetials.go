@@ -6,21 +6,18 @@ import (
 	"net/http"
 
 	"github.com/plgd-dev/hub/v2/pkg/net/http/client"
-	pkgJwt "github.com/plgd-dev/hub/v2/pkg/security/jwt"
+	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"golang.org/x/oauth2"
 )
 
 // NewPlgdProvider creates OAuth client
-func NewClientCredentialsPlgdProvider(config Config, httpClient *client.Client, jwksURL string, ownerClaim, deviceIDClaim string) *ClientCredentialsPlgdProvider {
-	keyCache := pkgJwt.NewKeyCache(jwksURL, httpClient.HTTP())
-
-	jwtValidator := pkgJwt.NewValidator(keyCache)
+func NewClientCredentialsPlgdProvider(config Config, httpClient *client.Client, ownerClaim, deviceIDClaim string, validator *jwt.Validator) *ClientCredentialsPlgdProvider {
 	return &ClientCredentialsPlgdProvider{
 		Config:        config,
 		HTTPClient:    httpClient,
 		ownerClaim:    ownerClaim,
 		deviceIDClaim: deviceIDClaim,
-		jwtValidator:  jwtValidator,
+		jwtValidator:  validator,
 	}
 }
 
@@ -30,16 +27,30 @@ type ClientCredentialsPlgdProvider struct {
 	HTTPClient    *client.Client
 	ownerClaim    string
 	deviceIDClaim string
-	jwtValidator  *pkgJwt.Validator
+	jwtValidator  *jwt.Validator
+}
+
+func (p *ClientCredentialsPlgdProvider) parseToken(ctx context.Context, accessToken string) (jwt.Claims, error) {
+	if p.jwtValidator != nil {
+		claims, err := p.jwtValidator.ParseWithContext(ctx, accessToken)
+		if err != nil {
+			return nil, fmt.Errorf("cannot verify authorization code: %w", err)
+		}
+		return jwt.Claims(claims), nil
+	}
+	claims, err := jwt.ParseToken(accessToken)
+	if err != nil {
+		return nil, fmt.Errorf("cannot parse authorization code: %w", err)
+	}
+	return claims, nil
 }
 
 // Exchange Auth Code for Access Token via OAuth
-func (p *ClientCredentialsPlgdProvider) Exchange(ctx context.Context, authorizationCode string) (*Token, error) {
-	claims, err := p.jwtValidator.ParseWithContext(ctx, authorizationCode)
+func (p *ClientCredentialsPlgdProvider) Exchange(ctx context.Context, accessToken string) (*Token, error) {
+	m, err := p.parseToken(ctx, accessToken)
 	if err != nil {
-		return nil, fmt.Errorf("cannot verify authorization code: %w", err)
+		return nil, err
 	}
-	m := pkgJwt.Claims(claims)
 	c := p.Config.ToDefaultClientCredentials()
 	if p.deviceIDClaim != "" {
 		deviceID, errG := m.GetDeviceID(p.deviceIDClaim)
@@ -58,7 +69,14 @@ func (p *ClientCredentialsPlgdProvider) Exchange(ctx context.Context, authorizat
 	if owner == "" {
 		return nil, fmt.Errorf("ownerClaim('%v') is not set in token", p.ownerClaim)
 	}
+	sub, err := m.GetSubject()
+	if err != nil {
+		return nil, fmt.Errorf("cannot get subject: %w", err)
+	}
 	c.EndpointParams.Add(p.ownerClaim, owner)
+	if p.ownerClaim != "sub" {
+		c.EndpointParams.Add("sub", sub)
+	}
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, p.HTTPClient.HTTP())
 	token, err := c.Token(ctx)
 	if err != nil {

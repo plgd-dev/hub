@@ -1,6 +1,6 @@
 package pb
 
-func copyScopes(scopes []string) []string {
+func copySlice(scopes []string) []string {
 	if len(scopes) == 0 {
 		return nil
 	}
@@ -9,25 +9,17 @@ func copyScopes(scopes []string) []string {
 	return sc
 }
 
-func (r *WebOAuthClient) Clone() *WebOAuthClient {
+func (r *OAuthClient) Clone() *OAuthClient {
 	if r == nil {
 		return nil
 	}
-	return &WebOAuthClient{
-		ClientId: r.GetClientId(),
-		Audience: r.GetAudience(),
-		Scopes:   copyScopes(r.GetScopes()),
-	}
-}
-
-func (r *DeviceOAuthClient) Clone() *DeviceOAuthClient {
-	if r == nil {
-		return nil
-	}
-	return &DeviceOAuthClient{
-		ProviderName: r.GetProviderName(),
-		ClientId:     r.GetClientId(),
-		Audience:     r.GetAudience(),
-		Scopes:       copyScopes(r.GetScopes()),
+	return &OAuthClient{
+		ClientId:            r.GetClientId(),
+		Audience:            r.GetAudience(),
+		Scopes:              copySlice(r.GetScopes()),
+		ProviderName:        r.GetProviderName(),
+		GrantType:           r.GetGrantType(),
+		ClientAssertionType: r.GetClientAssertionType(),
+		Authority:           r.GetAuthority(),
 	}
 }

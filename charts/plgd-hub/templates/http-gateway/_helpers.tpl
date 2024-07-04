@@ -11,13 +11,6 @@
 {{- end }}
 {{- end }}
 
-{{- define  "plgd-hub.httpgateway.image" -}}
-    {{- $registryName := .Values.httpgateway.image.registry | default "" -}}
-    {{- $repositoryName := .Values.httpgateway.image.repository -}}
-    {{- $tag := .Values.httpgateway.image.tag | default .Chart.AppVersion | toString -}}
-    {{- printf "%s%s:%s" $registryName $repositoryName  $tag -}}
-{{- end -}}
-
 {{- define  "plgd-hub.httpgateway.configName" -}}
     {{- $fullName :=  include "plgd-hub.httpgateway.fullname" . -}}
     {{- printf "%s-cfg" $fullName }}

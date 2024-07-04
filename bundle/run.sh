@@ -15,7 +15,6 @@ export NGINX_PATH="/data/nginx"
 export JETSTREAM_PATH="/data/jetstream"
 
 export CERTIFICATE_AUTHORITY_ADDRESS="localhost:${CERTIFICATE_AUTHORITY_PORT}"
-export CERTIFICATE_AUTHORITY_HTTP_ADDRESS="localhost:${HTTP_CERTIFICATE_AUTHORITY_PORT}"
 export MOCK_OAUTH_SERVER_ADDRESS="localhost:${MOCK_OAUTH_SERVER_PORT}"
 export RESOURCE_AGGREGATE_ADDRESS="localhost:${RESOURCE_AGGREGATE_PORT}"
 export RESOURCE_DIRECTORY_ADDRESS="localhost:${RESOURCE_DIRECTORY_PORT}"
@@ -24,8 +23,7 @@ export GRPC_GATEWAY_ADDRESS="localhost:${GRPC_GATEWAY_PORT}"
 export HTTP_GATEWAY_ADDRESS="localhost:${HTTP_GATEWAY_PORT}"
 export CLOUD2CLOUD_GATEWAY_ADDRESS="localhost:${CLOUD2CLOUD_GATEWAY_PORT}"
 export CLOUD2CLOUD_CONNECTOR_ADDRESS="localhost:${CLOUD2CLOUD_CONNECTOR_PORT}"
-export SNIPPET_SERVICE_ADDRESS="localhost:${SNIPPET_SERVICE_PORT}"
-export SNIPPET_SERVICE_HTTP_ADDRESS="localhost:${HTTP_SNIPPET_SERVICE_PORT}"
+export M2M_OAUTH_SERVER_ADDRESS="localhost:${M2M_OAUTH_SERVER_PORT}"
 
 export INTERNAL_CERT_DIR_PATH="$CERTIFICATES_PATH/internal"
 export GRPC_INTERNAL_CERT_NAME="endpoint.crt"
@@ -47,6 +45,9 @@ export OAUTH_ID_TOKEN_KEY_PATH=${OAUTH_KEYS_PATH}/id-token.pem
 export OAUTH_ACCESS_TOKEN_KEY_PATH=${OAUTH_KEYS_PATH}/access-token.pem
 
 export OAUTH_DEVICE_SECRET_PATH=${OAUTH_SECRETS_PATH}/device.secret
+
+#M2M PRIVATE KEY
+export M2M_PRIVATE_KEY_PATH=${OAUTH_KEYS_PATH}/m2m-private.pem
 
 #ENDPOINTS
 export SCYLLA_HOSTNAME="localhost"
@@ -196,6 +197,31 @@ while read -r line; do
      cp $KEY_FILE ${file}
   fi
 done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/oauth-server.yaml | sort | uniq)
+
+## m2m-oauth-server
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+     cp $CA_POOL ${file}
+  fi
+done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/m2m-oauth-server.yaml | sort | uniq)
+### setup certificates
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+     cp $CERT_FILE ${file}
+  fi
+done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/m2m-oauth-server.yaml | sort | uniq)
+### setup private keys
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+     cp $KEY_FILE ${file}
+  fi
+done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/m2m-oauth-server.yaml | sort | uniq)
 
 ## identity-store
 while read -r line; do
@@ -440,6 +466,10 @@ if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${OAUTH_ACCESS_TOKEN_KEY_PATH}" ]
   openssl ecparam -name prime256v1 -genkey -noout -out ${OAUTH_ACCESS_TOKEN_KEY_PATH}
 fi
 
+if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${M2M_PRIVATE_KEY_PATH}" ]; then
+  openssl ecparam -name prime256v1 -genkey -noout -out ${M2M_PRIVATE_KEY_PATH}
+fi
+
 mkdir -p $MONGO_PATH
 mkdir -p $CERTIFICATES_PATH
 mkdir -p $LOGS_PATH
@@ -454,7 +484,7 @@ if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${NGINX_PATH}/nginx.conf" ]; then
   sed -i "s/REPLACE_CLOUD2CLOUD_GATEWAY_PORT/$CLOUD2CLOUD_GATEWAY_PORT/g" ${NGINX_PATH}/nginx.conf
   sed -i "s/REPLACE_CLOUD2CLOUD_CONNECTOR_PORT/$CLOUD2CLOUD_CONNECTOR_PORT/g" ${NGINX_PATH}/nginx.conf
   sed -i "s/REPLACE_HTTP_CERTIFICATE_AUTHORITY_PORT/$HTTP_CERTIFICATE_AUTHORITY_PORT/g" ${NGINX_PATH}/nginx.conf
-  sed -i "s/REPLACE_HTTP_SNIPPET_SERVICE_PORT/$HTTP_SNIPPET_SERVICE_PORT/g" ${NGINX_PATH}/nginx.conf
+  sed -i "s/REPLACE_M2M_OAUTH_SERVER_PORT/$M2M_OAUTH_SERVER_PORT/g" ${NGINX_PATH}/nginx.conf
 fi
 
 # nats
@@ -650,6 +680,64 @@ while true; do
     break
   fi
   echo "Try to reconnect to oauth-server(${MOCK_OAUTH_SERVER_ADDRESS}) $i"
+  sleep 1
+done
+
+# m2m-oauth-server
+echo "starting m2m-oauth-server"
+yq --version
+## setup cfg
+if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "/data/m2m-oauth-server.yaml" ]; then
+cat /configs/m2m-oauth-server.yaml | yq e "\
+  .log.level = \"${LOG_LEVEL}\" |
+  .apis.http.address = \"${M2M_OAUTH_SERVER_ADDRESS}\" |
+  .oauthSigner.privateKeyFile = \"${M2M_PRIVATE_KEY_PATH}\" |
+  .oauthSigner.domain = \"${DOMAIN}\" |
+  .oauthSigner.ownerClaim = \"${OWNER_CLAIM}\" |
+  .oauthSigner.clients[0].accessTokenLifetime= \"0s\" |
+  .oauthSigner.clients[0].id = \"jwt-private-key\" |
+  .oauthSigner.clients[0].requireOwner = true |
+  .oauthSigner.clients[0].allowedGrantTypes[0] = \"client_credentials\" |
+  .oauthSigner.clients[0].jwtPrivateKey.enabled = true |
+  .oauthSigner.clients[0].jwtPrivateKey.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
+  .oauthSigner.clients[0].jwtPrivateKey.authorization.http.maxIdleConns = 16 |
+  .oauthSigner.clients[0].jwtPrivateKey.authorization.http.maxConnsPerHost = 32 |
+  .oauthSigner.clients[0].jwtPrivateKey.authorization.http.maxIdleConnsPerHost = 16 |
+  .oauthSigner.clients[0].jwtPrivateKey.authorization.http.idleConnTimeout = \"30s\" |
+  .oauthSigner.clients[0].jwtPrivateKey.authorization.http.timeout = \"10s\" |
+  .oauthSigner.clients[0].jwtPrivateKey.authorization.http.tls.useSystemCAPool = true |
+  .oauthSigner.clients[0].jwtPrivateKey.authorization.http.tls.certFile = \"${INTERNAL_CERT_DIR_PATH}/${GRPC_INTERNAL_CERT_NAME}\" |
+  .oauthSigner.clients[0].jwtPrivateKey.authorization.http.tls.keyFile = \"${INTERNAL_CERT_DIR_PATH}/${GRPC_INTERNAL_CERT_KEY_NAME}\" |
+  .oauthSigner.clients[0].jwtPrivateKey.authorization.http.tls.caPool = \"${CA_POOL}\" |
+  .oauthSigner.clients[0].jwtPrivateKey.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
+  .clients.openTelemetryCollector.grpc.enabled = ${OPEN_TELEMETRY_EXPORTER_ENABLED} |
+  .clients.openTelemetryCollector.grpc.address = \"${OPEN_TELEMETRY_EXPORTER_ADDRESS}\" |
+  .clients.openTelemetryCollector.grpc.tls.caPool = \"${OPEN_TELEMETRY_EXPORTER_CA_POOL}\" |
+  .clients.openTelemetryCollector.grpc.tls.keyFile = \"${OPEN_TELEMETRY_EXPORTER_KEY_FILE}\" |
+  .clients.openTelemetryCollector.grpc.tls.certFile = \"${OPEN_TELEMETRY_EXPORTER_CERT_FILE}\" |
+  .clients.openTelemetryCollector.grpc.tls.useSystemCAPool = true
+" - > /data/m2m-oauth-server.yaml
+fi
+
+echo "running m2m-oauth-server"
+
+m2m-oauth-server --config /data/m2m-oauth-server.yaml >$LOGS_PATH/m2m-oauth-server.log 2>&1 &
+status=$?
+m2m_oauth_server_pid=$!
+if [ $status -ne 0 ]; then
+  echo "Failed to start oauth-server: $status"
+  sync
+  cat $LOGS_PATH/m2m-oauth-server.log
+  exit $status
+fi
+
+i=0
+while true; do
+  i=$((i+1))
+  if openssl s_client -connect ${M2M_OAUTH_SERVER_ADDRESS} -cert ${INTERNAL_CERT_DIR_PATH}/${GRPC_INTERNAL_CERT_NAME} -key ${INTERNAL_CERT_DIR_PATH}/${GRPC_INTERNAL_CERT_KEY_NAME} <<< "Q" 2>/dev/null > /dev/null; then
+    break
+  fi
+  echo "Try to reconnect to m2m-oauth-server(${M2M_OAUTH_SERVER_ADDRESS}) $i"
   sleep 1
 done
 
@@ -921,7 +1009,6 @@ cat /configs/certificate-authority.yaml | yq e "\
   .apis.grpc.authorization.http.tls.useSystemCAPool = true |
   .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
   .apis.grpc.authorization.ownerClaim = \"${OWNER_CLAIM}\" |
-  .apis.http.address = \"${CERTIFICATE_AUTHORITY_HTTP_ADDRESS}\" |
   .clients.storage.use = \"${DATABASE_USE}\" |
   .clients.storage.mongoDB.uri = \"${MONGODB_URI}\" |
   .clients.storage.cqlDB.hosts = [ \"${SCYLLA_HOSTNAME}\" ] |
@@ -1026,7 +1113,12 @@ cat /configs/http-gateway.yaml | yq e "\
   .ui.webConfiguration.deviceOAuthClient.clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
   .ui.webConfiguration.deviceOAuthClient.scopes = [ \"${DEVICE_OAUTH_SCOPES}\" ] |
   .ui.webConfiguration.deviceOAuthClient.audience = \"${DEVICE_OAUTH_AUDIENCE}\" |
-  .ui.webConfiguration.deviceOAuthClient.providerName = \"${DEVICE_PROVIDER}\"
+  .ui.webConfiguration.deviceOAuthClient.providerName = \"${DEVICE_PROVIDER}\" |
+  .ui.webConfiguration.m2mOAuthClient.clientID = \"jwt-private-key\" |
+  .ui.webConfiguration.m2mOAuthClient.authority = \"https://${DOMAIN}/m2m-oauth-server\" |
+  .ui.webConfiguration.m2mOAuthClient.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
+  .ui.webConfiguration.m2mOAuthClient.grantType = \"client_credentials\" |
+  .ui.webConfiguration.m2mOAuthClient.clientAssertionType = \"urn:ietf:params:oauth:client-assertion-type:jwt-bearer\"
 " - > /data/http-gateway.yaml
 fi
 
@@ -1149,51 +1241,7 @@ while true; do
   sleep 1
 done
 
-# snippet-service
-echo "starting snippet-service"
-## configuration
-if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "/data/snippet-service.yaml" ]; then
-cat /configs/snippet-service.yaml | yq e "\
-  .hubID = \"${HUB_ID}\" |
-  .log.level = \"${LOG_LEVEL}\" |
-  .apis.grpc.address = \"${SNIPPET_SERVICE_ADDRESS}\" |
-  .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
-  .apis.grpc.authorization.http.tls.useSystemCAPool = true |
-  .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
-  .apis.grpc.authorization.ownerClaim = \"${OWNER_CLAIM}\" |
-  .apis.http.address = \"${SNIPPET_SERVICE_HTTP_ADDRESS}\" |
-  .clients.storage.use = \"${DATABASE_USE}\" |
-  .clients.storage.mongoDB.uri = \"${MONGODB_URI}\" |
-  .clients.storage.cqlDB.hosts = [ \"${SCYLLA_HOSTNAME}\" ] |
-  .clients.storage.cqlDB.port = ${SCYLLA_PORT} |
-  .clients.openTelemetryCollector.grpc.enabled = ${OPEN_TELEMETRY_EXPORTER_ENABLED} |
-  .clients.openTelemetryCollector.grpc.address = \"${OPEN_TELEMETRY_EXPORTER_ADDRESS}\" |
-  .clients.openTelemetryCollector.grpc.tls.caPool = \"${OPEN_TELEMETRY_EXPORTER_CA_POOL}\" |
-  .clients.openTelemetryCollector.grpc.tls.keyFile = \"${OPEN_TELEMETRY_EXPORTER_KEY_FILE}\" |
-  .clients.openTelemetryCollector.grpc.tls.certFile = \"${OPEN_TELEMETRY_EXPORTER_CERT_FILE}\" |
-  .clients.openTelemetryCollector.grpc.tls.useSystemCAPool = true
-" - > /data/snippet-service.yaml
-fi
-snippet-service --config /data/snippet-service.yaml >$LOGS_PATH/snippet-service.log 2>&1 &
-status=$?
-snippet_service_pid=$!
-if [ $status -ne 0 ]; then
-  echo "Failed to start snippet-service: $status"
-  sync
-  cat $LOGS_PATH/snippet-service.log
-  exit $status
-fi
 
-# waiting for ca. Without wait, sometimes the service didn't connect.
-i=0
-while true; do
-  i=$((i+1))
-  if openssl s_client -connect ${SNIPPET_SERVICE_ADDRESS} -cert ${INTERNAL_CERT_DIR_PATH}/${GRPC_INTERNAL_CERT_NAME} -key ${INTERNAL_CERT_DIR_PATH}/${GRPC_INTERNAL_CERT_KEY_NAME} <<< "Q" 2>/dev/null > /dev/null; then
-    break
-  fi
-  echo "Try to reconnect to snippet-service(${SNIPPET_SERVICE_ADDRESS}) $i"
-  sleep 1
-done
 
 echo "Open browser at https://${DOMAIN}"
 
@@ -1282,6 +1330,13 @@ while sleep 10; do
     cat $LOGS_PATH/oauth-server.log
    exit 1
   fi
+  ps aux |grep $m2m_oauth_server_pid |grep -q -v grep
+  if [ $? -ne 0 ]; then
+    echo "m2m-oauth-server has already exited."
+    sync
+    cat $LOGS_PATH/m2m-oauth-server.log
+   exit 1
+  fi
   ps aux |grep $nginx_pid |grep -q -v grep
   if [ $? -ne 0 ]; then
     echo "nginx has already exited."
@@ -1311,12 +1366,5 @@ while sleep 10; do
       cat $LOGS_PATH/scylla.log
       exit 1
     fi
-  fi
-  ps aux |grep $snippet_service_pid |grep -q -v grep
-  if [ $? -ne 0 ]; then
-    echo "snippet-service has already exited."
-    sync
-    cat $LOGS_PATH/snippet-service.log
-   exit 1
   fi
 done

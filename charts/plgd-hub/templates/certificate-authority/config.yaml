@@ -41,17 +41,7 @@ data:
           clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
         authorization:
           {{- $authorization := .apis.grpc.authorization }}
-          {{- include "plgd-hub.authorizationConfig" (list $ $authorization "certificateauthority" ) | indent 8 }}
-          http:
-            maxIdleConns: {{ .apis.grpc.authorization.http.maxIdleConns }}
-            maxConnsPerHost: {{ .apis.grpc.authorization.http.maxIdleConnsPerHost }}
-            maxIdleConnsPerHost: {{ .apis.grpc.authorization.http.maxIdleConnsPerHost }}
-            idleConnTimeout: {{ .apis.grpc.authorization.http.idleConnTimeout }}
-            timeout: {{ .apis.grpc.authorization.http.timeout }}
-            tls:
-              {{- $grpcTls := .apis.grpc.authorization.http.tls }}
-              {{- include "plgd-hub.authorizationCaCertificateConfig" (list $ $grpcTls $cert ) | indent 12 }}
-              useSystemCAPool: {{ .apis.grpc.authorization.http.tls.useSystemCAPool }}
+          {{- include "plgd-hub.authorizationConfig" (list $ $authorization "certificateauthority.apis.grpc.authorization" $cert ) | indent 8 }}
       http:
         address: {{  .apis.http.address | default (printf "0.0.0.0:%v" .httpPort) | quote }}
         readTimeout: {{ .apis.http.readTimeout }}

@@ -226,10 +226,10 @@ func getPatchedTD(t *testing.T, deviceCfg bridgeDevice.Config, deviceID string, 
 	}
 	td.Properties[schemaDevice.ResourceURI] = dev
 
-	httpgwService.ThingSetSecurity(&td, openid.Config{
+	httpgwService.ThingSetSecurity(&td, []openid.Config{{
 		TokenURL: "https://localhost:20009/oauth/token",
 		AuthURL:  "https://localhost:20009/authorize",
-	})
+	}})
 
 	mnt, ok := bridgeResourcesTD.GetOCFResourcePropertyElement(schemaMaintenance.ResourceURI)
 	require.True(t, ok)

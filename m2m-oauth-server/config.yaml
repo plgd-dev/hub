@@ -1,0 +1,43 @@
+log:
+    level: info
+    encoding: json
+    stacktrace:
+        enabled: false
+        level: warn
+    encoderConfig:
+        timeEncoder: rfc3339nano
+    dumpBody: false
+apis:
+  http:
+    address: "0.0.0.0:9100"
+    readTimeout: 8s
+    readHeaderTimeout: 4s
+    writeTimeout: 16s
+    idleTimeout: 30s
+    tls:
+      caPool: "/secrets/public/rootca.crt"
+      keyFile: "/secrets/private/cert.key"
+      certFile: "/secrets/public/cert.crt"
+      clientCertificateRequired: true
+clients:
+  openTelemetryCollector:
+    grpc:
+      enabled: false
+      address: ""
+      sendMsgSize: 4194304
+      recvMsgSize: 4194304
+      keepAlive:
+        time: 10s
+        timeout: 20s
+        permitWithoutStream: true
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false
+oauthSigner:
+    privateKeyFile: "/secrets/private/private.key"
+    domain:
+    ownerClaim: sub
+    deviceIDClaim:
+    clients:

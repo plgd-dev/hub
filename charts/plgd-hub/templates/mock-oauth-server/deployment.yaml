@@ -65,8 +65,8 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          image: {{ include "plgd-hub.mockoauthserver.image" . | quote }}
-          imagePullPolicy: {{ .Values.httpgateway.image.pullPolicy }}
+          image: {{ include "plgd-hub.image" (list . .Values.mockoauthserver) | quote }}
+          imagePullPolicy: {{ .Values.mockoauthserver.image.pullPolicy }}
           {{- if .Values.mockoauthserver.command }}
           command:
           {{- range .Values.mockoauthserver.command  }}

@@ -10,6 +10,7 @@ import (
 	coapService "github.com/plgd-dev/hub/v2/pkg/net/coap/service"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
 	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
+	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2/oauth"
 	"github.com/plgd-dev/hub/v2/pkg/sync/task/queue"
@@ -92,6 +93,7 @@ type AuthorizationConfig struct {
 	DeviceIDClaim string            `yaml:"deviceIDClaim" json:"deviceIdClaim"`
 	OwnerClaim    string            `yaml:"ownerClaim" json:"ownerClaim"`
 	Providers     []ProvidersConfig `yaml:"providers" json:"providers"`
+	Authority     validator.Config  `yaml:",inline" json:",inline"`
 }
 
 func (c *AuthorizationConfig) Validate() error {
@@ -109,6 +111,16 @@ func (c *AuthorizationConfig) Validate() error {
 		if err := c.Providers[i].Validate(c.Providers[0].Authority, duplicitProviderNames); err != nil {
 			return fmt.Errorf("providers[%v].%w", i, err)
 		}
+	}
+	// for backward compatibility
+	if c.Authority.Authority == nil {
+		c.Authority.Authority = &c.Providers[0].Authority
+	}
+	if c.Authority.HTTP == nil {
+		c.Authority.HTTP = &c.Providers[0].HTTP
+	}
+	if err := c.Authority.Validate(); err != nil {
+		return fmt.Errorf("authority.%w", err)
 	}
 	return nil
 }

@@ -115,9 +115,9 @@ jobs:
           - name: mongodb-admin-tool
             directory: tools/mongodb/admin-tool
             file: tools/mongodb/admin-tool/Dockerfile
-          - name: snippet-service
-            directory: snippet-service
-            file: .tmp/docker/snippet-service/Dockerfile
+          - name: m2m-oauth-server
+            directory: m2m-oauth-server
+            file: .tmp/docker/m2m-oauth-server/Dockerfile
             template-file: tools/docker/Dockerfile.in
     uses: ./.github/workflows/build-publish-cfg.yaml
     with:

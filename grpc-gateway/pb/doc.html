@@ -410,15 +410,15 @@
                 </li>
               
                 <li>
-                  <a href="#grpcgateway.pb.DeviceOAuthClient"><span class="badge">M</span>DeviceOAuthClient</a>
-                </li>
-              
-                <li>
                   <a href="#grpcgateway.pb.HubConfigurationRequest"><span class="badge">M</span>HubConfigurationRequest</a>
                 </li>
               
                 <li>
                   <a href="#grpcgateway.pb.HubConfigurationResponse"><span class="badge">M</span>HubConfigurationResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#grpcgateway.pb.OAuthClient"><span class="badge">M</span>OAuthClient</a>
                 </li>
               
                 <li>
@@ -431,10 +431,6 @@
               
                 <li>
                   <a href="#grpcgateway.pb.UIVisibility.MainSidebar"><span class="badge">M</span>UIVisibility.MainSidebar</a>
-                </li>
-              
-                <li>
-                  <a href="#grpcgateway.pb.WebOAuthClient"><span class="badge">M</span>WebOAuthClient</a>
                 </li>
               
               
@@ -2723,51 +2719,6 @@
 
         
       
-        <h3 id="grpcgateway.pb.DeviceOAuthClient">DeviceOAuthClient</h3>
-        <p></p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>client_id</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>@gotags: yaml:&#34;clientID&#34; </p></td>
-                </tr>
-              
-                <tr>
-                  <td>audience</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-              
-                <tr>
-                  <td>scopes</td>
-                  <td><a href="#string">string</a></td>
-                  <td>repeated</td>
-                  <td><p> </p></td>
-                </tr>
-              
-                <tr>
-                  <td>provider_name</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>@gotags: yaml:&#34;providerName&#34; </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
         <h3 id="grpcgateway.pb.HubConfigurationRequest">HubConfigurationRequest</h3>
         <p></p>
 
@@ -2857,14 +2808,21 @@
               
                 <tr>
                   <td>web_oauth_client</td>
-                  <td><a href="#grpcgateway.pb.WebOAuthClient">WebOAuthClient</a></td>
+                  <td><a href="#grpcgateway.pb.OAuthClient">OAuthClient</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
               
                 <tr>
                   <td>device_oauth_client</td>
-                  <td><a href="#grpcgateway.pb.DeviceOAuthClient">DeviceOAuthClient</a></td>
+                  <td><a href="#grpcgateway.pb.OAuthClient">OAuthClient</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>m2m_oauth_client</td>
+                  <td><a href="#grpcgateway.pb.OAuthClient">OAuthClient</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -2881,6 +2839,72 @@
                   <td><a href="#grpcgateway.pb.BuildInfo">BuildInfo</a></td>
                   <td></td>
                   <td><p>build info </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="grpcgateway.pb.OAuthClient">OAuthClient</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>client_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>@gotags: yaml:&#34;clientID&#34; </p></td>
+                </tr>
+              
+                <tr>
+                  <td>audience</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>scopes</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>provider_name</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>@gotags: yaml:&#34;providerName&#34; </p></td>
+                </tr>
+              
+                <tr>
+                  <td>client_assertion_type</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>@gotags: yaml:&#34;clientAssertionType&#34; </p></td>
+                </tr>
+              
+                <tr>
+                  <td>authority</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>grant_type</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>@gotags: yaml:&#34;grantType&#34; </p></td>
                 </tr>
               
             </tbody>
@@ -3057,44 +3081,6 @@
                   <td>schema_hub</td>
                   <td><a href="#bool">bool</a></td>
                   <td></td>
-                  <td><p> </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="grpcgateway.pb.WebOAuthClient">WebOAuthClient</h3>
-        <p></p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>client_id</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p>@gotags: yaml:&#34;clientID&#34; </p></td>
-                </tr>
-              
-                <tr>
-                  <td>audience</td>
-                  <td><a href="#string">string</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-              
-                <tr>
-                  <td>scopes</td>
-                  <td><a href="#string">string</a></td>
-                  <td>repeated</td>
                   <td><p> </p></td>
                 </tr>
               

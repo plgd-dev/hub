@@ -18,13 +18,6 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/configmap-ref: {{ include "plgd-hub.mongodb-standby-tool.configName" . }}
 {{- end }}
 
-{{- define  "plgd-hub.mongodb-standby-tool.image" -}}
-    {{- $registryName := .Values.mongodb.standbyTool.image.registry | default "" -}}
-    {{- $repositoryName := .Values.mongodb.standbyTool.image.repository -}}
-    {{- $tag := .Values.mongodb.standbyTool.image.tag | default .Chart.AppVersion | toString -}}
-    {{- printf "%s%s:%s" $registryName $repositoryName  $tag -}}
-{{- end -}}
-
 {{- define "plgd-hub.mongodb-standby-tool.createCertByCm" }}
     {{- $serviceTls := .Values.mongodb.standbyTool.clients.storage.mongoDB.tls.certFile }}
     {{- if $serviceTls }}

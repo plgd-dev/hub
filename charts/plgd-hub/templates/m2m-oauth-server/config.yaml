@@ -1,0 +1,89 @@
+{{- if include "plgd-hub.m2moauthserver.enabled" . }}
+{{- $oauthServerCertPath := "/certs" }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "plgd-hub.m2moauthserver.configName" . }}
+  namespace: {{ .Release.Namespace }}
+data:
+  {{ .Values.m2moauthserver.config.fileName }}: |
+    {{- with .Values.m2moauthserver }}
+    log:
+      level: {{ .log.level }}
+      encoding: {{ .log.encoding }}
+      stacktrace:
+        enabled: {{ .log.stacktrace.enabled }}
+        level: {{ .log.stacktrace.level }}
+      encoderConfig:
+        timeEncoder: {{ .log.encoderConfig.timeEncoder }}
+    apis:
+      http:
+        address: {{  .apis.http.address | default (printf "0.0.0.0:%v" .port) | quote }}
+        readTimeout: {{ .apis.http.readTimeout }}
+        readHeaderTimeout: {{ .apis.http.readHeaderTimeout }}
+        writeTimeout: {{ .apis.http.writeTimeout }}
+        idleTimeout: {{ .apis.http.idleTimeout }}
+        tls:
+          {{- $tls := .apis.http.tls }}
+          {{- include "plgd-hub.internalCertificateConfig" (list $ $tls $oauthServerCertPath ) | indent 8 }}
+          clientCertificateRequired: {{ .apis.http.tls.clientCertificateRequired }}
+    oauthSigner:
+      privateKeyFile: {{ include "plgd-hub.m2moauthserver.getPrivateKeyFile" $ }}
+      domain: {{ include "plgd-hub.m2moauthserver.ingressDomain" $ }}
+      ownerClaim: {{ .oauthSigner.ownerClaim | default $.Values.global.ownerClaim | quote }}
+      {{- if .oauthSigner.deviceIdClaim | default $.Values.global.deviceIdClaim | quote }}
+      deviceIDClaim: {{ .oauthSigner.deviceIdClaim | default $.Values.global.deviceIdClaim | quote }}
+      {{- end }}
+      clients:
+        {{- range $idx := .oauthSigner.clients }}
+        {{- $createClient := "" }}
+        {{- if include "plgd-hub.resolveTemplateString" (list $ .secretFile) }}
+        {{- $createClient = "true" }}
+        {{- end }}
+        {{- if .jwtPrivateKey }}
+        {{- if .jwtPrivateKey.enabled }}
+        {{- $createClient = "true" }}
+        {{- end }}
+        {{- end }}
+        {{- if $createClient}}
+        - id: {{ .id }}
+          secretFile: {{ include "plgd-hub.resolveTemplateString" (list $ .secretFile) }}
+          requireDeviceID: {{ .requireDeviceID }}
+          requireOwner: {{ .requireOwner  }}
+          accessTokenLifetime: {{ .accessTokenLifetime }}
+          allowedGrantTypes:
+            {{- range .allowedGrantTypes }}
+            - {{ . | quote }}
+            {{- end }}
+          allowedAudiences:
+            {{- range .allowedAudiences }}
+            - {{ . | quote }}
+            {{- end }}
+          allowedScopes:
+            {{- range .allowedScopes }}
+            - {{ . | quote }}
+            {{- end }}
+          {{- if .jwtPrivateKey }}
+          {{- if .jwtPrivateKey.enabled }}
+          jwtPrivateKey:
+            enabled: {{ .jwtPrivateKey.enabled }}
+            authorization:
+              {{- $authorization := include "plgd-hub.basicAuthorizationConfig" (list $ .jwtPrivateKey.authorization (printf "m2moauthserver.oauthSigner.clients[%v].jwtPrivateKey.authorization" $idx) $oauthServerCertPath) | fromYaml }}
+              {{- if $authorization.audience }}
+              audience: {{ $authorization.audience | quote }}
+              {{- end }}
+              endpoints:
+              {{- range $authorization.endpoints }}
+              {{- if not (eq .authority (include "plgd-hub.m2moauthserver.uri" $)) }}
+                - authority: {{ .authority | quote }}
+                  http: {{- .http | toYaml | nindent 20}}
+              {{- end }}
+              {{- end }}
+          {{- end }}
+          {{- end }}
+        {{- end }}
+        {{- end }}
+    clients:
+      {{- include "plgd-hub.openTelemetryExporterConfig" (list $ $oauthServerCertPath) | nindent 6 }}
+{{- end }}
+{{- end }}
