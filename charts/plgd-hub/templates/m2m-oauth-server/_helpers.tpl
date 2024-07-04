@@ -56,11 +56,14 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 
 
 {{- define "plgd-hub.m2moauthserver.getJwtPrivateKeyClient" -}}
+{{- $ := . -}}
 {{- $clientID := dict }}
-{{- range . }}
+{{- if include "plgd-hub.m2moauthserver.enabled" $ }}
+{{- range $.Values.m2moauthserver.oauthSigner.clients }}
 {{- if .jwtPrivateKey }}
 {{- if .jwtPrivateKey.enabled }}
 {{- $clientID = . }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
