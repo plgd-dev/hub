@@ -28,6 +28,7 @@ type RequestHandler struct {
 	accessTokenJwkKey       jwk.Key
 	refreshRestriction      *cache.Cache[string, struct{}]
 	privateKeyJWTValidators map[string]*validator.Validator
+	logger                  log.Logger
 }
 
 // NewRequestHandler factory for new RequestHandler
@@ -67,6 +68,7 @@ func NewRequestHandler(ctx context.Context, config *Config, accessTokenKey inter
 		accessTokenKey:          accessTokenKey,
 		refreshRestriction:      refreshRestriction,
 		privateKeyJWTValidators: privateKeyJWTValidators,
+		logger:                  logger,
 	}, closer.Execute, nil
 }
 

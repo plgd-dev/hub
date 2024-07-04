@@ -108,7 +108,7 @@ func TestRequestHandlerRetrieveResourceSubscription(t *testing.T) {
 			},
 			wantCode:        http.StatusUnauthorized,
 			wantContentType: textPlain,
-			want:            "unknown issuer",
+			want:            "inaccessible uri",
 		},
 		{
 			name: "invalid resourceHref",

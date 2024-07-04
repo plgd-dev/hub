@@ -299,11 +299,13 @@ func (requestHandler *RequestHandler) validateClientAssertion(ctx context.Contex
 func (requestHandler *RequestHandler) processResponse(ctx context.Context, w http.ResponseWriter, tokenReq tokenRequest) {
 	clientCfg := requestHandler.config.OAuthSigner.Clients.Find(tokenReq.ClientID)
 	if clientCfg == nil {
-		writeError(w, fmt.Errorf("client(%v) not found", tokenReq.ClientID), http.StatusBadRequest)
+		requestHandler.logger.Errorf("client(%v) not found - sending unauthorized", tokenReq.ClientID)
+		writeError(w, errors.New("invalid client"), http.StatusUnauthorized)
 		return
 	}
 	if err := requestHandler.validateTokenRequest(ctx, clientCfg, &tokenReq); err != nil {
-		writeError(w, err, http.StatusBadRequest)
+		requestHandler.logger.Errorf("failed to validate token request - sending unauthorized: %w", err)
+		writeError(w, errors.New("invalid client"), http.StatusUnauthorized)
 		return
 	}
 

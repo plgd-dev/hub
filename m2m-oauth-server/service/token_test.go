@@ -1,6 +1,7 @@
 package service_test
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"testing"
@@ -41,6 +42,7 @@ func TestGetToken(t *testing.T) {
 		{
 			name: "serviceToken",
 			args: m2mOauthServerTest.AccessTokenOptions{
+				Ctx:          context.Background(),
 				ClientID:     m2mOauthServerTest.ServiceOAuthClient.ID,
 				ClientSecret: m2mOauthServerTest.GetSecret(t, m2mOauthServerTest.ServiceOAuthClient.ID),
 				GrantType:    string(service.GrantTypeClientCredentials),
@@ -51,6 +53,7 @@ func TestGetToken(t *testing.T) {
 		{
 			name: "snippetServiceToken",
 			args: m2mOauthServerTest.AccessTokenOptions{
+				Ctx:          context.Background(),
 				ClientID:     m2mOauthServerTest.JWTPrivateKeyOAuthClient.ID,
 				ClientSecret: m2mOauthServerTest.GetSecret(t, m2mOauthServerTest.JWTPrivateKeyOAuthClient.ID),
 				GrantType:    string(service.GrantTypeClientCredentials),
@@ -66,6 +69,7 @@ func TestGetToken(t *testing.T) {
 		{
 			name: "snippetServiceToken - JWT",
 			args: m2mOauthServerTest.AccessTokenOptions{
+				Ctx:       context.Background(),
 				ClientID:  m2mOauthServerTest.JWTPrivateKeyOAuthClient.ID,
 				GrantType: string(service.GrantTypeClientCredentials),
 				Host:      config.M2M_OAUTH_SERVER_HTTP_HOST,
@@ -79,36 +83,40 @@ func TestGetToken(t *testing.T) {
 		{
 			name: "invalid client",
 			args: m2mOauthServerTest.AccessTokenOptions{
+				Ctx:       context.Background(),
 				ClientID:  "invalid client",
 				GrantType: string(service.GrantTypeClientCredentials),
 				Host:      config.M2M_OAUTH_SERVER_HTTP_HOST,
 				JWT:       invalidToken,
 			},
-			wantCode: http.StatusBadRequest,
+			wantCode: http.StatusUnauthorized,
 		},
 		{
 			name: "snippetServiceToken - invalid JWT",
 			args: m2mOauthServerTest.AccessTokenOptions{
+				Ctx:       context.Background(),
 				ClientID:  m2mOauthServerTest.JWTPrivateKeyOAuthClient.ID,
 				GrantType: string(service.GrantTypeClientCredentials),
 				Host:      config.M2M_OAUTH_SERVER_HTTP_HOST,
 				JWT:       invalidToken,
 			},
-			wantCode: http.StatusBadRequest,
+			wantCode: http.StatusUnauthorized,
 		},
 		{
 			name: "snippetServiceToken - invalid owner",
 			args: m2mOauthServerTest.AccessTokenOptions{
+				Ctx:          context.Background(),
 				ClientID:     m2mOauthServerTest.JWTPrivateKeyOAuthClient.ID,
 				ClientSecret: m2mOauthServerTest.GetSecret(t, m2mOauthServerTest.JWTPrivateKeyOAuthClient.ID),
 				GrantType:    string(service.GrantTypeClientCredentials),
 				Host:         config.M2M_OAUTH_SERVER_HTTP_HOST,
 			},
-			wantCode: http.StatusBadRequest,
+			wantCode: http.StatusUnauthorized,
 		},
 		{
 			name: "deviceProvisioningServiceToken",
 			args: m2mOauthServerTest.AccessTokenOptions{
+				Ctx:          context.Background(),
 				ClientID:     m2mOauthServerTest.DeviceProvisioningServiceOAuthClient.ID,
 				ClientSecret: m2mOauthServerTest.GetSecret(t, m2mOauthServerTest.DeviceProvisioningServiceOAuthClient.ID),
 				GrantType:    string(service.GrantTypeClientCredentials),
@@ -125,35 +133,38 @@ func TestGetToken(t *testing.T) {
 		{
 			name: "deviceProvisioningServiceToken - invalid owner",
 			args: m2mOauthServerTest.AccessTokenOptions{
+				Ctx:          context.Background(),
 				ClientID:     m2mOauthServerTest.DeviceProvisioningServiceOAuthClient.ID,
 				ClientSecret: m2mOauthServerTest.GetSecret(t, m2mOauthServerTest.DeviceProvisioningServiceOAuthClient.ID),
 				GrantType:    string(service.GrantTypeClientCredentials),
 				Host:         config.M2M_OAUTH_SERVER_HTTP_HOST,
 				DeviceID:     deviceID,
 			},
-			wantCode: http.StatusBadRequest,
+			wantCode: http.StatusUnauthorized,
 		},
 		{
 			name: "deviceProvisioningServiceToken - invalid deviceID",
 			args: m2mOauthServerTest.AccessTokenOptions{
+				Ctx:          context.Background(),
 				ClientID:     m2mOauthServerTest.DeviceProvisioningServiceOAuthClient.ID,
 				ClientSecret: m2mOauthServerTest.GetSecret(t, m2mOauthServerTest.DeviceProvisioningServiceOAuthClient.ID),
 				GrantType:    string(service.GrantTypeClientCredentials),
 				Host:         config.M2M_OAUTH_SERVER_HTTP_HOST,
 				Owner:        owner,
 			},
-			wantCode: http.StatusBadRequest,
+			wantCode: http.StatusUnauthorized,
 		},
 		{
 			name: "deviceProvisioningServiceToken - invalid client",
 			args: m2mOauthServerTest.AccessTokenOptions{
+				Ctx:          context.Background(),
 				ClientID:     m2mOauthServerTest.DeviceProvisioningServiceOAuthClient.ID,
 				ClientSecret: m2mOauthServerTest.GetSecret(t, m2mOauthServerTest.DeviceProvisioningServiceOAuthClient.ID),
 				GrantType:    string(service.GrantTypeClientCredentials),
 				Host:         config.M2M_OAUTH_SERVER_HTTP_HOST,
 				Owner:        owner,
 			},
-			wantCode: http.StatusBadRequest,
+			wantCode: http.StatusUnauthorized,
 		},
 	}
 

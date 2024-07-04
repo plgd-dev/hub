@@ -59,7 +59,19 @@ func getIssuer(token *jwt.Token) (string, error) {
 	}
 }
 
+func checkForError(token *jwt.Token) error {
+	if claims, ok := token.Claims.(interface {
+		Error() string
+	}); ok {
+		return claims
+	}
+	return nil
+}
+
 func (c *MultiKeyCache) GetOrFetchKeyWithContext(ctx context.Context, token *jwt.Token) (interface{}, error) {
+	if err := checkForError(token); err != nil {
+		return nil, err
+	}
 	issuer, err := getIssuer(token)
 	if err != nil {
 		return nil, err

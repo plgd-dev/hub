@@ -152,7 +152,8 @@ func (c *RequestBuilder) Build(ctx context.Context, t *testing.T) *http.Request 
 	}
 	url.RawQuery = query.Encode()
 	fmt.Printf("URL %v\n", url.String())
-	request, _ := http.NewRequestWithContext(ctx, c.method, url.String(), c.body)
+	request, err := http.NewRequestWithContext(ctx, c.method, url.String(), c.body)
+	require.NoError(t, err)
 	for k, v := range c.header {
 		request.Header.Add(k, v)
 	}

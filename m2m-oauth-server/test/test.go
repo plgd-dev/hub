@@ -5,15 +5,14 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
 	"sync"
+	"testing"
 	"time"
 
-	"github.com/jtacoma/uritemplates"
 	"github.com/plgd-dev/hub/v2/m2m-oauth-server/service"
 	"github.com/plgd-dev/hub/v2/m2m-oauth-server/uri"
 	"github.com/plgd-dev/hub/v2/pkg/config/property/urischeme"
@@ -22,6 +21,7 @@ import (
 	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/test/config"
+	testHttp "github.com/plgd-dev/hub/v2/test/http"
 	testOAuthUri "github.com/plgd-dev/hub/v2/test/oauth-server/uri"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/stretchr/testify/require"
@@ -138,6 +138,8 @@ func GetSecret(t require.TestingT, clientID string) string {
 	return ""
 }
 
+/*
+
 func NewRequestBuilder(method, host, url string, body io.Reader) *RequestBuilder {
 	b := RequestBuilder{
 		method:      method,
@@ -198,6 +200,7 @@ func HTTPDo(t require.TestingT, req *http.Request, followRedirect bool) *http.Re
 	require.NoError(t, err)
 	return resp
 }
+*/
 
 type AccessTokenOptions struct {
 	Host         string
@@ -209,6 +212,7 @@ type AccessTokenOptions struct {
 	Audience     string
 	JWT          string
 	PostForm     bool
+	Ctx          context.Context
 }
 
 func WithAccessTokenOptions(options AccessTokenOptions) func(opts *AccessTokenOptions) {
@@ -271,6 +275,12 @@ func WithPostFrom(enabled bool) func(opts *AccessTokenOptions) {
 	}
 }
 
+func WithContext(ctx context.Context) func(opts *AccessTokenOptions) {
+	return func(opts *AccessTokenOptions) {
+		opts.Ctx = ctx
+	}
+}
+
 func mapToURLValues(data map[string]interface{}) url.Values {
 	values := url.Values{}
 	for key, value := range data {
@@ -279,12 +289,13 @@ func mapToURLValues(data map[string]interface{}) url.Values {
 	return values
 }
 
-func GetAccessToken(t require.TestingT, expectedCode int, opts ...func(opts *AccessTokenOptions)) map[string]string {
+func GetAccessToken(t *testing.T, expectedCode int, opts ...func(opts *AccessTokenOptions)) map[string]string {
 	options := AccessTokenOptions{
 		Host:         config.M2M_OAUTH_SERVER_HTTP_HOST,
 		ClientID:     ServiceOAuthClient.ID,
 		ClientSecret: GetSecret(t, ServiceOAuthClient.ID),
 		GrantType:    string(service.GrantTypeClientCredentials),
+		Ctx:          context.Background(),
 	}
 	for _, o := range opts {
 		o(&options)
@@ -316,13 +327,14 @@ func GetAccessToken(t require.TestingT, expectedCode int, opts ...func(opts *Acc
 		require.NoError(t, err)
 	}
 
-	getReq := NewRequestBuilder(http.MethodPost, options.Host, uri.Token, bytes.NewReader(data)).Build()
-	getReq.SetBasicAuth(options.ClientID, options.ClientSecret)
+	req := testHttp.NewRequest(http.MethodPost, testHttp.HTTPS_SCHEME+options.Host+uri.Token, bytes.NewReader(data)).Build(options.Ctx, t)
+	require.NotNil(t, req)
+	req.SetBasicAuth(options.ClientID, options.ClientSecret)
 	if options.PostForm {
-		getReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	}
 
-	res := HTTPDo(t, getReq, false)
+	res := testHttp.Do(t, req)
 	defer func() {
 		_ = res.Body.Close()
 	}()
@@ -338,7 +350,7 @@ func GetAccessToken(t require.TestingT, expectedCode int, opts ...func(opts *Acc
 	return nil
 }
 
-func GetDefaultAccessToken(t require.TestingT, opts ...func(opts *AccessTokenOptions)) string {
+func GetDefaultAccessToken(t *testing.T, opts ...func(opts *AccessTokenOptions)) string {
 	resp := GetAccessToken(t, http.StatusOK, opts...)
 	return resp[uri.AccessTokenKey]
 }
