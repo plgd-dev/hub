@@ -71,3 +71,58 @@ func TestRequestHandlerGetHubConfiguration(t *testing.T) {
 		})
 	}
 }
+
+func TestRequestHandlerGetHubConfigurationWithoutM2MOAuthClient(t *testing.T) {
+	rdCfg := rdTest.MakeConfig(t)
+	rdCfg.ExposedHubConfiguration.Authority = "https://" + config.OAUTH_SERVER_HOST + "?escape=test&test=escape"
+	httpCfg := httpgwTest.MakeConfig(t, true)
+	httpCfg.UI.WebConfiguration.M2MOAuthClient = nil
+	expected := rdCfg.ExposedHubConfiguration.ToProto(config.HubID())
+	expected.CurrentTime = 0
+	expected.WebOauthClient = httpCfg.UI.WebConfiguration.WebOAuthClient.ToProto()
+	expected.DeviceOauthClient = httpCfg.UI.WebConfiguration.DeviceOAuthClient.ToProto()
+	expected.M2MOauthClient = nil
+	expected.HttpGatewayAddress = httpCfg.UI.WebConfiguration.HTTPGatewayAddress
+	expected.Ui = &pb.UIConfiguration{
+		Visibility:                httpCfg.UI.WebConfiguration.Visibility.ToProto(),
+		DeviceProvisioningService: httpCfg.UI.WebConfiguration.DeviceProvisioningService,
+	}
+	tests := []struct {
+		name   string
+		accept string
+		want   *pb.HubConfigurationResponse
+	}{
+		{
+			name: "valid",
+			want: expected,
+		},
+		{
+			name:   "valid configuration",
+			accept: pkgHttp.ApplicationProtoJsonContentType,
+			want:   expected,
+		},
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	defer cancel()
+
+	tearDown := service.SetUp(ctx, t, service.WithRDConfig(rdCfg))
+	defer tearDown()
+
+	shutdownHttp := httpgwTest.New(t, httpCfg)
+	defer shutdownHttp()
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			request := httpgwTest.NewRequest(http.MethodGet, uri.HubConfiguration, nil).Accept(tt.accept).Build()
+			resp := httpgwTest.HTTPDo(t, request)
+			defer func() {
+				_ = resp.Body.Close()
+			}()
+			var got pb.HubConfigurationResponse
+			err := httpTest.Unmarshal(resp.StatusCode, resp.Body, &got)
+			require.NoError(t, err)
+			pbTest.CmpHubConfigurationResponse(t, tt.want, &got)
+		})
+	}
+}

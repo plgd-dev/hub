@@ -2,21 +2,18 @@ package service
 
 import (
 	"context"
-	"crypto/ecdsa"
 	"crypto/rsa"
-	"crypto/x509"
 	"fmt"
 	"net/http"
 	"time"
 
-	"github.com/google/uuid"
 	router "github.com/gorilla/mux"
-	"github.com/lestrrat-go/jwx/v2/jwa"
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/plgd-dev/go-coap/v3/pkg/cache"
 	"github.com/plgd-dev/go-coap/v3/pkg/runner/periodic"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgJwt "github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/test/oauth-server/uri"
 )
 
@@ -32,46 +29,13 @@ type RequestHandler struct {
 	refreshRestriction *cache.Cache[string, struct{}]
 }
 
-func createJwkKey(privateKey interface{}) (jwk.Key, error) {
-	var alg string
-	var publicKey interface{}
-	var publicKeyPtr any
-	switch v := privateKey.(type) {
-	case *rsa.PrivateKey:
-		alg = jwa.RS256.String()
-		publicKey = v.PublicKey
-		publicKeyPtr = &v.PublicKey
-	case *ecdsa.PrivateKey:
-		alg = jwa.ES256.String()
-		publicKey = v.PublicKey
-		publicKeyPtr = &v.PublicKey
-	}
-
-	jwkKey, err := jwk.FromRaw(publicKey)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create jwk: %w", err)
-	}
-	data, err := x509.MarshalPKIXPublicKey(publicKeyPtr)
-	if err != nil {
-		return nil, fmt.Errorf("cannot marshal public key: %w", err)
-	}
-
-	if err = jwkKey.Set(jwk.KeyIDKey, uuid.NewSHA1(uuid.NameSpaceX500, data).String()); err != nil {
-		return nil, setKeyError(jwk.KeyIDKey, err)
-	}
-	if err = jwkKey.Set(jwk.AlgorithmKey, alg); err != nil {
-		return nil, setKeyError(jwk.AlgorithmKey, err)
-	}
-	return jwkKey, nil
-}
-
 // NewRequestHandler factory for new RequestHandler
 func NewRequestHandler(ctx context.Context, config *Config, idTokenKey *rsa.PrivateKey, accessTokenKey interface{}) (*RequestHandler, error) {
-	idTokenJwkKey, err := createJwkKey(idTokenKey)
+	idTokenJwkKey, err := pkgJwt.CreateJwkKey(idTokenKey)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create jwk for idToken: %w", err)
 	}
-	accessTokenJwkKey, err := createJwkKey(accessTokenKey)
+	accessTokenJwkKey, err := pkgJwt.CreateJwkKey(accessTokenKey)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create jwk for idToken: %w", err)
 	}

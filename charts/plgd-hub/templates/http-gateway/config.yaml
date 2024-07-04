@@ -103,8 +103,7 @@ data:
           providerName: {{ .name | quote }}
           {{- end }}
         {{- end }}
-        {{- if $.Values.m2moauthserver.enabled }}
-        {{- $m2mClient := include "plgd-hub.m2moauthserver.getJwtPrivateKeyClient" $.Values.m2moauthserver.oauthSigner.clients | fromYaml }}
+        {{- $m2mClient := include "plgd-hub.m2moauthserver.getJwtPrivateKeyClient" $ | fromYaml }}
         {{- if $m2mClient }}
         m2mOAuthClient:
           authority: {{.ui.webConfiguration.m2mOAuthClient.authority | default (include "plgd-hub.m2moauthserver.uri" $) | quote }}
@@ -132,7 +131,6 @@ data:
           clientAssertionType: urn:ietf:params:oauth:client-assertion-type:jwt-bearer
           {{- end }}
           {{- end }}
-        {{- end }}
         {{- end }}
         visibility:
           mainSidebar:

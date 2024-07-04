@@ -42,6 +42,5 @@ push: build-servicecontainer
 	docker push plgd/$(SERVICE_NAME):$(LATEST_TAG)
 
 proto/generate:
-.PHONY: proto/generate
 
 .PHONY: build-servicecontainer build push proto/generate
