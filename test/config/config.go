@@ -43,8 +43,7 @@ const (
 	RESOURCE_DIRECTORY_HOST         = "localhost:20004"
 	CERTIFICATE_AUTHORITY_HOST      = "localhost:20011"
 	CERTIFICATE_AUTHORITY_HTTP_HOST = "localhost:20012"
-	// M2M_OAUTH_SERVER_HOST           = "localhost:20013" // for grpc
-	M2M_OAUTH_SERVER_HTTP_HOST      = "localhost:20014"
+	M2M_OAUTH_SERVER_HTTP_HOST      = "localhost:20013"
 	GRPC_GW_HOST                    = "localhost:20005"
 	C2C_CONNECTOR_HOST              = "localhost:20006"
 	C2C_CONNECTOR_DB                = "cloud2cloudConnector"

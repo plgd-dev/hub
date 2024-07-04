@@ -168,9 +168,9 @@ COPY --from=build /go/bin/nats-server /usr/local/bin/nats-server
 COPY --from=build /go/bin/nats /usr/local/bin/nats
 COPY --from=build /go/src/github.com/plgd-dev/hub/bundle/jetstream.json /configs/jetstream.json
 COPY --from=build /go/bin/oauth-server /usr/local/bin/oauth-server
+COPY --from=build /go/src/github.com/plgd-dev/hub/test/oauth-server/config.yaml /configs/oauth-server.yaml
 COPY --from=build /go/bin/m2m-oauth-server /usr/local/bin/m2m-oauth-server
 COPY --from=build /go/src/github.com/plgd-dev/hub/m2m-oauth-server/config.yaml /configs/m2m-oauth-server.yaml
-COPY --from=build /go/src/github.com/plgd-dev/hub/test/oauth-server/config.yaml /configs/oauth-server.yaml
 COPY http-gateway/web/build /usr/local/var/www
 COPY --from=build /go/bin/cloud2cloud-gateway /usr/local/bin/cloud2cloud-gateway
 COPY --from=build /go/src/github.com/plgd-dev/hub/cloud2cloud-gateway/config.yaml /configs/cloud2cloud-gateway.yaml

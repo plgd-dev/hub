@@ -45,7 +45,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	for _, authority := range config.Endpoints {
 		httpClient, err := client.New(authority.HTTP, fileWatcher, logger, tracerProvider)
 		if err != nil {
-			return nil, fmt.Errorf("cannot create cert manager: %w", err)
+			return nil, fmt.Errorf("cannot create client cert manager: %w", err)
 		}
 
 		ctx2, cancel := context.WithTimeout(ctx, authority.HTTP.Timeout)
