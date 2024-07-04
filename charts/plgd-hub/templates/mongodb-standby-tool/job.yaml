@@ -45,7 +45,7 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          image: {{ include "plgd-hub.mongodb-standby-tool.image" . | quote }}
+          image: {{ include "plgd-hub.image" (list . .Values.mongodb.standbyTool) | quote }}
           imagePullPolicy: {{ .Values.mongodb.standbyTool.image.pullPolicy }}
           command:
             - /usr/local/bin/mongodb-standby-tool

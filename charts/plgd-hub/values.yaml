@@ -18,6 +18,41 @@ global:
   authority:
   # -- OAuth audience
   audience: ""
+  # -- M2M OAuth server
+  m2mOAuthServer:
+    # -- private key to sign JWT m2m tokens 
+    privateKey: ""
+    # -- service secret to sign JWT m2m tokens for the oauth service client
+    clientServiceSecret: ""
+  # -- Default OAuth authorization for all services
+  authorization:
+    audience: "{{ include \"plgd-hub.globalAudience\" . }}"
+    endpoints:
+      # -- Authorization endpoint to Customer OAuth server
+      - address: "{{ include \"plgd-hub.globalAuthority\" . }}"
+        http:
+          maxIdleConns: 16
+          maxConnsPerHost: 32
+          maxIdleConnsPerHost: 16
+          idleConnTimeout: 30s
+          timeout: 10s
+          tls:
+            caPool:
+            keyFile:
+            certFile:
+            useSystemCAPool: true
+      - address: "{{ include \"plgd-hub.m2mOAuthServerAuthority\" . }}"
+        http:
+          maxIdleConns: 16
+          maxConnsPerHost: 32
+          maxIdleConnsPerHost: 16
+          idleConnTimeout: 30s
+          timeout: 10s
+          tls:
+            caPool:
+            keyFile:
+            certFile:
+            useSystemCAPool: true
   # -- Enable *.{{ global.domain }} for all external domain
   enableWildCartCert: true
   # -- Sets cloud to standby mode
@@ -61,6 +96,9 @@ global:
         keyFile:
         certFile:
         useSystemCAPool: false
+  # -- Set image.tag for all services
+  image:
+    tag:
 
 # -- Extra deploy. Resolved as template
 extraDeploy:
@@ -1703,14 +1741,23 @@ httpgateway:
       httpGatewayAddress: ""
       deviceProvisioningService: ""
       webOAuthClient:
+        authority: ""
         clientID: ""
         audience: ""
         scopes: []
       deviceOAuthClient:
+        authority: ""
         clientID:
         audience:
         scopes: []
         providerName:
+      m2mOAuthClient:
+        authority: ""
+        clientID:
+        audience:
+        scopes: []
+        grantType: 
+        clientAssertionType:
       visibility:
         mainSidebar:
           certificates : true
@@ -2419,3 +2466,174 @@ mockoauthserver:
       accessTokenLifetime: "0s"
       codeRestrictionLifetime: "0s"
       refreshTokenRestrictionLifetime: "0s"
+
+m2moauthserver:
+  # -- Enable m2m-oauth-server service
+  enabled: true
+  # -- Name of component. Used in label selectors
+  name: m2m-oauth-server
+  # -- Full name to override
+  fullnameOverride:
+  # -- Number of replicas
+  replicas: 1
+  # -- Additional labels for m2m-oauth-server deployment
+  deploymentLabels: {}
+  # -- Additional annotations for m2m-oauth-server deployment
+  deploymentAnnotations: {}
+  # -- Pod security context
+  podSecurityContext: {}
+  # -- Labels for http-gateway pod
+  podLabels: {}
+  # -- Annotations for m2m-oauth-server pod
+  podAnnotations: {}
+  service:
+    type: ClusterIP
+    # -- Labels for m2m-oauth-server service
+    labels: {}
+    # -- Annotations for m2m-oauth-server service
+    annotations: {}
+    # -- Target port
+    targetPort: http
+    # -- Protocol
+    protocol: TCP
+    # -- Name
+    name: http
+    crt:
+      # -- Extra DNS names for service certificate
+      extraDnsNames: []
+  securityContext: {}
+  # -- Image pull secrets
+  imagePullSecrets: {}
+  # -- Restart policy for pod
+  restartPolicy: Always
+  image:
+    # -- Image registry
+    registry: ghcr.io/
+    # -- Image repository
+    repository: plgd-dev/hub/m2m-oauth-server
+    # -- Image tag.
+    tag:
+    # -- Image pull policy
+    pullPolicy: Always
+    # -- Image pull secrets
+    imagePullSecrets: {}
+  # -- Liveness probe. m2m-oauth-server doesn't have any default liveness probe
+  livenessProbe: {}
+  # -- Readiness probe. m2m-oauth-server doesn't have aby default readiness probe
+  readinessProbe: {}
+  # -- Resources limit
+  resources: {}
+  # -- Node selector
+  nodeSelector: {}
+  # -- Affinity definition
+  affinity: {}
+  # -- Toleration definition
+  tolerations: {}
+  # -- Optional extra volumes
+  extraVolumes: {}
+  # -- Optional extra volume mounts
+  extraVolumeMounts: {}
+  # -- Domain for oauth. Default {{ global.domain }}
+  domain:
+  ingress:
+    # -- Enable ingress
+    enabled: true
+    # -- Pre defined map of Ingress annotation
+    annotations:
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+      ingress.kubernetes.io/force-ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/enable-cors: "true"
+      cert-manager.io/private-key-rotation-policy: always
+    # -- Custom map of Ingress annotation
+    customAnnotations: {}
+    # -- Ingress path
+    paths:
+      - /m2m-oauth-server
+    allowHeaders: "Authortity,Method,Path,Scheme,Accept,Accept-Encoding,Accept-Language,Content-Type,auth0-client,Origin,Refer,Sec-Fetch-Dest,Sec-Fetch-Mode,Sec-Fetch-Site,Authorization,DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range"
+  # -- m2m-oauth-server service yaml config section
+  config:
+    # -- Name of configuration file
+    fileName: service.yaml
+    # -- Volume for configuration file
+    volume: config
+    # -- Mount path
+    mountPath: /config
+  # -- Port for service and POD
+  port: 9100
+  privateKey:
+    # -- Set deployment to use secret for private key
+    enabled: false
+    # -- Name of private key file
+    fileName: private.key
+    # -- Name of secret
+    secretName: m2m-private-key
+    # -- Volume name
+    volume: private-key
+    # -- Mount path
+    mountPath: /secrets/keys
+  clientServiceSecret:
+    # -- Set deployment to use secret for service secret
+    enabled: false
+    # -- Name of private key file
+    fileName: secret.dat
+    # -- Name of secret
+    secretName: m2m-service-secret
+    # -- Volume name
+    volume: service-secret
+    # -- Mount path
+    mountPath: /secrets/clients/service
+  log:
+    # -- Logging enabled from level 
+    level: info
+    # -- The supported values are: "json", "console"
+    encoding: json
+    stacktrace:
+        # -- Log stacktrace
+        enabled: false
+        # -- Stacktrace from level
+        level: warn
+    encoderConfig:
+        # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
+        timeEncoder: rfc3339nano
+  # -- For complete m2m-oauth-server service configuration see [plgd/oauth-server](https://github.com/plgd-dev/hub/tree/main/test/oauth-server)
+  apis:
+    http:
+      address:
+      readTimeout: 8s
+      readHeaderTimeout: 4s
+      writeTimeout: 16s
+      idleTimeout: 30s
+      tls:
+        caPool:
+        keyFile:
+        certFile:
+        clientCertificateRequired: false
+  oauthSigner:
+    privateKeyFile:
+    domain:
+    ownerClaim:
+    deviceIDClaim:
+    clients:
+      - id: "jwt-private-key"
+        requireOwner: true
+        requireDeviceID: false
+        accessTokenLifetime: 0s
+        allowedGrantTypes:
+          - client_credentials
+        allowedAudiences: []
+        allowedScopes: []
+        jwtPrivateKey:
+          enabled: true
+          authorization:
+            audience:
+            endpoints:
+      - id: "service"
+        secretFile: "{{ include \"plgd-hub.m2moauthserver.getClientServiceSecretFile\" . }}"
+        requireOwner: false
+        requireDeviceID: false
+        accessTokenLifetime: 0s
+        allowedGrantTypes:
+          - client_credentials
+        allowedAudiences: []
+        allowedScopes: []
+

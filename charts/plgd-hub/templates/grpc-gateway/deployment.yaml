@@ -50,7 +50,7 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          image: {{ include "plgd-hub.grpcgateway.image" . | quote }}
+          image: {{ include "plgd-hub.image" (list . .Values.grpcgateway) | quote }}
           imagePullPolicy: {{ .Values.grpcgateway.image.pullPolicy }}
           {{- if .Values.grpcgateway.command }}
           command:

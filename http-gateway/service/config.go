@@ -107,42 +107,35 @@ func (c *ClientsConfig) Validate() error {
 	return nil
 }
 
-type BasicOAuthClient struct {
-	ClientID string   `yaml:"clientID" json:"clientId"`
-	Audience string   `yaml:"audience" json:"audience"`
-	Scopes   []string `yaml:"scopes" json:"scopes"`
+type OAuthClient struct {
+	Authority           string   `yaml:"authority" json:"authority,omitempty"`
+	ClientID            string   `yaml:"clientID" json:"clientId"`
+	Audience            string   `yaml:"audience" json:"audience"`
+	Scopes              []string `yaml:"scopes" json:"scopes"`
+	ProviderName        string   `json:"providerName" yaml:"providerName,omitempty"`
+	GrantType           string   `json:"grantType" yaml:"grantType"`
+	ClientAssertionType string   `json:"clientAssertionType" yaml:"clientAssertionType"`
 }
 
-func (c *BasicOAuthClient) ToProto() *pb.WebOAuthClient {
-	return &pb.WebOAuthClient{
-		ClientId: c.ClientID,
-		Audience: c.Audience,
-		Scopes:   c.Scopes,
+func (c *OAuthClient) ToProto() *pb.OAuthClient {
+	if c == nil {
+		return nil
+	}
+	return &pb.OAuthClient{
+		ClientId:            c.ClientID,
+		Audience:            c.Audience,
+		Scopes:              c.Scopes,
+		ProviderName:        c.ProviderName,
+		GrantType:           c.GrantType,
+		ClientAssertionType: c.ClientAssertionType,
+		Authority:           c.Authority,
 	}
 }
 
-func (c *BasicOAuthClient) Validate() error {
-	if c.ClientID == "" {
-		return fmt.Errorf("clientID('%v')", c.ClientID)
+func (c *OAuthClient) Validate() error {
+	if c == nil {
+		return nil
 	}
-	return nil
-}
-
-type DeviceOAuthClient struct {
-	BasicOAuthClient `yaml:",inline"`
-	ProviderName     string `json:"providerName" yaml:"providerName"`
-}
-
-func (c *DeviceOAuthClient) ToProto() *pb.DeviceOAuthClient {
-	return &pb.DeviceOAuthClient{
-		ClientId:     c.ClientID,
-		Audience:     c.Audience,
-		Scopes:       c.Scopes,
-		ProviderName: c.ProviderName,
-	}
-}
-
-func (c *DeviceOAuthClient) Validate() error {
 	if c.ClientID == "" {
 		return fmt.Errorf("clientID('%v')", c.ClientID)
 	}
@@ -197,12 +190,13 @@ func (c *VisibilityConfig) ToProto() *pb.UIVisibility {
 
 // WebConfiguration represents web configuration for user interface exposed via getOAuthConfiguration handler
 type WebConfiguration struct {
-	Authority                 string            `yaml:"-" json:"authority"`
-	HTTPGatewayAddress        string            `yaml:"httpGatewayAddress" json:"httpGatewayAddress"`
-	DeviceProvisioningService string            `yaml:"deviceProvisioningService" json:"deviceProvisioningService"`
-	WebOAuthClient            BasicOAuthClient  `yaml:"webOAuthClient" json:"webOauthClient"`
-	DeviceOAuthClient         DeviceOAuthClient `yaml:"deviceOAuthClient" json:"deviceOauthClient"`
-	Visibility                VisibilityConfig  `yaml:"visibility" json:"visibility"`
+	Authority                 string           `yaml:"-" json:"authority"`
+	HTTPGatewayAddress        string           `yaml:"httpGatewayAddress" json:"httpGatewayAddress"`
+	DeviceProvisioningService string           `yaml:"deviceProvisioningService" json:"deviceProvisioningService"`
+	WebOAuthClient            OAuthClient      `yaml:"webOAuthClient" json:"webOauthClient"`
+	DeviceOAuthClient         OAuthClient      `yaml:"deviceOAuthClient" json:"deviceOauthClient"`
+	M2MOAuthClient            *OAuthClient     `yaml:"m2mOAuthClient" json:"m2mOauthClient"`
+	Visibility                VisibilityConfig `yaml:"visibility" json:"visibility"`
 }
 
 func (c *WebConfiguration) Validate() error {
@@ -213,6 +207,9 @@ func (c *WebConfiguration) Validate() error {
 		return fmt.Errorf("webOAuthClient.%w", err)
 	}
 	if err := c.DeviceOAuthClient.Validate(); err != nil {
+		return fmt.Errorf("deviceOAuthClient.%w", err)
+	}
+	if err := c.M2MOAuthClient.Validate(); err != nil {
 		return fmt.Errorf("deviceOAuthClient.%w", err)
 	}
 	return nil

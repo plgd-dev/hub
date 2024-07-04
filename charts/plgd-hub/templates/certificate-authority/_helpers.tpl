@@ -11,13 +11,6 @@
 {{- end }}
 {{- end }}
 
-{{- define  "plgd-hub.certificateauthority.image" -}}
-    {{- $registryName := .Values.certificateauthority.image.registry | default "" -}}
-    {{- $repositoryName := .Values.certificateauthority.image.repository -}}
-    {{- $tag := .Values.certificateauthority.image.tag | default .Chart.AppVersion | toString -}}
-    {{- printf "%s%s:%s" $registryName $repositoryName  $tag -}}
-{{- end -}}
-
 {{- define  "plgd-hub.certificateauthority.configName" -}}
     {{- $fullName :=  include "plgd-hub.certificateauthority.fullname" . -}}
     {{- printf "%s-cfg" $fullName }}

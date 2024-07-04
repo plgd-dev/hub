@@ -11,13 +11,6 @@
 {{- end }}
 {{- end }}
 
-{{- define  "plgd-hub.coapgateway.image" -}}
-    {{- $registryName := .Values.coapgateway.image.registry | default "" -}}
-    {{- $repositoryName := .Values.coapgateway.image.repository -}}
-    {{- $tag := .Values.coapgateway.image.tag | default .Chart.AppVersion | toString -}}
-    {{- printf "%s%s:%s" $registryName $repositoryName  $tag -}}
-{{- end -}}
-
 {{- define  "plgd-hub.coapgateway.configName" -}}
     {{- $fullName :=  include "plgd-hub.coapgateway.fullname" . -}}
     {{- printf "%s-cfg" $fullName }}

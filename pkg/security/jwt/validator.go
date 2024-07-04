@@ -8,8 +8,13 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+type KeyCacheI interface {
+	GetOrFetchKey(token *jwt.Token) (interface{}, error)
+	GetOrFetchKeyWithContext(ctx context.Context, token *jwt.Token) (interface{}, error)
+}
+
 type Validator struct {
-	keys *KeyCache
+	keys KeyCacheI
 }
 
 var (
@@ -17,7 +22,7 @@ var (
 	ErrCannotParseToken = errors.New("could not parse token")
 )
 
-func NewValidator(keyCache *KeyCache) *Validator {
+func NewValidator(keyCache KeyCacheI) *Validator {
 	return &Validator{keys: keyCache}
 }
 
@@ -29,23 +34,8 @@ func errParseTokenInvalidClaimsType(t *jwt.Token) error {
 	return fmt.Errorf("%w: unsupported type %T", ErrCannotParseToken, t.Claims)
 }
 
-func (v *Validator) ParseToken(token string) (*jwt.Token, error) {
-	if token == "" {
-		return nil, ErrMissingToken
-	}
-	return jwt.Parse(token, v.keys.GetOrFetchKey, jwt.WithIssuedAt())
-}
-
 func (v *Validator) Parse(token string) (jwt.MapClaims, error) {
-	t, err := v.ParseToken(token)
-	if err != nil {
-		return nil, errParseToken(err)
-	}
-	c, ok := t.Claims.(jwt.MapClaims)
-	if !ok {
-		return nil, errParseTokenInvalidClaimsType(t)
-	}
-	return c, nil
+	return v.ParseWithContext(context.Background(), token)
 }
 
 func (v *Validator) ParseWithContext(ctx context.Context, token string) (jwt.MapClaims, error) {

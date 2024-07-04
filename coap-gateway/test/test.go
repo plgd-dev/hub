@@ -52,6 +52,7 @@ func MakeConfig(t require.TestingT) service.Config {
 				Config: config.MakeDeviceAuthorization(),
 			},
 		},
+		Authority: config.MakeAuthorizationConfig(),
 	}
 	cfg.Clients.IdentityStore.Connection = config.MakeGrpcClientConfig(config.IDENTITY_STORE_HOST)
 	cfg.Clients.ResourceAggregate.Connection = config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST)

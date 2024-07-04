@@ -155,31 +155,80 @@ If release name contains chart name it will be used as a full name.
 {{- include "plgd-hub.certificateConfigWithExtraCAPool" (list $ $certDefinition $certPath $.Values.extraCAPool.authorization) }}
 {{- end }}
 
-{{- define "plgd-hub.authorizationConfig" }}
+{{- define "plgd-hub.httpConfig" }}
+{{- $ := index . 0 }}
+{{- $http := index . 1 }}
+{{- $certPath := index . 2 }}
+maxIdleConns: {{ $http.maxIdleConns }}
+maxConnsPerHost:  {{ $http.maxConnsPerHost }}
+maxIdleConnsPerHost:  {{ $http.maxIdleConnsPerHost }}
+idleConnTimeout:  {{ $http.idleConnTimeout }}
+timeout: {{ $http.timeout }}
+tls:
+  {{- $httpTls := $http.tls }}
+  {{- include "plgd-hub.authorizationCaCertificateConfig" (list $ $httpTls $certPath ) }}
+  useSystemCAPool: {{ $http.tls.useSystemCAPool }}
+{{- end }}
+
+{{- define "plgd-hub.basicAuthorizationConfig" }}
   {{- $ := index . 0 }}
-  {{- $authoriztion := index . 1 }}
+  {{- $authorization := index . 1 }}
   {{- $prefix := index . 2 }}
-  ownerClaim:{{ printf " " }}{{ required (printf "%s.apis.grpc.authorization.ownerClaim or global.ownerClaim is required " $prefix) ( $authoriztion.ownerClaim | default $.Values.global.ownerClaim ) | quote }}
+  {{- $certPath := index . 3 }}
+  {{- $endpoints := list}}
+  {{- $audience := ""}}
+  {{- if $authorization }}
+  {{- if $authorization.audience }}
+  {{- $audience = $authorization.audience }}
+  {{- end }}
+  {{- if $authorization.endpoints }}
+  {{- if gt (len $authorization.endpoints) 0 }}
+  {{- $endpoints = $authorization.endpoints }}
+  {{- end }}
+  {{- end }}
+  {{- end}}
+  {{- if not $audience }}
+  {{- $audience = $.Values.global.audience }}
+  {{- end }}
+  {{- if eq (len $endpoints) 0 }}
+  {{- $endpoints = $.Values.global.authorization.endpoints }}
+  {{- end }}
+  {{- if eq (len $endpoints) 0 }}
+  {{- fail (printf "%s.authorization.endpoints or global.authorization.endpoints is required" $prefix) }}
+  {{- end}}
   {{- if not $.Values.mockoauthserver.enabled }}
-  authority:{{ printf " " }}{{ required (printf "%s.apis.grpc.authorization.authority or global.authority is required " $prefix) ( $authoriztion.authority | default $.Values.global.authority ) | quote }}
-  audience:{{ printf " " }}{{ ( $authoriztion.audience | default $.Values.global.audience ) | quote }}
+  audience: {{ include "plgd-hub.resolveTemplateString" (list $  $audience) }}
+  endpoints:
+    {{- range $endpoints }}
+    {{- $authority := include "plgd-hub.resolveTemplateString" (list $ .authority) }}
+    {{- if $authority }}
+    - authority: {{ include "plgd-hub.resolveTemplateString" (list $ .authority) }}
+      http:
+        {{- include "plgd-hub.httpConfig" (list $ .http $certPath ) | indent 8 }}
+    {{- end }}
+    {{- end }}
   {{- else }}
-  authority:{{ printf " " }}{{ include "plgd-hub.mockoauthserver.uri" $ }}
-  audience:{{ printf " " }}{{ printf "" | quote }}
+  audience: {{ include "plgd-hub.resolveTemplateString" (list $  $audience) }}
+  endpoints:
+    {{- range $endpoints }}
+    {{- $authority := include "plgd-hub.resolveTemplateString" (list $ .authority) }}
+    {{- if not $authority }}
+    {{- $authority = include "plgd-hub.mockoauthserver.uri" $ }}
+    {{- end }}
+    - authority: {{ $authority }}
+      http:
+        {{- include "plgd-hub.httpConfig" (list $ .http $certPath ) | indent 8 }}
+    {{- end }}
   {{- end }}
 {{- end }}
 
-{{- define "plgd-hub.baseAthorizationConfig" }}
+{{- define "plgd-hub.authorizationConfig" }}
   {{- $ := index . 0 }}
-  {{- $authoriztion := index . 1 }}
+  {{- $authorization := index . 1 }}
   {{- $prefix := index . 2 }}
-  {{- if not $.Values.mockoauthserver.enabled }}
-  authority:{{ printf " " }}{{ required (printf "%s.apis.grpc.authorization.authority or global.authority is required " $prefix) ( $authoriztion.authority | default $.Values.global.authority ) | quote }}
-  audience:{{ printf " " }}{{ ( $authoriztion.audience | default $.Values.global.audience ) | quote }}
-  {{- else }}
-  authority:{{ printf " " }}{{ include "plgd-hub.mockoauthserver.uri" $ }}
-  audience:{{ printf " " }}{{ printf "" | quote }}
-  {{- end }}
+  {{- $certPath := index . 3 }}
+  ownerClaim: {{ required (printf "%s.authorization.ownerClaim or global.ownerClaim is required " $prefix) ( $authorization.ownerClaim | default $.Values.global.ownerClaim ) | quote }}
+  {{- include "plgd-hub.basicAuthorizationConfig" (list $ $authorization $prefix $certPath) }}
 {{- end }}
 
 {{- define "plgd-hub.createInternalCertByCm" }}
@@ -586,4 +635,40 @@ true
 {{- $ca = $.Values.global.authorizationCAPool -}}
 {{- end -}}
 {{- printf "%s" $ca }}
+{{- end -}}
+
+{{- define "plgd-hub.globalAudience" }}
+{{- $ := . -}}
+{{- $ca := "" -}}
+{{- if $.Values.global.audience -}}
+{{- $ca = $.Values.global.audience -}}
+{{- end -}}
+{{- printf "%s" $ca }}
+{{- end -}}
+
+{{- define "plgd-hub.globalAuthority" }}
+{{- $ := . -}}
+{{- $ca := "" -}}
+{{- if $.Values.global.authority -}}
+{{- $ca = $.Values.global.authority -}}
+{{- end -}}
+{{- printf "%s" $ca }}
+{{- end -}}
+
+{{- define "plgd-hub.m2mOAuthServerAuthority" }}
+{{- $ := . -}}
+{{- $ca := "" -}}
+{{- if include "plgd-hub.m2moauthserver.enabled" $ -}}
+{{- $ca = include "plgd-hub.m2moauthserver.uri" $ }}
+{{- end -}}
+{{- printf "%s" $ca }}
+{{- end -}}
+
+{{- define  "plgd-hub.image" -}}
+{{- $ := index . 0 -}}
+{{- $service := index . 1 }}
+{{- $registryName := $service.image.registry | default "" -}}
+{{- $repositoryName := $service.image.repository -}}
+{{- $tag := $service.image.tag | default $.Values.global.image.tag | default $.Chart.AppVersion | toString -}}
+{{- printf "%s%s:%s" $registryName $repositoryName  $tag -}}
 {{- end -}}

@@ -11,13 +11,6 @@
 {{- end }}
 {{- end }}
 
-{{- define  "plgd-hub.grpcgateway.image" -}}
-    {{- $registryName := .Values.grpcgateway.image.registry | default "" -}}
-    {{- $repositoryName := .Values.grpcgateway.image.repository -}}
-    {{- $tag := .Values.grpcgateway.image.tag | default .Chart.AppVersion | toString -}}
-    {{- printf "%s%s:%s" $registryName $repositoryName  $tag -}}
-{{- end -}}
-
 {{- define  "plgd-hub.grpcgateway.configName" -}}
     {{- $fullName :=  include "plgd-hub.grpcgateway.fullname" . -}}
     {{- printf "%s-cfg" $fullName }}

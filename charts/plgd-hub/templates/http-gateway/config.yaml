@@ -30,23 +30,7 @@ data:
           streamBodyLimit: {{ .apis.http.webSocket.streamBodyLimit }}
           pingFrequency: {{ .apis.http.webSocket.pingFrequency }}
         authorization:
-          {{- if not $.Values.mockoauthserver.enabled }}
-          authority:{{ printf " " }}{{ required "httpgateway.apis.http.authorization.authority or global.authority is required " ( .apis.http.authorization.authority | default $.Values.global.authority ) | quote }}
-          audience:{{ printf " " }}{{ ( .apis.http.authorization.audience | default $.Values.global.audience ) | quote }}
-          {{- else }}
-          authority:{{ printf " " }}{{ include "plgd-hub.mockoauthserver.uri" $ }}
-          audience:{{ printf " " }}{{ printf "" | quote }}
-          {{- end }}
-          http:
-            maxIdleConns: {{ .apis.http.authorization.http.maxIdleConns }}
-            maxConnsPerHost: {{ .apis.http.authorization.http.maxIdleConnsPerHost }}
-            maxIdleConnsPerHost: {{ .apis.http.authorization.http.maxIdleConnsPerHost }}
-            idleConnTimeout: {{ .apis.http.authorization.http.idleConnTimeout }}
-            timeout: {{ .apis.http.authorization.http.timeout }}
-            tls:
-              {{- $httpTls := .apis.http.authorization.http.tls }}
-              {{- include "plgd-hub.authorizationCaCertificateConfig" (list $ $httpTls $httpGatewayCertPath ) | indent 12 }}
-              useSystemCAPool: {{ .apis.http.authorization.http.tls.useSystemCAPool }}
+          {{- include "plgd-hub.basicAuthorizationConfig" (list $ .apis.http.authorization "httpgateway.apis.http.authorization" $httpGatewayCertPath) | indent 8 }}
     clients:
       grpcGateway:
         grpc:
@@ -71,6 +55,7 @@ data:
         deviceProvisioningService: {{ .ui.webConfiguration.deviceProvisioningService | default ( include "plgd-hub.httpgateway.dpsApiDomain" $) | quote }}
         {{- if not $.Values.mockoauthserver.enabled }}
         webOAuthClient:
+          authority: {{ required ".ui.webConfiguration.webOAuthClient.authority or global.authority is required" ( .ui.webConfiguration.webOAuthClient.authority | default $.Values.global.authority ) | quote }}
           clientID: {{ required "httpgateway.ui.webConfiguration.webOAuthClient.clientID or global.oauth.web.clientID is required" ( .ui.webConfiguration.webOAuthClient.clientID | default $.Values.global.oauth.web.clientID ) | quote }}
           audience: {{ .ui.webConfiguration.webOAuthClient.audience | default ( $.Values.global.oauth.web.audience | default $.Values.global.audience ) | quote }}
           {{- if .ui.webConfiguration.webOAuthClient.scopes | default $.Values.global.oauth.web.scopes }}
@@ -81,12 +66,15 @@ data:
           {{- else }}
           scopes: []
           {{- end }}
+          grantType: {{ .grantType | default "authorization_code" | quote }}
         {{- else }}
         webOAuthClient:
           {{- $client := index $.Values.mockoauthserver.oauth 1 }}
           clientID: {{ $client.clientID | quote }}
+          authority: {{ include "plgd-hub.mockoauthserver.uri" $ | quote }}
           audience: {{ include "plgd-hub.mockoauthserver.ingressDomain" $ | quote }}
           scopes: [ "openid" ]
+          grantTypes: [ "authorization_code" ]
         {{- end }}
         deviceOAuthClient:
         {{- $providers := $.Values.mockoauthserver.oauth }}
@@ -95,6 +83,11 @@ data:
         {{- end }}
         {{- range $providers }}
           {{- if .useInUi }}
+          {{- if $.Values.mockoauthserver.enabled }}
+          authority: {{ include "plgd-hub.mockoauthserver.uri" $ | quote }}
+          {{- else }}
+          authority: {{ required "authority for oauth device provider or global.authority is required" ( .authority | default $.Values.global.authority ) | quote }}
+          {{- end }}
           clientID: {{ .clientID | quote }}
           audience: {{ .audience | default $.Values.global.audience | quote }}
           {{- if .scopes }}
@@ -105,7 +98,37 @@ data:
           {{- else }}
           scopes: []
           {{- end }}
+          grantType: {{ .grantType | default "authorization_code" | quote }}
           providerName: {{ .name | quote }}
+          {{- end }}
+        {{- end }}
+        {{- $m2mClient := include "plgd-hub.m2moauthserver.getJwtPrivateKeyClient" $ | fromYaml }}
+        {{- if $m2mClient }}
+        m2mOAuthClient:
+          authority: {{.ui.webConfiguration.m2mOAuthClient.authority | default (include "plgd-hub.m2moauthserver.uri" $) | quote }}
+          clientID: {{ required "httpgateway.ui.webConfiguration.m2mOAuthClient.clientID or $m2mClient.id is required" ( .ui.webConfiguration.m2mOAuthClient.clientID | default $m2mClient.id ) | quote }}
+          audience: {{ .ui.webConfiguration.m2mOAuthClient.audience | default $.Values.global.audience | quote }}
+          {{- if .ui.webConfiguration.m2mOAuthClient.scopes | default $m2mClient.allowedScopes }}
+          scopes:
+            {{- range .ui.webConfiguration.m2mOAuthClient.scopes | default $m2mClient.allowedScopes }}
+            - {{ . | quote }}
+            {{- end }}
+          {{- else }}
+          scopes: []
+          {{- end }}
+          {{- if .ui.webConfiguration.m2mOAuthClient.grantType }}
+          grantType: {{ .ui.webConfiguration.m2mOAuthClient.grantType | quote }}
+          {{- else }}
+          {{- if gt (len $m2mClient.allowedGrantTypes) 0 }}
+          grantType: {{ $m2mClient.allowedGrantTypes | first | quote }}
+          {{- end }}
+          {{- end }}
+          {{- if .ui.webConfiguration.m2mOAuthClient.clientAssertionType }}
+          clientAssertionType: {{ .ui.webConfiguration.m2mOAuthClient.clientAssertionType | quote }}
+          {{- else }}
+          {{- if $m2mClient.jwtPrivateKey.enabled }}
+          clientAssertionType: urn:ietf:params:oauth:client-assertion-type:jwt-bearer
+          {{- end }}
           {{- end }}
         {{- end }}
         visibility:
