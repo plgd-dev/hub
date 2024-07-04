@@ -118,6 +118,9 @@ type OAuthClient struct {
 }
 
 func (c *OAuthClient) ToProto() *pb.OAuthClient {
+	if c == nil {
+		return nil
+	}
 	return &pb.OAuthClient{
 		ClientId:            c.ClientID,
 		Audience:            c.Audience,
@@ -130,6 +133,9 @@ func (c *OAuthClient) ToProto() *pb.OAuthClient {
 }
 
 func (c *OAuthClient) Validate() error {
+	if c == nil {
+		return nil
+	}
 	if c.ClientID == "" {
 		return fmt.Errorf("clientID('%v')", c.ClientID)
 	}
@@ -189,7 +195,7 @@ type WebConfiguration struct {
 	DeviceProvisioningService string           `yaml:"deviceProvisioningService" json:"deviceProvisioningService"`
 	WebOAuthClient            OAuthClient      `yaml:"webOAuthClient" json:"webOauthClient"`
 	DeviceOAuthClient         OAuthClient      `yaml:"deviceOAuthClient" json:"deviceOauthClient"`
-	M2MOAuthClient            OAuthClient      `yaml:"m2mOAuthClient" json:"m2mOauthClient"`
+	M2MOAuthClient            *OAuthClient     `yaml:"m2mOAuthClient" json:"m2mOauthClient"`
 	Visibility                VisibilityConfig `yaml:"visibility" json:"visibility"`
 }
 
@@ -201,6 +207,9 @@ func (c *WebConfiguration) Validate() error {
 		return fmt.Errorf("webOAuthClient.%w", err)
 	}
 	if err := c.DeviceOAuthClient.Validate(); err != nil {
+		return fmt.Errorf("deviceOAuthClient.%w", err)
+	}
+	if err := c.M2MOAuthClient.Validate(); err != nil {
 		return fmt.Errorf("deviceOAuthClient.%w", err)
 	}
 	return nil

@@ -36,7 +36,7 @@ func MakeWebConfigurationConfig() service.WebConfiguration {
 			ProviderName: config.DEVICE_PROVIDER,
 			GrantType:    "authorization_code",
 		},
-		M2MOAuthClient: service.OAuthClient{
+		M2MOAuthClient: &service.OAuthClient{
 			Authority:           testHttp.HTTPS_SCHEME + config.M2M_OAUTH_SERVER_HTTP_HOST,
 			ClientID:            config.M2M_OAUTH_PRIVATE_KEY_CLIENT_ID,
 			Audience:            config.OAUTH_MANAGER_AUDIENCE,
