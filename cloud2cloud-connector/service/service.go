@@ -44,8 +44,8 @@ func toValidator(c oauth2.Config) validator.Config {
 		Audience: c.Audience,
 		Endpoints: []validator.AuthorityConfig{
 			{
-				Address: c.Authority,
-				HTTP:    c.HTTP,
+				Authority: c.Authority,
+				HTTP:      c.HTTP,
 			},
 		},
 	}

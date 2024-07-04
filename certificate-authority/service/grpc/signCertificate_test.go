@@ -116,8 +116,8 @@ func TestCertificateAuthorityServerSignCSRWithDifferentPublicKeys(t *testing.T) 
 
 	cfg := caTest.MakeConfig(t)
 	cfg.APIs.GRPC.Authorization.Endpoints = append(cfg.APIs.GRPC.Authorization.Endpoints, validator.AuthorityConfig{
-		Address: "https://" + config.M2M_OAUTH_SERVER_HTTP_HOST + m2mOauthUri.Base,
-		HTTP:    config.MakeHttpClientConfig(),
+		Authority: "https://" + config.M2M_OAUTH_SERVER_HTTP_HOST + m2mOauthUri.Base,
+		HTTP:      config.MakeHttpClientConfig(),
 	})
 
 	tearDown := service.SetUp(ctx, t, service.WithCAConfig(cfg))

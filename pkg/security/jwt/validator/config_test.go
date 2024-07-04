@@ -21,8 +21,8 @@ func TestConfig_Validate(t *testing.T) {
 				Audience: "example-audience",
 				Endpoints: []validator.AuthorityConfig{
 					{
-						Address: "example-address",
-						HTTP:    config.MakeHttpClientConfig(),
+						Authority: "example-address",
+						HTTP:      config.MakeHttpClientConfig(),
 					},
 				},
 			},
