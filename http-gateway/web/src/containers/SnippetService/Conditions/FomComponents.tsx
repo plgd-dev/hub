@@ -94,9 +94,9 @@ export const Step2FormComponent: FC<Props> = (props) => {
                                     title: _(g.done),
                                     variant: 'primary',
                                     onClick: (values: OptionType[]) => {
-                                        const value = values.map((v) => v.value)
-                                        setValue('deviceIdFilter', value)
-                                        updateField('deviceIdFilter', value)
+                                        const rawValue = values.map((v) => v.value)
+                                        setValue('deviceIdFilter', rawValue)
+                                        updateField('deviceIdFilter', rawValue)
                                     },
                                 },
                             ]}
@@ -106,11 +106,11 @@ export const Step2FormComponent: FC<Props> = (props) => {
                             }}
                             menuPortalTarget={document.getElementById('modal-root')}
                             menuZIndex={100}
-                            name='deviceIdFilter'
+                            name='deviceIdFilterrr'
                             onChange={(values: OptionType[]) => {
-                                const value = values.map((v) => v.value)
-                                setValue('deviceIdFilter', value)
-                                updateField('deviceIdFilter', values)
+                                const rawValue = values.map((v) => v.value)
+                                setValue('deviceIdFilter', rawValue)
+                                updateField('deviceIdFilter', rawValue)
                             }}
                             onCreateOption={(value: string | number) => {
                                 setOptions((prev) => [...prev, { value: value.toString(), label: value.toString() }])
