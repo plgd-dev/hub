@@ -91,21 +91,21 @@ data:
             {{- $cqlDbTls := .clients.storage.cqlDB.tls }}
             {{- include "plgd-hub.certificateConfig" (list $ $cqlDbTls $cert ) | indent 10 }}
             useSystemCAPool: {{ .clients.storage.cqlDB.tls.useSystemCAPool }}
-      resourceAggregate:
-        pendingCommandsCheckInterval: {{ .clients.resourceAggregate.pendingCommandsCheckInterval }}
+      resourceUpdater:
+        cleanUpExpiredUpdates: {{ .clients.resourceUpdater.cleanUpExpiredUpdates | quote }}
         grpc:
-          {{- $resourceAggregate := .clients.resourceAggregate.grpc.address }}
-          address:{{ printf " " }}{{- include "plgd-hub.resourceAggregateAddress" (list $ $resourceAggregate ) | quote }}
-          sendMsgSize: {{ int64 .clients.resourceAggregate.grpc.sendMsgSize | default 4194304 }}
-          recvMsgSize: {{ int64 .clients.resourceAggregate.grpc.recvMsgSize | default 4194304 }}
+          {{- $resourceUpdater := .clients.resourceUpdater.grpc.address }}
+          address:{{ printf " " }}{{- include "plgd-hub.resourceAggregateAddress" (list $ $resourceUpdater ) | quote }}
+          sendMsgSize: {{ int64 .clients.resourceUpdater.grpc.sendMsgSize | default 4194304 }}
+          recvMsgSize: {{ int64 .clients.resourceUpdater.grpc.recvMsgSize | default 4194304 }}
           keepAlive:
-            time: {{ .clients.resourceAggregate.grpc.keepAlive.time }}
-            timeout: {{ .clients.resourceAggregate.grpc.keepAlive.timeout }}
-            permitWithoutStream: {{ .clients.resourceAggregate.grpc.keepAlive.permitWithoutStream }}
+            time: {{ .clients.resourceUpdater.grpc.keepAlive.time }}
+            timeout: {{ .clients.resourceUpdater.grpc.keepAlive.timeout }}
+            permitWithoutStream: {{ .clients.resourceUpdater.grpc.keepAlive.permitWithoutStream }}
           tls:
-            {{- $raClientTls := .clients.resourceAggregate.grpc.tls }}
+            {{- $raClientTls := .clients.resourceUpdater.grpc.tls }}
             {{- include "plgd-hub.certificateConfig" (list $ $raClientTls $cert) | indent 10 }}
-            useSystemCAPool: {{ .clients.resourceAggregate.grpc.tls.useSystemCAPool }}
+            useSystemCAPool: {{ .clients.resourceUpdater.grpc.tls.useSystemCAPool }}
       {{- include "plgd-hub.openTelemetryExporterConfig" (list $ $cert ) | nindent 6 }}
   {{- end }}
 {{- end }}

@@ -88,6 +88,7 @@ func (r *AppliedConfiguration_Resource) Clone() *AppliedConfiguration_Resource {
 		CorrelationId:   r.GetCorrelationId(),
 		Status:          r.GetStatus(),
 		ResourceUpdated: r.GetResourceUpdated().Clone(),
+		ValidUntil:      r.GetValidUntil(),
 	}
 }
 
@@ -95,8 +96,12 @@ func (r *AppliedConfiguration_Resource) UnmarshalBSON(data []byte) error {
 	return pkgMongo.UnmarshalProtoBSON(data, r, nil)
 }
 
+func (r *AppliedConfiguration_Resource) jsonToBSONTag(json map[string]interface{}) {
+	pkgMongo.ConvertStringValueToInt64(json, "validUntil")
+}
+
 func (r *AppliedConfiguration_Resource) MarshalBSON() ([]byte, error) {
-	return pkgMongo.MarshalProtoBSON(r, nil)
+	return pkgMongo.MarshalProtoBSON(r, r.jsonToBSONTag)
 }
 
 func (c *AppliedConfiguration) CloneExecutedBy() isAppliedConfiguration_ExecutedBy {
@@ -133,8 +138,9 @@ func (c *AppliedConfiguration) Clone() *AppliedConfiguration {
 }
 
 func (c *AppliedConfiguration) jsonToBSONTag(json map[string]interface{}) {
-	pkgMongo.ConvertStringValueToInt(json, "configurationId.version")
-	pkgMongo.ConvertStringValueToInt(json, "conditionId.version")
+	pkgMongo.ConvertStringValueToInt64(json, "configurationId.version")
+	pkgMongo.ConvertStringValueToInt64(json, "conditionId.version")
+	pkgMongo.ConvertStringValueToInt64(json, "resources.validUntil")
 }
 
 func (c *AppliedConfiguration) MarshalBSON() ([]byte, error) {

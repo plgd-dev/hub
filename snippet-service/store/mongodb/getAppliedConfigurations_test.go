@@ -403,3 +403,38 @@ func TestStoreGetAppliedConfigurations(t *testing.T) {
 		})
 	}
 }
+
+func TestGetExpiredAppliedConfigurationResourceUpdates(t *testing.T) {
+	s, cleanUpStore := test.NewMongoStore(t)
+	defer cleanUpStore()
+
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	defer cancel()
+	stored := test.AddAppliedConfigurationsToStore(ctx, t, s)
+
+	got := make(map[string]*pb.AppliedConfiguration)
+	validUntil, err := s.GetExpiredAppliedConfigurationResourceUpdates(ctx, func(ac *store.AppliedConfiguration) error {
+		got[ac.GetId()] = ac.GetAppliedConfiguration().Clone()
+		return nil
+	})
+	require.NoError(t, err)
+
+	expiredStored := make(map[string]*pb.AppliedConfiguration)
+	for _, ac := range stored {
+		var resources []*pb.AppliedConfiguration_Resource
+		for _, r := range ac.GetResources() {
+			if r.GetStatus() == pb.AppliedConfiguration_Resource_PENDING &&
+				r.GetValidUntil() > 0 && r.GetValidUntil() <= validUntil {
+				resources = append(resources, r)
+			}
+		}
+		if len(resources) > 0 {
+			newAc := ac.Clone()
+			newAc.Resources = resources
+			expiredStored[ac.GetId()] = newAc
+		}
+	}
+
+	require.Len(t, got, len(expiredStored))
+	test.CmpAppliedDeviceConfigurationsMaps(t, expiredStored, got, false)
+}

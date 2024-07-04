@@ -25,6 +25,7 @@ const (
 	TimestampKey       = "timestamp"       // must match with Timestamp field tag
 	StatusKey          = "status"          // must match with Status field tag
 	HrefKey            = "href"            // must match with Href field tag
+	ValidUntil         = "validUntil"      // must match with ValidUntil field tag
 
 	ApiAccessTokenKey     = "apiAccessToken"     // must match with Condition.ApiAccessToken field tag
 	DeviceIDFilterKey     = "deviceIdFilter"     // must match with Condition.DeviceIdFilter tag
@@ -132,6 +133,8 @@ type Store interface {
 	UpdateAppliedConfiguration(ctx context.Context, conf *pb.AppliedConfiguration) (*pb.AppliedConfiguration, error)
 	// UpdateAppliedConfigurationResource updates an existing applied device configuration resource in the database.
 	UpdateAppliedConfigurationResource(ctx context.Context, owner string, query UpdateAppliedConfigurationResourceRequest) (*pb.AppliedConfiguration, error)
+	// GetExpiredAppliedConfigurationResourceUpdates loads applied device configuration with expired (validUntil <= now) resource updates from the database.
+	GetExpiredAppliedConfigurationResourceUpdates(ctx context.Context, p ProccessAppliedConfigurations) (int64, error)
 
 	Close(ctx context.Context) error
 }

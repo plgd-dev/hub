@@ -2,7 +2,6 @@ package service_test
 
 import (
 	"testing"
-	"time"
 
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	grpcServer "github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
@@ -11,7 +10,7 @@ import (
 	"github.com/plgd-dev/hub/v2/snippet-service/service"
 	storeConfig "github.com/plgd-dev/hub/v2/snippet-service/store/config"
 	"github.com/plgd-dev/hub/v2/snippet-service/test"
-	"github.com/plgd-dev/hub/v2/test/config"
+	"github.com/plgd-dev/hub/v2/snippet-service/updater"
 	"github.com/stretchr/testify/require"
 )
 
@@ -95,90 +94,20 @@ func TestHTTPConfig(t *testing.T) {
 func TestStorageConfig(t *testing.T) {
 	tests := []struct {
 		name    string
-		cfg     service.StorageConfig
+		cfg     storeConfig.Config
 		wantErr bool
 	}{
 		{
 			name:    "valid",
-			cfg:     test.MakeStorageConfig(),
+			cfg:     test.MakeStoreConfig(),
 			wantErr: false,
 		},
 		{
-			name: "valid - no cron",
-			cfg: func() service.StorageConfig {
-				cfg := test.MakeStorageConfig()
-				cfg.CleanUpRecords = ""
-				return cfg
-			}(),
-			wantErr: false,
-		},
-		{
-			name: "invalid - no storage",
-			cfg: func() service.StorageConfig {
-				cfg := test.MakeStorageConfig()
-				cfg.Embedded = storeConfig.Config{}
-				return cfg
-			}(),
-			wantErr: true,
-		},
-		{
-			name: "invalid - bad cron expression",
-			cfg: func() service.StorageConfig {
-				cfg := test.MakeStorageConfig()
-				cfg.CleanUpRecords = "bad"
-				return cfg
-			}(),
+			name:    "invalid",
+			cfg:     storeConfig.Config{},
 			wantErr: true,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := tt.cfg.Validate()
-			if tt.wantErr {
-				require.Error(t, err)
-				return
-			}
-			require.NoError(t, err)
-		})
-	}
-}
-
-func TestResourceAggregateConfig(t *testing.T) {
-	tests := []struct {
-		name    string
-		cfg     service.ResourceAggregateConfig
-		wantErr bool
-	}{
-		{
-			name: "valid",
-			cfg: service.ResourceAggregateConfig{
-				Connection:                   config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST),
-				PendingCommandsCheckInterval: time.Second * 10,
-			},
-		},
-		{
-			name: "invalid - no connection",
-			cfg: func() service.ResourceAggregateConfig {
-				cfg := service.ResourceAggregateConfig{
-					PendingCommandsCheckInterval: time.Second * 10,
-				}
-				return cfg
-			}(),
-			wantErr: true,
-		},
-		{
-			name: "invalid - pending commands check interval",
-			cfg: func() service.ResourceAggregateConfig {
-				cfg := service.ResourceAggregateConfig{
-					Connection:                   config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST),
-					PendingCommandsCheckInterval: -1,
-				}
-				return cfg
-			}(),
-			wantErr: true,
-		},
-	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.cfg.Validate()
@@ -205,7 +134,7 @@ func TestClientsConfig(t *testing.T) {
 			name: "invalid - no storage",
 			cfg: func() service.ClientsConfig {
 				cfg := test.MakeClientsConfig()
-				cfg.Storage = service.StorageConfig{}
+				cfg.Storage = storeConfig.Config{}
 				return cfg
 			}(),
 			wantErr: true,
@@ -238,7 +167,7 @@ func TestClientsConfig(t *testing.T) {
 			name: "invalid ResourceAggregate",
 			cfg: func() service.ClientsConfig {
 				cfg := test.MakeClientsConfig()
-				cfg.ResourceAggregate = service.ResourceAggregateConfig{}
+				cfg.ResourceUpdater = updater.ResourceUpdaterConfig{}
 				return cfg
 			}(),
 			wantErr: true,

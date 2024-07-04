@@ -46,6 +46,9 @@ func AppliedConfigurationResource(t *testing.T, deviceID string, start, n int) [
 			CorrelationId: correlationID,
 			Status:        pb.AppliedConfiguration_Resource_Status(1 + i%4),
 		}
+		if resource.GetStatus() == pb.AppliedConfiguration_Resource_PENDING {
+			resource.ValidUntil = time.Now().Add(time.Minute * -3).Add(time.Minute * time.Duration(i)).UnixNano()
+		}
 		if resource.GetStatus() == pb.AppliedConfiguration_Resource_DONE {
 			resource.ResourceUpdated = pbTest.MakeResourceUpdated(t,
 				deviceID,

@@ -23,8 +23,8 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
 	snippetHttp "github.com/plgd-dev/hub/v2/snippet-service/service/http"
-	"github.com/plgd-dev/hub/v2/snippet-service/store"
 	snippetTest "github.com/plgd-dev/hub/v2/snippet-service/test"
+	"github.com/plgd-dev/hub/v2/snippet-service/updater"
 	hubTest "github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	httpTest "github.com/plgd-dev/hub/v2/test/http"
@@ -136,7 +136,7 @@ func getPendingCommands(ctx context.Context, t *testing.T, c grpcGwPb.GrpcGatewa
 			id = c.ResourceUpdatePending.GetAuditContext().GetCorrelationId()
 		}
 
-		appliedConfID, _, _, ok := store.SplitCorrelationID(id)
+		appliedConfID, _, _, ok := updater.SplitCorrelationID(id)
 		if !ok {
 			continue
 		}
@@ -175,7 +175,8 @@ func TestRequestHandlerInvokeConfiguration(t *testing.T) {
 	}()
 
 	snippetCfg := snippetTest.MakeConfig(t)
-	snippetCfg.Clients.ResourceAggregate.PendingCommandsCheckInterval = time.Millisecond * 500
+	snippetCfg.Clients.ResourceUpdater.CleanUpExpiredUpdates = "*/1 * * * * *"
+	snippetCfg.Clients.ResourceUpdater.ExtendCronParserBySeconds = true
 	_, shutdownHttp := snippetTest.New(t, snippetCfg)
 	defer shutdownHttp()
 	logger := log.NewLogger(snippetCfg.Log)

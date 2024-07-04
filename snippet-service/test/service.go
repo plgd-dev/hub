@@ -14,6 +14,7 @@ import (
 	storeConfig "github.com/plgd-dev/hub/v2/snippet-service/store/config"
 	storeCqlDB "github.com/plgd-dev/hub/v2/snippet-service/store/cqldb"
 	storeMongo "github.com/plgd-dev/hub/v2/snippet-service/store/mongodb"
+	"github.com/plgd-dev/hub/v2/snippet-service/updater"
 	"github.com/plgd-dev/hub/v2/test/config"
 	httpTest "github.com/plgd-dev/hub/v2/test/http"
 	"github.com/stretchr/testify/require"
@@ -40,40 +41,42 @@ func MakeAPIsConfig() service.APIsConfig {
 	}
 }
 
+func MakeResourceUpdaterConfig() updater.ResourceUpdaterConfig {
+	return updater.ResourceUpdaterConfig{
+		Connection:                config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST),
+		CleanUpExpiredUpdates:     "0 * * * *",
+		ExtendCronParserBySeconds: false,
+	}
+}
+
 func MakeClientsConfig() service.ClientsConfig {
 	return service.ClientsConfig{
-		Storage:                MakeStorageConfig(),
+		Storage:                MakeStoreConfig(),
 		OpenTelemetryCollector: config.MakeOpenTelemetryCollectorClient(),
 		EventBus: service.EventBusConfig{
 			NATS: config.MakeSubscriberConfig(),
 		},
-		ResourceAggregate: service.ResourceAggregateConfig{
-			Connection:                   config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST),
-			PendingCommandsCheckInterval: time.Second * 10,
-		},
+		ResourceUpdater: MakeResourceUpdaterConfig(),
 	}
 }
 
-func MakeStorageConfig() service.StorageConfig {
-	return service.StorageConfig{
-		CleanUpRecords: "0 1 * * *",
-		Embedded: storeConfig.Config{
-			// TODO: add cqldb support
-			// Use: config.ACTIVE_DATABASE(),
-			Use: database.MongoDB,
-			MongoDB: &storeMongo.Config{
-				Mongo: mongodb.Config{
-					MaxPoolSize:     16,
-					MaxConnIdleTime: time.Minute * 4,
-					URI:             config.MONGODB_URI,
-					Database:        "snippetService",
-					TLS:             config.MakeTLSClientConfig(),
-				},
+func MakeStoreConfig() storeConfig.Config {
+	return storeConfig.Config{
+		// TODO: add cqldb support
+		// Use: config.ACTIVE_DATABASE(),
+		Use: database.MongoDB,
+		MongoDB: &storeMongo.Config{
+			Mongo: mongodb.Config{
+				MaxPoolSize:     16,
+				MaxConnIdleTime: time.Minute * 4,
+				URI:             config.MONGODB_URI,
+				Database:        "snippetService",
+				TLS:             config.MakeTLSClientConfig(),
 			},
-			CqlDB: &storeCqlDB.Config{
-				Embedded: config.MakeCqlDBConfig(),
-				Table:    "snippets",
-			},
+		},
+		CqlDB: &storeCqlDB.Config{
+			Embedded: config.MakeCqlDBConfig(),
+			Table:    "snippets",
 		},
 	}
 }
@@ -124,7 +127,7 @@ func New(t require.TestingT, cfg service.Config) (*service.Service, func()) {
 
 func NewStore(t require.TestingT) (store.Store, func()) {
 	cfg := MakeConfig(t)
-	if cfg.Clients.Storage.Embedded.Use == database.CqlDB {
+	if cfg.Clients.Storage.Use == database.CqlDB {
 		return nil, nil
 	}
 	return NewMongoStore(t)
@@ -138,7 +141,7 @@ func NewMongoStore(t require.TestingT) (*storeMongo.Store, func()) {
 	require.NoError(t, err)
 
 	ctx := context.Background()
-	store, err := storeMongo.New(ctx, cfg.Clients.Storage.Embedded.MongoDB, fileWatcher, logger, noop.NewTracerProvider())
+	store, err := storeMongo.New(ctx, cfg.Clients.Storage.MongoDB, fileWatcher, logger, noop.NewTracerProvider())
 	require.NoError(t, err)
 
 	cleanUp := func() {
