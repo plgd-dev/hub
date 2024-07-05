@@ -106,7 +106,7 @@ export const Step2FormComponent: FC<Props> = (props) => {
                             }}
                             menuPortalTarget={document.getElementById('modal-root')}
                             menuZIndex={100}
-                            name='deviceIdFilterrr'
+                            name='deviceIdFilter'
                             onChange={(values: OptionType[]) => {
                                 const rawValue = values.map((v) => v.value)
                                 setValue('deviceIdFilter', rawValue)
