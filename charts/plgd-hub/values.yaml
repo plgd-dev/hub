@@ -2615,8 +2615,6 @@ m2moauthserver:
     deviceIDClaim:
     clients:
       - id: "jwt-private-key"
-        requireOwner: true
-        requireDeviceID: false
         accessTokenLifetime: 0s
         allowedGrantTypes:
           - client_credentials
@@ -2629,8 +2627,6 @@ m2moauthserver:
             endpoints:
       - id: "service"
         secretFile: "{{ include \"plgd-hub.m2moauthserver.getClientServiceSecretFile\" . }}"
-        requireOwner: false
-        requireDeviceID: false
         accessTokenLifetime: 0s
         allowedGrantTypes:
           - client_credentials
