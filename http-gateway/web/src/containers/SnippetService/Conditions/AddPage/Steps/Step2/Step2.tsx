@@ -28,10 +28,10 @@ const Step2: FC<Props> = (props) => {
     return (
         <form onSubmit={(e) => e.preventDefault()}>
             <FullPageWizard.Headline>{_(confT.applyFilters)}</FullPageWizard.Headline>
-            <FullPageWizard.Description large>{_(confT.createConditionDescription)}</FullPageWizard.Description>
+            <FullPageWizard.Description large>{_(confT.applyFiltersShortDescription)}</FullPageWizard.Description>
 
-            <FullPageWizard.SubHeadline>Headline H4</FullPageWizard.SubHeadline>
-            <FullPageWizard.Description>Popis čo tu uživateľ musí nastaviať a prípadne prečo</FullPageWizard.Description>
+            <FullPageWizard.SubHeadline>{_(confT.applyFiltersSubHeadline)}</FullPageWizard.SubHeadline>
+            <FullPageWizard.Description>{_(confT.applyFiltersDescription)}</FullPageWizard.Description>
 
             <FullPageWizard.GroupHeadline>{_(g.filters)}</FullPageWizard.GroupHeadline>
 

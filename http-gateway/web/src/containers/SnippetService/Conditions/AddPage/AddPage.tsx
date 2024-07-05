@@ -31,18 +31,18 @@ const AddPage: FC<any> = () => {
     const steps = useMemo(
         () => [
             {
-                name: _(confT.createConditions),
-                description: _(confT.createConditionsDescription),
+                name: _(confT.createCondition),
+                description: _(confT.createConditionShortDescription),
                 link: pages.SNIPPET_SERVICE.CONDITIONS.ADD.STEPS[0],
             },
             {
                 name: _(confT.applyFilters),
-                description: _(confT.applyFiltersDescription),
+                description: _(confT.applyFiltersShortDescription),
                 link: pages.SNIPPET_SERVICE.CONDITIONS.ADD.STEPS[1],
             },
             {
                 name: _(confT.selectConfiguration),
-                description: _(confT.selectConfigurationDescription),
+                description: _(confT.selectConfigurationShortDescription),
                 link: pages.SNIPPET_SERVICE.CONDITIONS.ADD.STEPS[2],
             },
         ],

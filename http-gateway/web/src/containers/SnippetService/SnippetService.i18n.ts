@@ -321,29 +321,55 @@ export const messages = defineMessages({
         id: 'snippetService.addNewConfiguration',
         defaultMessage: 'Add a new Configuration',
     },
-    createConditions: {
-        id: 'snippetService.createConditions',
-        defaultMessage: 'Create Conditions',
+    createCondition: {
+        id: 'snippetService.createCondition',
+        defaultMessage: 'Create Condition',
     },
-    createConditionsDescription: {
-        id: 'snippetService.createConditionsDescription',
-        defaultMessage: 'Short description ...',
+    createConditionShortDescription: {
+        id: 'snippetService.createConditionShortDescription',
+        defaultMessage: 'Basic setup',
+    },
+    createConditionSubHeadline: {
+        id: 'snippetService.createConditionSubHeadline',
+        defaultMessage: 'Set a name and enable the condition',
+    },
+    createConditionDescription: {
+        id: 'snippetService.createConditionDescription',
+        defaultMessage: 'Name is used to identify the condition. Enable the condition to make it active.',
     },
     applyFilters: {
         id: 'snippetService.applyFilters',
         defaultMessage: 'Apply filters',
     },
+    applyFiltersShortDescription: {
+        id: 'snippetService.applyFiltersShortDescription',
+        defaultMessage: 'Filtering setup',
+    },
+    applyFiltersSubHeadline: {
+        id: 'snippetService.applyFiltersSubHeadline',
+        defaultMessage: 'Set filters for the condition',
+    },
     applyFiltersDescription: {
         id: 'snippetService.applyFiltersDescription',
-        defaultMessage: 'Short description ...',
+        defaultMessage:
+            'Filters are applied to the ResourceChanged event. You must set at least one of the following filters: DeviceID filter, Resource-Type filter, or href filter. The filters work together, meaning all specified conditions must be met. Within the DeviceID and href filters, any of the listed values can trigger the filter. For the Resource-Type filter, all listed values must be present. Additionally, a JQ expression can be optionally used to filter the content of the ResourceChanged event, and it should evaluate to true.',
     },
     selectConfiguration: {
         id: 'snippetService.selectConfiguration',
         defaultMessage: 'Select Configuration',
     },
+    selectConfigurationShortDescription: {
+        id: 'snippetService.selectConfigurationShortDescription',
+        defaultMessage: 'Configuration setup',
+    },
+    selectConfigurationSubHeadline: {
+        id: 'snippetService.selectConfigurationSubHeadline',
+        defaultMessage: 'Select a configuration to apply and set an API access token',
+    },
     selectConfigurationDescription: {
         id: 'snippetService.selectConfigurationDescription',
-        defaultMessage: 'Short description ...',
+        defaultMessage:
+            'The selected configuration will be applied to the device only when all filters are met, and the configuration has not been previously applied. Ensure that the API access token is valid at the time of application. By clicking the "Generate New Token" button, you will receive a machine-to-machine token signed by plgd, which is valid exclusively for plgd services.',
     },
     addConditionsSuccess: {
         id: 'snippetService.addConditionsSuccess',
@@ -360,14 +386,6 @@ export const messages = defineMessages({
     addCondition: {
         id: 'snippetService.addCondition',
         defaultMessage: 'Add Condition',
-    },
-    createCondition: {
-        id: 'snippetService.createCondition',
-        defaultMessage: 'Create condition',
-    },
-    createConditionDescription: {
-        id: 'snippetService.createConditionDescription',
-        defaultMessage: 'Short description ...',
     },
     selectVersion: {
         id: 'snippetService.selectVersion',
