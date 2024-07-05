@@ -89,9 +89,9 @@ const Step3: FC<Props> = (props) => {
     return (
         <form>
             <FullPageWizard.Headline>{_(confT.selectConfiguration)}</FullPageWizard.Headline>
-            <FullPageWizard.Description large>{_(confT.selectConfigurationDescription)}</FullPageWizard.Description>
+            <FullPageWizard.Description large>{_(confT.selectConfigurationShortDescription)}</FullPageWizard.Description>
 
-            <FullPageWizard.SubHeadline>Headline H4</FullPageWizard.SubHeadline>
+            <FullPageWizard.SubHeadline>{_(confT.selectConfigurationSubHeadline)}</FullPageWizard.SubHeadline>
             <FullPageWizard.Description>Popis čo tu uživateľ musí nastaviať a prípadne prečo</FullPageWizard.Description>
 
             <FormGroup error={errors.configurationId ? _(g.requiredField, { field: _(confT.configuration) }) : undefined} id='configurationId'>

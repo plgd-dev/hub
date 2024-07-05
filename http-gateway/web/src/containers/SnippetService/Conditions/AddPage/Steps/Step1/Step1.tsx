@@ -37,10 +37,10 @@ const Step1: FC<Props> = (props) => {
     return (
         <form>
             <FullPageWizard.Headline>{_(confT.createCondition)}</FullPageWizard.Headline>
-            <FullPageWizard.Description large>{_(confT.createConditionDescription)}</FullPageWizard.Description>
+            <FullPageWizard.Description large>{_(confT.createConditionShortDescription)}</FullPageWizard.Description>
 
-            <FullPageWizard.SubHeadline>Headline H4</FullPageWizard.SubHeadline>
-            <FullPageWizard.Description>Popis čo tu uživateľ musí nastaviať a prípadne prečo</FullPageWizard.Description>
+            <FullPageWizard.SubHeadline>{_(confT.createConditionSubHeadline)}</FullPageWizard.SubHeadline>
+            <FullPageWizard.Description>{_(confT.createConditionDescription)}</FullPageWizard.Description>
 
             <FullPageWizard.GroupHeadline>{_(g.general)}</FullPageWizard.GroupHeadline>
 
