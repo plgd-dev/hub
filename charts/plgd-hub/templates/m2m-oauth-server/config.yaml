@@ -48,8 +48,6 @@ data:
         {{- if $createClient}}
         - id: {{ .id }}
           secretFile: {{ include "plgd-hub.resolveTemplateString" (list $ .secretFile) }}
-          requireDeviceID: {{ .requireDeviceID }}
-          requireOwner: {{ .requireOwner  }}
           accessTokenLifetime: {{ .accessTokenLifetime }}
           allowedGrantTypes:
             {{- range .allowedGrantTypes }}
@@ -63,6 +61,9 @@ data:
             {{- range .allowedScopes }}
             - {{ . | quote }}
             {{- end }}
+          {{- if .insertTokenClaims }}
+          insertTokenClaims: {{ .insertTokenClaims | toYaml | nindent 12 }}
+          {{- end }}          
           {{- if .jwtPrivateKey }}
           {{- if .jwtPrivateKey.enabled }}
           jwtPrivateKey:
