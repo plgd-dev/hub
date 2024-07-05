@@ -39,7 +39,6 @@ const AddPage: FC<any> = () => {
 
     const [loadingState, setLoadingState] = useState(false)
     const [resourcesError, setResourcesError] = useState(false)
-    // const [formDataDefault, setFormData, rehydrated] = usePersistentState<any>('snippet-service-create-configuration', DEFAULT_CONFIGURATIONS_DATA)
     const { collapsed } = useContext(AppContext)
     const isMounted = useIsMounted()
 

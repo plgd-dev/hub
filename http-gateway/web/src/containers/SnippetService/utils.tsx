@@ -1,11 +1,9 @@
-import React from 'react'
 import cloneDeep from 'lodash/cloneDeep'
 import isEmpty from 'lodash/isEmpty'
 
 import { states } from '@shared-ui/components/Atomic/StatusPill/constants'
 import { ResourceType } from '@shared-ui/components/Organisms/ResourceToggleCreator/ResourceToggleCreator.types'
-import StatusTag from '@shared-ui/components/Atomic/StatusTag'
-import { tagVariants as statusTagVariants } from '@shared-ui/components/Atomic/StatusTag/constants'
+import { getResourceStatus } from '@shared-ui/components/Organisms/ResourceToggleCreator'
 
 import { messages as confT } from '@/containers/SnippetService/SnippetService.i18n'
 import { messages as g } from '@/containers/Global.i18n'
@@ -42,35 +40,6 @@ export const getAppliedDeviceConfigStatus = (appliedDeviceConfig: AppliedConfigu
     }
 
     return APPLIED_CONFIGURATIONS_STATUS.OK
-}
-
-export const getResourceStatus = (resource: ResourceType) => {
-    if (resource.status && ['PENDING', 'TIMEOUT'].includes(resource.status)) {
-        return resource.status
-    }
-
-    return resource.resourceUpdated?.status
-}
-
-export const getResourceStatusTag = (resource: ResourceType) => {
-    switch (resource.status) {
-        case 'PENDING':
-            return <StatusTag variant={statusTagVariants.WARNING}>{resource.status}</StatusTag>
-        case 'TIMEOUT':
-            return <StatusTag variant={statusTagVariants.ERROR}>{resource.status}</StatusTag>
-        case 'DONE':
-        default:
-            switch (resource.resourceUpdated?.status) {
-                case 'OK':
-                    return <StatusTag variant={statusTagVariants.SUCCESS}>{resource.resourceUpdated?.status}</StatusTag>
-                case 'CANCELED':
-                    return <StatusTag variant={statusTagVariants.WARNING}>{resource.resourceUpdated?.status}</StatusTag>
-                case 'ERROR':
-                default: {
-                    return <StatusTag variant={statusTagVariants.ERROR}>{resource.resourceUpdated?.status}</StatusTag>
-                }
-            }
-    }
 }
 
 export const getResourceI18n = (_: any) => ({

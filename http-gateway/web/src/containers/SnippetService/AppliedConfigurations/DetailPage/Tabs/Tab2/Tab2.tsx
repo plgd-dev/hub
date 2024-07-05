@@ -3,10 +3,10 @@ import { useIntl } from 'react-intl'
 
 import { ResourceType } from '@shared-ui/components/Organisms/ResourceToggleCreator/ResourceToggleCreator.types'
 import Spacer from '@shared-ui/components/Atomic/Spacer'
-import ResourceToggleCreator from '@shared-ui/components/Organisms/ResourceToggleCreator'
+import ResourceToggleCreator, { getResourceStatus, getResourceStatusTag } from '@shared-ui/components/Organisms/ResourceToggleCreator'
 
 import { Props } from './Tab2.types'
-import { getResourceI18n, getResourceStatus, getResourceStatusTag } from '@/containers/SnippetService/utils'
+import { getResourceI18n } from '@/containers/SnippetService/utils'
 
 const Tab2: FC<Props> = (props) => {
     const { data, cancelCommand } = props
