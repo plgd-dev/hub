@@ -49,8 +49,30 @@ func TestRequestHandlerCreateConfiguration(t *testing.T) {
 	token := oauthTest.GetDefaultAccessToken(t)
 	confID1 := uuid.NewString()
 
+	conf1 := &snippetPb.Configuration{
+		Id:   confID1,
+		Name: "1st",
+		Resources: []*snippetPb.Configuration_Resource{
+			makeTestResource(t, "/test/1", 41),
+		},
+	}
+	conf2 := &snippetPb.Configuration{
+		Id:    uuid.NewString(),
+		Owner: oauthService.DeviceUserID,
+		Name:  "2nd",
+		Resources: []*snippetPb.Configuration_Resource{
+			makeTestResource(t, "/test/2", 42),
+		},
+	}
+	conf3 := &snippetPb.Configuration{
+		Name: "3rd",
+		Resources: []*snippetPb.Configuration_Resource{
+			makeTestResource(t, "/test/3", 43),
+		},
+	}
+
 	type args struct {
-		conf  *snippetPb.Configuration
+		conf  interface{}
 		token string
 	}
 	tests := []struct {
@@ -58,48 +80,34 @@ func TestRequestHandlerCreateConfiguration(t *testing.T) {
 		args         args
 		wantHTTPCode int
 		wantErr      bool
+		want         *snippetPb.Configuration
 	}{
 		{
 			name: "create",
 			args: args{
-				conf: &snippetPb.Configuration{
-					Id:   confID1,
-					Name: "1st",
-					Resources: []*snippetPb.Configuration_Resource{
-						makeTestResource(t, "/test/1", 41),
-					},
-				},
+				conf:  conf1,
 				token: token,
 			},
 			wantHTTPCode: http.StatusOK,
+			want:         conf1,
 		},
 		{
 			name: "create - with owner",
 			args: args{
-				conf: &snippetPb.Configuration{
-					Id:    uuid.NewString(),
-					Owner: oauthService.DeviceUserID,
-					Name:  "2nd",
-					Resources: []*snippetPb.Configuration_Resource{
-						makeTestResource(t, "/test/2", 42),
-					},
-				},
+				conf:  conf2,
 				token: token,
 			},
 			wantHTTPCode: http.StatusOK,
+			want:         conf2,
 		},
 		{
 			name: "create - generate ID",
 			args: args{
-				conf: &snippetPb.Configuration{
-					Name: "3rd",
-					Resources: []*snippetPb.Configuration_Resource{
-						makeTestResource(t, "/test/3", 43),
-					},
-				},
+				conf:  conf3,
 				token: token,
 			},
 			wantHTTPCode: http.StatusOK,
+			want:         conf3,
 		},
 		{
 			name: "non-matching owner",
@@ -151,7 +159,7 @@ func TestRequestHandlerCreateConfiguration(t *testing.T) {
 					Id:   uuid.NewString(),
 					Name: "7th",
 					Resources: []*snippetPb.Configuration_Resource{
-						makeTestResource(t, "/test/6", 46),
+						makeTestResource(t, "/test/7", 47),
 					},
 				},
 				token: oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTest, map[string]interface{}{
@@ -187,12 +195,11 @@ func TestRequestHandlerCreateConfiguration(t *testing.T) {
 			}
 			require.NoError(t, err)
 
-			want := tt.args.conf
-			want.Owner = oauthService.DeviceUserID
-			if tt.args.conf.GetId() == "" {
-				want.Id = got.GetId()
+			tt.want.Owner = oauthService.DeviceUserID
+			if tt.want.GetId() == "" {
+				tt.want.Id = got.GetId()
 			}
-			snippetTest.CmpConfiguration(t, want, &got, true)
+			snippetTest.CmpConfiguration(t, tt.want, &got, true)
 		})
 	}
 }

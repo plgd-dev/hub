@@ -120,10 +120,17 @@ func TestCertificateAuthorityServerSignCSRWithDifferentPublicKeys(t *testing.T) 
 		HTTP:      config.MakeHttpClientConfig(),
 	})
 
-	tearDown := service.SetUp(ctx, t, service.WithCAConfig(cfg))
+	m2mCfg := m2mOauthTest.MakeConfig(t)
+	serviceOAuthClient := m2mOauthTest.ServiceOAuthClient
+	serviceOAuthClient.InsertTokenClaims = map[string]interface{}{
+		config.OWNER_CLAIM: oauthService.DeviceUserID,
+	}
+	m2mCfg.OAuthSigner.Clients[0] = &serviceOAuthClient
+
+	tearDown := service.SetUp(ctx, t, service.WithCAConfig(cfg), service.WithM2MOAuthConfig(m2mCfg))
 	defer tearDown()
 
-	ctx = kitNetGrpc.CtxWithToken(ctx, m2mOauthTest.GetDefaultAccessToken(t, m2mOauthTest.WithAccessTokenOwner(oauthService.DeviceUserID)))
+	ctx = kitNetGrpc.CtxWithToken(ctx, m2mOauthTest.GetDefaultAccessToken(t))
 
 	conn, err := grpc.NewClient(config.CERTIFICATE_AUTHORITY_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),

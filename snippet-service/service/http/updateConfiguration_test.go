@@ -30,13 +30,11 @@ func TestRequestHandlerUpdateConfiguration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	shutDown := service.SetUpServices(context.Background(), t, service.SetUpServicesOAuth)
+	shutDown := service.SetUpServices(ctx, t, service.SetUpServicesOAuth)
 	defer shutDown()
 
 	_, shutdownHttp := snippetTest.SetUp(t)
 	defer shutdownHttp()
-
-	token := oauthTest.GetDefaultAccessToken(t)
 
 	conn, err := grpc.NewClient(config.SNIPPET_SERVICE_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
@@ -54,6 +52,7 @@ func TestRequestHandlerUpdateConfiguration(t *testing.T) {
 			makeTestResource(t, "/test/1", 1),
 		},
 	}
+	token := oauthTest.GetDefaultAccessToken(t)
 	_, err = c.CreateConfiguration(pkgGrpc.CtxWithToken(ctx, token), conf)
 	require.NoError(t, err)
 
@@ -69,62 +68,13 @@ func TestRequestHandlerUpdateConfiguration(t *testing.T) {
 		wantErr      bool
 	}{
 		{
-			name: "update",
-			args: args{
-				id: conf.GetId(),
-				conf: &snippetPb.Configuration{
-					Version: 1,
-					Name:    "updated1",
-					Resources: []*snippetPb.Configuration_Resource{
-						makeTestResource(t, "/test/1", 42),
-						makeTestResource(t, "/test/2", 52),
-					},
-				},
-				token: token,
-			},
-			wantHTTPCode: http.StatusOK,
-		},
-		{
-			name: "update (with owner)",
-			args: args{
-				id: conf.GetId(),
-				conf: &snippetPb.Configuration{
-					Version: 2,
-					Owner:   oauthService.DeviceUserID,
-					Name:    "updated2",
-					Resources: []*snippetPb.Configuration_Resource{
-						makeTestResource(t, "/test/3", 62),
-					},
-				},
-				token: token,
-			},
-			wantHTTPCode: http.StatusOK,
-		},
-		{
-			name: "update (with overwritten ID)",
-			args: args{
-				id: conf.GetId(),
-				conf: &snippetPb.Configuration{
-					Id:      uuid.NewString(), // this ID will get overwritten by the ID in the query
-					Version: 3,
-					Name:    "updated3",
-					Resources: []*snippetPb.Configuration_Resource{
-						makeTestResource(t, "/test/4", 72),
-						makeTestResource(t, "/test/5", 82),
-					},
-				},
-				token: token,
-			},
-			wantHTTPCode: http.StatusOK,
-		},
-		{
 			name: "invalid ID",
 			args: args{
 				id: "invalid",
 				conf: &snippetPb.Configuration{
 					Version: 42,
 					Resources: []*snippetPb.Configuration_Resource{
-						makeTestResource(t, "/test/6", 92),
+						makeTestResource(t, "/test/1", 42),
 					},
 				},
 				token: token,
@@ -152,13 +102,62 @@ func TestRequestHandlerUpdateConfiguration(t *testing.T) {
 					Version: 42,
 					Owner:   "non-matching owner",
 					Resources: []*snippetPb.Configuration_Resource{
-						makeTestResource(t, "/test/7", 112),
+						makeTestResource(t, "/test/2", 52),
 					},
 				},
 				token: token,
 			},
 			wantHTTPCode: http.StatusForbidden,
 			wantErr:      true,
+		},
+		{
+			name: "update",
+			args: args{
+				id: conf.GetId(),
+				conf: &snippetPb.Configuration{
+					Version: 1,
+					Name:    "updated1",
+					Resources: []*snippetPb.Configuration_Resource{
+						makeTestResource(t, "/test/3", 62),
+						makeTestResource(t, "/test/4", 72),
+					},
+				},
+				token: token,
+			},
+			wantHTTPCode: http.StatusOK,
+		},
+		{
+			name: "update (with owner)",
+			args: args{
+				id: conf.GetId(),
+				conf: &snippetPb.Configuration{
+					Version: 2,
+					Owner:   oauthService.DeviceUserID,
+					Name:    "updated2",
+					Resources: []*snippetPb.Configuration_Resource{
+						makeTestResource(t, "/test/5", 82),
+					},
+				},
+				token: token,
+			},
+			wantHTTPCode: http.StatusOK,
+		},
+		{
+			name: "update (with overwritten ID)",
+			args: args{
+				id: conf.GetId(),
+				conf: &snippetPb.Configuration{
+					Id:      uuid.NewString(), // this ID will get overwritten by the ID in the query
+					Version: 3,
+					Name:    "updated3",
+					Resources: []*snippetPb.Configuration_Resource{
+						makeTestResource(t, "/test/6", 92),
+						makeTestResource(t, "/test/7", 102),
+					},
+				},
+				token: token,
+			},
+			wantHTTPCode: http.StatusOK,
 		},
 	}
 

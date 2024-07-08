@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	goJwt "github.com/golang-jwt/jwt/v5"
 	"github.com/lestrrat-go/jwx/v2/jwk"
 	"github.com/lestrrat-go/jwx/v2/jws"
 	"github.com/lestrrat-go/jwx/v2/jwt"
@@ -19,6 +20,10 @@ import (
 
 func setKeyError(key string, err error) error {
 	return fmt.Errorf("failed to set %v: %w", key, err)
+}
+
+func setKeyErrorExt(key, info interface{}, err error) error {
+	return fmt.Errorf("failed to set %v('%v'): %w", key, info, err)
 }
 
 func makeAccessToken(clientCfg *Client, tokenReq tokenRequest, issuedAt, expires time.Time) (jwt.Token, error) {
@@ -54,30 +59,49 @@ func makeAccessToken(clientCfg *Client, tokenReq tokenRequest, issuedAt, expires
 	if err := setOwnerClaim(token, tokenReq); err != nil {
 		return nil, err
 	}
+	if err := setOriginTokenClaims(token, tokenReq); err != nil {
+		return nil, err
+	}
+
+	for k, v := range clientCfg.InsertTokenClaims {
+		if _, ok := token.Get(k); ok {
+			continue
+		}
+		if err := token.Set(k, v); err != nil {
+			return nil, setKeyErrorExt(k, v, err)
+		}
+	}
 
 	return token, nil
 }
 
 func getSubject(clientCfg *Client, tokenReq tokenRequest) string {
-	if tokenReq.Subject != "" {
-		return tokenReq.Subject
+	if tokenReq.subject != "" {
+		return tokenReq.subject
 	}
-	if tokenReq.Owner != "" {
-		return tokenReq.Owner
+	if tokenReq.owner != "" {
+		return tokenReq.owner
 	}
 	return clientCfg.ID
 }
 
 func setDeviceIDClaim(token jwt.Token, tokenReq tokenRequest) error {
-	if tokenReq.DeviceID != "" && tokenReq.deviceIDClaim != "" {
-		return token.Set(tokenReq.deviceIDClaim, tokenReq.DeviceID)
+	if tokenReq.deviceID != "" && tokenReq.deviceIDClaim != "" {
+		return token.Set(tokenReq.deviceIDClaim, tokenReq.deviceID)
 	}
 	return nil
 }
 
 func setOwnerClaim(token jwt.Token, tokenReq tokenRequest) error {
-	if tokenReq.Owner != "" && tokenReq.ownerClaim != "" {
-		return token.Set(tokenReq.ownerClaim, tokenReq.Owner)
+	if tokenReq.owner != "" && tokenReq.ownerClaim != "" {
+		return token.Set(tokenReq.ownerClaim, tokenReq.owner)
+	}
+	return nil
+}
+
+func setOriginTokenClaims(token jwt.Token, tokenReq tokenRequest) error {
+	if len(tokenReq.originalTokenClaims) > 0 {
+		return token.Set(uri.OriginalTokenClaims, tokenReq.originalTokenClaims)
 	}
 	return nil
 }
@@ -123,21 +147,21 @@ func generateAccessToken(clientCfg *Client, tokenReq tokenRequest, key interface
 
 type tokenRequest struct {
 	ClientID            string    `json:"client_id"`
-	GrantType           GrantType `json:"grant_type"`
-	Username            string    `json:"username"`
-	Password            string    `json:"password"`
+	Secret              string    `json:"client_secret"`
 	Audience            string    `json:"audience"`
-	DeviceID            string    `json:"https://plgd.dev/deviceId"`
-	Owner               string    `json:"https://plgd.dev/owner"`
-	Subject             string    `json:"sub"`
+	GrantType           GrantType `json:"grant_type"`
 	ClientAssertionType string    `json:"client_assertion_type"`
 	ClientAssertion     string    `json:"client_assertion"`
 
-	host          string
-	scopes        string
-	ownerClaim    string
-	deviceIDClaim string
-	tokenType     AccessTokenType
+	deviceID            string          `json:"-"`
+	owner               string          `json:"-"`
+	subject             string          `json:"-"`
+	host                string          `json:"-"`
+	scopes              string          `json:"-"`
+	ownerClaim          string          `json:"-"`
+	deviceIDClaim       string          `json:"-"`
+	tokenType           AccessTokenType `json:"-"`
+	originalTokenClaims goJwt.MapClaims `json:"-"`
 }
 
 func (requestHandler *RequestHandler) getDomain() string {
@@ -158,12 +182,8 @@ func (requestHandler *RequestHandler) postToken(w http.ResponseWriter, r *http.R
 		}
 		tokenReq.GrantType = GrantType(r.PostFormValue(uri.GrantTypeKey))
 		tokenReq.ClientID = r.PostFormValue(uri.ClientIDKey)
-		tokenReq.Username = r.PostFormValue(uri.UsernameKey)
-		tokenReq.Password = r.PostFormValue(uri.PasswordKey)
 		tokenReq.Audience = r.PostFormValue(uri.AudienceKey)
-		tokenReq.Owner = r.PostFormValue(uri.OwnerKey)
-		tokenReq.DeviceID = r.PostFormValue(uri.DeviceIDKey)
-		tokenReq.Subject = r.PostFormValue(uri.SubjectKey)
+		tokenReq.Secret = r.PostFormValue(uri.ClientSecretKey)
 		tokenReq.ClientAssertionType = r.PostFormValue(uri.ClientAssertionTypeKey)
 		tokenReq.ClientAssertion = r.PostFormValue(uri.ClientAssertionKey)
 	} else {
@@ -173,17 +193,18 @@ func (requestHandler *RequestHandler) postToken(w http.ResponseWriter, r *http.R
 			return
 		}
 	}
-	clientID, password, ok := r.BasicAuth()
+	clientID, secret, ok := r.BasicAuth()
 	if ok {
 		tokenReq.ClientID = clientID
-		tokenReq.Password = password
+		tokenReq.Secret = secret
 	}
 	requestHandler.processResponse(r.Context(), w, tokenReq)
 }
 
 func sliceContains[T comparable](s []T, sub []T) bool {
-	if len(s) == 0 {
-		return true
+	// sub must be non-empty
+	if len(s) > 0 && len(sub) == 0 {
+		return false
 	}
 	check := make(map[T]struct{}, len(sub))
 	for _, e := range sub {
@@ -211,12 +232,6 @@ func (requestHandler *RequestHandler) validateTokenRequest(ctx context.Context, 
 	if err := validateAudience(clientCfg, tokenReq); err != nil {
 		return err
 	}
-	if err := validateDeviceID(clientCfg, tokenReq); err != nil {
-		return err
-	}
-	if err := validateOwner(clientCfg, tokenReq); err != nil {
-		return err
-	}
 
 	return nil
 }
@@ -225,13 +240,14 @@ func validateClient(clientCfg *Client, tokenReq *tokenRequest) error {
 	if clientCfg == nil {
 		return fmt.Errorf("client(%v) not found", tokenReq.ClientID)
 	}
-	if clientCfg.secret != "" && !clientCfg.JWTPrivateKey.Enabled && clientCfg.secret != tokenReq.Password {
+	if clientCfg.secret != "" && !clientCfg.JWTPrivateKey.Enabled && clientCfg.secret != tokenReq.Secret {
 		return errors.New("invalid client secret")
 	}
 	return nil
 }
 
 func validateGrantType(clientCfg *Client, tokenReq *tokenRequest) error {
+	// clientCfg.AllowedGrantTypes is always non-empty
 	if !sliceContains(clientCfg.AllowedGrantTypes, []GrantType{tokenReq.GrantType}) {
 		return fmt.Errorf("invalid grant type(%v)", tokenReq.GrantType)
 	}
@@ -239,22 +255,12 @@ func validateGrantType(clientCfg *Client, tokenReq *tokenRequest) error {
 }
 
 func validateAudience(clientCfg *Client, tokenReq *tokenRequest) error {
-	if !sliceContains(clientCfg.AllowedAudiences, []string{tokenReq.Audience}) {
+	var audiences []string
+	if tokenReq.Audience != "" {
+		audiences = []string{tokenReq.Audience}
+	}
+	if !sliceContains(clientCfg.AllowedAudiences, audiences) {
 		return fmt.Errorf("invalid audience(%v)", tokenReq.Audience)
-	}
-	return nil
-}
-
-func validateDeviceID(clientCfg *Client, tokenReq *tokenRequest) error {
-	if clientCfg.RequireDeviceID && tokenReq.DeviceID == "" {
-		return errors.New("deviceID is required")
-	}
-	return nil
-}
-
-func validateOwner(clientCfg *Client, tokenReq *tokenRequest) error {
-	if clientCfg.RequireOwner && tokenReq.Owner == "" {
-		return errors.New("owner is required")
 	}
 	return nil
 }
@@ -278,20 +284,24 @@ func (requestHandler *RequestHandler) validateClientAssertion(ctx context.Contex
 	if err != nil {
 		return fmt.Errorf("invalid client assertion: %w", err)
 	}
+	tokenReq.originalTokenClaims = token
 	claims := pkgJwt.Claims(token)
 	owner, err := claims.GetOwner(requestHandler.config.OAuthSigner.OwnerClaim)
 	if err != nil {
 		return fmt.Errorf("invalid client assertion - claim owner: %w", err)
 	}
-	tokenReq.Owner = owner
+	tokenReq.owner = owner
 	sub, err := claims.GetSubject()
 	if err != nil {
 		return fmt.Errorf("invalid client assertion - claim sub: %w", err)
 	}
-	tokenReq.Subject = sub
+	tokenReq.subject = sub
+	if requestHandler.config.OAuthSigner.DeviceIDClaim == "" {
+		return nil
+	}
 	deviceID, err := claims.GetDeviceID(requestHandler.config.OAuthSigner.DeviceIDClaim)
 	if err == nil {
-		tokenReq.DeviceID = deviceID
+		tokenReq.deviceID = deviceID
 	}
 	return nil
 }

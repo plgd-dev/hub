@@ -50,7 +50,7 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          image: {{ include "plgd-hub.snippetservice.image" . | quote }}
+          image: {{ include "plgd-hub.image" (list . .Values.snippetservice) | quote }}
           imagePullPolicy: {{ .Values.snippetservice.image.pullPolicy }}
           {{- if .Values.snippetservice.command }}
           command:

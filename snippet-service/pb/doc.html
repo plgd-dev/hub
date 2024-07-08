@@ -179,15 +179,15 @@
             <ul>
               
                 <li>
-                  <a href="#snippetservice.pb.AppliedDeviceConfiguration"><span class="badge">M</span>AppliedDeviceConfiguration</a>
+                  <a href="#snippetservice.pb.AppliedConfiguration"><span class="badge">M</span>AppliedConfiguration</a>
                 </li>
               
                 <li>
-                  <a href="#snippetservice.pb.AppliedDeviceConfiguration.RelationTo"><span class="badge">M</span>AppliedDeviceConfiguration.RelationTo</a>
+                  <a href="#snippetservice.pb.AppliedConfiguration.LinkedTo"><span class="badge">M</span>AppliedConfiguration.LinkedTo</a>
                 </li>
               
                 <li>
-                  <a href="#snippetservice.pb.AppliedDeviceConfiguration.Resource"><span class="badge">M</span>AppliedDeviceConfiguration.Resource</a>
+                  <a href="#snippetservice.pb.AppliedConfiguration.Resource"><span class="badge">M</span>AppliedConfiguration.Resource</a>
                 </li>
               
                 <li>
@@ -203,11 +203,11 @@
                 </li>
               
                 <li>
-                  <a href="#snippetservice.pb.DeleteAppliedDeviceConfigurationsRequest"><span class="badge">M</span>DeleteAppliedDeviceConfigurationsRequest</a>
+                  <a href="#snippetservice.pb.DeleteAppliedConfigurationsRequest"><span class="badge">M</span>DeleteAppliedConfigurationsRequest</a>
                 </li>
               
                 <li>
-                  <a href="#snippetservice.pb.DeleteAppliedDeviceConfigurationsResponse"><span class="badge">M</span>DeleteAppliedDeviceConfigurationsResponse</a>
+                  <a href="#snippetservice.pb.DeleteAppliedConfigurationsResponse"><span class="badge">M</span>DeleteAppliedConfigurationsResponse</a>
                 </li>
               
                 <li>
@@ -227,7 +227,7 @@
                 </li>
               
                 <li>
-                  <a href="#snippetservice.pb.GetAppliedDeviceConfigurationsRequest"><span class="badge">M</span>GetAppliedDeviceConfigurationsRequest</a>
+                  <a href="#snippetservice.pb.GetAppliedConfigurationsRequest"><span class="badge">M</span>GetAppliedConfigurationsRequest</a>
                 </li>
               
                 <li>
@@ -246,9 +246,13 @@
                   <a href="#snippetservice.pb.InvokeConfigurationRequest"><span class="badge">M</span>InvokeConfigurationRequest</a>
                 </li>
               
+                <li>
+                  <a href="#snippetservice.pb.InvokeConfigurationResponse"><span class="badge">M</span>InvokeConfigurationResponse</a>
+                </li>
+              
               
                 <li>
-                  <a href="#snippetservice.pb.AppliedDeviceConfiguration.Resource.Status"><span class="badge">E</span>AppliedDeviceConfiguration.Resource.Status</a>
+                  <a href="#snippetservice.pb.AppliedConfiguration.Resource.Status"><span class="badge">E</span>AppliedConfiguration.Resource.Status</a>
                 </li>
               
               
@@ -272,8 +276,8 @@
       <p></p>
 
       
-        <h3 id="snippetservice.pb.AppliedDeviceConfiguration">AppliedDeviceConfiguration</h3>
-        <p>TODO naming</p>
+        <h3 id="snippetservice.pb.AppliedConfiguration">AppliedConfiguration</h3>
+        <p></p>
 
         
           <table class="field-table">
@@ -286,7 +290,7 @@
                   <td>id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>@gotags: bson:&#34;_id&#34; </p></td>
+                  <td><p> </p></td>
                 </tr>
               
                 <tr>
@@ -298,7 +302,7 @@
               
                 <tr>
                   <td>configuration_id</td>
-                  <td><a href="#snippetservice.pb.AppliedDeviceConfiguration.RelationTo">AppliedDeviceConfiguration.RelationTo</a></td>
+                  <td><a href="#snippetservice.pb.AppliedConfiguration.LinkedTo">AppliedConfiguration.LinkedTo</a></td>
                   <td></td>
                   <td><p>@gotags: bson:&#34;configurationId&#34; </p></td>
                 </tr>
@@ -312,16 +316,16 @@
               
                 <tr>
                   <td>condition_id</td>
-                  <td><a href="#snippetservice.pb.AppliedDeviceConfiguration.RelationTo">AppliedDeviceConfiguration.RelationTo</a></td>
+                  <td><a href="#snippetservice.pb.AppliedConfiguration.LinkedTo">AppliedConfiguration.LinkedTo</a></td>
                   <td></td>
-                  <td><p>@gotags: bson:&#34;conditionId&#34; //TODO Naming </p></td>
+                  <td><p>@gotags: bson:&#34;conditionId&#34; </p></td>
                 </tr>
               
                 <tr>
                   <td>resources</td>
-                  <td><a href="#snippetservice.pb.AppliedDeviceConfiguration.Resource">AppliedDeviceConfiguration.Resource</a></td>
+                  <td><a href="#snippetservice.pb.AppliedConfiguration.Resource">AppliedConfiguration.Resource</a></td>
                   <td>repeated</td>
-                  <td><p>TODO naming </p></td>
+                  <td><p> </p></td>
                 </tr>
               
                 <tr>
@@ -345,8 +349,8 @@
 
         
       
-        <h3 id="snippetservice.pb.AppliedDeviceConfiguration.RelationTo">AppliedDeviceConfiguration.RelationTo</h3>
-        <p>TODO naming</p>
+        <h3 id="snippetservice.pb.AppliedConfiguration.LinkedTo">AppliedConfiguration.LinkedTo</h3>
+        <p></p>
 
         
           <table class="field-table">
@@ -376,7 +380,7 @@
 
         
       
-        <h3 id="snippetservice.pb.AppliedDeviceConfiguration.Resource">AppliedDeviceConfiguration.Resource</h3>
+        <h3 id="snippetservice.pb.AppliedConfiguration.Resource">AppliedConfiguration.Resource</h3>
         <p></p>
 
         
@@ -404,7 +408,7 @@
               
                 <tr>
                   <td>status</td>
-                  <td><a href="#snippetservice.pb.AppliedDeviceConfiguration.Resource.Status">AppliedDeviceConfiguration.Resource.Status</a></td>
+                  <td><a href="#snippetservice.pb.AppliedConfiguration.Resource.Status">AppliedConfiguration.Resource.Status</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -414,6 +418,15 @@
                   <td><a href="#resourceaggregate.pb.ResourceUpdated">resourceaggregate.pb.ResourceUpdated</a></td>
                   <td></td>
                   <td><p>@gotags: bson:&#34;resourceUpdated,omitempty&#34; </p></td>
+                </tr>
+              
+                <tr>
+                  <td>valid_until</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p>Unix nanoseconds timestamp for resource in PENDING status, until which the pending update is valid
+
+@gotags: bson:&#34;validUntil,omitempty&#34; </p></td>
                 </tr>
               
             </tbody>
@@ -621,7 +634,7 @@
 
         
       
-        <h3 id="snippetservice.pb.DeleteAppliedDeviceConfigurationsRequest">DeleteAppliedDeviceConfigurationsRequest</h3>
+        <h3 id="snippetservice.pb.DeleteAppliedConfigurationsRequest">DeleteAppliedConfigurationsRequest</h3>
         <p></p>
 
         
@@ -645,7 +658,7 @@
 
         
       
-        <h3 id="snippetservice.pb.DeleteAppliedDeviceConfigurationsResponse">DeleteAppliedDeviceConfigurationsResponse</h3>
+        <h3 id="snippetservice.pb.DeleteAppliedConfigurationsResponse">DeleteAppliedConfigurationsResponse</h3>
         <p></p>
 
         
@@ -656,8 +669,8 @@
             <tbody>
               
                 <tr>
-                  <td>count</td>
-                  <td><a href="#int64">int64</a></td>
+                  <td>success</td>
+                  <td><a href="#bool">bool</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -732,8 +745,8 @@
             <tbody>
               
                 <tr>
-                  <td>count</td>
-                  <td><a href="#int64">int64</a></td>
+                  <td>success</td>
+                  <td><a href="#bool">bool</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -808,8 +821,8 @@
             <tbody>
               
                 <tr>
-                  <td>count</td>
-                  <td><a href="#int64">int64</a></td>
+                  <td>success</td>
+                  <td><a href="#bool">bool</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
@@ -821,8 +834,8 @@
 
         
       
-        <h3 id="snippetservice.pb.GetAppliedDeviceConfigurationsRequest">GetAppliedDeviceConfigurationsRequest</h3>
-        <p>TODO Naming</p>
+        <h3 id="snippetservice.pb.GetAppliedConfigurationsRequest">GetAppliedConfigurationsRequest</h3>
+        <p></p>
 
         
           <table class="field-table">
@@ -1018,7 +1031,7 @@
         
       
         <h3 id="snippetservice.pb.IDFilter">IDFilter</h3>
-        <p>TODO: /configurations/123?version=latest</p>
+        <p></p>
 
         
           <table class="field-table">
@@ -1107,9 +1120,33 @@
 
         
       
+        <h3 id="snippetservice.pb.InvokeConfigurationResponse">InvokeConfigurationResponse</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>applied_configuration_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
 
       
-        <h3 id="snippetservice.pb.AppliedDeviceConfiguration.Resource.Status">AppliedDeviceConfiguration.Resource.Status</h3>
+        <h3 id="snippetservice.pb.AppliedConfiguration.Resource.Status">AppliedConfiguration.Resource.Status</h3>
         <p></p>
         <table class="enum-table">
           <thead>
@@ -1118,26 +1155,32 @@
           <tbody>
             
               <tr>
-                <td>QUEUED</td>
+                <td>UNSPECIFIED</td>
                 <td>0</td>
                 <td><p></p></td>
               </tr>
             
               <tr>
-                <td>PENDING</td>
+                <td>QUEUED</td>
                 <td>1</td>
                 <td><p></p></td>
               </tr>
             
               <tr>
-                <td>DONE</td>
+                <td>PENDING</td>
                 <td>2</td>
+                <td><p></p></td>
+              </tr>
+            
+              <tr>
+                <td>DONE</td>
+                <td>3</td>
                 <td><p>If done look to resource_updated if update resource failed for resource aggregate.</p></td>
               </tr>
             
               <tr>
                 <td>TIMEOUT</td>
-                <td>3</td>
+                <td>4</td>
                 <td><p></p></td>
               </tr>
             
@@ -1215,21 +1258,21 @@
               <tr>
                 <td>InvokeConfiguration</td>
                 <td><a href="#snippetservice.pb.InvokeConfigurationRequest">InvokeConfigurationRequest</a></td>
-                <td><a href="#snippetservice.pb.AppliedDeviceConfiguration">AppliedDeviceConfiguration</a> stream</td>
+                <td><a href="#snippetservice.pb.InvokeConfigurationResponse">InvokeConfigurationResponse</a></td>
                 <td><p>streaming process of update configuration to invoker</p></td>
               </tr>
             
               <tr>
                 <td>GetAppliedConfigurations</td>
-                <td><a href="#snippetservice.pb.GetAppliedDeviceConfigurationsRequest">GetAppliedDeviceConfigurationsRequest</a></td>
-                <td><a href="#snippetservice.pb.AppliedDeviceConfiguration">AppliedDeviceConfiguration</a> stream</td>
+                <td><a href="#snippetservice.pb.GetAppliedConfigurationsRequest">GetAppliedConfigurationsRequest</a></td>
+                <td><a href="#snippetservice.pb.AppliedConfiguration">AppliedConfiguration</a> stream</td>
                 <td><p></p></td>
               </tr>
             
               <tr>
                 <td>DeleteAppliedConfigurations</td>
-                <td><a href="#snippetservice.pb.DeleteAppliedDeviceConfigurationsRequest">DeleteAppliedDeviceConfigurationsRequest</a></td>
-                <td><a href="#snippetservice.pb.DeleteAppliedDeviceConfigurationsResponse">DeleteAppliedDeviceConfigurationsResponse</a></td>
+                <td><a href="#snippetservice.pb.DeleteAppliedConfigurationsRequest">DeleteAppliedConfigurationsRequest</a></td>
+                <td><a href="#snippetservice.pb.DeleteAppliedConfigurationsResponse">DeleteAppliedConfigurationsResponse</a></td>
                 <td><p></p></td>
               </tr>
             

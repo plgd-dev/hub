@@ -10,4 +10,5 @@ const (
 	In     Operator = "$in"
 	Set    Operator = "$set"
 	Unset  Operator = "$unset"
+	Match  Operator = "$match"
 )

@@ -122,6 +122,28 @@ func TestStoreUpdateCondition(t *testing.T) {
 				require.Equal(t, "{}", updated.GetJqExpressionFilter())
 			},
 		},
+		{
+			name: "second update",
+			args: args{
+				update: &pb.Condition{
+					Id:              cond.GetId(),
+					ConfigurationId: cond.GetConfigurationId(),
+					Owner:           cond.GetOwner(),
+					Name:            "next updated name",
+					Enabled:         true,
+					ApiAccessToken:  "next updated token",
+				},
+			},
+			want: func(updated *pb.Condition) {
+				require.Equal(t, "next updated name", updated.GetName())
+				require.True(t, updated.GetEnabled())
+				require.Equal(t, "next updated token", updated.GetApiAccessToken())
+				require.Empty(t, updated.GetDeviceIdFilter())
+				require.Empty(t, updated.GetResourceTypeFilter())
+				require.Empty(t, updated.GetResourceHrefFilter())
+				require.Empty(t, updated.GetJqExpressionFilter())
+			},
+		},
 	}
 
 	for _, tt := range tests {

@@ -10,6 +10,7 @@ import (
 	"github.com/plgd-dev/hub/v2/snippet-service/service"
 	storeConfig "github.com/plgd-dev/hub/v2/snippet-service/store/config"
 	"github.com/plgd-dev/hub/v2/snippet-service/test"
+	"github.com/plgd-dev/hub/v2/snippet-service/updater"
 	"github.com/stretchr/testify/require"
 )
 
@@ -93,39 +94,17 @@ func TestHTTPConfig(t *testing.T) {
 func TestStorageConfig(t *testing.T) {
 	tests := []struct {
 		name    string
-		cfg     service.StorageConfig
+		cfg     storeConfig.Config
 		wantErr bool
 	}{
 		{
 			name:    "valid",
-			cfg:     test.MakeStorageConfig(),
+			cfg:     test.MakeStoreConfig(),
 			wantErr: false,
 		},
 		{
-			name: "valid - no cron",
-			cfg: func() service.StorageConfig {
-				cfg := test.MakeStorageConfig()
-				cfg.CleanUpRecords = ""
-				return cfg
-			}(),
-			wantErr: false,
-		},
-		{
-			name: "invalid - no storage",
-			cfg: func() service.StorageConfig {
-				cfg := test.MakeStorageConfig()
-				cfg.Embedded = storeConfig.Config{}
-				return cfg
-			}(),
-			wantErr: true,
-		},
-		{
-			name: "invalid - bad cron expression",
-			cfg: func() service.StorageConfig {
-				cfg := test.MakeStorageConfig()
-				cfg.CleanUpRecords = "bad"
-				return cfg
-			}(),
+			name:    "invalid",
+			cfg:     storeConfig.Config{},
 			wantErr: true,
 		},
 	}
@@ -148,15 +127,14 @@ func TestClientsConfig(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:    "valid",
-			cfg:     test.MakeClientsConfig(),
-			wantErr: false,
+			name: "valid",
+			cfg:  test.MakeClientsConfig(),
 		},
 		{
 			name: "invalid - no storage",
 			cfg: func() service.ClientsConfig {
 				cfg := test.MakeClientsConfig()
-				cfg.Storage = service.StorageConfig{}
+				cfg.Storage = storeConfig.Config{}
 				return cfg
 			}(),
 			wantErr: true,
@@ -181,6 +159,24 @@ func TestClientsConfig(t *testing.T) {
 				cfg.EventBus.NATS = natsClient.Config{
 					URL: "bad",
 				}
+				return cfg
+			}(),
+			wantErr: true,
+		},
+		{
+			name: "invalid SubscriptionID",
+			cfg: func() service.ClientsConfig {
+				cfg := test.MakeClientsConfig()
+				cfg.EventBus.SubscriptionID = ""
+				return cfg
+			}(),
+			wantErr: true,
+		},
+		{
+			name: "invalid ResourceUpdater",
+			cfg: func() service.ClientsConfig {
+				cfg := test.MakeClientsConfig()
+				cfg.ResourceUpdater = updater.ResourceUpdaterConfig{}
 				return cfg
 			}(),
 			wantErr: true,

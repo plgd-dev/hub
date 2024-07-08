@@ -44,21 +44,20 @@ func (c *PrivateKeyJWTConfig) Validate() error {
 }
 
 type Client struct {
-	ID                  string              `yaml:"id"`
-	SecretFile          urischeme.URIScheme `yaml:"secretFile"`
-	RequireDeviceID     bool                `yaml:"requireDeviceID"`
-	RequireOwner        bool                `yaml:"requireOwner"`
-	AccessTokenLifetime time.Duration       `yaml:"accessTokenLifetime"`
-	AllowedGrantTypes   []GrantType         `yaml:"allowedGrantTypes"`
-	AllowedAudiences    []string            `yaml:"allowedAudiences"`
-	AllowedScopes       []string            `yaml:"allowedScopes"`
-	JWTPrivateKey       PrivateKeyJWTConfig `yaml:"jwtPrivateKey"`
+	ID                  string                 `yaml:"id"`
+	SecretFile          urischeme.URIScheme    `yaml:"secretFile"`
+	AccessTokenLifetime time.Duration          `yaml:"accessTokenLifetime"`
+	AllowedGrantTypes   []GrantType            `yaml:"allowedGrantTypes"`
+	AllowedAudiences    []string               `yaml:"allowedAudiences"`
+	AllowedScopes       []string               `yaml:"allowedScopes"`
+	JWTPrivateKey       PrivateKeyJWTConfig    `yaml:"jwtPrivateKey"`
+	InsertTokenClaims   map[string]interface{} `yaml:"insertTokenClaims"`
 
 	// runtime
 	secret string `yaml:"-"`
 }
 
-func (c *Client) Validate(ownerClaim, deviceIDClaim string) error {
+func (c *Client) Validate() error {
 	if c.ID == "" {
 		return fmt.Errorf("id('%v')", c.ID)
 	}
@@ -73,7 +72,7 @@ func (c *Client) Validate(ownerClaim, deviceIDClaim string) error {
 		c.secret = string(data)
 	}
 	if len(c.AllowedGrantTypes) == 0 {
-		return fmt.Errorf("allowedGrantTypes('%v')", c.AllowedGrantTypes)
+		return fmt.Errorf("allowedGrantTypes('%v') - is empty", c.AllowedGrantTypes)
 	}
 	for _, gt := range c.AllowedGrantTypes {
 		switch gt {
@@ -81,12 +80,6 @@ func (c *Client) Validate(ownerClaim, deviceIDClaim string) error {
 		default:
 			return fmt.Errorf("allowedGrantTypes('%v') - only %v is supported", c.AllowedGrantTypes, GrantTypeClientCredentials)
 		}
-	}
-	if c.RequireDeviceID && deviceIDClaim == "" {
-		return fmt.Errorf("requireDeviceID('%v') - oauthSigner.deviceIDClaim('%v') is empty", c.RequireDeviceID, deviceIDClaim)
-	}
-	if c.RequireOwner && ownerClaim == "" {
-		return fmt.Errorf("requireOwner('%v') - oauthSigner.ownerClaim('%v') is empty", c.RequireOwner, ownerClaim)
 	}
 	if err := c.JWTPrivateKey.Validate(); err != nil {
 		return fmt.Errorf("privateKeyJWT.%w", err)
@@ -180,7 +173,7 @@ func (c *OAuthSignerConfig) Validate() error {
 		return fmt.Errorf("clients('%v')", c.Clients)
 	}
 	for idx, client := range c.Clients {
-		if err := client.Validate(c.OwnerClaim, c.DeviceIDClaim); err != nil {
+		if err := client.Validate(); err != nil {
 			return fmt.Errorf("clients[%v].%w", idx, err)
 		}
 	}

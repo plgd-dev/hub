@@ -35,44 +35,29 @@ const (
 var ServiceOAuthClient = service.Client{
 	ID:                  "serviceClient",
 	SecretFile:          "data:,serviceClientSecret",
-	RequireDeviceID:     false,
-	RequireOwner:        false,
 	AccessTokenLifetime: 0,
 	AllowedGrantTypes:   []service.GrantType{service.GrantTypeClientCredentials},
 	AllowedAudiences:    nil,
 	AllowedScopes:       nil,
+	InsertTokenClaims:   map[string]interface{}{"hardcodedClaim": true},
 }
 
 var JWTPrivateKeyOAuthClient = service.Client{
 	ID:                  "JWTPrivateKeyClient",
 	SecretFile:          "data:,JWTPrivateKeyClientSecret",
-	RequireDeviceID:     false,
-	RequireOwner:        true,
 	AccessTokenLifetime: 0,
 	AllowedGrantTypes:   []service.GrantType{service.GrantTypeClientCredentials},
 	AllowedAudiences:    nil,
 	AllowedScopes:       nil,
 	JWTPrivateKey: service.PrivateKeyJWTConfig{
 		Enabled:       true,
-		Authorization: config.MakeAuthorizationConfig(),
+		Authorization: config.MakeValidatorConfig(),
 	},
-}
-
-var DeviceProvisioningServiceOAuthClient = service.Client{
-	ID:                  "deviceProvisioningServiceClient",
-	SecretFile:          "data:,deviceProvisioningServiceClientSecret",
-	RequireDeviceID:     true,
-	RequireOwner:        true,
-	AccessTokenLifetime: 0,
-	AllowedGrantTypes:   []service.GrantType{service.GrantTypeClientCredentials},
-	AllowedAudiences:    nil,
-	AllowedScopes:       nil,
 }
 
 var OAuthClients = service.OAuthClientsConfig{
 	&ServiceOAuthClient,
 	&JWTPrivateKeyOAuthClient,
-	&DeviceProvisioningServiceOAuthClient,
 }
 
 func MakeConfig(t require.TestingT) service.Config {
@@ -142,8 +127,6 @@ type AccessTokenOptions struct {
 	Host         string
 	ClientID     string
 	ClientSecret string
-	Owner        string
-	DeviceID     string
 	GrantType    string
 	Audience     string
 	JWT          string
@@ -166,18 +149,6 @@ func WithAccessTokenClientID(clientID string) func(opts *AccessTokenOptions) {
 func WithAccessTokenClientSecret(clientSecret string) func(opts *AccessTokenOptions) {
 	return func(opts *AccessTokenOptions) {
 		opts.ClientSecret = clientSecret
-	}
-}
-
-func WithAccessTokenOwner(owner string) func(opts *AccessTokenOptions) {
-	return func(opts *AccessTokenOptions) {
-		opts.Owner = owner
-	}
-}
-
-func WithAccessTokenDeviceID(deviceID string) func(opts *AccessTokenOptions) {
-	return func(opts *AccessTokenOptions) {
-		opts.DeviceID = deviceID
 	}
 }
 
@@ -239,13 +210,6 @@ func GetAccessToken(t *testing.T, expectedCode int, opts ...func(opts *AccessTok
 	reqBody := map[string]interface{}{
 		uri.GrantTypeKey: options.GrantType,
 		uri.ClientIDKey:  options.ClientID,
-	}
-
-	if options.Owner != "" {
-		reqBody[uri.OwnerKey] = options.Owner
-	}
-	if options.DeviceID != "" {
-		reqBody[uri.DeviceIDKey] = options.DeviceID
 	}
 	if options.Audience != "" {
 		reqBody[uri.AudienceKey] = options.Audience

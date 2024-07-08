@@ -9,7 +9,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
-	"github.com/plgd-dev/hub/v2/snippet-service/store"
+	"github.com/plgd-dev/hub/v2/snippet-service/pb"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -26,10 +26,17 @@ const (
 	appliedConfigurationsCol = "appliedConfigurations"
 )
 
+var idUniqueIndex = mongo.IndexModel{
+	Keys: bson.D{
+		{Key: pb.IDKey, Value: 1},
+	},
+	Options: options.Index().SetUnique(true),
+}
+
 var deviceIDConfigurationIDUniqueIndex = mongo.IndexModel{
 	Keys: bson.D{
-		{Key: store.DeviceIDKey, Value: 1},
-		{Key: store.ConfigurationRelationIDKey, Value: 1},
+		{Key: pb.DeviceIDKey, Value: 1},
+		{Key: pb.ConfigurationLinkIDKey, Value: 1},
 	},
 	Options: options.Index().SetUnique(true),
 }
@@ -43,7 +50,7 @@ func New(ctx context.Context, cfg *Config, fileWatcher *fsnotify.Watcher, logger
 	m, err := pkgMongo.NewStoreWithCollections(ctx, &cfg.Mongo, certManager.GetTLSConfig(), tracerProvider, map[string][]mongo.IndexModel{
 		conditionsCol:            nil,
 		configurationsCol:        nil,
-		appliedConfigurationsCol: {deviceIDConfigurationIDUniqueIndex},
+		appliedConfigurationsCol: {idUniqueIndex, deviceIDConfigurationIDUniqueIndex},
 	})
 	if err != nil {
 		certManager.Close()

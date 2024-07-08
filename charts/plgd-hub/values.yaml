@@ -2294,7 +2294,7 @@ certificateauthority:
     expiresIn: "87600h"
 
 snippetservice:
-  # -- Enable certificate-authority service
+  # -- Enable snippet-service
   enabled: true
   # -- Name of component. Used in label selectors
   name: snippet-service
@@ -2302,23 +2302,23 @@ snippetservice:
   fullnameOverride:
   # -- Number of replicas
   replicas: 1
-  # -- Additional labels for certificate-authority deployment
+  # -- Additional labels for snippet-service deployment
   deploymentLabels: {}
-  # -- Additional annotations for certificate-authority deployment
+  # -- Additional annotations for snippet-service deployment
   deploymentAnnotations: {}
   # -- Pod security context
   podSecurityContext: {}
-  # -- Labels for certificate-authority pod
+  # -- Labels for snippet-service pod
   podLabels: {}
-  # -- Annotations for certificate-authority pod
+  # -- Annotations for snippet-service pod
   podAnnotations: {}
   service:
     grpc:
       # -- Service type
       type: ClusterIP
-      # -- Labels for certificate-authority service
+      # -- Labels for snippet-service
       labels: {}
-      # -- Annotations for certificate-authority service
+      # -- Annotations for snippet-service
       annotations: {}
       # -- Target port
       targetPort: grpc
@@ -2456,7 +2456,7 @@ snippetservice:
     encoderConfig:
         # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
         timeEncoder: rfc3339nano
-  # -- For complete certificate-authority service configuration see [plgd/certificate-authority](https://github.com/plgd-dev/hub/tree/main/certificate-authority)
+  # -- For complete snippet-service configuration see [plgd/snippet-service](https://github.com/plgd-dev/hub/tree/main/snippet-service)
   apis:
     grpc:
       address:
@@ -2502,6 +2502,7 @@ snippetservice:
       idleTimeout: 30s
   clients:
     eventBus:
+      subscriptionID: snippet-service
       nats:
         url: ""
         pendingLimits:
@@ -2524,39 +2525,8 @@ snippetservice:
           keyFile:
           certFile:
           useSystemCAPool: false
-        bulkWrite:
-          # -- A time limit for write bulk to mongodb. A Timeout of zero means no timeout.
-          timeout: 1m0s
-          # -- The amount of time to wait until a record is written to mongodb. Any records collected during the throttle time will also be written. A throttle time of zero writes immediately. If recordLimit is reached, all records are written immediately
-          throttleTime: 500ms
-          # -- The maximum number of documents to cache before an immediate write.
-          documentLimit: 1000
-      cqlDB:
-        table: snippetServiceRecords
-        hosts: []
-        port: 9142
-        numConnections: 16
-        connectTimeout: 10s
-        # -- Resolve IP address to hostname before validate certificate. If false, the TLS validator will use ip/hostname advertised by the Cassandra node.
-        useHostnameResolution: true
-        reconnectionPolicy:
-          constant:
-            interval: 3s 
-            # 0 - means infinity
-            maxRetries: 3 
-        keyspace:
-          name: plgdhub
-          create: true
-          replication:
-            class: SimpleStrategy
-            replication_factor: 1
-        tls:
-          caPool:
-          keyFile:
-          certFile:
-          useSystemCAPool: false
-    resourceAggregate:
-      pendingCommandsCheckInterval: 1m
+    resourceUpdater:
+      cleanUpExpiredUpdates: "0 * * * *"
       grpc:
         address: ""
         sendMsgSize: 4194304
@@ -2893,8 +2863,6 @@ m2moauthserver:
     deviceIDClaim:
     clients:
       - id: "jwt-private-key"
-        requireOwner: true
-        requireDeviceID: false
         accessTokenLifetime: 0s
         allowedGrantTypes:
           - client_credentials
@@ -2907,8 +2875,6 @@ m2moauthserver:
             endpoints:
       - id: "service"
         secretFile: "{{ include \"plgd-hub.m2moauthserver.getClientServiceSecretFile\" . }}"
-        requireOwner: false
-        requireDeviceID: false
         accessTokenLifetime: 0s
         allowedGrantTypes:
           - client_credentials

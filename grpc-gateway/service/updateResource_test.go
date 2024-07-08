@@ -543,8 +543,12 @@ func TestUpdateCreateOnNotExistingResource(t *testing.T) {
 		}
 		if ev.GetResourceUpdatePending() != nil {
 			require.Equal(t, deviceID, ev.GetResourceUpdatePending().GetResourceId().GetDeviceId())
-			require.Equal(t, test.TestResourceLightInstanceHref("1"), ev.GetResourceUpdatePending().GetResourceId().GetHref())
-			numPendingCommands++
+			switch ev.GetResourceUpdatePending().GetResourceId().GetHref() {
+			case test.TestResourceLightInstanceHref("1"):
+				numPendingCommands++
+			default:
+				require.FailNowf(t, "unexpected pending command", "%v", ev)
+			}
 		}
 		if ev.GetResourceDeletePending() != nil {
 			require.Equal(t, deviceID, ev.GetResourceDeletePending().GetResourceId().GetDeviceId())
@@ -595,6 +599,45 @@ func TestUpdateCreateOnNotExistingResource(t *testing.T) {
 			break
 		}
 	}
+
+	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
+		ResourceId: commands.NewResourceID(deviceID, "/not/existing/resource"),
+		Content: &pb.Content{
+			ContentType: message.AppOcfCbor.String(),
+			Data: test.EncodeToCbor(t, map[string]interface{}{
+				"power": powerTest,
+			}),
+		},
+		Force: true,
+		Async: true,
+	})
+	require.NoError(t, err)
+
+	pendingCommandsClient, err = c.GetPendingCommands(ctx, &pb.GetPendingCommandsRequest{
+		DeviceIdFilter:         []string{deviceID},
+		IncludeHiddenResources: true,
+	})
+	require.NoError(t, err)
+	numPendingCommands = 0
+	for {
+		ev, err2 := pendingCommandsClient.Recv()
+		if errors.Is(err2, io.EOF) {
+			break
+		}
+		require.NoError(t, err2)
+		if ev.GetResourceUpdatePending() != nil {
+			require.Equal(t, deviceID, ev.GetResourceUpdatePending().GetResourceId().GetDeviceId())
+			switch ev.GetResourceUpdatePending().GetResourceId().GetHref() {
+			case "/not/existing/resource":
+				numPendingCommands++
+			default:
+				require.FailNowf(t, "unexpected pending command", "%v", ev)
+			}
+		} else {
+			require.FailNowf(t, "unexpected pending command", "%v", ev)
+		}
+	}
+	require.Equal(t, 1, numPendingCommands)
 
 	_, err = c.UpdateResource(ctx, &pb.UpdateResourceRequest{
 		ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
