@@ -94,6 +94,7 @@ func (s *Service) SigTerm() {
 func (s *Service) Close() error {
 	s.SigTerm()
 	if !s.serving.Load() {
+		s.closeFn.Execute()
 		return nil
 	}
 	<-s.done

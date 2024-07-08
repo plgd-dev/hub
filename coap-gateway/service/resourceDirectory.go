@@ -173,6 +173,8 @@ func resourceDirectoryPublishHandler(req *mux.Message, client *session) (*pool.M
 	if errCode, errO := observeResources(req.Context(), client, w, req.Sequence()); errO != nil {
 		return nil, statusErrorf(errCode, "%w", errO)
 	}
+	// trigger device subscriber to get pending commands for the resources that have been published
+	client.triggerDeviceSubscriber()
 
 	accept := coapconv.GetAccept(req.Options())
 	encode, err := coapconv.GetEncoder(accept)

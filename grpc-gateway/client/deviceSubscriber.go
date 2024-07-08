@@ -266,6 +266,14 @@ func (s *DeviceSubscriber) triggerReconnect() {
 	}
 }
 
+func (s *DeviceSubscriber) TriggerGetPendingCommands() {
+	select {
+	case <-s.done:
+	case s.reconnectChan <- true:
+	default:
+	}
+}
+
 func (s *DeviceSubscriber) reconnect() {
 	for {
 		var wantToSetPendingCommandsHandler bool

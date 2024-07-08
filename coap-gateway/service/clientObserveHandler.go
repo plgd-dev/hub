@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 	"sync"
 	"sync/atomic"
 
@@ -17,7 +18,6 @@ import (
 	"github.com/plgd-dev/hub/v2/coap-gateway/service/message"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/subscription"
-	"github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 )
@@ -119,7 +119,7 @@ func (s *resourceSubscription) isDuplicateEvent(ev *events.ResourceChanged) bool
 func (s *resourceSubscription) eventHandler(e *pb.Event) error {
 	switch {
 	case e.GetResourceUnpublished() != nil:
-		if !strings.Contains(e.GetResourceUnpublished().GetHrefs(), s.href) {
+		if !slices.Contains(e.GetResourceUnpublished().GetHrefs(), s.href) {
 			return nil
 		}
 		s.cancelSubscription(coapCodes.ServiceUnavailable)

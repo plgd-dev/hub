@@ -1,0 +1,112 @@
+{{- if .Values.snippetservice.enabled }}
+{{- $cert := "/certs" }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "plgd-hub.snippetservice.configName" . }}
+  namespace: {{ .Release.Namespace }}
+data:
+  {{ .Values.snippetservice.config.fileName }}: |
+    {{- with .Values.snippetservice }}
+    hubID: {{ required "snippetservice.hubId or global.hubId is required" ( .hubId | default $.Values.global.hubId) | quote }}
+    log:
+      level: {{ .log.level }}
+      dumpBody: {{ .log.dumpBody }}
+      encoding: {{ .log.encoding }}
+      stacktrace:
+        enabled: {{ .log.stacktrace.enabled }}
+        level: {{ .log.stacktrace.level }}
+      encoderConfig:
+        timeEncoder: {{ .log.encoderConfig.timeEncoder }}
+    apis:
+      grpc:
+        address: {{  .apis.grpc.address | default (printf "0.0.0.0:%v" .port) | quote }}
+        sendMsgSize: {{ int64 .apis.grpc.sendMsgSize | default 4194304 }}
+        recvMsgSize: {{ int64 .apis.grpc.recvMsgSize | default 4194304 }}
+        enforcementPolicy:
+          minTime: {{ .apis.grpc.enforcementPolicy.minTime }}
+          permitWithoutStream: {{ .apis.grpc.enforcementPolicy.permitWithoutStream }}
+        keepAlive:
+          # 0s - means infinity
+          maxConnectionIdle: {{ .apis.grpc.keepAlive.maxConnectionIdle }}
+          # 0s - means infinity
+          maxConnectionAge: {{ .apis.grpc.keepAlive.maxConnectionIdle }}
+          # 0s - means infinity
+          maxConnectionAgeGrace: {{ .apis.grpc.keepAlive.maxConnectionAgeGrace }}
+          time: {{ .apis.grpc.keepAlive.maxConnectionIdle }}
+          timeout: {{ .apis.grpc.keepAlive.maxConnectionIdle }}
+        tls:
+          {{- $tls := .apis.grpc.tls }}
+          {{- include "plgd-hub.certificateConfig" (list $ $tls $cert ) | indent 8 }}
+          clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
+        authorization:
+          {{- $authorization := .apis.grpc.authorization }}
+          {{- include "plgd-hub.authorizationConfig" (list $ $authorization "snippetservice.apis.grpc.authorization" $cert ) | indent 8 }}
+      http:
+        address: {{  .apis.http.address | default (printf "0.0.0.0:%v" .httpPort) | quote }}
+        readTimeout: {{ .apis.http.readTimeout }}
+        readHeaderTimeout: {{ .apis.http.readHeaderTimeout }}
+        writeTimeout: {{ .apis.http.writeTimeout }}
+        idleTimeout: {{ .apis.http.idleTimeout }}
+    clients:
+      eventBus:
+        subscriptionID: {{ .clients.eventBus.subscriptionID | default "snippet-service" }}
+        nats:
+          url: {{ printf " " }}{{- include "plgd-hub.natsUri" (list $ .clients.eventBus.nats.url) | quote }}
+          pendingLimits:
+            msgLimit: {{ .clients.eventBus.nats.pendingLimits.msgLimit }}
+            bytesLimit: {{ printf "%v" .clients.eventBus.nats.pendingLimits.bytesLimit }}
+          tls:
+            {{- $natsTls := .clients.eventBus.nats.tls }}
+            {{- include "plgd-hub.certificateConfig" (list $ $natsTls $cert ) | indent 10 }}
+            useSystemCAPool: {{ .clients.eventBus.nats.tls.useSystemCAPool }}
+      storage:
+        use: {{ include "plgd-hub.useDatabase" (list $ . .clients.storage.use)  | quote }}
+        mongoDB:
+          uri: {{ include "plgd-hub.mongoDBUri" (list $ .clients.storage.mongoDB.uri )  | quote }}
+          database: {{ .clients.storage.mongoDB.database }}
+          maxPoolSize: {{ .clients.storage.mongoDB.maxPoolSize }}
+          maxConnIdleTime: {{ .clients.storage.mongoDB.maxConnIdleTime }}
+          tls:
+            {{- $mongoDbTls := .clients.storage.mongoDB.tls }}
+            {{- include "plgd-hub.certificateConfig" (list $ $mongoDbTls $cert ) | indent 10 }}
+            useSystemCAPool: {{ .clients.storage.mongoDB.tls.useSystemCAPool }}
+        cqlDB:
+          hosts:
+          {{- include "plgd-hub.cqlDBHosts" (list $ .clients.storage.cqlDB.hosts ) | indent 8 }}
+          port: {{ .clients.storage.cqlDB.port | default 9142 }}
+          table: {{ .clients.storage.cqlDB.table | quote }}
+          numConnections: {{ .clients.storage.cqlDB.numConnections }}
+          connectTimeout: {{ .clients.storage.cqlDB.connectTimeout }}
+          useHostnameResolution: {{ .clients.storage.cqlDB.useHostnameResolution }}
+          reconnectionPolicy:
+            constant:
+              interval: {{ .clients.storage.cqlDB.reconnectionPolicy.constant.interval }}
+              maxRetries: {{ .clients.storage.cqlDB.reconnectionPolicy.constant.maxRetries }}
+          keyspace:
+            name: {{ .clients.storage.cqlDB.keyspace.name }}
+            create: {{ .clients.storage.cqlDB.keyspace.create }}
+            replication:
+              {{- toYaml .clients.storage.cqlDB.keyspace.replication | nindent 14 }}
+          tls:
+            {{- $cqlDbTls := .clients.storage.cqlDB.tls }}
+            {{- include "plgd-hub.certificateConfig" (list $ $cqlDbTls $cert ) | indent 10 }}
+            useSystemCAPool: {{ .clients.storage.cqlDB.tls.useSystemCAPool }}
+      resourceUpdater:
+        cleanUpExpiredUpdates: {{ .clients.resourceUpdater.cleanUpExpiredUpdates | quote }}
+        grpc:
+          {{- $resourceUpdater := .clients.resourceUpdater.grpc.address }}
+          address:{{ printf " " }}{{- include "plgd-hub.resourceAggregateAddress" (list $ $resourceUpdater ) | quote }}
+          sendMsgSize: {{ int64 .clients.resourceUpdater.grpc.sendMsgSize | default 4194304 }}
+          recvMsgSize: {{ int64 .clients.resourceUpdater.grpc.recvMsgSize | default 4194304 }}
+          keepAlive:
+            time: {{ .clients.resourceUpdater.grpc.keepAlive.time }}
+            timeout: {{ .clients.resourceUpdater.grpc.keepAlive.timeout }}
+            permitWithoutStream: {{ .clients.resourceUpdater.grpc.keepAlive.permitWithoutStream }}
+          tls:
+            {{- $raClientTls := .clients.resourceUpdater.grpc.tls }}
+            {{- include "plgd-hub.certificateConfig" (list $ $raClientTls $cert) | indent 10 }}
+            useSystemCAPool: {{ .clients.resourceUpdater.grpc.tls.useSystemCAPool }}
+      {{- include "plgd-hub.openTelemetryExporterConfig" (list $ $cert ) | nindent 6 }}
+  {{- end }}
+{{- end }}

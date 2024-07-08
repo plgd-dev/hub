@@ -223,6 +223,8 @@
 | resource_id | [resourceaggregate.pb.ResourceId](#resourceaggregate-pb-ResourceId) |  |  |
 | content | [Content](#grpcgateway-pb-Content) |  |  |
 | time_to_live | [int64](#int64) |  | command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms). |
+| force | [bool](#bool) |  | if true, the command will be executed even if the resource does not exist |
+| async | [bool](#bool) |  | if true, the command will finish immediately after pending event is created |
 
 
 
@@ -285,6 +287,8 @@
 | resource_id | [resourceaggregate.pb.ResourceId](#resourceaggregate-pb-ResourceId) |  |  |
 | time_to_live | [int64](#int64) |  | command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms). |
 | resource_interface | [string](#string) |  |  |
+| force | [bool](#bool) |  | if true, the command will be executed even if the resource does not exist |
+| async | [bool](#bool) |  | if true, the command will finish immediately after pending event is created |
 
 
 
@@ -695,6 +699,8 @@ Certain filters perform a logical &#34;or&#34; operation among the elements of t
 | resource_interface | [string](#string) |  |  |
 | time_to_live | [int64](#int64) |  | command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms). |
 | content | [Content](#grpcgateway-pb-Content) |  |  |
+| force | [bool](#bool) |  | if true, the command will be executed even if the resource does not exist |
+| async | [bool](#bool) |  | if true, the command will finish immediately after pending event is created |
 
 
 
@@ -905,6 +911,7 @@ Certain filters perform a logical &#34;or&#34; operation among the elements of t
 | device_id_filter | [string](#string) | repeated |  |
 | type_filter | [string](#string) | repeated |  |
 | resource_id_filter | [ResourceIdFilter](#grpcgateway-pb-ResourceIdFilter) | repeated | New resource ID filter. For HTTP requests, use it multiple times as a query parameter like &#34;resourceIdFilter={deviceID}{href}&#34;. |
+| include_hidden_resources | [bool](#bool) |  | Get all pending commands for all resources, even if the resource is not published. |
 
 
 
@@ -1050,6 +1057,7 @@ UI configuration
 | ----- | ---- | ----- | ----------- |
 | visibility | [UIVisibility](#grpcgateway-pb-UIVisibility) |  |  |
 | device_provisioning_service | [string](#string) |  | Address to device provisioning service HTTP API in format https://host:port |
+| snippet_service | [string](#string) |  | Address to snippet service HTTP API in format https://host:port |
 
 
 

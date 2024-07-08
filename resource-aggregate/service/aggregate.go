@@ -21,16 +21,41 @@ type Aggregate struct {
 	eventstore eventstore.EventStore
 }
 
-func NewResourceStateFactoryModel(userID, owner, hubID string) func(context.Context, string, string) (cqrsAggregate.AggregateModel, error) {
+type resourceStateModel struct {
+	resourceState *events.ResourceStateSnapshotTakenForCommand
+	resourceLinks *events.ResourceLinksSnapshotTakenForCommand
+}
+
+func newResourceStateModel(userID, owner, hubID string) *resourceStateModel {
 	resourceLinks := events.NewResourceLinksSnapshotTakenForCommand(userID, owner, hubID)
 	resourceState := events.NewResourceStateSnapshotTakenForCommand(userID, owner, hubID, resourceLinks)
-	return func(_ context.Context, groupID string, aggregateID string) (cqrsAggregate.AggregateModel, error) {
-		resID := commands.NewResourceID(groupID, commands.ResourceLinksHref)
-		if aggregateID == resID.ToUUID().String() {
-			return resourceLinks, nil
-		}
-		return resourceState, nil
+	return &resourceStateModel{
+		resourceState: resourceState,
+		resourceLinks: resourceLinks,
 	}
+}
+
+func (r *resourceStateModel) isPublished(resourceID *commands.ResourceId) bool {
+	if r.resourceLinks == nil {
+		return false
+	}
+	if r.resourceLinks.GetResources() == nil {
+		return false
+	}
+	return r.resourceLinks.GetResources()[resourceID.GetHref()] != nil
+}
+
+func (r *resourceStateModel) model(_ context.Context, groupID string, aggregateID string) (cqrsAggregate.AggregateModel, error) {
+	resID := commands.NewResourceID(groupID, commands.ResourceLinksHref)
+	if aggregateID == resID.ToUUID().String() {
+		return r.resourceLinks, nil
+	}
+	return r.resourceState, nil
+}
+
+func NewResourceStateFactoryModel(userID, owner, hubID string) func(context.Context, string, string) (cqrsAggregate.AggregateModel, error) {
+	m := newResourceStateModel(userID, owner, hubID)
+	return m.model
 }
 
 func NewResourceLinksFactoryModel(userID, owner, hubID string) func(context.Context, string, string) (cqrsAggregate.AggregateModel, error) {
