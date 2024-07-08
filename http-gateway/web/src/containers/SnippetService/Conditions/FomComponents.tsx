@@ -148,7 +148,7 @@ export const Step2FormComponent: FC<Props> = (props) => {
                                 onKeyPress={(e) => {
                                     if (e.key === 'Enter' && e.target.value !== '') {
                                         e.preventDefault()
-                                        const newVal = [...resourceTypeFilter, e.target.value]
+                                        const newVal = [...resourceTypeFilter, e.target.value.trim()]
                                         setValue('resourceTypeFilter', newVal)
                                         updateField('resourceTypeFilter', newVal)
                                         setResourceTypeValue('')
@@ -161,7 +161,7 @@ export const Step2FormComponent: FC<Props> = (props) => {
                             disabled={resourceTypeValue === ''}
                             icon={<IconPlus />}
                             onClick={() => {
-                                const newVal = [...resourceTypeFilter, resourceTypeValue]
+                                const newVal = [...resourceTypeFilter, resourceTypeValue.trim()]
                                 setValue('resourceTypeFilter', newVal)
                                 updateField('resourceTypeFilter', newVal)
                                 setResourceTypeValue('')
@@ -204,7 +204,8 @@ export const Step2FormComponent: FC<Props> = (props) => {
                                 onKeyPress={(e) => {
                                     if (e.key === 'Enter' && e.target.value !== '') {
                                         e.preventDefault()
-                                        const newVal = [...resourceHrefFilter, e.target.value]
+                                        const v = e.target.value.trim()
+                                        const newVal = [...resourceHrefFilter, v.startsWith('/') ? v : `/${v}`]
                                         setValue('resourceHrefFilter', newVal)
                                         updateField('resourceHrefFilter', newVal)
                                         setResourceHrefValue('')
@@ -217,7 +218,8 @@ export const Step2FormComponent: FC<Props> = (props) => {
                             disabled={resourceHrefValue === ''}
                             icon={<IconPlus />}
                             onClick={() => {
-                                const newVal = [...resourceHrefFilter, resourceHrefValue]
+                                const v = resourceHrefValue.trim()
+                                const newVal = [...resourceHrefFilter, v.startsWith('/') ? v : `/${v}`]
                                 setValue('resourceHrefFilter', newVal)
                                 updateField('resourceHrefFilter', newVal)
                                 setResourceHrefValue('')
