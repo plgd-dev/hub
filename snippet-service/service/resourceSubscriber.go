@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/google/uuid"
 	isEvents "github.com/plgd-dev/hub/v2/identity-store/events"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
@@ -29,7 +28,7 @@ func WithAllDevicesAndResources() func(values map[string]string) {
 	}
 }
 
-func NewResourceSubscriber(ctx context.Context, config natsClient.Config, fileWatcher *fsnotify.Watcher, logger log.Logger, handler eventbus.Handler) (*ResourceSubscriber, error) {
+func NewResourceSubscriber(ctx context.Context, config natsClient.Config, subscriptionID string, fileWatcher *fsnotify.Watcher, logger log.Logger, handler eventbus.Handler) (*ResourceSubscriber, error) {
 	nats, err := natsClient.New(config, fileWatcher, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create nats client: %w", err)
@@ -44,7 +43,6 @@ func NewResourceSubscriber(ctx context.Context, config natsClient.Config, fileWa
 		return nil, fmt.Errorf("cannot create resource subscriber: %w", err)
 	}
 
-	subscriptionID := uuid.NewString()
 	const owner = "*"
 	subjectResourceChanged := isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent,
 		isEvents.WithOwner(owner),

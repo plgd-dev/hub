@@ -74,14 +74,19 @@ func (c *Configuration) GetLatest() (*pb.Configuration, error) {
 	}, nil
 }
 
-func (c *Configuration) GetConfiguration(index int) *pb.Configuration {
-	return &pb.Configuration{
-		Id:        c.Id,
-		Owner:     c.Owner,
-		Name:      c.Versions[index].Name,
-		Timestamp: c.Versions[index].Timestamp,
-		Version:   c.Versions[index].Version,
-		Resources: c.Versions[index].Resources,
+func (c *Configuration) RangeVersions(f func(int, *pb.Configuration) bool) {
+	for i := range c.Versions {
+		conf := &pb.Configuration{
+			Id:        c.Id,
+			Owner:     c.Owner,
+			Name:      c.Versions[i].Name,
+			Timestamp: c.Versions[i].Timestamp,
+			Version:   c.Versions[i].Version,
+			Resources: c.Versions[i].Resources,
+		}
+		if !f(i, conf) {
+			break
+		}
 	}
 }
 
@@ -99,4 +104,13 @@ func (c *Configuration) Clone() *Configuration {
 		c2.Versions = append(c2.Versions, v.Copy())
 	}
 	return c2
+}
+
+type InvokeConfigurationRequest = pb.InvokeConfigurationRequest
+
+func ValidateInvokeConfigurationRequest(req *InvokeConfigurationRequest) error {
+	if err := req.Validate(); err != nil {
+		return errInvalidArgument(err)
+	}
+	return nil
 }

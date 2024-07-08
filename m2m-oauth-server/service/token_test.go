@@ -16,11 +16,9 @@ import (
 )
 
 func TestGetToken(t *testing.T) {
-	const deviceID = "deviceId"
-	const owner = "owner"
 	type want struct {
-		deviceID interface{}
-		owner    interface{}
+		owner                    interface{}
+		existOriginalTokenClaims bool
 	}
 
 	oauthServerTeardown := test.SetUp(t)
@@ -40,7 +38,7 @@ func TestGetToken(t *testing.T) {
 		want     want
 	}{
 		{
-			name: "serviceToken",
+			name: "serviceToken - json",
 			args: m2mOauthServerTest.AccessTokenOptions{
 				Ctx:          context.Background(),
 				ClientID:     m2mOauthServerTest.ServiceOAuthClient.ID,
@@ -51,20 +49,16 @@ func TestGetToken(t *testing.T) {
 			wantCode: http.StatusOK,
 		},
 		{
-			name: "snippetServiceToken",
+			name: "serviceToken - postForm",
 			args: m2mOauthServerTest.AccessTokenOptions{
 				Ctx:          context.Background(),
-				ClientID:     m2mOauthServerTest.JWTPrivateKeyOAuthClient.ID,
-				ClientSecret: m2mOauthServerTest.GetSecret(t, m2mOauthServerTest.JWTPrivateKeyOAuthClient.ID),
+				ClientID:     m2mOauthServerTest.ServiceOAuthClient.ID,
+				ClientSecret: m2mOauthServerTest.GetSecret(t, m2mOauthServerTest.ServiceOAuthClient.ID),
 				GrantType:    string(service.GrantTypeClientCredentials),
 				Host:         config.M2M_OAUTH_SERVER_HTTP_HOST,
-				Owner:        owner,
 				PostForm:     true,
 			},
 			wantCode: http.StatusOK,
-			want: want{
-				owner: owner,
-			},
 		},
 		{
 			name: "snippetServiceToken - JWT",
@@ -77,7 +71,8 @@ func TestGetToken(t *testing.T) {
 			},
 			wantCode: http.StatusOK,
 			want: want{
-				owner: "1",
+				owner:                    "1",
+				existOriginalTokenClaims: true,
 			},
 		},
 		{
@@ -102,70 +97,6 @@ func TestGetToken(t *testing.T) {
 			},
 			wantCode: http.StatusUnauthorized,
 		},
-		{
-			name: "snippetServiceToken - invalid owner",
-			args: m2mOauthServerTest.AccessTokenOptions{
-				Ctx:          context.Background(),
-				ClientID:     m2mOauthServerTest.JWTPrivateKeyOAuthClient.ID,
-				ClientSecret: m2mOauthServerTest.GetSecret(t, m2mOauthServerTest.JWTPrivateKeyOAuthClient.ID),
-				GrantType:    string(service.GrantTypeClientCredentials),
-				Host:         config.M2M_OAUTH_SERVER_HTTP_HOST,
-			},
-			wantCode: http.StatusUnauthorized,
-		},
-		{
-			name: "deviceProvisioningServiceToken",
-			args: m2mOauthServerTest.AccessTokenOptions{
-				Ctx:          context.Background(),
-				ClientID:     m2mOauthServerTest.DeviceProvisioningServiceOAuthClient.ID,
-				ClientSecret: m2mOauthServerTest.GetSecret(t, m2mOauthServerTest.DeviceProvisioningServiceOAuthClient.ID),
-				GrantType:    string(service.GrantTypeClientCredentials),
-				Host:         config.M2M_OAUTH_SERVER_HTTP_HOST,
-				DeviceID:     deviceID,
-				Owner:        owner,
-			},
-			wantCode: http.StatusOK,
-			want: want{
-				owner:    owner,
-				deviceID: deviceID,
-			},
-		},
-		{
-			name: "deviceProvisioningServiceToken - invalid owner",
-			args: m2mOauthServerTest.AccessTokenOptions{
-				Ctx:          context.Background(),
-				ClientID:     m2mOauthServerTest.DeviceProvisioningServiceOAuthClient.ID,
-				ClientSecret: m2mOauthServerTest.GetSecret(t, m2mOauthServerTest.DeviceProvisioningServiceOAuthClient.ID),
-				GrantType:    string(service.GrantTypeClientCredentials),
-				Host:         config.M2M_OAUTH_SERVER_HTTP_HOST,
-				DeviceID:     deviceID,
-			},
-			wantCode: http.StatusUnauthorized,
-		},
-		{
-			name: "deviceProvisioningServiceToken - invalid deviceID",
-			args: m2mOauthServerTest.AccessTokenOptions{
-				Ctx:          context.Background(),
-				ClientID:     m2mOauthServerTest.DeviceProvisioningServiceOAuthClient.ID,
-				ClientSecret: m2mOauthServerTest.GetSecret(t, m2mOauthServerTest.DeviceProvisioningServiceOAuthClient.ID),
-				GrantType:    string(service.GrantTypeClientCredentials),
-				Host:         config.M2M_OAUTH_SERVER_HTTP_HOST,
-				Owner:        owner,
-			},
-			wantCode: http.StatusUnauthorized,
-		},
-		{
-			name: "deviceProvisioningServiceToken - invalid client",
-			args: m2mOauthServerTest.AccessTokenOptions{
-				Ctx:          context.Background(),
-				ClientID:     m2mOauthServerTest.DeviceProvisioningServiceOAuthClient.ID,
-				ClientSecret: m2mOauthServerTest.GetSecret(t, m2mOauthServerTest.DeviceProvisioningServiceOAuthClient.ID),
-				GrantType:    string(service.GrantTypeClientCredentials),
-				Host:         config.M2M_OAUTH_SERVER_HTTP_HOST,
-				Owner:        owner,
-			},
-			wantCode: http.StatusUnauthorized,
-		},
 	}
 
 	cfg := m2mOauthServerTest.MakeConfig(t)
@@ -183,8 +114,10 @@ func TestGetToken(t *testing.T) {
 			validator := m2mOauthServerTest.GetJWTValidator(fmt.Sprintf("https://%s%s", config.M2M_OAUTH_SERVER_HTTP_HOST, uri.JWKs))
 			claims, err := validator.Parse(token[uri.AccessTokenKey])
 			require.NoError(t, err)
-			require.Equal(t, tt.want.deviceID, claims[m2mOauthServerTest.DeviceIDClaim])
 			require.Equal(t, tt.want.owner, claims[m2mOauthServerTest.OwnerClaim])
+			if tt.want.existOriginalTokenClaims {
+				require.NotEmpty(t, claims[uri.OriginalTokenClaims])
+			}
 		})
 	}
 }

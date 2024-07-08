@@ -3,9 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
-	"time"
 
-	"github.com/go-co-op/gocron/v2"
 	"github.com/plgd-dev/hub/v2/pkg/config/database"
 	"github.com/plgd-dev/hub/v2/pkg/fn"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
@@ -20,6 +18,7 @@ import (
 	"github.com/plgd-dev/hub/v2/snippet-service/store"
 	storeConfig "github.com/plgd-dev/hub/v2/snippet-service/store/config"
 	"github.com/plgd-dev/hub/v2/snippet-service/store/mongodb"
+	"github.com/plgd-dev/hub/v2/snippet-service/updater"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -28,8 +27,8 @@ const serviceName = "snippet-service"
 type Service struct {
 	*service.Service
 
-	snippetService     *grpcService.SnippetServiceServer
-	resourceUpdater    *store.ResourceUpdater
+	store              store.Store
+	resourceUpdater    *updater.ResourceUpdater
 	resourceSubscriber *ResourceSubscriber
 }
 
@@ -42,48 +41,6 @@ func createStore(ctx context.Context, config storeConfig.Config, fileWatcher *fs
 		return s, nil
 	}
 	return nil, fmt.Errorf("invalid store use('%v')", config.Use)
-}
-
-func newStore(ctx context.Context, config StorageConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (store.Store, func(), error) {
-	var fl fn.FuncList
-	db, err := createStore(ctx, config.Embedded, fileWatcher, logger, tracerProvider)
-	if err != nil {
-		fl.Execute()
-		return nil, nil, err
-	}
-	fl.AddFunc(func() {
-		if errC := db.Close(ctx); errC != nil {
-			log.Errorf("failed to close mongodb store: %w", errC)
-		}
-	})
-	if config.CleanUpRecords == "" {
-		return db, fl.ToFunction(), nil
-	}
-	// TODO: do we need a cron job?
-	s, err := gocron.NewScheduler(gocron.WithLocation(time.Local)) //nolint:gosmopolitan
-	if err != nil {
-		fl.Execute()
-		return nil, nil, fmt.Errorf("cannot create cron job: %w", err)
-	}
-	_, err = s.NewJob(gocron.CronJob(config.CleanUpRecords, config.ExtendCronParserBySeconds), gocron.NewTask(func() {
-		/*
-			_, errDel := db.DeleteNonDeviceExpiredRecords(ctx, time.Now())
-			if errDel != nil && !errors.Is(errDel, store.ErrNotSupported) {
-				log.Errorf("failed to delete expired signing records: %w", errDel)
-			}
-		*/
-	}))
-	if err != nil {
-		fl.Execute()
-		return nil, nil, fmt.Errorf("cannot create cron job: %w", err)
-	}
-	fl.AddFunc(func() {
-		if errS := s.Shutdown(); errS != nil {
-			log.Errorf("failed to shutdown cron job: %w", errS)
-		}
-	})
-	s.Start()
-	return db, fl.ToFunction(), nil
 }
 
 func newHttpService(ctx context.Context, config HTTPConfig, validatorConfig validator.Config, tlsConfig certManagerServer.Config, ss *grpcService.SnippetServiceServer, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*httpService.Service, func(), error) {
@@ -128,14 +85,18 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	closerFn.AddFunc(otelClient.Close)
 	tracerProvider := otelClient.GetTracerProvider()
 
-	dbStorage, closeStore, err := newStore(ctx, config.Clients.Storage, fileWatcher, logger, tracerProvider)
+	db, err := createStore(ctx, config.Clients.Storage, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		closerFn.Execute()
 		return nil, fmt.Errorf("cannot create store: %w", err)
 	}
-	closerFn.AddFunc(closeStore)
+	closerFn.AddFunc(func() {
+		if errC := db.Close(ctx); errC != nil {
+			log.Errorf("failed to close store: %w", errC)
+		}
+	})
 
-	resourceUpdater, err := store.NewResourceUpdater(ctx, config.Clients.ResourceAggregate.Connection, config.Clients.ResourceAggregate.PendingCommandsCheckInterval, dbStorage, fileWatcher, logger, tracerProvider)
+	resourceUpdater, err := updater.NewResourceUpdater(ctx, config.Clients.ResourceUpdater, db, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		closerFn.Execute()
 		return nil, fmt.Errorf("cannot create resource change handler: %w", err)
@@ -147,7 +108,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		}
 	})
 
-	resourceSubscriber, err := NewResourceSubscriber(ctx, config.Clients.EventBus.NATS, fileWatcher, logger, resourceUpdater)
+	resourceSubscriber, err := NewResourceSubscriber(ctx, config.Clients.EventBus.NATS, config.Clients.EventBus.SubscriptionID, fileWatcher, logger, resourceUpdater)
 	if err != nil {
 		closerFn.Execute()
 		return nil, fmt.Errorf("cannot create resource subscriber: %w", err)
@@ -159,13 +120,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		}
 	})
 
-	snippetService := grpcService.NewSnippetServiceServer(dbStorage, resourceUpdater, config.APIs.GRPC.Authorization.OwnerClaim, config.HubID, logger)
-	closerFn.AddFunc(func() {
-		errC := snippetService.Close(ctx)
-		if errC != nil {
-			log.Errorf("failed to close grpc %s server: %w", serviceName, errC)
-		}
-	})
+	snippetService := grpcService.NewSnippetServiceServer(db, resourceUpdater, config.APIs.GRPC.Authorization.OwnerClaim, config.HubID, logger)
 
 	grpcService, grpcServiceClose, err := newGrpcService(ctx, config.APIs.GRPC, snippetService, fileWatcher, logger, tracerProvider)
 	if err != nil {
@@ -188,12 +143,16 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	return &Service{
 		Service: s,
 
-		snippetService:     snippetService,
+		store:              db,
 		resourceUpdater:    resourceUpdater,
 		resourceSubscriber: resourceSubscriber,
 	}, nil
 }
 
-func (s *Service) SnippetServiceServer() *grpcService.SnippetServiceServer {
-	return s.snippetService
+func (s *Service) SnippetServiceStore() store.Store {
+	return s.store
+}
+
+func (s *Service) CancelPendingResourceUpdates(ctx context.Context) error {
+	return s.resourceUpdater.CancelPendingResourceUpdates(ctx)
 }

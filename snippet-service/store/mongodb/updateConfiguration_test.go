@@ -93,6 +93,7 @@ func TestStoreUpdateConfiguration(t *testing.T) {
 			args: args{
 				update: &pb.Configuration{
 					Id:    conf.GetId(),
+					Name:  "updated name",
 					Owner: conf.GetOwner(),
 					Resources: []*pb.Configuration_Resource{
 						makeLightResourceConfiguration(t, "2", 2, 42),
@@ -101,6 +102,7 @@ func TestStoreUpdateConfiguration(t *testing.T) {
 			},
 			want: func(t *testing.T, updatedConf *pb.Configuration) {
 				require.Equal(t, conf.GetId(), updatedConf.GetId())
+				require.Equal(t, "updated name", updatedConf.GetName())
 				require.Equal(t, conf.GetOwner(), updatedConf.GetOwner())
 				require.Equal(t, conf.GetVersion()+1, updatedConf.GetVersion())
 			},

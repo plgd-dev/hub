@@ -46,7 +46,7 @@ func TestRequestHandlerUpdateCondition(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	shutDown := service.SetUpServices(context.Background(), t, service.SetUpServicesOAuth)
+	shutDown := service.SetUpServices(ctx, t, service.SetUpServicesOAuth)
 	defer shutDown()
 
 	_, shutdownHttp := snippetTest.SetUp(t)

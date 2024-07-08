@@ -345,7 +345,7 @@ func TestStoreDeleteConditions(t *testing.T) {
 			if tt.args.makeQuery != nil {
 				query = tt.args.makeQuery(inserted)
 			}
-			_, err := s.DeleteConditions(ctx, tt.args.owner, query)
+			err := s.DeleteConditions(ctx, tt.args.owner, query)
 			if tt.wantErr {
 				require.Error(t, err)
 				return

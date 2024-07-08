@@ -1,0 +1,74 @@
+openapi: 3.0.0
+info:
+  title: m2m-oauth-server API
+  description: API documentation for m2m-oauth-server
+  version: 1.0.0
+paths:
+  /m2m-oauth-server/oauth/token:
+    post:
+      summary: Obtain an OAuth token
+      description: This endpoint is used to obtain an OAuth token by providing the necessary credentials and parameters.
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                client_id:
+                  type: string
+                  description: "The client ID."
+                scope:
+                  type: string
+                  description: "The scopes that are requested, separated by space. Must be a subset of the allowed scopes for the client."
+                grant_type:
+                  type: string
+                  description: "The type of grant being used. Only 'client_credentials' is supported."
+                client_assertion_type:
+                  type: string
+                  description: "Specifies the type of client assertion. Only 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer' is supported."
+                client_assertion:
+                  type: string
+                  description: "The JWT token signed by the configured client authority."
+      responses:
+        '200':
+          description: OAuth token obtained successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                    description: "The OAuth access token."
+                  token_type:
+                    type: string
+                    description: "The type of token. Typically 'Bearer'."
+                  expires_in:
+                    type: integer
+                    description: "The expiration time of the token in seconds. If not provided, the token will be valid indefinitely."
+                  scope:
+                    type: string
+                    description: "The scopes granted for the token."
+        '401':
+          description: Unauthorized. The request requires valid user authentication.
+
+  /m2m-oauth-server/.well-known/jwks.json:
+    get:
+      summary: Retrieve JSON Web Key Set (JWKS)
+      description: This endpoint retrieves the JSON Web Key Set (JWKS), which contains the public keys used to verify the JWT tokens.
+      responses:
+        '200':
+          description: JSON Web Key Set retrieved successfully
+        '404':
+          description: JWKS not found. The requested JWKS does not exist.
+
+  /m2m-oauth-server/.well-known/openid-configuration:
+    get:
+      summary: Retrieve OpenID Configuration
+      description: This endpoint retrieves the OpenID Configuration, which contains the necessary information for clients to interact with the OAuth server.
+      responses:
+        '200':
+          description: OpenID Configuration retrieved successfully
+        '404':
+          description: OpenID Configuration not found. The requested OpenID Configuration does not exist.

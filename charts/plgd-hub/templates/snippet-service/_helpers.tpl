@@ -11,13 +11,6 @@
 {{- end }}
 {{- end }}
 
-{{- define  "plgd-hub.snippetservice.image" -}}
-    {{- $registryName := .Values.snippetservice.image.registry | default "" -}}
-    {{- $repositoryName := .Values.snippetservice.image.repository -}}
-    {{- $tag := .Values.snippetservice.image.tag | default .Chart.AppVersion | toString -}}
-    {{- printf "%s%s:%s" $registryName $repositoryName  $tag -}}
-{{- end -}}
-
 {{- define  "plgd-hub.snippetservice.configName" -}}
     {{- $fullName :=  include "plgd-hub.snippetservice.fullname" . -}}
     {{- printf "%s-cfg" $fullName }}

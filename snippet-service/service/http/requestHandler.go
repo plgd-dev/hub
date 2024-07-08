@@ -19,7 +19,8 @@ type RequestHandler struct {
 }
 
 /*
-// TODO: the GRPC query parser doesn't seem to support oneOf fields, so we have to manually encode and decode the query
+// TODO: HTTP-API: /configurations/123?version=latest
+// - the GRPC query parser doesn't seem to support oneOf fields, so we have to manually encode and decode the query
 func (requestHandler *RequestHandler) getConfigurationVersion(w http.ResponseWriter, r *http.Request) {
 	// /api/v1/configuration/{id}?version=latest -> rpc GetConfigurations + IDFilter{IDFilter_Latest}
 	// /api/v1/configuration/{id}?version=all -> rpc GetConfigurations + IDFilter{IDFilter_All}

@@ -26,3 +26,7 @@ func (s *Store) DeleteConfigurations(context.Context, string, *pb.DeleteConfigur
 func (s *Store) InsertConfigurations(context.Context, ...*store.Configuration) error {
 	return store.ErrNotSupported
 }
+
+func (s *Store) GetLatestConfigurationsByID(context.Context, string, []string, store.ProcessConfigurations) error {
+	return store.ErrNotSupported
+}

@@ -30,6 +30,7 @@ func TestRequestHandlerGetHubConfiguration(t *testing.T) {
 	expected.Ui = &pb.UIConfiguration{
 		Visibility:                httpCfg.UI.WebConfiguration.Visibility.ToProto(),
 		DeviceProvisioningService: httpCfg.UI.WebConfiguration.DeviceProvisioningService,
+		SnippetService:            httpCfg.UI.WebConfiguration.SnippetService,
 	}
 	tests := []struct {
 		name   string
