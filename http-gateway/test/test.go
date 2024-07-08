@@ -21,6 +21,7 @@ func MakeWebConfigurationConfig() service.WebConfiguration {
 		Authority:                 testHttp.HTTPS_SCHEME + config.OAUTH_SERVER_HOST,
 		HTTPGatewayAddress:        testHttp.HTTPS_SCHEME + config.HTTP_GW_HOST,
 		DeviceProvisioningService: testHttp.HTTPS_SCHEME + config.HTTP_GW_HOST,
+		SnippetService:            testHttp.HTTPS_SCHEME + config.SNIPPET_SERVICE_HTTP_HOST,
 		WebOAuthClient: service.OAuthClient{
 			Authority: testHttp.HTTPS_SCHEME + config.OAUTH_SERVER_HOST,
 			ClientID:  config.OAUTH_MANAGER_CLIENT_ID,
@@ -51,7 +52,7 @@ func MakeConfig(t require.TestingT, enableUI bool) service.Config {
 
 	cfg.Log = log.MakeDefaultConfig()
 
-	cfg.APIs.HTTP.Authorization = config.MakeAuthorizationConfig()
+	cfg.APIs.HTTP.Authorization = config.MakeValidatorConfig()
 	cfg.APIs.HTTP.Connection = config.MakeListenerConfig(config.HTTP_GW_HOST)
 	cfg.APIs.HTTP.Connection.TLS.ClientCertificateRequired = false
 	cfg.APIs.HTTP.WebSocket.StreamBodyLimit = 256 * 1024

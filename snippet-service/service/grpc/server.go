@@ -6,9 +6,10 @@ import (
 	"fmt"
 
 	"github.com/plgd-dev/hub/v2/pkg/log"
-	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
 	"github.com/plgd-dev/hub/v2/snippet-service/store"
+	"github.com/plgd-dev/hub/v2/snippet-service/updater"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -18,13 +19,13 @@ type SnippetServiceServer struct {
 	pb.UnimplementedSnippetServiceServer
 
 	store           store.Store
-	resourceUpdater *store.ResourceUpdater
+	resourceUpdater *updater.ResourceUpdater
 	ownerClaim      string
 	hubID           string
 	logger          log.Logger
 }
 
-func NewSnippetServiceServer(store store.Store, resourceUpdater *store.ResourceUpdater, ownerClaim string, hubID string, logger log.Logger) *SnippetServiceServer {
+func NewSnippetServiceServer(store store.Store, resourceUpdater *updater.ResourceUpdater, ownerClaim string, hubID string, logger log.Logger) *SnippetServiceServer {
 	return &SnippetServiceServer{
 		store:           store,
 		resourceUpdater: resourceUpdater,
@@ -35,12 +36,12 @@ func NewSnippetServiceServer(store store.Store, resourceUpdater *store.ResourceU
 }
 
 func (s *SnippetServiceServer) checkOwner(ctx context.Context, owner string) (string, error) {
-	ownerFromToken, err := grpc.OwnerFromTokenMD(ctx, s.ownerClaim)
+	ownerFromToken, err := pkgGrpc.OwnerFromTokenMD(ctx, s.ownerClaim)
 	if err != nil {
 		return "", err
 	}
 	if owner != "" && ownerFromToken != owner {
-		return "", errors.New("owner mismatch")
+		return "", fmt.Errorf("owner mismatch: expected %v, got %v", owner, ownerFromToken)
 	}
 	return ownerFromToken, nil
 }
@@ -94,23 +95,29 @@ func errCannotGetConfigurations(err error) error {
 	return fmt.Errorf("cannot get configurations: %w", err)
 }
 
-func sendConfiguration(srv pb.SnippetService_GetConfigurationsServer, c *store.Configuration) error {
-	var lastVersion *store.ConfigurationVersion
-	for i := range c.Versions {
-		err := srv.Send(c.GetConfiguration(i))
-		if err != nil {
-			return err
+func sendConfiguration(srv pb.SnippetService_GetConfigurationsServer, sc *store.Configuration) error {
+	var err error
+	var lastVersion *pb.Configuration
+	sc.RangeVersions(func(_ int, c *pb.Configuration) bool {
+		errS := srv.Send(c)
+		if errS != nil {
+			err = errS
+			return false
 		}
-		lastVersion = &c.Versions[i]
-	}
-	if c.Latest == nil {
-		return nil
-	}
-	latest, err := c.GetLatest()
+		lastVersion = c
+		return true
+	})
 	if err != nil {
 		return err
 	}
-	if lastVersion != nil && lastVersion.Version == latest.GetVersion() {
+	if sc.Latest == nil {
+		return nil
+	}
+	latest, err := sc.GetLatest()
+	if err != nil {
+		return err
+	}
+	if lastVersion != nil && lastVersion.GetVersion() == latest.GetVersion() {
 		// already sent when iterating over versions array
 		return nil
 	}
@@ -158,25 +165,36 @@ func (s *SnippetServiceServer) DeleteConfigurations(ctx context.Context, req *pb
 	}
 	req.IdFilter = append(req.GetIdFilter(), req.ConvertHTTPIDFilter()...)
 
-	count, err := s.store.DeleteConfigurations(ctx, owner, req)
+	err = s.store.DeleteConfigurations(ctx, owner, req)
 	if err != nil {
 		return nil, s.logger.LogAndReturnError(status.Errorf(codes.Internal, "%v", errCannotDeleteConfigurations(err)))
 	}
 	return &pb.DeleteConfigurationsResponse{
-		Count: count,
+		Success: true,
 	}, nil
 }
 
 func errCannotInvokeConfiguration(err error) error {
-	return fmt.Errorf("cannot invaoke configuration: %w", err)
+	return fmt.Errorf("cannot invoke configuration: %w", err)
 }
 
-func (s *SnippetServiceServer) InvokeConfiguration(req *pb.InvokeConfigurationRequest, srv pb.SnippetService_InvokeConfigurationServer) error {
-	owner, err := s.checkOwner(srv.Context(), "")
+func (s *SnippetServiceServer) InvokeConfiguration(ctx context.Context, req *pb.InvokeConfigurationRequest) (*pb.InvokeConfigurationResponse, error) {
+	owner, err := s.checkOwner(ctx, "")
 	if err != nil {
-		return s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotInvokeConfiguration(err)))
+		return nil, s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotInvokeConfiguration(err)))
 	}
-	return s.resourceUpdater.InvokeConfiguration(srv.Context(), owner, req)
+	token, errT := pkgGrpc.TokenFromMD(ctx)
+	// we must have token for communication by raClient
+	if errT != nil {
+		return nil, s.logger.LogAndReturnError(status.Errorf(codes.Internal, "%v", errCannotInvokeConfiguration(errT)))
+	}
+	appliedConf, err := s.resourceUpdater.InvokeConfiguration(ctx, token, owner, req)
+	if err != nil {
+		return nil, s.logger.LogAndReturnError(status.Errorf(codes.Internal, "%v", errCannotInvokeConfiguration(err)))
+	}
+	return &pb.InvokeConfigurationResponse{
+		AppliedConfigurationId: appliedConf.GetId(),
+	}, nil
 }
 
 func errCannotCreateCondition(err error) error {
@@ -221,23 +239,29 @@ func errCannotGetConditions(err error) error {
 	return fmt.Errorf("cannot get conditions: %w", err)
 }
 
-func sendCondition(srv pb.SnippetService_GetConditionsServer, c *store.Condition) error {
-	var lastVersion *store.ConditionVersion
-	for i := range c.Versions {
-		err := srv.Send(c.GetCondition(i))
-		if err != nil {
-			return err
+func sendCondition(srv pb.SnippetService_GetConditionsServer, sc *store.Condition) error {
+	var err error
+	var lastVersion *pb.Condition
+	sc.RangeVersions(func(_ int, c *pb.Condition) bool {
+		errS := srv.Send(c)
+		if errS != nil {
+			err = errS
+			return false
 		}
-		lastVersion = &c.Versions[i]
-	}
-	if c.Latest == nil {
-		return nil
-	}
-	latest, err := c.GetLatest()
+		lastVersion = c
+		return true
+	})
 	if err != nil {
 		return err
 	}
-	if lastVersion != nil && lastVersion.Version == latest.GetVersion() {
+	if sc.Latest == nil {
+		return nil
+	}
+	latest, err := sc.GetLatest()
+	if err != nil {
+		return err
+	}
+	if lastVersion != nil && lastVersion.GetVersion() == latest.GetVersion() {
 		// already sent when iterating over versions array
 		return nil
 	}
@@ -275,38 +299,20 @@ func (s *SnippetServiceServer) DeleteConditions(ctx context.Context, req *pb.Del
 	}
 	req.IdFilter = append(req.GetIdFilter(), req.ConvertHTTPIDFilter()...)
 
-	count, err := s.store.DeleteConditions(ctx, owner, req)
+	err = s.store.DeleteConditions(ctx, owner, req)
 	if err != nil {
 		return nil, s.logger.LogAndReturnError(status.Errorf(codes.Internal, "%v", errCannotDeleteConditions(err)))
 	}
 	return &pb.DeleteConditionsResponse{
-		Count: count,
+		Success: true,
 	}, nil
-}
-
-func errCannotCreateAppliedConfiguration(err error) error {
-	return fmt.Errorf("cannot create applied configuration: %w", err)
-}
-
-func (s *SnippetServiceServer) CreateAppliedConfiguration(ctx context.Context, configuration *pb.AppliedDeviceConfiguration) (*pb.AppliedDeviceConfiguration, error) {
-	owner, err := s.checkOwner(ctx, configuration.GetOwner())
-	if err != nil {
-		return nil, s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotCreateAppliedConfiguration(err)))
-	}
-
-	configuration.Owner = owner
-	c, err := s.store.CreateAppliedConfiguration(ctx, configuration)
-	if err != nil {
-		return nil, s.logger.LogAndReturnError(status.Errorf(getGRPCErrorCode(err), "%v", errCannotCreateAppliedConfiguration(err)))
-	}
-	return c, nil
 }
 
 func errCannotGetAppliedConfigurations(err error) error {
 	return fmt.Errorf("cannot get applied configurations: %w", err)
 }
 
-func (s *SnippetServiceServer) GetAppliedConfigurations(req *pb.GetAppliedDeviceConfigurationsRequest, srv pb.SnippetService_GetAppliedConfigurationsServer) error {
+func (s *SnippetServiceServer) GetAppliedConfigurations(req *pb.GetAppliedConfigurationsRequest, srv pb.SnippetService_GetAppliedConfigurationsServer) error {
 	owner, err := s.checkOwner(srv.Context(), "")
 	if err != nil {
 		return s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotGetAppliedConfigurations(err)))
@@ -315,8 +321,8 @@ func (s *SnippetServiceServer) GetAppliedConfigurations(req *pb.GetAppliedDevice
 	req.ConditionIdFilter = append(req.GetConditionIdFilter(), req.ConvertHTTPConditionIdFilter()...)
 	req.ConfigurationIdFilter = append(req.GetConfigurationIdFilter(), req.ConvertHTTPConfigurationIdFilter()...)
 
-	err = s.store.GetAppliedConfigurations(srv.Context(), owner, req, func(c *pb.AppliedDeviceConfiguration) error {
-		return srv.Send(c)
+	err = s.store.GetAppliedConfigurations(srv.Context(), owner, req, func(c *store.AppliedConfiguration) error {
+		return srv.Send(c.GetAppliedConfiguration())
 	})
 	if err != nil {
 		return s.logger.LogAndReturnError(status.Errorf(codes.Internal, "%v", errCannotGetAppliedConfigurations(err)))
@@ -328,20 +334,16 @@ func errCannotDeleteAppliedConfigurations(err error) error {
 	return fmt.Errorf("cannot delete applied configurations: %w", err)
 }
 
-func (s *SnippetServiceServer) DeleteAppliedConfigurations(ctx context.Context, req *pb.DeleteAppliedDeviceConfigurationsRequest) (*pb.DeleteAppliedDeviceConfigurationsResponse, error) {
+func (s *SnippetServiceServer) DeleteAppliedConfigurations(ctx context.Context, req *pb.DeleteAppliedConfigurationsRequest) (*pb.DeleteAppliedConfigurationsResponse, error) {
 	owner, err := s.checkOwner(ctx, "")
 	if err != nil {
 		return nil, s.logger.LogAndReturnError(status.Errorf(codes.PermissionDenied, "%v", errCannotDeleteAppliedConfigurations(err)))
 	}
-	count, err := s.store.DeleteAppliedConfigurations(ctx, owner, req)
+	err = s.store.DeleteAppliedConfigurations(ctx, owner, req)
 	if err != nil {
 		return nil, s.logger.LogAndReturnError(status.Errorf(codes.Internal, "%v", errCannotDeleteAppliedConfigurations(err)))
 	}
-	return &pb.DeleteAppliedDeviceConfigurationsResponse{
-		Count: count,
+	return &pb.DeleteAppliedConfigurationsResponse{
+		Success: true,
 	}, nil
-}
-
-func (s *SnippetServiceServer) Close(ctx context.Context) error {
-	return s.store.Close(ctx)
 }

@@ -33,11 +33,12 @@ func TestStoreGetLatestConditions(t *testing.T) {
 	const owner1 = "owner1"
 	const owner2 = "owner2"
 	cond1In := &pb.Condition{
-		Id:              uuid.NewString(),
-		Name:            "c1",
-		Enabled:         true,
-		ConfigurationId: uuid.NewString(),
-		Owner:           owner1,
+		Id:                 uuid.NewString(),
+		Name:               "c1",
+		Enabled:            true,
+		ConfigurationId:    uuid.NewString(),
+		Owner:              owner1,
+		JqExpressionFilter: ".test",
 	}
 	cond1, err := s.CreateCondition(ctx, cond1In)
 	require.NoError(t, err)
@@ -108,8 +109,19 @@ func TestStoreGetLatestConditions(t *testing.T) {
 	require.NoError(t, err)
 
 	cond7In := &pb.Condition{
+		Id:              uuid.NewString(),
+		Name:            "c7",
+		Enabled:         true,
+		ConfigurationId: uuid.NewString(),
+		DeviceIdFilter:  []string{deviceID3},
+		Owner:           owner2,
+	}
+	cond7, err := s.CreateCondition(ctx, cond7In)
+	require.NoError(t, err)
+
+	cond8In := &pb.Condition{
 		Id:                 uuid.NewString(),
-		Name:               "c7 - disabled",
+		Name:               "c8 - disabled",
 		Enabled:            false,
 		ConfigurationId:    uuid.NewString(),
 		DeviceIdFilter:     []string{deviceID2, deviceID3},
@@ -117,7 +129,7 @@ func TestStoreGetLatestConditions(t *testing.T) {
 		ResourceTypeFilter: []string{type1, type2, type3},
 		Owner:              owner2,
 	}
-	_, err = s.CreateCondition(ctx, cond7In)
+	_, err = s.CreateCondition(ctx, cond8In)
 	require.NoError(t, err)
 
 	type args struct {
@@ -145,7 +157,7 @@ func TestStoreGetLatestConditions(t *testing.T) {
 					DeviceID: deviceID3,
 				},
 			},
-			want: []*pb.Condition{cond1, cond4, cond5, cond6},
+			want: []*pb.Condition{cond1, cond4, cond5, cond6, cond7},
 		},
 		{
 			name: "owner1/deviceID1",
@@ -195,7 +207,7 @@ func TestStoreGetLatestConditions(t *testing.T) {
 				},
 				owner: owner2,
 			},
-			want: []*pb.Condition{cond5, cond6},
+			want: []*pb.Condition{cond5, cond6, cond7},
 		},
 		{
 			name: "href1",
@@ -204,7 +216,7 @@ func TestStoreGetLatestConditions(t *testing.T) {
 					ResourceHref: href1,
 				},
 			},
-			want: []*pb.Condition{cond1, cond2, cond4, cond5},
+			want: []*pb.Condition{cond1, cond2, cond4, cond5, cond7},
 		},
 		{
 			name: "deviceID1/href3",
@@ -224,7 +236,7 @@ func TestStoreGetLatestConditions(t *testing.T) {
 				},
 				owner: owner2,
 			},
-			want: []*pb.Condition{cond5, cond6},
+			want: []*pb.Condition{cond5, cond6, cond7},
 		},
 		{
 			name: "[type2]",
@@ -233,7 +245,7 @@ func TestStoreGetLatestConditions(t *testing.T) {
 					ResourceTypeFilter: []string{type2},
 				},
 			},
-			want: []*pb.Condition{cond1, cond2, cond5, cond6},
+			want: []*pb.Condition{cond1, cond2, cond5, cond6, cond7},
 		},
 		{
 			name: "deviceID2/[type3]",
@@ -254,7 +266,7 @@ func TestStoreGetLatestConditions(t *testing.T) {
 				},
 				owner: owner2,
 			},
-			want: []*pb.Condition{cond6},
+			want: []*pb.Condition{cond6, cond7},
 		},
 		{
 			name: "deviceID1/href5/[type3]",

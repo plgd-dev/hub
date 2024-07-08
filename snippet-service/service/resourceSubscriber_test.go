@@ -62,7 +62,8 @@ func TestResourceSubscriber(t *testing.T) {
 	h := testHandler{
 		ch: make(chan *events.ResourceChanged, 8),
 	}
-	rs, err := service.NewResourceSubscriber(ctx, test.MakeConfig(t).Clients.EventBus.NATS, fileWatcher, logger, &h)
+	cfg := test.MakeConfig(t)
+	rs, err := service.NewResourceSubscriber(ctx, cfg.Clients.EventBus.NATS, cfg.Clients.EventBus.SubscriptionID, fileWatcher, logger, &h)
 	require.NoError(t, err)
 	defer rs.Close()
 

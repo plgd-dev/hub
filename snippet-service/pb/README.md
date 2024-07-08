@@ -4,25 +4,26 @@
 ## Table of Contents
 
 - [snippet-service/pb/service.proto](#snippet-service_pb_service-proto)
-    - [AppliedDeviceConfiguration](#snippetservice-pb-AppliedDeviceConfiguration)
-    - [AppliedDeviceConfiguration.RelationTo](#snippetservice-pb-AppliedDeviceConfiguration-RelationTo)
-    - [AppliedDeviceConfiguration.Resource](#snippetservice-pb-AppliedDeviceConfiguration-Resource)
+    - [AppliedConfiguration](#snippetservice-pb-AppliedConfiguration)
+    - [AppliedConfiguration.LinkedTo](#snippetservice-pb-AppliedConfiguration-LinkedTo)
+    - [AppliedConfiguration.Resource](#snippetservice-pb-AppliedConfiguration-Resource)
     - [Condition](#snippetservice-pb-Condition)
     - [Configuration](#snippetservice-pb-Configuration)
     - [Configuration.Resource](#snippetservice-pb-Configuration-Resource)
-    - [DeleteAppliedDeviceConfigurationsRequest](#snippetservice-pb-DeleteAppliedDeviceConfigurationsRequest)
-    - [DeleteAppliedDeviceConfigurationsResponse](#snippetservice-pb-DeleteAppliedDeviceConfigurationsResponse)
+    - [DeleteAppliedConfigurationsRequest](#snippetservice-pb-DeleteAppliedConfigurationsRequest)
+    - [DeleteAppliedConfigurationsResponse](#snippetservice-pb-DeleteAppliedConfigurationsResponse)
     - [DeleteConditionsRequest](#snippetservice-pb-DeleteConditionsRequest)
     - [DeleteConditionsResponse](#snippetservice-pb-DeleteConditionsResponse)
     - [DeleteConfigurationsRequest](#snippetservice-pb-DeleteConfigurationsRequest)
     - [DeleteConfigurationsResponse](#snippetservice-pb-DeleteConfigurationsResponse)
-    - [GetAppliedDeviceConfigurationsRequest](#snippetservice-pb-GetAppliedDeviceConfigurationsRequest)
+    - [GetAppliedConfigurationsRequest](#snippetservice-pb-GetAppliedConfigurationsRequest)
     - [GetConditionsRequest](#snippetservice-pb-GetConditionsRequest)
     - [GetConfigurationsRequest](#snippetservice-pb-GetConfigurationsRequest)
     - [IDFilter](#snippetservice-pb-IDFilter)
     - [InvokeConfigurationRequest](#snippetservice-pb-InvokeConfigurationRequest)
+    - [InvokeConfigurationResponse](#snippetservice-pb-InvokeConfigurationResponse)
   
-    - [AppliedDeviceConfiguration.Resource.Status](#snippetservice-pb-AppliedDeviceConfiguration-Resource-Status)
+    - [AppliedConfiguration.Resource.Status](#snippetservice-pb-AppliedConfiguration-Resource-Status)
   
     - [SnippetService](#snippetservice-pb-SnippetService)
   
@@ -37,20 +38,20 @@
 
 
 
-<a name="snippetservice-pb-AppliedDeviceConfiguration"></a>
+<a name="snippetservice-pb-AppliedConfiguration"></a>
 
-### AppliedDeviceConfiguration
-TODO naming
+### AppliedConfiguration
+
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  | @gotags: bson:&#34;_id&#34; |
+| id | [string](#string) |  |  |
 | device_id | [string](#string) |  | @gotags: bson:&#34;deviceId&#34; |
-| configuration_id | [AppliedDeviceConfiguration.RelationTo](#snippetservice-pb-AppliedDeviceConfiguration-RelationTo) |  | @gotags: bson:&#34;configurationId&#34; |
+| configuration_id | [AppliedConfiguration.LinkedTo](#snippetservice-pb-AppliedConfiguration-LinkedTo) |  | @gotags: bson:&#34;configurationId&#34; |
 | on_demand | [bool](#bool) |  |  |
-| condition_id | [AppliedDeviceConfiguration.RelationTo](#snippetservice-pb-AppliedDeviceConfiguration-RelationTo) |  | @gotags: bson:&#34;conditionId&#34; //TODO Naming |
-| resources | [AppliedDeviceConfiguration.Resource](#snippetservice-pb-AppliedDeviceConfiguration-Resource) | repeated | TODO naming |
+| condition_id | [AppliedConfiguration.LinkedTo](#snippetservice-pb-AppliedConfiguration-LinkedTo) |  | @gotags: bson:&#34;conditionId&#34; |
+| resources | [AppliedConfiguration.Resource](#snippetservice-pb-AppliedConfiguration-Resource) | repeated |  |
 | owner | [string](#string) |  |  |
 | timestamp | [int64](#int64) |  | Unix timestamp in ns when the applied device configuration has been created/updated |
 
@@ -59,10 +60,10 @@ TODO naming
 
 
 
-<a name="snippetservice-pb-AppliedDeviceConfiguration-RelationTo"></a>
+<a name="snippetservice-pb-AppliedConfiguration-LinkedTo"></a>
 
-### AppliedDeviceConfiguration.RelationTo
-TODO naming
+### AppliedConfiguration.LinkedTo
+
 
 
 | Field | Type | Label | Description |
@@ -75,9 +76,9 @@ TODO naming
 
 
 
-<a name="snippetservice-pb-AppliedDeviceConfiguration-Resource"></a>
+<a name="snippetservice-pb-AppliedConfiguration-Resource"></a>
 
-### AppliedDeviceConfiguration.Resource
+### AppliedConfiguration.Resource
 
 
 
@@ -87,8 +88,11 @@ TODO naming
 | correlation_id | [string](#string) |  | Reused from invoke command or generated. Can be used to retrieve corresponding pending command.
 
 @gotags: bson:&#34;correlationId&#34; |
-| status | [AppliedDeviceConfiguration.Resource.Status](#snippetservice-pb-AppliedDeviceConfiguration-Resource-Status) |  |  |
+| status | [AppliedConfiguration.Resource.Status](#snippetservice-pb-AppliedConfiguration-Resource-Status) |  |  |
 | resource_updated | [resourceaggregate.pb.ResourceUpdated](#resourceaggregate-pb-ResourceUpdated) |  | @gotags: bson:&#34;resourceUpdated,omitempty&#34; |
+| valid_until | [int64](#int64) |  | Unix nanoseconds timestamp for resource in PENDING status, until which the pending update is valid
+
+@gotags: bson:&#34;validUntil,omitempty&#34; |
 
 
 
@@ -158,9 +162,9 @@ driven by resource change event
 
 
 
-<a name="snippetservice-pb-DeleteAppliedDeviceConfigurationsRequest"></a>
+<a name="snippetservice-pb-DeleteAppliedConfigurationsRequest"></a>
 
-### DeleteAppliedDeviceConfigurationsRequest
+### DeleteAppliedConfigurationsRequest
 
 
 
@@ -173,15 +177,15 @@ driven by resource change event
 
 
 
-<a name="snippetservice-pb-DeleteAppliedDeviceConfigurationsResponse"></a>
+<a name="snippetservice-pb-DeleteAppliedConfigurationsResponse"></a>
 
-### DeleteAppliedDeviceConfigurationsResponse
+### DeleteAppliedConfigurationsResponse
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| count | [int64](#int64) |  |  |
+| success | [bool](#bool) |  |  |
 
 
 
@@ -212,7 +216,7 @@ driven by resource change event
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| count | [int64](#int64) |  |  |
+| success | [bool](#bool) |  |  |
 
 
 
@@ -243,17 +247,17 @@ driven by resource change event
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| count | [int64](#int64) |  |  |
+| success | [bool](#bool) |  |  |
 
 
 
 
 
 
-<a name="snippetservice-pb-GetAppliedDeviceConfigurationsRequest"></a>
+<a name="snippetservice-pb-GetAppliedConfigurationsRequest"></a>
 
-### GetAppliedDeviceConfigurationsRequest
-TODO Naming
+### GetAppliedConfigurationsRequest
+
 
 
 | Field | Type | Label | Description |
@@ -306,7 +310,7 @@ TODO Naming
 <a name="snippetservice-pb-IDFilter"></a>
 
 ### IDFilter
-TODO: /configurations/123?version=latest
+
 
 
 | Field | Type | Label | Description |
@@ -338,20 +342,36 @@ TODO: /configurations/123?version=latest
 
 
 
+
+<a name="snippetservice-pb-InvokeConfigurationResponse"></a>
+
+### InvokeConfigurationResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| applied_configuration_id | [string](#string) |  |  |
+
+
+
+
+
  
 
 
-<a name="snippetservice-pb-AppliedDeviceConfiguration-Resource-Status"></a>
+<a name="snippetservice-pb-AppliedConfiguration-Resource-Status"></a>
 
-### AppliedDeviceConfiguration.Resource.Status
+### AppliedConfiguration.Resource.Status
 
 
 | Name | Number | Description |
 | ---- | ------ | ----------- |
-| QUEUED | 0 |  |
-| PENDING | 1 |  |
-| DONE | 2 | If done look to resource_updated if update resource failed for resource aggregate. |
-| TIMEOUT | 3 |  |
+| UNSPECIFIED | 0 |  |
+| QUEUED | 1 |  |
+| PENDING | 2 |  |
+| DONE | 3 | If done look to resource_updated if update resource failed for resource aggregate. |
+| TIMEOUT | 4 |  |
 
 
  
@@ -374,9 +394,9 @@ TODO: /configurations/123?version=latest
 | GetConfigurations | [GetConfigurationsRequest](#snippetservice-pb-GetConfigurationsRequest) | [Configuration](#snippetservice-pb-Configuration) stream |  |
 | DeleteConfigurations | [DeleteConfigurationsRequest](#snippetservice-pb-DeleteConfigurationsRequest) | [DeleteConfigurationsResponse](#snippetservice-pb-DeleteConfigurationsResponse) |  |
 | UpdateConfiguration | [Configuration](#snippetservice-pb-Configuration) | [Configuration](#snippetservice-pb-Configuration) | For update the configuration whole configuration is required and the version must be incremented. |
-| InvokeConfiguration | [InvokeConfigurationRequest](#snippetservice-pb-InvokeConfigurationRequest) | [AppliedDeviceConfiguration](#snippetservice-pb-AppliedDeviceConfiguration) stream | streaming process of update configuration to invoker |
-| GetAppliedConfigurations | [GetAppliedDeviceConfigurationsRequest](#snippetservice-pb-GetAppliedDeviceConfigurationsRequest) | [AppliedDeviceConfiguration](#snippetservice-pb-AppliedDeviceConfiguration) stream |  |
-| DeleteAppliedConfigurations | [DeleteAppliedDeviceConfigurationsRequest](#snippetservice-pb-DeleteAppliedDeviceConfigurationsRequest) | [DeleteAppliedDeviceConfigurationsResponse](#snippetservice-pb-DeleteAppliedDeviceConfigurationsResponse) |  |
+| InvokeConfiguration | [InvokeConfigurationRequest](#snippetservice-pb-InvokeConfigurationRequest) | [InvokeConfigurationResponse](#snippetservice-pb-InvokeConfigurationResponse) | streaming process of update configuration to invoker |
+| GetAppliedConfigurations | [GetAppliedConfigurationsRequest](#snippetservice-pb-GetAppliedConfigurationsRequest) | [AppliedConfiguration](#snippetservice-pb-AppliedConfiguration) stream |  |
+| DeleteAppliedConfigurations | [DeleteAppliedConfigurationsRequest](#snippetservice-pb-DeleteAppliedConfigurationsRequest) | [DeleteAppliedConfigurationsResponse](#snippetservice-pb-DeleteAppliedConfigurationsResponse) |  |
 
  
 

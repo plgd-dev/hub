@@ -28,7 +28,7 @@ func TestRequestHandlerDeleteConfigurations(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	shutDown := service.SetUpServices(context.Background(), t, service.SetUpServicesOAuth)
+	shutDown := service.SetUpServices(ctx, t, service.SetUpServicesOAuth)
 	defer shutDown()
 
 	snippetCfg := test.MakeConfig(t)
@@ -67,7 +67,7 @@ func TestRequestHandlerDeleteConfigurations(t *testing.T) {
 			wantErr:      true,
 		},
 		{
-			name: "delete certain configuration",
+			name: "configuration/{1, version=0}",
 			args: args{
 				token: oauthTest.GetAccessToken(t, config.OAUTH_SERVER_HOST, oauthTest.ClientTest, map[string]interface{}{
 					snippetCfg.APIs.GRPC.Authorization.OwnerClaim: test.Owner(1),

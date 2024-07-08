@@ -120,19 +120,19 @@ func AddConfigurations(ctx context.Context, t *testing.T, ownerClaim string, ssc
 	configurations := getConfigurations(t, n, calcVersion)
 	for _, c := range configurations {
 		ctxWithToken := pkgGrpc.CtxWithToken(ctx, GetTokenWithOwnerClaim(t, c.Owner, ownerClaim))
-		for i := range c.Versions {
-			conf := c.GetConfiguration(i)
+		c.RangeVersions(func(i int, conf *pb.Configuration) bool {
 			if i == 0 {
 				createdConf, err := ssc.CreateConfiguration(ctxWithToken, conf)
 				require.NoError(t, err)
 				c.Latest.Timestamp = createdConf.GetTimestamp()
 				c.Versions[i].Timestamp = createdConf.GetTimestamp()
-				continue
+				return true
 			}
 			updatedConf, err := ssc.UpdateConfiguration(ctxWithToken, conf)
 			require.NoError(t, err)
 			c.Versions[i].Timestamp = updatedConf.GetTimestamp()
-		}
+			return true
+		})
 		configurations[c.Id] = c
 	}
 	return configurations

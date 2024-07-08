@@ -33,13 +33,12 @@ func (c *Configuration) Validate(isUpdate bool) error {
 }
 
 func normalizeResources(resources []*Configuration_Resource) []*Configuration_Resource {
-	resources = slices.CompactFunc(resources, func(i, j *Configuration_Resource) bool {
-		return i.GetHref() == j.GetHref()
-	})
 	slices.SortFunc(resources, func(i, j *Configuration_Resource) int {
 		return strings.Compare(i.GetHref(), j.GetHref())
 	})
-	return resources
+	return slices.CompactFunc(resources, func(i, j *Configuration_Resource) bool {
+		return i.GetHref() == j.GetHref()
+	})
 }
 
 func (c *Configuration) Normalize() {
@@ -58,4 +57,14 @@ func (c *Configuration) Clone() *Configuration {
 		cfg.Resources = append(cfg.Resources, r.Clone())
 	}
 	return cfg
+}
+
+func (r *InvokeConfigurationRequest) Validate() error {
+	if r.GetConfigurationId() == "" {
+		return errors.New("missing configuration ID")
+	}
+	if r.GetDeviceId() == "" {
+		return errors.New("missing device ID")
+	}
+	return nil
 }

@@ -96,20 +96,25 @@ func (c *Condition) GetLatest() (*pb.Condition, error) {
 	}, nil
 }
 
-func (c *Condition) GetCondition(index int) *pb.Condition {
-	return &pb.Condition{
-		Id:                 c.Id,
-		Owner:              c.Owner,
-		ConfigurationId:    c.ConfigurationId,
-		Name:               c.Versions[index].Name,
-		Enabled:            c.Versions[index].Enabled,
-		Version:            c.Versions[index].Version,
-		Timestamp:          c.Versions[index].Timestamp,
-		DeviceIdFilter:     c.Versions[index].DeviceIdFilter,
-		ResourceTypeFilter: c.Versions[index].ResourceTypeFilter,
-		ResourceHrefFilter: c.Versions[index].ResourceHrefFilter,
-		JqExpressionFilter: c.Versions[index].JqExpressionFilter,
-		ApiAccessToken:     c.Versions[index].ApiAccessToken,
+func (c *Condition) RangeVersions(f func(int, *pb.Condition) bool) {
+	for i := range c.Versions {
+		cond := &pb.Condition{
+			Id:                 c.Id,
+			Owner:              c.Owner,
+			ConfigurationId:    c.ConfigurationId,
+			Name:               c.Versions[i].Name,
+			Enabled:            c.Versions[i].Enabled,
+			Version:            c.Versions[i].Version,
+			Timestamp:          c.Versions[i].Timestamp,
+			DeviceIdFilter:     c.Versions[i].DeviceIdFilter,
+			ResourceTypeFilter: c.Versions[i].ResourceTypeFilter,
+			ResourceHrefFilter: c.Versions[i].ResourceHrefFilter,
+			JqExpressionFilter: c.Versions[i].JqExpressionFilter,
+			ApiAccessToken:     c.Versions[i].ApiAccessToken,
+		}
+		if !f(i, cond) {
+			break
+		}
 	}
 }
 

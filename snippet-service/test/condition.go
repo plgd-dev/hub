@@ -131,19 +131,19 @@ func AddConditions(ctx context.Context, t *testing.T, ownerClaim string, ssc pb.
 	conditions := getConditions(n, calcVersion)
 	for _, c := range conditions {
 		ctxWithToken := pkgGrpc.CtxWithToken(ctx, GetTokenWithOwnerClaim(t, c.Owner, ownerClaim))
-		for i := range c.Versions {
-			cond := c.GetCondition(i)
+		c.RangeVersions(func(i int, cond *pb.Condition) bool {
 			if i == 0 {
 				createdCond, err := ssc.CreateCondition(ctxWithToken, cond)
 				require.NoError(t, err)
 				c.Latest.Timestamp = createdCond.GetTimestamp()
 				c.Versions[i].Timestamp = createdCond.GetTimestamp()
-				continue
+				return true
 			}
 			updatedCond, err := ssc.UpdateCondition(ctxWithToken, cond)
 			require.NoError(t, err)
 			c.Versions[i].Timestamp = updatedCond.GetTimestamp()
-		}
+			return true
+		})
 		conditions[c.Id] = c
 	}
 	return conditions

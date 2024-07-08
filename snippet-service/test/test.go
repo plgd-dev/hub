@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"errors"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
@@ -253,13 +254,26 @@ func CmpStoredConditionMaps(t *testing.T, want, got map[string]store.Condition) 
 	}
 }
 
-func CmpAppliedDeviceConfiguration(t *testing.T, want, got *pb.AppliedDeviceConfiguration, ignoreTimestamp bool) {
+func CmpAppliedDeviceConfiguration(t *testing.T, want, got *pb.AppliedConfiguration, ignoreTimestamp bool) {
 	want = want.Clone()
 	got = got.Clone()
 	if ignoreTimestamp {
 		want.Timestamp = got.GetTimestamp()
 	}
 	require.Len(t, got.GetResources(), len(want.GetResources()))
+
+	normalizeResources := func(resources []*pb.AppliedConfiguration_Resource) []*pb.AppliedConfiguration_Resource {
+		resources = slices.CompactFunc(resources, func(i, j *pb.AppliedConfiguration_Resource) bool {
+			return i.GetHref() == j.GetHref()
+		})
+		slices.SortFunc(resources, func(i, j *pb.AppliedConfiguration_Resource) int {
+			return strings.Compare(i.GetHref(), j.GetHref())
+		})
+		return resources
+	}
+	want.Resources = normalizeResources(want.GetResources())
+	got.Resources = normalizeResources(got.GetResources())
+
 	for i := range want.GetResources() {
 		wantResource := want.GetResources()[i]
 		gotResource := got.GetResources()[i]
@@ -273,7 +287,7 @@ func CmpAppliedDeviceConfiguration(t *testing.T, want, got *pb.AppliedDeviceConf
 	CmpJSON(t, want, got)
 }
 
-func CmpAppliedDeviceConfigurationsMaps(t *testing.T, want, got map[string]*pb.AppliedDeviceConfiguration, ignoreTimestamp bool) {
+func CmpAppliedDeviceConfigurationsMaps(t *testing.T, want, got map[string]*pb.AppliedConfiguration, ignoreTimestamp bool) {
 	require.Len(t, got, len(want))
 	for _, v := range want {
 		gotV, ok := got[v.GetId()]

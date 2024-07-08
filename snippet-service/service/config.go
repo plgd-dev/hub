@@ -3,18 +3,16 @@ package service
 import (
 	"fmt"
 	"net"
-	"time"
 
-	"github.com/go-co-op/gocron/v2"
 	"github.com/google/uuid"
 	"github.com/plgd-dev/hub/v2/pkg/config"
 	"github.com/plgd-dev/hub/v2/pkg/log"
-	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
 	httpServer "github.com/plgd-dev/hub/v2/pkg/net/http/server"
 	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 	grpcService "github.com/plgd-dev/hub/v2/snippet-service/service/grpc"
 	storeConfig "github.com/plgd-dev/hub/v2/snippet-service/store/config"
+	"github.com/plgd-dev/hub/v2/snippet-service/updater"
 )
 
 type HTTPConfig struct {
@@ -45,69 +43,26 @@ func (c *APIsConfig) Validate() error {
 	return nil
 }
 
-type StorageConfig struct {
-	Embedded                  storeConfig.Config `yaml:",inline" json:",inline"`
-	ExtendCronParserBySeconds bool               `yaml:"-" json:"-"`
-	CleanUpRecords            string             `yaml:"cleanUpRecords" json:"cleanUpRecords"`
-}
-
-func (c *StorageConfig) Validate() error {
-	if err := c.Embedded.Validate(); err != nil {
-		return err
-	}
-	if c.CleanUpRecords == "" {
-		return nil
-	}
-	s, err := gocron.NewScheduler(gocron.WithLocation(time.Local)) //nolint:gosmopolitan
-	if err != nil {
-		return fmt.Errorf("cannot create cron job: %w", err)
-	}
-	defer func() {
-		if errS := s.Shutdown(); errS != nil {
-			log.Errorf("failed to shutdown cron job: %w", errS)
-		}
-	}()
-	_, err = s.NewJob(gocron.CronJob(c.CleanUpRecords, c.ExtendCronParserBySeconds),
-		gocron.NewTask(func() {
-			// do nothing
-		}))
-	if err != nil {
-		return fmt.Errorf("cleanUpRecords('%v') - %w", c.CleanUpRecords, err)
-	}
-	return nil
-}
-
-type ResourceAggregateConfig struct {
-	Connection                   grpcClient.Config `yaml:"grpc" json:"grpc"`
-	PendingCommandsCheckInterval time.Duration     `yaml:"pendingCommandsCheckInterval" json:"pendingCommandsCheckInterval"`
-}
-
-func (c *ResourceAggregateConfig) Validate() error {
-	if err := c.Connection.Validate(); err != nil {
-		return fmt.Errorf("grpc.%w", err)
-	}
-	if c.PendingCommandsCheckInterval <= 0 {
-		return fmt.Errorf("pendingCommandsCheckInterval('%v') - must be greater than 0", c.PendingCommandsCheckInterval)
-	}
-	return nil
-}
-
 type EventBusConfig struct {
-	NATS natsClient.Config `yaml:"nats" json:"nats"`
+	NATS           natsClient.Config `yaml:"nats" json:"nats"`
+	SubscriptionID string            `yaml:"subscriptionID" json:"subscriptionID"`
 }
 
 func (c *EventBusConfig) Validate() error {
 	if err := c.NATS.Validate(); err != nil {
 		return fmt.Errorf("nats.%w", err)
 	}
+	if c.SubscriptionID == "" {
+		return fmt.Errorf("subscriptionID('%v')", c.SubscriptionID)
+	}
 	return nil
 }
 
 type ClientsConfig struct {
-	Storage                StorageConfig           `yaml:"storage" json:"storage"`
-	OpenTelemetryCollector otelClient.Config       `yaml:"openTelemetryCollector" json:"openTelemetryCollector"`
-	EventBus               EventBusConfig          `yaml:"eventBus" json:"eventBus"`
-	ResourceAggregate      ResourceAggregateConfig `yaml:"resourceAggregate" json:"resourceAggregate"`
+	Storage                storeConfig.Config            `yaml:"storage" json:"storage"`
+	OpenTelemetryCollector otelClient.Config             `yaml:"openTelemetryCollector" json:"openTelemetryCollector"`
+	EventBus               EventBusConfig                `yaml:"eventBus" json:"eventBus"`
+	ResourceUpdater        updater.ResourceUpdaterConfig `yaml:"resourceUpdater" json:"resourceUpdater"`
 }
 
 func (c *ClientsConfig) Validate() error {
@@ -120,8 +75,8 @@ func (c *ClientsConfig) Validate() error {
 	if err := c.EventBus.Validate(); err != nil {
 		return fmt.Errorf("eventBus.%w", err)
 	}
-	if err := c.ResourceAggregate.Validate(); err != nil {
-		return fmt.Errorf("resourceAggregate.%w", err)
+	if err := c.ResourceUpdater.Validate(); err != nil {
+		return fmt.Errorf("resourceUpdater.%w", err)
 	}
 	return nil
 }

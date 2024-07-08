@@ -306,13 +306,13 @@
               "type": "object",
               "properties": {
                 "result": {
-                  "$ref": "#/definitions/pbAppliedDeviceConfiguration"
+                  "$ref": "#/definitions/pbAppliedConfiguration"
                 },
                 "error": {
                   "$ref": "#/definitions/googlerpcStatus"
                 }
               },
-              "title": "Stream result of pbAppliedDeviceConfiguration"
+              "title": "Stream result of pbAppliedConfiguration"
             }
           },
           "default": {
@@ -376,7 +376,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/pbDeleteAppliedDeviceConfigurationsResponse"
+              "$ref": "#/definitions/pbDeleteAppliedConfigurationsResponse"
             }
           },
           "default": {
@@ -409,18 +409,9 @@
         "operationId": "SnippetService_InvokeConfiguration",
         "responses": {
           "200": {
-            "description": "A successful response.(streaming responses)",
+            "description": "A successful response.",
             "schema": {
-              "type": "object",
-              "properties": {
-                "result": {
-                  "$ref": "#/definitions/pbAppliedDeviceConfiguration"
-                },
-                "error": {
-                  "$ref": "#/definitions/googlerpcStatus"
-                }
-              },
-              "title": "Stream result of pbAppliedDeviceConfiguration"
+              "$ref": "#/definitions/pbInvokeConfigurationResponse"
             }
           },
           "default": {
@@ -494,7 +485,7 @@
     }
   },
   "definitions": {
-    "AppliedDeviceConfigurationRelationTo": {
+    "AppliedConfigurationLinkedTo": {
       "type": "object",
       "properties": {
         "id": {
@@ -504,18 +495,18 @@
           "type": "string",
           "format": "uint64"
         }
-      },
-      "title": "TODO naming"
+      }
     },
-    "AppliedDeviceConfigurationResourceStatus": {
+    "AppliedConfigurationResourceStatus": {
       "type": "string",
       "enum": [
+        "UNSPECIFIED",
         "QUEUED",
         "PENDING",
         "DONE",
         "TIMEOUT"
       ],
-      "default": "QUEUED",
+      "default": "UNSPECIFIED",
       "description": " - DONE: If done look to resource_updated if update resource failed for resource aggregate."
     },
     "SnippetServiceInvokeConfigurationBody": {
@@ -643,35 +634,33 @@
         }
       }
     },
-    "pbAppliedDeviceConfiguration": {
+    "pbAppliedConfiguration": {
       "type": "object",
       "properties": {
         "id": {
-          "type": "string",
-          "title": "@gotags: bson:\"_id\""
+          "type": "string"
         },
         "deviceId": {
           "type": "string",
           "title": "@gotags: bson:\"deviceId\""
         },
         "configurationId": {
-          "$ref": "#/definitions/AppliedDeviceConfigurationRelationTo",
+          "$ref": "#/definitions/AppliedConfigurationLinkedTo",
           "title": "@gotags: bson:\"configurationId\""
         },
         "onDemand": {
           "type": "boolean"
         },
         "conditionId": {
-          "$ref": "#/definitions/AppliedDeviceConfigurationRelationTo",
-          "title": "@gotags: bson:\"conditionId\" //TODO Naming"
+          "$ref": "#/definitions/AppliedConfigurationLinkedTo",
+          "title": "@gotags: bson:\"conditionId\""
         },
         "resources": {
           "type": "array",
           "items": {
             "type": "object",
-            "$ref": "#/definitions/pbAppliedDeviceConfigurationResource"
-          },
-          "title": "TODO naming"
+            "$ref": "#/definitions/pbAppliedConfigurationResource"
+          }
         },
         "owner": {
           "type": "string"
@@ -681,10 +670,9 @@
           "format": "int64",
           "title": "Unix timestamp in ns when the applied device configuration has been created/updated"
         }
-      },
-      "title": "TODO naming"
+      }
     },
-    "pbAppliedDeviceConfigurationResource": {
+    "pbAppliedConfigurationResource": {
       "type": "object",
       "properties": {
         "href": {
@@ -695,11 +683,17 @@
           "description": "Reused from invoke command or generated. Can be used to retrieve corresponding pending command.\n\n@gotags: bson:\"correlationId\""
         },
         "status": {
-          "$ref": "#/definitions/AppliedDeviceConfigurationResourceStatus"
+          "$ref": "#/definitions/AppliedConfigurationResourceStatus"
         },
         "resourceUpdated": {
           "$ref": "#/definitions/pbResourceUpdated",
           "title": "@gotags: bson:\"resourceUpdated,omitempty\""
+        },
+        "validUntil": {
+          "type": "string",
+          "format": "int64",
+          "description": "@gotags: bson:\"validUntil,omitempty\"",
+          "title": "Unix nanoseconds timestamp for resource in PENDING status, until which the pending update is valid"
         }
       }
     },
@@ -850,30 +844,27 @@
         }
       }
     },
-    "pbDeleteAppliedDeviceConfigurationsResponse": {
+    "pbDeleteAppliedConfigurationsResponse": {
       "type": "object",
       "properties": {
-        "count": {
-          "type": "string",
-          "format": "int64"
+        "success": {
+          "type": "boolean"
         }
       }
     },
     "pbDeleteConditionsResponse": {
       "type": "object",
       "properties": {
-        "count": {
-          "type": "string",
-          "format": "int64"
+        "success": {
+          "type": "boolean"
         }
       }
     },
     "pbDeleteConfigurationsResponse": {
       "type": "object",
       "properties": {
-        "count": {
-          "type": "string",
-          "format": "int64"
+        "success": {
+          "type": "boolean"
         }
       }
     },
@@ -918,8 +909,15 @@
         "latest": {
           "type": "boolean"
         }
-      },
-      "title": "TODO: /configurations/123?version=latest"
+      }
+    },
+    "pbInvokeConfigurationResponse": {
+      "type": "object",
+      "properties": {
+        "appliedConfigurationId": {
+          "type": "string"
+        }
+      }
     },
     "pbResourceId": {
       "type": "object",

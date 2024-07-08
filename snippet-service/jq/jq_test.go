@@ -1,11 +1,11 @@
-package store_test
+package jq_test
 
 import (
 	"testing"
 
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
-	"github.com/plgd-dev/hub/v2/snippet-service/store"
+	"github.com/plgd-dev/hub/v2/snippet-service/jq"
 	hubTest "github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/stretchr/testify/require"
@@ -117,7 +117,7 @@ func TestEvalJQCondition(t *testing.T) {
 				err = commands.DecodeContent(tt.content, &json)
 			}
 			require.NoError(t, err)
-			got, err := store.EvalJQCondition(tt.jq, json)
+			got, err := jq.EvalJQCondition(tt.jq, json)
 			if tt.wantErr {
 				require.Error(t, err)
 				return

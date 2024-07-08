@@ -193,6 +193,7 @@ type WebConfiguration struct {
 	Authority                 string           `yaml:"-" json:"authority"`
 	HTTPGatewayAddress        string           `yaml:"httpGatewayAddress" json:"httpGatewayAddress"`
 	DeviceProvisioningService string           `yaml:"deviceProvisioningService" json:"deviceProvisioningService"`
+	SnippetService            string           `yaml:"snippetService" json:"snippetService"`
 	WebOAuthClient            OAuthClient      `yaml:"webOAuthClient" json:"webOauthClient"`
 	DeviceOAuthClient         OAuthClient      `yaml:"deviceOAuthClient" json:"deviceOauthClient"`
 	M2MOAuthClient            *OAuthClient     `yaml:"m2mOAuthClient" json:"m2mOauthClient"`

@@ -34,7 +34,7 @@ jobs:
               log:
                 level: "debug"
                 dumpBody: "true"
-          
+
           - name: test/cqldb
             cmd: test
             checkRace: "true"
@@ -43,7 +43,6 @@ jobs:
               log:
                 level: "debug"
                 dumpBody: "true"
-    
 
           # test without check race
           - name: test/norace
@@ -52,7 +51,7 @@ jobs:
               log:
                 level: "debug"
                 dumpBody: "true"
-          
+
           - name: test/norace/cqldb
             cmd: test
             database: "cqldb"
@@ -85,6 +84,10 @@ jobs:
               log:
                 level: "debug"
                 dumpBody: "true"
+            snippetService:
+              log:
+                level: "debug"
+                dumpBody: "true"
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -113,6 +116,7 @@ jobs:
           TEST_RESOURCE_AGGREGATE_LOG_LEVEL=${{ matrix.resourceAggregate.log.level }} TEST_RESOURCE_AGGREGATE_LOG_DUMP_BODY=${{ matrix.resourceAggregate.log.dumpBody }} \
           TEST_GRPC_GATEWAY_LOG_LEVEL=${{ matrix.grpcGateway.log.level }} TEST_GRPC_GATEWAY_LOG_DUMP_BODY=${{ matrix.grpcGateway.log.dumpBody }} \
           TEST_IDENTITY_STORE_LOG_LEVEL=${{ matrix.identityStore.log.level }} TEST_IDENTITY_STORE_LOG_DUMP_BODY=${{ matrix.identityStore.log.dumpBody }} \
+          TEST_SNIPPET_SERVICE_LOG_LEVEL=${{ matrix.snippetService.log.level }} TEST_SNIPPET_SERVICE_LOG_DUMP_BODY=${{ matrix.snippetService.log.dumpBody }} \
           TEST_DATABASE=${{ matrix.database }} \
           ${{ matrix.args }}
 
