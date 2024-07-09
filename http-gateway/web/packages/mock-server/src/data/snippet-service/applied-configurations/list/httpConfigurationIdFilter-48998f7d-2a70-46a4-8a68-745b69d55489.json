@@ -1,0 +1,272 @@
+[
+  {
+    "result": {
+      "resources": [
+        {
+          "resourceUpdated": {
+            "auditContext": {
+              "correlationId": "8d140cad-62ac-4fff-aa8f-48f413ca85ca.412a4dd7-3c9b-4dcb-9696-1f0eb6918a6d",
+              "owner": "beb32777-9680-4f42-8761-350eebe76a85"
+            },
+            "eventMetadata": {
+              "version": "0",
+              "timestamp": "0",
+              "connectionId": "48998f7d-2a70-46a4-8a68-745b69d55489",
+              "sequence": "0"
+            },
+            "resourceId": {
+              "deviceId": "7b645eab-01c3-483a-6289-98fc24e32bc1",
+              "href": "/not/existing"
+            },
+            "status": "ERROR",
+            "content": "pending resource update canceled"
+          },
+          "validUntil": "0",
+          "href": "/not/existing",
+          "correlationId": "8d140cad-62ac-4fff-aa8f-48f413ca85ca.412a4dd7-3c9b-4dcb-9696-1f0eb6918a6d",
+          "status": "DONE"
+        },
+        {
+          "status": "DONE",
+          "resourceUpdated": {
+            "resourceId": {
+              "deviceId": "7b645eab-01c3-483a-6289-98fc24e32bc1",
+              "href": "/oc/con"
+            },
+            "status": "CANCELED",
+            "auditContext": {
+              "userId": "beb32777-9680-4f42-8761-350eebe76a85",
+              "correlationId": "8d140cad-62ac-4fff-aa8f-48f413ca85ca.55d8f61c-f85b-4a0c-aaba-c77f237600dd",
+              "owner": "beb32777-9680-4f42-8761-350eebe76a85"
+            },
+            "eventMetadata": {
+              "version": "2",
+              "timestamp": "1719582951907143230",
+              "connectionId": "10.1.65.223:46696",
+              "sequence": "0",
+              "hubId": "1c10a3b6-287c-11ec-ac2d-13054959c274"
+            },
+            "resourceTypes": [
+              "oic.wk.con"
+            ]
+          },
+          "validUntil": "0",
+          "href": "/oc/con",
+          "correlationId": "8d140cad-62ac-4fff-aa8f-48f413ca85ca.55d8f61c-f85b-4a0c-aaba-c77f237600dd"
+        }
+      ],
+      "owner": "beb32777-9680-4f42-8761-350eebe76a85",
+      "timestamp": "1719817002027697453",
+      "id": "8d140cad-62ac-4fff-aa8f-48f413ca85ca",
+      "deviceId": "7b645eab-01c3-483a-6289-98fc24e32bc1",
+      "configurationId": {
+        "id": "48998f7d-2a70-46a4-8a68-745b69d55489",
+        "version": "0"
+      },
+      "onDemand": true
+    }
+  },
+  {
+  "result": {
+    "onDemand": true,
+    "resources": [
+      {
+        "href": "/not/existing",
+        "correlationId": "0f9dc817-333f-4556-9888-c01ed2676478.dd79c0ab-004f-43e3-bc03-58c8c44c6fcd",
+        "status": "DONE",
+        "resourceUpdated": {
+          "status": "ERROR",
+          "content": "pending resource update canceled",
+          "auditContext": {
+            "correlationId": "0f9dc817-333f-4556-9888-c01ed2676478.dd79c0ab-004f-43e3-bc03-58c8c44c6fcd",
+            "owner": "beb32777-9680-4f42-8761-350eebe76a85"
+          },
+          "eventMetadata": {
+            "connectionId": "48998f7d-2a70-46a4-8a68-745b69d55489",
+            "sequence": "0",
+            "version": "0",
+            "timestamp": "0"
+          },
+          "resourceId": {
+            "deviceId": "bcd30976-10e4-4145-5282-eb50ee55dfae",
+            "href": "/not/existing"
+          }
+        },
+        "validUntil": "0"
+      },
+      {
+        "href": "/oc/con",
+        "correlationId": "0f9dc817-333f-4556-9888-c01ed2676478.75be0ddc-e1e0-4738-9a88-b704ae0fc248",
+        "status": "DONE",
+        "resourceUpdated": {
+          "resourceTypes": [
+            "oic.wk.con"
+          ],
+          "resourceId": {
+            "deviceId": "bcd30976-10e4-4145-5282-eb50ee55dfae",
+            "href": "/oc/con"
+          },
+          "status": "OK",
+          "content": {
+            "n": "prezentacia dankovi"
+          },
+          "auditContext": {
+            "userId": "1e3a67e3-ec52-42e2-8bb0-aae61d4af7c8",
+            "correlationId": "0f9dc817-333f-4556-9888-c01ed2676478.75be0ddc-e1e0-4738-9a88-b704ae0fc248",
+            "owner": "beb32777-9680-4f42-8761-350eebe76a85"
+          },
+          "eventMetadata": {
+            "version": "281",
+            "timestamp": "1719595063306772686",
+            "connectionId": "10.110.110.10:30226",
+            "sequence": "10159",
+            "hubId": "1c10a3b6-287c-11ec-ac2d-13054959c274"
+          }
+        },
+        "validUntil": "0"
+      }
+    ],
+    "owner": "beb32777-9680-4f42-8761-350eebe76a85",
+    "timestamp": "1719817002006350403",
+    "id": "0f9dc817-333f-4556-9888-c01ed2676478",
+    "deviceId": "bcd30976-10e4-4145-5282-eb50ee55dfae",
+    "configurationId": {
+      "id": "48998f7d-2a70-46a4-8a68-745b69d55489",
+      "version": "0"
+    }
+  }
+},
+  {
+  "result": {
+    "deviceId": "d9dde79c-3916-433b-4789-ca10aad6fc4a",
+    "configurationId": {
+      "id": "48998f7d-2a70-46a4-8a68-745b69d55489",
+      "version": "0"
+    },
+    "onDemand": true,
+    "resources": [
+      {
+        "status": "DONE",
+        "resourceUpdated": {
+          "resourceId": {
+            "deviceId": "d9dde79c-3916-433b-4789-ca10aad6fc4a",
+            "href": "/not/existing"
+          },
+          "status": "ERROR",
+          "content": "pending resource update canceled",
+          "auditContext": {
+            "correlationId": "9dae740f-a598-4411-8cd0-cbf7c804426a.a0c76318-6f04-4c04-9c98-c0f87a0e8a1f",
+            "owner": "beb32777-9680-4f42-8761-350eebe76a85"
+          },
+          "eventMetadata": {
+            "connectionId": "48998f7d-2a70-46a4-8a68-745b69d55489",
+            "sequence": "0",
+            "version": "0",
+            "timestamp": "0"
+          }
+        },
+        "validUntil": "0",
+        "href": "/not/existing",
+        "correlationId": "9dae740f-a598-4411-8cd0-cbf7c804426a.a0c76318-6f04-4c04-9c98-c0f87a0e8a1f"
+      },
+      {
+        "status": "DONE",
+        "resourceUpdated": {
+          "resourceId": {
+            "deviceId": "d9dde79c-3916-433b-4789-ca10aad6fc4a",
+            "href": "/oc/con"
+          },
+          "status": "OK",
+          "content": {
+            "n": "prezentacia dankovi"
+          },
+          "auditContext": {
+            "correlationId": "9dae740f-a598-4411-8cd0-cbf7c804426a.38e0d0de-4b86-468f-8a61-e7e5df3edf98",
+            "owner": "beb32777-9680-4f42-8761-350eebe76a85",
+            "userId": "1e3a67e3-ec52-42e2-8bb0-aae61d4af7c8"
+          },
+          "eventMetadata": {
+            "version": "5",
+            "timestamp": "1719595063306023868",
+            "connectionId": "10.110.110.10:56076",
+            "sequence": "10153",
+            "hubId": "1c10a3b6-287c-11ec-ac2d-13054959c274"
+          },
+          "resourceTypes": [
+            "oic.wk.con"
+          ]
+        },
+        "validUntil": "0",
+        "href": "/oc/con",
+        "correlationId": "9dae740f-a598-4411-8cd0-cbf7c804426a.38e0d0de-4b86-468f-8a61-e7e5df3edf98"
+      }
+    ],
+    "owner": "beb32777-9680-4f42-8761-350eebe76a85",
+    "timestamp": "1719817002023535166",
+    "id": "9dae740f-a598-4411-8cd0-cbf7c804426a"
+  }
+},
+  {
+  "result": {
+    "timestamp": "1719595103190656748",
+    "id": "40cab4b8-e9d6-47d7-bd70-4daa85c094ad",
+    "deviceId": "wdsw",
+    "configurationId": {
+      "id": "48998f7d-2a70-46a4-8a68-745b69d55489",
+      "version": "0"
+    },
+    "onDemand": true,
+    "resources": [
+      {
+        "validUntil": "0",
+        "href": "/not/existing",
+        "correlationId": "40cab4b8-e9d6-47d7-bd70-4daa85c094ad.18830e29-5204-4fc9-a76f-91ab65409431",
+        "status": "DONE",
+        "resourceUpdated": {
+          "status": "ERROR",
+          "content": "rpc error: code = PermissionDenied desc = cannot validate user access: rpc error: code = PermissionDenied desc = access denied",
+          "auditContext": {
+            "correlationId": "40cab4b8-e9d6-47d7-bd70-4daa85c094ad.18830e29-5204-4fc9-a76f-91ab65409431",
+            "owner": "beb32777-9680-4f42-8761-350eebe76a85"
+          },
+          "eventMetadata": {
+            "version": "0",
+            "timestamp": "0",
+            "connectionId": "48998f7d-2a70-46a4-8a68-745b69d55489",
+            "sequence": "0"
+          },
+          "resourceId": {
+            "deviceId": "wdsw",
+            "href": "/not/existing"
+          }
+        }
+      },
+      {
+        "href": "/oc/con",
+        "correlationId": "40cab4b8-e9d6-47d7-bd70-4daa85c094ad.d4de7422-8543-4a67-bb25-4f41e1fc7e6d",
+        "status": "DONE",
+        "resourceUpdated": {
+          "resourceId": {
+            "deviceId": "wdsw",
+            "href": "/oc/con"
+          },
+          "status": "ERROR",
+          "content": "rpc error: code = PermissionDenied desc = cannot validate user access: rpc error: code = PermissionDenied desc = access denied",
+          "auditContext": {
+            "correlationId": "40cab4b8-e9d6-47d7-bd70-4daa85c094ad.d4de7422-8543-4a67-bb25-4f41e1fc7e6d",
+            "owner": "beb32777-9680-4f42-8761-350eebe76a85"
+          },
+          "eventMetadata": {
+            "sequence": "0",
+            "version": "0",
+            "timestamp": "0",
+            "connectionId": "48998f7d-2a70-46a4-8a68-745b69d55489"
+          }
+        },
+        "validUntil": "0"
+      }
+    ],
+    "owner": "beb32777-9680-4f42-8761-350eebe76a85"
+  }
+}
+]

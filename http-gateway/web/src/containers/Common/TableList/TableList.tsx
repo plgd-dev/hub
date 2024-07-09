@@ -1,5 +1,4 @@
 import React, { FC, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import { useResizeDetector } from 'react-resize-detector'
 import { useIntl } from 'react-intl'
 import ReactDOM from 'react-dom'
 
@@ -19,10 +18,13 @@ const TableList: FC<Props> = (props) => {
     const {
         columns,
         data,
+        dataTestId,
         defaultPageSize,
         defaultSortBy,
+        globalSearch,
         i18n,
         iframeMode,
+        loading,
         paginationPortalTargetId,
         primaryAttribute,
         onDeleteClick,
@@ -32,9 +34,6 @@ const TableList: FC<Props> = (props) => {
         ...defaultPops,
         ...props,
     }
-    const { ref, height } = useResizeDetector({
-        refreshRate: 500,
-    })
 
     const [isAllSelected, setIsAllSelected] = useState(false)
     const [selected, setSelected] = useState([])
@@ -50,7 +49,6 @@ const TableList: FC<Props> = (props) => {
 
     return (
         <div
-            ref={ref}
             style={{
                 height: '100%',
                 width: '100%',
@@ -60,14 +58,19 @@ const TableList: FC<Props> = (props) => {
             }}
         >
             <Table
+                autoHeight
                 columns={columns}
                 data={validData(data)}
+                dataTestId={dataTestId}
                 defaultPageSize={defaultPageSize ?? DEFAULT_PAGE_SIZE}
                 defaultSortBy={defaultSortBy}
-                height={height}
+                globalSearch={globalSearch}
+                height={undefined}
                 i18n={{
                     search: _(g.search),
+                    placeholder: i18n.tablePlaceholder,
                 }}
+                loading={loading}
                 onRowsSelect={(isAllRowsSelected, selection) => {
                     isAllRowsSelected !== isAllSelected && setIsAllSelected && setIsAllSelected(isAllRowsSelected)
                     setSelected(selection)
@@ -85,6 +88,11 @@ const TableList: FC<Props> = (props) => {
                         actionPrimary={
                             <Button onClick={() => onDeleteClick(isAllSelected, selected)} variant='primary'>
                                 {_(g.delete)}
+                            </Button>
+                        }
+                        actionSecondary={
+                            <Button onClick={() => setSelected([])} variant='tertiary'>
+                                {_(g.cancel)}
                             </Button>
                         }
                         i18n={{

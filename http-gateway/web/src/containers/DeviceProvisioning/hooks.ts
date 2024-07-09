@@ -216,7 +216,7 @@ export const useEnrollmentGroupDetail = (enrollmentGroupId?: string): StreamApiP
         if (!enrollmentGroupLoading && !hubsLoading && enrollmentGroupData && Array.isArray(enrollmentGroupData) && hubsData) {
             setData({
                 ...enrollmentGroupData[0],
-                preSharedKey: formatPSK(enrollmentGroupData[0].preSharedKey),
+                preSharedKey: formatPSK(enrollmentGroupData[0]?.preSharedKey),
                 hubsData,
             })
         }

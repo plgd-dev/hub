@@ -105,7 +105,7 @@ const Step4: FC<Props> = (props) => {
                         render={({ field: { onChange, value } }) => (
                             <div css={styles.flex}>
                                 <FormInput
-                                    onBlur={(e) => updateField(`authorization.provider.scopes.${index}`, { value: e.target.value, id: field.id }, true)}
+                                    onBlur={(e) => updateField(`authorization.provider.scopes.${index}`, { value: e.target.value, id: field.id })}
                                     onChange={(v) => {
                                         onChange({ value: v.target.value, id: field.id })
                                     }}

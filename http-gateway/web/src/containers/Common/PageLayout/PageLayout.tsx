@@ -3,6 +3,7 @@ import { useIntl } from 'react-intl'
 import isFunction from 'lodash/isFunction'
 import ReactDOM from 'react-dom'
 import { useRecoilState } from 'recoil'
+import get from 'lodash/get'
 
 import { default as PageLayoutShared } from '@shared-ui/components/Atomic/PageLayout/PageLayout'
 import Footer from '@shared-ui/components/Layout/Footer'
@@ -18,7 +19,7 @@ import { messages as t } from '@/containers/App/App.i18n'
 
 const PageLayout = forwardRef<HTMLDivElement, Props>((props, ref) => {
     const { formatMessage: _ } = useIntl()
-    const { children, breadcrumbs, deviceId, notFound, pendingCommands, innerPortalTarget, size, ...rest } = props
+    const { children, breadcrumbs, deviceId, notFound, pendingCommands, innerPortalTarget, size, headlineCustomContent, ...rest } = props
     const { footerExpanded, setFooterExpanded, collapsed } = useContext(AppContext)
 
     const [isDomReady, setIsDomReady] = useState(false)
@@ -37,7 +38,7 @@ const PageLayout = forwardRef<HTMLDivElement, Props>((props, ref) => {
             collapsed={collapsed}
             footer={
                 <Footer
-                    footerExpanded={footerExpanded}
+                    footerExpanded={window.location.pathname.indexOf('devices') > 0 ? footerExpanded : false}
                     innerPortalTarget={innerPortalTarget}
                     paginationComponent={<div id='paginationPortalTarget'></div>}
                     recentTasksPortal={pendingCommands && <div id='recentTasksPortalTarget'></div>}
@@ -54,12 +55,15 @@ const PageLayout = forwardRef<HTMLDivElement, Props>((props, ref) => {
                         )
                     }
                     setFooterExpanded={setFooterExpanded}
-                    size={size}
+                    size={window.location.pathname.indexOf('devices') > 0 ? size : 'small'}
                 />
             }
             header={notFound ? undefined : rest.header}
+            headlineCustomContent={notFound ? undefined : headlineCustomContent}
+            notFound={notFound}
             ref={ref}
             title={notFound ? undefined : rest.title}
+            xPadding={notFound ? true : get(rest, 'xPadding', true)}
         >
             {isDomReady &&
                 ReactDOM.createPortal(
@@ -76,7 +80,7 @@ const PageLayout = forwardRef<HTMLDivElement, Props>((props, ref) => {
                     document.querySelector('#breadcrumbsPortalTarget') as Element
                 )}
             {pendingCommands && <PendingCommandsExpandableList deviceId={deviceId} />}
-            {notFound ? <NotFoundPage message={_(t.notFoundPageDefaultMessage)} title={_(t.pageTitle)} /> : children}
+            {notFound ? <NotFoundPage layout={false} message={_(t.notFoundPageDefaultMessage)} title={_(t.pageTitle)} /> : children}
         </PageLayoutShared>
     )
 })

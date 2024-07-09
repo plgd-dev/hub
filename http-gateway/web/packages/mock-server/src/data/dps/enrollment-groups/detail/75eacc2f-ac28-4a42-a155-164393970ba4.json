@@ -1,0 +1,17 @@
+{
+  "result": {
+    "id": "75eacc2f-ac28-4a42-a155-164393970ba4",
+    "owner": "beb32777-9680-4f42-8761-350eebe76a85",
+    "attestationMechanism": {
+      "x509": {
+        "certificateChain": "/secrets/enrollmentgroups/x509/75eacc2f-ac28-4a42-a155-164393970ba4/certificatechain.crt",
+        "leadCertificateName": "root.ca.plgd.cloud",
+        "expiredCertificateEnabled": false
+      }
+    },
+    "hubIds": [
+      "1c10a3b6-287c-11ec-ac2d-13054959c274"
+    ],
+    "name": "75eacc2f-ac28-4a42-a155-164393970ba4"
+  }
+}
