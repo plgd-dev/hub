@@ -170,6 +170,19 @@ tls:
   useSystemCAPool: {{ $http.tls.useSystemCAPool }}
 {{- end }}
 
+{{- define "plgd-hub.authorizationFilterEndpoints" }}
+  {{- $ := index . 0 }}
+  {{- $endpoints := index . 1 }}
+  {{- $result := list}}
+  {{- range $endpoints }}
+  {{- $authority := include "plgd-hub.resolveTemplateString" (list $ .authority) }}
+  {{- if $authority }}
+  {{- $result = append $result . }}
+  {{- end }}
+  {{- end }}
+  {{- dict "Values" $result | toYaml }}
+{{- end }}
+
 {{- define "plgd-hub.basicAuthorizationConfig" }}
   {{- $ := index . 0 }}
   {{- $authorization := index . 1 }}
@@ -193,13 +206,14 @@ tls:
   {{- if eq (len $endpoints) 0 }}
   {{- $endpoints = $.Values.global.authorization.endpoints }}
   {{- end }}
-  {{- if eq (len $endpoints) 0 }}
-  {{- fail (printf "%s.authorization.endpoints or global.authorization.endpoints is required" $prefix) }}
+  {{- $mapEndpoints := include "plgd-hub.authorizationFilterEndpoints" (list $ $endpoints) | fromYaml }}
+  {{- if eq (len $mapEndpoints.Values) 0 }}
+  {{- fail (printf "%s.endpoints or global.authorization.endpoints is required" $prefix) }}
   {{- end}}
   {{- if not $.Values.mockoauthserver.enabled }}
-  audience: {{ include "plgd-hub.resolveTemplateString" (list $  $audience) }}
+  audience: {{ include "plgd-hub.resolveTemplateString" (list $ $audience) }}
   endpoints:
-    {{- range $endpoints }}
+    {{- range $mapEndpoints.Values }}
     {{- $authority := include "plgd-hub.resolveTemplateString" (list $ .authority) }}
     {{- if $authority }}
     - authority: {{ include "plgd-hub.resolveTemplateString" (list $ .authority) }}
@@ -208,9 +222,9 @@ tls:
     {{- end }}
     {{- end }}
   {{- else }}
-  audience: {{ include "plgd-hub.resolveTemplateString" (list $  $audience) }}
+  audience: {{ include "plgd-hub.resolveTemplateString" (list $ $audience) }}
   endpoints:
-    {{- range $endpoints }}
+    {{- range $mapEndpoints.Values }}
     {{- $authority := include "plgd-hub.resolveTemplateString" (list $ .authority) }}
     {{- if not $authority }}
     {{- $authority = include "plgd-hub.mockoauthserver.uri" $ }}
