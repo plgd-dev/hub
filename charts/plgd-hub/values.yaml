@@ -29,7 +29,7 @@ global:
     audience: "{{ include \"plgd-hub.globalAudience\" . }}"
     endpoints:
       # -- Authorization endpoint to Customer OAuth server
-      - address: "{{ include \"plgd-hub.globalAuthority\" . }}"
+      - authority: "{{ include \"plgd-hub.globalAuthority\" . }}"
         http:
           maxIdleConns: 16
           maxConnsPerHost: 32
@@ -41,7 +41,7 @@ global:
             keyFile:
             certFile:
             useSystemCAPool: true
-      - address: "{{ include \"plgd-hub.m2mOAuthServerAuthority\" . }}"
+      - authority: "{{ include \"plgd-hub.m2mOAuthServerAuthority\" . }}"
         http:
           maxIdleConns: 16
           maxConnsPerHost: 32
