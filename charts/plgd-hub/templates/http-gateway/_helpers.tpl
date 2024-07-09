@@ -83,6 +83,20 @@
   {{- end }}
 {{- end }}
 
+{{- define "plgd-hub.httpgateway.snippetServiceApiDomain" -}}
+  {{- $domain := "" }}
+  {{- if .Values.snippetservice }}
+    {{- if .Values.snippetservice.enabled }}
+      {{- if .Values.snippetservice.domain }}
+        {{- $domain = printf "https://%s" .Values.snippetservice.domain }}
+      {{- else }}
+        {{- $domain = printf "https://api.%s" .Values.global.domain }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+  {{- printf $domain }}
+{{- end }}
+
 {{- define "plgd-hub.httpgateway.uiDomain" -}}
   {{- if .Values.httpgateway.uiDomain }}
     {{- printf "%s" .Values.httpgateway.uiDomain }}

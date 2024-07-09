@@ -1,0 +1,25 @@
+[
+  {
+    "result": {
+      "id": "48998f7d-2a70-46a4-8a68-745b69d55489",
+      "version": "1",
+      "name": "my-cfg-1",
+      "resources": [
+        {
+          "href": "/not/existing",
+          "content": 123456,
+          "timeToLive": "0"
+        },
+        {
+          "href": "/oc/con",
+          "content": {
+            "n": "prezentacia dankovi"
+          },
+          "timeToLive": "0"
+        }
+      ],
+      "owner": "beb32777-9680-4f42-8761-350eebe76a85",
+      "timestamp": "1718961203704580832"
+    }
+  }
+]

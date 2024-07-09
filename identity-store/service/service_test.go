@@ -34,7 +34,7 @@ func MakeConfig(t require.TestingT) Config {
 	cfg.APIs.GRPC.TLS.CertFile = config.CERT_FILE
 	cfg.APIs.GRPC.TLS.KeyFile = config.KEY_FILE
 	cfg.APIs.GRPC.Authorization.OwnerClaim = config.OWNER_CLAIM
-	cfg.APIs.GRPC.Authorization.Config = config.MakeAuthorizationConfig()
+	cfg.APIs.GRPC.Authorization.Config = config.MakeValidatorConfig()
 
 	cfg.HubID = config.HubID()
 

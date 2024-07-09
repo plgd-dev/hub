@@ -8,6 +8,7 @@ import (
 	"github.com/plgd-dev/device/v2/schema/configuration"
 	"github.com/plgd-dev/device/v2/schema/interfaces"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
+	grpcgwTest "github.com/plgd-dev/hub/v2/grpc-gateway/test"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
@@ -94,7 +95,7 @@ func TestClientUpdateResource(t *testing.T) {
 
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
-	c := NewTestClient(t)
+	c := grpcgwTest.NewTestClient(t)
 	defer func() {
 		errC := c.Close()
 		require.NoError(t, errC)
@@ -131,7 +132,7 @@ func TestUpdateConfigurationName(t *testing.T) {
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
-	c := NewTestClient(t)
+	c := grpcgwTest.NewTestClient(t)
 	defer func() {
 		err := c.Close()
 		require.NoError(t, err)

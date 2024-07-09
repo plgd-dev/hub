@@ -9,6 +9,7 @@ import (
 	"github.com/plgd-dev/device/v2/schema/platform"
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	grpcgwTest "github.com/plgd-dev/hub/v2/grpc-gateway/test"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
@@ -82,7 +83,7 @@ func TestObserveDeviceResourcesRetrieve(t *testing.T) {
 	}()
 	rac := raservice.NewResourceAggregateClient(raConn.GRPC())
 
-	c := NewTestClient(t)
+	c := grpcgwTest.NewTestClient(t)
 	defer func() {
 		errC := c.Close()
 		require.NoError(t, errC)
@@ -177,7 +178,7 @@ func TestObserveDeviceResourcesUpdate(t *testing.T) {
 	}()
 	rac := raservice.NewResourceAggregateClient(raConn.GRPC())
 
-	c := NewTestClient(t)
+	c := grpcgwTest.NewTestClient(t)
 	defer func() {
 		errC := c.Close()
 		require.NoError(t, errC)
@@ -306,7 +307,7 @@ func TestObserveDeviceResourcesCreateAndDelete(t *testing.T) {
 	}()
 	rac := raservice.NewResourceAggregateClient(raConn.GRPC())
 
-	c := NewTestClient(t)
+	c := grpcgwTest.NewTestClient(t)
 	defer func() {
 		errC := c.Close()
 		require.NoError(t, errC)

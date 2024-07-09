@@ -356,6 +356,20 @@
             "in": "query",
             "required": false,
             "type": "string"
+          },
+          {
+            "name": "force",
+            "description": "if true, the command will be executed even if the resource does not exist",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "async",
+            "description": "if true, the command will finish immediately after pending event is created",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -408,6 +422,20 @@
             "required": false,
             "type": "string",
             "format": "int64"
+          },
+          {
+            "name": "force",
+            "description": "if true, the command will be executed even if the resource does not exist",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "async",
+            "description": "if true, the command will finish immediately after pending event is created",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -530,6 +558,20 @@
             "required": false,
             "type": "string",
             "format": "int64"
+          },
+          {
+            "name": "force",
+            "description": "if true, the command will be executed even if the resource does not exist",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "async",
+            "description": "if true, the command will finish immediately after pending event is created",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -674,6 +716,13 @@
               "type": "string"
             },
             "collectionFormat": "multi"
+          },
+          {
+            "name": "includeHiddenResources",
+            "description": "Get all pending commands for all resources, even if the resource is not published.",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -2301,6 +2350,10 @@
         "deviceProvisioningService": {
           "type": "string",
           "title": "Address to device provisioning service HTTP API in format https://host:port"
+        },
+        "snippetService": {
+          "type": "string",
+          "title": "Address to snippet service HTTP API in format https://host:port"
         }
       },
       "title": "UI configuration"

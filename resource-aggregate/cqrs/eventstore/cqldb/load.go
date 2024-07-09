@@ -143,7 +143,7 @@ func snapshotQueriesToFilter(deviceID string, queries []eventstore.SnapshotQuery
 	}
 	aggrs := make([]string, 0, len(queries))
 	for _, q := range queries {
-		if q.AggregateID != "" {
+		if q.AggregateID != "" && q.AggregateID != uuid.Nil.String() {
 			aggrs = append(aggrs, q.AggregateID)
 		}
 	}
@@ -192,7 +192,7 @@ func (s *EventStore) loadFromSnapshotByGroup(ctx context.Context, groupID string
 func normalizeQueries(queries []eventstore.SnapshotQuery) map[string][]eventstore.SnapshotQuery {
 	normalizeQuery := make(map[string][]eventstore.SnapshotQuery, len(queries))
 	for _, query := range queries {
-		if query.AggregateID == "" {
+		if query.AggregateID == "" || query.AggregateID == uuid.Nil.String() {
 			normalizeQuery[query.GroupID] = nil
 			continue
 		}

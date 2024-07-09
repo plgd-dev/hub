@@ -161,7 +161,7 @@ const EnrollmentGroupsListPage: FC<any> = () => {
     )
 
     return (
-        <PageLayout breadcrumbs={breadcrumbs} header={<ListHeader />} loading={loading || deleting} title={_(dpsT.enrollmentGroups)}>
+        <PageLayout tableLayout breadcrumbs={breadcrumbs} header={<ListHeader />} loading={loading || deleting} title={_(dpsT.enrollmentGroups)}>
             <TableList
                 columns={columns}
                 data={data}

@@ -71,6 +71,7 @@ ui:
   webConfiguration:
     httpGatewayAddress: ""
     deviceProvisioningService: ""
+    snippetService: ""
     webOAuthClient:
       authority: ""
       clientID: ""

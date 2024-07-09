@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"slices"
 	"testing"
 	"time"
 
@@ -16,7 +17,6 @@ import (
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
-	"github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	test "github.com/plgd-dev/hub/v2/test"
@@ -100,8 +100,8 @@ func TestRequestHandlerGetDeviceResourceLinks(t *testing.T) {
 				{
 					DeviceId: deviceID,
 					Resources: test.ResourceLinksToResources(deviceID, test.FilterResourceLink(func(rl schema.ResourceLink) bool {
-						return strings.Contains(rl.ResourceTypes, collection.ResourceType) ||
-							strings.Contains(rl.ResourceTypes, types.BINARY_SWITCH)
+						return slices.Contains(rl.ResourceTypes, collection.ResourceType) ||
+							slices.Contains(rl.ResourceTypes, types.BINARY_SWITCH)
 					}, resourceLinks)),
 					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
 				},
