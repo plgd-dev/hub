@@ -182,11 +182,120 @@ type DeviceOAuthConfigType = {
     scopes: string[]
 }
 
+const getCodeByIframe = (options: any) => {
+    const { resolve, reject, url } = options
+
+    let timeout: any = null
+    const iframe = document.createElement('iframe')
+    iframe.src = url
+
+    const destroyIframe = () => {
+        sessionStorage.removeItem(DEVICE_AUTH_CODE_SESSION_KEY)
+        localStorage.removeItem(DEVICE_AUTH_CODE_SESSION_KEY)
+        iframe.parentNode?.removeChild(iframe)
+    }
+
+    const doResolve = (value: string) => {
+        destroyIframe()
+        clearTimeout(timeout)
+        resolve(value)
+    }
+
+    const doReject = () => {
+        destroyIframe()
+        clearTimeout(timeout)
+        reject(new Error('Failed to get the device auth code.'))
+    }
+
+    iframe.onload = () => {
+        let attempts = 0
+        const maxAttempts = 40
+        const getCode = () => {
+            attempts += 1
+            const code = sessionStorage.getItem(DEVICE_AUTH_CODE_SESSION_KEY) || localStorage.getItem(DEVICE_AUTH_CODE_SESSION_KEY)
+
+            if (code) {
+                return doResolve(code)
+            }
+
+            if (attempts > maxAttempts) {
+                return doReject()
+            }
+
+            timeout = setTimeout(getCode, 500)
+        }
+
+        getCode()
+    }
+
+    iframe.onerror = () => {
+        doReject()
+    }
+
+    document.body.appendChild(iframe)
+}
+
+const getCodeByNewTab = (options: any) => {
+    const { resolve, reject, url } = options
+
+    let timeout: any = null
+    let attempts = 0
+    const maxAttempts = 60
+
+    const win = window.open(url, 'thePopUp', '')
+
+    const doResolve = (value: any) => {
+        clearTimeout(timeout)
+        resolve(value)
+    }
+
+    const doReject = () => {
+        clearTimeout(timeout)
+
+        reject(new Error('Failed to get the device auth code.'))
+    }
+
+    const pollTimer = window.setInterval(function () {
+        if (win && win.closed) {
+            window.clearInterval(pollTimer)
+            // find code after close
+            const code = localStorage.getItem(DEVICE_AUTH_CODE_SESSION_KEY)
+
+            if (code) {
+                localStorage.removeItem(DEVICE_AUTH_CODE_SESSION_KEY)
+                return doResolve(code)
+            } else {
+                return reject('user-cancel')
+            }
+        }
+    }, 200)
+
+    const getCode = () => {
+        attempts += 1
+        const code = localStorage.getItem(DEVICE_AUTH_CODE_SESSION_KEY)
+
+        if (code) {
+            localStorage.removeItem(DEVICE_AUTH_CODE_SESSION_KEY)
+            return doResolve(code)
+        }
+
+        if (attempts > maxAttempts) {
+            return doReject()
+        }
+
+        timeout = setTimeout(getCode, 500)
+    }
+
+    // scan for the code
+    getCode()
+}
+
 /**
  * Returns an async function which resolves with a authorization code gathered from a rendered iframe, used for onboarding of a device.
  * @param {*} deviceId
+ * @param newTab
  */
-export const getDeviceAuthCode = (deviceId: string) => {
+export const getDeviceAuthCode = (deviceId: string, newTab = false) => {
     return new Promise((resolve, reject) => {
         const { clientId, audience, scopes = [] } = security.getDeviceOAuthConfig() as DeviceOAuthConfigType
         const AuthUserManager = security.getUserManager()
@@ -196,55 +305,14 @@ export const getDeviceAuthCode = (deviceId: string) => {
         }
 
         AuthUserManager.metadataService.getAuthorizationEndpoint().then((authorizationEndpoint: string) => {
-            let timeout: any = null
-            const iframe = document.createElement('iframe')
             const audienceParam = audience ? `&audience=${audience}` : ''
-            iframe.src = `${authorizationEndpoint}?response_type=code&client_id=${clientId}&scope=${scopes}${audienceParam}&redirect_uri=${window.location.origin}/devices&device_id=${deviceId}`
+            const url = `${authorizationEndpoint}?response_type=code&client_id=${clientId}&scope=${scopes}${audienceParam}&redirect_uri=${window.location.origin}/devices&device_id=${deviceId}`
 
-            const destroyIframe = () => {
-                sessionStorage.removeItem(DEVICE_AUTH_CODE_SESSION_KEY)
-                localStorage.removeItem(DEVICE_AUTH_CODE_SESSION_KEY)
-                iframe.parentNode?.removeChild(iframe)
+            if (newTab) {
+                getCodeByNewTab({ url, resolve, reject })
+            } else {
+                getCodeByIframe({ url, resolve, reject })
             }
-
-            const doResolve = (value: string) => {
-                destroyIframe()
-                clearTimeout(timeout)
-                resolve(value)
-            }
-
-            const doReject = () => {
-                destroyIframe()
-                clearTimeout(timeout)
-                reject(new Error('Failed to get the device auth code.'))
-            }
-
-            iframe.onload = () => {
-                let attempts = 0
-                const maxAttempts = 40
-                const getCode = () => {
-                    attempts += 1
-                    const code = sessionStorage.getItem(DEVICE_AUTH_CODE_SESSION_KEY) || localStorage.getItem(DEVICE_AUTH_CODE_SESSION_KEY)
-
-                    if (code) {
-                        return doResolve(code)
-                    }
-
-                    if (attempts > maxAttempts) {
-                        return doReject()
-                    }
-
-                    timeout = setTimeout(getCode, 500)
-                }
-
-                getCode()
-            }
-
-            iframe.onerror = () => {
-                doReject()
-            }
-
-            document.body.appendChild(iframe)
         })
     })
 }

@@ -17,16 +17,19 @@ import { DEVICE_AUTH_CODE_SESSION_KEY } from '@/constants'
 const ProvisionNewDeviceCore = () => {
     const [show, setShow] = useState(false)
     const [fetching, setFetching] = useState(false)
-    const [deviceId, setDeviceId] = useState<null | string>(null)
     const [code, setCode] = useState<undefined | string>(undefined)
     const inputRef = useRef<HTMLInputElement>(null)
+    const [resetIndex, setResetIndex] = useState(0)
 
     const { formatMessage: _ } = useIntl()
 
-    const handleFetch = async () => {
+    const handleFetch = async (deviceId: string) => {
         setFetching(true)
         try {
-            const code = await getDeviceAuthCode(deviceId as string)
+            // @ts-ignore
+            let isBrave = await navigator?.brave?.isBrave()
+
+            const code = await getDeviceAuthCode(deviceId, isBrave)
             setFetching(false)
             setCode(code as string)
         } catch (e: any) {
@@ -56,7 +59,7 @@ const ProvisionNewDeviceCore = () => {
         setCode(undefined)
         localStorage.removeItem(DEVICE_AUTH_CODE_SESSION_KEY)
         sessionStorage.removeItem(DEVICE_AUTH_CODE_SESSION_KEY)
-        setDeviceId(null)
+        setResetIndex((prev) => prev + 1)
     }
 
     const { coapGateway: deviceEndpoint, id: hubId, certificateAuthorities } = security.getWellKnownConfig() || {}
@@ -105,6 +108,7 @@ const ProvisionNewDeviceCore = () => {
                     deviceInformation: _(t.deviceInformation),
                 }}
                 onClose={!fetching ? onClose : () => {}}
+                resetIndex={resetIndex}
                 show={show}
                 title={_(t.provisionNewDevice)}
             />
