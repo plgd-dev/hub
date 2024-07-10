@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -185,18 +186,35 @@ func MakeHttpServerConfig() httpServer.Config {
 	}
 }
 
-func MakePublisherConfig() natsClient.ConfigPublisher {
-	return natsClient.ConfigPublisher{
+func MakePublisherConfig(t require.TestingT) natsClient.ConfigPublisher {
+	cp := natsClient.ConfigPublisher{
 		Config: natsClient.Config{
 			URL:            NATS_URL,
 			TLS:            MakeTLSClientConfig(),
 			FlusherTimeout: time.Second * 30,
 		},
-		// LeadResourceType: &natsClient.LeadResourceTypeConfig{
-		// 	Enabled: true,
-		// 	Filter:  natsClient.LeadResourceTypeFilter_First,
-		// },
 	}
+	lrt := &natsClient.LeadResourceTypeConfig{
+		UseUUID: os.Getenv("TEST_LEAD_RESOURCE_TYPE_USE_UUID") == TRUE_STRING,
+	}
+	filterIn := os.Getenv("TEST_LEAD_RESOURCE_TYPE_FILTER")
+	if filterIn != "" {
+		filter, err := natsClient.LeadResourceTypeFilterFromString(filterIn)
+		require.NoError(t, err)
+		lrt.Enabled = true
+		lrt.Filter = filter
+	}
+	regexFilterIn := os.Getenv("TEST_LEAD_RESOURCE_TYPE_REGEX_FILTER")
+	if regexFilterIn != "" {
+		_, err := regexp.Compile(regexFilterIn)
+		require.NoError(t, err)
+		lrt.Enabled = true
+		lrt.RegexFilter = regexFilterIn
+	}
+	if lrt.Enabled {
+		cp.LeadResourceType = lrt
+	}
+	return cp
 }
 
 func MakeSubscriberConfig() natsClient.Config {

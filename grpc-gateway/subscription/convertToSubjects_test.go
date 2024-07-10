@@ -164,11 +164,11 @@ func TestConvertToSubjects(t *testing.T) {
 				},
 				owner: "c",
 			},
-			want: []string{
-				isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID(resourceID.GetDeviceId()), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType())),
-				isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithOwner("c"), utils.WithDeviceID(resourceID.GetDeviceId()), utils.WithHrefId(utils.HrefToID(resourceID.GetHref()).String()), isEvents.WithEventType((&events.ResourceChanged{}).EventType())),
-				isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")),
-			},
+			want: func() []string {
+				subjects := []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID(resourceID.GetDeviceId()), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType()))}
+				subjects = append(subjects, utils.GetResourceEventSubjects("c", resourceID, (&events.ResourceChanged{}).EventType())...)
+				return append(subjects, isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")))
+			}(),
 		},
 		{
 			name: "href",
@@ -181,11 +181,11 @@ func TestConvertToSubjects(t *testing.T) {
 				},
 				owner: "c",
 			},
-			want: []string{
-				isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID("*"), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType())),
-				isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithOwner("c"), utils.WithDeviceID("*"), utils.WithHrefId(utils.HrefToID(resourceID.GetHref()).String()), isEvents.WithEventType((&events.ResourceChanged{}).EventType())),
-				isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")),
-			},
+			want: func() []string {
+				subjects := []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID("*"), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType()))}
+				subjects = append(subjects, utils.GetResourceEventSubjects("c", commands.NewResourceID("*", resourceID.GetHref()), (&events.ResourceChanged{}).EventType())...)
+				return append(subjects, isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")))
+			}(),
 		},
 		{
 			name: "device and resourceID",
@@ -203,11 +203,11 @@ func TestConvertToSubjects(t *testing.T) {
 				},
 				owner: "c",
 			},
-			want: []string{
-				isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID(resourceID.GetDeviceId()), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType())),
-				isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithOwner("c"), utils.WithDeviceID(resourceID.GetDeviceId()), utils.WithHrefId("*"), isEvents.WithEventType((&events.ResourceChanged{}).EventType())),
-				isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")),
-			},
+			want: func() []string {
+				subjects := []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID(resourceID.GetDeviceId()), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType()))}
+				subjects = append(subjects, utils.GetResourceEventSubjects("c", commands.NewResourceID(resourceID.GetDeviceId(), "*"), (&events.ResourceChanged{}).EventType())...)
+				return append(subjects, isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")))
+			}(),
 		},
 		{
 			name: "device, href and resourceID",
@@ -226,11 +226,11 @@ func TestConvertToSubjects(t *testing.T) {
 				},
 				owner: "c",
 			},
-			want: []string{
-				isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID(resourceID.GetDeviceId()), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType())),
-				isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithOwner("c"), utils.WithDeviceID(resourceID.GetDeviceId()), utils.WithHrefId(utils.HrefToID(resourceID.GetHref()).String()), isEvents.WithEventType((&events.ResourceChanged{}).EventType())),
-				isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")),
-			},
+			want: func() []string {
+				subjects := []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID(resourceID.GetDeviceId()), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType()))}
+				subjects = append(subjects, utils.GetResourceEventSubjects("c", resourceID, (&events.ResourceChanged{}).EventType())...)
+				return append(subjects, isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")))
+			}(),
 		},
 	}
 	for _, tt := range tests {

@@ -60,14 +60,21 @@ jobs:
                 level: "debug"
                 dumpBody: "true"
 
-          # test without check race and with ECDSA-SHA256 signature and P384 elliptic curve certificates
+          # test
+          #   - without check race
+          #   - with ECDSA-SHA256 signature and P384 elliptic curve certificates
+          #   - with TEST_LEAD_RESOURCE_TYPE_FILTER, TEST_LEAD_RESOURCE_TYPE_USE_UUID
           - name: test/norace-384
             cmd: test
-            args: CERT_TOOL_SIGN_ALG=ECDSA-SHA384 CERT_TOOL_ELLIPTIC_CURVE=P384
+            args: CERT_TOOL_SIGN_ALG=ECDSA-SHA384 CERT_TOOL_ELLIPTIC_CURVE=P384 TEST_LEAD_RESOURCE_TYPE_FILTER=last TEST_LEAD_RESOURCE_TYPE_USE_UUID=true
 
-          # test without check race with logs from all services
+          # test
+          #   - without check race
+          #   - with TEST_LEAD_RESOURCE_TYPE_FILTER, TEST_LEAD_RESOURCE_TYPE_REGEX_FILTER
+          #   - with logs from all services
           - name: test/norace/logs
             cmd: test
+            args: TEST_LEAD_RESOURCE_TYPE_REGEX_FILTER='(oic\.wk\.d|^/light/\d+$$)' TEST_LEAD_RESOURCE_TYPE_FILTER=first
             coapGateway:
               log:
                 level: "debug"

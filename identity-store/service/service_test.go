@@ -46,7 +46,7 @@ func MakeConfig(t require.TestingT) Config {
 	cfg.Clients.Storage.CqlDB = &cqldb.Config{}
 	cfg.Clients.Storage.CqlDB.Embedded = config.MakeCqlDBConfig()
 
-	cfg.Clients.Eventbus.NATS = config.MakePublisherConfig()
+	cfg.Clients.Eventbus.NATS = config.MakePublisherConfig(t)
 
 	err := cfg.Validate()
 	require.NoError(t, err)

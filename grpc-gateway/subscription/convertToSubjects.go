@@ -21,37 +21,47 @@ const (
 )
 
 type subject struct {
-	bitmask FilterBitmask
-	subject string
+	bitmask  FilterBitmask
+	subjects []string
+}
+
+// resourceEventSubjects returns subjects for resource events
+//
+// If the Publisher submits evets with leading resource type then if a resource type is matched then the subjects will have "leadResourceType.$resourceType" suffix,
+// othewise the subjects will not have the suffix; NATS does not support "a zero or more" wildcard, so we need to have two subjects - one with the suffix and one without
+func resourceEventSubjects(eventType string) []string {
+	subject := isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType(eventType))
+	return []string{subject, subject + "." + utils.LeadResourcePrefix + ".>"}
 }
 
 var bitmaskToSubjectsTemplate = []subject{
-	{bitmask: FilterBitmaskMax, subject: isEvents.PlgdOwnersOwner + ".>"},
+	{bitmask: FilterBitmaskMax, subjects: []string{isEvents.PlgdOwnersOwner + ".>"}},
 
-	{bitmask: FilterBitmaskRegistrations, subject: isEvents.PlgdOwnersOwnerRegistrations + ".>"},
-	{bitmask: FilterBitmaskDeviceRegistered, subject: isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrationsEvent, isEvents.WithEventType(isEvents.DevicesRegisteredEvent))},
-	{bitmask: FilterBitmaskDeviceUnregistered, subject: isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrationsEvent, isEvents.WithEventType(isEvents.DevicesUnregisteredEvent))},
+	{bitmask: FilterBitmaskRegistrations, subjects: []string{isEvents.PlgdOwnersOwnerRegistrations + ".>"}},
+	{bitmask: FilterBitmaskDeviceRegistered, subjects: []string{isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrationsEvent, isEvents.WithEventType(isEvents.DevicesRegisteredEvent))}},
+	{bitmask: FilterBitmaskDeviceUnregistered, subjects: []string{isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrationsEvent, isEvents.WithEventType(isEvents.DevicesUnregisteredEvent))}},
 
-	{bitmask: FilterBitmaskDevices, subject: utils.PlgdOwnersOwnerDevices + ".>"},
+	{bitmask: FilterBitmaskDevices, subjects: []string{utils.PlgdOwnersOwnerDevices + ".>"}},
 
-	{bitmask: FilterBitmaskDeviceMetadata, subject: utils.PlgdOwnersOwnerDevicesDeviceMetadata + ".>"},
-	{bitmask: FilterBitmaskDeviceMetadataUpdatePending, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithEventType((&events.DeviceMetadataUpdatePending{}).EventType()))},
-	{bitmask: FilterBitmaskDeviceMetadataUpdated, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType()))},
+	{bitmask: FilterBitmaskDeviceMetadata, subjects: []string{utils.PlgdOwnersOwnerDevicesDeviceMetadata + ".>"}},
+	{bitmask: FilterBitmaskDeviceMetadataUpdatePending, subjects: []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithEventType((&events.DeviceMetadataUpdatePending{}).EventType()))}},
+	{bitmask: FilterBitmaskDeviceMetadataUpdated, subjects: []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType()))}},
 
-	{bitmask: FilterBitmaskDeviceResourceLinks, subject: utils.PlgdOwnersOwnerDevicesDeviceResourceLinks + ".>"},
-	{bitmask: FilterBitmaskResourcesPublished, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourceLinksEvent, isEvents.WithEventType((&events.ResourceLinksPublished{}).EventType()))},
-	{bitmask: FilterBitmaskResourcesUnpublished, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourceLinksEvent, isEvents.WithEventType((&events.ResourceLinksUnpublished{}).EventType()))},
+	{bitmask: FilterBitmaskDeviceResourceLinks, subjects: []string{utils.PlgdOwnersOwnerDevicesDeviceResourceLinks + ".>"}},
+	{bitmask: FilterBitmaskResourcesPublished, subjects: []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourceLinksEvent, isEvents.WithEventType((&events.ResourceLinksPublished{}).EventType()))}},
+	{bitmask: FilterBitmaskResourcesUnpublished, subjects: []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourceLinksEvent, isEvents.WithEventType((&events.ResourceLinksUnpublished{}).EventType()))}},
 
-	{bitmask: FilterBitmaskDeviceDeviceResourcesResource, subject: utils.PlgdOwnersOwnerDevicesDeviceResourcesResource + ".>"},
-	{bitmask: FilterBitmaskResourceChanged, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType((&events.ResourceChanged{}).EventType())) + ".>"},
-	{bitmask: FilterBitmaskResourceCreatePending, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType((&events.ResourceCreatePending{}).EventType())) + ".>"},
-	{bitmask: FilterBitmaskResourceCreated, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType((&events.ResourceCreated{}).EventType())) + ".>"},
-	{bitmask: FilterBitmaskResourceDeletePending, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType((&events.ResourceDeletePending{}).EventType())) + ".>"},
-	{bitmask: FilterBitmaskResourceDeleted, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType((&events.ResourceDeleted{}).EventType())) + ".>"},
-	{bitmask: FilterBitmaskResourceRetrievePending, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType((&events.ResourceRetrievePending{}).EventType())) + ".>"},
-	{bitmask: FilterBitmaskResourceRetrieved, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType((&events.ResourceRetrieved{}).EventType())) + ".>"},
-	{bitmask: FilterBitmaskResourceUpdatePending, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType((&events.ResourceUpdatePending{}).EventType())) + ".>"},
-	{bitmask: FilterBitmaskResourceUpdated, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType((&events.ResourceUpdated{}).EventType())) + ".>"},
+	{bitmask: FilterBitmaskDeviceDeviceResourcesResource, subjects: []string{utils.PlgdOwnersOwnerDevicesDeviceResourcesResource + ".>"}},
+
+	{bitmask: FilterBitmaskResourceChanged, subjects: resourceEventSubjects((&events.ResourceChanged{}).EventType())},
+	{bitmask: FilterBitmaskResourceCreatePending, subjects: resourceEventSubjects((&events.ResourceCreatePending{}).EventType())},
+	{bitmask: FilterBitmaskResourceCreated, subjects: resourceEventSubjects((&events.ResourceCreated{}).EventType())},
+	{bitmask: FilterBitmaskResourceDeletePending, subjects: resourceEventSubjects((&events.ResourceDeletePending{}).EventType())},
+	{bitmask: FilterBitmaskResourceDeleted, subjects: resourceEventSubjects((&events.ResourceDeleted{}).EventType())},
+	{bitmask: FilterBitmaskResourceRetrievePending, subjects: resourceEventSubjects((&events.ResourceRetrievePending{}).EventType())},
+	{bitmask: FilterBitmaskResourceRetrieved, subjects: resourceEventSubjects((&events.ResourceRetrieved{}).EventType())},
+	{bitmask: FilterBitmaskResourceUpdatePending, subjects: resourceEventSubjects((&events.ResourceUpdatePending{}).EventType())},
+	{bitmask: FilterBitmaskResourceUpdated, subjects: resourceEventSubjects((&events.ResourceUpdated{}).EventType())},
 }
 
 func convertTemplateToSubjects(owner string, filters map[uuid.UUID]*commands.ResourceId, rawTemplate string, subjects map[string]bool) {
@@ -64,14 +74,7 @@ func convertTemplateToSubjects(owner string, filters map[uuid.UUID]*commands.Res
 		if deviceID == "" {
 			deviceID = "*"
 		}
-		hrefID := v.GetHref()
-		switch hrefID {
-		case "":
-			hrefID = "*"
-		case "*":
-		default:
-			hrefID = utils.HrefToID(hrefID).String()
-		}
+		hrefID := utils.GetSubjectHrefID(v.GetHref())
 		subjects[isEvents.ToSubject(rawTemplate, isEvents.WithOwner(owner), utils.WithDeviceID(deviceID), utils.WithHrefId(hrefID))] = true
 	}
 }
@@ -80,7 +83,7 @@ func ConvertToSubjects(owner string, filters map[uuid.UUID]*commands.ResourceId,
 	var rawTemplates []string
 	for _, s := range bitmaskToSubjectsTemplate {
 		if s.bitmask&bitmask == s.bitmask {
-			rawTemplates = append(rawTemplates, s.subject)
+			rawTemplates = append(rawTemplates, s.subjects...)
 			bitmask &= ^(s.bitmask)
 		}
 	}

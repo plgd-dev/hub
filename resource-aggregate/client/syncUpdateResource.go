@@ -58,7 +58,7 @@ func (h *updateHandler) recv(ctx context.Context) (*events.ResourceUpdated, erro
 // SyncUpdateResource sends update resource command to resource aggregate and wait for resource updated event from eventbus.
 func (c *Client) SyncUpdateResource(ctx context.Context, owner string, req *commands.UpdateResourceRequest) (*events.ResourceUpdated, error) {
 	h := newUpdateHandler(req.GetCorrelationId())
-	subject := utils.GetResourceEventSubject(owner, req.GetResourceId(), (&events.ResourceUpdated{}).EventType())
+	subject := utils.GetResourceEventSubjects(owner, req.GetResourceId(), (&events.ResourceUpdated{}).EventType())
 	obs, err := c.subscriber.Subscribe(ctx, req.GetCorrelationId(), subject, h)
 	if err != nil {
 		return nil, fmt.Errorf("cannot subscribe to eventbus: %w", err)

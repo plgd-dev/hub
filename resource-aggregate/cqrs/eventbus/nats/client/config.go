@@ -53,6 +53,18 @@ const (
 	LeadResourceTypeFilter_Last  LeadResourceTypeFilter = "last"
 )
 
+func LeadResourceTypeFilterFromString(s string) (LeadResourceTypeFilter, error) {
+	switch s {
+	case string(LeadResourceTypeFilter_First):
+		return LeadResourceTypeFilter_First, nil
+	case string(LeadResourceTypeFilter_Last):
+		return LeadResourceTypeFilter_Last, nil
+	case string(LeadResourceTypeFilter_None):
+		return LeadResourceTypeFilter_None, nil
+	}
+	return LeadResourceTypeFilter_None, fmt.Errorf("unknown LeadResourceTypeFilter('%v')", s)
+}
+
 type LeadResourceTypeConfig struct {
 	Enabled     bool                   `yaml:"enabled" json:"enabled"`
 	RegexFilter string                 `yaml:"regexFilter" json:"regexFilter"`

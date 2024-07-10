@@ -34,7 +34,7 @@ func TestSubscriber(t *testing.T) {
 		require.NoError(t, errC)
 	}()
 
-	naPubClient, publisher, err := test.NewClientAndPublisher(config.MakePublisherConfig(), fileWatcher, logger, publisher.WithMarshaler(json.Marshal))
+	naPubClient, publisher, err := test.NewClientAndPublisher(config.MakePublisherConfig(t), fileWatcher, logger, publisher.WithMarshaler(json.Marshal))
 	require.NoError(t, err)
 	require.NotNil(t, publisher)
 	defer func() {
