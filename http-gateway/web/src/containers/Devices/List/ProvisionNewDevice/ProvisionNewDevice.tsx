@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react'
 import { useIntl } from 'react-intl'
+import { detect } from 'detect-browser'
 
 import Button from '@shared-ui/components/Atomic/Button'
 import { ProvisionDeviceModal } from '@shared-ui/components/Atomic/Modal'
@@ -7,6 +8,7 @@ import { security } from '@shared-ui/common/services'
 import { IconPlus } from '@shared-ui/components/Atomic/Icon'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import { getApiErrorMessage } from '@shared-ui/common/utils'
+import { isSafari } from '@shared-ui/components/Atomic/_utils/browser'
 
 import { getDeviceAuthCode } from '@/containers/Devices/rest'
 import { messages as t } from '@/containers/Devices/Devices.i18n'
@@ -22,6 +24,7 @@ const ProvisionNewDeviceCore = () => {
     const [resetIndex, setResetIndex] = useState(0)
 
     const { formatMessage: _ } = useIntl()
+    const isSafariBrowser = isSafari(detect())
 
     const handleFetch = async (deviceId: string) => {
         setFetching(true)
@@ -29,7 +32,7 @@ const ProvisionNewDeviceCore = () => {
             // @ts-ignore
             let isBrave = await navigator?.brave?.isBrave()
 
-            const code = await getDeviceAuthCode(deviceId, isBrave)
+            const code = await getDeviceAuthCode(deviceId, isBrave || isSafariBrowser)
             setFetching(false)
             setCode(code as string)
         } catch (e: any) {
