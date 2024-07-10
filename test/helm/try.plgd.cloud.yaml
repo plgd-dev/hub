@@ -1,0 +1,125 @@
+global:
+  defaultCommandTimeToLive: 144h
+  domain: "try.plgd.cloud"
+  enableWildCartCert: false
+  hubId: 1c10a3b6-287c-11ec-ac2d-13054959c274
+  ownerClaim: "owner-id"
+  authority: "https://auth.plgd.cloud/realms/shared"
+  m2mOAuthServer:
+    privateKey: |-
+      -----BEGIN EC PRIVATE KEY-----
+      ...
+      -----END EC PRIVATE KEY-----
+  oauth:
+    device:
+    - name: "plgd.dps"
+      clientID: "..."
+      clientSecret: "..."
+      grantType: clientCredentials
+      redirectURL: "cloud.plgd.mobile://login-callback"
+      scopes: ['openid']
+      useInUi: false
+    - name: "plgd.web"
+      clientID: "..."
+      clientSecret: "..."
+      scopes: ["offline_access"]
+      redirectURL: "https://try.plgd.cloud/devices"
+      useInUi: true
+    web:
+      clientID: "..."
+      scopes: ["openid"]
+certmanager:
+  external:
+    issuer:
+      kind: "ClusterIssuer"
+      name: "letsencrypt-prod"
+  default:
+    issuer:
+      kind: "ClusterIssuer"
+    ca:
+      issuerRef:
+        name: plgd-issuer
+        kind: "ClusterIssuer"
+certificateauthority:
+  domain: csr.try.plgd.cloud
+resourcedirectory:
+  log:
+    level: DEBUG
+    dumpBody: true
+snippetservice:
+  log:
+    level: DEBUG
+    dumpBody: true
+coapgateway:
+  log:
+    dumpBody: true
+    level: 'DEBUG'
+  service:
+    type: NodePort
+    tcp:
+      nodePort: 5684
+    udp:
+      nodePort: 5683
+  apis:
+    coap:
+      requireBatchObserveEnabled: false
+      protocols:
+       - "udp"
+       - "tcp"
+      tls:
+        clientCertificateRequired: false
+deviceProvisioningService:
+  apiDomain: "dps.try.plgd.cloud"
+  log:
+    dumpBody: true
+    level: 'DEBUG'
+  apis:
+    http:
+      enabled: true
+      authorization:
+        http:
+          tls:
+            useSystemCAPool: true
+  service:
+    type: NodePort
+    nodePort: 25684
+  image:
+    dockerConfigSecret: |
+      {
+        "auths": {
+          "ghcr.io": {
+              "auth": "..."
+          }
+        }
+      }
+  enrollmentGroups:
+    - id: "75eacc2f-ac28-4a42-a155-164393970ba4"
+      owner: "beb32777-9680-4f42-8761-350eebe76a85"
+      attestationMechanism:
+        x509:
+          certificateChain: |-
+            -----BEGIN CERTIFICATE-----
+            ...
+            -----END CERTIFICATE-----
+      hub:
+        authorization:
+          provider:
+            name: "plgd.dps"
+            clientId: "..."
+            clientSecret: "..."
+            scopes: ["openid"]
+    - id: "4f0d3d81-0e09-4f1e-9706-0997488011af"
+      owner: "beb32777-9680-4f42-8761-350eebe76a85"
+      attestationMechanism:
+        x509:
+          certificateChain: |-
+            -----BEGIN CERTIFICATE-----
+            ...
+            -----END CERTIFICATE-----
+      hub:
+        authorization:
+          provider:
+            name: "plgd.dps"
+            clientId: "..."
+            clientSecret: "..."
+            scopes: ["openid"]
