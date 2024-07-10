@@ -32,7 +32,7 @@ const { reducer, actions } = createSlice({
             state.version = payload
         },
         setThemes(state, { payload }) {
-            if (state.hasOwnProperty('configuration')) {
+            if (Object.hasOwn(state, 'configuration')) {
                 state.configuration.themes = payload
             } else {
                 state.configuration = { ...initialState.configuration, themes: payload }
