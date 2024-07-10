@@ -157,6 +157,7 @@ type MainSidebarConfig struct {
 	DeviceLogs           bool `yaml:"deviceLogs" json:"deviceLogs"`
 	ApiTokens            bool `yaml:"apiTokens" json:"apiTokens"`
 	SchemaHub            bool `yaml:"schemaHub" json:"schemaHub"`
+	SnippetService       bool `yaml:"snippetService" json:"snippetService"`
 }
 
 func (c *MainSidebarConfig) ToProto() *pb.UIVisibility_MainSidebar {
@@ -175,6 +176,7 @@ func (c *MainSidebarConfig) ToProto() *pb.UIVisibility_MainSidebar {
 		DeviceLogs:           c.DeviceLogs,
 		ApiTokens:            c.ApiTokens,
 		SchemaHub:            c.SchemaHub,
+		SnippetService:       c.SnippetService,
 	}
 }
 

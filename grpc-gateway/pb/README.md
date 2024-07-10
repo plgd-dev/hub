@@ -1102,6 +1102,7 @@ If true - show UI element, if false - hide UI element
 | device_logs | [bool](#bool) |  |  |
 | api_tokens | [bool](#bool) |  |  |
 | schema_hub | [bool](#bool) |  |  |
+| snippet_service | [bool](#bool) |  |  |
 
 
 

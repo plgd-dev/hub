@@ -1,0 +1,205 @@
+global:
+  domain: "primary.mock.plgd.cloud"
+  hubId: "d03a1bb4-0a77-428c-b78c-1c46efe6a38e"
+  ownerClaim: "https://plgd.dev/owner"
+  standby: false
+  deviceIdClaim: "https://plgd.dev/deviceId"
+  image:
+    tag: vnext-pr1088
+  m2mOAuthServer:
+    privateKey: |
+      -----BEGIN EC PRIVATE KEY-----
+      ...
+      -----END EC PRIVATE KEY-----
+    clientServiceSecret: "..."
+  authorizationCAPool: |-
+    -----BEGIN CERTIFICATE-----
+    ...
+    -----END CERTIFICATE-----
+# -- Configuration parameters for authorizationCaPool
+extraAuthorizationCAPool:
+  # -- Name of secret for storing custom auth ca pool
+  name: authorization-ca-pool
+  # -- Name of file for custom auth ca pool
+  fileName: my-ca.crt
+extraCAPool:
+  authorization:
+    asecretName: my-secret
+  coap:
+    enabled: false
+mongodb:
+  tls:
+    extraDnsNames:
+      - "mongodb.primary.mock.plgd.cloud"
+  enabled: true
+  standbyTool:
+    image:
+      tag: vnext-pr1088
+    enabled: true
+    replicaSet:
+      standby:
+        members:
+          - "mongodb-0.standby.mock.plgd.cloud:27017"
+          - "mongodb-1.standby.mock.plgd.cloud:27017"
+          - "mongodb-2.standby.mock.plgd.cloud:27017"
+  externalAccess:
+    enabled: true
+    service:
+      type: LoadBalancer
+      publicNames:
+        - mongodb-0.primary.mock.plgd.cloud
+        - mongodb-1.primary.mock.plgd.cloud
+        - mongodb-2.primary.mock.plgd.cloud
+      annotationsList:
+        - external-dns.alpha.kubernetes.io/hostname: mongodb-0.primary.mock.plgd.cloud
+        - external-dns.alpha.kubernetes.io/hostname: mongodb-1.primary.mock.plgd.cloud
+        - external-dns.alpha.kubernetes.io/hostname: mongodb-2.primary.mock.plgd.cloud
+scylla:
+  enabled: false
+certmanager:
+  default:
+    cert:
+      duration: 8640h5m
+      renewBefore: 2640h
+mockoauthserver:
+  enabled: true
+  oauth:
+    - name: "plgd.mobile"
+      clientID: "test"
+      clientSecret: "test"
+      redirectURL: "cloud.plgd.mobile://login-callback"
+    - name: "plgd.dps"
+      clientID: "test"
+      clientSecret: "test"
+      grantType: "clientCredentials"
+      redirectURL: "https://primary.mock.plgd.cloud/things"
+      scopes: ['openid']
+    - name: "plgd.web"
+      clientID: "test"
+      clientSecret: "test"
+      redirectURL: "https://primary.mock.plgd.cloud/things"
+      scopes: ['openid']
+      useInUi: true
+identitystore:
+  log:
+    level: "DEBUG"
+httpgateway:
+  apiDomain: "primary.mock.plgd.cloud"
+  ui:
+    enabled: true
+    webConfiguration:
+      snippetServicea: "https://abrakadabra"
+snippetservice:
+  domain: "bbbbb"
+grpcgateway:
+  domain: "primary.mock.plgd.cloud"
+certificateauthority:
+  log:
+    level: debug
+  domain: "primary.mock.plgd.cloud"
+  clients:
+    storage:
+      cqlDB:
+        reconnectionPolicy:
+          constant:
+            interval: 3s
+            maxRetries: 3
+  image:
+    tag: vnext-pr1088
+coapgateway:
+  service:
+    type: NodePort
+    tcp:
+      nodePort: 15684
+    udp:
+      nodePort: 15683
+  apis:
+    coap:
+      requireBatchObserveEnabled: false
+      protocols:
+        - "udp"
+        - "tcp"
+      tls:
+        clientCertificateRequired: false
+resourceaggregate:
+  image:
+    tag: vnext-pr1088
+resourcedirectory:
+  publicConfiguration:
+    coapGateway: "coaps+tcp://primary.mock.plgd.cloud:15684"
+deviceProvisioningService:
+  log:
+    dumpBody: true
+    level: "DEBUG"
+  apis:
+    coap:
+      protocols:
+        - tcp
+        - udp
+  service:
+    type: NodePort
+    nodePort: 26684
+    udp:
+      nodePort: 26683
+  image:
+    dockerConfigSecret: |
+      {
+        "auths": {
+          "ghcr.io": {
+              "auth": "..."
+          }
+        }
+      }
+  enrollmentGroups:
+    - id: "5db6ccde-05e1-480b-a522-c1591ad7dfd2"
+      owner: "1"
+      attestationMechanism:
+        x509:
+          certificateChain: |-
+            -----BEGIN CERTIFICATE-----
+            ...
+            -----END CERTIFICATE-----
+      hub:
+        coapGateway: "primary.mock.plgd.cloud:15684"
+        certificateAuthority:
+          grpc:
+            address: "primary.mock.plgd.cloud:443"
+        authorization:
+          provider:
+            name: "plgd.dps"
+            clientId: "test"
+            clientSecret: "test"
+            audience: "https://primary.mock.plgd.cloud"
+            scopes: ["openid"]
+m2moauthserver:
+  oauthSigner:
+    clients:
+      - id: "jwt-private-key"
+        accessTokenLifetime: 0s
+        allowedGrantTypes:
+          - client_credentials
+        allowedAudiences: []
+        allowedScopes: []
+        jwtPrivateKey:
+          enabled: true
+          authorization:
+            audience:
+            endpoints:
+      - id: "service"
+        secretFile: "{{ include \"plgd-hub.m2moauthserver.getClientServiceSecretFile\" . }}"
+        accessTokenLifetime: 0s
+        allowedGrantTypes:
+          - client_credentials
+        allowedAudiences: []
+        allowedScopes: []
+        insertTokenClaims:
+          x-deviceid: "device1"
+          x-deviceowner: "owner1"
+          x-array:
+            - key: "key1"
+              value: "value1"
+            - key: "key2"
+              value: "value2"
+          x-map:
+            key1: "value1"
+            key2: "value2"

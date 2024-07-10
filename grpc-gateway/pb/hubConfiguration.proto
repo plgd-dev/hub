@@ -48,6 +48,7 @@ message UIVisibility {
         bool device_logs = 12;
         bool api_tokens = 13;
         bool schema_hub = 14;
+        bool snippet_service = 15;
     }
     // Main sidebar visibility
     MainSidebar main_sidebar = 1;
