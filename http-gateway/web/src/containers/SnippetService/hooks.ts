@@ -1,9 +1,11 @@
 import { useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { UseFormWatch } from 'react-hook-form'
 
 import AppContext from '@shared-ui/app/share/AppContext'
 import { useStreamApi } from '@shared-ui/common/hooks'
 import { security } from '@shared-ui/common/services'
 import { useStreamVersionData } from '@shared-ui/common/hooks/useStreamVersionData'
+import { StreamApiReturnType } from '@shared-ui/common/types/API.types'
 
 import { SecurityConfig, StreamApiPropsType } from '@/containers/App/App.types'
 import { SnippetServiceApiEndpoints } from './constants'
@@ -17,8 +19,6 @@ import {
     ConfigurationDataType,
 } from '@/containers/SnippetService/ServiceSnippet.types'
 import { DeviceDataType } from '@/containers/Devices/Devices.types'
-import { StreamApiReturnType } from '@shared-ui/common/types/API.types'
-import { UseFormWatch } from 'react-hook-form'
 
 const getConfig = () => security.getGeneralConfig() as SecurityConfig
 const getWellKnow = () => security.getWellKnownConfig()
@@ -189,17 +189,6 @@ export const useAppliedConfigurationsList = (filter = '', requestActive = true):
         telemetrySpan: 'get-devices',
         unauthorizedCallback,
     })
-    // const {
-    //     data: devicesData,
-    //     loading: devicesLoading,
-    //     refresh: deviceRefresh,
-    // }: StreamApiPropsType = useStreamApi(`${getConfig().httpGatewayAddress}${devicesApiEndpoints.DEVICES}/${detailData?.deviceId}`, {
-    //     telemetryWebTracer,
-    //     streamApi: false,
-    //     telemetrySpan: `get-device-${detailData?.deviceId || ''}`,
-    //     unauthorizedCallback,
-    //     requestActive: !!appliedConfigData,
-    // })
 
     const {
         data: configurationsData,
