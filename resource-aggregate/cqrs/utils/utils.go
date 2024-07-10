@@ -13,21 +13,23 @@ import (
 )
 
 const (
-	DeviceIDKey = "deviceId"
-	HrefIDKey   = "hrefId"
+	DeviceIDKey         = "deviceId"
+	HrefIDKey           = "hrefId"
+	LeadResourceTypeKey = "leadResourceType"
 )
 
 const (
-	Devices                                            = "devices"
-	PlgdOwnersOwnerDevices                             = isEvents.PlgdOwnersOwner + "." + Devices
-	PlgdOwnersOwnerDevicesDevice                       = PlgdOwnersOwnerDevices + ".{" + DeviceIDKey + "}"
-	PlgdOwnersOwnerDevicesDeviceResourceLinks          = PlgdOwnersOwnerDevicesDevice + ".resource-links"
-	PlgdOwnersOwnerDevicesDeviceResourceLinksEvent     = PlgdOwnersOwnerDevicesDeviceResourceLinks + ".{" + isEvents.EventTypeKey + "}"
-	PlgdOwnersOwnerDevicesDeviceMetadata               = PlgdOwnersOwnerDevicesDevice + ".metadata"
-	PlgdOwnersOwnerDevicesDeviceMetadataEvent          = PlgdOwnersOwnerDevicesDeviceMetadata + ".{" + isEvents.EventTypeKey + "}"
-	PlgdOwnersOwnerDevicesDeviceResources              = PlgdOwnersOwnerDevicesDevice + ".resources"
-	PlgdOwnersOwnerDevicesDeviceResourcesResource      = PlgdOwnersOwnerDevicesDeviceResources + ".{" + HrefIDKey + "}"
-	PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent = PlgdOwnersOwnerDevicesDeviceResourcesResource + ".{" + isEvents.EventTypeKey + "}"
+	Devices                                                            = "devices"
+	PlgdOwnersOwnerDevices                                             = isEvents.PlgdOwnersOwner + "." + Devices
+	PlgdOwnersOwnerDevicesDevice                                       = PlgdOwnersOwnerDevices + ".{" + DeviceIDKey + "}"
+	PlgdOwnersOwnerDevicesDeviceResourceLinks                          = PlgdOwnersOwnerDevicesDevice + ".resource-links"
+	PlgdOwnersOwnerDevicesDeviceResourceLinksEvent                     = PlgdOwnersOwnerDevicesDeviceResourceLinks + ".{" + isEvents.EventTypeKey + "}"
+	PlgdOwnersOwnerDevicesDeviceMetadata                               = PlgdOwnersOwnerDevicesDevice + ".metadata"
+	PlgdOwnersOwnerDevicesDeviceMetadataEvent                          = PlgdOwnersOwnerDevicesDeviceMetadata + ".{" + isEvents.EventTypeKey + "}"
+	PlgdOwnersOwnerDevicesDeviceResources                              = PlgdOwnersOwnerDevicesDevice + ".resources"
+	PlgdOwnersOwnerDevicesDeviceResourcesResource                      = PlgdOwnersOwnerDevicesDeviceResources + ".{" + HrefIDKey + "}"
+	PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent                 = PlgdOwnersOwnerDevicesDeviceResourcesResource + ".{" + isEvents.EventTypeKey + "}"
+	PlgdOwnersOwnerDevicesDeviceResourcesResourceEventLeadResourceType = PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent + ".leadrt.{" + LeadResourceTypeKey + "}"
 )
 
 func HrefToID(href string) uuid.UUID {
@@ -43,6 +45,12 @@ func WithHrefId(hrefId string) func(values map[string]string) {
 func WithDeviceID(deviceID string) func(values map[string]string) {
 	return func(values map[string]string) {
 		values[DeviceIDKey] = deviceID
+	}
+}
+
+func WithLeadResourceType(leadResourceType string) func(values map[string]string) {
+	return func(values map[string]string) {
+		values[LeadResourceTypeKey] = leadResourceType
 	}
 }
 

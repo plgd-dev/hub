@@ -192,6 +192,10 @@ func MakePublisherConfig() natsClient.ConfigPublisher {
 			TLS:            MakeTLSClientConfig(),
 			FlusherTimeout: time.Second * 30,
 		},
+		// LeadResourceType: &natsClient.LeadResourceTypeConfig{
+		// 	Enabled: true,
+		// 	Filter:  natsClient.LeadResourceTypeFilter_First,
+		// },
 	}
 }
 

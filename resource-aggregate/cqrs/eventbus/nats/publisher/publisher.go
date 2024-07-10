@@ -5,26 +5,40 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"regexp"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
 	nats "github.com/nats-io/nats.go"
+	isEvents "github.com/plgd-dev/hub/v2/identity-store/events"
 	"github.com/plgd-dev/hub/v2/pkg/fn"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/pb"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"google.golang.org/protobuf/proto"
 )
 
 // MarshalerFunc marshal struct to bytes.
 type MarshalerFunc = func(v interface{}) ([]byte, error)
 
+type leadResourceType struct {
+	filter      client.LeadResourceTypeFilter
+	regexFilter *regexp.Regexp
+	useUUID     bool
+}
+
 // Publisher implements a eventbus.Publisher interface.
 type Publisher struct {
-	dataMarshaler  MarshalerFunc
-	conn           *nats.Conn
-	closeFunc      fn.FuncList
-	publish        func(subj string, data []byte) error
-	flusherTimeout time.Duration
+	dataMarshaler    MarshalerFunc
+	conn             *nats.Conn
+	closeFunc        fn.FuncList
+	publish          func(subj string, data []byte) error
+	flusherTimeout   time.Duration
+	leadResourceType *leadResourceType
 }
 
 func (p *Publisher) AddCloseFunc(f func()) {
@@ -32,8 +46,9 @@ func (p *Publisher) AddCloseFunc(f func()) {
 }
 
 type options struct {
-	dataMarshaler  MarshalerFunc
-	flusherTimeout time.Duration
+	dataMarshaler    MarshalerFunc
+	flusherTimeout   time.Duration
+	leadResourceType *leadResourceType
 }
 
 type Option interface {
@@ -70,6 +85,28 @@ func WithFlusherTimeout(flusherTimeout time.Duration) FlusherTimeoutOpt {
 	}
 }
 
+type LeadResourceTypeOpt struct {
+	filter      client.LeadResourceTypeFilter
+	regexFilter *regexp.Regexp
+	useUUID     bool
+}
+
+func (o LeadResourceTypeOpt) apply(opts *options) {
+	opts.leadResourceType = &leadResourceType{
+		filter:      o.filter,
+		regexFilter: o.regexFilter,
+		useUUID:     o.useUUID,
+	}
+}
+
+func WithLeadResourceType(regexFilter *regexp.Regexp, filter client.LeadResourceTypeFilter, useUUID bool) LeadResourceTypeOpt {
+	return LeadResourceTypeOpt{
+		regexFilter: regexFilter,
+		filter:      filter,
+		useUUID:     useUUID,
+	}
+}
+
 // Create publisher with existing NATS connection and proto marshaller
 func New(conn *nats.Conn, jetstream bool, opts ...Option) (*Publisher, error) {
 	cfg := options{
@@ -93,11 +130,66 @@ func New(conn *nats.Conn, jetstream bool, opts ...Option) (*Publisher, error) {
 	}
 
 	return &Publisher{
-		dataMarshaler:  cfg.dataMarshaler,
-		conn:           conn,
-		publish:        publish,
-		flusherTimeout: cfg.flusherTimeout,
+		dataMarshaler:    cfg.dataMarshaler,
+		conn:             conn,
+		publish:          publish,
+		flusherTimeout:   cfg.flusherTimeout,
+		leadResourceType: cfg.leadResourceType,
 	}, nil
+}
+
+func (p *Publisher) getLeadResourceTypeByFilter(event eventbus.Event) string {
+	types := event.Types()
+	if p.leadResourceType.regexFilter != nil {
+		for _, t := range types {
+			if p.leadResourceType.regexFilter.MatchString(t) {
+				return t
+			}
+		}
+	}
+
+	switch p.leadResourceType.filter {
+	case client.LeadResourceTypeFilter_First:
+		return types[0]
+	case client.LeadResourceTypeFilter_Last:
+		return types[len(types)-1]
+	}
+	return ""
+}
+
+func (p *Publisher) GetLeadResourceType(event eventbus.Event) string {
+	if p.leadResourceType == nil || len(event.Types()) == 0 {
+		return ""
+	}
+
+	leadResourceType := p.getLeadResourceTypeByFilter(event)
+	if p.leadResourceType.useUUID && leadResourceType != "" {
+		return uuid.NewSHA1(uuid.NameSpaceURL, []byte(leadResourceType)).String()
+	}
+	return leadResourceType
+}
+
+func (p *Publisher) GetPublishSubject(owner string, event eventbus.Event) []string {
+	switch event.EventType() {
+	case (&events.ResourceLinksPublished{}).EventType(), (&events.ResourceLinksUnpublished{}).EventType(), (&events.ResourceLinksSnapshotTaken{}).EventType():
+		return []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourceLinksEvent, isEvents.WithOwner(owner), utils.WithDeviceID(event.GroupID()), isEvents.WithEventType(event.EventType()))}
+	case (&events.DeviceMetadataUpdatePending{}).EventType(), (&events.DeviceMetadataUpdated{}).EventType(), (&events.DeviceMetadataSnapshotTaken{}).EventType():
+		return []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner(owner), utils.WithDeviceID(event.GroupID()), isEvents.WithEventType(event.EventType()))}
+	}
+	if ev, ok := event.(interface{ GetResourceId() *commands.ResourceId }); ok {
+		template := utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent
+		opts := []func(values map[string]string){
+			isEvents.WithOwner(owner), utils.WithDeviceID(event.GroupID()),
+			utils.WithHrefId(utils.HrefToID(ev.GetResourceId().GetHref()).String()), isEvents.WithEventType(event.EventType()),
+		}
+		leadResourceType := p.GetLeadResourceType(event)
+		if leadResourceType != "" {
+			template = utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEventLeadResourceType
+			opts = append(opts, utils.WithLeadResourceType(leadResourceType))
+		}
+		return []string{isEvents.ToSubject(template, opts...)}
+	}
+	return nil
 }
 
 // Publish publishes an event to topics.

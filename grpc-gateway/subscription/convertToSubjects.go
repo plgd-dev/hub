@@ -43,15 +43,15 @@ var bitmaskToSubjectsTemplate = []subject{
 	{bitmask: FilterBitmaskResourcesUnpublished, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourceLinksEvent, isEvents.WithEventType((&events.ResourceLinksUnpublished{}).EventType()))},
 
 	{bitmask: FilterBitmaskDeviceDeviceResourcesResource, subject: utils.PlgdOwnersOwnerDevicesDeviceResourcesResource + ".>"},
-	{bitmask: FilterBitmaskResourceChanged, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType((&events.ResourceChanged{}).EventType()))},
-	{bitmask: FilterBitmaskResourceCreatePending, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType((&events.ResourceCreatePending{}).EventType()))},
-	{bitmask: FilterBitmaskResourceCreated, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType((&events.ResourceCreated{}).EventType()))},
-	{bitmask: FilterBitmaskResourceDeletePending, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType((&events.ResourceDeletePending{}).EventType()))},
-	{bitmask: FilterBitmaskResourceDeleted, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType((&events.ResourceDeleted{}).EventType()))},
-	{bitmask: FilterBitmaskResourceRetrievePending, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType((&events.ResourceRetrievePending{}).EventType()))},
-	{bitmask: FilterBitmaskResourceRetrieved, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType((&events.ResourceRetrieved{}).EventType()))},
-	{bitmask: FilterBitmaskResourceUpdatePending, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType((&events.ResourceUpdatePending{}).EventType()))},
-	{bitmask: FilterBitmaskResourceUpdated, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType((&events.ResourceUpdated{}).EventType()))},
+	{bitmask: FilterBitmaskResourceChanged, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType((&events.ResourceChanged{}).EventType())) + ".>"},
+	{bitmask: FilterBitmaskResourceCreatePending, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType((&events.ResourceCreatePending{}).EventType())) + ".>"},
+	{bitmask: FilterBitmaskResourceCreated, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType((&events.ResourceCreated{}).EventType())) + ".>"},
+	{bitmask: FilterBitmaskResourceDeletePending, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType((&events.ResourceDeletePending{}).EventType())) + ".>"},
+	{bitmask: FilterBitmaskResourceDeleted, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType((&events.ResourceDeleted{}).EventType())) + ".>"},
+	{bitmask: FilterBitmaskResourceRetrievePending, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType((&events.ResourceRetrievePending{}).EventType())) + ".>"},
+	{bitmask: FilterBitmaskResourceRetrieved, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType((&events.ResourceRetrieved{}).EventType())) + ".>"},
+	{bitmask: FilterBitmaskResourceUpdatePending, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType((&events.ResourceUpdatePending{}).EventType())) + ".>"},
+	{bitmask: FilterBitmaskResourceUpdated, subject: isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType((&events.ResourceUpdated{}).EventType())) + ".>"},
 }
 
 func convertTemplateToSubjects(owner string, filters map[uuid.UUID]*commands.ResourceId, rawTemplate string, subjects map[string]bool) {
