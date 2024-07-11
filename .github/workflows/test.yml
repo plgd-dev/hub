@@ -153,8 +153,6 @@ jobs:
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
       - name: Set up Helm
         uses: azure/setup-helm@v4.2.0
-        with:
-          version: v3.14.4
 
       - name: Add Helm dependency repositories
         run: |

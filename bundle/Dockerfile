@@ -189,7 +189,7 @@ COPY --from=build /go/bin/snippet-service /usr/local/bin/snippet-service
 COPY --from=build /go/src/github.com/plgd-dev/hub/snippet-service/config.yaml /configs/snippet-service.yaml
 
 # install scylla
-RUN curl -sSf get.scylladb.com/server | sudo bash -s -- --scylla-version 5.2
+RUN curl -sSf get.scylladb.com/server | sudo bash -s -- --scylla-version 5.4
 COPY bundle/scylla /scylla
 
 # global
