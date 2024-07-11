@@ -210,7 +210,6 @@ tls:
   {{- if eq (len $mapEndpoints.Values) 0 }}
   {{- fail (printf "%s.endpoints or global.authorization.endpoints is required" $prefix) }}
   {{- end}}
-  {{- if not $.Values.mockoauthserver.enabled }}
   audience: {{ include "plgd-hub.resolveTemplateString" (list $ $audience) }}
   endpoints:
     {{- range $mapEndpoints.Values }}
@@ -221,19 +220,6 @@ tls:
         {{- include "plgd-hub.httpConfig" (list $ .http $certPath ) | indent 8 }}
     {{- end }}
     {{- end }}
-  {{- else }}
-  audience: {{ include "plgd-hub.resolveTemplateString" (list $ $audience) }}
-  endpoints:
-    {{- range $mapEndpoints.Values }}
-    {{- $authority := include "plgd-hub.resolveTemplateString" (list $ .authority) }}
-    {{- if not $authority }}
-    {{- $authority = include "plgd-hub.mockoauthserver.uri" $ }}
-    {{- end }}
-    - authority: {{ $authority }}
-      http:
-        {{- include "plgd-hub.httpConfig" (list $ .http $certPath ) | indent 8 }}
-    {{- end }}
-  {{- end }}
 {{- end }}
 
 {{- define "plgd-hub.authorizationConfig" }}
@@ -662,11 +648,13 @@ true
 
 {{- define "plgd-hub.globalAuthority" }}
 {{- $ := . -}}
-{{- $ca := "" -}}
-{{- if $.Values.global.authority -}}
-{{- $ca = $.Values.global.authority -}}
+{{- $authority := $.Values.global.authority | default "" -}}
+{{- if not $authority }}
+{{- if $.Values.mockoauthserver.enabled }}
+{{- $authority = include "plgd-hub.mockoauthserver.uri" $ }}
+{{- end }}
 {{- end -}}
-{{- printf "%s" $ca }}
+{{- printf "%s" $authority }}
 {{- end -}}
 
 {{- define "plgd-hub.m2mOAuthServerAuthority" }}
