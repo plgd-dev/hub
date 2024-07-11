@@ -300,10 +300,13 @@ mongodb:
           done
 
           CERT_CRT=/certs-original/tls.crt
-          CERT_SHA256=/certs/cert.sha256.$(sha256sum -z ${CERT_CRT} | cut -d " " -f 1)
+          CERT_SHA256=/certs/cert.sha256.$(sha256sum ${CERT_CRT} | cut -d " " -f 1)
           CA=/certs-original/ca.crt
-          EXTRA_CA=/certs/extra/storage/ca.crt
-          CA_SHA256=$(cat ${CA} ${EXTRA_CA} | sha256sum -z | cut -d " " -f 1)
+          EXTRA_CA=/dev/null
+          if [ -f /certs/extra/storage/ca.crt ]; then
+            EXTRA_CA=/certs/extra/storage/ca.crt
+          fi
+          CA_SHA256=$(cat ${CA} ${EXTRA_CA} | sha256sum | cut -d " " -f 1)
           CA_FILE_SHA256=/certs/ca.sha256.$CA_SHA256
           ROTATE_CERTIFICATES=0
           if [ ! -f ${CERT_SHA256} ]; then
