@@ -1212,6 +1212,9 @@
         },
         "schemaHub": {
           "type": "boolean"
+        },
+        "snippetService": {
+          "type": "boolean"
         }
       }
     },

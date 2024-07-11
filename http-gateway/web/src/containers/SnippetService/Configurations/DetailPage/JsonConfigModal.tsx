@@ -3,7 +3,7 @@ import { useIntl } from 'react-intl'
 import isFunction from 'lodash/isFunction'
 
 import Modal, { ModalStrippedLine } from '@shared-ui/components/Atomic/Modal'
-import ModalFooter from '@plgd/shared-ui/src/components/Atomic/Modal/components/ModalFooter'
+import ModalFooter from '@shared-ui/components/Atomic/Modal/components/ModalFooter'
 import Button from '@shared-ui/components/Atomic/Button'
 import FormInput, { inputSizes } from '@shared-ui/components/Atomic/FormInput'
 import TimeoutControl from '@shared-ui/components/Atomic/TimeoutControl'

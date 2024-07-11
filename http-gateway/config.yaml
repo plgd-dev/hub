@@ -109,3 +109,4 @@ ui:
         deviceLogs : false
         apiTokens : false
         schemaHub : false
+        snippetService: true

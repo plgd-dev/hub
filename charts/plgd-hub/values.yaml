@@ -20,16 +20,16 @@ global:
   audience: ""
   # -- M2M OAuth server
   m2mOAuthServer:
-    # -- private key to sign JWT m2m tokens 
+    # -- private key to sign JWT m2m tokens
     privateKey: ""
     # -- service secret to sign JWT m2m tokens for the oauth service client
     clientServiceSecret: ""
   # -- Default OAuth authorization for all services
   authorization:
-    audience: "{{ include \"plgd-hub.globalAudience\" . }}"
+    audience: '{{ include "plgd-hub.globalAudience" . }}'
     endpoints:
       # -- Authorization endpoint to Customer OAuth server
-      - authority: "{{ include \"plgd-hub.globalAuthority\" . }}"
+      - authority: '{{ include "plgd-hub.globalAuthority" . }}'
         http:
           maxIdleConns: 16
           maxConnsPerHost: 32
@@ -41,7 +41,7 @@ global:
             keyFile:
             certFile:
             useSystemCAPool: true
-      - authority: "{{ include \"plgd-hub.m2mOAuthServerAuthority\" . }}"
+      - authority: '{{ include "plgd-hub.m2mOAuthServerAuthority" . }}'
         http:
           maxIdleConns: 16
           maxConnsPerHost: 32
@@ -59,20 +59,20 @@ global:
   standby: false
   # -- Global OAuth configuration used by multiple services
   oauth:
-   device: []
-#     - name:
-#       clientID:
-#       clientSecret:
-#       scopes: []
-#       redirectURL:
-#       useInUi: true
-   web:
-    clientID:
-    scopes: [ "openid" ]
+    device: []
+    #     - name:
+    #       clientID:
+    #       clientSecret:
+    #       scopes: []
+    #       redirectURL:
+    #       useInUi: true
+    web:
+      clientID:
+      scopes: ["openid"]
   # -- Custom CA certificates
   extraCAPool:
-    # -- Custom CA certificate for authorization endpoint in PEM format 
-    authorization: "{{ include \"plgd-hub.oldGlobalAuthorizationCAPool\" . }}"
+    # -- Custom CA certificate for authorization endpoint in PEM format
+    authorization: '{{ include "plgd-hub.oldGlobalAuthorizationCAPool" . }}'
     # -- Custom CA certificate for internal endpoints in PEM format
     internal:
     # -- Custom CA certificate for storage(database) endpoints in PEM format
@@ -81,21 +81,21 @@ global:
     coap:
   # -- Global Open Telemetry exporter configuration
   openTelemetryExporter:
-      # -- Enable OTLP gRPC exporter
-      enabled: false
-      # -- The gRPC collector to which the exporter is going to send data
-      address:
-      # -- Expoter keep alive configuration
-      keepAlive:
-        time: 10s
-        timeout: 20s
-        permitWithoutStream: true
-      # -- Expoter TLS configuration
-      tls:
-        caPool:
-        keyFile:
-        certFile:
-        useSystemCAPool: false
+    # -- Enable OTLP gRPC exporter
+    enabled: false
+    # -- The gRPC collector to which the exporter is going to send data
+    address:
+    # -- Expoter keep alive configuration
+    keepAlive:
+      time: 10s
+      timeout: 20s
+      permitWithoutStream: true
+    # -- Expoter TLS configuration
+    tls:
+      caPool:
+      keyFile:
+      certFile:
+      useSystemCAPool: false
   # -- Set image.tag for all services
   image:
     tag:
@@ -143,20 +143,20 @@ mongodb:
     enabled: false
     # -- Log section
     log:
-      # -- Logging enabled from level 
+      # -- Logging enabled from level
       level: info
       # -- Dump grpc messages
       dumpBody: false
       # -- The supported values are: "json", "console"
       encoding: json
       stacktrace:
-          # -- Log stacktrace
-          enabled: false
-          # -- Stacktrace from level
-          level: warn
+        # -- Log stacktrace
+        enabled: false
+        # -- Stacktrace from level
+        level: warn
       encoderConfig:
-          # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
-          timeEncoder: rfc3339nano
+        # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
+        timeEncoder: rfc3339nano
     # -- Mode of standby job. Supported values: "active", "standby"
     mode: standby
     # -- Name of component. Used in label selectors
@@ -263,7 +263,7 @@ mongodb:
         secretName: mongodb-cm-crt
     - name: mongodb-extra-ca-pool
       secret:
-        secretName: mongodb-extra-ca-pool  
+        secretName: mongodb-extra-ca-pool
   initContainers:
     # workaround for https://github.com/bitnami/charts/issues/10264, https://jira.mongodb.org/browse/MONGOSH-1240
     - name: mongo-binary
@@ -300,10 +300,13 @@ mongodb:
           done
 
           CERT_CRT=/certs-original/tls.crt
-          CERT_SHA256=/certs/cert.sha256.$(sha256sum -z ${CERT_CRT} | cut -d " " -f 1)
+          CERT_SHA256=/certs/cert.sha256.$(sha256sum ${CERT_CRT} | cut -d " " -f 1)
           CA=/certs-original/ca.crt
-          EXTRA_CA=/certs/extra/storage/ca.crt
-          CA_SHA256=$(cat ${CA} ${EXTRA_CA} | sha256sum -z | cut -d " " -f 1)
+          EXTRA_CA=/dev/null
+          if [ -f /certs/extra/storage/ca.crt ]; then
+            EXTRA_CA=/certs/extra/storage/ca.crt
+          fi
+          CA_SHA256=$(cat ${CA} ${EXTRA_CA} | sha256sum | cut -d " " -f 1)
           CA_FILE_SHA256=/certs/ca.sha256.$CA_SHA256
           ROTATE_CERTIFICATES=0
           if [ ! -f ${CERT_SHA256} ]; then
@@ -364,41 +367,41 @@ mongodb:
     timeoutSeconds: 10
     successThreshold: 1
     failureThreshold: 6
-  
+
 scylla:
   # -- Enable scylla service. Required scylla operator: https://github.com/scylladb/scylla-operator/blob/master/docs/source/generic.md#deploy-scylla-operator
   enabled: false
   scyllaImage:
-    tag: "5.2.9"  
+    tag: "5.2.9"
   # Name of datacenter
   datacenter: "dc-1"
   sysctls:
-  - "fs.aio-max-nr=2097152"
+    - "fs.aio-max-nr=2097152"
   # List of racks
   racks:
-  - name: "dc-1a"
-    # Name of additional scylla config configMap
-    scyllaConfig: "scylla-cfg"
-    # Storage definition
-    storage:
-      capacity: 10Gi
-    volumes:
-    - name: scylla-certs-volume
-      secret:
-        # scylla certificate secret name in format scylla-{{ scylla.racks[].name}}-crt
-        secretName: scylla-dc-1a-crt
-    volumeMounts:
-    - name: scylla-certs-volume
-      mountPath: /certs
-    # Number of rack members (nodes)
-    members: 3
-    resources:
-      limits:
-        cpu: 1
-        memory: 4Gi
-      requests:
-        cpu: 1
-        memory: 4Gi
+    - name: "dc-1a"
+      # Name of additional scylla config configMap
+      scyllaConfig: "scylla-cfg"
+      # Storage definition
+      storage:
+        capacity: 10Gi
+      volumes:
+        - name: scylla-certs-volume
+          secret:
+            # scylla certificate secret name in format scylla-{{ scylla.racks[].name}}-crt
+            secretName: scylla-dc-1a-crt
+      volumeMounts:
+        - name: scylla-certs-volume
+          mountPath: /certs
+      # Number of rack members (nodes)
+      members: 3
+      resources:
+        limits:
+          cpu: 1
+          memory: 4Gi
+        requests:
+          cpu: 1
+          memory: 4Gi
 
 cluster:
   # -- Cluster internal DNS prefix
@@ -577,7 +580,7 @@ extraCAPool:
   # -- Authorization CAPool section to verify the OAuth service certificate.
   authorization:
     # -- Enable extra authorization ca pool
-    enabled: "{{ include \"plgd-hub.extraCAPoolAuthorizationEnabled\" . }}"
+    enabled: '{{ include "plgd-hub.extraCAPoolAuthorizationEnabled" . }}'
     # -- Volume and Mount name
     name: authorization-ca-pool
     # -- Mount path for custom auth ca pool
@@ -585,13 +588,13 @@ extraCAPool:
     # set configMapName in order to mount an existing configMap to dir
     configMapName:
     # set secretName in order to mount an existing secretName to dir
-    secretName: "{{ include \"plgd-hub.oldExtraCAPoolAuthorizationSecretName\" . }}"
+    secretName: '{{ include "plgd-hub.oldExtraCAPoolAuthorizationSecretName" . }}'
     # key in the configMap or secret that contains the CA Certificate or Bundle
-    key: "{{ include \"plgd-hub.oldExtraCAPoolAuthorizationFileName\" . }}"
+    key: '{{ include "plgd-hub.oldExtraCAPoolAuthorizationFileName" . }}'
   # -- Internal CAPool section to verify internal and storage services certificates by plgd services
   internal:
     # -- Enable extra internal ca pool
-    enabled: "{{ include \"plgd-hub.extraCAPoolInternalEnabled\" . }}"
+    enabled: '{{ include "plgd-hub.extraCAPoolInternalEnabled" . }}'
     # -- Volume and Mount name
     name: internal-ca-pool
     # -- Mount path for custom internal ca pool
@@ -605,7 +608,7 @@ extraCAPool:
   # -- Storage CAPool section to verify internal and storage services certificates by storage services
   storage:
     # -- Enable extra storage ca pool
-    enabled: "{{ include \"plgd-hub.extraCAPoolStorageEnabled\" . }}"
+    enabled: '{{ include "plgd-hub.extraCAPoolStorageEnabled" . }}'
     # -- Volume and Mount name
     name: storage-ca-pool
     # -- Mount path for custom storage ca pool
@@ -619,7 +622,7 @@ extraCAPool:
   # -- CoAP CAPool section to verify device certificate by coap-gateway
   coap:
     # -- Enable extra coap ca pool
-    enabled: "{{ include \"plgd-hub.extraCAPoolCoapEnabled\" . }}"
+    enabled: '{{ include "plgd-hub.extraCAPoolCoapEnabled" . }}'
     # -- Volume and Mount name
     name: coap-ca-pool
     # -- Mount path for custom coap ca pool
@@ -725,20 +728,20 @@ resourcedirectory:
   hubId:
   # -- Log section
   log:
-    # -- Logging enabled from level 
+    # -- Logging enabled from level
     level: info
     # -- Dump grpc messages
     dumpBody: false
     # -- The supported values are: "json", "console"
     encoding: json
     stacktrace:
-        # -- Log stacktrace
-        enabled: false
-        # -- Stacktrace from level
-        level: warn
+      # -- Log stacktrace
+      enabled: false
+      # -- Stacktrace from level
+      level: warn
     encoderConfig:
-        # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
-        timeEncoder: rfc3339nano
+      # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
+      timeEncoder: rfc3339nano
   # -- For complete resource-directory service configuration see [plgd/resource-directory](https://github.com/plgd-dev/hub/tree/main/resource-directory)
   apis:
     grpc:
@@ -821,9 +824,9 @@ resourcedirectory:
         useHostnameResolution: true
         reconnectionPolicy:
           constant:
-            interval: 3s 
+            interval: 3s
             # 0 - means infinity
-            maxRetries: 3 
+            maxRetries: 3
         keyspace:
           name: plgdhub
           create: true
@@ -974,21 +977,21 @@ resourceaggregate:
   hubId:
   # -- Log section
   log:
-    # -- Logging enabled from level 
+    # -- Logging enabled from level
     level: info
     # -- Dump grpc messages
     dumpBody: false
     # -- The supported values are: "json", "console"
     encoding: json
     stacktrace:
-        # -- Log stacktrace
-        enabled: false
-        # -- Stacktrace from level
-        level: warn
+      # -- Log stacktrace
+      enabled: false
+      # -- Stacktrace from level
+      level: warn
     encoderConfig:
-        # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
-        timeEncoder: rfc3339nano
-# -- For complete resource-aggregate service configuration see [plgd/resource-aggregate](https://github.com/plgd-dev/hub/tree/main/resource-aggregate)
+      # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
+      timeEncoder: rfc3339nano
+  # -- For complete resource-aggregate service configuration see [plgd/resource-aggregate](https://github.com/plgd-dev/hub/tree/main/resource-aggregate)
   apis:
     grpc:
       ownerCacheExpiration: 1m
@@ -1072,9 +1075,9 @@ resourceaggregate:
         useHostnameResolution: true
         reconnectionPolicy:
           constant:
-            interval: 3s 
+            interval: 3s
             # 0 - means infinity
-            maxRetries: 3 
+            maxRetries: 3
         keyspace:
           name: plgdhub
           create: true
@@ -1112,32 +1115,32 @@ coapgateway:
   # -- Number of replicas
   replicas: 1
   # -- Additional labels for coap-gateway deployment
-  deploymentLabels: { }
+  deploymentLabels: {}
   # -- Additional annotations for coap-gateway deployment
-  deploymentAnnotations: { }
+  deploymentAnnotations: {}
   # -- Pod security context
-  podSecurityContext: { }
+  podSecurityContext: {}
   # -- Labels for coap-gateway pod
-  podLabels: { }
+  podLabels: {}
   # -- Annotations for coap-gateway pod
-  podAnnotations: { }
+  podAnnotations: {}
   service:
     # -- Service type
     type: LoadBalancer
     # -- Use nodePort, if specified, for one of the protocols. If both protocols are enabled, nodePort needs to be configured directly in the service to mutually different ports.
     nodePort:
     # -- Default labels for coap-gateway services
-    labels: { }
+    labels: {}
     # -- Default annotations for coap-gateway services
-    annotations: { }
+    annotations: {}
     # -- TCP service
-    tcp:  
+    tcp:
       # -- Service type
       type:
       # -- Labels for coap-gateway service
-      labels: { }
+      labels: {}
       # -- Annotations for coap-gateway service
-      annotations: { }
+      annotations: {}
       # -- Use nodePort if specified, must to be different as is in udp
       nodePort:
       # -- Target port
@@ -1151,9 +1154,9 @@ coapgateway:
       # -- Service type
       type:
       # -- Labels for coap-gateway service
-      labels: { }
+      labels: {}
       # -- Annotations for coap-gateway service
-      annotations: { }
+      annotations: {}
       # -- Use nodePort if specified. Must to be different as is in tcp
       nodePort:
       # -- Target port
@@ -1171,13 +1174,13 @@ coapgateway:
     # -- template definition for Role/binding etc..
     roleBindingDefinitionTpl:
   # -- Security context for pod
-  securityContext: { }
+  securityContext: {}
   # -- Image pull secrets
-  imagePullSecrets: { }
+  imagePullSecrets: {}
   # -- Restart policy for pod
   restartPolicy: Always
   # -- Init containers definition
-  initContainersTpl: { }
+  initContainersTpl: {}
   # -- Extra POD containers
   extraContainers: {}
   image:
@@ -1190,23 +1193,23 @@ coapgateway:
     # -- Image pull policy
     pullPolicy: Always
     # -- Image pull secrets
-    imagePullSecrets: { }
+    imagePullSecrets: {}
   # -- Liveness probe. coap-gateway doesn't have any default liveness probe
-  livenessProbe: { }
+  livenessProbe: {}
   # -- Readiness probe. coap-gateway doesn't have aby default readiness probe
-  readinessProbe: { }
+  readinessProbe: {}
   # -- Resources limit
-  resources: { }
+  resources: {}
   # -- Node selector
-  nodeSelector: { }
+  nodeSelector: {}
   # -- Affinity definition
-  affinity: { }
+  affinity: {}
   # -- Toleration definition
-  tolerations: { }
+  tolerations: {}
   # -- Optional extra volumes
-  extraVolumes: { }
+  extraVolumes: {}
   # -- Optional extra volume mounts
-  extraVolumeMounts: { }
+  extraVolumeMounts: {}
   config:
     # -- Service configuration file name
     fileName: service.yaml
@@ -1226,23 +1229,23 @@ coapgateway:
   log:
     # -- Dump coap messages
     dumpBody: false
-    # -- Logging enabled from level 
+    # -- Logging enabled from level
     level: info
     # -- The supported values are: "json", "console"
     encoding: json
     stacktrace:
-        # -- Log stacktrace
-        enabled: false
-        # -- Stacktrace from level
-        level: warn
+      # -- Log stacktrace
+      enabled: false
+      # -- Stacktrace from level
+      level: warn
     encoderConfig:
-        # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
-        timeEncoder: rfc3339nano
+      # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
+      timeEncoder: rfc3339nano
   # -- For complete coap-gateway service configuration see [plgd/coap-gateway](https://github.com/plgd-dev/hub/tree/main/coap-gateway)
   apis:
     coap:
       externalAddress: ""
-      protocols: [ "tcp" ]
+      protocols: ["tcp"]
       maxMessageSize: 262144
       ownerCacheExpiration: 1m
       subscriptionBufferSize: 1000
@@ -1343,7 +1346,7 @@ coapgateway:
     size: "2097152"
     maxIdleTime: "10m"
   deviceTwin:
-    maxETagsCountInRequest:  8
+    maxETagsCountInRequest: 8
     useETags: false
 
 identitystore:
@@ -1442,20 +1445,20 @@ identitystore:
   hubId:
   # -- Log section
   log:
-    # -- Logging enabled from level 
+    # -- Logging enabled from level
     level: info
     # -- Dump grpc messages
     dumpBody: false
     # -- The supported values are: "json", "console"
     encoding: json
     stacktrace:
-        # -- Log stacktrace
-        enabled: false
-        # -- Stacktrace from level
-        level: warn
+      # -- Log stacktrace
+      enabled: false
+      # -- Stacktrace from level
+      level: warn
     encoderConfig:
-        # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
-        timeEncoder: rfc3339nano
+      # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
+      timeEncoder: rfc3339nano
   # -- For complete identity service configuration see [plgd/identity](https://github.com/plgd-dev/hub/tree/main/identity)
   apis:
     grpc:
@@ -1527,9 +1530,9 @@ identitystore:
         useHostnameResolution: true
         reconnectionPolicy:
           constant:
-            interval: 3s 
+            interval: 3s
             # 0 - means infinity
-            maxRetries: 3 
+            maxRetries: 3
         keyspace:
           name: plgdhub
           create: true
@@ -1634,7 +1637,7 @@ httpgateway:
       secretName:
       # -- Pre defined map of Ingress annotation
       annotations:
-        nginx.org/grpc-services: "{{ include \"plgd-hub.httpgateway.fullname\" . }}"
+        nginx.org/grpc-services: '{{ include "plgd-hub.httpgateway.fullname" . }}'
         nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
         ingress.kubernetes.io/force-ssl-redirect: "true"
         nginx.ingress.kubernetes.io/enable-cors: "true"
@@ -1674,18 +1677,18 @@ httpgateway:
   # -- Port for service and POD
   port: 9100
   log:
-    # -- Logging enabled from level 
+    # -- Logging enabled from level
     level: info
     # -- The supported values are: "json", "console"
     encoding: json
     stacktrace:
-        # -- Log stacktrace
-        enabled: false
-        # -- Stacktrace from level
-        level: warn
+      # -- Log stacktrace
+      enabled: false
+      # -- Stacktrace from level
+      level: warn
     encoderConfig:
-        # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
-        timeEncoder: rfc3339nano
+      # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
+      timeEncoder: rfc3339nano
   # -- For complete http-gateway service configuration see [plgd/http-gateway](https://github.com/plgd-dev/hub/tree/main/http-gateway)
   apis:
     http:
@@ -1757,25 +1760,25 @@ httpgateway:
         clientID:
         audience:
         scopes: []
-        grantType: 
+        grantType:
         clientAssertionType:
       visibility:
         mainSidebar:
-          certificates : true
-          chatRoom : true
-          configuration : true
-          deviceProvisioning : true
-          devices : true
-          docs : true
-          pendingCommands : true
-          remoteClients : true
-          dashboard : false
-          integrations : false
-          deviceFirmwareUpdate : false
-          deviceLogs : false
-          apiTokens : false
-          schemaHub : false
-
+          certificates: true
+          chatRoom: true
+          configuration: true
+          deviceProvisioning: true
+          devices: true
+          docs: true
+          pendingCommands: true
+          remoteClients: true
+          dashboard: false
+          integrations: false
+          deviceFirmwareUpdate: false
+          deviceLogs: false
+          apiTokens: false
+          schemaHub: false
+          snippetService: true
 
 grpcgateway:
   # -- Enable grpc-gateway service
@@ -1866,7 +1869,7 @@ grpcgateway:
     secretName:
     # -- Ingress annotations
     annotations:
-      nginx.org/grpc-services: "{{ include \"plgd-hub.grpcgateway.fullname\" . }}"
+      nginx.org/grpc-services: '{{ include "plgd-hub.grpcgateway.fullname" . }}'
       nginx.ingress.kubernetes.io/backend-protocol: "GRPCS"
       ingress.kubernetes.io/force-ssl-redirect: "true"
       nginx.ingress.kubernetes.io/enable-cors: "true"
@@ -1887,20 +1890,20 @@ grpcgateway:
   # -- Service and POD port
   port: 9100
   log:
-    # -- Logging enabled from level 
+    # -- Logging enabled from level
     level: info
     # -- Dump grpc messages
     dumpBody: false
     # -- The supported values are: "json", "console"
     encoding: json
     stacktrace:
-        # -- Log stacktrace
-        enabled: false
-        # -- Stacktrace from level
-        level: warn
+      # -- Log stacktrace
+      enabled: false
+      # -- Stacktrace from level
+      level: warn
     encoderConfig:
-        # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
-        timeEncoder: rfc3339nano
+      # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
+      timeEncoder: rfc3339nano
   # -- For complete grpc-gateway service configuration see [plgd/grpc-gateway](https://github.com/plgd-dev/hub/tree/main/grpc-gateway)
   apis:
     grpc:
@@ -2013,7 +2016,6 @@ grpcgateway:
           certFile:
           useSystemCAPool: false
 
-
 certificateauthority:
   # -- Enable certificate-authority service
   enabled: true
@@ -2121,7 +2123,7 @@ certificateauthority:
       secretName:
       # -- Pre defined map of Ingress annotation
       annotations:
-        nginx.org/grpc-services: "{{ include \"plgd-hub.certificateauthority.fullname\" . }}-http"
+        nginx.org/grpc-services: '{{ include "plgd-hub.certificateauthority.fullname" . }}-http'
         nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
         ingress.kubernetes.io/force-ssl-redirect: "true"
         nginx.ingress.kubernetes.io/enable-cors: "true"
@@ -2139,13 +2141,13 @@ certificateauthority:
       secretName:
       # -- Pre defined map of Ingress annotation
       annotations:
-        nginx.org/grpc-services: "{{ include \"plgd-hub.certificateauthority.fullname\" . }}-grpc"
+        nginx.org/grpc-services: '{{ include "plgd-hub.certificateauthority.fullname" . }}-grpc'
         nginx.ingress.kubernetes.io/backend-protocol: "GRPCS"
         ingress.kubernetes.io/force-ssl-redirect: "true"
         nginx.ingress.kubernetes.io/enable-cors: "true"
         cert-manager.io/private-key-rotation-policy: always
       # -- Custom map of Ingress annotation
-      customAnnotations: { }
+      customAnnotations: {}
       # -- Paths
       paths:
         - /certificateauthority.pb.CertificateAuthority
@@ -2181,20 +2183,20 @@ certificateauthority:
   hubId:
   # -- Log section
   log:
-    # -- Logging enabled from level 
+    # -- Logging enabled from level
     level: info
     # -- Dump grpc messages
     dumpBody: false
     # -- The supported values are: "json", "console"
     encoding: json
     stacktrace:
-        # -- Log stacktrace
-        enabled: false
-        # -- Stacktrace from level
-        level: warn
+      # -- Log stacktrace
+      enabled: false
+      # -- Stacktrace from level
+      level: warn
     encoderConfig:
-        # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
-        timeEncoder: rfc3339nano
+      # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
+      timeEncoder: rfc3339nano
   # -- For complete certificate-authority service configuration see [plgd/certificate-authority](https://github.com/plgd-dev/hub/tree/main/certificate-authority)
   apis:
     grpc:
@@ -2271,9 +2273,9 @@ certificateauthority:
         useHostnameResolution: true
         reconnectionPolicy:
           constant:
-            interval: 3s 
+            interval: 3s
             # 0 - means infinity
-            maxRetries: 3 
+            maxRetries: 3
         keyspace:
           name: plgdhub
           create: true
@@ -2400,7 +2402,7 @@ snippetservice:
       secretName:
       # -- Pre defined map of Ingress annotation
       annotations:
-        nginx.org/grpc-services: "{{ include \"plgd-hub.snippetservice.fullname\" . }}-http"
+        nginx.org/grpc-services: '{{ include "plgd-hub.snippetservice.fullname" . }}-http'
         nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
         ingress.kubernetes.io/force-ssl-redirect: "true"
         nginx.ingress.kubernetes.io/enable-cors: "true"
@@ -2417,13 +2419,13 @@ snippetservice:
       secretName:
       # -- Pre defined map of Ingress annotation
       annotations:
-        nginx.org/grpc-services: "{{ include \"plgd-hub.snippetservice.fullname\" . }}-grpc"
+        nginx.org/grpc-services: '{{ include "plgd-hub.snippetservice.fullname" . }}-grpc'
         nginx.ingress.kubernetes.io/backend-protocol: "GRPCS"
         ingress.kubernetes.io/force-ssl-redirect: "true"
         nginx.ingress.kubernetes.io/enable-cors: "true"
         cert-manager.io/private-key-rotation-policy: always
       # -- Custom map of Ingress annotation
-      customAnnotations: { }
+      customAnnotations: {}
       # -- Paths
       paths:
         - /snippetservice.pb.SnippetService
@@ -2442,20 +2444,20 @@ snippetservice:
   hubId:
   # -- Log section
   log:
-    # -- Logging enabled from level 
+    # -- Logging enabled from level
     level: info
     # -- Dump grpc messages
     dumpBody: false
     # -- The supported values are: "json", "console"
     encoding: json
     stacktrace:
-        # -- Log stacktrace
-        enabled: false
-        # -- Stacktrace from level
-        level: warn
+      # -- Log stacktrace
+      enabled: false
+      # -- Stacktrace from level
+      level: warn
     encoderConfig:
-        # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
-        timeEncoder: rfc3339nano
+      # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
+      timeEncoder: rfc3339nano
   # -- For complete snippet-service configuration see [plgd/snippet-service](https://github.com/plgd-dev/hub/tree/main/snippet-service)
   apis:
     grpc:
@@ -2550,9 +2552,9 @@ mockoauthserver:
     - name: "plgd.web"
       clientID: "test"
       clientSecret: "test"
-      redirectURL: "{{ printf \"https://%s\" ( include \"plgd-hub.mockoauthserver.ingressDomain\" . ) }}/devices"
+      redirectURL: '{{ printf "https://%s" ( include "plgd-hub.mockoauthserver.ingressDomain" . ) }}/devices'
       useInUi: true
-      
+
   # -- Enable mock-oauth-server service
   enabled: false
   # -- Name of component. Used in label selectors
@@ -2679,18 +2681,18 @@ mockoauthserver:
   # -- Port for service and POD
   port: 9100
   log:
-    # -- Logging enabled from level 
+    # -- Logging enabled from level
     level: info
     # -- The supported values are: "json", "console"
     encoding: json
     stacktrace:
-        # -- Log stacktrace
-        enabled: false
-        # -- Stacktrace from level
-        level: warn
+      # -- Log stacktrace
+      enabled: false
+      # -- Stacktrace from level
+      level: warn
     encoderConfig:
-        # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
-        timeEncoder: rfc3339nano
+      # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
+      timeEncoder: rfc3339nano
   # -- For complete mock-oauth-server service configuration see [plgd/oauth-server](https://github.com/plgd-dev/hub/tree/main/test/oauth-server)
   apis:
     http:
@@ -2831,18 +2833,18 @@ m2moauthserver:
     # -- Mount path
     mountPath: /secrets/clients/service
   log:
-    # -- Logging enabled from level 
+    # -- Logging enabled from level
     level: info
     # -- The supported values are: "json", "console"
     encoding: json
     stacktrace:
-        # -- Log stacktrace
-        enabled: false
-        # -- Stacktrace from level
-        level: warn
+      # -- Log stacktrace
+      enabled: false
+      # -- Stacktrace from level
+      level: warn
     encoderConfig:
-        # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
-        timeEncoder: rfc3339nano
+      # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
+      timeEncoder: rfc3339nano
   # -- For complete m2m-oauth-server service configuration see [plgd/oauth-server](https://github.com/plgd-dev/hub/tree/main/test/oauth-server)
   apis:
     http:
@@ -2874,10 +2876,9 @@ m2moauthserver:
             audience:
             endpoints:
       - id: "service"
-        secretFile: "{{ include \"plgd-hub.m2moauthserver.getClientServiceSecretFile\" . }}"
+        secretFile: '{{ include "plgd-hub.m2moauthserver.getClientServiceSecretFile" . }}'
         accessTokenLifetime: 0s
         allowedGrantTypes:
           - client_credentials
         allowedAudiences: []
         allowedScopes: []
-

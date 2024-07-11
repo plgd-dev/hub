@@ -148,5 +148,6 @@ data:
             deviceLogs : {{ .ui.webConfiguration.visibility.mainSidebar.deviceLogs }}
             apiTokens : {{ .ui.webConfiguration.visibility.mainSidebar.apiTokens }}
             schemaHub : {{ .ui.webConfiguration.visibility.mainSidebar.schemaHub }}
+            snippetService: {{ .ui.webConfiguration.visibility.mainSidebar.snippetService }}
       {{- end }}
 {{- end }}

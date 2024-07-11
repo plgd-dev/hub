@@ -301,7 +301,7 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                 paths: [pages.SNIPPET_SERVICE.LINK],
                 exact: true,
                 dataTestId: testId.menu.snippetService.link,
-                visibility: menuConfig.menuSnippetService || true,
+                visibility: menuConfig.snippetService,
                 children: [
                     {
                         id: '111',
