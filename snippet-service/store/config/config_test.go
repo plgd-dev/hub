@@ -1,43 +1,35 @@
-package updater_test
+package config_test
 
 import (
 	"testing"
 
+	"github.com/plgd-dev/hub/v2/snippet-service/store/config"
 	"github.com/plgd-dev/hub/v2/snippet-service/test"
-	"github.com/plgd-dev/hub/v2/snippet-service/updater"
 	"github.com/stretchr/testify/require"
 )
 
-func TestResourceAggregateConfig(t *testing.T) {
+func TestConfig(t *testing.T) {
 	tests := []struct {
 		name    string
-		cfg     updater.ResourceUpdaterConfig
+		cfg     config.Config
 		wantErr bool
 	}{
 		{
 			name: "valid",
-			cfg:  test.MakeResourceUpdaterConfig(),
+			cfg:  test.MakeStoreConfig(),
 		},
 		{
 			name: "valid - no cron",
-			cfg: func() updater.ResourceUpdaterConfig {
-				cfg := test.MakeResourceUpdaterConfig()
+			cfg: func() config.Config {
+				cfg := test.MakeStoreConfig()
 				cfg.CleanUpExpiredUpdates = ""
 				return cfg
 			}(),
 		},
 		{
-			name: "invalid - no connection",
-			cfg: func() updater.ResourceUpdaterConfig {
-				cfg := updater.ResourceUpdaterConfig{}
-				return cfg
-			}(),
-			wantErr: true,
-		},
-		{
 			name: "invalid - bad cron expression",
-			cfg: func() updater.ResourceUpdaterConfig {
-				cfg := test.MakeResourceUpdaterConfig()
+			cfg: func() config.Config {
+				cfg := test.MakeStoreConfig()
 				cfg.CleanUpExpiredUpdates = "bad"
 				return cfg
 			}(),
