@@ -49,6 +49,7 @@ proto/generate:
 	protoc -I=. -I=$(REPOSITORY_DIRECTORY) -I=$(GOPATH)/src --go_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pb/resources.proto
 	protoc -I=. -I=$(REPOSITORY_DIRECTORY) -I=$(GOPATH)/src --go_out=$(GOPATH)/src $(WORKING_DIRECTORY)/cqrs/aggregate/test/aggregate_test.proto
 	protoc -I=. -I=$(REPOSITORY_DIRECTORY) -I=$(GOPATH)/src --go_out=$(GOPATH)/src $(WORKING_DIRECTORY)/cqrs/eventbus/pb/eventbus.proto
+	protoc -I=. -I=$(REPOSITORY_DIRECTORY) -I=$(GOPATH)/src --go_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pb/service.proto
 	protoc -I=. -I=$(REPOSITORY_DIRECTORY) -I=$(GOPATH)/src --go-grpc_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pb/service.proto
 
 .PHONY: build-servicecontainer build push clean proto/generate
