@@ -2,23 +2,32 @@ package subscription_test
 
 import (
 	"context"
+	"slices"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/panjf2000/ants/v2"
+	"github.com/plgd-dev/device/v2/schema/configuration"
+	"github.com/plgd-dev/device/v2/schema/softwareupdate"
+	"github.com/plgd-dev/device/v2/test/resource/types"
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	subscription "github.com/plgd-dev/hub/v2/grpc-gateway/subscription"
 	isEvents "github.com/plgd-dev/hub/v2/identity-store/events"
+	"github.com/plgd-dev/hub/v2/pkg/fn"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/publisher"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	natsTest "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/test"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	raservice "github.com/plgd-dev/hub/v2/resource-aggregate/service"
+	raTest "github.com/plgd-dev/hub/v2/resource-aggregate/test"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/service"
@@ -147,11 +156,14 @@ func checkAndValidateRetrieve(ctx context.Context, t *testing.T, rac raservice.R
 	})
 }
 
-func getResourceChangedEvents(t *testing.T, deviceID, correlationID, subscriptionID string) map[string]*pb.Event {
+func getResourceChangedEvents(t *testing.T, deviceID, correlationID, subscriptionID string, filter func(href string) bool) map[string]*pb.Event {
 	resources := test.GetAllBackendResourceRepresentations(t, deviceID, test.TestDeviceName)
 	events := make(map[string]*pb.Event)
 	for _, res := range resources {
 		rid := commands.ResourceIdFromString(res.Href) // validate
+		if filter != nil && !filter(rid.GetHref()) {
+			continue
+		}
 		events[rid.GetHref()] = &pb.Event{
 			SubscriptionId: subscriptionID,
 			Type: &pb.Event_ResourceChanged{
@@ -161,6 +173,51 @@ func getResourceChangedEvents(t *testing.T, deviceID, correlationID, subscriptio
 		}
 	}
 	return events
+}
+
+func prepareServicesAndSubscription(t *testing.T, owner, correlationID string, req *pb.SubscribeToEvents_CreateSubscription, sendEvent subscription.SendEventFunc) (pb.GrpcGatewayClient, raservice.ResourceAggregateClient, *subscription.Sub, func()) {
+	var cleanUp fn.FuncList
+	fileWatcher, err := fsnotify.NewWatcher(log.Get())
+	require.NoError(t, err)
+	cleanUp.AddFunc(func() {
+		errC := fileWatcher.Close()
+		require.NoError(t, errC)
+	})
+
+	rdConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.RESOURCE_DIRECTORY_HOST), fileWatcher, log.Get(), noop.NewTracerProvider())
+	require.NoError(t, err)
+	cleanUp.AddFunc(func() {
+		_ = rdConn.Close()
+	})
+	rdc := pb.NewGrpcGatewayClient(rdConn.GRPC())
+
+	raConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST), fileWatcher, log.Get(), noop.NewTracerProvider())
+	require.NoError(t, err)
+	cleanUp.AddFunc(func() {
+		_ = raConn.Close()
+	})
+	rac := raservice.NewResourceAggregateClient(raConn.GRPC())
+
+	pool, err := ants.NewPool(1)
+	require.NoError(t, err)
+	natsConn, resourceSubscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(), fileWatcher, log.Get(), subscriber.WithGoPool(pool.Submit), subscriber.WithUnmarshaler(utils.Unmarshal))
+	require.NoError(t, err)
+	cleanUp.AddFunc(func() {
+		resourceSubscriber.Close()
+		natsConn.Close()
+	})
+
+	subCache := subscription.NewSubscriptionsCache(resourceSubscriber.Conn(), func(err error) { log.Get().Error(err) })
+
+	s := subscription.New(sendEvent, correlationID, req)
+	err = s.Init(owner, subCache)
+	require.NoError(t, err)
+	cleanUp.AddFunc(func() {
+		errC := s.Close()
+		require.NoError(t, errC)
+	})
+
+	return rdc, rac, s, cleanUp.ToFunction()
 }
 
 func TestRequestHandlerSubscribeToEvents(t *testing.T) {
@@ -174,53 +231,20 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 	token := oauthTest.GetDefaultAccessToken(t)
 	ctx = kitNetGrpc.CtxWithIncomingToken(kitNetGrpc.CtxWithToken(ctx, token), token)
 
-	fileWatcher, err := fsnotify.NewWatcher(log.Get())
-	require.NoError(t, err)
-	defer func() {
-		errC := fileWatcher.Close()
-		require.NoError(t, errC)
-	}()
-
-	rdConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.RESOURCE_DIRECTORY_HOST), fileWatcher, log.Get(), noop.NewTracerProvider())
-	require.NoError(t, err)
-	defer func() {
-		_ = rdConn.Close()
-	}()
-	rdc := pb.NewGrpcGatewayClient(rdConn.GRPC())
-
-	raConn, err := grpcClient.New(config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST), fileWatcher, log.Get(), noop.NewTracerProvider())
-	require.NoError(t, err)
-	defer func() {
-		_ = raConn.Close()
-	}()
-	rac := raservice.NewResourceAggregateClient(raConn.GRPC())
-
-	pool, err := ants.NewPool(1)
-	require.NoError(t, err)
-	natsConn, resourceSubscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(), fileWatcher, log.Get(), subscriber.WithGoPool(pool.Submit), subscriber.WithUnmarshaler(utils.Unmarshal))
-	require.NoError(t, err)
-	defer natsConn.Close()
-	defer resourceSubscriber.Close()
-
 	owner, err := kitNetGrpc.OwnerFromTokenMD(ctx, config.OWNER_CLAIM)
 	require.NoError(t, err)
-	subCache := subscription.NewSubscriptionsCache(resourceSubscriber.Conn(), func(err error) { t.Log(err) })
+
 	correlationID := "testToken"
 	recvChan := make(chan *pb.Event, 1)
-
-	s := subscription.New(func(e *pb.Event) error {
-		select {
-		case recvChan <- e:
-		case <-ctx.Done():
-		}
-		return nil
-	}, correlationID, &pb.SubscribeToEvents_CreateSubscription{})
-	err = s.Init(owner, subCache)
-	require.NoError(t, err)
-	defer func() {
-		errC := s.Close()
-		require.NoError(t, errC)
-	}()
+	rdc, rac, s, cleanUp := prepareServicesAndSubscription(t, owner, correlationID, &pb.SubscribeToEvents_CreateSubscription{},
+		func(e *pb.Event) error {
+			select {
+			case recvChan <- e:
+			case <-ctx.Done():
+			}
+			return nil
+		})
+	defer cleanUp()
 
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, rdc, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, nil)
 
@@ -264,7 +288,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 		pbTest.GetEventID(onlineFinishedSync): onlineFinishedSync,
 		pbTest.GetEventID(publishedEv):        publishedEv,
 	}
-	resChanged := getResourceChangedEvents(t, deviceID, correlationID, s.Id())
+	resChanged := getResourceChangedEvents(t, deviceID, correlationID, s.Id(), nil)
 	for _, v := range resChanged {
 		expEvents[pbTest.GetEventID(v)] = v
 	}
@@ -331,4 +355,125 @@ LOOP:
 			require.NoError(t, err)
 		}
 	}
+}
+
+func testRequestHandlerSubscribeToChangedEvents(t *testing.T, cfg *natsClient.LeadResourceTypeConfig, createSubscription *pb.SubscribeToEvents_CreateSubscription, filterExpectedEvents func(href string) bool) {
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	defer cancel()
+
+	raCfg := raTest.MakeConfig(t)
+	raCfg.Clients.Eventbus.NATS.LeadResourceType = cfg
+	err := raCfg.Clients.Eventbus.NATS.Validate()
+	require.NoError(t, err)
+	tearDown := service.SetUp(ctx, t, service.WithRAConfig(raCfg))
+	defer tearDown()
+
+	token := oauthTest.GetDefaultAccessToken(t)
+	ctx = kitNetGrpc.CtxWithIncomingToken(kitNetGrpc.CtxWithToken(ctx, token), token)
+
+	owner, err := kitNetGrpc.OwnerFromTokenMD(ctx, config.OWNER_CLAIM)
+	require.NoError(t, err)
+
+	correlationID := uuid.NewString()
+	recvChan := make(chan *pb.Event, 1)
+	rdc, _, s, cleanUp := prepareServicesAndSubscription(t, owner, correlationID, createSubscription,
+		func(e *pb.Event) error {
+			select {
+			case recvChan <- e:
+			case <-ctx.Done():
+			}
+			return nil
+		})
+	defer cleanUp()
+
+	_, shutdownDevSim := test.OnboardDevSim(ctx, t, rdc, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, nil)
+	defer shutdownDevSim()
+
+	expEvents := make(map[string]*pb.Event)
+	resChanged := getResourceChangedEvents(t, deviceID, correlationID, s.Id(), filterExpectedEvents)
+	for _, v := range resChanged {
+		expEvents[pbTest.GetEventID(v)] = v
+	}
+
+	run := true
+	for run {
+		select {
+		case <-ctx.Done():
+			require.Fail(t, "timeout")
+		case e := <-recvChan:
+			exp, ok := expEvents[pbTest.GetEventID(e)]
+			if !ok {
+				require.Failf(t, "unexpected event", "%v", e)
+			}
+			check(t, e, exp)
+			delete(expEvents, pbTest.GetEventID(e))
+			if len(expEvents) == 0 {
+				run = false
+				continue
+			}
+		}
+	}
+}
+
+func TestRequestHandlerSubscribeToAllResourceEvents(t *testing.T) {
+	cfg := &natsClient.LeadResourceTypeConfig{
+		Enabled: true,
+		Filter:  natsClient.LeadResourceTypeFilter_First,
+	}
+	createSub := &pb.SubscribeToEvents_CreateSubscription{
+		EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+			pb.SubscribeToEvents_CreateSubscription_RESOURCE_UPDATE_PENDING,
+			pb.SubscribeToEvents_CreateSubscription_RESOURCE_UPDATED,
+			pb.SubscribeToEvents_CreateSubscription_RESOURCE_RETRIEVE_PENDING,
+			pb.SubscribeToEvents_CreateSubscription_RESOURCE_RETRIEVED,
+			pb.SubscribeToEvents_CreateSubscription_RESOURCE_DELETE_PENDING,
+			pb.SubscribeToEvents_CreateSubscription_RESOURCE_DELETED,
+			pb.SubscribeToEvents_CreateSubscription_RESOURCE_CREATE_PENDING,
+			pb.SubscribeToEvents_CreateSubscription_RESOURCE_CREATED,
+			pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
+		},
+		// NATS supports "*" and ">" wildcards, we must use ">" because a resource types can contain multiple substrings delimited by "."
+		LeadResourceTypeFilter: []string{">"},
+	}
+	testRequestHandlerSubscribeToChangedEvents(t, cfg, createSub, nil)
+}
+
+func TestRequestHandlerSubscribeToResourceChangedEventsWithLeadResourceTypeLastAndUseUUID(t *testing.T) {
+	cfg := &natsClient.LeadResourceTypeConfig{
+		Enabled: true,
+		Filter:  natsClient.LeadResourceTypeFilter_Last,
+		UseUUID: true,
+	}
+	lrtFilter := make([]string, 0, len(test.TestResourceLightInstanceResourceTypes))
+	for _, rt := range test.TestResourceLightInstanceResourceTypes {
+		lrtFilter = append(lrtFilter, publisher.ResourceTypeToUUID(rt))
+	}
+	createSub := &pb.SubscribeToEvents_CreateSubscription{
+		EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+			pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
+		},
+		LeadResourceTypeFilter: lrtFilter,
+	}
+	testRequestHandlerSubscribeToChangedEvents(t, cfg, createSub, func(href string) bool {
+		return test.TestResourceLightInstanceHref("1") == href
+	})
+}
+
+func TestRequestHandlerSubscribeToResourceChangedEventsWithLeadResourceTypeRegex(t *testing.T) {
+	// must match the regexFilter
+	expectedHrefs := []string{test.TestResourceLightInstanceHref("1"), softwareupdate.ResourceURI, configuration.ResourceURI}
+	cfg := &natsClient.LeadResourceTypeConfig{
+		Enabled:     true,
+		RegexFilter: []string{"core\\.light", "oic\\.r.*", ".*\\.con", "x\\.plgd\\.dev\\..*"}, // x.plgd.dev.* is extra, it is published, but not subscribed to
+	}
+	createSub := &pb.SubscribeToEvents_CreateSubscription{
+		EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+			pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
+		},
+		LeadResourceTypeFilter: []string{types.CORE_LIGHT, softwareupdate.ResourceType, configuration.ResourceType},
+	}
+	testRequestHandlerSubscribeToChangedEvents(t, cfg, createSub, func(href string) bool {
+		return slices.Contains(expectedHrefs, href)
+	})
 }

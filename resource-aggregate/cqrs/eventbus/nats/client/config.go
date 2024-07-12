@@ -1,6 +1,7 @@
 package client
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"time"
@@ -53,39 +54,42 @@ const (
 	LeadResourceTypeFilter_Last  LeadResourceTypeFilter = "last"
 )
 
-func LeadResourceTypeFilterFromString(s string) (LeadResourceTypeFilter, error) {
+func CheckResourceTypeFilterString(s string) error {
 	switch s {
-	case string(LeadResourceTypeFilter_First):
-		return LeadResourceTypeFilter_First, nil
-	case string(LeadResourceTypeFilter_Last):
-		return LeadResourceTypeFilter_Last, nil
-	case string(LeadResourceTypeFilter_None):
-		return LeadResourceTypeFilter_None, nil
+	case string(LeadResourceTypeFilter_First), string(LeadResourceTypeFilter_Last), string(LeadResourceTypeFilter_None):
+		return nil
 	}
-	return LeadResourceTypeFilter_None, fmt.Errorf("unknown LeadResourceTypeFilter('%v')", s)
+	return errors.New("unknown LeadResourceTypeFilter")
 }
 
 type LeadResourceTypeConfig struct {
 	Enabled     bool                   `yaml:"enabled" json:"enabled"`
-	RegexFilter string                 `yaml:"regexFilter" json:"regexFilter"`
+	RegexFilter []string               `yaml:"regexFilter" json:"regexFilter"`
 	Filter      LeadResourceTypeFilter `yaml:"filter" json:"filter"`
 	UseUUID     bool                   `yaml:"useUUID" json:"useUUID"`
 
-	compiledRegexFilter *regexp.Regexp `yaml:"-" json:"-"`
+	compiledRegexFilter []*regexp.Regexp `yaml:"-" json:"-"`
 }
 
 func (c *LeadResourceTypeConfig) Validate() error {
-	if c.RegexFilter != "" {
-		compiledRegexFilter, err := regexp.Compile(c.RegexFilter)
-		if err != nil {
-			return fmt.Errorf("regexFilter('%v'): %w", c.RegexFilter, err)
+	if err := CheckResourceTypeFilterString(string(c.Filter)); err != nil {
+		return fmt.Errorf("filter(%v): %w", c.Filter, err)
+	}
+	if len(c.RegexFilter) > 0 {
+		compiledRegexFilter := make([]*regexp.Regexp, 0, len(c.RegexFilter))
+		for _, rf := range c.RegexFilter {
+			compiledRf, err := regexp.Compile(rf)
+			if err != nil {
+				return fmt.Errorf("regexFilter('%v'): %w", rf, err)
+			}
+			compiledRegexFilter = append(compiledRegexFilter, compiledRf)
 		}
 		c.compiledRegexFilter = compiledRegexFilter
 	}
 	return nil
 }
 
-func (c *LeadResourceTypeConfig) GetCompiledRegexFilter() *regexp.Regexp {
+func (c *LeadResourceTypeConfig) GetCompiledRegexFilter() []*regexp.Regexp {
 	return c.compiledRegexFilter
 }
 

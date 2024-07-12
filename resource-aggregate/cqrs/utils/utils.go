@@ -68,9 +68,7 @@ func GetResourceEventSubjects(owner string, resourceID *commands.ResourceId, eve
 
 func GetSubjectHrefID(href string) string {
 	switch href {
-	case "":
-		return "*"
-	case "*":
+	case "", "*":
 		return "*"
 	default:
 		return HrefToID(href).String()

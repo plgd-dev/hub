@@ -40,7 +40,7 @@
         "TEST_DATABASE": "mongoDB",
         "TEST_BRIDGE_DEVICE_CONFIG": "${workspaceFolder}/.tmp/bridge/config-test.yaml",
         // "TEST_LEAD_RESOURCE_TYPE_FILTER": "first",
-        // "TEST_LEAD_RESOURCE_TYPE_REGEX_FILTER": "(oic\\..*|oc\\..*)",
+        // "TEST_LEAD_RESOURCE_TYPE_REGEX_FILTER": "oic\\.wk\\..*,^/light/\\d+$",
         // "TEST_LEAD_RESOURCE_TYPE_USE_UUID": "true",
         // "TEST_DEVICE_NAME": "bridged-device-0",
         // "TEST_DEVICE_TYPE": "bridged",

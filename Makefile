@@ -436,7 +436,6 @@ $(test-targets): %: env hub-test
 	@mkdir -p $(WORKING_DIRECTORY)/.tmp/home
 	@mkdir -p $(WORKING_DIRECTORY)/.tmp/home/certificate-authority
 	@mkdir -p $(WORKING_DIRECTORY)/.tmp/report
-	env
 	@readonly TARGET_DIRECTORY=$(patsubst test-%,./%/,$@) ; \
 	if ! go list -f '{{.GoFiles}}' $$TARGET_DIRECTORY... 2>/dev/null | grep go > /dev/null 2>&1; then \
 		echo "No golang files detected, directory $$TARGET_DIRECTORY skipped"; \

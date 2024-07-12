@@ -188,6 +188,27 @@ func TestConvertToSubjects(t *testing.T) {
 			}(),
 		},
 		{
+			name: "href (2)",
+			args: args{
+				req: &pb.SubscribeToEvents_CreateSubscription{
+					ResourceIdFilter: []*pb.ResourceIdFilter{
+						{
+							ResourceId: commands.NewResourceID("*", resourceID.GetHref()),
+						},
+					},
+					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+						pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED, pb.SubscribeToEvents_CreateSubscription_REGISTERED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
+					},
+				},
+				owner: "c",
+			},
+			want: func() []string {
+				subjects := []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID("*"), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType()))}
+				subjects = append(subjects, utils.GetResourceEventSubjects("c", commands.NewResourceID("*", resourceID.GetHref()), (&events.ResourceChanged{}).EventType())...)
+				return append(subjects, isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")))
+			}(),
+		},
+		{
 			name: "device and resourceID",
 			args: args{
 				req: &pb.SubscribeToEvents_CreateSubscription{

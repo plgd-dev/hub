@@ -1869,7 +1869,7 @@
         
       
         <h3 id="grpcgateway.pb.SubscribeToEvents.CreateSubscription">SubscribeToEvents.CreateSubscription</h3>
-        <p>If you want to subscribe to all events, leave the filter unset.</p><p>Use the event_filter in conjunction with other filters to filter events by type. If event_filter is set, only events with the specified type will be received.</p><p>To filter devices, use the device_id_filter. It follows the format {deviceID[0]+"/"+"*", deviceID[1]+"/"+"*", ...}.</p><p>To filter resources, use the href_filter. It follows the format {"*"+href[0], "*"+href[1], ...}.</p><p>When both device_id_filter and href_filter are set, the href_filter is applied to each device. {deviceID[0]+href[0], ..., deviceID[1]+href[0], ...}.</p><p>To filter resources of specific devices, use the resource_id_filter.</p><p>You can use either device_id_filter or resource_id_filter or both. In this case, the result is the union of both filters.</p><p>Certain filters perform a logical "or" operation among the elements of the filter.</p>
+        <p>If you want to subscribe to all events, leave the filter unset.</p><p>Use the event_filter in conjunction with other filters to filter events by type. If event_filter is set, only events with the specified type will be received.</p><p>To filter devices, use the device_id_filter. It follows the format {deviceID[0]+"/"+"*", deviceID[1]+"/"+"*", ...}.</p><p>To filter resources, use the href_filter. It follows the format {"*"+href[0], "*"+href[1], ...}.</p><p>When both device_id_filter and href_filter are set, the href_filter is applied to each device. {deviceID[0]+href[0], ..., deviceID[1]+href[0], ...}.</p><p>To filter resources of specific devices, use the resource_id_filter.</p><p>You can use either device_id_filter or resource_id_filter or both. In this case, the result is the union of both filters.</p><p>Certain filters perform a logical "or" operation among the elements of the filter.</p><p>Lead reasource type filter applies to resource-level events (RESOURCE_UPDATE_PENDING..RESOURCE_CHANGED) only. For example, if you subscribe to RESOURCE_CHANGED and RESOURCE_UPDATED with lead_resource_type_filter set to ["oic.wk.d", "oic.wk.p"],</p><p>you will receive events only for resources with the lead resource type "oic.wk.d" or "oic.wk.p".</p>
 
         
           <table class="field-table">
@@ -1911,6 +1911,13 @@
                   <td><a href="#grpcgateway.pb.ResourceIdFilter">ResourceIdFilter</a></td>
                   <td>repeated</td>
                   <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>lead_resource_type_filter</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p>filter by lead resource type </p></td>
                 </tr>
               
             </tbody>

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -27,7 +28,7 @@ type MarshalerFunc = func(v interface{}) ([]byte, error)
 
 type leadResourceType struct {
 	filter      client.LeadResourceTypeFilter
-	regexFilter *regexp.Regexp
+	regexFilter []*regexp.Regexp
 	useUUID     bool
 }
 
@@ -87,7 +88,7 @@ func WithFlusherTimeout(flusherTimeout time.Duration) FlusherTimeoutOpt {
 
 type LeadResourceTypeOpt struct {
 	filter      client.LeadResourceTypeFilter
-	regexFilter *regexp.Regexp
+	regexFilter []*regexp.Regexp
 	useUUID     bool
 }
 
@@ -99,7 +100,7 @@ func (o LeadResourceTypeOpt) apply(opts *options) {
 	}
 }
 
-func WithLeadResourceType(regexFilter *regexp.Regexp, filter client.LeadResourceTypeFilter, useUUID bool) LeadResourceTypeOpt {
+func WithLeadResourceType(regexFilter []*regexp.Regexp, filter client.LeadResourceTypeFilter, useUUID bool) LeadResourceTypeOpt {
 	return LeadResourceTypeOpt{
 		regexFilter: regexFilter,
 		filter:      filter,
@@ -138,11 +139,20 @@ func New(conn *nats.Conn, jetstream bool, opts ...Option) (*Publisher, error) {
 	}, nil
 }
 
+func matchType(t string, filter []*regexp.Regexp) bool {
+	for _, f := range filter {
+		if f.MatchString(t) {
+			return true
+		}
+	}
+	return false
+}
+
 func (p *Publisher) getLeadResourceTypeByFilter(event eventbus.Event) string {
 	types := event.Types()
 	if p.leadResourceType.regexFilter != nil {
 		for _, t := range types {
-			if p.leadResourceType.regexFilter.MatchString(t) {
+			if matchType(t, p.leadResourceType.regexFilter) {
 				return t
 			}
 		}
@@ -157,14 +167,23 @@ func (p *Publisher) getLeadResourceTypeByFilter(event eventbus.Event) string {
 	return ""
 }
 
+func replaceSpecialCharacters(s string) string {
+	// "*", ">" and "$" are reserved characters in NATS
+	return strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(s, "*", "_"), ">", "_"), "$", "_")
+}
+
+func ResourceTypeToUUID(resourceType string) string {
+	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(resourceType)).String()
+}
+
 func (p *Publisher) GetLeadResourceType(event eventbus.Event) string {
 	if p.leadResourceType == nil || len(event.Types()) == 0 {
 		return ""
 	}
 
-	leadResourceType := p.getLeadResourceTypeByFilter(event)
+	leadResourceType := replaceSpecialCharacters(p.getLeadResourceTypeByFilter(event))
 	if p.leadResourceType.useUUID && leadResourceType != "" {
-		return uuid.NewSHA1(uuid.NameSpaceURL, []byte(leadResourceType)).String()
+		return ResourceTypeToUUID(leadResourceType)
 	}
 	return leadResourceType
 }

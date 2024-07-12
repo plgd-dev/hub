@@ -74,7 +74,7 @@ jobs:
           #   - with logs from all services
           - name: test/norace/logs
             cmd: test
-            args: TEST_LEAD_RESOURCE_TYPE_REGEX_FILTER='(oic\.wk\.d|^/light/\d+$$)' TEST_LEAD_RESOURCE_TYPE_FILTER=first
+            args: TEST_LEAD_RESOURCE_TYPE_REGEX_FILTER='oic\.wk\.d,^/light/\d+$$' TEST_LEAD_RESOURCE_TYPE_FILTER=first
             coapGateway:
               log:
                 level: "debug"

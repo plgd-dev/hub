@@ -199,17 +199,20 @@ func MakePublisherConfig(t require.TestingT) natsClient.ConfigPublisher {
 	}
 	filterIn := os.Getenv("TEST_LEAD_RESOURCE_TYPE_FILTER")
 	if filterIn != "" {
-		filter, err := natsClient.LeadResourceTypeFilterFromString(filterIn)
+		err := natsClient.CheckResourceTypeFilterString(filterIn)
 		require.NoError(t, err)
 		lrt.Enabled = true
-		lrt.Filter = filter
+		lrt.Filter = natsClient.LeadResourceTypeFilter(filterIn)
 	}
 	regexFilterIn := os.Getenv("TEST_LEAD_RESOURCE_TYPE_REGEX_FILTER")
 	if regexFilterIn != "" {
-		_, err := regexp.Compile(regexFilterIn)
-		require.NoError(t, err)
+		rfs := strings.Split(regexFilterIn, ",")
+		for _, rf := range rfs {
+			_, err := regexp.Compile(rf)
+			require.NoError(t, err)
+		}
 		lrt.Enabled = true
-		lrt.RegexFilter = regexFilterIn
+		lrt.RegexFilter = rfs
 	}
 	if lrt.Enabled {
 		cp.LeadResourceType = lrt
