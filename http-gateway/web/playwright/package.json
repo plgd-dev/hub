@@ -8,7 +8,8 @@
     "test": "npx playwright test",
     "test:ui": "npx playwright test --ui",
     "test:debug": "npx playwright test --debug",
-    "test:r": "npx playwright test snippet-service/list.spec.ts --debug --update-snapshots"
+    "test:login": "npx playwright test login.spec.ts --debug",
+    "test:r": "npx playwright test snippet-service/configurations/list.spec.ts --debug --update-snapshots"
   },
   "keywords": [],
   "author": "",

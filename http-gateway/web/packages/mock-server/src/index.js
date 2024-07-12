@@ -2,6 +2,7 @@ const express = require('express')
 const cors = require('cors')
 const axios = require('axios')
 const { checkError, loadResponseStreamFromFile } = require('./utils')
+const bodyParser = require('body-parser')
 
 const devices = require('./routes/devices')
 const dps = require('./routes/dps')
@@ -16,6 +17,9 @@ app.use(
         methods: ['GET', 'POST', 'DELETE', 'UPDATE', 'PUT', 'PATCH'],
     })
 )
+
+app.use(bodyParser.urlencoded({ extended: true }))
+app.use(bodyParser.json())
 
 // ----- PENDING COMMANDS -----
 app.get('/api/v1/pending-commands', function (req, res) {

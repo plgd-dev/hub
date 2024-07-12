@@ -6,6 +6,8 @@ const get = require('lodash/get')
 
 const router = express.Router()
 
+let configurationsAdd = false
+
 router.get('/api/v1/configurations/applied', (req, res) => {
     try {
         checkError(req, res)
@@ -33,10 +35,26 @@ router.get('/api/v1/configurations', (req, res) => {
         // detail page
         if (filter) {
             loadResponseStreamFromFile(path.join('snippet-service', 'configurations', 'detail', `${filter}.json`), res)
+        }
+        // list page after add
+        if (configurationsAdd) {
+            loadResponseStreamFromFile(path.join('snippet-service', 'configurations', 'list', `listAdd.json`), res)
         } else {
-            // list page
+            // list page default
             loadResponseStreamFromFile(path.join('snippet-service', 'configurations', 'list', `list.json`), res)
         }
+    } catch (e) {
+        res.status(500).send(escapeHtml(e.toString()))
+    }
+})
+
+router.post('/api/v1/configurations', (req, res) => {
+    try {
+        checkError(req, res)
+
+        configurationsAdd = this
+
+        res.status(200).send({ id: '1a53e16f-b533-4c26-9150-e2c30065ab27' })
     } catch (e) {
         res.status(500).send(escapeHtml(e.toString()))
     }

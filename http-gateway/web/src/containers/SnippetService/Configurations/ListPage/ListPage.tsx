@@ -122,6 +122,7 @@ const ListPage: FC<any> = () => {
             breadcrumbs={breadcrumbs}
             header={
                 <Button
+                    dataTestId={testId.snippetService.configurations.list.addConfigurationButton}
                     icon={<IconPlus />}
                     onClick={() => navigate(generatePath(pages.SNIPPET_SERVICE.CONFIGURATIONS.ADD.LINK, { tab: '' }))}
                     variant='primary'

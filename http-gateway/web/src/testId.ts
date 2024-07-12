@@ -94,8 +94,19 @@ const testId = {
     },
     snippetService: {
         configurations: {
+            addPage: {
+                form: {
+                    name: 'hub-snippet-service-configurations-add-page-form-name',
+                    addResourceButton: 'hub-snippet-service-configurations-add-page-form-add-resource-button',
+                    createResourceModal: 'hub-snippet-service-configurations-add-page-form-create-resource-modal',
+                    resourceTable: 'hub-snippet-service-configurations-add-page-form-resource-table',
+                    addButton: 'hub-snippet-service-configurations-add-page-form-add-button',
+                    resetButton: 'hub-snippet-service-configurations-add-page-form-reset-button',
+                },
+            },
             list: {
                 table: 'hub-snippet-service-configurations-list-table',
+                addConfigurationButton: 'hub-snippet-service-configurations-list-add-configuration-button',
             },
             detail: {
                 deleteButton: 'hub-snippet-service-configurations-detail-delete-button',

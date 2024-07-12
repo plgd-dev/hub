@@ -1,4 +1,5 @@
 import { chromium, expect, FullConfig } from '@playwright/test'
+import { login } from './tests/utils'
 
 async function globalSetup(config: FullConfig) {
     const wellKnowConfigurationAddress = process.env.REACT_APP_HTTP_WELL_KNOW_CONFIGURATION_ADDRESS
@@ -12,17 +13,7 @@ async function globalSetup(config: FullConfig) {
 
     process.env.WELL_KNOWN_CONFIG = JSON.stringify(data)
 
-    await page.goto('http://localhost:3000/')
-
-    // keycloak login page
-    await expect(page).toHaveTitle(/Login | plgd.dev/, { timeout: 30000 })
-
-    await expect(page).toHaveURL(/auth.plgd.cloud/)
-
-    // login data
-    await page.locator('#email').fill(process.env.REACT_APP_TEST_LOGIN_USERNAME || '')
-    await page.locator('#password').fill(process.env.REACT_APP_TEST_LOGIN_PASSWORD || '')
-    await page.getByRole('button', { name: 'Sign In' }).click()
+    await login(page)
 
     await page.context().storageState({ path: 'storageState.json' })
     await browser.close()
