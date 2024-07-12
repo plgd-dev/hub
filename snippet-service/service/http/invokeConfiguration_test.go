@@ -123,8 +123,8 @@ func TestRequestHandlerInvokeConfiguration(t *testing.T) {
 	}()
 
 	snippetCfg := test.MakeConfig(t)
-	snippetCfg.Clients.ResourceUpdater.CleanUpExpiredUpdates = "*/1 * * * * *"
-	snippetCfg.Clients.ResourceUpdater.ExtendCronParserBySeconds = true
+	snippetCfg.Clients.Storage.CleanUpExpiredUpdates = "*/1 * * * * *"
+	snippetCfg.Clients.Storage.ExtendCronParserBySeconds = true
 	_, shutdownHttp := test.New(t, snippetCfg)
 	defer shutdownHttp()
 	logger := log.NewLogger(snippetCfg.Log)

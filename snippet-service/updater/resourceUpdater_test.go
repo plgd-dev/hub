@@ -33,8 +33,8 @@ func TestCleanUpExpiredUpdates(t *testing.T) {
 
 	snippetCfg := test.MakeConfig(t)
 	const interval = time.Second
-	snippetCfg.Clients.ResourceUpdater.CleanUpExpiredUpdates = "*/1 * * * * *"
-	snippetCfg.Clients.ResourceUpdater.ExtendCronParserBySeconds = true
+	snippetCfg.Clients.Storage.CleanUpExpiredUpdates = "*/1 * * * * *"
+	snippetCfg.Clients.Storage.ExtendCronParserBySeconds = true
 	_, shutdownSnippetService := test.New(t, snippetCfg)
 	defer shutdownSnippetService()
 

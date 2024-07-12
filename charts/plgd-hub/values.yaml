@@ -2516,6 +2516,7 @@ snippetservice:
           certFile:
           useSystemCAPool: false
     storage:
+      cleanUpExpiredUpdates: "0 * * * *"
       use: mongoDB
       mongoDB:
         uri:
@@ -2527,8 +2528,7 @@ snippetservice:
           keyFile:
           certFile:
           useSystemCAPool: false
-    resourceUpdater:
-      cleanUpExpiredUpdates: "0 * * * *"
+    resourceAggregate:
       grpc:
         address: ""
         sendMsgSize: 4194304

@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-co-op/gocron/v2"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/go-coap/v3/message"
@@ -29,16 +28,15 @@ import (
 )
 
 type ResourceUpdater struct {
-	ctx       context.Context
-	storage   store.Store
-	raConn    *grpcClient.Client
-	raClient  raService.ResourceAggregateClient
-	scheduler gocron.Scheduler
-	logger    log.Logger
+	ctx      context.Context
+	storage  store.Store
+	raConn   *grpcClient.Client
+	raClient raService.ResourceAggregateClient
+	logger   log.Logger
 }
 
-func NewResourceUpdater(ctx context.Context, config ResourceUpdaterConfig, storage store.Store, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*ResourceUpdater, error) {
-	raConn, err := grpcClient.New(config.Connection, fileWatcher, logger, tracerProvider)
+func NewResourceUpdater(ctx context.Context, raConfig grpcClient.Config, storage store.Store, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*ResourceUpdater, error) {
+	raConn, err := grpcClient.New(raConfig, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, fmt.Errorf("cannot connect to resource aggregate: %w", err)
 	}
@@ -49,13 +47,6 @@ func NewResourceUpdater(ctx context.Context, config ResourceUpdaterConfig, stora
 		raConn:   raConn,
 		raClient: raService.NewResourceAggregateClient(raConn.GRPC()),
 		logger:   logger,
-	}
-	if config.CleanUpExpiredUpdates != "" {
-		scheduler, err := NewExpiredUpdatesChecker(config.CleanUpExpiredUpdates, config.ExtendCronParserBySeconds, ru)
-		if err != nil {
-			return nil, fmt.Errorf("cannot create scheduler: %w", err)
-		}
-		ru.scheduler = scheduler
 	}
 	return ru, nil
 }
@@ -718,12 +709,5 @@ func (h *ResourceUpdater) CancelPendingResourceUpdates(ctx context.Context) erro
 }
 
 func (h *ResourceUpdater) Close() error {
-	var errs *multierror.Error
-	if h.scheduler != nil {
-		err := h.scheduler.Shutdown()
-		errs = multierror.Append(errs, err)
-	}
-	err := h.raConn.Close()
-	errs = multierror.Append(errs, err)
-	return errs.ErrorOrNil()
+	return h.raConn.Close()
 }

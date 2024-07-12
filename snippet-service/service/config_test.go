@@ -10,7 +10,6 @@ import (
 	"github.com/plgd-dev/hub/v2/snippet-service/service"
 	storeConfig "github.com/plgd-dev/hub/v2/snippet-service/store/config"
 	"github.com/plgd-dev/hub/v2/snippet-service/test"
-	"github.com/plgd-dev/hub/v2/snippet-service/updater"
 	"github.com/stretchr/testify/require"
 )
 
@@ -120,6 +119,38 @@ func TestStorageConfig(t *testing.T) {
 	}
 }
 
+func TestResourceAggregateConfig(t *testing.T) {
+	tests := []struct {
+		name    string
+		cfg     service.ResourceAggregateConfig
+		wantErr bool
+	}{
+		{
+			name: "valid",
+			cfg:  test.MakeResourceAggregateConfig(),
+		},
+		{
+			name: "invalid - no connection",
+			cfg: func() service.ResourceAggregateConfig {
+				cfg := service.ResourceAggregateConfig{}
+				return cfg
+			}(),
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.cfg.Validate()
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+		})
+	}
+}
+
 func TestClientsConfig(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -173,10 +204,10 @@ func TestClientsConfig(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "invalid ResourceUpdater",
+			name: "invalid ResourceAggregate",
 			cfg: func() service.ClientsConfig {
 				cfg := test.MakeClientsConfig()
-				cfg.ResourceUpdater = updater.ResourceUpdaterConfig{}
+				cfg.ResourceAggregate = service.ResourceAggregateConfig{}
 				return cfg
 			}(),
 			wantErr: true,
