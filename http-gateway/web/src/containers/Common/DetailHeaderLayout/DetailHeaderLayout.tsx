@@ -45,6 +45,7 @@ const DetailHeaderLayout: FC<Props> = (props) => {
                 {i18n.delete}
             </Button>
             <DeleteModal
+                dataTestId={testIds?.deleteModal}
                 deleteInformation={deleteInformation}
                 footerActions={[
                     {

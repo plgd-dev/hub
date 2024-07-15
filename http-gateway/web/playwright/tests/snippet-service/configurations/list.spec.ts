@@ -1,10 +1,8 @@
 import { test, expect, Page } from '@playwright/test'
 import testId from '../../../../src/testId'
 
-const urlBase = 'http://localhost:3000'
-
 test('snippet-service-configurations-list-open', async ({ page }) => {
-    await page.goto(urlBase)
+    await page.goto('')
     await page.getByTestId(testId.menu.snippetService.link).click()
     await page.getByTestId(testId.menu.snippetService.configurations).click()
 
@@ -26,7 +24,7 @@ const fillAddForm = async (page: Page) => {
 }
 
 test('add-configuration-reset', async ({ page }) => {
-    await page.goto(urlBase)
+    await page.goto('')
     await page.getByTestId(testId.menu.snippetService.link).click()
     await page.getByTestId(testId.menu.snippetService.configurations).click()
 
@@ -49,7 +47,7 @@ test('add-configuration-reset', async ({ page }) => {
 })
 
 test('add-configuration-save', async ({ page }) => {
-    await page.goto(urlBase)
+    await page.goto('')
     await page.getByTestId(testId.menu.snippetService.link).click()
     await page.getByTestId(testId.menu.snippetService.configurations).click()
     await page.getByTestId(testId.snippetService.configurations.list.addConfigurationButton).click()
@@ -60,4 +58,51 @@ test('add-configuration-save', async ({ page }) => {
     await page.getByTestId(testId.snippetService.configurations.addPage.form.addButton).click()
 
     await expect(page).toHaveTitle(/my-cfg-2 | plgd Dashboard/)
+})
+
+test('list-invoke-modal', async ({ page }) => {
+    await page.goto('')
+    await page.getByTestId(testId.menu.snippetService.link).click()
+    await page.getByTestId(testId.menu.snippetService.configurations).click()
+
+    page.setViewportSize({ width: 1600, height: 720 })
+
+    await expect(page.getByTestId(testId.snippetService.configurations.list.table)).toBeVisible()
+    await expect(page.getByTestId(`${testId.snippetService.configurations.list.table}-row-0`)).toBeVisible()
+    await expect(page.getByTestId(`${testId.snippetService.configurations.list.table}-row-0-invoke`)).toBeVisible()
+
+    await page.getByTestId(`${testId.snippetService.configurations.list.table}-row-0-invoke`).click()
+    await expect(page.getByTestId(testId.snippetService.configurations.list.invokeModal)).toBeVisible()
+
+    // close and open
+    await expect(page.getByTestId(`${testId.snippetService.configurations.list.invokeModal}-close`)).toBeVisible()
+    await page.getByTestId(`${testId.snippetService.configurations.list.invokeModal}-close`).click()
+    await expect(page.getByTestId(testId.snippetService.configurations.list.invokeModal)).not.toBeVisible()
+
+    await page.getByTestId(`${testId.snippetService.configurations.list.table}-row-0-invoke`).click()
+    await expect(page.getByTestId(testId.snippetService.configurations.list.invokeModal)).toBeVisible()
+
+    await page.locator('#deviceId').focus()
+    await expect(page.getByTestId(`${testId.snippetService.configurations.list.invokeModal}-select-input`)).toBeVisible()
+
+    // select
+    await page.locator('#deviceId').click()
+    await page.getByTestId(`${testId.snippetService.configurations.list.invokeModal}-select-input`).fill('3aae0672-47f3-4498-78d4-b061e6105ccd')
+    await page.getByTestId(`${testId.snippetService.configurations.list.invokeModal}-select-3aae0672-47f3-4498-78d4-b061e6105ccd`).click()
+
+    await expect(page.getByTestId(`${testId.snippetService.configurations.list.invokeModal}-footer-reset`)).toBeVisible()
+    await expect(page.getByTestId(`${testId.snippetService.configurations.list.invokeModal}-footer-done`)).toBeVisible()
+
+    await page.getByTestId(`${testId.snippetService.configurations.list.invokeModal}-footer-done`).click()
+    await page.getByTestId(`${testId.snippetService.configurations.list.invokeModal}-force-label`).click()
+
+    await expect(page).toHaveScreenshot({ fullPage: true, omitBackground: true })
+
+    await expect(page.getByTestId(`${testId.snippetService.configurations.list.invokeModal}-reset`)).toBeVisible()
+    await expect(page.getByTestId(`${testId.snippetService.configurations.list.invokeModal}-invoke`)).toBeVisible()
+
+    await expect(page.getByTestId(`${testId.snippetService.configurations.list.invokeModal}-reset`)).not.toBeDisabled()
+    await expect(page.getByTestId(`${testId.snippetService.configurations.list.invokeModal}-invoke`)).not.toBeDisabled()
+
+    await page.getByTestId(`${testId.snippetService.configurations.list.invokeModal}-invoke`).click()
 })

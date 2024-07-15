@@ -240,18 +240,35 @@ const DetailPage: FC<any> = () => {
                     />
                 </Loadable>
             </FormContext.Provider>
-            <InvokeModal handleClose={() => setShowInvoke(undefined)} handleInvoke={handleInvoke} show={!!showInvoke} />
+            <InvokeModal
+                dataTestId={testId.snippetService.configurations.detail.invokeModal}
+                handleClose={() => setShowInvoke(undefined)}
+                handleInvoke={handleInvoke}
+                show={!!showInvoke}
+            />
             {isMounted &&
                 document.querySelector('#modal-root') &&
                 ReactDOM.createPortal(
                     <BottomPanel
                         actionPrimary={
-                            <Button disabled={hasError} loading={loading} loadingText={_(g.loading)} onClick={onSubmit} variant='primary'>
+                            <Button
+                                dataTestId={testId.snippetService.configurations.detail.saveButton}
+                                disabled={hasError}
+                                loading={loading}
+                                loadingText={_(g.loading)}
+                                onClick={onSubmit}
+                                variant='primary'
+                            >
                                 {_(g.saveChanges)}
                             </Button>
                         }
                         actionSecondary={
-                            <Button disabled={loading} onClick={handleReset} variant='secondary'>
+                            <Button
+                                dataTestId={testId.snippetService.configurations.detail.resetButton}
+                                disabled={loading}
+                                onClick={handleReset}
+                                variant='secondary'
+                            >
                                 {_(g.reset)}
                             </Button>
                         }

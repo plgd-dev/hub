@@ -114,14 +114,16 @@ const Tab1: FC<Props> = (props) => {
                     <TableActionButton
                         items={[
                             {
-                                onClick: () => setDeleteResource(resources.find((r) => r.href === row.original.href)),
-                                label: _(g.delete),
+                                dataTestId: testId.snippetService.configurations.addPage.form.resourceTable.concat(`-row-${row.id}-delete`),
                                 icon: <IconTrash />,
+                                label: _(g.delete),
+                                onClick: () => setDeleteResource(resources.find((r) => r.href === row.original.href)),
                             },
                             {
-                                onClick: () => setUpdateResource(row.original.href),
-                                label: _(g.edit),
+                                dataTestId: testId.snippetService.configurations.addPage.form.resourceTable.concat(`-row-${row.id}-edit`),
                                 icon: <IconEdit />,
+                                label: _(g.edit),
+                                onClick: () => setUpdateResource(row.original.href),
                             },
                         ]}
                     />

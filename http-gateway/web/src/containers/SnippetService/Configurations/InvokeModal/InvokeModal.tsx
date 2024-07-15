@@ -15,9 +15,10 @@ import { messages as g } from '@/containers/Global.i18n'
 import { useDevicesList } from '@/containers/Devices/hooks'
 import { messages as confT } from '@/containers/SnippetService/SnippetService.i18n'
 import { Props } from './InvokeModal.types'
+import { truncate } from '@shared-ui/common/utils'
 
 const InvokeModal: FC<Props> = (props) => {
-    const { handleClose, handleInvoke, show } = props
+    const { dataTestId, handleClose, handleInvoke, show } = props
 
     const { formatMessage: _ } = useIntl()
     const { data: devicesData } = useDevicesList(show)
@@ -28,7 +29,10 @@ const InvokeModal: FC<Props> = (props) => {
     const [force, setForce] = useState<boolean>(false)
 
     useEffect(() => {
-        const o: OptionType[] = devicesData?.map((device: { id: string; name: string }) => ({ value: device.id, label: `${device.name} - ${device.id}` }))
+        const o: OptionType[] = devicesData?.map((device: { id: string; name: string }) => ({
+            value: device.id,
+            label: `${truncate(device.name, 60)} - ${device.id}`,
+        }))
         setDefaultOptions(o)
         setOptions(o)
     }, [devicesData])
@@ -41,20 +45,23 @@ const InvokeModal: FC<Props> = (props) => {
                     checkboxOptions
                     creatable
                     isMulti
+                    dataTestId={dataTestId?.concat('-select')}
                     footerLinksLeft={[
                         {
-                            title: _(g.reset),
+                            dataTestId: dataTestId?.concat('-footer-reset'),
                             onClick: () => {
                                 setOptions(defaultOptions)
                                 setValue([])
                             },
+                            title: _(g.reset),
                         },
                         {
-                            title: _(g.done),
-                            variant: 'primary',
+                            dataTestId: dataTestId?.concat('-footer-done'),
                             onClick: (values: OptionType[]) => {
                                 setValue(values)
                             },
+                            title: _(g.done),
+                            variant: 'primary',
                         },
                     ]}
                     i18n={{
@@ -98,6 +105,7 @@ const InvokeModal: FC<Props> = (props) => {
                         value: (
                             <Switch
                                 checked={force}
+                                dataTestId={dataTestId?.concat('-force')}
                                 onChange={(e) => {
                                     setForce(e.target.checked)
                                 }}
@@ -113,8 +121,10 @@ const InvokeModal: FC<Props> = (props) => {
         <Modal
             appRoot={document.getElementById('root')}
             closeButtonText={_(g.close)}
+            dataTestId={dataTestId}
             footerActions={[
                 {
+                    dataTestId: dataTestId?.concat('-reset'),
                     label: _(g.reset),
                     onClick: () => {
                         setValue([])
@@ -123,6 +133,7 @@ const InvokeModal: FC<Props> = (props) => {
                     variant: 'secondary',
                 },
                 {
+                    dataTestId: dataTestId?.concat('-invoke'),
                     label: _(g.invoke),
                     disabled: value.length === 0,
                     onClick: () => {

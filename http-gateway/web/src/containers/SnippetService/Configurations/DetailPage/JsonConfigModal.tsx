@@ -157,8 +157,6 @@ const JsonConfigModal: FC<Props> = (props) => {
             })
     }
 
-    console.log({ jsonData })
-
     const hasInvalidResource = useMemo(
         () => jsonData === '' || hasInvalidConfigurationResource([{ href, timeToLive: ttl.toString(), content: jsonData || {} }]),
         [href, jsonData, ttl]

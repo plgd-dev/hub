@@ -156,7 +156,12 @@ const ListPage: FC<any> = () => {
                 refresh={() => refresh()}
                 tableDataTestId={testId.snippetService.configurations.list.table}
             />
-            <InvokeModal handleClose={() => setShowInvoke(undefined)} handleInvoke={handleInvoke} show={!!showInvoke} />
+            <InvokeModal
+                dataTestId={testId.snippetService.configurations.list.invokeModal}
+                handleClose={() => setShowInvoke(undefined)}
+                handleInvoke={handleInvoke}
+                show={!!showInvoke}
+            />
         </PageLayout>
     )
 }
