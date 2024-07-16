@@ -116,3 +116,8 @@ func (c *ConfigPublisher) Validate() error {
 	}
 	return nil
 }
+
+type ConfigSubscriber struct {
+	Config                  `yaml:",inline" json:",inline"`
+	LeadResourceTypeEnabled bool `yaml:"leadResourceTypeEnabled,omitempty" json:"leadResourceTypeEnabled,omitempty"`
+}

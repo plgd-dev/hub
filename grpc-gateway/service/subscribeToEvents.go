@@ -19,6 +19,7 @@ type subscriptions struct {
 	owner              string
 	send               func(e *pb.Event) error
 	subscriptionsCache *subscription.SubscriptionsCache
+	leadRTEnabled      bool
 
 	subs map[string]*subscription.Sub
 }
@@ -26,6 +27,7 @@ type subscriptions struct {
 func newSubscriptions(
 	owner string,
 	subscriptionsCache *subscription.SubscriptionsCache,
+	leadRTEnabled bool,
 	send func(e *pb.Event) error,
 ) *subscriptions {
 	return &subscriptions{
@@ -33,6 +35,7 @@ func newSubscriptions(
 		subs:               make(map[string]*subscription.Sub),
 		send:               send,
 		subscriptionsCache: subscriptionsCache,
+		leadRTEnabled:      leadRTEnabled,
 	}
 }
 
@@ -46,7 +49,7 @@ func (s *subscriptions) close() {
 }
 
 func (s *subscriptions) createSubscription(req *pb.SubscribeToEvents) error {
-	sub := subscription.New(s.send, req.GetCorrelationId(), req.GetCreateSubscription())
+	sub := subscription.New(s.send, req.GetCorrelationId(), s.leadRTEnabled, req.GetCreateSubscription())
 	err := s.send(&pb.Event{
 		SubscriptionId: sub.Id(),
 		CorrelationId:  req.GetCorrelationId(),
@@ -133,8 +136,32 @@ func (s *subscriptions) cancelSubscription(req *pb.SubscribeToEvents) error {
 	return err
 }
 
-func processNextRequest(srv pb.GrpcGateway_SubscribeToEventsServer, subs *subscriptions, send func(e *pb.Event) error) (bool, error) {
-	req, err := srv.Recv()
+type subscribeToEventsHandler struct {
+	srv      pb.GrpcGateway_SubscribeToEventsServer
+	sendChan chan *pb.Event
+}
+
+func makeSubscribeToEventsHandler(srv pb.GrpcGateway_SubscribeToEventsServer, sendChan chan *pb.Event) subscribeToEventsHandler {
+	return subscribeToEventsHandler{
+		srv:      srv,
+		sendChan: sendChan,
+	}
+}
+
+func (h *subscribeToEventsHandler) send(e *pb.Event) error {
+	// sending event go grpc goroutine
+	select {
+	case <-h.srv.Context().Done():
+		return nil
+	case h.sendChan <- e:
+	default:
+		return fmt.Errorf("event('%v') was dropped because client is exhausted", e)
+	}
+	return nil
+}
+
+func (h *subscribeToEventsHandler) processNextRequest(subs *subscriptions) (bool, error) {
+	req, err := h.srv.Recv()
 	if errors.Is(err, io.EOF) {
 		return false, nil
 	}
@@ -154,7 +181,7 @@ func processNextRequest(srv pb.GrpcGateway_SubscribeToEventsServer, subs *subscr
 		}
 	case nil:
 		err := fmt.Errorf("invalid action('%T')", v)
-		_ = send(&pb.Event{
+		_ = h.send(&pb.Event{
 			CorrelationId: req.GetCorrelationId(),
 			Type: &pb.Event_OperationProcessed_{
 				OperationProcessed: &pb.Event_OperationProcessed{
@@ -168,7 +195,7 @@ func processNextRequest(srv pb.GrpcGateway_SubscribeToEventsServer, subs *subscr
 		log.Errorf("%w", err)
 	default:
 		err := fmt.Errorf("unknown action %T", v)
-		_ = send(&pb.Event{
+		_ = h.send(&pb.Event{
 			CorrelationId: req.GetCorrelationId(),
 			Type: &pb.Event_OperationProcessed_{
 				OperationProcessed: &pb.Event_OperationProcessed{
@@ -209,28 +236,18 @@ func (r *RequestHandler) SubscribeToEvents(srv pb.GrpcGateway_SubscribeToEventsS
 		}
 	}()
 
-	// sending event go grpc goroutine
-	send := func(e *pb.Event) error {
-		select {
-		case <-srv.Context().Done():
-			return nil
-		case sendChan <- e:
-		default:
-			return fmt.Errorf("event('%v') was dropped because client is exhausted", e)
-		}
-		return nil
-	}
+	h := makeSubscribeToEventsHandler(srv, sendChan)
 
 	owner, err := grpc.OwnerFromTokenMD(ctx, r.ownerCache.OwnerClaim())
 	if err != nil {
 		return err
 	}
 
-	subs := newSubscriptions(owner, r.subscriptionsCache, send)
+	subs := newSubscriptions(owner, r.subscriptionsCache, r.config.Clients.Eventbus.NATS.LeadResourceTypeEnabled, h.send)
 	defer subs.close()
 
 	for {
-		ok, err := processNextRequest(srv, subs, send)
+		ok, err := h.processNextRequest(subs)
 		if err != nil {
 			return err
 		}

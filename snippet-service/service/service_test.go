@@ -129,7 +129,7 @@ func TestServiceNew(t *testing.T) {
 			name: "invalid resource subscriber config",
 			cfg: func() service.Config {
 				cfg := test.MakeConfig(t)
-				cfg.Clients.EventBus.NATS = natsClient.Config{}
+				cfg.Clients.EventBus.NATS = natsClient.ConfigSubscriber{}
 				return cfg
 			}(),
 			wantErr: true,

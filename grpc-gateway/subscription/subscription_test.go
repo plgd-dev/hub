@@ -175,7 +175,7 @@ func getResourceChangedEvents(t *testing.T, deviceID, correlationID, subscriptio
 	return events
 }
 
-func prepareServicesAndSubscription(t *testing.T, owner, correlationID string, req *pb.SubscribeToEvents_CreateSubscription, sendEvent subscription.SendEventFunc) (pb.GrpcGatewayClient, raservice.ResourceAggregateClient, *subscription.Sub, func()) {
+func prepareServicesAndSubscription(t *testing.T, owner, correlationID string, leadRTEnabled bool, req *pb.SubscribeToEvents_CreateSubscription, sendEvent subscription.SendEventFunc) (pb.GrpcGatewayClient, raservice.ResourceAggregateClient, *subscription.Sub, func()) {
 	var cleanUp fn.FuncList
 	fileWatcher, err := fsnotify.NewWatcher(log.Get())
 	require.NoError(t, err)
@@ -209,7 +209,7 @@ func prepareServicesAndSubscription(t *testing.T, owner, correlationID string, r
 
 	subCache := subscription.NewSubscriptionsCache(resourceSubscriber.Conn(), func(err error) { log.Get().Error(err) })
 
-	s := subscription.New(sendEvent, correlationID, req)
+	s := subscription.New(sendEvent, correlationID, leadRTEnabled, req)
 	err = s.Init(owner, subCache)
 	require.NoError(t, err)
 	cleanUp.AddFunc(func() {
@@ -236,7 +236,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 
 	correlationID := "testToken"
 	recvChan := make(chan *pb.Event, 1)
-	rdc, rac, s, cleanUp := prepareServicesAndSubscription(t, owner, correlationID, &pb.SubscribeToEvents_CreateSubscription{},
+	rdc, rac, s, cleanUp := prepareServicesAndSubscription(t, owner, correlationID, false, &pb.SubscribeToEvents_CreateSubscription{},
 		func(e *pb.Event) error {
 			select {
 			case recvChan <- e:
@@ -377,7 +377,7 @@ func testRequestHandlerSubscribeToChangedEvents(t *testing.T, cfg *natsClient.Le
 
 	correlationID := uuid.NewString()
 	recvChan := make(chan *pb.Event, 1)
-	rdc, _, s, cleanUp := prepareServicesAndSubscription(t, owner, correlationID, createSubscription,
+	rdc, _, s, cleanUp := prepareServicesAndSubscription(t, owner, correlationID, true, createSubscription,
 		func(e *pb.Event) error {
 			select {
 			case recvChan <- e:

@@ -188,6 +188,28 @@ func (p *Publisher) GetLeadResourceType(event eventbus.Event) string {
 	return leadResourceType
 }
 
+func (p *Publisher) getPublishResourceEventSubject(owner string, resourceID *commands.ResourceId, event eventbus.Event) string {
+	template := utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent
+	opts := []func(values map[string]string){
+		isEvents.WithOwner(owner), utils.WithDeviceID(event.GroupID()),
+		utils.WithHrefId(utils.HrefToID(resourceID.GetHref()).String()), isEvents.WithEventType(event.EventType()),
+	}
+	if p.leadResourceType == nil {
+		return isEvents.ToSubject(template, opts...)
+	}
+	// if leadResourceType is set, then the feature is enabled
+	lrt := p.GetLeadResourceType(event)
+	if lrt != "" {
+		template = utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEventLeadResourceType
+		opts = append(opts, utils.WithLeadResourceType(lrt))
+	} else {
+		// no lead resource type, but we append the suffix so we can subscribe to all events using a single
+		// utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent + ".>" subject
+		template = utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent + "." + utils.LeadResourcePrefix
+	}
+	return isEvents.ToSubject(template, opts...)
+}
+
 func (p *Publisher) GetPublishSubject(owner string, event eventbus.Event) []string {
 	switch event.EventType() {
 	case (&events.ResourceLinksPublished{}).EventType(), (&events.ResourceLinksUnpublished{}).EventType(), (&events.ResourceLinksSnapshotTaken{}).EventType():
@@ -196,17 +218,7 @@ func (p *Publisher) GetPublishSubject(owner string, event eventbus.Event) []stri
 		return []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner(owner), utils.WithDeviceID(event.GroupID()), isEvents.WithEventType(event.EventType()))}
 	}
 	if ev, ok := event.(interface{ GetResourceId() *commands.ResourceId }); ok {
-		template := utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent
-		opts := []func(values map[string]string){
-			isEvents.WithOwner(owner), utils.WithDeviceID(event.GroupID()),
-			utils.WithHrefId(utils.HrefToID(ev.GetResourceId().GetHref()).String()), isEvents.WithEventType(event.EventType()),
-		}
-		leadResourceType := p.GetLeadResourceType(event)
-		if leadResourceType != "" {
-			template = utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEventLeadResourceType
-			opts = append(opts, utils.WithLeadResourceType(leadResourceType))
-		}
-		return []string{isEvents.ToSubject(template, opts...)}
+		return []string{p.getPublishResourceEventSubject(owner, ev.GetResourceId(), event)}
 	}
 	return nil
 }

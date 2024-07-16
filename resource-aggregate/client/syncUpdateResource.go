@@ -8,7 +8,6 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
-	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 )
 
@@ -58,7 +57,7 @@ func (h *updateHandler) recv(ctx context.Context) (*events.ResourceUpdated, erro
 // SyncUpdateResource sends update resource command to resource aggregate and wait for resource updated event from eventbus.
 func (c *Client) SyncUpdateResource(ctx context.Context, owner string, req *commands.UpdateResourceRequest) (*events.ResourceUpdated, error) {
 	h := newUpdateHandler(req.GetCorrelationId())
-	subject := utils.GetResourceEventSubjects(owner, req.GetResourceId(), (&events.ResourceUpdated{}).EventType())
+	subject := c.subscriber.GetResourceEventSubjects(owner, req.GetResourceId(), (&events.ResourceUpdated{}).EventType())
 	obs, err := c.subscriber.Subscribe(ctx, req.GetCorrelationId(), subject, h)
 	if err != nil {
 		return nil, fmt.Errorf("cannot subscribe to eventbus: %w", err)

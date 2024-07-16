@@ -187,8 +187,10 @@ func TestClientsConfig(t *testing.T) {
 			name: "invalid NATS",
 			cfg: func() service.ClientsConfig {
 				cfg := test.MakeClientsConfig()
-				cfg.EventBus.NATS = natsClient.Config{
-					URL: "bad",
+				cfg.EventBus.NATS = natsClient.ConfigSubscriber{
+					Config: natsClient.Config{
+						URL: "bad",
+					},
 				}
 				return cfg
 			}(),

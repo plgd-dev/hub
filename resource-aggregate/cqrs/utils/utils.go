@@ -61,9 +61,12 @@ func GetDeviceMetadataEventSubject(owner, deviceID, eventType string) []string {
 	return []string{isEvents.ToSubject(PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner(owner), WithDeviceID(deviceID), isEvents.WithEventType(eventType))}
 }
 
-func GetResourceEventSubjects(owner string, resourceID *commands.ResourceId, eventType string) []string {
+func GetResourceEventSubjects(owner string, resourceID *commands.ResourceId, eventType string, leadResourceTypeEnabled bool) []string {
 	subject := isEvents.ToSubject(PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithOwner(owner), WithDeviceID(resourceID.GetDeviceId()), isEvents.WithEventType(eventType), WithHrefId(GetSubjectHrefID(resourceID.GetHref())))
-	return []string{subject, subject + "." + LeadResourcePrefix + ".>"}
+	if !leadResourceTypeEnabled {
+		return []string{subject}
+	}
+	return []string{subject + ".>"}
 }
 
 func GetSubjectHrefID(href string) string {

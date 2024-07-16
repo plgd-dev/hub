@@ -15,8 +15,9 @@ import (
 func TestConvertToSubjects(t *testing.T) {
 	resourceID := commands.NewResourceID("a", "/light/2")
 	type args struct {
-		owner string
-		req   *pb.SubscribeToEvents_CreateSubscription
+		owner         string
+		req           *pb.SubscribeToEvents_CreateSubscription
+		leadRTEnabled bool
 	}
 	tests := []struct {
 		name string
@@ -153,20 +154,36 @@ func TestConvertToSubjects(t *testing.T) {
 			name: "device and href",
 			args: args{
 				req: &pb.SubscribeToEvents_CreateSubscription{
-					ResourceIdFilter: []*pb.ResourceIdFilter{
-						{
-							ResourceId: resourceID,
-						},
-					},
+					ResourceIdFilter: []*pb.ResourceIdFilter{{ResourceId: resourceID}},
 					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
-						pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED, pb.SubscribeToEvents_CreateSubscription_REGISTERED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
+						pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED, pb.SubscribeToEvents_CreateSubscription_REGISTERED,
+						pb.SubscribeToEvents_CreateSubscription_UNREGISTERED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
 					},
 				},
 				owner: "c",
 			},
 			want: func() []string {
 				subjects := []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID(resourceID.GetDeviceId()), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType()))}
-				subjects = append(subjects, utils.GetResourceEventSubjects("c", resourceID, (&events.ResourceChanged{}).EventType())...)
+				subjects = append(subjects, utils.GetResourceEventSubjects("c", resourceID, (&events.ResourceChanged{}).EventType(), false)...)
+				return append(subjects, isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")))
+			}(),
+		},
+		{
+			name: "device and href (leadRTEnabled=true)",
+			args: args{
+				req: &pb.SubscribeToEvents_CreateSubscription{
+					ResourceIdFilter: []*pb.ResourceIdFilter{{ResourceId: resourceID}},
+					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+						pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED, pb.SubscribeToEvents_CreateSubscription_REGISTERED,
+						pb.SubscribeToEvents_CreateSubscription_UNREGISTERED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
+					},
+				},
+				owner:         "c",
+				leadRTEnabled: true,
+			},
+			want: func() []string {
+				subjects := []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID(resourceID.GetDeviceId()), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType()))}
+				subjects = append(subjects, utils.GetResourceEventSubjects("c", resourceID, (&events.ResourceChanged{}).EventType(), true)...)
 				return append(subjects, isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")))
 			}(),
 		},
@@ -183,19 +200,33 @@ func TestConvertToSubjects(t *testing.T) {
 			},
 			want: func() []string {
 				subjects := []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID("*"), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType()))}
-				subjects = append(subjects, utils.GetResourceEventSubjects("c", commands.NewResourceID("*", resourceID.GetHref()), (&events.ResourceChanged{}).EventType())...)
+				subjects = append(subjects, utils.GetResourceEventSubjects("c", commands.NewResourceID("*", resourceID.GetHref()), (&events.ResourceChanged{}).EventType(), false)...)
 				return append(subjects, isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")))
 			}(),
 		},
 		{
-			name: "href (2)",
+			name: "href (leadRTEnabled=true)",
 			args: args{
 				req: &pb.SubscribeToEvents_CreateSubscription{
-					ResourceIdFilter: []*pb.ResourceIdFilter{
-						{
-							ResourceId: commands.NewResourceID("*", resourceID.GetHref()),
-						},
+					HrefFilter: []string{resourceID.GetHref()},
+					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+						pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED, pb.SubscribeToEvents_CreateSubscription_REGISTERED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
 					},
+				},
+				owner:         "c",
+				leadRTEnabled: true,
+			},
+			want: func() []string {
+				subjects := []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID("*"), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType()))}
+				subjects = append(subjects, utils.GetResourceEventSubjects("c", commands.NewResourceID("*", resourceID.GetHref()), (&events.ResourceChanged{}).EventType(), true)...)
+				return append(subjects, isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")))
+			}(),
+		},
+		{
+			name: "href (resourceID)",
+			args: args{
+				req: &pb.SubscribeToEvents_CreateSubscription{
+					ResourceIdFilter: []*pb.ResourceIdFilter{{ResourceId: commands.NewResourceID("*", resourceID.GetHref())}},
 					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 						pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED, pb.SubscribeToEvents_CreateSubscription_REGISTERED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
 					},
@@ -204,7 +235,25 @@ func TestConvertToSubjects(t *testing.T) {
 			},
 			want: func() []string {
 				subjects := []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID("*"), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType()))}
-				subjects = append(subjects, utils.GetResourceEventSubjects("c", commands.NewResourceID("*", resourceID.GetHref()), (&events.ResourceChanged{}).EventType())...)
+				subjects = append(subjects, utils.GetResourceEventSubjects("c", commands.NewResourceID("*", resourceID.GetHref()), (&events.ResourceChanged{}).EventType(), false)...)
+				return append(subjects, isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")))
+			}(),
+		},
+		{
+			name: "href (resourceID, leadRTEnabled=true)",
+			args: args{
+				req: &pb.SubscribeToEvents_CreateSubscription{
+					ResourceIdFilter: []*pb.ResourceIdFilter{{ResourceId: commands.NewResourceID("*", resourceID.GetHref())}},
+					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+						pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED, pb.SubscribeToEvents_CreateSubscription_REGISTERED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
+					},
+				},
+				owner:         "c",
+				leadRTEnabled: true,
+			},
+			want: func() []string {
+				subjects := []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID("*"), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType()))}
+				subjects = append(subjects, utils.GetResourceEventSubjects("c", commands.NewResourceID("*", resourceID.GetHref()), (&events.ResourceChanged{}).EventType(), true)...)
 				return append(subjects, isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")))
 			}(),
 		},
@@ -212,12 +261,8 @@ func TestConvertToSubjects(t *testing.T) {
 			name: "device and resourceID",
 			args: args{
 				req: &pb.SubscribeToEvents_CreateSubscription{
-					DeviceIdFilter: []string{resourceID.GetDeviceId()},
-					ResourceIdFilter: []*pb.ResourceIdFilter{
-						{
-							ResourceId: resourceID,
-						},
-					},
+					DeviceIdFilter:   []string{resourceID.GetDeviceId()},
+					ResourceIdFilter: []*pb.ResourceIdFilter{{ResourceId: resourceID}},
 					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 						pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED, pb.SubscribeToEvents_CreateSubscription_REGISTERED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
 					},
@@ -226,7 +271,26 @@ func TestConvertToSubjects(t *testing.T) {
 			},
 			want: func() []string {
 				subjects := []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID(resourceID.GetDeviceId()), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType()))}
-				subjects = append(subjects, utils.GetResourceEventSubjects("c", commands.NewResourceID(resourceID.GetDeviceId(), "*"), (&events.ResourceChanged{}).EventType())...)
+				subjects = append(subjects, utils.GetResourceEventSubjects("c", commands.NewResourceID(resourceID.GetDeviceId(), "*"), (&events.ResourceChanged{}).EventType(), false)...)
+				return append(subjects, isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")))
+			}(),
+		},
+		{
+			name: "device and resourceID (leadRTEnabled=true)",
+			args: args{
+				req: &pb.SubscribeToEvents_CreateSubscription{
+					DeviceIdFilter:   []string{resourceID.GetDeviceId()},
+					ResourceIdFilter: []*pb.ResourceIdFilter{{ResourceId: resourceID}},
+					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+						pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED, pb.SubscribeToEvents_CreateSubscription_REGISTERED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
+					},
+				},
+				owner:         "c",
+				leadRTEnabled: true,
+			},
+			want: func() []string {
+				subjects := []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID(resourceID.GetDeviceId()), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType()))}
+				subjects = append(subjects, utils.GetResourceEventSubjects("c", commands.NewResourceID(resourceID.GetDeviceId(), "*"), (&events.ResourceChanged{}).EventType(), true)...)
 				return append(subjects, isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")))
 			}(),
 		},
@@ -234,13 +298,9 @@ func TestConvertToSubjects(t *testing.T) {
 			name: "device, href and resourceID",
 			args: args{
 				req: &pb.SubscribeToEvents_CreateSubscription{
-					DeviceIdFilter: []string{resourceID.GetDeviceId()},
-					HrefFilter:     []string{resourceID.GetHref()},
-					ResourceIdFilter: []*pb.ResourceIdFilter{
-						{
-							ResourceId: resourceID,
-						},
-					},
+					DeviceIdFilter:   []string{resourceID.GetDeviceId()},
+					HrefFilter:       []string{resourceID.GetHref()},
+					ResourceIdFilter: []*pb.ResourceIdFilter{{ResourceId: resourceID}},
 					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
 						pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED, pb.SubscribeToEvents_CreateSubscription_REGISTERED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
 					},
@@ -249,14 +309,34 @@ func TestConvertToSubjects(t *testing.T) {
 			},
 			want: func() []string {
 				subjects := []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID(resourceID.GetDeviceId()), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType()))}
-				subjects = append(subjects, utils.GetResourceEventSubjects("c", resourceID, (&events.ResourceChanged{}).EventType())...)
+				subjects = append(subjects, utils.GetResourceEventSubjects("c", resourceID, (&events.ResourceChanged{}).EventType(), false)...)
+				return append(subjects, isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")))
+			}(),
+		},
+		{
+			name: "device, href and resourceID (leadRTEnabled=true)",
+			args: args{
+				req: &pb.SubscribeToEvents_CreateSubscription{
+					DeviceIdFilter:   []string{resourceID.GetDeviceId()},
+					HrefFilter:       []string{resourceID.GetHref()},
+					ResourceIdFilter: []*pb.ResourceIdFilter{{ResourceId: resourceID}},
+					EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{
+						pb.SubscribeToEvents_CreateSubscription_DEVICE_METADATA_UPDATED, pb.SubscribeToEvents_CreateSubscription_REGISTERED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
+					},
+				},
+				owner:         "c",
+				leadRTEnabled: true,
+			},
+			want: func() []string {
+				subjects := []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID(resourceID.GetDeviceId()), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType()))}
+				subjects = append(subjects, utils.GetResourceEventSubjects("c", resourceID, (&events.ResourceChanged{}).EventType(), true)...)
 				return append(subjects, isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")))
 			}(),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			filters, bitmask := getFilters(tt.args.req)
+			filters, bitmask := getFilters(tt.args.req, tt.args.leadRTEnabled)
 			got := ConvertToSubjects(tt.args.owner, filters, bitmask)
 			sort.Strings(got)
 			require.Equal(t, tt.want, got)

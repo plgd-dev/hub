@@ -21,14 +21,14 @@ type ResourceSubscriber struct {
 	observer            eventbus.Observer
 }
 
-func NewResourceSubscriber(ctx context.Context, config natsClient.Config, subscriptionID string, fileWatcher *fsnotify.Watcher, logger log.Logger, handler eventbus.Handler) (*ResourceSubscriber, error) {
-	nats, err := natsClient.New(config, fileWatcher, logger)
+func NewResourceSubscriber(ctx context.Context, config natsClient.ConfigSubscriber, subscriptionID string, fileWatcher *fsnotify.Watcher, logger log.Logger, handler eventbus.Handler) (*ResourceSubscriber, error) {
+	nats, err := natsClient.New(config.Config, fileWatcher, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create nats client: %w", err)
 	}
 
 	subscriber, err := subscriber.New(nats.GetConn(),
-		config.PendingLimits,
+		config.PendingLimits, config.LeadResourceTypeEnabled,
 		logger,
 		subscriber.WithUnmarshaler(utils.Unmarshal))
 	if err != nil {
@@ -37,8 +37,8 @@ func NewResourceSubscriber(ctx context.Context, config natsClient.Config, subscr
 	}
 
 	const owner = "*"
-	subjectsResourceChanged := utils.GetResourceEventSubjects(owner, commands.NewResourceID("*", "*"), (&events.ResourceChanged{}).EventType())
-	subjectsResourceUpdated := utils.GetResourceEventSubjects(owner, commands.NewResourceID("*", "*"), (&events.ResourceUpdated{}).EventType())
+	subjectsResourceChanged := subscriber.GetResourceEventSubjects(owner, commands.NewResourceID("*", "*"), (&events.ResourceChanged{}).EventType())
+	subjectsResourceUpdated := subscriber.GetResourceEventSubjects(owner, commands.NewResourceID("*", "*"), (&events.ResourceUpdated{}).EventType())
 	observer, err := subscriber.Subscribe(ctx, subscriptionID, append(subjectsResourceChanged, subjectsResourceUpdated...), handler)
 	if err != nil {
 		subscriber.Close()

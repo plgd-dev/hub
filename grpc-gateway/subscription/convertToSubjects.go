@@ -44,7 +44,7 @@ var bitmaskToSubjectsTemplate = []subject{
 // for resource events the format of the subject varies depending on whether the leadResourceType filter is set or not
 type resourceSubject struct {
 	bitmask     FilterBitmask
-	getSubjects func(leadRTFilter []string) []string
+	getSubjects func(leadRTFilter leadResourceTypeFilter) []string
 }
 
 func subjectsForLeadResourceType(template string, leadRTFilter []string) []string {
@@ -55,27 +55,29 @@ func subjectsForLeadResourceType(template string, leadRTFilter []string) []strin
 	return subjects
 }
 
-func getSubjectsForEventType(eventType string) func(leadRTFilter []string) []string {
-	return func(leadRTFilter []string) []string {
-		if len(leadRTFilter) == 0 {
-			// If the Publisher submits evets with leading resource type then if a resource type is matched then the subjects will have "leadResourceType.$resourceType" suffix,
-			// othewise the subjects will not have the suffix; NATS does not support "a zero or more" wildcard, so we need to have two subjects - one with the suffix and one without
-			subject := isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType(eventType))
-			isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType(eventType))
-			return []string{subject, subject + "." + utils.LeadResourcePrefix + ".>"}
+func getSubjectsForEventType(eventType string) func(leadRTFilter leadResourceTypeFilter) []string {
+	return func(leadRTFilter leadResourceTypeFilter) []string {
+		if !leadRTFilter.enabled {
+			return []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType(eventType))}
 		}
+		if len(leadRTFilter.filter) == 0 {
+			// if lead resource filter is enabled, but not set then subscribing to a single subject using ".>" wildcards is sufficient, because all
+			// published subjects have ".leadrt" after the event type
+			return []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType(eventType)) + ".>"}
+		}
+		// otherwise we want to subscribe to each lead resource type
 		template := isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEventLeadResourceType, isEvents.WithEventType(eventType))
-		return subjectsForLeadResourceType(template, leadRTFilter)
+		return subjectsForLeadResourceType(template, leadRTFilter.filter)
 	}
 }
 
 var bitmaskToResourceSubjectsTemplate = []resourceSubject{
-	{bitmask: FilterBitmaskDeviceDeviceResourcesResource, getSubjects: func(leadRTFilter []string) []string {
-		if len(leadRTFilter) == 0 {
+	{bitmask: FilterBitmaskDeviceDeviceResourcesResource, getSubjects: func(leadRTFilter leadResourceTypeFilter) []string {
+		if len(leadRTFilter.filter) == 0 { // disabled or not set
 			return []string{utils.PlgdOwnersOwnerDevicesDeviceResourcesResource + ".>"}
 		}
 		template := isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEventLeadResourceType, isEvents.WithEventType("*"))
-		return subjectsForLeadResourceType(template, leadRTFilter)
+		return subjectsForLeadResourceType(template, leadRTFilter.filter)
 	}},
 	{bitmask: FilterBitmaskResourceChanged, getSubjects: getSubjectsForEventType((&events.ResourceChanged{}).EventType())},
 	{bitmask: FilterBitmaskResourceCreatePending, getSubjects: getSubjectsForEventType((&events.ResourceCreatePending{}).EventType())},
@@ -88,7 +90,7 @@ var bitmaskToResourceSubjectsTemplate = []resourceSubject{
 	{bitmask: FilterBitmaskResourceUpdated, getSubjects: getSubjectsForEventType((&events.ResourceUpdated{}).EventType())},
 }
 
-func convertTemplateToSubjects(owner string, sf SubjectFilters, rawTemplate string, subjects map[string]bool) {
+func convertTemplateToSubjects(owner string, sf subjectFilters, rawTemplate string, subjects map[string]bool) {
 	if len(sf.resourceFilters) == 0 {
 		subjects[isEvents.ToSubject(rawTemplate, isEvents.WithOwner(owner), utils.WithDeviceID("*"), utils.WithHrefId("*"))] = true
 		return
@@ -103,7 +105,7 @@ func convertTemplateToSubjects(owner string, sf SubjectFilters, rawTemplate stri
 	}
 }
 
-func ConvertToSubjects(owner string, filters SubjectFilters, bitmask FilterBitmask) []string {
+func ConvertToSubjects(owner string, filters subjectFilters, bitmask FilterBitmask) []string {
 	var rawTemplates []string
 	for _, s := range bitmaskToSubjectsTemplate {
 		if s.bitmask&bitmask == s.bitmask {

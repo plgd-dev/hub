@@ -154,7 +154,7 @@ func newGrpcGatewayClient(config GrpcGatewayConfig, fileWatcher *fsnotify.Watche
 
 func newResourceSubscriber(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*subscriber.Subscriber, func(), error) {
 	var fl fn.FuncList
-	nats, err := natsClient.New(config.Clients.Eventbus.NATS, fileWatcher, logger)
+	nats, err := natsClient.New(config.Clients.Eventbus.NATS.Config, fileWatcher, logger)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create nats client: %w", err)
 	}
@@ -168,7 +168,7 @@ func newResourceSubscriber(config Config, fileWatcher *fsnotify.Watcher, logger 
 	fl.AddFunc(pool.Release)
 
 	resourceSubscriber, err := subscriber.New(nats.GetConn(),
-		config.Clients.Eventbus.NATS.PendingLimits,
+		config.Clients.Eventbus.NATS.PendingLimits, config.Clients.Eventbus.NATS.LeadResourceTypeEnabled,
 		logger,
 		subscriber.WithGoPool(func(f func()) error { return pool.Submit(f) }),
 		subscriber.WithUnmarshaler(utils.Unmarshal))

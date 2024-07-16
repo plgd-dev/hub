@@ -26,13 +26,28 @@ func (s set) Has(a uuid.UUID) bool {
 	return ok
 }
 
-type SubjectFilters struct {
+type leadResourceTypeFilter struct {
+	enabled bool
+	filter  []string
+}
+
+func makeLeadResourceTypeFilter(enabled bool, filter []string) leadResourceTypeFilter {
+	lrt := leadResourceTypeFilter{
+		enabled: enabled,
+	}
+	if enabled {
+		lrt.filter = filter
+	}
+	return lrt
+}
+
+type subjectFilters struct {
 	resourceFilters        map[uuid.UUID]*commands.ResourceId
-	leadResourceTypeFilter []string
+	leadResourceTypeFilter leadResourceTypeFilter
 }
 
 type subInit struct {
-	filters SubjectFilters
+	filters subjectFilters
 }
 
 type Sub struct {
@@ -237,17 +252,9 @@ func toFilters(req *pb.SubscribeToEvents_CreateSubscription) ([]string, []string
 	return filterDeviceIDs, filterHrefs, filterResourceIDs
 }
 
-func normalizeFilters(req *pb.SubscribeToEvents_CreateSubscription) ([]string, []string, []string, []string, FilterBitmask) {
+func normalizeFilters(req *pb.SubscribeToEvents_CreateSubscription) ([]string, []string, []string, FilterBitmask) {
 	bitmask := EventsFilterToBitmask(req.GetEventFilter())
 	filterDeviceIDs, filterHrefs, filterResourceIDs := toFilters(req)
-	leadRTFilter := strings.Unique(req.GetLeadResourceTypeFilter())
-	if slices.Contains(leadRTFilter, ">") {
-		// - in NATS the ">" wildcard matches one or more subjects, so there is no need for any other filters when leadRTFilter is ">"
-		// - "*" will subscribe to all events that have been published with lead resource type, but not events that have been published without it
-		// - if no leadRTFilter is provided, then it will subscribe events with and without a lead resource type
-		leadRTFilter = []string{">"}
-	}
-
 	for _, d := range req.GetDeviceIdFilter() {
 		if d != "*" {
 			filterDeviceIDs = append(filterDeviceIDs, d)
@@ -268,7 +275,7 @@ func normalizeFilters(req *pb.SubscribeToEvents_CreateSubscription) ([]string, [
 		filterHrefs = nil
 	}
 
-	return strings.Unique(filterDeviceIDs), strings.Unique(filterHrefs), strings.Unique(filterResourceIDs), leadRTFilter, bitmask
+	return strings.Unique(filterDeviceIDs), strings.Unique(filterHrefs), strings.Unique(filterResourceIDs), bitmask
 }
 
 func addHrefFilters(filterSlice []string, deviceHrefFilters map[uuid.UUID]*commands.ResourceId) {
@@ -302,17 +309,30 @@ func addResourceIdFilters(filterSlice []*pb.ResourceIdFilter, deviceHrefFilters 
 	}
 }
 
-func getFilters(req *pb.SubscribeToEvents_CreateSubscription) (SubjectFilters, FilterBitmask) {
-	filterDeviceIDs, filterHrefs, filterResourceIDs, leadRTFilter, bitmask := normalizeFilters(req)
+func getFilters(req *pb.SubscribeToEvents_CreateSubscription, leadRTFilterEnabled bool) (subjectFilters, FilterBitmask) {
+	filterDeviceIDs, filterHrefs, filterResourceIDs, bitmask := normalizeFilters(req)
+
+	var leadRTFilter []string
+	if leadRTFilterEnabled {
+		if slices.Contains(req.GetLeadResourceTypeFilter(), ">") {
+			// - in NATS the ">" wildcard matches one or more subjects, so there is no need for any other filters when leadRTFilter is ">"
+			// - "*" will subscribe to all events that have been published with lead resource type, but not events that have been published without it
+			// - if no leadRTFilter is provided, then it will subscribe events with and without a lead resource type
+			leadRTFilter = []string{">"}
+		} else {
+			leadRTFilter = strings.Unique(req.GetLeadResourceTypeFilter())
+		}
+	}
+
 	// all events or just filtered by leading resource type
 	if len(filterDeviceIDs) == 0 && len(filterHrefs) == 0 && len(filterResourceIDs) == 0 {
-		return SubjectFilters{
-			leadResourceTypeFilter: leadRTFilter,
+		return subjectFilters{
+			leadResourceTypeFilter: makeLeadResourceTypeFilter(leadRTFilterEnabled, leadRTFilter),
 		}, bitmask
 	}
-	sf := SubjectFilters{
+	sf := subjectFilters{
 		resourceFilters:        make(map[uuid.UUID]*commands.ResourceId),
-		leadResourceTypeFilter: leadRTFilter,
+		leadResourceTypeFilter: makeLeadResourceTypeFilter(leadRTFilterEnabled, leadRTFilter),
 	}
 
 	if len(req.GetResourceIdFilter()) == 0 {
@@ -352,11 +372,11 @@ func getFilters(req *pb.SubscribeToEvents_CreateSubscription) (SubjectFilters, F
 	return sf, bitmask
 }
 
-func New(send SendEventFunc, correlationID string, req *pb.SubscribeToEvents_CreateSubscription) *Sub {
+func New(send SendEventFunc, correlationID string, leadRTEnabled bool, req *pb.SubscribeToEvents_CreateSubscription) *Sub {
 	// for backward compatibility and http api
 	req.ResourceIdFilter = append(req.ResourceIdFilter, req.ConvertHTTPResourceIDFilter()...)
 
-	filters, bitmask := getFilters(req)
+	filters, bitmask := getFilters(req, leadRTEnabled)
 	id := uuid.NewString()
 	var closeAtomic atomic.Value
 	closeAtomic.Store(func() {

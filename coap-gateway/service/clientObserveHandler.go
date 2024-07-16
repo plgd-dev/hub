@@ -213,7 +213,7 @@ func (s *resourceSubscription) Close() error {
 	return s.sub.Close()
 }
 
-func newResourceSubscription(req *mux.Message, client *session, authCtx *authorizationContext, deviceID string, href string) *resourceSubscription {
+func newResourceSubscription(req *mux.Message, client *session, authCtx *authorizationContext, deviceID, href string) *resourceSubscription {
 	r := &resourceSubscription{
 		client:   client,
 		token:    req.Token(),
@@ -223,14 +223,11 @@ func newResourceSubscription(req *mux.Message, client *session, authCtx *authori
 		seqNum:   2,
 	}
 
-	sub := subscription.New(r.eventHandler, req.Token().String(), &pb.SubscribeToEvents_CreateSubscription{
-		ResourceIdFilter: []*pb.ResourceIdFilter{
-			{
-				ResourceId: &commands.ResourceId{DeviceId: deviceID, Href: href},
-			},
-		},
-		EventFilter: []pb.SubscribeToEvents_CreateSubscription_Event{pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_UNPUBLISHED},
-	})
+	sub := subscription.New(r.eventHandler, req.Token().String(), client.server.config.Clients.Eventbus.NATS.LeadResourceTypeEnabled,
+		&pb.SubscribeToEvents_CreateSubscription{
+			ResourceIdFilter: []*pb.ResourceIdFilter{{ResourceId: &commands.ResourceId{DeviceId: deviceID, Href: href}}},
+			EventFilter:      []pb.SubscribeToEvents_CreateSubscription_Event{pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_UNPUBLISHED},
+		})
 	r.sub = sub
 
 	return r

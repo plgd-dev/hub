@@ -123,7 +123,7 @@ func newRequestHandlerFromConfig(ctx context.Context, config Config, publicConfi
 		}
 	})
 
-	natsClient, err := naClient.New(config.Clients.Eventbus.NATS, fileWatcher, logger)
+	natsClient, err := naClient.New(config.Clients.Eventbus.NATS.Config, fileWatcher, logger)
 	if err != nil {
 		closeFunc.Execute()
 		return nil, fmt.Errorf("cannot create nats client: %w", err)
@@ -131,7 +131,7 @@ func newRequestHandlerFromConfig(ctx context.Context, config Config, publicConfi
 	closeFunc.AddFunc(natsClient.Close)
 
 	resourceSubscriber, err := subscriber.New(natsClient.GetConn(),
-		config.Clients.Eventbus.NATS.PendingLimits,
+		config.Clients.Eventbus.NATS.PendingLimits, config.Clients.Eventbus.NATS.LeadResourceTypeEnabled,
 		logger,
 		subscriber.WithGoPool(goroutinePoolGo),
 		subscriber.WithUnmarshaler(utils.Unmarshal),

@@ -220,14 +220,16 @@ func MakePublisherConfig(t require.TestingT) natsClient.ConfigPublisher {
 	return cp
 }
 
-func MakeSubscriberConfig() natsClient.Config {
-	return natsClient.Config{
-		URL: NATS_URL,
-		PendingLimits: natsClient.PendingLimitsConfig{
-			MsgLimit:   524288,
-			BytesLimit: 67108864,
+func MakeSubscriberConfig() natsClient.ConfigSubscriber {
+	return natsClient.ConfigSubscriber{
+		Config: natsClient.Config{
+			URL: NATS_URL,
+			PendingLimits: natsClient.PendingLimitsConfig{
+				MsgLimit:   524288,
+				BytesLimit: 67108864,
+			},
+			TLS: MakeTLSClientConfig(),
 		},
-		TLS: MakeTLSClientConfig(),
 	}
 }
 
