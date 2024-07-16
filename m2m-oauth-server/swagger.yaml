@@ -18,6 +18,9 @@ paths:
                 client_id:
                   type: string
                   description: "The client ID."
+                token_name:
+                  type: string
+                  description: "The name of the token which will be used in the name claim."
                 scope:
                   type: string
                   description: "The scopes that are requested, separated by space. Must be a subset of the allowed scopes for the client."
