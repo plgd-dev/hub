@@ -21,6 +21,9 @@ paths:
                 token_name:
                   type: string
                   description: "The name of the token which will be used in the name claim."
+                time_to_live:
+                  type: integer
+                  description: "The time to live of the token in nano seconds. If not provided, the token will be max allowed by client."
                 scope:
                   type: string
                   description: "The scopes that are requested, separated by space. Must be a subset of the allowed scopes for the client."
