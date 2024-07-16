@@ -267,9 +267,9 @@
             <tbody>
               
                 <tr>
-                  <td>id</td>
-                  <td><a href="#string">string</a></td>
-                  <td>repeated</td>
+                  <td>count</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
                   <td><p> </p></td>
                 </tr>
               
@@ -291,10 +291,10 @@
             <tbody>
               
                 <tr>
-                  <td>version</td>
-                  <td><a href="#uint64">uint64</a></td>
+                  <td>timestamp</td>
+                  <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>Returns all blacklisted/revoked not expired tokens of the owner from the given version </p></td>
+                  <td><p>Returns all blacklisted/revoked not expired tokens of the owner from the given timestamp </p></td>
                 </tr>
               
             </tbody>
@@ -322,8 +322,8 @@
                 </tr>
               
                 <tr>
-                  <td>version</td>
-                  <td><a href="#uint64">uint64</a></td>
+                  <td>timestamp</td>
+                  <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>The biggest version of the blacklisted/revoked token over all tokens of owner </p></td>
                 </tr>
@@ -418,7 +418,9 @@
                   <td>id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>Token ID / jti </p></td>
+                  <td><p>Token ID / jti
+
+@gotags: bson:&#34;_id&#34; </p></td>
                 </tr>
               
                 <tr>
@@ -471,6 +473,13 @@
                 </tr>
               
                 <tr>
+                  <td>client_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Client ID </p></td>
+                </tr>
+              
+                <tr>
                   <td>original_token_claims</td>
                   <td><a href="#google.protobuf.Value">google.protobuf.Value</a></td>
                   <td></td>
@@ -513,13 +522,6 @@
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Unix timestamp in ns when the token has been blacklisted/revoked </p></td>
-                </tr>
-              
-                <tr>
-                  <td>version</td>
-                  <td><a href="#uint64">uint64</a></td>
-                  <td></td>
-                  <td><p>Incremental version of the blacklisted/revoked token over all tokens of owner </p></td>
                 </tr>
               
             </tbody>

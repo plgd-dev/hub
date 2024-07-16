@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	storeConfig "github.com/plgd-dev/hub/v2/m2m-oauth-server/store/config"
 	"github.com/plgd-dev/hub/v2/pkg/config"
 	"github.com/plgd-dev/hub/v2/pkg/config/property/urischeme"
 	"github.com/plgd-dev/hub/v2/pkg/log"
@@ -99,12 +100,16 @@ func (c OAuthClientsConfig) Find(id string) *Client {
 }
 
 type ClientsConfig struct {
+	Storage                storeConfig.Config                `yaml:"storage" json:"storage"`
 	OpenTelemetryCollector http.OpenTelemetryCollectorConfig `yaml:"openTelemetryCollector" json:"openTelemetryCollector"`
 }
 
 func (c *ClientsConfig) Validate() error {
 	if err := c.OpenTelemetryCollector.Validate(); err != nil {
 		return fmt.Errorf("openTelemetryCollector.%w", err)
+	}
+	if err := c.Storage.Validate(); err != nil {
+		return fmt.Errorf("storage.%w", err)
 	}
 	return nil
 }

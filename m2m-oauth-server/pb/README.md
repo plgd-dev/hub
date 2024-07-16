@@ -49,7 +49,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) | repeated |  |
+| count | [int64](#int64) |  |  |
 
 
 
@@ -64,7 +64,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| version | [uint64](#uint64) |  | Returns all blacklisted/revoked not expired tokens of the owner from the given version |
+| timestamp | [int64](#int64) |  | Returns all blacklisted/revoked not expired tokens of the owner from the given timestamp |
 
 
 
@@ -80,7 +80,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | black_list | [GetBlacklistedTokensResponse.Item](#m2moauthserver-pb-GetBlacklistedTokensResponse-Item) | repeated |  |
-| version | [uint64](#uint64) |  | The biggest version of the blacklisted/revoked token over all tokens of owner |
+| timestamp | [int64](#int64) |  | The biggest version of the blacklisted/revoked token over all tokens of owner |
 
 
 
@@ -130,7 +130,9 @@ driven by resource change event
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  | Token ID / jti |
+| id | [string](#string) |  | Token ID / jti
+
+@gotags: bson:&#34;_id&#34; |
 | version | [uint64](#uint64) |  | Incremetal version for update |
 | name | [string](#string) |  | User-friendly token name |
 | owner | [string](#string) |  | Owner of the token |
@@ -138,6 +140,7 @@ driven by resource change event
 | audience | [string](#string) | repeated | Token Audience |
 | scopes | [string](#string) | repeated | Token scopes |
 | expiration | [int64](#int64) |  | Original token expiration |
+| client_id | [string](#string) |  | Client ID |
 | original_token_claims | [google.protobuf.Value](#google-protobuf-Value) |  | Original token claims |
 | blacklisted | [Token.BlackListed](#m2moauthserver-pb-Token-BlackListed) |  | Token black list section |
 
@@ -156,7 +159,6 @@ driven by resource change event
 | ----- | ---- | ----- | ----------- |
 | flag | [bool](#bool) |  | Blacklisted/revoked enabled flag, if once token has been blacklisted/revoked then it can&#39;t be unblacklisted/unrevoked |
 | timestamp | [int64](#int64) |  | Unix timestamp in ns when the token has been blacklisted/revoked |
-| version | [uint64](#uint64) |  | Incremental version of the blacklisted/revoked token over all tokens of owner |
 
 
 

@@ -72,6 +72,8 @@ func MakeConfig(t require.TestingT) service.Config {
 		Config: config.MakeOpenTelemetryCollectorClient(),
 	}
 
+	cfg.Clients.Storage = MakeStoreConfig()
+
 	cfg.OAuthSigner.PrivateKeyFile = urischeme.URIScheme(os.Getenv("M2M_OAUTH_SERVER_PRIVATE_KEY"))
 	cfg.OAuthSigner.Domain = config.M2M_OAUTH_SERVER_HTTP_HOST
 	cfg.OAuthSigner.Clients = OAuthClients

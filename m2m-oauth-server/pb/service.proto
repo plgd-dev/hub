@@ -31,7 +31,7 @@ option go_package = "github.com/plgd-dev/hub/v2/m2m-oauth-server/pb;pb";
 // Tokens are deleted from DB after they are expired and blacklisted/revoked
 message Token { // driven by resource change event
   // Token ID / jti
-  string id = 1;
+  string id = 1; // @gotags: bson:"_id"
   // Incremetal version for update
   uint64 version = 2;
   // User-friendly token name
@@ -46,23 +46,23 @@ message Token { // driven by resource change event
   repeated string scopes = 7;
   // Original token expiration
   int64 expiration = 8;
+  // Client ID
+  string client_id = 9;
   // Original token claims
-  google.protobuf.Value original_token_claims = 9;
+  google.protobuf.Value original_token_claims = 10;
   message BlackListed {
     // Blacklisted/revoked enabled flag, if once token has been blacklisted/revoked then it can't be unblacklisted/unrevoked
     bool flag = 1;
     // Unix timestamp in ns when the token has been blacklisted/revoked
     int64 timestamp = 2;
-    // Incremental version of the blacklisted/revoked token over all tokens of owner
-    uint64 version = 3;
   }
   // Token black list section
-  BlackListed blacklisted = 10;
+  BlackListed blacklisted = 11;
 }
 
 message GetBlacklistedTokensRequest {
-  // Returns all blacklisted/revoked not expired tokens of the owner from the given version
-  uint64 version = 1;
+  // Returns all blacklisted/revoked not expired tokens of the owner from the given timestamp
+  int64 timestamp = 1;
 }
 
 message GetBlacklistedTokensResponse {
@@ -72,7 +72,7 @@ message GetBlacklistedTokensResponse {
   }
   repeated Item black_list = 1;
   // The biggest version of the blacklisted/revoked token over all tokens of owner
-  uint64 version = 2; 
+  int64 timestamp = 2; 
 }
 
 message GetTokensRequest {
@@ -86,7 +86,7 @@ message BlacklistTokensRequest {
 }
 
 message BlacklistTokensResponse {
-  repeated string id = 1;
+  int64 count = 1;
 }
 
 service M2MOAuthServer {

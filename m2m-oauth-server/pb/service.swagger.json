@@ -51,12 +51,12 @@
         },
         "parameters": [
           {
-            "name": "version",
-            "description": "Returns all blacklisted/revoked not expired tokens of the owner from the given version",
+            "name": "timestamp",
+            "description": "Returns all blacklisted/revoked not expired tokens of the owner from the given timestamp",
             "in": "query",
             "required": false,
             "type": "string",
-            "format": "uint64"
+            "format": "int64"
           }
         ],
         "tags": [
@@ -170,11 +170,6 @@
           "type": "string",
           "format": "int64",
           "title": "Unix timestamp in ns when the token has been blacklisted/revoked"
-        },
-        "version": {
-          "type": "string",
-          "format": "uint64",
-          "title": "Incremental version of the blacklisted/revoked token over all tokens of owner"
         }
       }
     },
@@ -192,11 +187,9 @@
     "pbBlacklistTokensResponse": {
       "type": "object",
       "properties": {
-        "id": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
+        "count": {
+          "type": "string",
+          "format": "int64"
         }
       }
     },
@@ -210,9 +203,9 @@
             "$ref": "#/definitions/GetBlacklistedTokensResponseItem"
           }
         },
-        "version": {
+        "timestamp": {
           "type": "string",
-          "format": "uint64",
+          "format": "int64",
           "title": "The biggest version of the blacklisted/revoked token over all tokens of owner"
         }
       }
@@ -222,6 +215,7 @@
       "properties": {
         "id": {
           "type": "string",
+          "description": "@gotags: bson:\"_id\"",
           "title": "Token ID / jti"
         },
         "version": {
@@ -260,6 +254,10 @@
           "type": "string",
           "format": "int64",
           "title": "Original token expiration"
+        },
+        "clientId": {
+          "type": "string",
+          "title": "Client ID"
         },
         "originalTokenClaims": {
           "title": "Original token claims"
