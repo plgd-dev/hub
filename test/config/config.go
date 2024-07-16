@@ -186,6 +186,12 @@ func MakeHttpServerConfig() httpServer.Config {
 	}
 }
 
+func TestLeadResourceIsEnabled() bool {
+	filter := os.Getenv("TEST_LEAD_RESOURCE_TYPE_FILTER")
+	regexFilter := os.Getenv("TEST_LEAD_RESOURCE_TYPE_REGEX_FILTER")
+	return filter != "" || regexFilter != ""
+}
+
 func MakePublisherConfig(t require.TestingT) natsClient.ConfigPublisher {
 	cp := natsClient.ConfigPublisher{
 		Config: natsClient.Config{
@@ -194,29 +200,29 @@ func MakePublisherConfig(t require.TestingT) natsClient.ConfigPublisher {
 			FlusherTimeout: time.Second * 30,
 		},
 	}
+	filterIn := os.Getenv("TEST_LEAD_RESOURCE_TYPE_FILTER")
+	regexFilterIn := os.Getenv("TEST_LEAD_RESOURCE_TYPE_REGEX_FILTER")
+	if filterIn == "" && regexFilterIn == "" {
+		return cp
+	}
 	lrt := &natsClient.LeadResourceTypeConfig{
+		Enabled: true,
 		UseUUID: os.Getenv("TEST_LEAD_RESOURCE_TYPE_USE_UUID") == TRUE_STRING,
 	}
-	filterIn := os.Getenv("TEST_LEAD_RESOURCE_TYPE_FILTER")
 	if filterIn != "" {
 		err := natsClient.CheckResourceTypeFilterString(filterIn)
 		require.NoError(t, err)
-		lrt.Enabled = true
 		lrt.Filter = natsClient.LeadResourceTypeFilter(filterIn)
 	}
-	regexFilterIn := os.Getenv("TEST_LEAD_RESOURCE_TYPE_REGEX_FILTER")
 	if regexFilterIn != "" {
 		rfs := strings.Split(regexFilterIn, ",")
 		for _, rf := range rfs {
 			_, err := regexp.Compile(rf)
 			require.NoError(t, err)
 		}
-		lrt.Enabled = true
 		lrt.RegexFilter = rfs
 	}
-	if lrt.Enabled {
-		cp.LeadResourceType = lrt
-	}
+	cp.LeadResourceType = lrt
 	return cp
 }
 
@@ -230,6 +236,7 @@ func MakeSubscriberConfig() natsClient.ConfigSubscriber {
 			},
 			TLS: MakeTLSClientConfig(),
 		},
+		LeadResourceTypeEnabled: TestLeadResourceIsEnabled(),
 	}
 }
 
