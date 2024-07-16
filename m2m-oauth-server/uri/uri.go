@@ -5,6 +5,7 @@ import "github.com/lestrrat-go/jwx/v2/jwt"
 const (
 	ClientIDKey            = "client_id"
 	ClientSecretKey        = "client_secret"
+	TokenName              = "token_name"
 	ScopeKey               = "scope"
 	GrantTypeKey           = "grant_type"
 	AudienceKey            = jwt.AudienceKey

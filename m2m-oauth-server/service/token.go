@@ -56,6 +56,9 @@ func makeAccessToken(clientCfg *Client, tokenReq tokenRequest, issuedAt, expires
 	if err := setDeviceIDClaim(token, tokenReq); err != nil {
 		return nil, err
 	}
+	if err := setName(token, tokenReq); err != nil {
+		return nil, err
+	}
 	if err := setOwnerClaim(token, tokenReq); err != nil {
 		return nil, err
 	}
@@ -95,6 +98,13 @@ func setDeviceIDClaim(token jwt.Token, tokenReq tokenRequest) error {
 func setOwnerClaim(token jwt.Token, tokenReq tokenRequest) error {
 	if tokenReq.owner != "" && tokenReq.ownerClaim != "" {
 		return token.Set(tokenReq.ownerClaim, tokenReq.owner)
+	}
+	return nil
+}
+
+func setName(token jwt.Token, tokenReq tokenRequest) error {
+	if tokenReq.TokenName != "" && tokenReq.ownerClaim != "name" {
+		return token.Set("name", tokenReq.TokenName)
 	}
 	return nil
 }
@@ -152,6 +162,7 @@ type tokenRequest struct {
 	GrantType           GrantType `json:"grant_type"`
 	ClientAssertionType string    `json:"client_assertion_type"`
 	ClientAssertion     string    `json:"client_assertion"`
+	TokenName           string    `json:"token_name"`
 
 	deviceID            string          `json:"-"`
 	owner               string          `json:"-"`
@@ -186,6 +197,7 @@ func (requestHandler *RequestHandler) postToken(w http.ResponseWriter, r *http.R
 		tokenReq.Secret = r.PostFormValue(uri.ClientSecretKey)
 		tokenReq.ClientAssertionType = r.PostFormValue(uri.ClientAssertionTypeKey)
 		tokenReq.ClientAssertion = r.PostFormValue(uri.ClientAssertionKey)
+		tokenReq.TokenName = r.PostFormValue(uri.TokenName)
 	} else {
 		err := json.ReadFrom(r.Body, &tokenReq)
 		if err != nil {
