@@ -1,5 +1,5 @@
 const express = require('express')
-const { loadResponseStreamFromFile, checkError, loadResponseFromFile } = require('../utils')
+const { loadResponseStreamFromFile, checkError } = require('../utils')
 const path = require('path')
 const escapeHtml = require('escape-html')
 const get = require('lodash/get')
@@ -12,6 +12,21 @@ let configurationsAdd = false
 let configurationsDeleted = false
 
 const configurationIdCheck = [check('configurationId').notEmpty().withMessage('Configuration ID must be alphanumeric')]
+
+router.get('/api/v1/configurations/api-reset', (req, res) => {
+    try {
+        checkError(req, res)
+
+        console.log('===== RESET CONFIGURATION API RESET')
+
+        configurationsAdd = false
+        configurationsDeleted = false
+
+        res.send('OK')
+    } catch (e) {
+        res.status(500).send(escapeHtml(e.toString()))
+    }
+})
 
 router.get('/api/v1/configurations/applied', (req, res) => {
     try {
@@ -61,7 +76,7 @@ router.get('/api/v1/configurations', (req, res) => {
             // list page after add
             loadResponseStreamFromFile(path.join('snippet-service', 'configurations', 'list', `listAdd.json`), res)
         } else if (configurationsDeleted) {
-            // list page after add
+            // list page after delete
             loadResponseStreamFromFile(path.join('snippet-service', 'configurations', 'list', `listEmpty.json`), res)
         } else {
             // list page default

@@ -7,7 +7,7 @@ test('snippet-service-configurations-list-open', async ({ page }) => {
     await page.getByTestId(testId.menu.snippetService.configurations).click()
 
     await expect(page).toHaveTitle(/Configuraions | plgd Dashboard/)
-    await expect(page).toHaveScreenshot({ fullPage: true, omitBackground: true })
+    await expect(page).toHaveScreenshot({ fullPage: true, omitBackground: true, animations: 'disabled' })
 })
 
 const fillAddForm = async (page: Page) => {
@@ -30,7 +30,7 @@ test('add-configuration-reset', async ({ page }) => {
 
     await page.getByTestId(testId.snippetService.configurations.list.addConfigurationButton).click()
     await expect(page).toHaveTitle(/Create new Configuration | plgd Dashboard/)
-    await expect(page).toHaveScreenshot({ fullPage: true, omitBackground: true })
+    await expect(page).toHaveScreenshot({ fullPage: true, omitBackground: true, animations: 'disabled' })
 
     fillAddForm(page)
 
@@ -65,7 +65,7 @@ test('list-invoke-modal', async ({ page }) => {
     await page.getByTestId(testId.menu.snippetService.link).click()
     await page.getByTestId(testId.menu.snippetService.configurations).click()
 
-    page.setViewportSize({ width: 1600, height: 720 })
+    page.setViewportSize({ width: 1600, height: 800 })
 
     await expect(page.getByTestId(testId.snippetService.configurations.list.table)).toBeVisible()
     await expect(page.getByTestId(`${testId.snippetService.configurations.list.table}-row-0`)).toBeVisible()
@@ -96,7 +96,7 @@ test('list-invoke-modal', async ({ page }) => {
     await page.getByTestId(`${testId.snippetService.configurations.list.invokeModal}-footer-done`).click()
     await page.getByTestId(`${testId.snippetService.configurations.list.invokeModal}-force-label`).click()
 
-    await expect(page).toHaveScreenshot({ fullPage: true, omitBackground: true })
+    await expect(page).toHaveScreenshot({ fullPage: true, omitBackground: true, animations: 'disabled' })
 
     await expect(page.getByTestId(`${testId.snippetService.configurations.list.invokeModal}-reset`)).toBeVisible()
     await expect(page.getByTestId(`${testId.snippetService.configurations.list.invokeModal}-invoke`)).toBeVisible()

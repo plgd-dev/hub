@@ -8,8 +8,9 @@
     "test": "npx playwright test",
     "test:ui": "npx playwright test --ui",
     "test:debug": "npx playwright test --debug",
+    "test:updateScreenshots": "npx playwright test --update-snapshots",
     "test:login": "npx playwright test login.spec.ts --debug",
-    "test:r": "npx playwright test snippet-service/configurations/detail.spec.ts --debug --update-snapshots"
+    "test:dev": "npx playwright test snippet-service/configurations/detail.spec.ts --update-snapshots"
   },
   "keywords": [],
   "author": "",
@@ -18,6 +19,7 @@
     "@playwright/test": "^1.44.0"
   },
   "dependencies": {
+    "@octokit/core": "^6.1.2",
     "axios": "^1.7.2"
   }
 }

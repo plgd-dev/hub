@@ -3,9 +3,11 @@ import testId from '../../../../src/testId'
 
 const openConfigurationItem = async (page: Page) => {
     await page.goto('')
+    await page.request.get('http://localhost:8181/snippet-service/api/v1/configurations/api-reset')
+
     await page.getByTestId(testId.menu.snippetService.link).click()
     await page.getByTestId(testId.menu.snippetService.configurations).click()
-    page.setViewportSize({ width: 1600, height: 720 })
+    await page.setViewportSize({ width: 1600, height: 800 })
     await page.getByTestId(`${testId.snippetService.configurations.list.table}-row-0-detail`).click()
 }
 
@@ -58,7 +60,7 @@ test('snippet-service-configurations-detail-delete', async ({ page }) => {
 
     await expect(page.getByTestId(testId.snippetService.configurations.detail.deleteModal)).toBeVisible()
 
-    await expect(page).toHaveScreenshot({ fullPage: true, omitBackground: true })
+    await expect(page).toHaveScreenshot({ fullPage: true, omitBackground: true, animations: 'disabled' })
 
     await expect(page.getByTestId(testId.snippetService.configurations.detail.deleteButtonCancel)).toBeVisible()
     await expect(page.getByTestId(testId.snippetService.configurations.detail.deleteButtonConfirm)).toBeVisible()
@@ -114,7 +116,7 @@ test('snippet-service-configurations-detail-tab-conditions', async ({ page }) =>
     await page.getByTestId(testId.snippetService.configurations.detail.tabConditions).click()
     await expect(page.getByTestId(testId.snippetService.configurations.detail.conditionsTable)).toBeVisible()
 
-    await expect(page).toHaveScreenshot({ fullPage: true, omitBackground: true })
+    await expect(page).toHaveScreenshot({ fullPage: true, omitBackground: true, animations: 'disabled' })
 
     await expect(page.getByTestId(`${testId.snippetService.configurations.detail.conditionsTable}-row-0`)).toBeVisible()
     await expect(page.getByTestId(`${testId.snippetService.configurations.detail.conditionsTable}-detail`)).toBeVisible()
@@ -130,7 +132,7 @@ test('snippet-service-configurations-detail-tab-applied-configurations', async (
     await expect(page.getByTestId(testId.snippetService.configurations.detail.tabAppliedConfiguration)).toBeVisible()
     await page.getByTestId(testId.snippetService.configurations.detail.tabAppliedConfiguration).click()
 
-    await expect(page).toHaveScreenshot({ fullPage: true, omitBackground: true })
+    await expect(page).toHaveScreenshot({ fullPage: true, omitBackground: true, animations: 'disabled' })
 
     await expect(page.getByTestId(`${testId.snippetService.configurations.detail.appliedConfigurationsTable}-detail-link-name`)).toBeVisible()
     await page.getByTestId(`${testId.snippetService.configurations.detail.appliedConfigurationsTable}-detail-link-name`).click()

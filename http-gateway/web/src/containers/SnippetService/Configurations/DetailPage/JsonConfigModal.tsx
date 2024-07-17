@@ -17,7 +17,6 @@ import { messages as confT } from '../../SnippetService.i18n'
 import { ResourceTypeEnhanced } from './Tabs/Tab1/Tab1.types'
 import { messages as t } from '@/containers/Devices/Devices.i18n'
 import { hasInvalidConfigurationResource } from '@/containers/SnippetService/utils'
-import { j } from '../../../../../packages/shared-ui/playwright-report/trace/assets/testServerConnection-Dj8RHZjQ'
 
 type Props = {
     resource?: ResourceTypeEnhanced

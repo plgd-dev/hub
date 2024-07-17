@@ -239,6 +239,9 @@ const Tab2: FC<Props> = (props) => {
     const updateResource = async ({ href, currentInterface = '' }: DevicesResourcesModalParamsType, resourceDataUpdate: any) => {
         setSavingResource(true)
 
+        console.log('updateResource')
+        console.log({ deviceId: id, href, currentInterface, ttl }, resourceDataUpdate)
+
         try {
             const ret = await updateDevicesResourceApi({ deviceId: id, href, currentInterface, ttl }, resourceDataUpdate)
             const { auditContext } = ret.data.data
