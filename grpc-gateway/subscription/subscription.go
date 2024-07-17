@@ -309,30 +309,37 @@ func addResourceIdFilters(filterSlice []*pb.ResourceIdFilter, deviceHrefFilters 
 	}
 }
 
+func getLeadResourceTypeFilter(req *pb.SubscribeToEvents_CreateSubscription, leadRTFilterEnabled bool) leadResourceTypeFilter {
+	if !leadRTFilterEnabled {
+		return makeLeadResourceTypeFilter(false, nil)
+	}
+
+	var lrtFilter []string
+	if slices.Contains(req.GetLeadResourceTypeFilter(), ">") {
+		// - in NATS the ">" wildcard matches one or more subjects, so there is no need for any other filters when leadRTFilter is ">"
+		// - "*" will subscribe to all events that have been published with lead resource type, but not events that have been published without it
+		// - if no leadRTFilter is provided, then it will subscribe events with and without a lead resource type
+		lrtFilter = []string{">"}
+	} else {
+		lrtFilter = strings.Unique(req.GetLeadResourceTypeFilter())
+	}
+	return makeLeadResourceTypeFilter(true, lrtFilter)
+}
+
 func getFilters(req *pb.SubscribeToEvents_CreateSubscription, leadRTFilterEnabled bool) (subjectFilters, FilterBitmask) {
 	filterDeviceIDs, filterHrefs, filterResourceIDs, bitmask := normalizeFilters(req)
 
-	var leadRTFilter []string
-	if leadRTFilterEnabled {
-		if slices.Contains(req.GetLeadResourceTypeFilter(), ">") {
-			// - in NATS the ">" wildcard matches one or more subjects, so there is no need for any other filters when leadRTFilter is ">"
-			// - "*" will subscribe to all events that have been published with lead resource type, but not events that have been published without it
-			// - if no leadRTFilter is provided, then it will subscribe events with and without a lead resource type
-			leadRTFilter = []string{">"}
-		} else {
-			leadRTFilter = strings.Unique(req.GetLeadResourceTypeFilter())
-		}
-	}
-
+	leadRTFilter := getLeadResourceTypeFilter(req, leadRTFilterEnabled)
 	// all events or just filtered by leading resource type
 	if len(filterDeviceIDs) == 0 && len(filterHrefs) == 0 && len(filterResourceIDs) == 0 {
 		return subjectFilters{
-			leadResourceTypeFilter: makeLeadResourceTypeFilter(leadRTFilterEnabled, leadRTFilter),
+			leadResourceTypeFilter: leadRTFilter,
 		}, bitmask
 	}
+
 	sf := subjectFilters{
 		resourceFilters:        make(map[uuid.UUID]*commands.ResourceId),
-		leadResourceTypeFilter: makeLeadResourceTypeFilter(leadRTFilterEnabled, leadRTFilter),
+		leadResourceTypeFilter: leadRTFilter,
 	}
 
 	if len(req.GetResourceIdFilter()) == 0 {

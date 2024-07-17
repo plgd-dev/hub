@@ -65,7 +65,7 @@ func getSubjectsForEventType(eventType string) func(leadRTFilter leadResourceTyp
 			// published subjects have ".leadrt" after the event type
 			return []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent, isEvents.WithEventType(eventType)) + ".>"}
 		}
-		// otherwise we want to subscribe to each lead resource type
+		// otherwise we want to subscribe to each lead resource type and lead resource type pair
 		template := isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEventLeadResourceType, isEvents.WithEventType(eventType))
 		return subjectsForLeadResourceType(template, leadRTFilter.filter)
 	}
@@ -73,7 +73,7 @@ func getSubjectsForEventType(eventType string) func(leadRTFilter leadResourceTyp
 
 var bitmaskToResourceSubjectsTemplate = []resourceSubject{
 	{bitmask: FilterBitmaskDeviceDeviceResourcesResource, getSubjects: func(leadRTFilter leadResourceTypeFilter) []string {
-		if len(leadRTFilter.filter) == 0 { // disabled or not set
+		if !leadRTFilter.enabled || len(leadRTFilter.filter) == 0 {
 			return []string{utils.PlgdOwnersOwnerDevicesDeviceResourcesResource + ".>"}
 		}
 		template := isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEventLeadResourceType, isEvents.WithEventType("*"))

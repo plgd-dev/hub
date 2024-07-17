@@ -186,10 +186,14 @@ func MakeHttpServerConfig() httpServer.Config {
 	}
 }
 
-func TestLeadResourceIsEnabled() bool {
+func LeadResourceIsEnabled() bool {
 	filter := os.Getenv("TEST_LEAD_RESOURCE_TYPE_FILTER")
 	regexFilter := os.Getenv("TEST_LEAD_RESOURCE_TYPE_REGEX_FILTER")
 	return filter != "" || regexFilter != ""
+}
+
+func LeadResourceUseUUID() bool {
+	return os.Getenv("TEST_LEAD_RESOURCE_TYPE_USE_UUID") == TRUE_STRING
 }
 
 func MakePublisherConfig(t require.TestingT) natsClient.ConfigPublisher {
@@ -207,7 +211,7 @@ func MakePublisherConfig(t require.TestingT) natsClient.ConfigPublisher {
 	}
 	lrt := &natsClient.LeadResourceTypeConfig{
 		Enabled: true,
-		UseUUID: os.Getenv("TEST_LEAD_RESOURCE_TYPE_USE_UUID") == TRUE_STRING,
+		UseUUID: LeadResourceUseUUID(),
 	}
 	if filterIn != "" {
 		err := natsClient.CheckResourceTypeFilterString(filterIn)
@@ -236,7 +240,7 @@ func MakeSubscriberConfig() natsClient.ConfigSubscriber {
 			},
 			TLS: MakeTLSClientConfig(),
 		},
-		LeadResourceTypeEnabled: TestLeadResourceIsEnabled(),
+		LeadResourceTypeEnabled: LeadResourceIsEnabled(),
 	}
 }
 
