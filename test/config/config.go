@@ -45,6 +45,7 @@ const (
 	CERTIFICATE_AUTHORITY_HOST      = "localhost:20011"
 	CERTIFICATE_AUTHORITY_HTTP_HOST = "localhost:20012"
 	M2M_OAUTH_SERVER_HTTP_HOST      = "localhost:20013"
+	M2M_OAUTH_SERVER_HOST           = "localhost:20016"
 	SNIPPET_SERVICE_HOST            = "localhost:20014"
 	SNIPPET_SERVICE_HTTP_HOST       = "localhost:20015"
 	GRPC_GW_HOST                    = "localhost:20005"

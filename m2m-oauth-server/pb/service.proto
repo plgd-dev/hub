@@ -32,18 +32,18 @@ option go_package = "github.com/plgd-dev/hub/v2/m2m-oauth-server/pb;pb";
 message Token { // driven by resource change event
   // Token ID / jti
   string id = 1; // @gotags: bson:"_id"
-  // Incremetal version for update
+  // Incremental version for update
   uint64 version = 2;
   // User-friendly token name
   string name = 3;
   // Owner of the token
   string owner = 4;
   // Unix timestamp in ns when the condition has been created/updated
-  int64 timestamp = 5;
+  int64 issued_at = 5;
   // Token Audience
   repeated string audience = 6;
   // Token scopes
-  repeated string scopes = 7;
+  repeated string scope = 7;
   // Original token expiration
   int64 expiration = 8;
   // Client ID
@@ -60,20 +60,7 @@ message Token { // driven by resource change event
   BlackListed blacklisted = 11;
 }
 
-message GetBlacklistedTokensRequest {
-  // Returns all blacklisted/revoked not expired tokens of the owner from the given timestamp
-  int64 timestamp = 1;
-}
 
-message GetBlacklistedTokensResponse {
-  message Item {
-    string audience = 1;
-    string id = 2;
-  }
-  repeated Item black_list = 1;
-  // The biggest version of the blacklisted/revoked token over all tokens of owner
-  int64 timestamp = 2; 
-}
 
 message GetTokensRequest {
   repeated string id_filter = 1;
@@ -89,21 +76,41 @@ message BlacklistTokensResponse {
   int64 count = 1;
 }
 
-service M2MOAuthServer {
-  // Returns all tokens of the owner
-  rpc GetTokens(GetTokensRequest) returns (Token) {
+message CreateTokenRequest {
+  string client_id = 1;
+  string client_secret = 2;
+  repeated string audience = 3;
+  repeated string scope = 4;
+  int64 time_to_live = 5;
+  string client_assertion_type = 6;
+  string client_assertion = 7;
+  string token_name = 8;
+  string grant_type = 9;
+}
+
+message CreateTokenResponse {
+  string access_token = 1;
+  string token_type = 2;
+  int64 expires_in = 3;
+  repeated string scope = 4;
+} 
+
+service M2MOAuthService {
+  // Creates a new token
+  rpc CreateToken(CreateTokenRequest) returns (CreateTokenResponse) {
     option (google.api.http) = {
-      get: "/m2m-oauth-server/api/v1/tokens";
+      post: "/m2m-oauth-server/api/v1/tokens";
+      body: "*";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Tokens" ];
     };
   }
 
-  // Returns all blacklisted/revoked not expired tokens 
-  rpc GetBlacklistedTokens(GetBlacklistedTokensRequest) returns (GetBlacklistedTokensResponse) {
+  // Returns all tokens of the owner
+  rpc GetTokens(GetTokensRequest) returns (stream Token) {
     option (google.api.http) = {
-      get: "/m2m-oauth-server/api/v1/blacklist";
+      get: "/m2m-oauth-server/api/v1/tokens";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Tokens" ];

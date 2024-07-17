@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/plgd-dev/hub/v2/m2m-oauth-server/pb"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -66,15 +67,12 @@ func (i *MongoIterator[T]) Err() error {
 
 type Store interface {
 	// CreateToken creates a new token. If the token already exists, it will throw an error.
-	CreateToken(ctx context.Context, token *pb.Token) (*pb.Token, error)
+	CreateToken(ctx context.Context, owner string, token *pb.Token) (*pb.Token, error)
 	// GetTokens loads tokens from the database.
 	GetTokens(ctx context.Context, owner string, query *pb.GetTokensRequest, p ProcessTokens) error
 
 	// DeleteTokens deletes blacklisted expired tokens from the database.
-	DeleteTokens(ctx context.Context) error
-
-	// GetBlacklistedTokens get blacklisted tokens which are not expired.
-	GetBlacklistedTokens(ctx context.Context, owner string, query *pb.GetBlacklistedTokensRequest, p ProcessTokens) error
+	DeleteTokens(ctx context.Context, now time.Time) error
 
 	// Set tokens as blacklisted
 	BlacklistTokens(ctx context.Context, owner string, req *pb.BlacklistTokensRequest) (*pb.BlacklistTokensResponse, error)

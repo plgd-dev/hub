@@ -187,15 +187,11 @@
                 </li>
               
                 <li>
-                  <a href="#m2moauthserver.pb.GetBlacklistedTokensRequest"><span class="badge">M</span>GetBlacklistedTokensRequest</a>
+                  <a href="#m2moauthserver.pb.CreateTokenRequest"><span class="badge">M</span>CreateTokenRequest</a>
                 </li>
               
                 <li>
-                  <a href="#m2moauthserver.pb.GetBlacklistedTokensResponse"><span class="badge">M</span>GetBlacklistedTokensResponse</a>
-                </li>
-              
-                <li>
-                  <a href="#m2moauthserver.pb.GetBlacklistedTokensResponse.Item"><span class="badge">M</span>GetBlacklistedTokensResponse.Item</a>
+                  <a href="#m2moauthserver.pb.CreateTokenResponse"><span class="badge">M</span>CreateTokenResponse</a>
                 </li>
               
                 <li>
@@ -214,7 +210,7 @@
               
               
                 <li>
-                  <a href="#m2moauthserver.pb.M2MOAuthServer"><span class="badge">S</span>M2MOAuthServer</a>
+                  <a href="#m2moauthserver.pb.M2MOAuthService"><span class="badge">S</span>M2MOAuthService</a>
                 </li>
               
             </ul>
@@ -280,7 +276,7 @@
 
         
       
-        <h3 id="m2moauthserver.pb.GetBlacklistedTokensRequest">GetBlacklistedTokensRequest</h3>
+        <h3 id="m2moauthserver.pb.CreateTokenRequest">CreateTokenRequest</h3>
         <p></p>
 
         
@@ -291,41 +287,66 @@
             <tbody>
               
                 <tr>
-                  <td>timestamp</td>
-                  <td><a href="#int64">int64</a></td>
+                  <td>client_id</td>
+                  <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p>Returns all blacklisted/revoked not expired tokens of the owner from the given timestamp </p></td>
+                  <td><p> </p></td>
                 </tr>
               
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="m2moauthserver.pb.GetBlacklistedTokensResponse">GetBlacklistedTokensResponse</h3>
-        <p></p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
+                <tr>
+                  <td>client_secret</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
               
                 <tr>
-                  <td>black_list</td>
-                  <td><a href="#m2moauthserver.pb.GetBlacklistedTokensResponse.Item">GetBlacklistedTokensResponse.Item</a></td>
+                  <td>audience</td>
+                  <td><a href="#string">string</a></td>
                   <td>repeated</td>
                   <td><p> </p></td>
                 </tr>
               
                 <tr>
-                  <td>timestamp</td>
+                  <td>scope</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>time_to_live</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>The biggest version of the blacklisted/revoked token over all tokens of owner </p></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>client_assertion_type</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>client_assertion</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>token_name</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>grant_type</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p> </p></td>
                 </tr>
               
             </tbody>
@@ -335,7 +356,7 @@
 
         
       
-        <h3 id="m2moauthserver.pb.GetBlacklistedTokensResponse.Item">GetBlacklistedTokensResponse.Item</h3>
+        <h3 id="m2moauthserver.pb.CreateTokenResponse">CreateTokenResponse</h3>
         <p></p>
 
         
@@ -346,16 +367,30 @@
             <tbody>
               
                 <tr>
-                  <td>audience</td>
+                  <td>access_token</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
                   <td><p> </p></td>
                 </tr>
               
                 <tr>
-                  <td>id</td>
+                  <td>token_type</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>expires_in</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>scope</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
                   <td><p> </p></td>
                 </tr>
               
@@ -427,7 +462,7 @@
                   <td>version</td>
                   <td><a href="#uint64">uint64</a></td>
                   <td></td>
-                  <td><p>Incremetal version for update </p></td>
+                  <td><p>Incremental version for update </p></td>
                 </tr>
               
                 <tr>
@@ -445,7 +480,7 @@
                 </tr>
               
                 <tr>
-                  <td>timestamp</td>
+                  <td>issued_at</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
                   <td><p>Unix timestamp in ns when the condition has been created/updated </p></td>
@@ -459,7 +494,7 @@
                 </tr>
               
                 <tr>
-                  <td>scopes</td>
+                  <td>scope</td>
                   <td><a href="#string">string</a></td>
                   <td>repeated</td>
                   <td><p>Token scopes </p></td>
@@ -537,7 +572,7 @@
       
 
       
-        <h3 id="m2moauthserver.pb.M2MOAuthServer">M2MOAuthServer</h3>
+        <h3 id="m2moauthserver.pb.M2MOAuthService">M2MOAuthService</h3>
         <p></p>
         <table class="enum-table">
           <thead>
@@ -546,17 +581,17 @@
           <tbody>
             
               <tr>
-                <td>GetTokens</td>
-                <td><a href="#m2moauthserver.pb.GetTokensRequest">GetTokensRequest</a></td>
-                <td><a href="#m2moauthserver.pb.Token">Token</a></td>
-                <td><p>Returns all tokens of the owner</p></td>
+                <td>CreateToken</td>
+                <td><a href="#m2moauthserver.pb.CreateTokenRequest">CreateTokenRequest</a></td>
+                <td><a href="#m2moauthserver.pb.CreateTokenResponse">CreateTokenResponse</a></td>
+                <td><p>Creates a new token</p></td>
               </tr>
             
               <tr>
-                <td>GetBlacklistedTokens</td>
-                <td><a href="#m2moauthserver.pb.GetBlacklistedTokensRequest">GetBlacklistedTokensRequest</a></td>
-                <td><a href="#m2moauthserver.pb.GetBlacklistedTokensResponse">GetBlacklistedTokensResponse</a></td>
-                <td><p>Returns all blacklisted/revoked not expired tokens</p></td>
+                <td>GetTokens</td>
+                <td><a href="#m2moauthserver.pb.GetTokensRequest">GetTokensRequest</a></td>
+                <td><a href="#m2moauthserver.pb.Token">Token</a> stream</td>
+                <td><p>Returns all tokens of the owner</p></td>
               </tr>
             
               <tr>
@@ -587,19 +622,19 @@
               
               
               <tr>
-                <td>GetTokens</td>
-                <td>GET</td>
+                <td>CreateToken</td>
+                <td>POST</td>
                 <td>/m2m-oauth-server/api/v1/tokens</td>
-                <td></td>
+                <td>*</td>
               </tr>
               
             
               
               
               <tr>
-                <td>GetBlacklistedTokens</td>
+                <td>GetTokens</td>
                 <td>GET</td>
-                <td>/m2m-oauth-server/api/v1/blacklist</td>
+                <td>/m2m-oauth-server/api/v1/tokens</td>
                 <td></td>
               </tr>
               

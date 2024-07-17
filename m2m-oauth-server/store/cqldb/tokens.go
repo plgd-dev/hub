@@ -16,9 +16,6 @@ func (s *Store) GetTokens(context.Context, string, *pb.GetTokensRequest, store.P
 func (s *Store) DeleteTokens(context.Context) error {
 	return store.ErrNotSupported
 }
-func (s *Store) GetBlacklistedTokens(context.Context, string, *pb.GetBlacklistedTokensRequest, store.ProcessTokens) error {
-	return store.ErrNotSupported
-}
 func (s *Store) BlacklistTokens(context.Context, string, *pb.BlacklistTokensRequest) (*pb.BlacklistTokensResponse, error) {
 	return nil, store.ErrNotSupported
 }

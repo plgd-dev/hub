@@ -19,171 +19,199 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	M2MOAuthServer_GetTokens_FullMethodName            = "/m2moauthserver.pb.M2MOAuthServer/GetTokens"
-	M2MOAuthServer_GetBlacklistedTokens_FullMethodName = "/m2moauthserver.pb.M2MOAuthServer/GetBlacklistedTokens"
-	M2MOAuthServer_BlacklistTokens_FullMethodName      = "/m2moauthserver.pb.M2MOAuthServer/BlacklistTokens"
+	M2MOAuthService_CreateToken_FullMethodName     = "/m2moauthserver.pb.M2MOAuthService/CreateToken"
+	M2MOAuthService_GetTokens_FullMethodName       = "/m2moauthserver.pb.M2MOAuthService/GetTokens"
+	M2MOAuthService_BlacklistTokens_FullMethodName = "/m2moauthserver.pb.M2MOAuthService/BlacklistTokens"
 )
 
-// M2MOAuthServerClient is the client API for M2MOAuthServer service.
+// M2MOAuthServiceClient is the client API for M2MOAuthService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type M2MOAuthServerClient interface {
+type M2MOAuthServiceClient interface {
+	// Creates a new token
+	CreateToken(ctx context.Context, in *CreateTokenRequest, opts ...grpc.CallOption) (*CreateTokenResponse, error)
 	// Returns all tokens of the owner
-	GetTokens(ctx context.Context, in *GetTokensRequest, opts ...grpc.CallOption) (*Token, error)
-	// Returns all blacklisted/revoked not expired tokens
-	GetBlacklistedTokens(ctx context.Context, in *GetBlacklistedTokensRequest, opts ...grpc.CallOption) (*GetBlacklistedTokensResponse, error)
+	GetTokens(ctx context.Context, in *GetTokensRequest, opts ...grpc.CallOption) (M2MOAuthService_GetTokensClient, error)
 	// Blacklists/revokes tokens
 	BlacklistTokens(ctx context.Context, in *BlacklistTokensRequest, opts ...grpc.CallOption) (*BlacklistTokensResponse, error)
 }
 
-type m2MOAuthServerClient struct {
+type m2MOAuthServiceClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewM2MOAuthServerClient(cc grpc.ClientConnInterface) M2MOAuthServerClient {
-	return &m2MOAuthServerClient{cc}
+func NewM2MOAuthServiceClient(cc grpc.ClientConnInterface) M2MOAuthServiceClient {
+	return &m2MOAuthServiceClient{cc}
 }
 
-func (c *m2MOAuthServerClient) GetTokens(ctx context.Context, in *GetTokensRequest, opts ...grpc.CallOption) (*Token, error) {
-	out := new(Token)
-	err := c.cc.Invoke(ctx, M2MOAuthServer_GetTokens_FullMethodName, in, out, opts...)
+func (c *m2MOAuthServiceClient) CreateToken(ctx context.Context, in *CreateTokenRequest, opts ...grpc.CallOption) (*CreateTokenResponse, error) {
+	out := new(CreateTokenResponse)
+	err := c.cc.Invoke(ctx, M2MOAuthService_CreateToken_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *m2MOAuthServerClient) GetBlacklistedTokens(ctx context.Context, in *GetBlacklistedTokensRequest, opts ...grpc.CallOption) (*GetBlacklistedTokensResponse, error) {
-	out := new(GetBlacklistedTokensResponse)
-	err := c.cc.Invoke(ctx, M2MOAuthServer_GetBlacklistedTokens_FullMethodName, in, out, opts...)
+func (c *m2MOAuthServiceClient) GetTokens(ctx context.Context, in *GetTokensRequest, opts ...grpc.CallOption) (M2MOAuthService_GetTokensClient, error) {
+	stream, err := c.cc.NewStream(ctx, &M2MOAuthService_ServiceDesc.Streams[0], M2MOAuthService_GetTokens_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &m2MOAuthServiceGetTokensClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
 }
 
-func (c *m2MOAuthServerClient) BlacklistTokens(ctx context.Context, in *BlacklistTokensRequest, opts ...grpc.CallOption) (*BlacklistTokensResponse, error) {
+type M2MOAuthService_GetTokensClient interface {
+	Recv() (*Token, error)
+	grpc.ClientStream
+}
+
+type m2MOAuthServiceGetTokensClient struct {
+	grpc.ClientStream
+}
+
+func (x *m2MOAuthServiceGetTokensClient) Recv() (*Token, error) {
+	m := new(Token)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *m2MOAuthServiceClient) BlacklistTokens(ctx context.Context, in *BlacklistTokensRequest, opts ...grpc.CallOption) (*BlacklistTokensResponse, error) {
 	out := new(BlacklistTokensResponse)
-	err := c.cc.Invoke(ctx, M2MOAuthServer_BlacklistTokens_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, M2MOAuthService_BlacklistTokens_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// M2MOAuthServerServer is the server API for M2MOAuthServer service.
-// All implementations must embed UnimplementedM2MOAuthServerServer
+// M2MOAuthServiceServer is the server API for M2MOAuthService service.
+// All implementations must embed UnimplementedM2MOAuthServiceServer
 // for forward compatibility
-type M2MOAuthServerServer interface {
+type M2MOAuthServiceServer interface {
+	// Creates a new token
+	CreateToken(context.Context, *CreateTokenRequest) (*CreateTokenResponse, error)
 	// Returns all tokens of the owner
-	GetTokens(context.Context, *GetTokensRequest) (*Token, error)
-	// Returns all blacklisted/revoked not expired tokens
-	GetBlacklistedTokens(context.Context, *GetBlacklistedTokensRequest) (*GetBlacklistedTokensResponse, error)
+	GetTokens(*GetTokensRequest, M2MOAuthService_GetTokensServer) error
 	// Blacklists/revokes tokens
 	BlacklistTokens(context.Context, *BlacklistTokensRequest) (*BlacklistTokensResponse, error)
-	mustEmbedUnimplementedM2MOAuthServerServer()
+	mustEmbedUnimplementedM2MOAuthServiceServer()
 }
 
-// UnimplementedM2MOAuthServerServer must be embedded to have forward compatible implementations.
-type UnimplementedM2MOAuthServerServer struct {
+// UnimplementedM2MOAuthServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedM2MOAuthServiceServer struct {
 }
 
-func (UnimplementedM2MOAuthServerServer) GetTokens(context.Context, *GetTokensRequest) (*Token, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetTokens not implemented")
+func (UnimplementedM2MOAuthServiceServer) CreateToken(context.Context, *CreateTokenRequest) (*CreateTokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateToken not implemented")
 }
-func (UnimplementedM2MOAuthServerServer) GetBlacklistedTokens(context.Context, *GetBlacklistedTokensRequest) (*GetBlacklistedTokensResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetBlacklistedTokens not implemented")
+func (UnimplementedM2MOAuthServiceServer) GetTokens(*GetTokensRequest, M2MOAuthService_GetTokensServer) error {
+	return status.Errorf(codes.Unimplemented, "method GetTokens not implemented")
 }
-func (UnimplementedM2MOAuthServerServer) BlacklistTokens(context.Context, *BlacklistTokensRequest) (*BlacklistTokensResponse, error) {
+func (UnimplementedM2MOAuthServiceServer) BlacklistTokens(context.Context, *BlacklistTokensRequest) (*BlacklistTokensResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method BlacklistTokens not implemented")
 }
-func (UnimplementedM2MOAuthServerServer) mustEmbedUnimplementedM2MOAuthServerServer() {}
+func (UnimplementedM2MOAuthServiceServer) mustEmbedUnimplementedM2MOAuthServiceServer() {}
 
-// UnsafeM2MOAuthServerServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to M2MOAuthServerServer will
+// UnsafeM2MOAuthServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to M2MOAuthServiceServer will
 // result in compilation errors.
-type UnsafeM2MOAuthServerServer interface {
-	mustEmbedUnimplementedM2MOAuthServerServer()
+type UnsafeM2MOAuthServiceServer interface {
+	mustEmbedUnimplementedM2MOAuthServiceServer()
 }
 
-func RegisterM2MOAuthServerServer(s grpc.ServiceRegistrar, srv M2MOAuthServerServer) {
-	s.RegisterService(&M2MOAuthServer_ServiceDesc, srv)
+func RegisterM2MOAuthServiceServer(s grpc.ServiceRegistrar, srv M2MOAuthServiceServer) {
+	s.RegisterService(&M2MOAuthService_ServiceDesc, srv)
 }
 
-func _M2MOAuthServer_GetTokens_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetTokensRequest)
+func _M2MOAuthService_CreateToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateTokenRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(M2MOAuthServerServer).GetTokens(ctx, in)
+		return srv.(M2MOAuthServiceServer).CreateToken(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: M2MOAuthServer_GetTokens_FullMethodName,
+		FullMethod: M2MOAuthService_CreateToken_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(M2MOAuthServerServer).GetTokens(ctx, req.(*GetTokensRequest))
+		return srv.(M2MOAuthServiceServer).CreateToken(ctx, req.(*CreateTokenRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _M2MOAuthServer_GetBlacklistedTokens_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetBlacklistedTokensRequest)
-	if err := dec(in); err != nil {
-		return nil, err
+func _M2MOAuthService_GetTokens_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(GetTokensRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
 	}
-	if interceptor == nil {
-		return srv.(M2MOAuthServerServer).GetBlacklistedTokens(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: M2MOAuthServer_GetBlacklistedTokens_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(M2MOAuthServerServer).GetBlacklistedTokens(ctx, req.(*GetBlacklistedTokensRequest))
-	}
-	return interceptor(ctx, in, info, handler)
+	return srv.(M2MOAuthServiceServer).GetTokens(m, &m2MOAuthServiceGetTokensServer{stream})
 }
 
-func _M2MOAuthServer_BlacklistTokens_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+type M2MOAuthService_GetTokensServer interface {
+	Send(*Token) error
+	grpc.ServerStream
+}
+
+type m2MOAuthServiceGetTokensServer struct {
+	grpc.ServerStream
+}
+
+func (x *m2MOAuthServiceGetTokensServer) Send(m *Token) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _M2MOAuthService_BlacklistTokens_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(BlacklistTokensRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(M2MOAuthServerServer).BlacklistTokens(ctx, in)
+		return srv.(M2MOAuthServiceServer).BlacklistTokens(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: M2MOAuthServer_BlacklistTokens_FullMethodName,
+		FullMethod: M2MOAuthService_BlacklistTokens_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(M2MOAuthServerServer).BlacklistTokens(ctx, req.(*BlacklistTokensRequest))
+		return srv.(M2MOAuthServiceServer).BlacklistTokens(ctx, req.(*BlacklistTokensRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// M2MOAuthServer_ServiceDesc is the grpc.ServiceDesc for M2MOAuthServer service.
+// M2MOAuthService_ServiceDesc is the grpc.ServiceDesc for M2MOAuthService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var M2MOAuthServer_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "m2moauthserver.pb.M2MOAuthServer",
-	HandlerType: (*M2MOAuthServerServer)(nil),
+var M2MOAuthService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "m2moauthserver.pb.M2MOAuthService",
+	HandlerType: (*M2MOAuthServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "GetTokens",
-			Handler:    _M2MOAuthServer_GetTokens_Handler,
-		},
-		{
-			MethodName: "GetBlacklistedTokens",
-			Handler:    _M2MOAuthServer_GetBlacklistedTokens_Handler,
+			MethodName: "CreateToken",
+			Handler:    _M2MOAuthService_CreateToken_Handler,
 		},
 		{
 			MethodName: "BlacklistTokens",
-			Handler:    _M2MOAuthServer_BlacklistTokens_Handler,
+			Handler:    _M2MOAuthService_BlacklistTokens_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "GetTokens",
+			Handler:       _M2MOAuthService_GetTokens_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "m2m-oauth-server/pb/service.proto",
 }

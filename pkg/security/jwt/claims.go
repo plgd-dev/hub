@@ -22,7 +22,7 @@ const (
 	ClaimID             = "jti"
 	ClaimEmail          = "email"
 	ClaimClientID       = "client_id"
-	ClaimName           = "n"
+	ClaimName           = "name"
 )
 
 var ErrOwnerClaimInvalid = errors.New("owner claim is invalid")

@@ -12,6 +12,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/mongodb"
 	"github.com/plgd-dev/hub/v2/test/config"
+	testHttp "github.com/plgd-dev/hub/v2/test/http"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 )
@@ -62,4 +63,8 @@ func NewMongoStore(t require.TestingT) (*storeMongo.Store, func()) {
 	}
 
 	return store, cleanUp
+}
+
+func HTTPURI(uri string) string {
+	return testHttp.HTTPS_SCHEME + config.M2M_OAUTH_SERVER_HTTP_HOST + uri
 }

@@ -1,4 +1,4 @@
-package service
+package http
 
 import (
 	"net/http"
@@ -10,7 +10,7 @@ import (
 func (requestHandler *RequestHandler) getJWKs(w http.ResponseWriter, _ *http.Request) {
 	resp := map[string]interface{}{
 		"keys": []jwk.Key{
-			requestHandler.accessTokenJwkKey,
+			requestHandler.m2mOAuthServiceServer.GetJWK(),
 		},
 	}
 

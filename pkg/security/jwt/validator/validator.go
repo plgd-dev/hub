@@ -2,7 +2,9 @@ package validator
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/plgd-dev/hub/v2/pkg/fn"
@@ -38,7 +40,26 @@ func (v *Validator) GetParser() *jwtValidator.Validator {
 	return v.validator
 }
 
-func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*Validator, error) {
+type GetOpenIDConfigurationFunc func(ctx context.Context, c *http.Client, authority string) (openid.Config, error)
+
+type Options struct {
+	GetOpenIDConfiguration GetOpenIDConfigurationFunc
+}
+
+func WithGetOpenIDConfiguration(f GetOpenIDConfigurationFunc) func(o *Options) {
+	return func(o *Options) {
+		o.GetOpenIDConfiguration = f
+	}
+}
+
+func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, opts ...func(o *Options)) (*Validator, error) {
+	options := Options{
+		GetOpenIDConfiguration: openid.GetConfiguration,
+	}
+	for _, o := range opts {
+		o(&options)
+	}
+
 	keys := jwtValidator.NewMultiKeyCache()
 	var onClose fn.FuncList
 	openIDConfigurations := make([]openid.Config, 0, len(config.Endpoints))
@@ -50,6 +71,10 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 
 		ctx2, cancel := context.WithTimeout(ctx, authority.HTTP.Timeout)
 		defer cancel()
+
+		if options.GetOpenIDConfiguration == nil {
+			return nil, errors.New("GetOpenIDConfiguration is nil")
+		}
 
 		openIDCfg, err := openid.GetConfiguration(ctx2, httpClient.HTTP(), authority.Authority)
 		if err != nil {

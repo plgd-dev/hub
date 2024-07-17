@@ -16,7 +16,7 @@
   },
   "tags": [
     {
-      "name": "M2MOAuthServer"
+      "name": "M2MOAuthService"
     }
   ],
   "schemes": [
@@ -32,40 +32,9 @@
   ],
   "paths": {
     "/m2m-oauth-server/api/v1/blacklist": {
-      "get": {
-        "summary": "Returns all blacklisted/revoked not expired tokens",
-        "operationId": "M2MOAuthServer_GetBlacklistedTokens",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/pbGetBlacklistedTokensResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "timestamp",
-            "description": "Returns all blacklisted/revoked not expired tokens of the owner from the given timestamp",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "format": "int64"
-          }
-        ],
-        "tags": [
-          "Tokens"
-        ]
-      },
       "post": {
         "summary": "Blacklists/revokes tokens",
-        "operationId": "M2MOAuthServer_BlacklistTokens",
+        "operationId": "M2MOAuthService_BlacklistTokens",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -98,12 +67,21 @@
     "/m2m-oauth-server/api/v1/tokens": {
       "get": {
         "summary": "Returns all tokens of the owner",
-        "operationId": "M2MOAuthServer_GetTokens",
+        "operationId": "M2MOAuthService_GetTokens",
         "responses": {
           "200": {
-            "description": "A successful response.",
+            "description": "A successful response.(streaming responses)",
             "schema": {
-              "$ref": "#/definitions/pbToken"
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/pbToken"
+                },
+                "error": {
+                  "$ref": "#/definitions/rpcStatus"
+                }
+              },
+              "title": "Stream result of pbToken"
             }
           },
           "default": {
@@ -144,21 +122,41 @@
         "tags": [
           "Tokens"
         ]
+      },
+      "post": {
+        "summary": "Creates a new token",
+        "operationId": "M2MOAuthService_CreateToken",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbCreateTokenResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbCreateTokenRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Tokens"
+        ]
       }
     }
   },
   "definitions": {
-    "GetBlacklistedTokensResponseItem": {
-      "type": "object",
-      "properties": {
-        "audience": {
-          "type": "string"
-        },
-        "id": {
-          "type": "string"
-        }
-      }
-    },
     "TokenBlackListed": {
       "type": "object",
       "properties": {
@@ -193,20 +191,63 @@
         }
       }
     },
-    "pbGetBlacklistedTokensResponse": {
+    "pbCreateTokenRequest": {
       "type": "object",
       "properties": {
-        "blackList": {
+        "clientId": {
+          "type": "string"
+        },
+        "clientSecret": {
+          "type": "string"
+        },
+        "audience": {
           "type": "array",
           "items": {
-            "type": "object",
-            "$ref": "#/definitions/GetBlacklistedTokensResponseItem"
+            "type": "string"
           }
         },
-        "timestamp": {
+        "scope": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "timeToLive": {
           "type": "string",
-          "format": "int64",
-          "title": "The biggest version of the blacklisted/revoked token over all tokens of owner"
+          "format": "int64"
+        },
+        "clientAssertionType": {
+          "type": "string"
+        },
+        "clientAssertion": {
+          "type": "string"
+        },
+        "tokenName": {
+          "type": "string"
+        },
+        "grantType": {
+          "type": "string"
+        }
+      }
+    },
+    "pbCreateTokenResponse": {
+      "type": "object",
+      "properties": {
+        "accessToken": {
+          "type": "string"
+        },
+        "tokenType": {
+          "type": "string"
+        },
+        "expiresIn": {
+          "type": "string",
+          "format": "int64"
+        },
+        "scope": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
     },
@@ -221,7 +262,7 @@
         "version": {
           "type": "string",
           "format": "uint64",
-          "title": "Incremetal version for update"
+          "title": "Incremental version for update"
         },
         "name": {
           "type": "string",
@@ -231,7 +272,7 @@
           "type": "string",
           "title": "Owner of the token"
         },
-        "timestamp": {
+        "issuedAt": {
           "type": "string",
           "format": "int64",
           "title": "Unix timestamp in ns when the condition has been created/updated"
@@ -243,7 +284,7 @@
           },
           "title": "Token Audience"
         },
-        "scopes": {
+        "scope": {
           "type": "array",
           "items": {
             "type": "string"

@@ -1,4 +1,4 @@
-package service
+package oauthsigner
 
 import (
 	"crypto/x509"

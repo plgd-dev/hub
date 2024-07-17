@@ -23,7 +23,7 @@ func (x *Token) Validate() error {
 	if x.GetClientId() == "" {
 		return errors.New("Token.ClientId is empty")
 	}
-	if x.GetTimestamp() == 0 {
+	if x.GetIssuedAt() == 0 {
 		return errors.New("Token.Timestamp is empty")
 	}
 	return nil

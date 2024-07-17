@@ -1,4 +1,4 @@
-package service_test
+package http_test
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/plgd-dev/hub/v2/m2m-oauth-server/service"
+	oauthsigner "github.com/plgd-dev/hub/v2/m2m-oauth-server/oauthSigner"
 	m2mOauthServerTest "github.com/plgd-dev/hub/v2/m2m-oauth-server/test"
 	"github.com/plgd-dev/hub/v2/m2m-oauth-server/uri"
 	"github.com/plgd-dev/hub/v2/test/config"
@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGetToken(t *testing.T) {
+func TestPostToken(t *testing.T) {
 	type want struct {
 		owner                    interface{}
 		existOriginalTokenClaims bool
@@ -43,10 +43,13 @@ func TestGetToken(t *testing.T) {
 				Ctx:          context.Background(),
 				ClientID:     m2mOauthServerTest.ServiceOAuthClient.ID,
 				ClientSecret: m2mOauthServerTest.GetSecret(t, m2mOauthServerTest.ServiceOAuthClient.ID),
-				GrantType:    string(service.GrantTypeClientCredentials),
+				GrantType:    string(oauthsigner.GrantTypeClientCredentials),
 				Host:         config.M2M_OAUTH_SERVER_HTTP_HOST,
 			},
 			wantCode: http.StatusOK,
+			want: want{
+				owner: "1",
+			},
 		},
 		{
 			name: "serviceToken - postForm",
@@ -54,18 +57,21 @@ func TestGetToken(t *testing.T) {
 				Ctx:          context.Background(),
 				ClientID:     m2mOauthServerTest.ServiceOAuthClient.ID,
 				ClientSecret: m2mOauthServerTest.GetSecret(t, m2mOauthServerTest.ServiceOAuthClient.ID),
-				GrantType:    string(service.GrantTypeClientCredentials),
+				GrantType:    string(oauthsigner.GrantTypeClientCredentials),
 				Host:         config.M2M_OAUTH_SERVER_HTTP_HOST,
 				PostForm:     true,
 			},
 			wantCode: http.StatusOK,
+			want: want{
+				owner: "1",
+			},
 		},
 		{
 			name: "snippetServiceToken - JWT",
 			args: m2mOauthServerTest.AccessTokenOptions{
 				Ctx:       context.Background(),
 				ClientID:  m2mOauthServerTest.JWTPrivateKeyOAuthClient.ID,
-				GrantType: string(service.GrantTypeClientCredentials),
+				GrantType: string(oauthsigner.GrantTypeClientCredentials),
 				Host:      config.M2M_OAUTH_SERVER_HTTP_HOST,
 				JWT:       token,
 			},
@@ -80,7 +86,7 @@ func TestGetToken(t *testing.T) {
 			args: m2mOauthServerTest.AccessTokenOptions{
 				Ctx:       context.Background(),
 				ClientID:  "invalid client",
-				GrantType: string(service.GrantTypeClientCredentials),
+				GrantType: string(oauthsigner.GrantTypeClientCredentials),
 				Host:      config.M2M_OAUTH_SERVER_HTTP_HOST,
 				JWT:       invalidToken,
 			},
@@ -91,16 +97,13 @@ func TestGetToken(t *testing.T) {
 			args: m2mOauthServerTest.AccessTokenOptions{
 				Ctx:       context.Background(),
 				ClientID:  m2mOauthServerTest.JWTPrivateKeyOAuthClient.ID,
-				GrantType: string(service.GrantTypeClientCredentials),
+				GrantType: string(oauthsigner.GrantTypeClientCredentials),
 				Host:      config.M2M_OAUTH_SERVER_HTTP_HOST,
 				JWT:       invalidToken,
 			},
 			wantCode: http.StatusUnauthorized,
 		},
 	}
-
-	cfg := m2mOauthServerTest.MakeConfig(t)
-	fmt.Printf("cfg: %v\n", cfg)
 
 	webTearDown := m2mOauthServerTest.SetUp(t)
 	defer webTearDown()

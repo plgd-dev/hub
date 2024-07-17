@@ -6,14 +6,13 @@
 - [m2m-oauth-server/pb/service.proto](#m2m-oauth-server_pb_service-proto)
     - [BlacklistTokensRequest](#m2moauthserver-pb-BlacklistTokensRequest)
     - [BlacklistTokensResponse](#m2moauthserver-pb-BlacklistTokensResponse)
-    - [GetBlacklistedTokensRequest](#m2moauthserver-pb-GetBlacklistedTokensRequest)
-    - [GetBlacklistedTokensResponse](#m2moauthserver-pb-GetBlacklistedTokensResponse)
-    - [GetBlacklistedTokensResponse.Item](#m2moauthserver-pb-GetBlacklistedTokensResponse-Item)
+    - [CreateTokenRequest](#m2moauthserver-pb-CreateTokenRequest)
+    - [CreateTokenResponse](#m2moauthserver-pb-CreateTokenResponse)
     - [GetTokensRequest](#m2moauthserver-pb-GetTokensRequest)
     - [Token](#m2moauthserver-pb-Token)
     - [Token.BlackListed](#m2moauthserver-pb-Token-BlackListed)
   
-    - [M2MOAuthServer](#m2moauthserver-pb-M2MOAuthServer)
+    - [M2MOAuthService](#m2moauthserver-pb-M2MOAuthService)
   
 - [Scalar Value Types](#scalar-value-types)
 
@@ -56,47 +55,41 @@
 
 
 
-<a name="m2moauthserver-pb-GetBlacklistedTokensRequest"></a>
+<a name="m2moauthserver-pb-CreateTokenRequest"></a>
 
-### GetBlacklistedTokensRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| timestamp | [int64](#int64) |  | Returns all blacklisted/revoked not expired tokens of the owner from the given timestamp |
-
-
-
-
-
-
-<a name="m2moauthserver-pb-GetBlacklistedTokensResponse"></a>
-
-### GetBlacklistedTokensResponse
+### CreateTokenRequest
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| black_list | [GetBlacklistedTokensResponse.Item](#m2moauthserver-pb-GetBlacklistedTokensResponse-Item) | repeated |  |
-| timestamp | [int64](#int64) |  | The biggest version of the blacklisted/revoked token over all tokens of owner |
+| client_id | [string](#string) |  |  |
+| client_secret | [string](#string) |  |  |
+| audience | [string](#string) | repeated |  |
+| scope | [string](#string) | repeated |  |
+| time_to_live | [int64](#int64) |  |  |
+| client_assertion_type | [string](#string) |  |  |
+| client_assertion | [string](#string) |  |  |
+| token_name | [string](#string) |  |  |
+| grant_type | [string](#string) |  |  |
 
 
 
 
 
 
-<a name="m2moauthserver-pb-GetBlacklistedTokensResponse-Item"></a>
+<a name="m2moauthserver-pb-CreateTokenResponse"></a>
 
-### GetBlacklistedTokensResponse.Item
+### CreateTokenResponse
 
 
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| audience | [string](#string) |  |  |
-| id | [string](#string) |  |  |
+| access_token | [string](#string) |  |  |
+| token_type | [string](#string) |  |  |
+| expires_in | [int64](#int64) |  |  |
+| scope | [string](#string) | repeated |  |
 
 
 
@@ -133,12 +126,12 @@ driven by resource change event
 | id | [string](#string) |  | Token ID / jti
 
 @gotags: bson:&#34;_id&#34; |
-| version | [uint64](#uint64) |  | Incremetal version for update |
+| version | [uint64](#uint64) |  | Incremental version for update |
 | name | [string](#string) |  | User-friendly token name |
 | owner | [string](#string) |  | Owner of the token |
-| timestamp | [int64](#int64) |  | Unix timestamp in ns when the condition has been created/updated |
+| issued_at | [int64](#int64) |  | Unix timestamp in ns when the condition has been created/updated |
 | audience | [string](#string) | repeated | Token Audience |
-| scopes | [string](#string) | repeated | Token scopes |
+| scope | [string](#string) | repeated | Token scopes |
 | expiration | [int64](#int64) |  | Original token expiration |
 | client_id | [string](#string) |  | Client ID |
 | original_token_claims | [google.protobuf.Value](#google-protobuf-Value) |  | Original token claims |
@@ -171,15 +164,15 @@ driven by resource change event
  
 
 
-<a name="m2moauthserver-pb-M2MOAuthServer"></a>
+<a name="m2moauthserver-pb-M2MOAuthService"></a>
 
-### M2MOAuthServer
+### M2MOAuthService
 
 
 | Method Name | Request Type | Response Type | Description |
 | ----------- | ------------ | ------------- | ------------|
-| GetTokens | [GetTokensRequest](#m2moauthserver-pb-GetTokensRequest) | [Token](#m2moauthserver-pb-Token) | Returns all tokens of the owner |
-| GetBlacklistedTokens | [GetBlacklistedTokensRequest](#m2moauthserver-pb-GetBlacklistedTokensRequest) | [GetBlacklistedTokensResponse](#m2moauthserver-pb-GetBlacklistedTokensResponse) | Returns all blacklisted/revoked not expired tokens |
+| CreateToken | [CreateTokenRequest](#m2moauthserver-pb-CreateTokenRequest) | [CreateTokenResponse](#m2moauthserver-pb-CreateTokenResponse) | Creates a new token |
+| GetTokens | [GetTokensRequest](#m2moauthserver-pb-GetTokensRequest) | [Token](#m2moauthserver-pb-Token) stream | Returns all tokens of the owner |
 | BlacklistTokens | [BlacklistTokensRequest](#m2moauthserver-pb-BlacklistTokensRequest) | [BlacklistTokensResponse](#m2moauthserver-pb-BlacklistTokensResponse) | Blacklists/revokes tokens |
 
  

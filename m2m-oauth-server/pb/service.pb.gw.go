@@ -31,79 +31,61 @@ var _ = runtime.String
 var _ = utilities.NewDoubleArray
 var _ = metadata.Join
 
+func request_M2MOAuthService_CreateToken_0(ctx context.Context, marshaler runtime.Marshaler, client M2MOAuthServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq CreateTokenRequest
+	var metadata runtime.ServerMetadata
+
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := client.CreateToken(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_M2MOAuthService_CreateToken_0(ctx context.Context, marshaler runtime.Marshaler, server M2MOAuthServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq CreateTokenRequest
+	var metadata runtime.ServerMetadata
+
+	if err := marshaler.NewDecoder(req.Body).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := server.CreateToken(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
 var (
-	filter_M2MOAuthServer_GetTokens_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+	filter_M2MOAuthService_GetTokens_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 )
 
-func request_M2MOAuthServer_GetTokens_0(ctx context.Context, marshaler runtime.Marshaler, client M2MOAuthServerClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_M2MOAuthService_GetTokens_0(ctx context.Context, marshaler runtime.Marshaler, client M2MOAuthServiceClient, req *http.Request, pathParams map[string]string) (M2MOAuthService_GetTokensClient, runtime.ServerMetadata, error) {
 	var protoReq GetTokensRequest
 	var metadata runtime.ServerMetadata
 
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_M2MOAuthServer_GetTokens_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_M2MOAuthService_GetTokens_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := client.GetTokens(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
-	return msg, metadata, err
+	stream, err := client.GetTokens(ctx, &protoReq)
+	if err != nil {
+		return nil, metadata, err
+	}
+	header, err := stream.Header()
+	if err != nil {
+		return nil, metadata, err
+	}
+	metadata.HeaderMD = header
+	return stream, metadata, nil
 
 }
 
-func local_request_M2MOAuthServer_GetTokens_0(ctx context.Context, marshaler runtime.Marshaler, server M2MOAuthServerServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetTokensRequest
-	var metadata runtime.ServerMetadata
-
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_M2MOAuthServer_GetTokens_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	msg, err := server.GetTokens(ctx, &protoReq)
-	return msg, metadata, err
-
-}
-
-var (
-	filter_M2MOAuthServer_GetBlacklistedTokens_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
-)
-
-func request_M2MOAuthServer_GetBlacklistedTokens_0(ctx context.Context, marshaler runtime.Marshaler, client M2MOAuthServerClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetBlacklistedTokensRequest
-	var metadata runtime.ServerMetadata
-
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_M2MOAuthServer_GetBlacklistedTokens_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	msg, err := client.GetBlacklistedTokens(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
-	return msg, metadata, err
-
-}
-
-func local_request_M2MOAuthServer_GetBlacklistedTokens_0(ctx context.Context, marshaler runtime.Marshaler, server M2MOAuthServerServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq GetBlacklistedTokensRequest
-	var metadata runtime.ServerMetadata
-
-	if err := req.ParseForm(); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_M2MOAuthServer_GetBlacklistedTokens_0); err != nil {
-		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
-	}
-
-	msg, err := server.GetBlacklistedTokens(ctx, &protoReq)
-	return msg, metadata, err
-
-}
-
-func request_M2MOAuthServer_BlacklistTokens_0(ctx context.Context, marshaler runtime.Marshaler, client M2MOAuthServerClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_M2MOAuthService_BlacklistTokens_0(ctx context.Context, marshaler runtime.Marshaler, client M2MOAuthServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq BlacklistTokensRequest
 	var metadata runtime.ServerMetadata
 
@@ -116,7 +98,7 @@ func request_M2MOAuthServer_BlacklistTokens_0(ctx context.Context, marshaler run
 
 }
 
-func local_request_M2MOAuthServer_BlacklistTokens_0(ctx context.Context, marshaler runtime.Marshaler, server M2MOAuthServerServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_M2MOAuthService_BlacklistTokens_0(ctx context.Context, marshaler runtime.Marshaler, server M2MOAuthServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq BlacklistTokensRequest
 	var metadata runtime.ServerMetadata
 
@@ -129,13 +111,13 @@ func local_request_M2MOAuthServer_BlacklistTokens_0(ctx context.Context, marshal
 
 }
 
-// RegisterM2MOAuthServerHandlerServer registers the http handlers for service M2MOAuthServer to "mux".
-// UnaryRPC     :call M2MOAuthServerServer directly.
+// RegisterM2MOAuthServiceHandlerServer registers the http handlers for service M2MOAuthService to "mux".
+// UnaryRPC     :call M2MOAuthServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
-// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterM2MOAuthServerHandlerFromEndpoint instead.
-func RegisterM2MOAuthServerHandlerServer(ctx context.Context, mux *runtime.ServeMux, server M2MOAuthServerServer) error {
+// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterM2MOAuthServiceHandlerFromEndpoint instead.
+func RegisterM2MOAuthServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server M2MOAuthServiceServer) error {
 
-	mux.Handle("GET", pattern_M2MOAuthServer_GetTokens_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_M2MOAuthService_CreateToken_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -143,12 +125,12 @@ func RegisterM2MOAuthServerHandlerServer(ctx context.Context, mux *runtime.Serve
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/m2moauthserver.pb.M2MOAuthServer/GetTokens", runtime.WithHTTPPathPattern("/m2m-oauth-server/api/v1/tokens"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/m2moauthserver.pb.M2MOAuthService/CreateToken", runtime.WithHTTPPathPattern("/m2m-oauth-server/api/v1/tokens"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_M2MOAuthServer_GetTokens_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_M2MOAuthService_CreateToken_0(annotatedContext, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
@@ -156,36 +138,18 @@ func RegisterM2MOAuthServerHandlerServer(ctx context.Context, mux *runtime.Serve
 			return
 		}
 
-		forward_M2MOAuthServer_GetTokens_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_M2MOAuthService_CreateToken_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_M2MOAuthServer_GetBlacklistedTokens_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		var stream runtime.ServerTransportStream
-		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
-		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		var err error
-		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/m2moauthserver.pb.M2MOAuthServer/GetBlacklistedTokens", runtime.WithHTTPPathPattern("/m2m-oauth-server/api/v1/blacklist"))
-		if err != nil {
-			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
-			return
-		}
-		resp, md, err := local_request_M2MOAuthServer_GetBlacklistedTokens_0(annotatedContext, inboundMarshaler, server, req, pathParams)
-		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
-		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
-		if err != nil {
-			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
-			return
-		}
-
-		forward_M2MOAuthServer_GetBlacklistedTokens_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
-
+	mux.Handle("GET", pattern_M2MOAuthService_GetTokens_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		err := status.Error(codes.Unimplemented, "streaming calls are not yet supported in the in-process transport")
+		_, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+		return
 	})
 
-	mux.Handle("POST", pattern_M2MOAuthServer_BlacklistTokens_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_M2MOAuthService_BlacklistTokens_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
@@ -193,12 +157,12 @@ func RegisterM2MOAuthServerHandlerServer(ctx context.Context, mux *runtime.Serve
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/m2moauthserver.pb.M2MOAuthServer/BlacklistTokens", runtime.WithHTTPPathPattern("/m2m-oauth-server/api/v1/blacklist"))
+		annotatedContext, err = runtime.AnnotateIncomingContext(ctx, mux, req, "/m2moauthserver.pb.M2MOAuthService/BlacklistTokens", runtime.WithHTTPPathPattern("/m2m-oauth-server/api/v1/blacklist"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_M2MOAuthServer_BlacklistTokens_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_M2MOAuthService_BlacklistTokens_0(annotatedContext, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
@@ -206,16 +170,16 @@ func RegisterM2MOAuthServerHandlerServer(ctx context.Context, mux *runtime.Serve
 			return
 		}
 
-		forward_M2MOAuthServer_BlacklistTokens_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_M2MOAuthService_BlacklistTokens_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	return nil
 }
 
-// RegisterM2MOAuthServerHandlerFromEndpoint is same as RegisterM2MOAuthServerHandler but
+// RegisterM2MOAuthServiceHandlerFromEndpoint is same as RegisterM2MOAuthServiceHandler but
 // automatically dials to "endpoint" and closes the connection when "ctx" gets done.
-func RegisterM2MOAuthServerHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
+func RegisterM2MOAuthServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
 	conn, err := grpc.NewClient(endpoint, opts...)
 	if err != nil {
 		return err
@@ -235,85 +199,85 @@ func RegisterM2MOAuthServerHandlerFromEndpoint(ctx context.Context, mux *runtime
 		}()
 	}()
 
-	return RegisterM2MOAuthServerHandler(ctx, mux, conn)
+	return RegisterM2MOAuthServiceHandler(ctx, mux, conn)
 }
 
-// RegisterM2MOAuthServerHandler registers the http handlers for service M2MOAuthServer to "mux".
+// RegisterM2MOAuthServiceHandler registers the http handlers for service M2MOAuthService to "mux".
 // The handlers forward requests to the grpc endpoint over "conn".
-func RegisterM2MOAuthServerHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	return RegisterM2MOAuthServerHandlerClient(ctx, mux, NewM2MOAuthServerClient(conn))
+func RegisterM2MOAuthServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+	return RegisterM2MOAuthServiceHandlerClient(ctx, mux, NewM2MOAuthServiceClient(conn))
 }
 
-// RegisterM2MOAuthServerHandlerClient registers the http handlers for service M2MOAuthServer
-// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "M2MOAuthServerClient".
-// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "M2MOAuthServerClient"
+// RegisterM2MOAuthServiceHandlerClient registers the http handlers for service M2MOAuthService
+// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "M2MOAuthServiceClient".
+// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "M2MOAuthServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "M2MOAuthServerClient" to call the correct interceptors.
-func RegisterM2MOAuthServerHandlerClient(ctx context.Context, mux *runtime.ServeMux, client M2MOAuthServerClient) error {
+// "M2MOAuthServiceClient" to call the correct interceptors.
+func RegisterM2MOAuthServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client M2MOAuthServiceClient) error {
 
-	mux.Handle("GET", pattern_M2MOAuthServer_GetTokens_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_M2MOAuthService_CreateToken_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/m2moauthserver.pb.M2MOAuthServer/GetTokens", runtime.WithHTTPPathPattern("/m2m-oauth-server/api/v1/tokens"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/m2moauthserver.pb.M2MOAuthService/CreateToken", runtime.WithHTTPPathPattern("/m2m-oauth-server/api/v1/tokens"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_M2MOAuthServer_GetTokens_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_M2MOAuthService_CreateToken_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_M2MOAuthServer_GetTokens_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_M2MOAuthService_CreateToken_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_M2MOAuthServer_GetBlacklistedTokens_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_M2MOAuthService_GetTokens_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/m2moauthserver.pb.M2MOAuthServer/GetBlacklistedTokens", runtime.WithHTTPPathPattern("/m2m-oauth-server/api/v1/blacklist"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/m2moauthserver.pb.M2MOAuthService/GetTokens", runtime.WithHTTPPathPattern("/m2m-oauth-server/api/v1/tokens"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_M2MOAuthServer_GetBlacklistedTokens_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_M2MOAuthService_GetTokens_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_M2MOAuthServer_GetBlacklistedTokens_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_M2MOAuthService_GetTokens_0(annotatedContext, mux, outboundMarshaler, w, req, func() (proto.Message, error) { return resp.Recv() }, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_M2MOAuthServer_BlacklistTokens_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_M2MOAuthService_BlacklistTokens_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
 		var err error
 		var annotatedContext context.Context
-		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/m2moauthserver.pb.M2MOAuthServer/BlacklistTokens", runtime.WithHTTPPathPattern("/m2m-oauth-server/api/v1/blacklist"))
+		annotatedContext, err = runtime.AnnotateContext(ctx, mux, req, "/m2moauthserver.pb.M2MOAuthService/BlacklistTokens", runtime.WithHTTPPathPattern("/m2m-oauth-server/api/v1/blacklist"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_M2MOAuthServer_BlacklistTokens_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_M2MOAuthService_BlacklistTokens_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_M2MOAuthServer_BlacklistTokens_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_M2MOAuthService_BlacklistTokens_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -321,17 +285,17 @@ func RegisterM2MOAuthServerHandlerClient(ctx context.Context, mux *runtime.Serve
 }
 
 var (
-	pattern_M2MOAuthServer_GetTokens_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"m2m-oauth-server", "api", "v1", "tokens"}, ""))
+	pattern_M2MOAuthService_CreateToken_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"m2m-oauth-server", "api", "v1", "tokens"}, ""))
 
-	pattern_M2MOAuthServer_GetBlacklistedTokens_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"m2m-oauth-server", "api", "v1", "blacklist"}, ""))
+	pattern_M2MOAuthService_GetTokens_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"m2m-oauth-server", "api", "v1", "tokens"}, ""))
 
-	pattern_M2MOAuthServer_BlacklistTokens_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"m2m-oauth-server", "api", "v1", "blacklist"}, ""))
+	pattern_M2MOAuthService_BlacklistTokens_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"m2m-oauth-server", "api", "v1", "blacklist"}, ""))
 )
 
 var (
-	forward_M2MOAuthServer_GetTokens_0 = runtime.ForwardResponseMessage
+	forward_M2MOAuthService_CreateToken_0 = runtime.ForwardResponseMessage
 
-	forward_M2MOAuthServer_GetBlacklistedTokens_0 = runtime.ForwardResponseMessage
+	forward_M2MOAuthService_GetTokens_0 = runtime.ForwardResponseStream
 
-	forward_M2MOAuthServer_BlacklistTokens_0 = runtime.ForwardResponseMessage
+	forward_M2MOAuthService_BlacklistTokens_0 = runtime.ForwardResponseMessage
 )

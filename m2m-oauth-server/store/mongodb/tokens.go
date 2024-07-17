@@ -11,11 +11,10 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/mongodb"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func (s *Store) CreateToken(ctx context.Context, owner string, token *pb.Token) (*pb.Token, error) {
-	if owner == "" {
+	if token.Owner == "" {
 		token.Owner = owner
 	}
 	if token.GetId() == "" {
@@ -109,35 +108,6 @@ func (s *Store) DeleteTokens(ctx context.Context, now time.Time) error {
 	}
 	_, err := s.Store.Collection(tokensCol).DeleteMany(ctx, deleteFilter)
 	return err
-}
-
-func (s *Store) GetBlacklistedTokens(ctx context.Context, owner string, req *pb.GetBlacklistedTokensRequest, process store.ProcessTokens) error {
-	if owner == "" {
-		return store.ErrInvalidArgument
-	}
-	filter := bson.D{
-		{Key: pb.OwnerKey, Value: owner},
-		{
-			Key: mongodb.Or, Value: bson.A{
-				bson.M{
-					pb.ExpirationKey: bson.M{"$gte": time.Now().UnixNano()},
-				},
-				bson.M{
-					pb.ExpirationKey: bson.M{mongodb.Exists: false},
-				},
-				bson.M{
-					pb.ExpirationKey: int64(0),
-				},
-			},
-		},
-		{Key: pb.BlackListedTimestampKey, Value: bson.M{"$gt": req.GetTimestamp()}},
-		{Key: pb.BlackListedFlagKey, Value: true},
-	}
-	cur, err := s.Store.Collection(tokensCol).Find(ctx, filter, options.Find().SetHint(expirationOwnerBlacklistedIndex.Keys))
-	if err != nil {
-		return err
-	}
-	return processCursor(ctx, cur, process)
 }
 
 func (s *Store) BlacklistTokens(ctx context.Context, owner string, req *pb.BlacklistTokensRequest) (*pb.BlacklistTokensResponse, error) {

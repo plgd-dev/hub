@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	oauthsigner "github.com/plgd-dev/hub/v2/m2m-oauth-server/oauthSigner"
 	"github.com/plgd-dev/hub/v2/m2m-oauth-server/service"
 	"github.com/plgd-dev/hub/v2/m2m-oauth-server/uri"
 	"github.com/plgd-dev/hub/v2/pkg/config/property/urischeme"
@@ -32,30 +33,31 @@ const (
 	DeviceIDClaim = testOAuthUri.DeviceIDClaimKey
 )
 
-var ServiceOAuthClient = service.Client{
+var ServiceOAuthClient = oauthsigner.Client{
 	ID:                  "serviceClient",
 	SecretFile:          "data:,serviceClientSecret",
+	Owner:               "1",
 	AccessTokenLifetime: 0,
-	AllowedGrantTypes:   []service.GrantType{service.GrantTypeClientCredentials},
+	AllowedGrantTypes:   []oauthsigner.GrantType{oauthsigner.GrantTypeClientCredentials},
 	AllowedAudiences:    nil,
 	AllowedScopes:       nil,
 	InsertTokenClaims:   map[string]interface{}{"hardcodedClaim": true},
 }
 
-var JWTPrivateKeyOAuthClient = service.Client{
+var JWTPrivateKeyOAuthClient = oauthsigner.Client{
 	ID:                  "JWTPrivateKeyClient",
 	SecretFile:          "data:,JWTPrivateKeyClientSecret",
 	AccessTokenLifetime: 0,
-	AllowedGrantTypes:   []service.GrantType{service.GrantTypeClientCredentials},
+	AllowedGrantTypes:   []oauthsigner.GrantType{oauthsigner.GrantTypeClientCredentials},
 	AllowedAudiences:    nil,
 	AllowedScopes:       nil,
-	JWTPrivateKey: service.PrivateKeyJWTConfig{
+	JWTPrivateKey: oauthsigner.PrivateKeyJWTConfig{
 		Enabled:       true,
 		Authorization: config.MakeValidatorConfig(),
 	},
 }
 
-var OAuthClients = service.OAuthClientsConfig{
+var OAuthClients = oauthsigner.OAuthClientsConfig{
 	&ServiceOAuthClient,
 	&JWTPrivateKeyOAuthClient,
 }
@@ -65,13 +67,13 @@ func MakeConfig(t require.TestingT) service.Config {
 
 	cfg.Log = log.MakeDefaultConfig()
 
-	cfg.APIs.HTTP.Connection = config.MakeListenerConfig(config.M2M_OAUTH_SERVER_HTTP_HOST)
-	cfg.APIs.HTTP.Connection.TLS.ClientCertificateRequired = false
+	cfg.APIs.HTTP.Addr = config.M2M_OAUTH_SERVER_HTTP_HOST
 	cfg.APIs.HTTP.Server = config.MakeHttpServerConfig()
 	cfg.Clients.OpenTelemetryCollector = kitNetHttp.OpenTelemetryCollectorConfig{
 		Config: config.MakeOpenTelemetryCollectorClient(),
 	}
-
+	cfg.APIs.GRPC = config.MakeGrpcServerConfig(config.M2M_OAUTH_SERVER_HOST)
+	cfg.APIs.GRPC.TLS.ClientCertificateRequired = false
 	cfg.Clients.Storage = MakeStoreConfig()
 
 	cfg.OAuthSigner.PrivateKeyFile = urischeme.URIScheme(os.Getenv("M2M_OAUTH_SERVER_PRIVATE_KEY"))
@@ -203,7 +205,7 @@ func GetAccessToken(t *testing.T, expectedCode int, opts ...func(opts *AccessTok
 		Host:         config.M2M_OAUTH_SERVER_HTTP_HOST,
 		ClientID:     ServiceOAuthClient.ID,
 		ClientSecret: GetSecret(t, ServiceOAuthClient.ID),
-		GrantType:    string(service.GrantTypeClientCredentials),
+		GrantType:    string(oauthsigner.GrantTypeClientCredentials),
 		Ctx:          context.Background(),
 	}
 	for _, o := range opts {
