@@ -138,13 +138,13 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 	var opts []service.SetUpOption
 	if resourceFilter.leadResourceTypeFilterEnabled {
 		coapGWCfg := coapgwTest.MakeConfig(t)
-		coapGWCfg.Clients.Eventbus.NATS.LeadResourceTypeEnabled = true
+		coapGWCfg.Clients.Eventbus.NATS.LeadResourceType.Enabled = true
 		rdCfg := rdTest.MakeConfig(t)
-		rdCfg.Clients.Eventbus.NATS.LeadResourceTypeEnabled = true
+		rdCfg.Clients.Eventbus.NATS.LeadResourceType.Enabled = true
 		grpcGWCfg := grpcgwTest.MakeConfig(t)
-		grpcGWCfg.Clients.Eventbus.NATS.LeadResourceTypeEnabled = true
+		grpcGWCfg.Clients.Eventbus.NATS.LeadResourceType.Enabled = true
 		raCfg := raTest.MakeConfig(t)
-		raCfg.Clients.Eventbus.NATS.LeadResourceType = &natsClient.LeadResourceTypeConfig{
+		raCfg.Clients.Eventbus.NATS.LeadResourceType = &natsClient.LeadResourceTypePublisherConfig{
 			Enabled:     true,
 			RegexFilter: []string{types.CORE_LIGHT},
 			UseUUID:     config.LeadResourceUseUUID(),

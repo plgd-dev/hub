@@ -28,7 +28,7 @@ func NewResourceSubscriber(ctx context.Context, config natsClient.ConfigSubscrib
 	}
 
 	subscriber, err := subscriber.New(nats.GetConn(),
-		config.PendingLimits, config.LeadResourceTypeEnabled,
+		config.PendingLimits, config.LeadResourceType.IsEnabled(),
 		logger,
 		subscriber.WithUnmarshaler(utils.Unmarshal))
 	if err != nil {

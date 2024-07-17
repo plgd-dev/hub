@@ -13,7 +13,7 @@ func NewClientAndSubscriber(config client.ConfigSubscriber, fileWatcher *fsnotif
 		return nil, nil, err
 	}
 
-	p, err := subscriber.New(c.GetConn(), config.PendingLimits, config.LeadResourceTypeEnabled, logger, opts...)
+	p, err := subscriber.New(c.GetConn(), config.PendingLimits, config.LeadResourceType.IsEnabled(), logger, opts...)
 	if err != nil {
 		c.Close()
 		return nil, nil, err

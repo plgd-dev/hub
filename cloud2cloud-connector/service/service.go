@@ -97,7 +97,7 @@ func newSubscriber(config natsClient.ConfigSubscriber, fileWatcher *fsnotify.Wat
 	fl.AddFunc(nats.Close)
 
 	sub, err := subscriber.New(nats.GetConn(),
-		config.PendingLimits, config.LeadResourceTypeEnabled,
+		config.PendingLimits, config.LeadResourceType.IsEnabled(),
 		logger, subscriber.WithUnmarshaler(utils.Unmarshal))
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create subscriber: %w", err)

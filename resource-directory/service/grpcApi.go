@@ -131,7 +131,7 @@ func newRequestHandlerFromConfig(ctx context.Context, config Config, publicConfi
 	closeFunc.AddFunc(natsClient.Close)
 
 	resourceSubscriber, err := subscriber.New(natsClient.GetConn(),
-		config.Clients.Eventbus.NATS.PendingLimits, config.Clients.Eventbus.NATS.LeadResourceTypeEnabled,
+		config.Clients.Eventbus.NATS.PendingLimits, config.Clients.Eventbus.NATS.LeadResourceType.IsEnabled(),
 		logger,
 		subscriber.WithGoPool(goroutinePoolGo),
 		subscriber.WithUnmarshaler(utils.Unmarshal),

@@ -70,7 +70,7 @@ leadResourceType:
 			},
 			want: func() client.ConfigPublisher {
 				c := basicConfig
-				c.LeadResourceType = &client.LeadResourceTypeConfig{
+				c.LeadResourceType = &client.LeadResourceTypePublisherConfig{
 					Enabled: true,
 					RegexFilter: []string{
 						"^a",

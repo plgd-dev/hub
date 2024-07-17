@@ -357,7 +357,7 @@ LOOP:
 	}
 }
 
-func testRequestHandlerSubscribeToChangedEvents(t *testing.T, cfg *natsClient.LeadResourceTypeConfig, createSubscription *pb.SubscribeToEvents_CreateSubscription, filterExpectedEvents func(href string) bool) {
+func testRequestHandlerSubscribeToChangedEvents(t *testing.T, cfg *natsClient.LeadResourceTypePublisherConfig, createSubscription *pb.SubscribeToEvents_CreateSubscription, filterExpectedEvents func(href string) bool) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
@@ -417,7 +417,7 @@ func testRequestHandlerSubscribeToChangedEvents(t *testing.T, cfg *natsClient.Le
 }
 
 func TestRequestHandlerSubscribeToAllResourceEvents(t *testing.T) {
-	cfg := &natsClient.LeadResourceTypeConfig{
+	cfg := &natsClient.LeadResourceTypePublisherConfig{
 		Enabled: true,
 		Filter:  natsClient.LeadResourceTypeFilter_First,
 	}
@@ -440,7 +440,7 @@ func TestRequestHandlerSubscribeToAllResourceEvents(t *testing.T) {
 }
 
 func TestRequestHandlerSubscribeToResourceChangedEventsWithLeadResourceTypeLastAndUseUUID(t *testing.T) {
-	cfg := &natsClient.LeadResourceTypeConfig{
+	cfg := &natsClient.LeadResourceTypePublisherConfig{
 		Enabled: true,
 		Filter:  natsClient.LeadResourceTypeFilter_Last,
 		UseUUID: true,
@@ -463,7 +463,7 @@ func TestRequestHandlerSubscribeToResourceChangedEventsWithLeadResourceTypeLastA
 func TestRequestHandlerSubscribeToResourceChangedEventsWithLeadResourceTypeRegex(t *testing.T) {
 	// must match the regexFilter
 	expectedHrefs := []string{test.TestResourceLightInstanceHref("1"), softwareupdate.ResourceURI, configuration.ResourceURI}
-	cfg := &natsClient.LeadResourceTypeConfig{
+	cfg := &natsClient.LeadResourceTypePublisherConfig{
 		Enabled:     true,
 		RegexFilter: []string{"core\\.light", "oic\\.r.*", ".*\\.con", "x\\.plgd\\.dev\\..*"}, // x.plgd.dev.* is extra, it is published, but not subscribed to
 	}

@@ -223,7 +223,7 @@ func newResourceSubscription(req *mux.Message, client *session, authCtx *authori
 		seqNum:   2,
 	}
 
-	sub := subscription.New(r.eventHandler, req.Token().String(), client.server.config.Clients.Eventbus.NATS.LeadResourceTypeEnabled,
+	sub := subscription.New(r.eventHandler, req.Token().String(), client.server.config.Clients.Eventbus.NATS.LeadResourceType.IsEnabled(),
 		&pb.SubscribeToEvents_CreateSubscription{
 			ResourceIdFilter: []*pb.ResourceIdFilter{{ResourceId: &commands.ResourceId{DeviceId: deviceID, Href: href}}},
 			EventFilter:      []pb.SubscribeToEvents_CreateSubscription_Event{pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED, pb.SubscribeToEvents_CreateSubscription_UNREGISTERED, pb.SubscribeToEvents_CreateSubscription_RESOURCE_UNPUBLISHED},

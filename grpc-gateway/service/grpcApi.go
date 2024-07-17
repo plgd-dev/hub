@@ -137,7 +137,7 @@ func newRequestHandlerFromConfig(config Config, fileWatcher *fsnotify.Watcher, l
 	closeFunc.AddFunc(closeResourceDirectoryClient)
 
 	resourceSubscriber, err := subscriber.New(natsClient.GetConn(),
-		config.Clients.Eventbus.NATS.PendingLimits, config.Clients.Eventbus.NATS.LeadResourceTypeEnabled,
+		config.Clients.Eventbus.NATS.PendingLimits, config.Clients.Eventbus.NATS.LeadResourceType.IsEnabled(),
 		logger,
 		subscriber.WithGoPool(goroutinePoolGo),
 		subscriber.WithUnmarshaler(utils.Unmarshal),

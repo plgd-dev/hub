@@ -209,7 +209,7 @@ func MakePublisherConfig(t require.TestingT) natsClient.ConfigPublisher {
 	if filterIn == "" && regexFilterIn == "" {
 		return cp
 	}
-	lrt := &natsClient.LeadResourceTypeConfig{
+	lrt := &natsClient.LeadResourceTypePublisherConfig{
 		Enabled: true,
 		UseUUID: LeadResourceUseUUID(),
 	}
@@ -240,7 +240,9 @@ func MakeSubscriberConfig() natsClient.ConfigSubscriber {
 			},
 			TLS: MakeTLSClientConfig(),
 		},
-		LeadResourceTypeEnabled: LeadResourceIsEnabled(),
+		LeadResourceType: &natsClient.LeadResourceTypeSubscriberConfig{
+			Enabled: LeadResourceIsEnabled(),
+		},
 	}
 }
 

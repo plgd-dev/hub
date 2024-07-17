@@ -243,7 +243,7 @@ func (r *RequestHandler) SubscribeToEvents(srv pb.GrpcGateway_SubscribeToEventsS
 		return err
 	}
 
-	subs := newSubscriptions(owner, r.subscriptionsCache, r.config.Clients.Eventbus.NATS.LeadResourceTypeEnabled, h.send)
+	subs := newSubscriptions(owner, r.subscriptionsCache, r.config.Clients.Eventbus.NATS.LeadResourceType.IsEnabled(), h.send)
 	defer subs.close()
 
 	for {

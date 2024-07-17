@@ -72,7 +72,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		return nil, fmt.Errorf("cannot create nats client %w", err)
 	}
 	opts := []publisher.Option{publisher.WithMarshaler(utils.Marshal), publisher.WithFlusherTimeout(config.Clients.Eventbus.NATS.Config.FlusherTimeout)}
-	if config.Clients.Eventbus.NATS.LeadResourceType != nil && config.Clients.Eventbus.NATS.LeadResourceType.Enabled {
+	if config.Clients.Eventbus.NATS.LeadResourceType.IsEnabled() {
 		lrt := config.Clients.Eventbus.NATS.LeadResourceType
 		opts = append(opts, publisher.WithLeadResourceType(lrt.GetCompiledRegexFilter(), lrt.Filter, lrt.UseUUID))
 	}

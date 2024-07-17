@@ -62,7 +62,7 @@ func CheckResourceTypeFilterString(s string) error {
 	return errors.New("unknown LeadResourceTypeFilter")
 }
 
-type LeadResourceTypeConfig struct {
+type LeadResourceTypePublisherConfig struct {
 	Enabled     bool                   `yaml:"enabled" json:"enabled"`
 	RegexFilter []string               `yaml:"regexFilter" json:"regexFilter"`
 	Filter      LeadResourceTypeFilter `yaml:"filter" json:"filter"`
@@ -71,7 +71,11 @@ type LeadResourceTypeConfig struct {
 	compiledRegexFilter []*regexp.Regexp `yaml:"-" json:"-"`
 }
 
-func (c *LeadResourceTypeConfig) Validate() error {
+func (c *LeadResourceTypePublisherConfig) IsEnabled() bool {
+	return c != nil && c.Enabled
+}
+
+func (c *LeadResourceTypePublisherConfig) Validate() error {
 	if err := CheckResourceTypeFilterString(string(c.Filter)); err != nil {
 		return fmt.Errorf("filter(%v): %w", c.Filter, err)
 	}
@@ -89,14 +93,14 @@ func (c *LeadResourceTypeConfig) Validate() error {
 	return nil
 }
 
-func (c *LeadResourceTypeConfig) GetCompiledRegexFilter() []*regexp.Regexp {
+func (c *LeadResourceTypePublisherConfig) GetCompiledRegexFilter() []*regexp.Regexp {
 	return c.compiledRegexFilter
 }
 
 type ConfigPublisher struct {
 	Config           `yaml:",inline" json:",inline"`
-	JetStream        bool                    `yaml:"jetstream" json:"jetstream"`
-	LeadResourceType *LeadResourceTypeConfig `yaml:"leadResourceType,omitempty" json:"leadResourceType,omitempty"`
+	JetStream        bool                             `yaml:"jetstream" json:"jetstream"`
+	LeadResourceType *LeadResourceTypePublisherConfig `yaml:"leadResourceType,omitempty" json:"leadResourceType,omitempty"`
 }
 
 func (c *ConfigPublisher) Validate() error {
@@ -117,7 +121,15 @@ func (c *ConfigPublisher) Validate() error {
 	return nil
 }
 
+type LeadResourceTypeSubscriberConfig struct {
+	Enabled bool `yaml:"enabled" json:"enabled"`
+}
+
+func (c *LeadResourceTypeSubscriberConfig) IsEnabled() bool {
+	return c != nil && c.Enabled
+}
+
 type ConfigSubscriber struct {
-	Config                  `yaml:",inline" json:",inline"`
-	LeadResourceTypeEnabled bool `yaml:"leadResourceTypeEnabled,omitempty" json:"leadResourceTypeEnabled,omitempty"`
+	Config           `yaml:",inline" json:",inline"`
+	LeadResourceType *LeadResourceTypeSubscriberConfig `yaml:"leadResourceType,omitempty" json:"leadResourceType,omitempty"`
 }
