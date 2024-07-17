@@ -100,7 +100,7 @@ global:
   nats:
     # -- Lead resource type configuration
     leadResourceType:
-      enabled: true
+      enabled: false
       filter: ""
       regexFilter: []
       useUUID: false
