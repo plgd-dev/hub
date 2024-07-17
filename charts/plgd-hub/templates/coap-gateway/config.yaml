@@ -110,6 +110,11 @@ data:
             {{- $natsTls := .clients.eventBus.nats.tls }}
             {{- include "plgd-hub.internalCertificateConfig" (list $ $natsTls $coapGatewayClientCertPath) | indent 10 }}
             useSystemCAPool: {{ .clients.eventBus.nats.tls.useSystemCAPool }}
+          {{- if or .clients.eventBus.nats.leadResourceType $.Values.global.nats.leadResourceType }}
+          {{- $leadResourceType := .clients.eventBus.nats.leadResourceType | default $.Values.global.nats.leadResourceType }}
+          leadResourceType:
+            enabled: {{ $leadResourceType.enabled }}
+          {{- end }}
       identityStore:
         ownerClaim: {{ .clients.identityStore.ownerClaim | default $.Values.global.ownerClaim | quote }}
         grpc:
