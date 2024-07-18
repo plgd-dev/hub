@@ -157,7 +157,6 @@ func MakeGrpcServerConfig(address string) grpcServer.Config {
 			},
 		},
 		Authorization: MakeAuthorizationConfig(),
-		},
 	}
 }
 
