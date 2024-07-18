@@ -88,6 +88,7 @@ func (s *M2MOAuthServiceServer) CreateToken(ctx context.Context, req *pb.CreateT
 	tokenReq.ownerClaim = s.signer.Config.OwnerClaim
 	tokenReq.id = uuid.NewString()
 	tokenReq.expiration = getExpirationTime(clientCfg, tokenReq)
+	tokenReq.subject = getSubject(clientCfg, tokenReq)
 	accessToken, err := s.generateAccessToken(
 		clientCfg,
 		tokenReq)
@@ -105,6 +106,7 @@ func (s *M2MOAuthServiceServer) CreateToken(ctx context.Context, req *pb.CreateT
 		Expiration:          pkgTime.UnixSec(tokenReq.expiration),
 		ClientId:            tokenReq.CreateTokenRequest.GetClientId(),
 		OriginalTokenClaims: originalTokenClaims,
+		Subject:             tokenReq.subject,
 	})
 	if err != nil {
 		return nil, status.Errorf(getGRPCErrorCode(err), "%v", errCannotCreateConfiguration(err))

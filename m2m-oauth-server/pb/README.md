@@ -134,6 +134,7 @@ driven by resource change event
 | client_id | [string](#string) |  | Client ID |
 | original_token_claims | [google.protobuf.Value](#google-protobuf-Value) |  | Original token claims |
 | blacklisted | [Token.BlackListed](#m2moauthserver-pb-Token-BlackListed) |  | Token black list section |
+| subject | [string](#string) |  | Subject of the token |
 
 
 

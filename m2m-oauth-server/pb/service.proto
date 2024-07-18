@@ -58,6 +58,8 @@ message Token { // driven by resource change event
   }
   // Token black list section
   BlackListed blacklisted = 11;
+  // Subject of the token
+  string subject = 12;
 }
 
 

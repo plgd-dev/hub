@@ -314,6 +314,10 @@
         "blacklisted": {
           "$ref": "#/definitions/TokenBlackListed",
           "title": "Token black list section"
+        },
+        "subject": {
+          "type": "string",
+          "title": "Subject of the token"
         }
       },
       "description": "driven by resource change event",

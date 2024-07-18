@@ -27,7 +27,7 @@ func makeAccessToken(clientCfg *oauthsigner.Client, tokenReq tokenRequest) (jwt.
 
 	claims := map[string]interface{}{
 		jwt.JwtIDKey:    tokenReq.id,
-		jwt.SubjectKey:  getSubject(clientCfg, tokenReq),
+		jwt.SubjectKey:  tokenReq.subject,
 		jwt.AudienceKey: tokenReq.host,
 		jwt.IssuedAtKey: tokenReq.issuedAt,
 		uri.ScopeKey:    tokenReq.scopes,
