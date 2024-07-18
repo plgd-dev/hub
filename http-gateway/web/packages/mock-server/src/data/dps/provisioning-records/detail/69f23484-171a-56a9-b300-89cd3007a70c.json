@@ -1,0 +1,250 @@
+{
+  "result": {
+    "localEndpoints": [
+      "coap://10.110.110.12:41885",
+      "coaps://10.110.110.12:49997",
+      "coap+tcp://10.110.110.12:35389",
+      "coaps+tcp://10.110.110.12:33711"
+    ],
+    "deviceId": "d9dde79c-3916-433b-4789-ca10aad6fc4a",
+    "creationDate": "1716652467413672050",
+    "attestation": {
+      "date": "1719474938251929779",
+      "x509": {
+        "certificatePem": "-----BEGIN CERTIFICATE-----\nMIIBgjCCASmgAwIBAgIQdYzG5cWdt18FWrG0WxBqNzAKBggqhkjOPQQDAjAUMRIw\nEAYDVQQDEwlNZmdSb290Q0EwIBcNMjMxMTA2MDcyNzU5WhgPMjEyMzEwMTMwNzI3\nNTlaMBIxEDAOBgNVBAMTB01mZ0NlcnQwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNC\nAAQMkz/uQi1sbMmuxgagH/A5II6CcxZz9sWpSjuxLEqPNEbL021yUaQX6/U2GBYs\npFVWzGPWIog30mgGq/jvDyQKo10wWzAfBgNVHSMEGDAWgBRchhQ5bzFpRdMG/NMg\nyH20R+5UzzAMBgNVHRMEBTADAQEAMAsGA1UdDwQEAwIDiDAdBgNVHSUEFjAUBggr\nBgEFBQcDAgYIKwYBBQUHAwEwCgYIKoZIzj0EAwIDRwAwRAIgbqEU4iOhHpD4YnjC\nO5J8lTIw+RbZ+r9uZD1K2fz4ZfkCIGFzidJQAmBSPVvEdK4X4CSf76BjEoRwXxm2\nKaeI8Vkl\n-----END CERTIFICATE-----\n",
+        "commonName": "MfgCert"
+      }
+    },
+    "cloud": {
+      "status": {
+        "coapCode": 68,
+        "date": "1719474938285092512"
+      },
+      "providerName": "plgd.dps",
+      "gateways": [
+        {
+          "uri": "coaps+tcp://try.plgd.cloud:5684",
+          "id": "1c10a3b6-287c-11ec-ac2d-13054959c274"
+        }
+      ],
+      "selectedGateway": 0
+    },
+    "ownership": {
+      "status": {
+        "date": "1719474938266133666",
+        "coapCode": 69
+      },
+      "owner": "beb32777-9680-4f42-8761-350eebe76a85"
+    },
+    "plgdTime": {
+      "date": "1719474938192355476",
+      "coapCode": 69
+    },
+    "owner": "beb32777-9680-4f42-8761-350eebe76a85",
+    "id": "69f23484-171a-56a9-b300-89cd3007a70c",
+    "enrollmentGroupId": "4f0d3d81-0e09-4f1e-9706-0997488011af",
+    "credential": {
+      "status": {
+        "date": "1719474938324358862",
+        "coapCode": 68
+      },
+      "identityCertificatePem": "-----BEGIN CERTIFICATE-----\nMIIBpDCCAUmgAwIBAgIRAPJNdAgYEQhNPjTxlF3/1v0wCgYIKoZIzj0EAwIwEjEQ\nMA4GA1UEAxMHcGxnZC1jYTAeFw0yNDA2MjcwNjU1MzhaFw0yNTA1MjUxNzAyNTFa\nMDQxMjAwBgNVBAMTKXV1aWQ6ZDlkZGU3OWMtMzkxNi00MzNiLTQ3ODktY2ExMGFh\nZDZmYzRhMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEaWg0Wurmnrl8LTvARHc+\nCu8eiLBIsKXp/RALqr2htsFK0jlkStpuxMWfSofbTiY/8gD1YmM3Q833CL0Sg+C5\nZaNeMFwwDgYDVR0PAQH/BAQDAgOIMCkGA1UdJQQiMCAGCCsGAQUFBwMCBggrBgEF\nBQcDAQYKKwYBBAGC3nwBBjAfBgNVHSMEGDAWgBQjPUu64s8tgK2IYgEQbrTl+w0z\n2jAKBggqhkjOPQQDAgNJADBGAiEA/bvt26yZJozHeXJGusuH4HLZd4eAkQy7Bc9x\nSmt3UukCIQDx9g2DUPECP/20MV18FKkitUAN3Ed4tB/gmX17tCBuQw==\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nMIIBkDCCATagAwIBAgIQFq/ergts3Jlaxk3N92FfzTAKBggqhkjOPQQDAjAdMRsw\nGQYDVQQDExJyb290LmNhLnBsZ2QuY2xvdWQwHhcNMjQwNTI1MTcwMjUxWhcNMjUw\nNTI1MTcwMjUxWjASMRAwDgYDVQQDEwdwbGdkLWNhMFkwEwYHKoZIzj0CAQYIKoZI\nzj0DAQcDQgAE5s5zak9SL6OCMM49iyJYpNvnHly3UVdTe4jaAxmMS2YM63e68Cix\nevhl849SzCnpoD9yJzFA2HmhEc82IVt66KNjMGEwDgYDVR0PAQH/BAQDAgGGMA8G\nA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFCM9S7rizy2ArYhiARButOX7DTPaMB8G\nA1UdIwQYMBaAFELK01Gtmvz99kTvIM5idzOLxerIMAoGCCqGSM49BAMCA0gAMEUC\nIG4Cnqkb+atbFIAeTFyIR4v3ABi0CjPub07xnt/bvN6FAiEAxgyW5sibfw7z3/xc\nQnA0w68sKmVRZhvfUNMYkqbk/2w=\n-----END CERTIFICATE-----\n",
+      "credentials": [
+        {
+          "type": [
+            "ASYMMETRIC_SIGNING_WITH_CERTIFICATE"
+          ],
+          "usage": "CERT",
+          "id": "0",
+          "subject": "d9dde79c-3916-433b-4789-ca10aad6fc4a",
+          "publicData": {
+            "data": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJwRENDQVVtZ0F3SUJBZ0lSQVBKTmRBZ1lFUWhOUGpUeGxGMy8xdjB3Q2dZSUtvWkl6ajBFQXdJd0VqRVEKTUE0R0ExVUVBeE1IY0d4blpDMWpZVEFlRncweU5EQTJNamN3TmpVMU16aGFGdzB5TlRBMU1qVXhOekF5TlRGYQpNRFF4TWpBd0JnTlZCQU1US1hWMWFXUTZaRGxrWkdVM09XTXRNemt4TmkwME16TmlMVFEzT0RrdFkyRXhNR0ZoClpEWm1ZelJoTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJemowREFRY0RRZ0FFYVdnMFd1cm1ucmw4TFR2QVJIYysKQ3U4ZWlMQklzS1hwL1JBTHFyMmh0c0ZLMGpsa1N0cHV4TVdmU29mYlRpWS84Z0QxWW1NM1E4MzNDTDBTZytDNQpaYU5lTUZ3d0RnWURWUjBQQVFIL0JBUURBZ09JTUNrR0ExVWRKUVFpTUNBR0NDc0dBUVVGQndNQ0JnZ3JCZ0VGCkJRY0RBUVlLS3dZQkJBR0MzbndCQmpBZkJnTlZIU01FR0RBV2dCUWpQVXU2NHM4dGdLMklZZ0VRYnJUbCt3MHoKMmpBS0JnZ3Foa2pPUFFRREFnTkpBREJHQWlFQS9idnQyNnlaSm96SGVYSkd1c3VINEhMWmQ0ZUFrUXk3QmM5eApTbXQzVXVrQ0lRRHg5ZzJEVVBFQ1AvMjBNVjE4RktraXRVQU4zRWQ0dEIvZ21YMTd0Q0J1UXc9PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCi0tLS0tQkVHSU4gQ0VSVElGSUNBVEUtLS0tLQpNSUlCa0RDQ0FUYWdBd0lCQWdJUUZxL2VyZ3RzM0psYXhrM045MkZmelRBS0JnZ3Foa2pPUFFRREFqQWRNUnN3CkdRWURWUVFERXhKeWIyOTBMbU5oTG5Cc1oyUXVZMnh2ZFdRd0hoY05NalF3TlRJMU1UY3dNalV4V2hjTk1qVXcKTlRJMU1UY3dNalV4V2pBU01SQXdEZ1lEVlFRREV3ZHdiR2RrTFdOaE1Ga3dFd1lIS29aSXpqMENBUVlJS29aSQp6ajBEQVFjRFFnQUU1czV6YWs5U0w2T0NNTTQ5aXlKWXBOdm5IbHkzVVZkVGU0amFBeG1NUzJZTTYzZTY4Q2l4CmV2aGw4NDlTekNucG9EOXlKekZBMkhtaEVjODJJVnQ2NktOak1HRXdEZ1lEVlIwUEFRSC9CQVFEQWdHR01BOEcKQTFVZEV3RUIvd1FGTUFNQkFmOHdIUVlEVlIwT0JCWUVGQ005UzdyaXp5MkFyWWhpQVJCdXRPWDdEVFBhTUI4RwpBMVVkSXdRWU1CYUFGRUxLMDFHdG12ejk5a1R2SU01aWR6T0x4ZXJJTUFvR0NDcUdTTTQ5QkFNQ0EwZ0FNRVVDCklHNENucWtiK2F0YkZJQWVURnlJUjR2M0FCaTBDalB1YjA3eG50L2J2TjZGQWlFQXhneVc1c2liZnc3ejMveGMKUW5BMHc2OHNLbVZSWmh2ZlVOTVlrcWJrLzJ3PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==",
+            "encoding": "PEM"
+          }
+        },
+        {
+          "publicData": {
+            "data": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJmVENDQVNPZ0F3SUJBZ0lSQUlwR0Jrb0U2ZXdwdFJMT1FaMXZrb1V3Q2dZSUtvWkl6ajBFQXdJd0hURWIKTUJrR0ExVUVBeE1TY205dmRDNWpZUzV3Ykdka0xtTnNiM1ZrTUNBWERUSXpNVEF4T1RBNE5EZ3hOVm9ZRHpJeApNak13T1RJMU1EZzBPREUxV2pBZE1Sc3dHUVlEVlFRREV4SnliMjkwTG1OaExuQnNaMlF1WTJ4dmRXUXdXVEFUCkJnY3Foa2pPUFFJQkJnZ3Foa2pPUFFNQkJ3TkNBQVFtMHgrMTZCdWt2ditIV0FlcnkvMG8vVlFBTzhib3hzNHcKT2lhWFRybDBhbi9iUkR6REFwc1J2cDY5SHdJY2haS0FjZTVPQ3JkZFNpVVJOdDZRZWYwQ28wSXdRREFPQmdOVgpIUThCQWY4RUJBTUNBUVl3RHdZRFZSMFRBUUgvQkFVd0F3RUIvekFkQmdOVkhRNEVGZ1FVUXNyVFVhMmEvUDMyClJPOGd6bUozTTR2RjZzZ3dDZ1lJS29aSXpqMEVBd0lEU0FBd1JRSWdOMHBnS1N4d2RvUklkV1RxaTdUcDd0eVAKb05LNERxeElsWWJuRUlJb3BlZ0NJUURsd2FUMmg2RUtaM1R3SHFBcTU1UXl3TDM3RzJwdjVKOE03dDFFcVBnQQpZQT09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K",
+            "encoding": "PEM"
+          },
+          "subject": "beb32777-9680-4f42-8761-350eebe76a85",
+          "type": [
+            "ASYMMETRIC_SIGNING_WITH_CERTIFICATE"
+          ],
+          "usage": "TRUST_CA",
+          "id": "0"
+        }
+      ]
+    },
+    "acl": {
+      "accessControlList": [
+        {
+          "deviceSubject": {
+            "deviceId": "beb32777-9680-4f42-8761-350eebe76a85"
+          },
+          "permissions": [
+            "CREATE",
+            "READ",
+            "WRITE",
+            "DELETE",
+            "NOTIFY"
+          ],
+          "resources": [
+            {
+              "href": "/CoapCloudConfResURI",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE",
+              "href": "/oic/sec/sp"
+            },
+            {
+              "wildcard": "NONE",
+              "href": "/x.plgd.dev/time",
+              "interfaces": [
+                "*"
+              ]
+            },
+            {
+              "href": "/oc/con",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "href": "/oc/swu",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "href": "/oic/mnt",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE",
+              "href": "/x.plgd.dev/time"
+            },
+            {
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONCFG_ALL"
+            }
+          ]
+        },
+        {
+          "resources": [
+            {
+              "href": "/oic/d",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE",
+              "href": "/oic/p"
+            },
+            {
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE",
+              "href": "/oic/res"
+            },
+            {
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE",
+              "href": "/oic/sec/sdi"
+            },
+            {
+              "href": "/oic/sec/doxm",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            }
+          ],
+          "connectionSubject": {
+            "type": "ANON_CLEAR"
+          },
+          "permissions": [
+            "READ"
+          ]
+        },
+        {
+          "permissions": [
+            "CREATE",
+            "READ",
+            "WRITE",
+            "DELETE",
+            "NOTIFY"
+          ],
+          "resources": [
+            {
+              "wildcard": "NONE",
+              "href": "/oc/con",
+              "interfaces": [
+                "*"
+              ]
+            },
+            {
+              "wildcard": "NONE",
+              "href": "/oc/swu",
+              "interfaces": [
+                "*"
+              ]
+            },
+            {
+              "href": "/oic/mnt",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "href": "/x.plgd.dev/time",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONCFG_ALL"
+            }
+          ],
+          "deviceSubject": {
+            "deviceId": "1c10a3b6-287c-11ec-ac2d-13054959c274"
+          }
+        }
+      ],
+      "status": {
+        "date": "1719474938340859252",
+        "coapCode": 69
+      }
+    }
+  }
+}

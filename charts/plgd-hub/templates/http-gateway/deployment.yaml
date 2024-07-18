@@ -15,7 +15,7 @@ metadata:
   {{- . | toYaml | nindent 4 }}
   {{- end }}
 spec:
-  replicas: {{ .Values.httpgateway.replicas }}
+  replicas: {{ include "plgd-hub.replicas" (list $ .Values.httpgateway.replicas) }}
   selector:
     matchLabels:
       {{- include "plgd-hub.httpgateway.selectorLabels" . | nindent 6 }}
@@ -50,7 +50,7 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          image: {{ include "plgd-hub.httpgateway.image" . | quote }}
+          image: {{ include "plgd-hub.image" (list . .Values.httpgateway) | quote }}
           imagePullPolicy: {{ .Values.httpgateway.image.pullPolicy }}
           {{- if .Values.httpgateway.command }}
           command:
@@ -88,10 +88,8 @@ spec:
             - name: service-crt
               mountPath: {{ $rdServiceCert }}
             {{- end }}
-            {{- if .Values.global.authorizationCAPool }}
-            - name: {{ .Values.extraAuthorizationCAPool.name }}
-              mountPath: {{ .Values.extraAuthorizationCAPool.mountPath }}
-            {{- end }}
+            {{- include "plgd-hub.extraCAPoolMount" (list . .Values.extraCAPool.authorization) | nindent 12 }}
+            {{- include "plgd-hub.extraCAPoolMount" (list . .Values.extraCAPool.internal) | nindent 12 }}
             {{- with .Values.httpgateway.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -112,11 +110,8 @@ spec:
           secret:
             secretName: {{ include "plgd-hub.httpgateway.serviceCertName" . }}
         {{- end }}
-        {{- if .Values.global.authorizationCAPool }}
-        - name: {{ .Values.extraAuthorizationCAPool.name }}
-          secret:
-            secretName: {{ .Values.extraAuthorizationCAPool.name }}
-        {{- end }}
+        {{- include "plgd-hub.extraCAPoolVolume" (list . .Values.extraCAPool.authorization) | nindent 8 }}
+        {{- include "plgd-hub.extraCAPoolVolume" (list . .Values.extraCAPool.internal) | nindent 8 }}
         {{- with .Values.httpgateway.extraVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}

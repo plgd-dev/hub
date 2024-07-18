@@ -36,12 +36,20 @@ func NewInterceptorWithValidator(validator Validator, auths map[string][]AuthArg
 	}
 }
 
-type DeniedClaims struct {
+type DeniedClaimsError struct {
 	jwt.MapClaims
 	Err error
 }
 
-func (c DeniedClaims) Validate() error {
+func (c DeniedClaimsError) Validate() error {
+	return c.Err
+}
+
+func (c DeniedClaimsError) Error() string {
+	return c.Err.Error()
+}
+
+func (c DeniedClaimsError) Unwrap() error {
 	return c.Err
 }
 
@@ -49,13 +57,13 @@ func MakeClaimsFunc(methods map[string][]AuthArgs) ClaimsFunc {
 	return func(_ context.Context, method, uri string) jwt.ClaimsValidator {
 		args, ok := methods[method]
 		if !ok {
-			return &DeniedClaims{Err: fmt.Errorf("inaccessible method: %v", method)}
+			return &DeniedClaimsError{Err: fmt.Errorf("inaccessible method: %v", method)}
 		}
 		for _, arg := range args {
 			if arg.URI.MatchString(uri) {
 				return pkgJwt.NewRegexpScopeClaims(arg.Scopes...)
 			}
 		}
-		return &DeniedClaims{Err: fmt.Errorf("inaccessible uri: %v %v", method, uri)}
+		return &DeniedClaimsError{Err: fmt.Errorf("inaccessible uri: %v %v", method, uri)}
 	}
 }

@@ -81,6 +81,14 @@ RUN go build \
     -o "/go/bin/$service" \
     ./cmd/service
 
+#oauth-server
+ARG service=m2m-oauth-server
+WORKDIR $root_directory/$service
+RUN go build \
+    -ldflags "-linkmode external -extldflags -static -X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" \
+    -o "/go/bin/$service" \
+    ./cmd/service
+
 #cloud2cloud-gateway
 ARG service=cloud2cloud-gateway
 WORKDIR $root_directory/$service
@@ -104,6 +112,13 @@ RUN go build \
     -ldflags "-linkmode external -extldflags -static -X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" \
     -o "/go/bin/$tool" \
     ./
+
+#snippet-service
+ARG service=snippet-service
+WORKDIR $root_directory/$service
+RUN go build -ldflags "-linkmode external -extldflags -static -X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" \
+    -o "/go/bin/$service" \
+    ./cmd/service
 
 #nats
 WORKDIR $root_directory
@@ -134,7 +149,7 @@ RUN apt update \
     && apt-get install -y --no-install-recommends ca-certificates gnupg iproute2 netcat nginx openssl wget curl sudo coreutils \
     && apt-get clean
 # yq utility in run.sh
-RUN wget https://github.com/mikefarah/yq/releases/download/v4.6.3/yq_linux_$(dpkg --print-architecture) -O /usr/bin/yq && chmod +x /usr/bin/yq
+RUN wget https://github.com/mikefarah/yq/releases/download/v4.44.2/yq_linux_$(dpkg --print-architecture) -O /usr/bin/yq && chmod +x /usr/bin/yq
 RUN wget -qO - https://pgp.mongodb.com/server-6.0.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/mongodb-6.0.gpg
 RUN echo "deb [ arch=$(dpkg --print-architecture) ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-6.0.list
 RUN apt update \
@@ -161,6 +176,8 @@ COPY --from=build /go/bin/nats /usr/local/bin/nats
 COPY --from=build /go/src/github.com/plgd-dev/hub/bundle/jetstream.json /configs/jetstream.json
 COPY --from=build /go/bin/oauth-server /usr/local/bin/oauth-server
 COPY --from=build /go/src/github.com/plgd-dev/hub/test/oauth-server/config.yaml /configs/oauth-server.yaml
+COPY --from=build /go/bin/m2m-oauth-server /usr/local/bin/m2m-oauth-server
+COPY --from=build /go/src/github.com/plgd-dev/hub/m2m-oauth-server/config.yaml /configs/m2m-oauth-server.yaml
 COPY http-gateway/web/build /usr/local/var/www
 COPY --from=build /go/bin/cloud2cloud-gateway /usr/local/bin/cloud2cloud-gateway
 COPY --from=build /go/src/github.com/plgd-dev/hub/cloud2cloud-gateway/config.yaml /configs/cloud2cloud-gateway.yaml
@@ -168,9 +185,11 @@ COPY --from=build /go/bin/cloud2cloud-connector /usr/local/bin/cloud2cloud-conne
 COPY --from=build /go/src/github.com/plgd-dev/hub/cloud2cloud-connector/config.yaml /configs/cloud2cloud-connector.yaml
 COPY --from=build /go/src/github.com/plgd-dev/hub/bundle/run.sh /usr/local/bin/run.sh
 COPY --from=build /go/src/github.com/plgd-dev/hub/bundle/nginx /nginx
+COPY --from=build /go/bin/snippet-service /usr/local/bin/snippet-service
+COPY --from=build /go/src/github.com/plgd-dev/hub/snippet-service/config.yaml /configs/snippet-service.yaml
 
 # install scylla
-RUN curl -sSf get.scylladb.com/server | sudo bash -s -- --scylla-version 5.2
+RUN curl -sSf get.scylladb.com/server | sudo bash -s -- --scylla-version 5.4
 COPY bundle/scylla /scylla
 
 # global
@@ -222,6 +241,9 @@ ENV NATS_PORT=10001
 ENV SCYLLA_SMP=1
 ENV SCYLLA_DEVELOPER_MODE=true
 ENV SCYLLA_PORT=29142
+ENV SNIPPET_SERVICE_PORT=9091
+ENV HTTP_SNIPPET_SERVICE_PORT=9092
+ENV M2M_OAUTH_SERVER_PORT=9080
 
 # OAuth
 ENV DEVICE_PROVIDER=plgd

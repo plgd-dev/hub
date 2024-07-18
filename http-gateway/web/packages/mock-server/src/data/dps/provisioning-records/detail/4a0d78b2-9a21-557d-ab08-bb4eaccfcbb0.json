@@ -1,0 +1,250 @@
+{
+  "result": {
+    "deviceId": "bcd30976-10e4-4145-5282-eb50ee55dfae",
+    "enrollmentGroupId": "4f0d3d81-0e09-4f1e-9706-0997488011af",
+    "attestation": {
+      "date": "1717157743336135946",
+      "x509": {
+        "certificatePem": "-----BEGIN CERTIFICATE-----\nMIIBhTCCASugAwIBAgIRAJ+UC+MPMl6jc9FVeHZEgB4wCgYIKoZIzj0EAwIwFDES\nMBAGA1UEAxMJTWZnUm9vdENBMCAXDTIzMTIxMTEyNTIwMVoYDzIxMjMxMTE3MTI1\nMjAxWjATMREwDwYDVQQDEwhNZmdDZXJ0MTBZMBMGByqGSM49AgEGCCqGSM49AwEH\nA0IABFU2BHkqcNsiN68hGoFGzk+QtK78su3HpObu0U6Yhq5tnbGffQ4oTcel4Lhx\nlW5FHWUPI/l2LV9Ej/i3DSaurs6jXTBbMB8GA1UdIwQYMBaAFFyGFDlvMWlF0wb8\n0yDIfbRH7lTPMAwGA1UdEwQFMAMBAQAwCwYDVR0PBAQDAgOIMB0GA1UdJQQWMBQG\nCCsGAQUFBwMCBggrBgEFBQcDATAKBggqhkjOPQQDAgNIADBFAiBM31BMFp/ImqVt\nwH55aaqYSYp00pabSyIbKwFle6B+2wIhAMqXjZ3zoEECNU7zUo/hpYPTqanak2t6\ndPVwtlKcRlPx\n-----END CERTIFICATE-----\n",
+        "commonName": "MfgCert1"
+      }
+    },
+    "acl": {
+      "status": {
+        "date": "1717157743480774484",
+        "coapCode": 69
+      },
+      "accessControlList": [
+        {
+          "deviceSubject": {
+            "deviceId": "beb32777-9680-4f42-8761-350eebe76a85"
+          },
+          "permissions": [
+            "CREATE",
+            "READ",
+            "WRITE",
+            "DELETE",
+            "NOTIFY"
+          ],
+          "resources": [
+            {
+              "href": "/CoapCloudConfResURI",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE",
+              "href": "/oic/sec/sp"
+            },
+            {
+              "href": "/x.plgd.dev/time",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "wildcard": "NONE",
+              "href": "/oc/con",
+              "interfaces": [
+                "*"
+              ]
+            },
+            {
+              "href": "/oc/swu",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE",
+              "href": "/oic/mnt"
+            },
+            {
+              "href": "/x.plgd.dev/time",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONCFG_ALL"
+            }
+          ]
+        },
+        {
+          "connectionSubject": {
+            "type": "ANON_CLEAR"
+          },
+          "permissions": [
+            "READ"
+          ],
+          "resources": [
+            {
+              "href": "/oic/d",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "href": "/oic/p",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "href": "/oic/res",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE",
+              "href": "/oic/sec/sdi"
+            },
+            {
+              "href": "/oic/sec/doxm",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            }
+          ]
+        },
+        {
+          "deviceSubject": {
+            "deviceId": "1c10a3b6-287c-11ec-ac2d-13054959c274"
+          },
+          "permissions": [
+            "CREATE",
+            "READ",
+            "WRITE",
+            "DELETE",
+            "NOTIFY"
+          ],
+          "resources": [
+            {
+              "href": "/oc/con",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "href": "/oc/swu",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "href": "/oic/mnt",
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE"
+            },
+            {
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONE",
+              "href": "/x.plgd.dev/time"
+            },
+            {
+              "interfaces": [
+                "*"
+              ],
+              "wildcard": "NONCFG_ALL"
+            }
+          ]
+        }
+      ]
+    },
+    "cloud": {
+      "status": {
+        "date": "1717157743426800468",
+        "coapCode": 68
+      },
+      "providerName": "plgd.dps",
+      "gateways": [
+        {
+          "id": "1c10a3b6-287c-11ec-ac2d-13054959c274",
+          "uri": "coaps+tcp://try.plgd.cloud:5684"
+        }
+      ],
+      "selectedGateway": 0
+    },
+    "ownership": {
+      "status": {
+        "date": "1717157743352900277",
+        "coapCode": 69
+      },
+      "owner": "beb32777-9680-4f42-8761-350eebe76a85"
+    },
+    "localEndpoints": [
+      "coap://10.110.110.12:45396",
+      "coaps://10.110.110.12:52852",
+      "coap+tcp://10.110.110.12:51863",
+      "coaps+tcp://10.110.110.12:38145"
+    ],
+    "owner": "beb32777-9680-4f42-8761-350eebe76a85",
+    "id": "4a0d78b2-9a21-557d-ab08-bb4eaccfcbb0",
+    "creationDate": "1716656687662199144",
+    "credential": {
+      "status": {
+        "date": "1717157743461436598",
+        "coapCode": 68
+      },
+      "identityCertificatePem": "-----BEGIN CERTIFICATE-----\nMIIBojCCAUigAwIBAgIQIm1TIO0PH7O+w+LXTfV1KTAKBggqhkjOPQQDAjASMRAw\nDgYDVQQDEwdwbGdkLWNhMB4XDTI0MDUzMTExMTU0M1oXDTI1MDUyNTE3MDI1MVow\nNDEyMDAGA1UEAxMpdXVpZDpiY2QzMDk3Ni0xMGU0LTQxNDUtNTI4Mi1lYjUwZWU1\nNWRmYWUwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAQK9W+P4MDWdABFVSgZOWnW\nDGEkU8abmg2zVW1MlGPZF4YKpKWEUIoqeVxpm5D/yKtzG15uuvx3U2oU3UbRGL5t\no14wXDAOBgNVHQ8BAf8EBAMCA4gwKQYDVR0lBCIwIAYIKwYBBQUHAwIGCCsGAQUF\nBwMBBgorBgEEAYLefAEGMB8GA1UdIwQYMBaAFCM9S7rizy2ArYhiARButOX7DTPa\nMAoGCCqGSM49BAMCA0gAMEUCIBMdkdXzDBJgThKP3Q1hTV/XzigwlSe7+YlXoINl\ngW8DAiEA7f9ghvAZzBbep1sMDmcTFFLquzAPNsRBSCkSquyYUNQ=\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nMIIBkDCCATagAwIBAgIQFq/ergts3Jlaxk3N92FfzTAKBggqhkjOPQQDAjAdMRsw\nGQYDVQQDExJyb290LmNhLnBsZ2QuY2xvdWQwHhcNMjQwNTI1MTcwMjUxWhcNMjUw\nNTI1MTcwMjUxWjASMRAwDgYDVQQDEwdwbGdkLWNhMFkwEwYHKoZIzj0CAQYIKoZI\nzj0DAQcDQgAE5s5zak9SL6OCMM49iyJYpNvnHly3UVdTe4jaAxmMS2YM63e68Cix\nevhl849SzCnpoD9yJzFA2HmhEc82IVt66KNjMGEwDgYDVR0PAQH/BAQDAgGGMA8G\nA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFCM9S7rizy2ArYhiARButOX7DTPaMB8G\nA1UdIwQYMBaAFELK01Gtmvz99kTvIM5idzOLxerIMAoGCCqGSM49BAMCA0gAMEUC\nIG4Cnqkb+atbFIAeTFyIR4v3ABi0CjPub07xnt/bvN6FAiEAxgyW5sibfw7z3/xc\nQnA0w68sKmVRZhvfUNMYkqbk/2w=\n-----END CERTIFICATE-----\n",
+      "credentials": [
+        {
+          "type": [
+            "ASYMMETRIC_SIGNING_WITH_CERTIFICATE"
+          ],
+          "usage": "CERT",
+          "publicData": {
+            "data": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJvakNDQVVpZ0F3SUJBZ0lRSW0xVElPMFBIN08rdytMWFRmVjFLVEFLQmdncWhrak9QUVFEQWpBU01SQXcKRGdZRFZRUURFd2R3Ykdka0xXTmhNQjRYRFRJME1EVXpNVEV4TVRVME0xb1hEVEkxTURVeU5URTNNREkxTVZvdwpOREV5TURBR0ExVUVBeE1wZFhWcFpEcGlZMlF6TURrM05pMHhNR1UwTFRReE5EVXROVEk0TWkxbFlqVXdaV1UxCk5XUm1ZV1V3V1RBVEJnY3Foa2pPUFFJQkJnZ3Foa2pPUFFNQkJ3TkNBQVFLOVcrUDRNRFdkQUJGVlNnWk9XblcKREdFa1U4YWJtZzJ6VlcxTWxHUFpGNFlLcEtXRVVJb3FlVnhwbTVEL3lLdHpHMTV1dXZ4M1Uyb1UzVWJSR0w1dApvMTR3WERBT0JnTlZIUThCQWY4RUJBTUNBNGd3S1FZRFZSMGxCQ0l3SUFZSUt3WUJCUVVIQXdJR0NDc0dBUVVGCkJ3TUJCZ29yQmdFRUFZTGVmQUVHTUI4R0ExVWRJd1FZTUJhQUZDTTlTN3JpenkyQXJZaGlBUkJ1dE9YN0RUUGEKTUFvR0NDcUdTTTQ5QkFNQ0EwZ0FNRVVDSUJNZGtkWHpEQkpnVGhLUDNRMWhUVi9Yemlnd2xTZTcrWWxYb0lObApnVzhEQWlFQTdmOWdodkFaekJiZXAxc01EbWNURkZMcXV6QVBOc1JCU0NrU3F1eVlVTlE9Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0KLS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJrRENDQVRhZ0F3SUJBZ0lRRnEvZXJndHMzSmxheGszTjkyRmZ6VEFLQmdncWhrak9QUVFEQWpBZE1Sc3cKR1FZRFZRUURFeEp5YjI5MExtTmhMbkJzWjJRdVkyeHZkV1F3SGhjTk1qUXdOVEkxTVRjd01qVXhXaGNOTWpVdwpOVEkxTVRjd01qVXhXakFTTVJBd0RnWURWUVFERXdkd2JHZGtMV05oTUZrd0V3WUhLb1pJemowQ0FRWUlLb1pJCnpqMERBUWNEUWdBRTVzNXphazlTTDZPQ01NNDlpeUpZcE52bkhseTNVVmRUZTRqYUF4bU1TMllNNjNlNjhDaXgKZXZobDg0OVN6Q25wb0Q5eUp6RkEySG1oRWM4MklWdDY2S05qTUdFd0RnWURWUjBQQVFIL0JBUURBZ0dHTUE4RwpBMVVkRXdFQi93UUZNQU1CQWY4d0hRWURWUjBPQkJZRUZDTTlTN3JpenkyQXJZaGlBUkJ1dE9YN0RUUGFNQjhHCkExVWRJd1FZTUJhQUZFTEswMUd0bXZ6OTlrVHZJTTVpZHpPTHhlcklNQW9HQ0NxR1NNNDlCQU1DQTBnQU1FVUMKSUc0Q25xa2IrYXRiRklBZVRGeUlSNHYzQUJpMENqUHViMDd4bnQvYnZONkZBaUVBeGd5VzVzaWJmdzd6My94YwpRbkEwdzY4c0ttVlJaaHZmVU5NWWtxYmsvMnc9Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K",
+            "encoding": "PEM"
+          },
+          "id": "0",
+          "subject": "bcd30976-10e4-4145-5282-eb50ee55dfae"
+        },
+        {
+          "publicData": {
+            "data": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUJmVENDQVNPZ0F3SUJBZ0lSQUlwR0Jrb0U2ZXdwdFJMT1FaMXZrb1V3Q2dZSUtvWkl6ajBFQXdJd0hURWIKTUJrR0ExVUVBeE1TY205dmRDNWpZUzV3Ykdka0xtTnNiM1ZrTUNBWERUSXpNVEF4T1RBNE5EZ3hOVm9ZRHpJeApNak13T1RJMU1EZzBPREUxV2pBZE1Sc3dHUVlEVlFRREV4SnliMjkwTG1OaExuQnNaMlF1WTJ4dmRXUXdXVEFUCkJnY3Foa2pPUFFJQkJnZ3Foa2pPUFFNQkJ3TkNBQVFtMHgrMTZCdWt2ditIV0FlcnkvMG8vVlFBTzhib3hzNHcKT2lhWFRybDBhbi9iUkR6REFwc1J2cDY5SHdJY2haS0FjZTVPQ3JkZFNpVVJOdDZRZWYwQ28wSXdRREFPQmdOVgpIUThCQWY4RUJBTUNBUVl3RHdZRFZSMFRBUUgvQkFVd0F3RUIvekFkQmdOVkhRNEVGZ1FVUXNyVFVhMmEvUDMyClJPOGd6bUozTTR2RjZzZ3dDZ1lJS29aSXpqMEVBd0lEU0FBd1JRSWdOMHBnS1N4d2RvUklkV1RxaTdUcDd0eVAKb05LNERxeElsWWJuRUlJb3BlZ0NJUURsd2FUMmg2RUtaM1R3SHFBcTU1UXl3TDM3RzJwdjVKOE03dDFFcVBnQQpZQT09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K",
+            "encoding": "PEM"
+          },
+          "id": "0",
+          "subject": "beb32777-9680-4f42-8761-350eebe76a85",
+          "usage": "TRUST_CA",
+          "type": [
+            "ASYMMETRIC_SIGNING_WITH_CERTIFICATE"
+          ]
+        }
+      ]
+    },
+    "plgdTime": {
+      "date": "1717157743283612068",
+      "coapCode": 69
+    }
+  }
+}

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"slices"
 
 	"github.com/plgd-dev/device/v2/schema"
 	"github.com/plgd-dev/device/v2/schema/interfaces"
@@ -16,7 +17,6 @@ import (
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/coap"
-	pkgStrings "github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	pbRD "github.com/plgd-dev/hub/v2/resource-directory/pb"
 	"google.golang.org/grpc"
@@ -308,7 +308,7 @@ func IsDiscoveryResourceObservable(links schema.ResourceLinks) (bool, error) {
 		return observable, nil
 	}
 
-	return pkgStrings.Contains(res.Interfaces, observeInterface), nil
+	return slices.Contains(res.Interfaces, observeInterface), nil
 }
 
 func detectObservationType(links schema.ResourceLinks) (ObservationType, error) {

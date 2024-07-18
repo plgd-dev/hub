@@ -71,9 +71,11 @@ func (requestHandler *RequestHandler) getHubConfiguration(w http.ResponseWriter,
 	resp.HttpGatewayAddress = requestHandler.config.UI.WebConfiguration.HTTPGatewayAddress
 	resp.DeviceOauthClient = requestHandler.config.UI.WebConfiguration.DeviceOAuthClient.ToProto()
 	resp.WebOauthClient = requestHandler.config.UI.WebConfiguration.WebOAuthClient.ToProto()
+	resp.M2MOauthClient = requestHandler.config.UI.WebConfiguration.M2MOAuthClient.ToProto()
 	resp.Ui = &pb.UIConfiguration{
 		Visibility:                requestHandler.config.UI.WebConfiguration.Visibility.ToProto(),
 		DeviceProvisioningService: requestHandler.config.UI.WebConfiguration.DeviceProvisioningService,
+		SnippetService:            requestHandler.config.UI.WebConfiguration.SnippetService,
 	}
 	if accept == pkgHttp.ApplicationProtoJsonContentType {
 		m := serverMux.NewJsonpbMarshaler()

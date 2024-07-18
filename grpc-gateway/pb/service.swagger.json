@@ -356,6 +356,20 @@
             "in": "query",
             "required": false,
             "type": "string"
+          },
+          {
+            "name": "force",
+            "description": "if true, the command will be executed even if the resource does not exist",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "async",
+            "description": "if true, the command will finish immediately after pending event is created",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -408,6 +422,20 @@
             "required": false,
             "type": "string",
             "format": "int64"
+          },
+          {
+            "name": "force",
+            "description": "if true, the command will be executed even if the resource does not exist",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "async",
+            "description": "if true, the command will finish immediately after pending event is created",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -530,6 +558,20 @@
             "required": false,
             "type": "string",
             "format": "int64"
+          },
+          {
+            "name": "force",
+            "description": "if true, the command will be executed even if the resource does not exist",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "async",
+            "description": "if true, the command will finish immediately after pending event is created",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -674,6 +716,13 @@
               "type": "string"
             },
             "collectionFormat": "multi"
+          },
+          {
+            "name": "includeHiddenResources",
+            "description": "Get all pending commands for all resources, even if the resource is not published.",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -1163,6 +1212,9 @@
         },
         "schemaHub": {
           "type": "boolean"
+        },
+        "snippetService": {
+          "type": "boolean"
         }
       }
     },
@@ -1570,28 +1622,6 @@
         }
       }
     },
-    "pbDeviceOAuthClient": {
-      "type": "object",
-      "properties": {
-        "clientId": {
-          "type": "string",
-          "title": "@gotags: yaml:\"clientID\""
-        },
-        "audience": {
-          "type": "string"
-        },
-        "scopes": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "providerName": {
-          "type": "string",
-          "title": "@gotags: yaml:\"providerName\""
-        }
-      }
-    },
     "pbEndpointInformation": {
       "type": "object",
       "properties": {
@@ -1713,10 +1743,13 @@
           "title": "cfg for UI http-gateway"
         },
         "webOauthClient": {
-          "$ref": "#/definitions/pbWebOAuthClient"
+          "$ref": "#/definitions/pbOAuthClient"
         },
         "deviceOauthClient": {
-          "$ref": "#/definitions/pbDeviceOAuthClient"
+          "$ref": "#/definitions/pbOAuthClient"
+        },
+        "m2mOauthClient": {
+          "$ref": "#/definitions/pbOAuthClient"
         },
         "ui": {
           "$ref": "#/definitions/pbUIConfiguration"
@@ -1735,6 +1768,39 @@
         },
         "value": {
           "type": "string"
+        }
+      }
+    },
+    "pbOAuthClient": {
+      "type": "object",
+      "properties": {
+        "clientId": {
+          "type": "string",
+          "title": "@gotags: yaml:\"clientID\""
+        },
+        "audience": {
+          "type": "string"
+        },
+        "scopes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "providerName": {
+          "type": "string",
+          "title": "@gotags: yaml:\"providerName\""
+        },
+        "clientAssertionType": {
+          "type": "string",
+          "title": "@gotags: yaml:\"clientAssertionType\""
+        },
+        "authority": {
+          "type": "string"
+        },
+        "grantType": {
+          "type": "string",
+          "title": "@gotags: yaml:\"grantType\""
         }
       }
     },
@@ -2287,6 +2353,10 @@
         "deviceProvisioningService": {
           "type": "string",
           "title": "Address to device provisioning service HTTP API in format https://host:port"
+        },
+        "snippetService": {
+          "type": "string",
+          "title": "Address to snippet service HTTP API in format https://host:port"
         }
       },
       "title": "UI configuration"
@@ -2300,24 +2370,6 @@
         }
       },
       "title": "UI visibility configuration\nIf true - show UI element, if false - hide UI element"
-    },
-    "pbWebOAuthClient": {
-      "type": "object",
-      "properties": {
-        "clientId": {
-          "type": "string",
-          "title": "@gotags: yaml:\"clientID\""
-        },
-        "audience": {
-          "type": "string"
-        },
-        "scopes": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
     },
     "protobufAny": {
       "type": "object",

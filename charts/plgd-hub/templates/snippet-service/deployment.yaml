@@ -1,0 +1,129 @@
+{{- if .Values.snippetservice.enabled }}
+{{- $cert := "/certs" }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "plgd-hub.snippetservice.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plgd-hub.labels" . | nindent 4 }}
+    {{- with .Values.snippetservice.deploymentLabels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+  {{- with .Values.snippetservice.deploymentAnnotations }}
+  annotations:
+  {{- . | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.snippetservice.replicas }}
+  selector:
+    matchLabels:
+      {{- include "plgd-hub.snippetservice.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.snippetservice.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "plgd-hub.snippetservice.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.snippetservice.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.snippetservice.rbac.enabled }}
+      serviceAccountName: {{ .Values.snippetservice.rbac.serviceAccountName }}
+      {{- end }}
+      {{- with .Values.snippetservice.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      restartPolicy: {{ .Values.snippetservice.restartPolicy }}
+      {{- if .Values.snippetservice.initContainersTpl }}
+      initContainers:
+      {{- tpl .Values.snippetservice.initContainersTpl . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Values.snippetservice.name }}
+          {{- with .Values.snippetservice.podSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: {{ include "plgd-hub.image" (list . .Values.snippetservice) | quote }}
+          imagePullPolicy: {{ .Values.snippetservice.image.pullPolicy }}
+          {{- if .Values.snippetservice.command }}
+          command:
+          {{- range .Values.snippetservice.command  }}
+            - {{ . | quote }}
+          {{- end }}
+          {{- end}}
+          args:
+            - "--config"
+            - {{  printf "%s/%s" .Values.snippetservice.config.mountPath .Values.snippetservice.config.fileName | quote }}
+          ports:
+            - name: grpc
+              containerPort: {{ .Values.snippetservice.port }}
+              protocol: TCP
+            - name: http
+              containerPort: {{ .Values.snippetservice.httpPort }}
+              protocol: TCP  
+          {{- with .Values.snippetservice.livenessProbe }}
+          livenessProbe:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.snippetservice.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.snippetservice.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: {{ .Values.snippetservice.config.volume }}
+              mountPath: {{ .Values.snippetservice.config.mountPath }}
+            {{- if ( include "plgd-hub.snippetservice.createServiceCertByCm" . ) }}
+            - name: service-crt
+              mountPath: {{ $cert }}
+            {{- end }}
+            {{- if .Values.global.authorizationCAPool }}
+            - name: {{ .Values.extraAuthorizationCAPool.name }}
+              mountPath: {{ .Values.extraAuthorizationCAPool.mountPath }}
+            {{- end }}
+            {{- with .Values.snippetservice.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      {{- if .Values.snippetservice.extraContainers }}
+      {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.snippetservice.extraContainers "context" $ ) | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: {{ .Values.resourcedirectory.config.volume }}
+          configMap:
+            name: {{ include "plgd-hub.snippetservice.configName" . }}
+        {{- if ( include "plgd-hub.snippetservice.createServiceCertByCm" . ) }}
+        - name: service-crt
+          secret:
+            secretName: {{ include "plgd-hub.snippetservice.serviceCertName" . }}
+        {{- end }}
+        {{- if .Values.global.authorizationCAPool }}
+        - name: {{ .Values.extraAuthorizationCAPool.name }}
+          secret:
+            secretName: {{ .Values.extraAuthorizationCAPool.name }}
+        {{- end }}
+        {{- with .Values.snippetservice.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.snippetservice.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.snippetservice.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.snippetservice.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

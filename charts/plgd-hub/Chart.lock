@@ -4,9 +4,9 @@ dependencies:
   version: 1.1.9
 - name: mongodb
   repository: https://charts.bitnami.com/bitnami
-  version: 13.18.3
+  version: 15.4.4
 - name: scylla
   repository: https://scylla-operator-charts.storage.googleapis.com/stable
   version: v1.10.0
-digest: sha256:3ed14035e169597cbd91e8521414c8bbae13879d27bda6726ce45b1e74572050
-generated: "2024-03-05T10:43:45.524423289Z"
+digest: sha256:2c3e908c6556633c6fd5467498177029023aa737b9436d1001907ecd9ba282ec
+generated: "2024-05-20T14:26:43.823740553Z"

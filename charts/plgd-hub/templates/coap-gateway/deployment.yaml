@@ -1,5 +1,6 @@
 {{- if .Values.coapgateway.enabled }}
 {{- $rdServiceCert := "/certs" }}
+{{- $rdClientCert := "/certs/client" }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -15,7 +16,7 @@ metadata:
   {{- . | toYaml | nindent 4 }}
   {{- end }}
 spec:
-  replicas: {{ .Values.coapgateway.replicas }}
+  replicas: {{ include "plgd-hub.replicas" (list $ .Values.coapgateway.replicas) }}
   selector:
     matchLabels:
       {{- include "plgd-hub.coapgateway.selectorLabels" . | nindent 6 }}
@@ -50,7 +51,7 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          image: {{ include "plgd-hub.coapgateway.image" . | quote }}
+          image: {{ include "plgd-hub.image" (list . .Values.coapgateway) | quote }}
           imagePullPolicy: {{ .Values.coapgateway.image.pullPolicy }}
           {{- if .Values.coapgateway.command }}
           command:
@@ -91,10 +92,11 @@ spec:
             - name: service-crt
               mountPath: {{ $rdServiceCert }}
             {{- end }}
-            {{- if .Values.global.authorizationCAPool }}
-            - name: {{ .Values.extraAuthorizationCAPool.name }}
-              mountPath: {{ .Values.extraAuthorizationCAPool.mountPath }}
-            {{- end }}
+            - name: client-crt
+              mountPath: {{ $rdClientCert }}
+            {{- include "plgd-hub.extraCAPoolMount" (list . .Values.extraCAPool.authorization) | nindent 12 }}
+            {{- include "plgd-hub.extraCAPoolMount" (list . .Values.extraCAPool.coap) | nindent 12 }}
+            {{- include "plgd-hub.extraCAPoolMount" (list . .Values.extraCAPool.internal) | nindent 12 }}
             {{- with .Values.coapgateway.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -120,11 +122,12 @@ spec:
           secret:
             secretName: {{ include "plgd-hub.coapgateway.serviceCertName" . }}
         {{- end }}
-        {{- if .Values.global.authorizationCAPool }}
-        - name: {{ .Values.extraAuthorizationCAPool.name }}
+        - name: client-crt
           secret:
-            secretName: {{ .Values.extraAuthorizationCAPool.name }}
-        {{- end }}
+            secretName: {{ include "plgd-hub.coapgateway.clientCertName" . }}
+        {{- include "plgd-hub.extraCAPoolVolume" (list . .Values.extraCAPool.authorization) | nindent 8 }}
+        {{- include "plgd-hub.extraCAPoolVolume" (list . .Values.extraCAPool.coap) | nindent 8 }}
+        {{- include "plgd-hub.extraCAPoolVolume" (list . .Values.extraCAPool.internal) | nindent 8 }}
         {{- with .Values.coapgateway.extraVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}

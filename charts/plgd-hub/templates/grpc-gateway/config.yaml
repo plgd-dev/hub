@@ -38,21 +38,11 @@ data:
           timeout: {{ .apis.grpc.keepAlive.timeout }}
         tls:
           {{- $tls := .apis.grpc.tls }}
-          {{- include "plgd-hub.certificateConfig" (list $ $tls $grpcGatewayCertPath) | indent 8 }}
+          {{- include "plgd-hub.internalCertificateConfig" (list $ $tls $grpcGatewayCertPath) | indent 8 }}
           clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
         authorization:
           {{- $authorization := .apis.grpc.authorization }}
-          {{- include "plgd-hub.authorizationConfig" (list $ $authorization "grpcgateway" ) | indent 8 }}
-          http:
-            maxIdleConns: {{ .apis.grpc.authorization.http.maxIdleConns }}
-            maxConnsPerHost: {{ .apis.grpc.authorization.http.maxIdleConnsPerHost }}
-            maxIdleConnsPerHost: {{ .apis.grpc.authorization.http.maxIdleConnsPerHost }}
-            idleConnTimeout: {{ .apis.grpc.authorization.http.idleConnTimeout }}
-            timeout: {{ .apis.grpc.authorization.http.timeout }}
-            tls:
-              {{- $grpcTls := .apis.grpc.authorization.http.tls }}
-              {{- include "plgd-hub.authorizationCaCertificateConfig" (list $ $grpcTls $grpcGatewayCertPath ) | indent 12 }}
-              useSystemCAPool: {{ .apis.grpc.authorization.http.tls.useSystemCAPool }}
+          {{- include "plgd-hub.authorizationConfig" (list $ $authorization "grpcgateway.apis.grpc.authorization" $grpcGatewayCertPath ) | indent 8 }}
     clients:
       eventBus:
         goPoolSize: {{ .clients.eventBus.goPoolSize }}
@@ -63,7 +53,7 @@ data:
             bytesLimit: {{ printf "%v" .clients.eventBus.nats.pendingLimits.bytesLimit }}
           tls:
             {{- $natsTls := .clients.eventBus.nats.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $natsTls $grpcGatewayCertPath ) | indent 10 }}
+            {{- include "plgd-hub.internalCertificateConfig" (list $ $natsTls $grpcGatewayCertPath ) | indent 10 }}
             useSystemCAPool: {{ .clients.eventBus.nats.tls.useSystemCAPool }}
       identityStore:
         grpc:
@@ -77,7 +67,7 @@ data:
             permitWithoutStream: {{ .clients.identityStore.grpc.keepAlive.permitWithoutStream }}
           tls:
             {{- $authClientTls := .clients.identityStore.grpc.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $authClientTls $grpcGatewayCertPath ) | indent 10 }}
+            {{- include "plgd-hub.internalCertificateConfig" (list $ $authClientTls $grpcGatewayCertPath ) | indent 10 }}
             useSystemCAPool: {{ .clients.identityStore.grpc.tls.useSystemCAPool }}
       resourceAggregate:
         grpc:
@@ -91,7 +81,7 @@ data:
             permitWithoutStream: {{ .clients.resourceAggregate.grpc.keepAlive.permitWithoutStream }}
           tls:
             {{- $raClientTls := .clients.resourceAggregate.grpc.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $raClientTls $grpcGatewayCertPath) | indent 10 }}
+            {{- include "plgd-hub.internalCertificateConfig" (list $ $raClientTls $grpcGatewayCertPath) | indent 10 }}
             useSystemCAPool: {{ .clients.resourceAggregate.grpc.tls.useSystemCAPool }}
       resourceDirectory:
         grpc:
@@ -105,7 +95,7 @@ data:
             permitWithoutStream: {{ .clients.resourceDirectory.grpc.keepAlive.permitWithoutStream }}
           tls:
             {{- $rdClientTls := .clients.resourceDirectory.grpc.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $rdClientTls $grpcGatewayCertPath ) | indent 10 }}
+            {{- include "plgd-hub.internalCertificateConfig" (list $ $rdClientTls $grpcGatewayCertPath ) | indent 10 }}
             useSystemCAPool: {{ .clients.resourceDirectory.grpc.tls.useSystemCAPool }}
       certificateAuthority:
         grpc:
@@ -119,7 +109,7 @@ data:
             permitWithoutStream: {{ .clients.certificateAuthority.grpc.keepAlive.permitWithoutStream }}
           tls:
             {{- $caClientTls := .clients.certificateAuthority.grpc.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $caClientTls $grpcGatewayCertPath ) | indent 10 }}
+            {{- include "plgd-hub.internalCertificateConfig" (list $ $caClientTls $grpcGatewayCertPath ) | indent 10 }}
             useSystemCAPool: {{ .clients.certificateAuthority.grpc.tls.useSystemCAPool }}
       {{- include "plgd-hub.openTelemetryExporterConfig" (list $ $grpcGatewayCertPath) | nindent 6 }}
   {{- end }}

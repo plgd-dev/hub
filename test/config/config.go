@@ -43,6 +43,9 @@ const (
 	RESOURCE_DIRECTORY_HOST         = "localhost:20004"
 	CERTIFICATE_AUTHORITY_HOST      = "localhost:20011"
 	CERTIFICATE_AUTHORITY_HTTP_HOST = "localhost:20012"
+	M2M_OAUTH_SERVER_HTTP_HOST      = "localhost:20013"
+	SNIPPET_SERVICE_HOST            = "localhost:20014"
+	SNIPPET_SERVICE_HTTP_HOST       = "localhost:20015"
 	GRPC_GW_HOST                    = "localhost:20005"
 	C2C_CONNECTOR_HOST              = "localhost:20006"
 	C2C_CONNECTOR_DB                = "cloud2cloudConnector"
@@ -56,6 +59,7 @@ const (
 	DEVICE_PROVIDER                 = "plgd"
 	OPENTELEMETRY_COLLECTOR_HOST    = "localhost:55690"
 	TRUE_STRING                     = "true"
+	M2M_OAUTH_PRIVATE_KEY_CLIENT_ID = "JWTPrivateKeyClient"
 )
 
 var (
@@ -133,6 +137,13 @@ func MakeTLSServerConfig() server.Config {
 	}
 }
 
+func MakeAuthorizationConfig() grpcServer.AuthorizationConfig {
+	return grpcServer.AuthorizationConfig{
+		OwnerClaim: OWNER_CLAIM,
+		Config:     MakeValidatorConfig(),
+	}
+}
+
 func MakeGrpcServerConfig(address string) grpcServer.Config {
 	return grpcServer.Config{
 		BaseConfig: grpcServer.BaseConfig{
@@ -145,9 +156,7 @@ func MakeGrpcServerConfig(address string) grpcServer.Config {
 				PermitWithoutStream: true,
 			},
 		},
-		Authorization: grpcServer.AuthorizationConfig{
-			OwnerClaim: OWNER_CLAIM,
-			Config:     MakeAuthorizationConfig(),
+		Authorization: MakeAuthorizationConfig(),
 		},
 	}
 }
@@ -244,11 +253,15 @@ func MakeEventsStoreCqlDBConfig() *cqldb.Config {
 	}
 }
 
-func MakeAuthorizationConfig() validator.Config {
+func MakeValidatorConfig() validator.Config {
 	return validator.Config{
-		Authority: http.HTTPS_SCHEME + OAUTH_SERVER_HOST,
-		Audience:  http.HTTPS_SCHEME + OAUTH_MANAGER_AUDIENCE,
-		HTTP:      MakeHttpClientConfig(),
+		Audience: http.HTTPS_SCHEME + OAUTH_MANAGER_AUDIENCE,
+		Endpoints: []validator.AuthorityConfig{
+			{
+				Authority: http.HTTPS_SCHEME + OAUTH_SERVER_HOST,
+				HTTP:      MakeHttpClientConfig(),
+			},
+		},
 	}
 }
 

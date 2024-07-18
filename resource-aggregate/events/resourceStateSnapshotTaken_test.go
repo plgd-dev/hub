@@ -6,10 +6,13 @@ import (
 	"time"
 
 	"github.com/plgd-dev/go-coap/v3/message"
+	grpcgwPb "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/aggregate"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/test"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	"github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
@@ -70,6 +73,553 @@ func TestResourceStateSnapshotTakenResourceTypes(t *testing.T) {
 	err = e.Handle(context.TODO(), newIterator([]eventstore.EventUnmarshaler{test.MakeResourceChangedEvent(commands.NewResourceID(deviceID, href), &commands.Content{}, events.MakeEventMeta("", 1, 9, hubID), commands.NewAuditContext(userID, "0", userID), resourceTypes)}))
 	require.NoError(t, err)
 	require.Equal(t, resourceTypes, e.Types())
+}
+
+func TestResourceStateSnapshotHandleCommand(t *testing.T) {
+	deviceID := "deviceId"
+	correlationID := "correlationID"
+	connectionID := "connectionID"
+	userID := "userID"
+	hubID := "hubID"
+	resourceHref := "/a"
+	resourceTypes := []string{"type1", "type2"}
+
+	type cmd struct {
+		cmd        aggregate.Command
+		newVersion uint64
+		wantErr    bool
+		want       []*grpcgwPb.Event
+	}
+	tests := []struct {
+		name string
+		cmds []cmd
+	}{
+		{
+			name: "notify-resource-changed",
+			cmds: []cmd{
+				{
+					cmd: &commands.NotifyResourceChangedRequest{
+						ResourceId: commands.NewResourceID(deviceID, resourceHref),
+						Content: &commands.Content{
+							Data:              []byte("{}"),
+							ContentType:       "application/json",
+							CoapContentFormat: int32(message.AppJSON),
+						},
+						Status: commands.Status_OK,
+						CommandMetadata: &commands.CommandMetadata{
+							ConnectionId: connectionID,
+							Sequence:     0,
+						},
+						ResourceTypes: resourceTypes,
+					},
+					newVersion: 0,
+					want: []*grpcgwPb.Event{
+						pb.ToEvent(&events.ResourceChanged{
+							ResourceId:           commands.NewResourceID(deviceID, resourceHref),
+							AuditContext:         commands.NewAuditContext(userID, "", userID),
+							OpenTelemetryCarrier: map[string]string{},
+							Content: &commands.Content{
+								Data:              []byte("{}"),
+								ContentType:       "application/json",
+								CoapContentFormat: int32(message.AppJSON),
+							},
+							Status: commands.Status_OK,
+							EventMetadata: &events.EventMetadata{
+								Version:      0,
+								Timestamp:    0,
+								ConnectionId: connectionID,
+								Sequence:     0,
+							},
+							ResourceTypes: resourceTypes,
+						}),
+					},
+				},
+			},
+		},
+		{
+			name: "update-resource-not-exists",
+			cmds: []cmd{
+				{
+					cmd: &commands.UpdateResourceRequest{
+						ResourceId: commands.NewResourceID(deviceID, resourceHref),
+						Content: &commands.Content{
+							Data:              []byte("{}"),
+							ContentType:       "application/json",
+							CoapContentFormat: int32(message.AppJSON),
+						},
+						CommandMetadata: &commands.CommandMetadata{
+							ConnectionId: connectionID,
+							Sequence:     1,
+						},
+					},
+					wantErr: true,
+				},
+			},
+		},
+		{
+			name: "update-resource-not-exists-with-flag",
+			cmds: []cmd{
+				{
+					cmd: &commands.UpdateResourceRequest{
+						ResourceId: commands.NewResourceID(deviceID, resourceHref),
+						Content: &commands.Content{
+							Data:              []byte("{}"),
+							ContentType:       "application/json",
+							CoapContentFormat: int32(message.AppJSON),
+						},
+						CommandMetadata: &commands.CommandMetadata{
+							ConnectionId: connectionID,
+							Sequence:     1,
+						},
+						Force:         true,
+						CorrelationId: correlationID,
+					},
+					want: []*grpcgwPb.Event{
+						pb.ToEvent(&events.ResourceUpdatePending{
+							ResourceId:           commands.NewResourceID(deviceID, resourceHref),
+							AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
+							OpenTelemetryCarrier: map[string]string{},
+							EventMetadata: &events.EventMetadata{
+								Version:      0,
+								Timestamp:    0,
+								ConnectionId: connectionID,
+								Sequence:     1,
+							},
+							Content: &commands.Content{
+								Data:              []byte("{}"),
+								ContentType:       "application/json",
+								CoapContentFormat: int32(message.AppJSON),
+							},
+						}),
+					},
+				},
+				{
+					cmd: &commands.ConfirmResourceUpdateRequest{
+						ResourceId: commands.NewResourceID(deviceID, resourceHref),
+						Content: &commands.Content{
+							Data:              []byte("{}"),
+							ContentType:       "application/json",
+							CoapContentFormat: int32(message.AppJSON),
+						},
+						CommandMetadata: &commands.CommandMetadata{
+							ConnectionId: connectionID,
+							Sequence:     2,
+						},
+						CorrelationId: correlationID,
+					},
+					want: []*grpcgwPb.Event{
+						pb.ToEvent(&events.ResourceUpdated{
+							ResourceId:           commands.NewResourceID(deviceID, resourceHref),
+							AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
+							OpenTelemetryCarrier: map[string]string{},
+							EventMetadata: &events.EventMetadata{
+								Version:      1,
+								Timestamp:    0,
+								ConnectionId: connectionID,
+								Sequence:     2,
+							},
+							Content: &commands.Content{
+								Data:              []byte("{}"),
+								ContentType:       "application/json",
+								CoapContentFormat: int32(message.AppJSON),
+							},
+						}),
+					},
+				},
+			},
+		},
+		{
+			name: "update-resource-not-exists-with-flag-and-cancel",
+			cmds: []cmd{
+				{
+					cmd: &commands.UpdateResourceRequest{
+						ResourceId: commands.NewResourceID(deviceID, resourceHref),
+						Content: &commands.Content{
+							Data:              []byte("{}"),
+							ContentType:       "application/json",
+							CoapContentFormat: int32(message.AppJSON),
+						},
+						CommandMetadata: &commands.CommandMetadata{
+							ConnectionId: connectionID,
+							Sequence:     1,
+						},
+						Force:         true,
+						CorrelationId: correlationID,
+					},
+					want: []*grpcgwPb.Event{
+						pb.ToEvent(&events.ResourceUpdatePending{
+							ResourceId:           commands.NewResourceID(deviceID, resourceHref),
+							AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
+							OpenTelemetryCarrier: map[string]string{},
+							EventMetadata: &events.EventMetadata{
+								Version:      0,
+								Timestamp:    0,
+								ConnectionId: connectionID,
+								Sequence:     1,
+							},
+							Content: &commands.Content{
+								Data:              []byte("{}"),
+								ContentType:       "application/json",
+								CoapContentFormat: int32(message.AppJSON),
+							},
+						}),
+					},
+				},
+				{
+					cmd: &commands.CancelPendingCommandsRequest{
+						ResourceId:          commands.NewResourceID(deviceID, resourceHref),
+						CorrelationIdFilter: []string{correlationID},
+						CommandMetadata: &commands.CommandMetadata{
+							ConnectionId: connectionID,
+							Sequence:     2,
+						},
+					},
+					want: []*grpcgwPb.Event{
+						pb.ToEvent(&events.ResourceUpdated{
+							ResourceId:           commands.NewResourceID(deviceID, resourceHref),
+							AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
+							OpenTelemetryCarrier: map[string]string{},
+							EventMetadata: &events.EventMetadata{
+								Version:      1,
+								Timestamp:    0,
+								ConnectionId: connectionID,
+								Sequence:     2,
+							},
+							Status: commands.Status_CANCELED,
+						}),
+					},
+				},
+			},
+		},
+		{
+			name: "create-resource-not-exists",
+			cmds: []cmd{
+				{
+					cmd: &commands.CreateResourceRequest{
+						ResourceId: commands.NewResourceID(deviceID, resourceHref),
+						Content: &commands.Content{
+							Data:              []byte("{}"),
+							ContentType:       "application/json",
+							CoapContentFormat: int32(message.AppJSON),
+						},
+						CommandMetadata: &commands.CommandMetadata{
+							ConnectionId: connectionID,
+							Sequence:     1,
+						},
+					},
+					wantErr: true,
+				},
+			},
+		},
+		{
+			name: "create-resource-not-exists-with-flag",
+			cmds: []cmd{
+				{
+					cmd: &commands.CreateResourceRequest{
+						ResourceId: commands.NewResourceID(deviceID, resourceHref),
+						Content: &commands.Content{
+							Data:              []byte("{}"),
+							ContentType:       "application/json",
+							CoapContentFormat: int32(message.AppJSON),
+						},
+						CommandMetadata: &commands.CommandMetadata{
+							ConnectionId: connectionID,
+							Sequence:     1,
+						},
+						Force:         true,
+						CorrelationId: correlationID,
+					},
+					want: []*grpcgwPb.Event{
+						pb.ToEvent(&events.ResourceCreatePending{
+							ResourceId:           commands.NewResourceID(deviceID, resourceHref),
+							AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
+							OpenTelemetryCarrier: map[string]string{},
+							EventMetadata: &events.EventMetadata{
+								Version:      0,
+								Timestamp:    0,
+								ConnectionId: connectionID,
+								Sequence:     1,
+							},
+							Content: &commands.Content{
+								Data:              []byte("{}"),
+								ContentType:       "application/json",
+								CoapContentFormat: int32(message.AppJSON),
+							},
+						}),
+					},
+				},
+				{
+					cmd: &commands.ConfirmResourceCreateRequest{
+						ResourceId: commands.NewResourceID(deviceID, resourceHref),
+						Content: &commands.Content{
+							Data:              []byte("{}"),
+							ContentType:       "application/json",
+							CoapContentFormat: int32(message.AppJSON),
+						},
+						CommandMetadata: &commands.CommandMetadata{
+							ConnectionId: connectionID,
+							Sequence:     2,
+						},
+						CorrelationId: correlationID,
+					},
+					want: []*grpcgwPb.Event{
+						pb.ToEvent(&events.ResourceCreated{
+							ResourceId:           commands.NewResourceID(deviceID, resourceHref),
+							AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
+							OpenTelemetryCarrier: map[string]string{},
+							EventMetadata: &events.EventMetadata{
+								Version:      1,
+								Timestamp:    0,
+								ConnectionId: connectionID,
+								Sequence:     2,
+							},
+							Content: &commands.Content{
+								Data:              []byte("{}"),
+								ContentType:       "application/json",
+								CoapContentFormat: int32(message.AppJSON),
+							},
+						}),
+					},
+				},
+			},
+		},
+		{
+			name: "create-resource-not-exists-with-flag-and-cancel",
+			cmds: []cmd{
+				{
+					cmd: &commands.CreateResourceRequest{
+						ResourceId: commands.NewResourceID(deviceID, resourceHref),
+						Content: &commands.Content{
+							Data:              []byte("{}"),
+							ContentType:       "application/json",
+							CoapContentFormat: int32(message.AppJSON),
+						},
+						CommandMetadata: &commands.CommandMetadata{
+							ConnectionId: connectionID,
+							Sequence:     1,
+						},
+						Force:         true,
+						CorrelationId: correlationID,
+					},
+					want: []*grpcgwPb.Event{
+						pb.ToEvent(&events.ResourceCreatePending{
+							ResourceId:           commands.NewResourceID(deviceID, resourceHref),
+							AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
+							OpenTelemetryCarrier: map[string]string{},
+							EventMetadata: &events.EventMetadata{
+								Version:      0,
+								Timestamp:    0,
+								ConnectionId: connectionID,
+								Sequence:     1,
+							},
+							Content: &commands.Content{
+								Data:              []byte("{}"),
+								ContentType:       "application/json",
+								CoapContentFormat: int32(message.AppJSON),
+							},
+						}),
+					},
+				},
+				{
+					cmd: &commands.CancelPendingCommandsRequest{
+						ResourceId:          commands.NewResourceID(deviceID, resourceHref),
+						CorrelationIdFilter: []string{correlationID},
+						CommandMetadata: &commands.CommandMetadata{
+							ConnectionId: connectionID,
+							Sequence:     2,
+						},
+					},
+					want: []*grpcgwPb.Event{
+						pb.ToEvent(&events.ResourceCreated{
+							ResourceId:           commands.NewResourceID(deviceID, resourceHref),
+							AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
+							OpenTelemetryCarrier: map[string]string{},
+							EventMetadata: &events.EventMetadata{
+								Version:      1,
+								Timestamp:    0,
+								ConnectionId: connectionID,
+								Sequence:     2,
+							},
+							Status: commands.Status_CANCELED,
+						}),
+					},
+				},
+			},
+		},
+		{
+			name: "delete-resource-not-exists",
+			cmds: []cmd{
+				{
+					cmd: &commands.DeleteResourceRequest{
+						ResourceId: commands.NewResourceID(deviceID, resourceHref),
+						CommandMetadata: &commands.CommandMetadata{
+							ConnectionId: connectionID,
+							Sequence:     1,
+						},
+					},
+					wantErr: true,
+				},
+			},
+		},
+		{
+			name: "delete-resource-not-exists-with-flag",
+			cmds: []cmd{
+				{
+					cmd: &commands.DeleteResourceRequest{
+						ResourceId: commands.NewResourceID(deviceID, resourceHref),
+						CommandMetadata: &commands.CommandMetadata{
+							ConnectionId: connectionID,
+							Sequence:     1,
+						},
+						Force:         true,
+						CorrelationId: correlationID,
+					},
+					want: []*grpcgwPb.Event{
+						pb.ToEvent(&events.ResourceDeletePending{
+							ResourceId:           commands.NewResourceID(deviceID, resourceHref),
+							AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
+							OpenTelemetryCarrier: map[string]string{},
+							EventMetadata: &events.EventMetadata{
+								Version:      0,
+								Timestamp:    0,
+								ConnectionId: connectionID,
+								Sequence:     1,
+							},
+						}),
+					},
+				},
+				{
+					cmd: &commands.ConfirmResourceDeleteRequest{
+						ResourceId: commands.NewResourceID(deviceID, resourceHref),
+						CommandMetadata: &commands.CommandMetadata{
+							ConnectionId: connectionID,
+							Sequence:     2,
+						},
+						Content: &commands.Content{
+							Data:        []byte("{}"),
+							ContentType: "application/json",
+						},
+						CorrelationId: correlationID,
+						Status:        commands.Status_METHOD_NOT_ALLOWED,
+					},
+					want: []*grpcgwPb.Event{
+						pb.ToEvent(&events.ResourceDeleted{
+							ResourceId:           commands.NewResourceID(deviceID, resourceHref),
+							AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
+							OpenTelemetryCarrier: map[string]string{},
+							EventMetadata: &events.EventMetadata{
+								Version:      1,
+								Timestamp:    0,
+								ConnectionId: connectionID,
+								Sequence:     2,
+							},
+							Content: &commands.Content{
+								Data:        []byte("{}"),
+								ContentType: "application/json",
+							},
+							Status: commands.Status_METHOD_NOT_ALLOWED,
+						}),
+					},
+				},
+			},
+		},
+		{
+			name: "delete-resource-not-exists-with-flag-and-cancel",
+			cmds: []cmd{
+				{
+					cmd: &commands.DeleteResourceRequest{
+						ResourceId: commands.NewResourceID(deviceID, resourceHref),
+						CommandMetadata: &commands.CommandMetadata{
+							ConnectionId: connectionID,
+							Sequence:     1,
+						},
+						Force:         true,
+						CorrelationId: correlationID,
+					},
+					want: []*grpcgwPb.Event{
+						pb.ToEvent(&events.ResourceDeletePending{
+							ResourceId:           commands.NewResourceID(deviceID, resourceHref),
+							AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
+							OpenTelemetryCarrier: map[string]string{},
+							EventMetadata: &events.EventMetadata{
+								Version:      0,
+								Timestamp:    0,
+								ConnectionId: connectionID,
+								Sequence:     1,
+							},
+						}),
+					},
+				},
+				{
+					cmd: &commands.CancelPendingCommandsRequest{
+						ResourceId: commands.NewResourceID(deviceID, resourceHref),
+						CommandMetadata: &commands.CommandMetadata{
+							ConnectionId: connectionID,
+							Sequence:     2,
+						},
+						CorrelationIdFilter: []string{correlationID},
+					},
+					want: []*grpcgwPb.Event{
+						pb.ToEvent(&events.ResourceDeleted{
+							ResourceId:           commands.NewResourceID(deviceID, resourceHref),
+							AuditContext:         commands.NewAuditContext(userID, correlationID, userID),
+							OpenTelemetryCarrier: map[string]string{},
+							EventMetadata: &events.EventMetadata{
+								Version:      1,
+								Timestamp:    0,
+								ConnectionId: connectionID,
+								Sequence:     2,
+							},
+							Status: commands.Status_CANCELED,
+						}),
+					},
+				},
+			},
+		},
+		{
+			name: "retrieve-resource-not-exists",
+			cmds: []cmd{
+				{
+					cmd: &commands.RetrieveResourceRequest{
+						ResourceId: commands.NewResourceID(deviceID, resourceHref),
+						CommandMetadata: &commands.CommandMetadata{
+							ConnectionId: connectionID,
+							Sequence:     1,
+						},
+					},
+					wantErr: true,
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			e := events.NewResourceStateSnapshotTakenForCommand(userID, userID, hubID, nil)
+			for idx, cmd := range tt.cmds {
+				res, err := e.HandleCommand(context.TODO(), cmd.cmd, cmd.newVersion)
+				if cmd.wantErr {
+					require.Error(t, err, "cmd: %v", idx)
+				} else {
+					require.NoError(t, err, "cmd: %v", idx)
+					var got []*grpcgwPb.Event
+					if len(res) > 0 {
+						got = make([]*grpcgwPb.Event, 0, len(res))
+						for _, e := range res {
+							grpcEv := pb.ToEvent(e)
+							d1, err := proto.Marshal(grpcEv)
+							require.NoError(t, err)
+							var v grpcgwPb.Event
+							err = proto.Unmarshal(d1, &v)
+							require.NoError(t, err)
+							got = append(got, &v)
+						}
+					}
+					pb.CmpEvents(t, cmd.want, got)
+				}
+			}
+		})
+	}
 }
 
 func TestResourceStateSnapshotTakenHandle(t *testing.T) {

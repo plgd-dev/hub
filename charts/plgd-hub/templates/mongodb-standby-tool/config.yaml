@@ -1,0 +1,46 @@
+{{- if (include  "plgd-hub.mongodb-standby-tool.enabled" .) }}
+{{- $certPath := "/certs" }}
+{{- $standbyTool := .Values.mongodb.standbyTool }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "plgd-hub.mongodb-standby-tool.configName" . }}
+  namespace: {{ .Release.Namespace }}
+data:
+  {{ $standbyTool.config.fileName }}: |
+    log:
+      level: {{ $standbyTool.log.level }}
+      dumpBody: {{ $standbyTool.log.dumpBody }}
+      encoding: {{ $standbyTool.log.encoding }}
+      stacktrace:
+        enabled: {{ $standbyTool.log.stacktrace.enabled }}
+        level: {{ $standbyTool.log.stacktrace.level }}
+      encoderConfig:
+        timeEncoder: {{ $standbyTool.log.encoderConfig.timeEncoder }}
+    mode: {{ required "mode need to be set to one of values: standby,active" $standbyTool.mode | quote }}
+    replicaSet:
+      forceUpdate: {{ $standbyTool.replicaSet.forceUpdate }}
+      maxWaitsForReady: {{ $standbyTool.replicaSet.maxWaitsForReady }}
+      standby:
+        # List of the MongoDB members in the replica set which are used as hidden and secondary members
+        members:
+          {{- range $standbyTool.replicaSet.standby.members }}
+          - {{printf "%s" . }}
+          {{- end }}
+        # Set the delay for syncing the standby members with the secondary/primary members
+        delays: {{ $standbyTool.replicaSet.standby.delays }}
+      secondary:
+        # Used to configure the secondary members priority
+        priority: {{ $standbyTool.replicaSet.secondary.priority }}
+        # Set number of votes for the secondary members
+        votes: {{ $standbyTool.replicaSet.secondary.votes }}
+    clients:
+      storage:
+        mongoDB:
+          timeout: {{ $standbyTool.clients.storage.mongoDB.timeout }}
+          tls:
+            # Enable or disable TLS
+            enabled: true
+            {{- $tls := $standbyTool.clients.storage.mongoDB.tls }}
+            {{- include "plgd-hub.storageCertificateConfig" (list $ $tls $certPath) | indent 10 }}
+{{- end }}

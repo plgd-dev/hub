@@ -90,7 +90,7 @@ const Step2: FC<Props> = (props) => {
                                 render={({ field: { onChange, value } }) => (
                                     <div css={styles.flex}>
                                         <FormInput
-                                            onBlur={(e) => updateField(`gateways.${index}`, { value: e.target.value, id: field.id }, true)}
+                                            onBlur={(e) => updateField(`gateways.${index}`, { value: e.target.value, id: field.id })}
                                             onChange={(v) => {
                                                 onChange({ value: v.target.value, id: field.id })
                                             }}

@@ -8,13 +8,15 @@
     "test": "npx playwright test",
     "test:ui": "npx playwright test --ui",
     "test:debug": "npx playwright test --debug",
-    "test:r": "npx playwright test devices/detail.spec.ts --debug --update-snapshots"
+    "test:r": "npx playwright test snippet-service/list.spec.ts --debug --update-snapshots"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "axios": "^0.24.0",
     "@playwright/test": "^1.44.0"
+  },
+  "dependencies": {
+    "axios": "^1.7.2"
   }
 }

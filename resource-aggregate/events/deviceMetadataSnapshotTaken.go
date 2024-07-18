@@ -128,34 +128,41 @@ func (d *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdatePending(_ contex
 	return nil
 }
 
+func (d *DeviceMetadataSnapshotTaken) handleByEvent(ctx context.Context, eu eventstore.EventUnmarshaler) error {
+	if eu.EventType() == "" {
+		return status.Errorf(codes.Internal, "cannot determine type of event")
+	}
+	switch eu.EventType() {
+	case (&DeviceMetadataSnapshotTaken{}).EventType():
+		var s DeviceMetadataSnapshotTaken
+		if err := eu.Unmarshal(&s); err != nil {
+			return status.Errorf(codes.Internal, "%v", err)
+		}
+		d.HandleDeviceMetadataSnapshotTaken(ctx, &s)
+	case (&DeviceMetadataUpdated{}).EventType():
+		var s DeviceMetadataUpdated
+		if err := eu.Unmarshal(&s); err != nil {
+			return status.Errorf(codes.Internal, "%v", err)
+		}
+		_, _ = d.HandleDeviceMetadataUpdated(ctx, &s, false)
+	case (&DeviceMetadataUpdatePending{}).EventType():
+		var s DeviceMetadataUpdatePending
+		if err := eu.Unmarshal(&s); err != nil {
+			return status.Errorf(codes.Internal, "%v", err)
+		}
+		_ = d.HandleDeviceMetadataUpdatePending(ctx, &s)
+	}
+	return nil
+}
+
 func (d *DeviceMetadataSnapshotTaken) Handle(ctx context.Context, iter eventstore.Iter) error {
 	for {
 		eu, ok := iter.Next(ctx)
 		if !ok {
 			break
 		}
-		if eu.EventType() == "" {
-			return status.Errorf(codes.Internal, "cannot determine type of event")
-		}
-		switch eu.EventType() {
-		case (&DeviceMetadataSnapshotTaken{}).EventType():
-			var s DeviceMetadataSnapshotTaken
-			if err := eu.Unmarshal(&s); err != nil {
-				return status.Errorf(codes.Internal, "%v", err)
-			}
-			d.HandleDeviceMetadataSnapshotTaken(ctx, &s)
-		case (&DeviceMetadataUpdated{}).EventType():
-			var s DeviceMetadataUpdated
-			if err := eu.Unmarshal(&s); err != nil {
-				return status.Errorf(codes.Internal, "%v", err)
-			}
-			_, _ = d.HandleDeviceMetadataUpdated(ctx, &s, false)
-		case (&DeviceMetadataUpdatePending{}).EventType():
-			var s DeviceMetadataUpdatePending
-			if err := eu.Unmarshal(&s); err != nil {
-				return status.Errorf(codes.Internal, "%v", err)
-			}
-			_ = d.HandleDeviceMetadataUpdatePending(ctx, &s)
+		if err := d.handleByEvent(ctx, eu); err != nil {
+			return err
 		}
 	}
 	return iter.Err()

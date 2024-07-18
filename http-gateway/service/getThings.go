@@ -91,7 +91,7 @@ func (requestHandler *RequestHandler) getThings(w http.ResponseWriter, r *http.R
 		})
 	}
 	var td wotTD.ThingDescription
-	ThingSetSecurity(&td, requestHandler.openIDConfig)
+	ThingSetSecurity(&td, requestHandler.openIDConfigs)
 
 	things := GetThingsResponse{
 		Base:                requestHandler.config.UI.WebConfiguration.HTTPGatewayAddress + uri.Things,
@@ -318,17 +318,24 @@ func (requestHandler *RequestHandler) thingSetLinks(ctx context.Context, td *wot
 	}
 }
 
-func ThingSetSecurity(td *wotTD.ThingDescription, openIDConfig openid.Config) {
-	td.Security = &wotTD.TypeDeclaration{
-		String: bridgeDeviceTD.StringToPtr("oauth2_sc"),
+func toSecurityName(idx int) string {
+	return fmt.Sprintf("oauth2_sc_%v", idx)
+}
+
+func ThingSetSecurity(td *wotTD.ThingDescription, openIDConfigs []openid.Config) {
+	if len(openIDConfigs) == 0 {
+		return
 	}
-	td.SecurityDefinitions = map[string]wotTD.SecurityScheme{
-		"oauth2_sc": {
+	td.Security = &wotTD.TypeDeclaration{}
+	td.SecurityDefinitions = make(map[string]wotTD.SecurityScheme)
+	for idx := range openIDConfigs {
+		td.SecurityDefinitions[toSecurityName(idx)] = wotTD.SecurityScheme{
 			Scheme:        "oauth2",
 			Flow:          bridgeDeviceTD.StringToPtr("code"),
-			Authorization: &openIDConfig.AuthURL,
-			Token:         &openIDConfig.TokenURL,
-		},
+			Authorization: &(openIDConfigs[idx].AuthURL),
+			Token:         &(openIDConfigs[idx].TokenURL),
+		}
+		td.Security.StringArray = append(td.Security.StringArray, toSecurityName(idx))
 	}
 }
 
@@ -346,7 +353,7 @@ func (requestHandler *RequestHandler) thingDescriptionResponse(ctx context.Conte
 	}
 
 	// .security
-	ThingSetSecurity(&td, requestHandler.openIDConfig)
+	ThingSetSecurity(&td, requestHandler.openIDConfigs)
 
 	// .base
 	if err = requestHandler.thingSetBase(&td); err != nil {

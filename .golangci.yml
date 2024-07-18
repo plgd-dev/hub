@@ -142,6 +142,10 @@ issues:
         - gocognit
         - gocyclo
         - gosec
+    - path: m2m-oauth-server/uri/uri.go
+      text: "G101:"
+      linters:
+        - gosec
     - path: pkg/time/delay.go
       text: "G404:"
       linters:

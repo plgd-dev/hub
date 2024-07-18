@@ -22,6 +22,7 @@ type resourceProjection struct {
 		content                  *events.ResourceChanged
 		version                  uint64
 		onResourceChangedVersion uint64
+		resourceTypes            []string
 		resourceUpdatePendings   []*events.ResourceUpdatePending
 		resourceRetrievePendings []*events.ResourceRetrievePending
 		resourceDeletePendings   []*events.ResourceDeletePending
@@ -56,6 +57,7 @@ func (rp *resourceProjection) handleResourceStateSnapshotTakenLocked(eu eventsto
 	}
 	rp.private.resourceID = s.GetResourceId()
 	rp.private.content = s.GetLatestResourceChange()
+	rp.private.resourceTypes = s.GetResourceTypes()
 	rp.private.onResourceChangedVersion = eu.Version()
 	rp.private.resourceUpdatePendings = s.GetResourceUpdatePendings()
 	rp.private.resourceCreatePendings = s.GetResourceCreatePendings()
@@ -64,12 +66,19 @@ func (rp *resourceProjection) handleResourceStateSnapshotTakenLocked(eu eventsto
 	return nil
 }
 
+func (rp *resourceProjection) GetMatchingData() (*commands.ResourceId, []string) {
+	rp.private.lock.RLock()
+	defer rp.private.lock.RUnlock()
+	return rp.private.resourceID, rp.private.resourceTypes
+}
+
 func (rp *resourceProjection) handleResourceChangedLocked(eu eventstore.EventUnmarshaler) error {
 	var s events.ResourceChanged
 	if err := eu.Unmarshal(&s); err != nil {
 		return err
 	}
 	rp.private.resourceID = s.GetResourceId()
+	rp.setResourceTypesLocked(s.GetResourceTypes())
 	rp.private.content = &s
 	rp.private.onResourceChangedVersion = eu.Version()
 	return nil
@@ -80,6 +89,7 @@ func (rp *resourceProjection) handleResourceUpdatePendingLocked(eu eventstore.Ev
 	if err := eu.Unmarshal(&s); err != nil {
 		return err
 	}
+	rp.setResourceTypesLocked(s.GetResourceTypes())
 	rp.private.resourceUpdatePendings = append(rp.private.resourceUpdatePendings, &s)
 	rp.private.resourceID = s.GetResourceId()
 	return nil
@@ -90,6 +100,7 @@ func (rp *resourceProjection) handleResourceUpdatedLocked(eu eventstore.EventUnm
 	if err := eu.Unmarshal(&s); err != nil {
 		return err
 	}
+	rp.setResourceTypesLocked(s.GetResourceTypes())
 	rp.private.resourceID = s.GetResourceId()
 	tmp := make([]*events.ResourceUpdatePending, 0, 16)
 	var found bool
@@ -111,6 +122,7 @@ func (rp *resourceProjection) handleResourceRetrievePendingLocked(eu eventstore.
 	if err := eu.Unmarshal(&s); err != nil {
 		return err
 	}
+	rp.setResourceTypesLocked(s.GetResourceTypes())
 	rp.private.resourceID = s.GetResourceId()
 	rp.private.resourceRetrievePendings = append(rp.private.resourceRetrievePendings, &s)
 	return nil
@@ -121,6 +133,7 @@ func (rp *resourceProjection) handleResourceDeletePendingLocked(eu eventstore.Ev
 	if err := eu.Unmarshal(&s); err != nil {
 		return err
 	}
+	rp.setResourceTypesLocked(s.GetResourceTypes())
 	rp.private.resourceID = s.GetResourceId()
 	rp.private.resourceDeletePendings = append(rp.private.resourceDeletePendings, &s)
 	return nil
@@ -131,6 +144,7 @@ func (rp *resourceProjection) handleResourceRetrievedLocked(eu eventstore.EventU
 	if err := eu.Unmarshal(&s); err != nil {
 		return err
 	}
+	rp.setResourceTypesLocked(s.GetResourceTypes())
 	rp.private.resourceID = s.GetResourceId()
 	tmp := make([]*events.ResourceRetrievePending, 0, 16)
 	var found bool
@@ -152,6 +166,7 @@ func (rp *resourceProjection) handleResourceDeletedLocked(eu eventstore.EventUnm
 	if err := eu.Unmarshal(&s); err != nil {
 		return err
 	}
+	rp.setResourceTypesLocked(s.GetResourceTypes())
 	rp.private.resourceID = s.GetResourceId()
 	tmp := make([]*events.ResourceDeletePending, 0, 16)
 	var found bool
@@ -173,9 +188,17 @@ func (rp *resourceProjection) handleResourceCreatePendingLocked(eu eventstore.Ev
 	if err := eu.Unmarshal(&s); err != nil {
 		return err
 	}
+	rp.setResourceTypesLocked(s.GetResourceTypes())
 	rp.private.resourceCreatePendings = append(rp.private.resourceCreatePendings, &s)
 	rp.private.resourceID = s.GetResourceId()
 	return nil
+}
+
+func (rp *resourceProjection) setResourceTypesLocked(resourceTypes []string) {
+	if len(resourceTypes) == 0 {
+		return
+	}
+	rp.private.resourceTypes = resourceTypes
 }
 
 func (rp *resourceProjection) handleResourceCreatedLocked(eu eventstore.EventUnmarshaler) error {
@@ -183,6 +206,7 @@ func (rp *resourceProjection) handleResourceCreatedLocked(eu eventstore.EventUnm
 	if err := eu.Unmarshal(&s); err != nil {
 		return err
 	}
+	rp.setResourceTypesLocked(s.GetResourceTypes())
 	rp.private.resourceID = s.GetResourceId()
 	tmp := make([]*events.ResourceCreatePending, 0, 16)
 	var found bool

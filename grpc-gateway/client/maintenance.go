@@ -3,10 +3,10 @@ package client
 import (
 	"context"
 	"net/http"
+	"slices"
 
 	"github.com/plgd-dev/device/v2/schema/maintenance"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc"
-	"github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -65,7 +65,7 @@ func (c *Client) updateMaintenanceResource(
 	}
 	var href string
 	for _, r := range v.GetResources() {
-		if r.GetDeviceId() == deviceID && strings.Contains(r.GetResourceTypes(), maintenance.ResourceType) {
+		if r.GetDeviceId() == deviceID && slices.Contains(r.GetResourceTypes(), maintenance.ResourceType) {
 			href = r.GetHref()
 			break
 		}

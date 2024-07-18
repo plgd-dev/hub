@@ -60,13 +60,12 @@
   
 - [grpc-gateway/pb/hubConfiguration.proto](#grpc-gateway_pb_hubConfiguration-proto)
     - [BuildInfo](#grpcgateway-pb-BuildInfo)
-    - [DeviceOAuthClient](#grpcgateway-pb-DeviceOAuthClient)
     - [HubConfigurationRequest](#grpcgateway-pb-HubConfigurationRequest)
     - [HubConfigurationResponse](#grpcgateway-pb-HubConfigurationResponse)
+    - [OAuthClient](#grpcgateway-pb-OAuthClient)
     - [UIConfiguration](#grpcgateway-pb-UIConfiguration)
     - [UIVisibility](#grpcgateway-pb-UIVisibility)
     - [UIVisibility.MainSidebar](#grpcgateway-pb-UIVisibility-MainSidebar)
-    - [WebOAuthClient](#grpcgateway-pb-WebOAuthClient)
   
 - [grpc-gateway/pb/service.proto](#grpc-gateway_pb_service-proto)
     - [GrpcGateway](#grpcgateway-pb-GrpcGateway)
@@ -224,6 +223,8 @@
 | resource_id | [resourceaggregate.pb.ResourceId](#resourceaggregate-pb-ResourceId) |  |  |
 | content | [Content](#grpcgateway-pb-Content) |  |  |
 | time_to_live | [int64](#int64) |  | command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms). |
+| force | [bool](#bool) |  | if true, the command will be executed even if the resource does not exist |
+| async | [bool](#bool) |  | if true, the command will finish immediately after pending event is created |
 
 
 
@@ -286,6 +287,8 @@
 | resource_id | [resourceaggregate.pb.ResourceId](#resourceaggregate-pb-ResourceId) |  |  |
 | time_to_live | [int64](#int64) |  | command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms). |
 | resource_interface | [string](#string) |  |  |
+| force | [bool](#bool) |  | if true, the command will be executed even if the resource does not exist |
+| async | [bool](#bool) |  | if true, the command will finish immediately after pending event is created |
 
 
 
@@ -696,6 +699,8 @@ Certain filters perform a logical &#34;or&#34; operation among the elements of t
 | resource_interface | [string](#string) |  |  |
 | time_to_live | [int64](#int64) |  | command validity in nanoseconds. 0 means forever and minimal value is 100000000 (100ms). |
 | content | [Content](#grpcgateway-pb-Content) |  |  |
+| force | [bool](#bool) |  | if true, the command will be executed even if the resource does not exist |
+| async | [bool](#bool) |  | if true, the command will finish immediately after pending event is created |
 
 
 
@@ -906,6 +911,7 @@ Certain filters perform a logical &#34;or&#34; operation among the elements of t
 | device_id_filter | [string](#string) | repeated |  |
 | type_filter | [string](#string) | repeated |  |
 | resource_id_filter | [ResourceIdFilter](#grpcgateway-pb-ResourceIdFilter) | repeated | New resource ID filter. For HTTP requests, use it multiple times as a query parameter like &#34;resourceIdFilter={deviceID}{href}&#34;. |
+| include_hidden_resources | [bool](#bool) |  | Get all pending commands for all resources, even if the resource is not published. |
 
 
 
@@ -981,24 +987,6 @@ Certain filters perform a logical &#34;or&#34; operation among the elements of t
 
 
 
-<a name="grpcgateway-pb-DeviceOAuthClient"></a>
-
-### DeviceOAuthClient
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| client_id | [string](#string) |  | @gotags: yaml:&#34;clientID&#34; |
-| audience | [string](#string) |  |  |
-| scopes | [string](#string) | repeated |  |
-| provider_name | [string](#string) |  | @gotags: yaml:&#34;providerName&#34; |
-
-
-
-
-
-
 <a name="grpcgateway-pb-HubConfigurationRequest"></a>
 
 ### HubConfigurationRequest
@@ -1027,10 +1015,32 @@ Certain filters perform a logical &#34;or&#34; operation among the elements of t
 | default_command_time_to_live | [int64](#int64) |  | exposes default command time to live in nanoseconds for CreateResource, RetrieveResource, UpdateResource, DeleteResource, and UpdateDeviceMetadata commands when it is not set in the request. 0 - means forever. |
 | certificate_authority | [string](#string) |  | certificate_authority in format https://host:port |
 | http_gateway_address | [string](#string) |  | cfg for UI http-gateway |
-| web_oauth_client | [WebOAuthClient](#grpcgateway-pb-WebOAuthClient) |  |  |
-| device_oauth_client | [DeviceOAuthClient](#grpcgateway-pb-DeviceOAuthClient) |  |  |
+| web_oauth_client | [OAuthClient](#grpcgateway-pb-OAuthClient) |  |  |
+| device_oauth_client | [OAuthClient](#grpcgateway-pb-OAuthClient) |  |  |
+| m2m_oauth_client | [OAuthClient](#grpcgateway-pb-OAuthClient) |  |  |
 | ui | [UIConfiguration](#grpcgateway-pb-UIConfiguration) |  |  |
 | build_info | [BuildInfo](#grpcgateway-pb-BuildInfo) |  | build info |
+
+
+
+
+
+
+<a name="grpcgateway-pb-OAuthClient"></a>
+
+### OAuthClient
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| client_id | [string](#string) |  | @gotags: yaml:&#34;clientID&#34; |
+| audience | [string](#string) |  |  |
+| scopes | [string](#string) | repeated |  |
+| provider_name | [string](#string) |  | @gotags: yaml:&#34;providerName&#34; |
+| client_assertion_type | [string](#string) |  | @gotags: yaml:&#34;clientAssertionType&#34; |
+| authority | [string](#string) |  |  |
+| grant_type | [string](#string) |  | @gotags: yaml:&#34;grantType&#34; |
 
 
 
@@ -1047,6 +1057,7 @@ UI configuration
 | ----- | ---- | ----- | ----------- |
 | visibility | [UIVisibility](#grpcgateway-pb-UIVisibility) |  |  |
 | device_provisioning_service | [string](#string) |  | Address to device provisioning service HTTP API in format https://host:port |
+| snippet_service | [string](#string) |  | Address to snippet service HTTP API in format https://host:port |
 
 
 
@@ -1091,23 +1102,7 @@ If true - show UI element, if false - hide UI element
 | device_logs | [bool](#bool) |  |  |
 | api_tokens | [bool](#bool) |  |  |
 | schema_hub | [bool](#bool) |  |  |
-
-
-
-
-
-
-<a name="grpcgateway-pb-WebOAuthClient"></a>
-
-### WebOAuthClient
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| client_id | [string](#string) |  | @gotags: yaml:&#34;clientID&#34; |
-| audience | [string](#string) |  |  |
-| scopes | [string](#string) | repeated |  |
+| snippet_service | [bool](#bool) |  |  |
 
 
 

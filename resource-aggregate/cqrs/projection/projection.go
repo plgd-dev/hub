@@ -24,7 +24,9 @@ type Projection struct {
 
 // NewProjection creates new resource projection.
 func NewProjection(ctx context.Context, name string, store eventstore.EventStore, subscriber eventbus.Subscriber, factoryModel eventstore.FactoryModelFunc) (*Projection, error) {
-	cqrsProjection, err := newProjection(ctx, store, name, subscriber, factoryModel, func(string, ...interface{}) {})
+	cqrsProjection, err := newProjection(ctx, store, name, subscriber, factoryModel, func(string, ...interface{}) {
+		// no-op if not set
+	})
 	if err != nil {
 		return nil, fmt.Errorf("cannot create Projection: %w", err)
 	}
@@ -117,6 +119,14 @@ func (p *Projection) Models(onModel func(eventstore.Model) (wantNext bool), reso
 	q := make([]eventstore.SnapshotQuery, 0, len(resourceIDs))
 	for _, resourceID := range resourceIDs {
 		q = append(q, eventstore.SnapshotQuery{GroupID: resourceID.GetDeviceId(), AggregateID: resourceID.ToUUID().String()})
+	}
+	p.cqrsProjection.Models(q, onModel)
+}
+
+func (p *Projection) GroupsModels(onModel func(eventstore.Model) (wantNext bool), groups ...string) {
+	q := make([]eventstore.SnapshotQuery, 0, len(groups))
+	for _, group := range groups {
+		q = append(q, eventstore.SnapshotQuery{GroupID: group})
 	}
 	p.cqrsProjection.Models(q, onModel)
 }

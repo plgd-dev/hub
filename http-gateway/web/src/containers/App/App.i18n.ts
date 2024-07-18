@@ -121,4 +121,20 @@ export const messages = defineMessages({
         id: 'app.menuConfiguration',
         defaultMessage: 'Configuration',
     },
+    menuSnippetService: {
+        id: 'app.menuSnippetService',
+        defaultMessage: 'Snippet Service',
+    },
+    menuConditions: {
+        id: 'app.menuConditions',
+        defaultMessage: 'Conditions',
+    },
+    menuConfigurations: {
+        id: 'app.menuConfigurations',
+        defaultMessage: 'Configurations',
+    },
+    menuAppliedConfigurations: {
+        id: 'app.menuAppliedConfigurations',
+        defaultMessage: 'Applied Configurations',
+    },
 })

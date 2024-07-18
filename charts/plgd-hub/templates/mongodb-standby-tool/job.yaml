@@ -1,0 +1,98 @@
+{{- if include "plgd-hub.mongodb-standby-tool.enabled" . }}
+{{- $rdServiceCert := "/certs" }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "plgd-hub.mongodb-standby-tool.fullname" . }}-job
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plgd-hub.labels" . | nindent 4 }}
+    {{- with .Values.mongodb.standbyTool.jobLabels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+  annotations:
+    checksum/config: {{ printf "%s" .Values.mongodb.standbyTool | sha256sum }}
+  {{- with .Values.mongodb.standbyTool.jobAnnotations }}
+    {{- . | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  backoffLimit: 1
+  suspend: true
+  template:        
+    metadata:
+      {{- with .Values.mongodb.standbyTool.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "plgd-hub.mongodb-standby-tool.selectorLabels" . | nindent 8 }}
+    spec:
+      restartPolicy: Never
+      {{- with .Values.mongodb.standbyTool.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.mongodb.standbyTool.rbac.enabled }}
+      serviceAccountName: {{ .Values.mongodb.standbyTool.rbac.serviceAccountName }}
+      {{- end }}
+      {{- with .Values.mongodb.standbyTool.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Values.mongodb.standbyTool.name }}
+          {{- with .Values.mongodb.standbyTool.podSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: {{ include "plgd-hub.image" (list . .Values.mongodb.standbyTool) | quote }}
+          imagePullPolicy: {{ .Values.mongodb.standbyTool.image.pullPolicy }}
+          command:
+            - /usr/local/bin/mongodb-standby-tool
+          args:
+            - "--config"
+            - {{  printf "%s/%s" .Values.mongodb.standbyTool.config.mountPath .Values.mongodb.standbyTool.config.fileName | quote }}
+          {{- with .Values.mongodb.standbyTool.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: {{ .Values.mongodb.standbyTool.config.volume }}
+              mountPath: {{ .Values.mongodb.standbyTool.config.mountPath }}
+            {{- if ( include "plgd-hub.mongodb-standby-tool.createCertByCm" . ) }}
+            - name: job-crt
+              mountPath: {{ $rdServiceCert }}
+            {{- end }}
+            {{- include "plgd-hub.extraCAPoolMount" (list . .Values.extraCAPool.storage) | nindent 12 }}
+            {{- with .Values.mongodb.standbyTool.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      {{- if .Values.mongodb.standbyTool.extraContainers }}
+      {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.mongodb.standbyTool.extraContainers "context" $ ) | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: {{ .Values.mongodb.standbyTool.config.volume }}
+          configMap:
+            name: {{ include "plgd-hub.mongodb-standby-tool.configName" . }}
+        {{- if ( include "plgd-hub.mongodb-standby-tool.createCertByCm" . ) }}
+        - name: job-crt
+          secret:
+            secretName: {{ include "plgd-hub.mongodb-standby-tool.jobCertName" . }}
+        {{- end }}
+        {{- include "plgd-hub.extraCAPoolVolume" (list . .Values.extraCAPool.storage) | nindent 8 }}
+        {{- with .Values.mongodb.standbyTool.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with .Values.mongodb.standbyTool.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.mongodb.standbyTool.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.mongodb.standbyTool.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

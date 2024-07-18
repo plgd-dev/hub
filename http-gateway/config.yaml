@@ -71,15 +71,28 @@ ui:
   webConfiguration:
     httpGatewayAddress: ""
     deviceProvisioningService: ""
+    snippetService: ""
     webOAuthClient:
+      authority: ""
       clientID: ""
       audience: ""
       scopes: []
+      grantTypes: [ "authorization_code" ]
     deviceOAuthClient:
+      authority: ""
       clientID: ""
       audience: ""
       scopes: []
       providerName: ""
+      grantTypes: [ "authorization_code" ]
+    m2mOAuthClient:
+      authority: ""
+      clientID: ""
+      audience: ""
+      scopes: []
+      providerName: ""
+      grantTypes: [ "client_credentials" ]
+      useJWTPrivateKey: true
     visibility:
       mainSidebar:
         certificates : true
@@ -96,3 +109,4 @@ ui:
         deviceLogs : false
         apiTokens : false
         schemaHub : false
+        snippetService: true

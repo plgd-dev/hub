@@ -361,9 +361,7 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 	secureGWShutdown()
 
 	createFn := func(timeToLive time.Duration) {
-		createCtx, cancel := context.WithTimeout(ctx, time.Second)
-		defer cancel()
-		_, errC := c.CreateResource(createCtx, &pb.CreateResourceRequest{
+		_, errC := c.CreateResource(ctx, &pb.CreateResourceRequest{
 			ResourceId: commands.NewResourceID(deviceID, device.ResourceURI),
 			Content: &pb.Content{
 				ContentType: message.AppOcfCbor.String(),
@@ -372,8 +370,9 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 				}),
 			},
 			TimeToLive: int64(timeToLive),
+			Async:      true,
 		})
-		require.Error(t, errC)
+		require.NoError(t, errC)
 	}
 	createFn(time.Millisecond * 500) // for test expired event
 	createFn(0)
@@ -391,9 +390,7 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 	retrieveFn(0)
 
 	updateFn := func(timeToLive time.Duration) {
-		updateCtx, cancel := context.WithTimeout(ctx, time.Second)
-		defer cancel()
-		_, errU := c.UpdateResource(updateCtx, &pb.UpdateResourceRequest{
+		_, errU := c.UpdateResource(ctx, &pb.UpdateResourceRequest{
 			ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
 			Content: &pb.Content{
 				ContentType: message.AppOcfCbor.String(),
@@ -402,20 +399,20 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 				}),
 			},
 			TimeToLive: int64(timeToLive),
+			Async:      true,
 		})
-		require.Error(t, errU)
+		require.NoError(t, errU)
 	}
 	updateFn(time.Millisecond * 500) // for test expired event
 	updateFn(0)
 
 	deleteFn := func(timeToLive time.Duration) {
-		deleteCtx, cancel := context.WithTimeout(ctx, time.Second)
-		defer cancel()
-		_, errD := c.DeleteResource(deleteCtx, &pb.DeleteResourceRequest{
+		_, errD := c.DeleteResource(ctx, &pb.DeleteResourceRequest{
 			ResourceId: commands.NewResourceID(deviceID, device.ResourceURI),
 			TimeToLive: int64(timeToLive),
+			Async:      true,
 		})
-		require.Error(t, errD)
+		require.NoError(t, errD)
 	}
 	deleteFn(time.Millisecond * 500) // for test expired event
 	deleteFn(0)

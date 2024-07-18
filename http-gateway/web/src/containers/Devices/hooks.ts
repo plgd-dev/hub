@@ -13,13 +13,14 @@ import { SecurityConfig, StreamApiPropsType } from '@/containers/App/App.types'
 const getConfig = () => security.getGeneralConfig() as SecurityConfig
 const getWellKnow = () => security.getWellKnownConfig()
 
-export const useDevicesList = () => {
+export const useDevicesList = (requestActive = true): StreamApiPropsType => {
     const { telemetryWebTracer, unauthorizedCallback } = useContext(AppContext)
 
-    const { data, updateData, setState, ...rest } = useStreamApi(`${getConfig().httpGatewayAddress}${devicesApiEndpoints.DEVICES}`, {
+    const { data, updateData, setState, ...rest }: StreamApiPropsType = useStreamApi(`${getConfig().httpGatewayAddress}${devicesApiEndpoints.DEVICES}`, {
         telemetryWebTracer,
         telemetrySpan: 'get-devices',
         unauthorizedCallback,
+        requestActive,
     })
 
     // Update the metadata when a WS event is emitted

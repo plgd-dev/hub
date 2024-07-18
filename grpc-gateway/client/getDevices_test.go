@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
+	grpcgwTest "github.com/plgd-dev/hub/v2/grpc-gateway/test"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	test "github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
@@ -69,7 +70,7 @@ func TestClient_GetDevices(t *testing.T) {
 
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
-	c := NewTestClient(t)
+	c := grpcgwTest.NewTestClient(t)
 	defer func() {
 		err := c.Close()
 		require.NoError(t, err)

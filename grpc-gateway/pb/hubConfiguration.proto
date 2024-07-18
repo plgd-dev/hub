@@ -7,18 +7,14 @@ option go_package = "github.com/plgd-dev/hub/v2/grpc-gateway/pb;pb";
 message HubConfigurationRequest {
 }
 
-message WebOAuthClient {
+message OAuthClient {
 	string client_id = 1; // @gotags: yaml:"clientID"
 	string audience = 2;
 	repeated string scopes = 3;
-}
-
-
-message DeviceOAuthClient {
-    string client_id = 1; // @gotags: yaml:"clientID"
-	string audience = 2;
-	repeated string scopes = 3;
     string provider_name = 4; // @gotags: yaml:"providerName"
+    string client_assertion_type = 5; // @gotags: yaml:"clientAssertionType"
+    string authority = 6;
+    string grant_type = 7; // @gotags: yaml:"grantType"
 }
 
 message BuildInfo {
@@ -52,6 +48,7 @@ message UIVisibility {
         bool device_logs = 12;
         bool api_tokens = 13;
         bool schema_hub = 14;
+        bool snippet_service = 15;
     }
     // Main sidebar visibility
     MainSidebar main_sidebar = 1;
@@ -62,6 +59,8 @@ message UIConfiguration {
     UIVisibility visibility = 1;
     // Address to device provisioning service HTTP API in format https://host:port  
     string device_provisioning_service = 2;
+    // Address to snippet service HTTP API in format https://host:port
+    string snippet_service = 3;
 }
 
 message HubConfigurationResponse {
@@ -80,8 +79,9 @@ message HubConfigurationResponse {
 
     // cfg for UI http-gateway
     string http_gateway_address = 10;
-    WebOAuthClient web_oauth_client = 11;
-    DeviceOAuthClient device_oauth_client = 12;
+    OAuthClient web_oauth_client = 11;
+    OAuthClient device_oauth_client = 12;
+    OAuthClient m2m_oauth_client = 15;
     UIConfiguration ui = 14;
 
     // build info

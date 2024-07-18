@@ -2,15 +2,36 @@ package test
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"sync"
+	"testing"
 	"time"
 
+	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/service"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
 )
+
+func NewTestClient(t *testing.T) *client.Client {
+	rootCAs := x509.NewCertPool()
+	for _, c := range test.GetRootCertificateAuthorities(t) {
+		rootCAs.AddCert(c)
+	}
+	tlsCfg := tls.Config{
+		RootCAs: rootCAs,
+	}
+	clientConfig := client.Config{
+		GatewayAddress: config.GRPC_GW_HOST,
+	}
+	c, err := client.NewFromConfig(&clientConfig, &tlsCfg)
+	require.NoError(t, err)
+	return c
+}
 
 func MakeConfig(t require.TestingT) service.Config {
 	var cfg service.Config

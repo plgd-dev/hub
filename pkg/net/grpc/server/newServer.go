@@ -1,8 +1,10 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"net"
+	"sync/atomic"
 
 	"github.com/plgd-dev/hub/v2/pkg/fn"
 	"google.golang.org/grpc"
@@ -14,6 +16,7 @@ type Server struct {
 	listener     net.Listener
 	gracefulStop bool
 	closeFunc    fn.FuncList
+	serving      atomic.Bool
 }
 
 // NewServer instantiates a gRPC server.
@@ -44,6 +47,9 @@ func (s *Server) Addr() string {
 
 // Serve starts serving and blocks.
 func (s *Server) Serve() error {
+	if !s.serving.CompareAndSwap(false, true) {
+		return errors.New("already serving")
+	}
 	err := s.Server.Serve(s.listener)
 	if err != nil {
 		return fmt.Errorf("serving failed: %w", err)
@@ -57,11 +63,16 @@ func (s *Server) Serve() error {
 // pending RPCs on the client side will get notified by connection
 // errors.
 func (s *Server) Close() error {
-	if s.gracefulStop {
-		s.Server.GracefulStop()
+	var err error
+	if !s.serving.Load() {
+		err = s.listener.Close()
 	} else {
-		s.Server.Stop()
+		if s.gracefulStop {
+			s.Server.GracefulStop()
+		} else {
+			s.Server.Stop()
+		}
 	}
 	s.closeFunc.Execute()
-	return nil
+	return err
 }

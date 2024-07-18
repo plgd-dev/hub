@@ -1,0 +1,40 @@
+{{- if and .Values.snippetservice.enabled .Values.snippetservice.ingress.http.enabled }}
+{{- $fullname := include "plgd-hub.snippetservice.fullname" . }}
+{{- $port := .Values.snippetservice.httpPort }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $fullname }}-http
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plgd-hub.labels" . | nindent 4 }}
+  annotations:
+    {{- if .Values.snippetservice.ingress.http.annotations }}
+    {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.snippetservice.ingress.http.annotations "context" $ ) | nindent 4 }}
+    {{- end }}
+    {{- if .Values.snippetservice.ingress.http.customAnnotations }}
+    {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.snippetservice.ingress.http.customAnnotations "context" $ ) | nindent 4 }}
+    {{- end }}
+spec:
+  tls:
+    - hosts:
+        - {{ include "plgd-hub.snippetservice.domain" . | quote }}
+      {{- if $.Values.global.enableWildCartCert }}
+      secretName: {{ include "plgd-hub.wildCardCertName" . | quote }}
+      {{- else }}
+      secretName: {{ include "plgd-hub.snippetservice.domainCertName" . | quote }}
+      {{- end }}
+  rules:
+  - host: {{ include "plgd-hub.snippetservice.domain" . | quote }}
+    http:
+      paths:
+      {{- range  .Values.snippetservice.ingress.http.paths }}
+        - path: {{ . }}
+          pathType: Prefix
+          backend:
+            service:
+              name: {{ $fullname }}-http
+              port:
+                number: {{ $port }}
+      {{- end }}
+{{- end }}

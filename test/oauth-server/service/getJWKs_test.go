@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestRequestHandler_getJWKs(t *testing.T) {
+func TestRequestHandlerGetJWKs(t *testing.T) {
 	webTearDown := test.SetUp(t)
 	defer webTearDown()
 

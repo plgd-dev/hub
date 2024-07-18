@@ -37,21 +37,11 @@ data:
           timeout: {{ .apis.grpc.keepAlive.maxConnectionIdle }}
         tls:
           {{- $tls := .apis.grpc.tls }}
-          {{- include "plgd-hub.certificateConfig" (list $ $tls $cert ) | indent 8 }}
+          {{- include "plgd-hub.internalCertificateConfig" (list $ $tls $cert ) | indent 8 }}
           clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
         authorization:
           {{- $authorization := .apis.grpc.authorization }}
-          {{- include "plgd-hub.authorizationConfig" (list $ $authorization "certificateauthority" ) | indent 8 }}
-          http:
-            maxIdleConns: {{ .apis.grpc.authorization.http.maxIdleConns }}
-            maxConnsPerHost: {{ .apis.grpc.authorization.http.maxIdleConnsPerHost }}
-            maxIdleConnsPerHost: {{ .apis.grpc.authorization.http.maxIdleConnsPerHost }}
-            idleConnTimeout: {{ .apis.grpc.authorization.http.idleConnTimeout }}
-            timeout: {{ .apis.grpc.authorization.http.timeout }}
-            tls:
-              {{- $grpcTls := .apis.grpc.authorization.http.tls }}
-              {{- include "plgd-hub.authorizationCaCertificateConfig" (list $ $grpcTls $cert ) | indent 12 }}
-              useSystemCAPool: {{ .apis.grpc.authorization.http.tls.useSystemCAPool }}
+          {{- include "plgd-hub.authorizationConfig" (list $ $authorization "certificateauthority.apis.grpc.authorization" $cert ) | indent 8 }}
       http:
         address: {{  .apis.http.address | default (printf "0.0.0.0:%v" .httpPort) | quote }}
         readTimeout: {{ .apis.http.readTimeout }}
@@ -69,7 +59,7 @@ data:
           maxConnIdleTime: {{ .clients.storage.mongoDB.maxConnIdleTime }}
           tls:
             {{- $mongoDbTls := .clients.storage.mongoDB.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $mongoDbTls $cert ) | indent 10 }}
+            {{- include "plgd-hub.internalCertificateConfig" (list $ $mongoDbTls $cert ) | indent 10 }}
             useSystemCAPool: {{ .clients.storage.mongoDB.tls.useSystemCAPool }}
           bulkWrite:
             timeout: {{ .clients.storage.mongoDB.bulkWrite.timeout  | quote }}
@@ -94,7 +84,7 @@ data:
               {{- toYaml .clients.storage.cqlDB.keyspace.replication | nindent 14 }}
           tls:
             {{- $cqlDbTls := .clients.storage.cqlDB.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $cqlDbTls $cert ) | indent 10 }}
+            {{- include "plgd-hub.internalCertificateConfig" (list $ $cqlDbTls $cert ) | indent 10 }}
             useSystemCAPool: {{ .clients.storage.cqlDB.tls.useSystemCAPool }}
       {{- include "plgd-hub.openTelemetryExporterConfig" (list $ $cert ) | nindent 6 }}
     signer:

@@ -236,6 +236,16 @@ func (r RequestHandler) NotifyResourceChanged(ctx context.Context, request *comm
 	}, nil
 }
 
+// check update, delete, create requests when force is set
+func wantToPublish(m *resourceStateModel, force bool, resourceID *commands.ResourceId) bool {
+	if !force {
+		// we want to publish the source when force is not set
+		return true
+	}
+	// when the resource is not published we do not want to publish event to the eventbus
+	return m.isPublished(resourceID)
+}
+
 func (r RequestHandler) UpdateResource(ctx context.Context, request *commands.UpdateResourceRequest) (*commands.UpdateResourceResponse, error) {
 	userID, owner, err := r.validateAccessToDevice(ctx, request.GetResourceId().GetDeviceId())
 	if err != nil {
@@ -243,7 +253,8 @@ func (r RequestHandler) UpdateResource(ctx context.Context, request *commands.Up
 	}
 	request.TimeToLive = checkTimeToLiveForDefault(r.config.Clients.Eventstore.DefaultCommandTimeToLive, request.GetTimeToLive())
 
-	aggregate, err := NewResourceAggregate(request.GetResourceId(), r.eventstore, NewResourceStateFactoryModel(userID, owner, r.config.HubID), cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry), true)
+	m := newResourceStateModel(userID, owner, r.config.HubID)
+	aggregate, err := NewResourceAggregate(request.GetResourceId(), r.eventstore, m.model, cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry), true)
 	if err != nil {
 		return nil, log.LogAndReturnError(grpc.ForwardErrorf(codes.InvalidArgument, "cannot update resource content: %v", err))
 	}
@@ -253,7 +264,9 @@ func (r RequestHandler) UpdateResource(ctx context.Context, request *commands.Up
 		return nil, log.LogAndReturnError(grpc.ForwardErrorf(codes.Internal, "cannot update resource content: %v", err))
 	}
 
-	PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), events, r.logger)
+	if wantToPublish(m, request.GetForce(), request.GetResourceId()) {
+		PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), events, r.logger)
+	}
 
 	var validUntil int64
 	for _, e := range events {
@@ -356,7 +369,8 @@ func (r RequestHandler) DeleteResource(ctx context.Context, request *commands.De
 	}
 	request.TimeToLive = checkTimeToLiveForDefault(r.config.Clients.Eventstore.DefaultCommandTimeToLive, request.GetTimeToLive())
 
-	aggregate, err := NewResourceAggregate(request.GetResourceId(), r.eventstore, NewResourceStateFactoryModel(userID, owner, r.config.HubID), cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry), true)
+	m := newResourceStateModel(userID, owner, r.config.HubID)
+	aggregate, err := NewResourceAggregate(request.GetResourceId(), r.eventstore, m.model, cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry), true)
 	if err != nil {
 		return nil, log.LogAndReturnError(grpc.ForwardErrorf(codes.InvalidArgument, "cannot delete resource: %v", err))
 	}
@@ -366,7 +380,9 @@ func (r RequestHandler) DeleteResource(ctx context.Context, request *commands.De
 		return nil, log.LogAndReturnError(grpc.ForwardErrorf(codes.Internal, "cannot delete resource: %v", err))
 	}
 
-	PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), events, r.logger)
+	if wantToPublish(m, request.GetForce(), request.GetResourceId()) {
+		PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), events, r.logger)
+	}
 
 	var validUntil int64
 	for _, e := range events {
@@ -414,7 +430,8 @@ func (r RequestHandler) CreateResource(ctx context.Context, request *commands.Cr
 	}
 	request.TimeToLive = checkTimeToLiveForDefault(r.config.Clients.Eventstore.DefaultCommandTimeToLive, request.GetTimeToLive())
 
-	aggregate, err := NewResourceAggregate(request.GetResourceId(), r.eventstore, NewResourceStateFactoryModel(userID, owner, r.config.HubID), cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry), true)
+	m := newResourceStateModel(userID, owner, r.config.HubID)
+	aggregate, err := NewResourceAggregate(request.GetResourceId(), r.eventstore, m.model, cqrsAggregate.NewDefaultRetryFunc(r.config.Clients.Eventstore.ConcurrencyExceptionMaxRetry), true)
 	if err != nil {
 		return nil, log.LogAndReturnError(grpc.ForwardErrorf(codes.InvalidArgument, "cannot create resource: %v", err))
 	}
@@ -424,7 +441,9 @@ func (r RequestHandler) CreateResource(ctx context.Context, request *commands.Cr
 		return nil, log.LogAndReturnError(grpc.ForwardErrorf(codes.Internal, "cannot create resource: %v", err))
 	}
 
-	PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), events, r.logger)
+	if wantToPublish(m, request.GetForce(), request.GetResourceId()) {
+		PublishEvents(r.publisher, owner, aggregate.DeviceID(), aggregate.ResourceID(), events, r.logger)
+	}
 
 	var validUntil int64
 	for _, e := range events {

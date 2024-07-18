@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/plgd-dev/hub/v2/http-gateway/service"
+	"github.com/plgd-dev/hub/v2/m2m-oauth-server/uri"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
@@ -20,18 +21,28 @@ func MakeWebConfigurationConfig() service.WebConfiguration {
 		Authority:                 testHttp.HTTPS_SCHEME + config.OAUTH_SERVER_HOST,
 		HTTPGatewayAddress:        testHttp.HTTPS_SCHEME + config.HTTP_GW_HOST,
 		DeviceProvisioningService: testHttp.HTTPS_SCHEME + config.HTTP_GW_HOST,
-		WebOAuthClient: service.BasicOAuthClient{
-			ClientID: config.OAUTH_MANAGER_CLIENT_ID,
-			Audience: config.OAUTH_MANAGER_AUDIENCE,
-			Scopes:   []string{"openid", "offline_access"},
+		SnippetService:            testHttp.HTTPS_SCHEME + config.SNIPPET_SERVICE_HTTP_HOST,
+		WebOAuthClient: service.OAuthClient{
+			Authority: testHttp.HTTPS_SCHEME + config.OAUTH_SERVER_HOST,
+			ClientID:  config.OAUTH_MANAGER_CLIENT_ID,
+			Audience:  config.OAUTH_MANAGER_AUDIENCE,
+			Scopes:    []string{"openid", "offline_access"},
+			GrantType: "authorization_code",
 		},
-		DeviceOAuthClient: service.DeviceOAuthClient{
-			BasicOAuthClient: service.BasicOAuthClient{
-				ClientID: config.OAUTH_MANAGER_CLIENT_ID,
-				Audience: config.OAUTH_MANAGER_AUDIENCE,
-				Scopes:   []string{"profile", "openid", "offline_access"},
-			},
+		DeviceOAuthClient: service.OAuthClient{
+			Authority:    testHttp.HTTPS_SCHEME + config.OAUTH_SERVER_HOST,
+			ClientID:     config.OAUTH_MANAGER_CLIENT_ID,
+			Audience:     config.OAUTH_MANAGER_AUDIENCE,
+			Scopes:       []string{"profile", "openid", "offline_access"},
 			ProviderName: config.DEVICE_PROVIDER,
+			GrantType:    "authorization_code",
+		},
+		M2MOAuthClient: &service.OAuthClient{
+			Authority:           testHttp.HTTPS_SCHEME + config.M2M_OAUTH_SERVER_HTTP_HOST,
+			ClientID:            config.M2M_OAUTH_PRIVATE_KEY_CLIENT_ID,
+			Audience:            config.OAUTH_MANAGER_AUDIENCE,
+			GrantType:           "client_credentials",
+			ClientAssertionType: uri.ClientAssertionTypeJWT,
 		},
 	}
 }
@@ -41,7 +52,7 @@ func MakeConfig(t require.TestingT, enableUI bool) service.Config {
 
 	cfg.Log = log.MakeDefaultConfig()
 
-	cfg.APIs.HTTP.Authorization = config.MakeAuthorizationConfig()
+	cfg.APIs.HTTP.Authorization = config.MakeValidatorConfig()
 	cfg.APIs.HTTP.Connection = config.MakeListenerConfig(config.HTTP_GW_HOST)
 	cfg.APIs.HTTP.Connection.TLS.ClientCertificateRequired = false
 	cfg.APIs.HTTP.WebSocket.StreamBodyLimit = 256 * 1024

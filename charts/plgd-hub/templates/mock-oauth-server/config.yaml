@@ -25,7 +25,7 @@ data:
         idleTimeout: {{ .apis.http.idleTimeout }}
         tls:
           {{- $tls := .apis.http.tls }}
-          {{- include "plgd-hub.certificateConfig" (list $ $tls $oauthServerCertPath ) | indent 8 }}
+          {{- include "plgd-hub.internalCertificateConfig" (list $ $tls $oauthServerCertPath ) | indent 8 }}
           clientCertificateRequired: {{ .apis.http.tls.clientCertificateRequired }}
     oauthSigner:
       idTokenKeyFile: {{ .oauthSigner.idTokenKeyFile | quote }}
