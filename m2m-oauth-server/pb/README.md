@@ -123,9 +123,7 @@ driven by resource change event
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| id | [string](#string) |  | Token ID / jti
-
-@gotags: bson:&#34;_id&#34; |
+| id | [string](#string) |  | Token ID / jti |
 | version | [uint64](#uint64) |  | Incremental version for update |
 | name | [string](#string) |  | User-friendly token name |
 | owner | [string](#string) |  | Owner of the token |

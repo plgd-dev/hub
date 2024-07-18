@@ -17,7 +17,7 @@ BUILD_VERSION ?= $(shell git tag --sort version:refname | tail -1 | sed -e "s/^v
 default: build
 
 define build-docker-image
-	cd ../.. && \
+	cd .. && \
 		mkdir -p .tmp/docker/$(SERVICE_NAME) && \
 		awk '{gsub("@NAME@","$(SERVICE_NAME)")} {gsub("@DIRECTORY@","m2m-oauth-server")} {print}' tools/docker/Dockerfile.in > .tmp/docker/$(SERVICE_NAME)/Dockerfile && \
 		docker build \

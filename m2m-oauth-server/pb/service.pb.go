@@ -30,7 +30,7 @@ type Token struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Token ID / jti
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty" bson:"_id"`  
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	// Incremental version for update
 	Version uint64 `protobuf:"varint,2,opt,name=version,proto3" json:"version,omitempty"`
 	// User-friendly token name

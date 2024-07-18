@@ -31,7 +31,7 @@ option go_package = "github.com/plgd-dev/hub/v2/m2m-oauth-server/pb;pb";
 // Tokens are deleted from DB after they are expired and blacklisted/revoked
 message Token { // driven by resource change event
   // Token ID / jti
-  string id = 1; // @gotags: bson:"_id"
+  string id = 1;
   // Incremental version for update
   uint64 version = 2;
   // User-friendly token name

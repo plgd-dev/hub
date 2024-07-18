@@ -256,7 +256,6 @@
       "properties": {
         "id": {
           "type": "string",
-          "description": "@gotags: bson:\"_id\"",
           "title": "Token ID / jti"
         },
         "version": {

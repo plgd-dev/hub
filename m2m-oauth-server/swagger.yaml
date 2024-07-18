@@ -293,7 +293,6 @@ components:
         id:
           title: Token ID / jti
           type: string
-          description: "@gotags: bson:\"_id\""
         version:
           title: Incremental version for update
           type: string
