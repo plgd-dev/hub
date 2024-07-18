@@ -15,7 +15,7 @@ import (
 )
 
 func (s *Store) CreateToken(ctx context.Context, owner string, token *pb.Token) (*pb.Token, error) {
-	if token.Owner == "" {
+	if token.GetOwner() == "" {
 		token.Owner = owner
 	}
 	if token.GetId() == "" {

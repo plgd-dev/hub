@@ -56,9 +56,9 @@ func replaceStrToInt64(m map[string]interface{}, keys ...string) error {
 				i, err := strconv.ParseInt(str, 10, 64)
 				if err != nil {
 					errs = multierror.Append(errs, fmt.Errorf("cannot convert key %v to int64, %w", k, err))
-					return err
+				} else {
+					m[k] = i
 				}
-				m[k] = i
 			}
 		}
 	}

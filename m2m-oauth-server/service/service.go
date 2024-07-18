@@ -42,14 +42,14 @@ func createStore(ctx context.Context, config storeConfig.Config, fileWatcher *fs
 		return nil, fmt.Errorf("mongodb: %w", err)
 	}
 	if config.CleanUpDeletedTokens != "" {
-		scheduler, err := NewExpiredUpdatesChecker(config.CleanUpDeletedTokens, config.ExtendCronParserBySeconds, func() {
-			err = s.DeleteTokens(ctx, time.Now())
-			if err != nil {
-				log.Errorf("cannot delete expired tokens: %v", err)
+		scheduler, err2 := NewExpiredUpdatesChecker(config.CleanUpDeletedTokens, config.ExtendCronParserBySeconds, func() {
+			err2 := s.DeleteTokens(ctx, time.Now())
+			if err2 != nil {
+				log.Errorf("cannot delete expired tokens: %v", err2)
 			}
 		})
-		if err != nil {
-			return nil, fmt.Errorf("cannot create scheduler: %w", err)
+		if err2 != nil {
+			return nil, fmt.Errorf("cannot create scheduler: %w", err2)
 		}
 		s.AddCloseFunc(func() {
 			err2 := scheduler.Shutdown()

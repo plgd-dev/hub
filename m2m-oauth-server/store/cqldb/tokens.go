@@ -10,12 +10,15 @@ import (
 func (s *Store) CreateToken(context.Context, *pb.Token) (*pb.Token, error) {
 	return nil, store.ErrNotSupported
 }
+
 func (s *Store) GetTokens(context.Context, string, *pb.GetTokensRequest, store.ProcessTokens) error {
 	return store.ErrNotSupported
 }
+
 func (s *Store) DeleteTokens(context.Context) error {
 	return store.ErrNotSupported
 }
+
 func (s *Store) BlacklistTokens(context.Context, string, *pb.BlacklistTokensRequest) (*pb.BlacklistTokensResponse, error) {
 	return nil, store.ErrNotSupported
 }

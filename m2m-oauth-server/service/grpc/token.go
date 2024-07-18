@@ -7,8 +7,6 @@ import (
 	"time"
 
 	goJwt "github.com/golang-jwt/jwt/v5"
-	"github.com/lestrrat-go/jwx/v2/jwk"
-	"github.com/lestrrat-go/jwx/v2/jws"
 	"github.com/lestrrat-go/jwx/v2/jwt"
 	oauthsigner "github.com/plgd-dev/hub/v2/m2m-oauth-server/oauthSigner"
 	"github.com/plgd-dev/hub/v2/m2m-oauth-server/pb"
@@ -27,32 +25,27 @@ func setKeyErrorExt(key, info interface{}, err error) error {
 func makeAccessToken(clientCfg *oauthsigner.Client, tokenReq tokenRequest) (jwt.Token, error) {
 	token := jwt.New()
 
-	if err := token.Set(jwt.JwtIDKey, tokenReq.id); err != nil {
-		return nil, setKeyError(jwt.JwtIDKey, err)
+	simpleSets := []struct {
+		key string
+		val interface{}
+	}{
+		{jwt.JwtIDKey, tokenReq.id},
+		{jwt.SubjectKey, getSubject(clientCfg, tokenReq)},
+		{jwt.AudienceKey, tokenReq.host},
+		{jwt.IssuedAtKey, tokenReq.issuedAt},
+		{uri.ScopeKey, tokenReq.scopes},
+		{uri.ClientIDKey, clientCfg.ID},
+		{jwt.IssuerKey, tokenReq.host},
 	}
-	sub := getSubject(clientCfg, tokenReq)
-	if err := token.Set(jwt.SubjectKey, sub); err != nil {
-		return nil, setKeyError(jwt.SubjectKey, err)
-	}
-	if err := token.Set(jwt.AudienceKey, tokenReq.host); err != nil {
-		return nil, setKeyError(jwt.AudienceKey, err)
-	}
-	if err := token.Set(jwt.IssuedAtKey, tokenReq.issuedAt); err != nil {
-		return nil, setKeyError(jwt.IssuedAtKey, err)
+	for _, set := range simpleSets {
+		if err := token.Set(set.key, set.val); err != nil {
+			return nil, setKeyError(set.key, err)
+		}
 	}
 	if !tokenReq.expiration.IsZero() {
 		if err := token.Set(jwt.ExpirationKey, tokenReq.expiration); err != nil {
 			return nil, setKeyError(jwt.ExpirationKey, err)
 		}
-	}
-	if err := token.Set(uri.ScopeKey, tokenReq.scopes); err != nil {
-		return nil, setKeyError(uri.ScopeKey, err)
-	}
-	if err := token.Set(uri.ClientIDKey, clientCfg.ID); err != nil {
-		return nil, setKeyError(uri.ClientIDKey, err)
-	}
-	if err := token.Set(jwt.IssuerKey, tokenReq.host); err != nil {
-		return nil, setKeyError(jwt.IssuerKey, err)
 	}
 	if err := setDeviceIDClaim(token, tokenReq); err != nil {
 		return nil, err
@@ -115,22 +108,6 @@ func setOriginTokenClaims(token jwt.Token, tokenReq tokenRequest) error {
 		return token.Set(uri.OriginalTokenClaims, tokenReq.originalTokenClaims)
 	}
 	return nil
-}
-
-func makeJWTPayload(key interface{}, jwkKey jwk.Key, data []byte) ([]byte, error) {
-	hdr := jws.NewHeaders()
-	if err := hdr.Set(jws.TypeKey, `JWT`); err != nil {
-		return nil, setKeyError(jws.TypeKey, err)
-	}
-	if err := hdr.Set(jws.KeyIDKey, jwkKey.KeyID()); err != nil {
-		return nil, setKeyError(jws.KeyIDKey, err)
-	}
-
-	payload, err := jws.Sign(data, jws.WithKey(jwkKey.Algorithm(), key, jws.WithProtectedHeaders(hdr)))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create UserToken: %w", err)
-	}
-	return payload, nil
 }
 
 func getExpirationTime(clientCfg *oauthsigner.Client, tokenReq tokenRequest) time.Time {

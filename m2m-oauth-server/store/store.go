@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/plgd-dev/hub/v2/m2m-oauth-server/pb"
@@ -27,10 +26,6 @@ var (
 	ErrInvalidArgument = errors.New("invalid argument")
 	ErrPartialDelete   = errors.New("some errors occurred while deleting")
 )
-
-func errInvalidArgument(err error) error {
-	return fmt.Errorf("%w: %w", ErrInvalidArgument, err)
-}
 
 func IsDuplicateKeyError(err error) bool {
 	return mongo.IsDuplicateKeyError(err)
