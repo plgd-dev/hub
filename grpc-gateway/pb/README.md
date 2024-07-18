@@ -672,8 +672,9 @@ When both device_id_filter and href_filter are set, the href_filter is applied t
 To filter resources of specific devices, use the resource_id_filter.
 You can use either device_id_filter or resource_id_filter or both. In this case, the result is the union of both filters.
 Certain filters perform a logical &#34;or&#34; operation among the elements of the filter.
-Lead reasource type filter applies to resource-level events (RESOURCE_UPDATE_PENDING..RESOURCE_CHANGED) only. For example, if you subscribe to RESOURCE_CHANGED and RESOURCE_UPDATED with lead_resource_type_filter set to [&#34;oic.wk.d&#34;, &#34;oic.wk.p&#34;],
-you will receive events only for resources with the lead resource type &#34;oic.wk.d&#34; or &#34;oic.wk.p&#34;.
+Lead resource type filter applies to resource-level events (RESOURCE_UPDATE_PENDING..RESOURCE_CHANGED) only. For example, if you subscribe to RESOURCE_CHANGED
+and RESOURCE_UPDATED with lead_resource_type_filter set to [&#34;oic.wk.d&#34;, &#34;oic.wk.p&#34;], you will receive events only for resources with the lead resource type
+&#34;oic.wk.d&#34; or &#34;oic.wk.p&#34;.
 
 
 | Field | Type | Label | Description |

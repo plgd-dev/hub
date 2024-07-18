@@ -1801,8 +1801,9 @@ func (x *CreateResourceResponse) GetData() *events.ResourceCreated {
 // To filter resources of specific devices, use the resource_id_filter.
 // You can use either device_id_filter or resource_id_filter or both. In this case, the result is the union of both filters.
 // Certain filters perform a logical "or" operation among the elements of the filter.
-// Lead reasource type filter applies to resource-level events (RESOURCE_UPDATE_PENDING..RESOURCE_CHANGED) only. For example, if you subscribe to RESOURCE_CHANGED and RESOURCE_UPDATED with lead_resource_type_filter set to ["oic.wk.d", "oic.wk.p"],
-// you will receive events only for resources with the lead resource type "oic.wk.d" or "oic.wk.p".
+// Lead resource type filter applies to resource-level events (RESOURCE_UPDATE_PENDING..RESOURCE_CHANGED) only. For example, if you subscribe to RESOURCE_CHANGED
+// and RESOURCE_UPDATED with lead_resource_type_filter set to ["oic.wk.d", "oic.wk.p"], you will receive events only for resources with the lead resource type
+// "oic.wk.d" or "oic.wk.p".
 type SubscribeToEvents_CreateSubscription struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

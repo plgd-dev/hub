@@ -15,6 +15,8 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
+var ErrNotFound = errors.New("not found")
+
 type subscriptions struct {
 	owner              string
 	send               func(e *pb.Event) error
@@ -48,36 +50,30 @@ func (s *subscriptions) close() {
 	}
 }
 
-func (s *subscriptions) createSubscription(req *pb.SubscribeToEvents) error {
-	sub := subscription.New(s.send, req.GetCorrelationId(), s.leadRTEnabled, req.GetCreateSubscription())
-	err := s.send(&pb.Event{
-		SubscriptionId: sub.Id(),
-		CorrelationId:  req.GetCorrelationId(),
+func NewOperationProcessed(subscriptionId, correlationId string, code pb.Event_OperationProcessed_ErrorStatus_Code, msg string) *pb.Event {
+	return &pb.Event{
+		SubscriptionId: subscriptionId,
+		CorrelationId:  correlationId,
 		Type: &pb.Event_OperationProcessed_{
 			OperationProcessed: &pb.Event_OperationProcessed{
 				ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
-					Code: pb.Event_OperationProcessed_ErrorStatus_OK,
+					Code:    code,
+					Message: msg,
 				},
 			},
 		},
-	})
+	}
+}
+
+func (s *subscriptions) createSubscription(req *pb.SubscribeToEvents) error {
+	sub := subscription.New(s.send, req.GetCorrelationId(), s.leadRTEnabled, req.GetCreateSubscription())
+	err := s.send(NewOperationProcessed(sub.Id(), req.GetCorrelationId(), pb.Event_OperationProcessed_ErrorStatus_OK, ""))
 	if err != nil {
 		return err
 	}
 	err = sub.Init(s.owner, s.subscriptionsCache)
 	if err != nil {
-		_ = s.send(&pb.Event{
-			SubscriptionId: sub.Id(),
-			CorrelationId:  req.GetCorrelationId(),
-			Type: &pb.Event_OperationProcessed_{
-				OperationProcessed: &pb.Event_OperationProcessed{
-					ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
-						Code:    pb.Event_OperationProcessed_ErrorStatus_ERROR,
-						Message: err.Error(),
-					},
-				},
-			},
-		})
+		_ = s.send(NewOperationProcessed(sub.Id(), req.GetCorrelationId(), pb.Event_OperationProcessed_ErrorStatus_ERROR, err.Error()))
 		return err
 	}
 	s.subs[sub.Id()] = sub
@@ -87,19 +83,8 @@ func (s *subscriptions) createSubscription(req *pb.SubscribeToEvents) error {
 func (s *subscriptions) cancelSubscription(req *pb.SubscribeToEvents) error {
 	sub, ok := s.subs[req.GetCancelSubscription().GetSubscriptionId()]
 	if !ok {
-		err := fmt.Errorf("cannot cancel subscription('%v'): not found", req.GetCancelSubscription().GetSubscriptionId())
-		err2 := s.send(&pb.Event{
-			SubscriptionId: req.GetCancelSubscription().GetSubscriptionId(),
-			CorrelationId:  req.GetCorrelationId(),
-			Type: &pb.Event_OperationProcessed_{
-				OperationProcessed: &pb.Event_OperationProcessed{
-					ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
-						Code:    pb.Event_OperationProcessed_ErrorStatus_NOT_FOUND,
-						Message: err.Error(),
-					},
-				},
-			},
-		})
+		err := fmt.Errorf("cannot cancel subscription('%v'): %w", req.GetCancelSubscription().GetSubscriptionId(), ErrNotFound)
+		err2 := s.send(NewOperationProcessed(req.GetCancelSubscription().GetSubscriptionId(), req.GetCorrelationId(), pb.Event_OperationProcessed_ErrorStatus_NOT_FOUND, err.Error()))
 		var errors *multierror.Error
 		errors = multierror.Append(errors, err)
 		if err2 != nil {
@@ -119,17 +104,7 @@ func (s *subscriptions) cancelSubscription(req *pb.SubscribeToEvents) error {
 	if err2 != nil {
 		return fmt.Errorf("cannot send subscription canceled for subscription('%v'): %w", sub.Id(), err2)
 	}
-	err2 = s.send(&pb.Event{
-		SubscriptionId: sub.Id(),
-		CorrelationId:  req.GetCorrelationId(),
-		Type: &pb.Event_OperationProcessed_{
-			OperationProcessed: &pb.Event_OperationProcessed{
-				ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
-					Code: pb.Event_OperationProcessed_ErrorStatus_OK,
-				},
-			},
-		},
-	})
+	err2 = s.send(NewOperationProcessed(sub.Id(), req.GetCorrelationId(), pb.Event_OperationProcessed_ErrorStatus_OK, ""))
 	if err2 != nil {
 		return fmt.Errorf("cannot send operation processed event for subscription('%v'): %w", sub.Id(), err2)
 	}
@@ -181,31 +156,11 @@ func (h *subscribeToEventsHandler) processNextRequest(subs *subscriptions) (bool
 		}
 	case nil:
 		err := fmt.Errorf("invalid action('%T')", v)
-		_ = h.send(&pb.Event{
-			CorrelationId: req.GetCorrelationId(),
-			Type: &pb.Event_OperationProcessed_{
-				OperationProcessed: &pb.Event_OperationProcessed{
-					ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
-						Code:    pb.Event_OperationProcessed_ErrorStatus_ERROR,
-						Message: err.Error(),
-					},
-				},
-			},
-		})
+		_ = h.send(NewOperationProcessed("", req.GetCorrelationId(), pb.Event_OperationProcessed_ErrorStatus_ERROR, err.Error()))
 		log.Errorf("%w", err)
 	default:
 		err := fmt.Errorf("unknown action %T", v)
-		_ = h.send(&pb.Event{
-			CorrelationId: req.GetCorrelationId(),
-			Type: &pb.Event_OperationProcessed_{
-				OperationProcessed: &pb.Event_OperationProcessed{
-					ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
-						Code:    pb.Event_OperationProcessed_ErrorStatus_ERROR,
-						Message: err.Error(),
-					},
-				},
-			},
-		})
+		_ = h.send(NewOperationProcessed("", req.GetCorrelationId(), pb.Event_OperationProcessed_ErrorStatus_ERROR, err.Error()))
 		log.Errorf("%w", err)
 	}
 	return true, nil
