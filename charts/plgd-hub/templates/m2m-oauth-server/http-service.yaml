@@ -16,7 +16,7 @@ metadata:
 spec:
   type: {{ .Values.m2moauthserver.service.http.type | default "ClusterIP" }}
   ports:
-    - port: {{ .Values.m2moauthserver.port }}
+    - port: {{ .Values.m2moauthserver.httpPort }}
       targetPort: {{ .Values.m2moauthserver.service.http.targetPort }}
       protocol: {{ .Values.m2moauthserver.service.http.protocol }}
       name: {{ .Values.m2moauthserver.service.http.name }}
