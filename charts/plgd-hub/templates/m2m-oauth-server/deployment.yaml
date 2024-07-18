@@ -56,9 +56,12 @@ spec:
             - "--config"
             - {{  printf "%s/%s" .Values.m2moauthserver.config.mountPath .Values.m2moauthserver.config.fileName | quote }}
           ports:
-            - name: http
+            - name: grpc
               containerPort: {{ .Values.m2moauthserver.port }}
               protocol: TCP
+            - name: http
+              containerPort: {{ .Values.m2moauthserver.httpPort }}
+              protocol: TCP  
           {{- with .Values.m2moauthserver.livenessProbe }}
           livenessProbe:
           {{- toYaml . | nindent 12 }}
