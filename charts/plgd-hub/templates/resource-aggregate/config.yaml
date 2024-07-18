@@ -54,7 +54,12 @@ data:
           {{- if $leadResourceType }}
           leadResourceType:
             enabled: {{ $leadResourceType.enabled | default false }}
-            regexFilter: {{ $leadResourceType.regexFilter }}
+            {{- if $leadResourceType.regexFilter }}
+            regexFilter: 
+            {{- range $leadResourceType.regexFilter }}
+              - {{ . | quote }}
+            {{- end }}
+            {{- end }}
             filter: {{ $leadResourceType.filter | quote }}
             useUUID: {{ $leadResourceType.useUUID | default false }}
           {{- end }}
