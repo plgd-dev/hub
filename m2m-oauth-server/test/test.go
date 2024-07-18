@@ -21,6 +21,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
+	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
 	"github.com/plgd-dev/hub/v2/test/config"
 	testHttp "github.com/plgd-dev/hub/v2/test/http"
 	testOAuthUri "github.com/plgd-dev/hub/v2/test/oauth-server/uri"
@@ -74,6 +75,12 @@ func MakeConfig(t require.TestingT) service.Config {
 	}
 	cfg.APIs.GRPC = config.MakeGrpcServerConfig(config.M2M_OAUTH_SERVER_HOST)
 	cfg.APIs.GRPC.TLS.ClientCertificateRequired = false
+	cfg.APIs.GRPC.Authorization.Endpoints = append(cfg.APIs.GRPC.Authorization.Endpoints,
+		validator.AuthorityConfig{
+			Authority: testHttp.HTTPS_SCHEME + config.M2M_OAUTH_SERVER_HTTP_HOST + uri.Base,
+			HTTP:      config.MakeHttpClientConfig(),
+		},
+	)
 	cfg.Clients.Storage = MakeStoreConfig()
 
 	cfg.OAuthSigner.PrivateKeyFile = urischeme.URIScheme(os.Getenv("M2M_OAUTH_SERVER_PRIVATE_KEY"))

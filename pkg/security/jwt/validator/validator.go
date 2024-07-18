@@ -76,7 +76,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 			return nil, errors.New("GetOpenIDConfiguration is nil")
 		}
 
-		openIDCfg, err := openid.GetConfiguration(ctx2, httpClient.HTTP(), authority.Authority)
+		openIDCfg, err := options.GetOpenIDConfiguration(ctx2, httpClient.HTTP(), authority.Authority)
 		if err != nil {
 			onClose.Execute()
 			httpClient.Close()
