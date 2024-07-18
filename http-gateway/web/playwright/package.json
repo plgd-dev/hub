@@ -19,7 +19,6 @@
     "@playwright/test": "^1.44.0"
   },
   "dependencies": {
-    "@octokit/core": "^6.1.2",
     "axios": "^1.7.2"
   }
 }

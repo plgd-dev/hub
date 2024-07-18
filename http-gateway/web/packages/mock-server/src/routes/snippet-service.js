@@ -17,8 +17,6 @@ router.get('/api/v1/configurations/api-reset', (req, res) => {
     try {
         checkError(req, res)
 
-        console.log('===== RESET CONFIGURATION API RESET')
-
         configurationsAdd = false
         configurationsDeleted = false
 
@@ -31,8 +29,9 @@ router.get('/api/v1/configurations/api-reset', (req, res) => {
 router.get('/api/v1/configurations/applied', (req, res) => {
     try {
         checkError(req, res)
-        const httpConfigurationIdFilter = get(req.query, 'httpConfigurationIdFilter', null)?.replace('/all', '')
-        const idFilter = get(req.query, 'idFilter', null)?.replace('/all', '')
+        const extractFilter = (query, key) => get(query, key, null)?.replace('/all', '')
+        const httpConfigurationIdFilter = extractFilter(req.query, 'httpConfigurationIdFilter')
+        const idFilter = extractFilter(req.query, 'idFilter')
 
         // detail configuration page
         if (httpConfigurationIdFilter) {
@@ -64,10 +63,8 @@ router.get('/api/v1/configurations', (req, res) => {
     try {
         checkError(req, res)
 
-        let filter = parseFilters(req.query, 'httpIdFilter')
-        if (Array.isArray(filter)) {
-            filter = filter[0]
-        }
+        const parsedFilter = parseFilters(req.query, 'httpIdFilter')
+        const filter = Array.isArray(parsedFilter) ? parsedFilter[0] : parsedFilter
 
         // detail page
         if (filter) {
@@ -101,7 +98,7 @@ router.post('/api/v1/configurations', (req, res) => {
     try {
         checkError(req, res)
 
-        configurationsAdd = this
+        configurationsAdd = true
 
         res.status(200).send({ id: '1a53e16f-b533-4c26-9150-e2c30065ab27' })
     } catch (e) {
