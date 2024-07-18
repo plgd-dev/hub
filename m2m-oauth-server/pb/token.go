@@ -10,9 +10,11 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
+var errTokenIsNil = errors.New("Token is nil")
+
 func (x *Token) Validate() error {
 	if x == nil {
-		return errors.New("Token is nil")
+		return errTokenIsNil
 	}
 	if x.GetId() == "" {
 		return errors.New("Token.Id is empty")
@@ -103,7 +105,7 @@ func (x *Token) ToBsonMap() (map[string]interface{}, error) {
 
 func (x *Token) FromMap(m map[string]interface{}) error {
 	if x == nil {
-		return errors.New("Token is nil")
+		return errTokenIsNil
 	}
 	data, err := json.Marshal(m)
 	if err != nil {
@@ -118,7 +120,7 @@ func (x *Token) FromMap(m map[string]interface{}) error {
 
 func (x *Token) FromBsonMap(m map[string]interface{}) error {
 	if x == nil {
-		return errors.New("Token is nil")
+		return errTokenIsNil
 	}
 	m["id"] = m["_id"]
 	delete(m, "_id")
