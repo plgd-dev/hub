@@ -1,4 +1,4 @@
-{{- if and (include "plgd-hub.m2moauthserver.enabled" .) .Values.m2moauthserver.ingress.enabled }}
+{{- if and (include "plgd-hub.m2moauthserver.enabled" .) .Values.m2moauthserver.ingress.http.enabled }}
 {{- $fullname := include "plgd-hub.m2moauthserver.fullname" . }}
 {{- $port := .Values.m2moauthserver.port }}
 apiVersion: networking.k8s.io/v1
@@ -9,11 +9,11 @@ metadata:
   labels:
     {{- include "plgd-hub.labels" . | nindent 4 }}
   annotations:
-    {{- if .Values.m2moauthserver.ingress.annotations }}
-    {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.m2moauthserver.ingress.annotations "context" $ ) | nindent 4 }}
+    {{- if .Values.m2moauthserver.ingress.http.annotations }}
+    {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.m2moauthserver.ingress.http.annotations "context" $ ) | nindent 4 }}
     {{- end }}
-    {{- if .Values.m2moauthserver.ingress.customAnnotations }}
-    {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.m2moauthserver.ingress.customAnnotations "context" $ ) | nindent 4 }}
+    {{- if .Values.m2moauthserver.ingress.http.customAnnotations }}
+    {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.m2moauthserver.ingress.http.customAnnotations "context" $ ) | nindent 4 }}
     {{- end }}
 spec:
   tls:
@@ -28,7 +28,7 @@ spec:
   - host: {{ include "plgd-hub.m2moauthserver.ingressDomain" . | quote }}
     http:
       paths:
-      {{- range  .Values.m2moauthserver.ingress.paths }}
+      {{- range  .Values.m2moauthserver.ingress.http.paths }}
       - path: {{ . }}
         pathType: Prefix
         backend:
