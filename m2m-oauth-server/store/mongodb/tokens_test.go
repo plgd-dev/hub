@@ -26,7 +26,7 @@ func TestGetTokens(t *testing.T) {
 			Owner:    owner,
 			Version:  0,
 			Name:     "name1",
-			IssuedAt: time.Now().UnixNano(),
+			IssuedAt: time.Now().Unix(),
 			ClientId: "client1",
 		},
 		{
@@ -34,11 +34,11 @@ func TestGetTokens(t *testing.T) {
 			Owner:    owner,
 			Version:  0,
 			Name:     "name2",
-			IssuedAt: time.Now().UnixNano(),
+			IssuedAt: time.Now().Unix(),
 			ClientId: "client1",
 			Blacklisted: &pb.Token_BlackListed{
 				Flag:      true,
-				Timestamp: time.Now().UnixNano(),
+				Timestamp: time.Now().Unix(),
 			},
 		},
 	}
@@ -133,7 +133,7 @@ func TestBlacklistTokens(t *testing.T) {
 			Owner:    owner,
 			Version:  0,
 			Name:     "name1",
-			IssuedAt: time.Now().UnixNano(),
+			IssuedAt: time.Now().Unix(),
 			ClientId: "client1",
 		},
 		{
@@ -141,7 +141,7 @@ func TestBlacklistTokens(t *testing.T) {
 			Owner:    owner,
 			Version:  0,
 			Name:     "name2",
-			IssuedAt: time.Now().UnixNano(),
+			IssuedAt: time.Now().Unix(),
 			ClientId: "client1",
 		},
 		{
@@ -149,7 +149,7 @@ func TestBlacklistTokens(t *testing.T) {
 			Owner:    owner,
 			Version:  0,
 			Name:     "name3",
-			IssuedAt: time.Now().UnixNano(),
+			IssuedAt: time.Now().Unix(),
 			ClientId: "client1",
 		},
 	}
@@ -173,11 +173,11 @@ func TestBlacklistTokens(t *testing.T) {
 			Owner:    owner,
 			Version:  0,
 			Name:     "name1",
-			IssuedAt: time.Now().UnixNano(),
+			IssuedAt: time.Now().Unix(),
 			ClientId: "client1",
 			Blacklisted: &pb.Token_BlackListed{
 				Flag:      true,
-				Timestamp: time.Now().UnixNano(),
+				Timestamp: time.Now().Unix(),
 			},
 		},
 		{
@@ -185,11 +185,11 @@ func TestBlacklistTokens(t *testing.T) {
 			Owner:    owner,
 			Version:  0,
 			Name:     "name2",
-			IssuedAt: time.Now().UnixNano(),
+			IssuedAt: time.Now().Unix(),
 			ClientId: "client1",
 			Blacklisted: &pb.Token_BlackListed{
 				Flag:      true,
-				Timestamp: time.Now().UnixNano(),
+				Timestamp: time.Now().Unix(),
 			},
 		},
 	}
@@ -226,12 +226,12 @@ func TestDeleteTokens(t *testing.T) {
 			Owner:      owner,
 			Version:    0,
 			Name:       "name1",
-			IssuedAt:   time.Now().UnixNano(),
+			IssuedAt:   time.Now().Unix(),
 			ClientId:   "client1",
-			Expiration: time.Now().Add(time.Minute * 10).UnixNano(),
+			Expiration: time.Now().Add(time.Minute * 10).Unix(),
 			Blacklisted: &pb.Token_BlackListed{
 				Flag:      true,
-				Timestamp: time.Now().UnixNano(),
+				Timestamp: time.Now().Unix(),
 			},
 		},
 		{
@@ -239,12 +239,12 @@ func TestDeleteTokens(t *testing.T) {
 			Owner:      owner,
 			Version:    0,
 			Name:       "name2",
-			IssuedAt:   time.Now().UnixNano(),
+			IssuedAt:   time.Now().Unix(),
 			ClientId:   "client1",
-			Expiration: time.Now().Add(time.Minute * 10).UnixNano(),
+			Expiration: time.Now().Add(time.Minute * 10).Unix(),
 			Blacklisted: &pb.Token_BlackListed{
 				Flag:      true,
-				Timestamp: time.Now().Add(time.Minute).UnixNano(),
+				Timestamp: time.Now().Add(time.Minute).Unix(),
 			},
 		},
 		{
@@ -252,7 +252,7 @@ func TestDeleteTokens(t *testing.T) {
 			Owner:    owner,
 			Version:  0,
 			Name:     "name3",
-			IssuedAt: time.Now().UnixNano(),
+			IssuedAt: time.Now().Unix(),
 			ClientId: "client1",
 		},
 	}
@@ -271,7 +271,7 @@ func TestDeleteTokens(t *testing.T) {
 			Owner:    owner,
 			Version:  0,
 			Name:     "name3",
-			IssuedAt: time.Now().UnixNano(),
+			IssuedAt: time.Now().Unix(),
 			ClientId: "client1",
 		},
 	}

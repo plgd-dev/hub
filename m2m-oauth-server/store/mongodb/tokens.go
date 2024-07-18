@@ -117,7 +117,7 @@ func (s *Store) GetTokens(ctx context.Context, owner string, req *pb.GetTokensRe
 
 func (s *Store) DeleteTokens(ctx context.Context, now time.Time) error {
 	deleteFilter := bson.D{
-		{Key: pb.ExpirationKey, Value: bson.M{"$lt": now.UnixNano()}},
+		{Key: pb.ExpirationKey, Value: bson.M{"$lt": now.Unix()}},
 		{Key: pb.ExpirationKey, Value: bson.M{"$gt": int64(0)}},
 		{Key: pb.BlackListedFlagKey, Value: true},
 	}
@@ -134,7 +134,7 @@ func (s *Store) BlacklistTokens(ctx context.Context, owner string, req *pb.Black
 		{
 			Key: mongodb.Or, Value: bson.A{
 				bson.M{
-					pb.ExpirationKey: bson.M{"$gte": time.Now().UnixNano()},
+					pb.ExpirationKey: bson.M{"$gte": time.Now().Unix()},
 				},
 				bson.M{
 					pb.ExpirationKey: bson.M{mongodb.Exists: false},
@@ -156,7 +156,7 @@ func (s *Store) BlacklistTokens(ctx context.Context, owner string, req *pb.Black
 	}
 	blacklisted := pb.Token_BlackListed{
 		Flag:      true,
-		Timestamp: time.Now().UnixNano(),
+		Timestamp: time.Now().Unix(),
 	}
 	value, err := blacklisted.ToBsonMap()
 	if err != nil {

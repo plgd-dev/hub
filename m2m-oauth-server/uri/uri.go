@@ -8,7 +8,7 @@ const (
 	TokenNameKey           = "token_name"
 	ScopeKey               = "scope"
 	GrantTypeKey           = "grant_type"
-	TimeToLiveKey          = "time_to_live"
+	ExpirationKey          = "expiration"
 	AudienceKey            = jwt.AudienceKey
 	AccessTokenKey         = "access_token"
 	ClientAssertionTypeKey = "client_assertion_type"

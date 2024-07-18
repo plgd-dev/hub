@@ -25,21 +25,18 @@ func setKeyErrorExt(key, info interface{}, err error) error {
 func makeAccessToken(clientCfg *oauthsigner.Client, tokenReq tokenRequest) (jwt.Token, error) {
 	token := jwt.New()
 
-	simpleSets := []struct {
-		key string
-		val interface{}
-	}{
-		{jwt.JwtIDKey, tokenReq.id},
-		{jwt.SubjectKey, getSubject(clientCfg, tokenReq)},
-		{jwt.AudienceKey, tokenReq.host},
-		{jwt.IssuedAtKey, tokenReq.issuedAt},
-		{uri.ScopeKey, tokenReq.scopes},
-		{uri.ClientIDKey, clientCfg.ID},
-		{jwt.IssuerKey, tokenReq.host},
+	claims := map[string]interface{}{
+		jwt.JwtIDKey:    tokenReq.id,
+		jwt.SubjectKey:  getSubject(clientCfg, tokenReq),
+		jwt.AudienceKey: tokenReq.host,
+		jwt.IssuedAtKey: tokenReq.issuedAt,
+		uri.ScopeKey:    tokenReq.scopes,
+		uri.ClientIDKey: clientCfg.ID,
+		jwt.IssuerKey:   tokenReq.host,
 	}
-	for _, set := range simpleSets {
-		if err := token.Set(set.key, set.val); err != nil {
-			return nil, setKeyError(set.key, err)
+	for key, val := range claims {
+		if err := token.Set(key, val); err != nil {
+			return nil, setKeyError(key, err)
 		}
 	}
 	if !tokenReq.expiration.IsZero() {
@@ -111,15 +108,24 @@ func setOriginTokenClaims(token jwt.Token, tokenReq tokenRequest) error {
 }
 
 func getExpirationTime(clientCfg *oauthsigner.Client, tokenReq tokenRequest) time.Time {
-	var expires time.Time
-	ttl := time.Duration(tokenReq.CreateTokenRequest.GetTimeToLive()) * time.Nanosecond
-	if ttl == 0 || (ttl > clientCfg.AccessTokenLifetime && clientCfg.AccessTokenLifetime > 0) {
-		ttl = clientCfg.AccessTokenLifetime
+	if clientCfg.AccessTokenLifetime == 0 {
+		if tokenReq.CreateTokenRequest.GetExpiration() > 0 {
+			return time.Unix(tokenReq.CreateTokenRequest.GetExpiration(), 0)
+		}
+		return time.Time{}
 	}
-	if ttl > 0 {
-		expires = tokenReq.issuedAt.Add(clientCfg.AccessTokenLifetime)
+	if tokenReq.CreateTokenRequest.GetExpiration() == 0 {
+		if clientCfg.AccessTokenLifetime == 0 {
+			return time.Time{}
+		}
+		return tokenReq.issuedAt.Add(clientCfg.AccessTokenLifetime)
 	}
-	return expires
+	wantExpiration := time.Unix(tokenReq.CreateTokenRequest.GetExpiration(), 0)
+	clientWantExpiration := tokenReq.issuedAt.Add(clientCfg.AccessTokenLifetime)
+	if clientWantExpiration.Before(wantExpiration) {
+		return clientWantExpiration
+	}
+	return wantExpiration
 }
 
 func (s *M2MOAuthServiceServer) generateAccessToken(clientCfg *oauthsigner.Client, tokenReq tokenRequest) (string, error) {
@@ -166,11 +172,28 @@ func sliceContains[T comparable](s []T, sub []T) bool {
 	return len(check) == 0
 }
 
+func validateExpiration(clientCfg *oauthsigner.Client, tokenReq *tokenRequest) error {
+	if tokenReq.CreateTokenRequest.GetExpiration() > 0 {
+		if tokenReq.CreateTokenRequest.GetExpiration() < tokenReq.issuedAt.Unix() {
+			return fmt.Errorf("expiration(%v) must be greater than issuedAt(%v)", time.Unix(tokenReq.CreateTokenRequest.GetExpiration(), 0), tokenReq.issuedAt)
+		}
+		if clientCfg.AccessTokenLifetime > 0 {
+			if tokenReq.CreateTokenRequest.GetExpiration() > tokenReq.issuedAt.Add(clientCfg.AccessTokenLifetime).Unix() {
+				return fmt.Errorf("expiration(%v) must be less than or equal to issuedAt + client accessTokenLifetime(%v)", time.Unix(tokenReq.CreateTokenRequest.GetExpiration(), 0), tokenReq.issuedAt.Add(clientCfg.AccessTokenLifetime))
+			}
+		}
+	}
+	return nil
+}
+
 func (s *M2MOAuthServiceServer) validateTokenRequest(ctx context.Context, clientCfg *oauthsigner.Client, tokenReq *tokenRequest) error {
 	if err := validateGrantType(clientCfg, tokenReq); err != nil {
 		return err
 	}
 	if err := validateClient(clientCfg, tokenReq); err != nil {
+		return err
+	}
+	if err := validateExpiration(clientCfg, tokenReq); err != nil {
 		return err
 	}
 	if err := validateClientAssertionType(clientCfg, tokenReq); err != nil {
@@ -185,7 +208,6 @@ func (s *M2MOAuthServiceServer) validateTokenRequest(ctx context.Context, client
 	if err := validateScopes(clientCfg, tokenReq); err != nil {
 		return err
 	}
-
 	return nil
 }
 

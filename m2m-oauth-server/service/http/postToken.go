@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
 	"github.com/plgd-dev/hub/v2/m2m-oauth-server/pb"
@@ -16,15 +15,15 @@ import (
 )
 
 type postRequest struct {
-	ClientID            string        `json:"client_id"`
-	Secret              string        `json:"client_secret"`
-	Audience            string        `json:"audience"`
-	GrantType           string        `json:"grant_type"`
-	ClientAssertionType string        `json:"client_assertion_type"`
-	ClientAssertion     string        `json:"client_assertion"`
-	TokenName           string        `json:"token_name"`
-	Scope               string        `json:"scope"`
-	TimeToLive          time.Duration `json:"time_to_live"`
+	ClientID            string `json:"client_id"`
+	Secret              string `json:"client_secret"`
+	Audience            string `json:"audience"`
+	GrantType           string `json:"grant_type"`
+	ClientAssertionType string `json:"client_assertion_type"`
+	ClientAssertion     string `json:"client_assertion"`
+	TokenName           string `json:"token_name"`
+	Scope               string `json:"scope"`
+	Expiration          int64  `json:"expiration"`
 }
 
 func postFormToCreateTokenRequest(r *http.Request, createTokenRequest *pb.CreateTokenRequest) {
@@ -42,12 +41,12 @@ func postFormToCreateTokenRequest(r *http.Request, createTokenRequest *pb.Create
 	createTokenRequest.ClientAssertionType = r.PostFormValue(uri.ClientAssertionTypeKey)
 	createTokenRequest.ClientAssertion = r.PostFormValue(uri.ClientAssertionKey)
 	createTokenRequest.TokenName = r.PostFormValue(uri.TokenNameKey)
-	ttl := r.PostFormValue(uri.TimeToLiveKey)
-	if ttl == "" {
+	expiration := r.PostFormValue(uri.ExpirationKey)
+	if expiration == "" {
 		return
 	}
-	if ttlVal, err := strconv.ParseInt(ttl, 10, 64); err == nil {
-		createTokenRequest.TimeToLive = ttlVal
+	if expirationVal, err := strconv.ParseInt(expiration, 10, 64); err == nil {
+		createTokenRequest.Expiration = expirationVal
 	}
 }
 
@@ -66,7 +65,7 @@ func jsonToCreateTokenRequest(req postRequest, createTokenRequest *pb.CreateToke
 	createTokenRequest.ClientAssertionType = req.ClientAssertionType
 	createTokenRequest.ClientAssertion = req.ClientAssertion
 	createTokenRequest.TokenName = req.TokenName
-	createTokenRequest.TimeToLive = req.TimeToLive.Nanoseconds()
+	createTokenRequest.Expiration = req.Expiration
 }
 
 func (requestHandler *RequestHandler) postToken(w http.ResponseWriter, r *http.Request) {

@@ -290,63 +290,63 @@
                   <td>client_id</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Client ID </p></td>
                 </tr>
               
                 <tr>
                   <td>client_secret</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Client Secret </p></td>
                 </tr>
               
                 <tr>
                   <td>audience</td>
                   <td><a href="#string">string</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>Requested token Audience </p></td>
                 </tr>
               
                 <tr>
                   <td>scope</td>
                   <td><a href="#string">string</a></td>
                   <td>repeated</td>
-                  <td><p> </p></td>
+                  <td><p>Requested token scopes </p></td>
                 </tr>
               
                 <tr>
-                  <td>time_to_live</td>
+                  <td>expiration</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Requested token expiration in Unix timestamp seconds </p></td>
                 </tr>
               
                 <tr>
                   <td>client_assertion_type</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Client assertion type </p></td>
                 </tr>
               
                 <tr>
                   <td>client_assertion</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Client assertion </p></td>
                 </tr>
               
                 <tr>
                   <td>token_name</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Token name </p></td>
                 </tr>
               
                 <tr>
                   <td>grant_type</td>
                   <td><a href="#string">string</a></td>
                   <td></td>
-                  <td><p> </p></td>
+                  <td><p>Grant type </p></td>
                 </tr>
               
             </tbody>
@@ -481,7 +481,7 @@
                   <td>issued_at</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>Unix timestamp in ns when the condition has been created/updated </p></td>
+                  <td><p>Unix timestamp in s when the condition has been created/updated </p></td>
                 </tr>
               
                 <tr>
@@ -502,7 +502,7 @@
                   <td>expiration</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>Original token expiration </p></td>
+                  <td><p>Token expiration in Unix timestamp seconds </p></td>
                 </tr>
               
                 <tr>
@@ -547,14 +547,14 @@
                   <td>flag</td>
                   <td><a href="#bool">bool</a></td>
                   <td></td>
-                  <td><p>Blacklisted/revoked enabled flag, if once token has been blacklisted/revoked then it can&#39;t be unblacklisted/unrevoked </p></td>
+                  <td><p>Blacklisted enabled flag, if once token has been blacklisted then it can&#39;t be unblacklisted/unrevoked </p></td>
                 </tr>
               
                 <tr>
                   <td>timestamp</td>
                   <td><a href="#int64">int64</a></td>
                   <td></td>
-                  <td><p>Unix timestamp in ns when the token has been blacklisted/revoked </p></td>
+                  <td><p>Unix timestamp in s when the token has been blacklisted </p></td>
                 </tr>
               
             </tbody>

@@ -63,15 +63,15 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| client_id | [string](#string) |  |  |
-| client_secret | [string](#string) |  |  |
-| audience | [string](#string) | repeated |  |
-| scope | [string](#string) | repeated |  |
-| time_to_live | [int64](#int64) |  |  |
-| client_assertion_type | [string](#string) |  |  |
-| client_assertion | [string](#string) |  |  |
-| token_name | [string](#string) |  |  |
-| grant_type | [string](#string) |  |  |
+| client_id | [string](#string) |  | Client ID |
+| client_secret | [string](#string) |  | Client Secret |
+| audience | [string](#string) | repeated | Requested token Audience |
+| scope | [string](#string) | repeated | Requested token scopes |
+| expiration | [int64](#int64) |  | Requested token expiration in Unix timestamp seconds |
+| client_assertion_type | [string](#string) |  | Client assertion type |
+| client_assertion | [string](#string) |  | Client assertion |
+| token_name | [string](#string) |  | Token name |
+| grant_type | [string](#string) |  | Grant type |
 
 
 
@@ -127,10 +127,10 @@ driven by resource change event
 | version | [uint64](#uint64) |  | Incremental version for update |
 | name | [string](#string) |  | User-friendly token name |
 | owner | [string](#string) |  | Owner of the token |
-| issued_at | [int64](#int64) |  | Unix timestamp in ns when the condition has been created/updated |
+| issued_at | [int64](#int64) |  | Unix timestamp in s when the condition has been created/updated |
 | audience | [string](#string) | repeated | Token Audience |
 | scope | [string](#string) | repeated | Token scopes |
-| expiration | [int64](#int64) |  | Original token expiration |
+| expiration | [int64](#int64) |  | Token expiration in Unix timestamp seconds |
 | client_id | [string](#string) |  | Client ID |
 | original_token_claims | [google.protobuf.Value](#google-protobuf-Value) |  | Original token claims |
 | blacklisted | [Token.BlackListed](#m2moauthserver-pb-Token-BlackListed) |  | Token black list section |
@@ -148,8 +148,8 @@ driven by resource change event
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| flag | [bool](#bool) |  | Blacklisted/revoked enabled flag, if once token has been blacklisted/revoked then it can&#39;t be unblacklisted/unrevoked |
-| timestamp | [int64](#int64) |  | Unix timestamp in ns when the token has been blacklisted/revoked |
+| flag | [bool](#bool) |  | Blacklisted enabled flag, if once token has been blacklisted then it can&#39;t be unblacklisted/unrevoked |
+| timestamp | [int64](#int64) |  | Unix timestamp in s when the token has been blacklisted |
 
 
 

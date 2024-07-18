@@ -99,10 +99,10 @@ func (s *M2MOAuthServiceServer) CreateToken(ctx context.Context, req *pb.CreateT
 		Id:                  tokenReq.id,
 		Name:                tokenReq.CreateTokenRequest.GetTokenName(),
 		Owner:               tokenReq.owner,
-		IssuedAt:            tokenReq.issuedAt.UnixNano(),
+		IssuedAt:            tokenReq.issuedAt.Unix(),
 		Audience:            tokenReq.CreateTokenRequest.GetAudience(),
 		Scope:               tokenReq.CreateTokenRequest.GetScope(),
-		Expiration:          pkgTime.UnixNano(tokenReq.expiration),
+		Expiration:          pkgTime.UnixSec(tokenReq.expiration),
 		ClientId:            tokenReq.CreateTokenRequest.GetClientId(),
 		OriginalTokenClaims: originalTokenClaims,
 	})

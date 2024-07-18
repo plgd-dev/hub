@@ -162,12 +162,12 @@
       "properties": {
         "flag": {
           "type": "boolean",
-          "title": "Blacklisted/revoked enabled flag, if once token has been blacklisted/revoked then it can't be unblacklisted/unrevoked"
+          "title": "Blacklisted enabled flag, if once token has been blacklisted then it can't be unblacklisted/unrevoked"
         },
         "timestamp": {
           "type": "string",
           "format": "int64",
-          "title": "Unix timestamp in ns when the token has been blacklisted/revoked"
+          "title": "Unix timestamp in s when the token has been blacklisted"
         }
       }
     },
@@ -195,38 +195,47 @@
       "type": "object",
       "properties": {
         "clientId": {
-          "type": "string"
+          "type": "string",
+          "title": "Client ID"
         },
         "clientSecret": {
-          "type": "string"
+          "type": "string",
+          "title": "Client Secret"
         },
         "audience": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "title": "Requested token Audience"
         },
         "scope": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "title": "Requested token scopes"
         },
-        "timeToLive": {
+        "expiration": {
           "type": "string",
-          "format": "int64"
+          "format": "int64",
+          "title": "Requested token expiration in Unix timestamp seconds"
         },
         "clientAssertionType": {
-          "type": "string"
+          "type": "string",
+          "title": "Client assertion type"
         },
         "clientAssertion": {
-          "type": "string"
+          "type": "string",
+          "title": "Client assertion"
         },
         "tokenName": {
-          "type": "string"
+          "type": "string",
+          "title": "Token name"
         },
         "grantType": {
-          "type": "string"
+          "type": "string",
+          "title": "Grant type"
         }
       }
     },
@@ -274,7 +283,7 @@
         "issuedAt": {
           "type": "string",
           "format": "int64",
-          "title": "Unix timestamp in ns when the condition has been created/updated"
+          "title": "Unix timestamp in s when the condition has been created/updated"
         },
         "audience": {
           "type": "array",
@@ -293,7 +302,7 @@
         "expiration": {
           "type": "string",
           "format": "int64",
-          "title": "Original token expiration"
+          "title": "Token expiration in Unix timestamp seconds"
         },
         "clientId": {
           "type": "string",
