@@ -21,6 +21,7 @@ import (
 	testOAuthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	testService "github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 func createTokens(ctx context.Context, t *testing.T, createTokens []*pb.CreateTokenRequest) []string {
@@ -103,6 +104,8 @@ func TestGetTokens(t *testing.T) {
 	blacklistTokenIDs := createTokens(ctx, t, blacklistedTokens)
 
 	blacklistTokens(ctx, t, blacklistTokenIDs, token)
+	claims, err := jwt.ParseToken(token)
+	require.NoError(t, err)
 
 	type args struct {
 		req   *pb.GetTokensRequest
@@ -126,17 +129,22 @@ func TestGetTokens(t *testing.T) {
 			wantHTTPCode: http.StatusOK,
 			want: map[string]*pb.Token{
 				tokenIDs[0]: {
-					ClientId: m2mOauthServerTest.ServiceOAuthClient.ID,
+					ClientId: tokens[0].GetClientId(),
 					Id:       tokenIDs[0],
 					Name:     tokens[0].GetTokenName(),
 				},
 				tokenIDs[1]: {
-					ClientId: m2mOauthServerTest.JWTPrivateKeyOAuthClient.ID,
+					ClientId: tokens[1].GetClientId(),
 					Id:       tokenIDs[1],
 					Name:     tokens[1].GetTokenName(),
+					OriginalTokenClaims: func() *structpb.Value {
+						v, err2 := structpb.NewValue(map[string]interface{}(claims))
+						require.NoError(t, err2)
+						return v
+					}(),
 				},
 				blacklistTokenIDs[0]: {
-					ClientId: m2mOauthServerTest.ServiceOAuthClient.ID,
+					ClientId: blacklistedTokens[0].GetClientId(),
 					Id:       blacklistTokenIDs[0],
 					Name:     blacklistedTokens[0].GetTokenName(),
 					Blacklisted: &pb.Token_BlackListed{
@@ -154,14 +162,19 @@ func TestGetTokens(t *testing.T) {
 			wantHTTPCode: http.StatusOK,
 			want: map[string]*pb.Token{
 				tokenIDs[0]: {
-					ClientId: m2mOauthServerTest.ServiceOAuthClient.ID,
+					ClientId: tokens[0].GetClientId(),
 					Id:       tokenIDs[0],
 					Name:     tokens[0].GetTokenName(),
 				},
 				tokenIDs[1]: {
-					ClientId: m2mOauthServerTest.JWTPrivateKeyOAuthClient.ID,
+					ClientId: tokens[1].GetClientId(),
 					Id:       tokenIDs[1],
 					Name:     tokens[1].GetTokenName(),
+					OriginalTokenClaims: func() *structpb.Value {
+						v, err2 := structpb.NewValue(map[string]interface{}(claims))
+						require.NoError(t, err2)
+						return v
+					}(),
 				},
 			},
 		},
@@ -169,16 +182,21 @@ func TestGetTokens(t *testing.T) {
 			name: "get certain tokens with excluded blacklisted",
 			args: args{
 				req: &pb.GetTokensRequest{
-					IdFilter: []string{tokenIDs[0], blacklistTokenIDs[0]},
+					IdFilter: []string{tokenIDs[1], blacklistTokenIDs[0]},
 				},
 				token: token,
 			},
 			wantHTTPCode: http.StatusOK,
 			want: map[string]*pb.Token{
-				tokenIDs[0]: {
-					ClientId: m2mOauthServerTest.ServiceOAuthClient.ID,
-					Id:       tokenIDs[0],
-					Name:     tokens[0].GetTokenName(),
+				tokenIDs[1]: {
+					ClientId: tokens[1].GetClientId(),
+					Id:       tokenIDs[1],
+					Name:     tokens[1].GetTokenName(),
+					OriginalTokenClaims: func() *structpb.Value {
+						v, err2 := structpb.NewValue(map[string]interface{}(claims))
+						require.NoError(t, err2)
+						return v
+					}(),
 				},
 			},
 		},
@@ -186,20 +204,25 @@ func TestGetTokens(t *testing.T) {
 			name: "get certain tokens with included blacklisted",
 			args: args{
 				req: &pb.GetTokensRequest{
-					IdFilter:           []string{tokenIDs[0], blacklistTokenIDs[0]},
+					IdFilter:           []string{tokenIDs[1], blacklistTokenIDs[0]},
 					IncludeBlacklisted: true,
 				},
 				token: token,
 			},
 			wantHTTPCode: http.StatusOK,
 			want: map[string]*pb.Token{
-				tokenIDs[0]: {
-					ClientId: m2mOauthServerTest.ServiceOAuthClient.ID,
-					Id:       tokenIDs[0],
-					Name:     tokens[0].GetTokenName(),
+				tokenIDs[1]: {
+					ClientId: tokens[1].GetClientId(),
+					Id:       tokenIDs[1],
+					Name:     tokens[1].GetTokenName(),
+					OriginalTokenClaims: func() *structpb.Value {
+						v, err2 := structpb.NewValue(map[string]interface{}(claims))
+						require.NoError(t, err2)
+						return v
+					}(),
 				},
 				blacklistTokenIDs[0]: {
-					ClientId: m2mOauthServerTest.ServiceOAuthClient.ID,
+					ClientId: blacklistedTokens[0].GetClientId(),
 					Id:       blacklistTokenIDs[0],
 					Name:     blacklistedTokens[0].GetTokenName(),
 					Blacklisted: &pb.Token_BlackListed{
@@ -246,8 +269,8 @@ func TestGetTokens(t *testing.T) {
 				require.Equal(t, want.GetClientId(), gotToken.GetClientId())
 				require.Equal(t, want.GetId(), gotToken.GetId())
 				require.Equal(t, want.GetName(), gotToken.GetName())
-				if gotToken.GetId() == blacklistTokenIDs[0] {
-					require.NotNil(t, gotToken.GetBlacklisted())
+				if want.GetOriginalTokenClaims() != nil {
+					test.CheckProtobufs(t, want.GetOriginalTokenClaims(), gotToken.GetOriginalTokenClaims(), test.RequireToCheckFunc(require.Equal))
 				}
 				require.Equal(t, want.GetBlacklisted().GetFlag(), gotToken.GetBlacklisted().GetFlag())
 			}

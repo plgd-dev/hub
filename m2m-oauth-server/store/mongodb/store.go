@@ -23,12 +23,10 @@ const (
 	tokensCol = "tokens"
 )
 
-var expirationOwnerBlacklistedIndex = mongo.IndexModel{
+var idOwnerIndex = mongo.IndexModel{
 	Keys: bson.D{
+		{Key: "_id", Value: 1},
 		{Key: pb.OwnerKey, Value: 1},
-		{Key: pb.ExpirationKey, Value: 1},
-		{Key: pb.BlackListedTimestampKey, Value: 1},
-		{Key: pb.BlackListedFlagKey, Value: 1},
 	},
 }
 
@@ -39,7 +37,7 @@ func New(ctx context.Context, cfg *Config, fileWatcher *fsnotify.Watcher, logger
 	}
 
 	m, err := pkgMongo.NewStoreWithCollections(ctx, &cfg.Mongo, certManager.GetTLSConfig(), tracerProvider, map[string][]mongo.IndexModel{
-		tokensCol: {expirationOwnerBlacklistedIndex},
+		tokensCol: {idOwnerIndex},
 	})
 	if err != nil {
 		certManager.Close()

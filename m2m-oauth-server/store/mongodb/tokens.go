@@ -11,6 +11,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/mongodb"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 func (s *Store) CreateToken(ctx context.Context, owner string, token *pb.Token) (*pb.Token, error) {
@@ -38,17 +39,24 @@ func (s *Store) CreateToken(ctx context.Context, owner string, token *pb.Token) 
 	return token, nil
 }
 
-func toFilter(owner string, req *pb.GetTokensRequest) (filter bson.D) {
-	if owner != "" {
-		filter = append(filter, bson.E{Key: pb.OwnerKey, Value: owner})
-	}
+func toFilter(owner string, req *pb.GetTokensRequest) (filter bson.D, hint interface{}) {
+	setIdOwnerHint := true
 	if len(req.GetIdFilter()) > 0 {
 		filter = append(filter, bson.E{Key: "_id", Value: bson.M{mongodb.In: req.GetIdFilter()}})
+	} else {
+		setIdOwnerHint = false
+	}
+	if owner != "" {
+		filter = append(filter, bson.E{Key: pb.OwnerKey, Value: owner})
+	} else {
+		setIdOwnerHint = false
 	}
 	if len(req.GetAudienceFilter()) > 0 {
 		filter = append(filter, bson.E{Key: pb.AudienceKey, Value: bson.M{mongodb.In: req.GetAudienceFilter()}})
+		setIdOwnerHint = false
 	}
 	if !req.GetIncludeBlacklisted() {
+		setIdOwnerHint = false
 		filter = append(filter,
 			bson.E{
 				Key: mongodb.Or, Value: bson.A{
@@ -63,7 +71,10 @@ func toFilter(owner string, req *pb.GetTokensRequest) (filter bson.D) {
 				},
 			})
 	}
-	return filter
+	if setIdOwnerHint {
+		hint = idOwnerIndex.Keys
+	}
+	return filter, hint
 }
 
 func processCursor[T any](ctx context.Context, cr *mongo.Cursor, process store.Process[T]) error {
@@ -92,8 +103,12 @@ func (s *Store) GetTokens(ctx context.Context, owner string, req *pb.GetTokensRe
 	if owner == "" {
 		return store.ErrInvalidArgument
 	}
-	filter := toFilter(owner, req)
-	cur, err := s.Store.Collection(tokensCol).Find(ctx, filter)
+	filter, hint := toFilter(owner, req)
+	opts := options.Find()
+	if hint != nil {
+		opts.SetHint(hint)
+	}
+	cur, err := s.Store.Collection(tokensCol).Find(ctx, filter, opts)
 	if err != nil {
 		return err
 	}
