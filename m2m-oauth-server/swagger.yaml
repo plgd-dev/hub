@@ -338,6 +338,9 @@ components:
           type: object
         blacklisted:
           $ref: '#/components/schemas/TokenBlackListed'
+        subject:
+          title: Subject of the token
+          type: string
       description: driven by resource change event
     protobufAny:
       type: object
