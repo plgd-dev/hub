@@ -57,7 +57,7 @@ spec:
           {{- range .Values.httpgateway.command  }}
             - {{ . | quote }}
           {{- end }}
-          {{- end}}
+          {{- end }}
           args:
             - "--config"
             - {{  printf "%s/%s" .Values.httpgateway.config.mountPath .Values.httpgateway.config.fileName | quote }}

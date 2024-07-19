@@ -57,7 +57,7 @@ spec:
           {{- range .Values.snippetservice.command  }}
             - {{ . | quote }}
           {{- end }}
-          {{- end}}
+          {{- end }}
           args:
             - "--config"
             - {{  printf "%s/%s" .Values.snippetservice.config.mountPath .Values.snippetservice.config.fileName | quote }}
