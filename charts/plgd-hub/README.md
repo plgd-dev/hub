@@ -127,7 +127,7 @@ global:
 | certificateauthority.log.dumpBody | bool | `false` | Dump grpc messages |
 | certificateauthority.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
 | certificateauthority.log.encoding | string | `"json"` | The supported values are: "json", "console" |
-| certificateauthority.log.level | string | `"info"` | Logging enabled from level  |
+| certificateauthority.log.level | string | `"info"` | Logging enabled from level |
 | certificateauthority.log.stacktrace.enabled | bool | `false` | Log stacktrace |
 | certificateauthority.log.stacktrace.level | string | `"warn"` | Stacktrace from level |
 | certificateauthority.name | string | `"certificate-authority"` | Name of component. Used in label selectors |
@@ -263,7 +263,7 @@ global:
 | coapgateway.log.dumpBody | bool | `false` | Dump coap messages |
 | coapgateway.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
 | coapgateway.log.encoding | string | `"json"` | The supported values are: "json", "console" |
-| coapgateway.log.level | string | `"info"` | Logging enabled from level  |
+| coapgateway.log.level | string | `"info"` | Logging enabled from level |
 | coapgateway.log.stacktrace.enabled | bool | `false` | Log stacktrace |
 | coapgateway.log.stacktrace.level | string | `"warn"` | Stacktrace from level |
 | coapgateway.name | string | `"coap-gateway"` | Name of component. Used in label selectors |
@@ -323,24 +323,28 @@ global:
 | extraCAPool.storage.mountPath | string | `"/certs/extra/storage"` | Mount path for custom storage ca pool |
 | extraCAPool.storage.name | string | `"storage-ca-pool"` | Volume and Mount name |
 | extraDeploy | string | `nil` | Extra deploy. Resolved as template |
-| global | object | `{"audience":"","authority":null,"authorization":{"audience":"{{ include \"plgd-hub.globalAudience\" . }}","endpoints":[{"address":"{{ include \"plgd-hub.globalAuthority\" . }}","http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}}},{"address":"{{ include \"plgd-hub.m2mOAuthServerAuthority\" . }}","http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}}]},"defaultCommandTimeToLive":"10s","deviceIdClaim":null,"domain":null,"enableWildCartCert":true,"extraCAPool":{"authorization":"{{ include \"plgd-hub.oldGlobalAuthorizationCAPool\" . }}","coap":null,"internal":null,"storage":null},"hubId":null,"image":{"tag":null},"m2mPrivateKey":"","mongoUri":"","oauth":{"device":[],"web":{"clientID":null,"scopes":["openid"]}},"openTelemetryExporter":{"address":null,"enabled":false,"keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}},"ownerClaim":"sub","standby":false,"useDatabase":"mongoDB"}` | Global config variables |
+| global | object | `{"audience":"","authority":null,"authorization":{"audience":"{{ include \"plgd-hub.globalAudience\" . }}","endpoints":[{"authority":"{{ include \"plgd-hub.globalAuthority\" . }}","http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}}},{"authority":"{{ include \"plgd-hub.m2mOAuthServerAuthority\" . }}","http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}}}]},"defaultCommandTimeToLive":"10s","deviceIdClaim":null,"domain":null,"enableWildCartCert":true,"extraCAPool":{"authorization":"{{ include \"plgd-hub.oldGlobalAuthorizationCAPool\" . }}","coap":null,"internal":null,"storage":null},"hubId":null,"image":{"tag":null},"m2mOAuthServer":{"clientServiceSecret":"","privateKey":""},"mongoUri":"","nats":{"leadResourceType":{"enabled":false,"filter":"","regexFilter":[],"useUUID":false}},"oauth":{"device":[],"web":{"clientID":null,"scopes":["openid"]}},"openTelemetryExporter":{"address":null,"enabled":false,"keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}},"ownerClaim":"sub","standby":false,"useDatabase":"mongoDB"}` | Global config variables |
 | global.audience | string | `""` | OAuth audience |
 | global.authority | string | `nil` | OAuth authority |
-| global.authorization | object | `{"audience":"{{ include \"plgd-hub.globalAudience\" . }}","endpoints":[{"address":"{{ include \"plgd-hub.globalAuthority\" . }}","http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}}},{"address":"{{ include \"plgd-hub.m2mOAuthServerAuthority\" . }}","http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}}]}` | Default OAuth authorization for all services |
-| global.authorization.endpoints[0] | object | `{"address":"{{ include \"plgd-hub.globalAuthority\" . }}","http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}}}` | Authorization endpoint to Customer OAuth server |
+| global.authorization | object | `{"audience":"{{ include \"plgd-hub.globalAudience\" . }}","endpoints":[{"authority":"{{ include \"plgd-hub.globalAuthority\" . }}","http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}}},{"authority":"{{ include \"plgd-hub.m2mOAuthServerAuthority\" . }}","http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}}}]}` | Default OAuth authorization for all services |
+| global.authorization.endpoints[0] | object | `{"authority":"{{ include \"plgd-hub.globalAuthority\" . }}","http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}}}` | Authorization endpoint to Customer OAuth server |
 | global.defaultCommandTimeToLive | string | `"10s"` | Global Default command time to live for resource-aggregate and resource-directory |
 | global.deviceIdClaim | string | `nil` | Device ID claim |
 | global.domain | string | `nil` | Global domain |
 | global.enableWildCartCert | bool | `true` | Enable *.{{ global.domain }} for all external domain |
 | global.extraCAPool | object | `{"authorization":"{{ include \"plgd-hub.oldGlobalAuthorizationCAPool\" . }}","coap":null,"internal":null,"storage":null}` | Custom CA certificates |
-| global.extraCAPool.authorization | string | `"{{ include \"plgd-hub.oldGlobalAuthorizationCAPool\" . }}"` | Custom CA certificate for authorization endpoint in PEM format  |
+| global.extraCAPool.authorization | string | `"{{ include \"plgd-hub.oldGlobalAuthorizationCAPool\" . }}"` | Custom CA certificate for authorization endpoint in PEM format |
 | global.extraCAPool.coap | string | `nil` | Custom CA certificate for coap endpoints in PEM format |
 | global.extraCAPool.internal | string | `nil` | Custom CA certificate for internal endpoints in PEM format |
 | global.extraCAPool.storage | string | `nil` | Custom CA certificate for storage(database) endpoints in PEM format |
 | global.hubId | string | `nil` | hubId. Used by coapgateway, resourceaggregate, resourcedirectory, indentitystore, certificateauthority. It must be unique |
 | global.image | object | `{"tag":null}` | Set image.tag for all services |
-| global.m2mPrivateKey | string | `""` | M2M OAuth JWT private key |
+| global.m2mOAuthServer | object | `{"clientServiceSecret":"","privateKey":""}` | M2M OAuth server |
+| global.m2mOAuthServer.clientServiceSecret | string | `""` | service secret to sign JWT m2m tokens for the oauth service client |
+| global.m2mOAuthServer.privateKey | string | `""` | private key to sign JWT m2m tokens |
 | global.mongoUri | string | `""` | MongoDB URI |
+| global.nats | object | `{"leadResourceType":{"enabled":false,"filter":"","regexFilter":[],"useUUID":false}}` | NATS publisher and subscriber configuration |
+| global.nats.leadResourceType | object | `{"enabled":false,"filter":"","regexFilter":[],"useUUID":false}` | Lead resource type configuration |
 | global.oauth | object | `{"device":[],"web":{"clientID":null,"scopes":["openid"]}}` | Global OAuth configuration used by multiple services |
 | global.openTelemetryExporter | object | `{"address":null,"enabled":false,"keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}` | Global Open Telemetry exporter configuration |
 | global.openTelemetryExporter.address | string | `nil` | The gRPC collector to which the exporter is going to send data |
@@ -381,7 +385,7 @@ global:
 | grpcgateway.log.dumpBody | bool | `false` | Dump grpc messages |
 | grpcgateway.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
 | grpcgateway.log.encoding | string | `"json"` | The supported values are: "json", "console" |
-| grpcgateway.log.level | string | `"info"` | Logging enabled from level  |
+| grpcgateway.log.level | string | `"info"` | Logging enabled from level |
 | grpcgateway.log.stacktrace.enabled | bool | `false` | Log stacktrace |
 | grpcgateway.log.stacktrace.level | string | `"warn"` | Stacktrace from level |
 | grpcgateway.name | string | `"grpc-gateway"` | Name of component. Used in label selectors |
@@ -443,7 +447,7 @@ global:
 | httpgateway.livenessProbe | object | `{}` | Liveness probe. http-gateway doesn't have any default liveness probe |
 | httpgateway.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
 | httpgateway.log.encoding | string | `"json"` | The supported values are: "json", "console" |
-| httpgateway.log.level | string | `"info"` | Logging enabled from level  |
+| httpgateway.log.level | string | `"info"` | Logging enabled from level |
 | httpgateway.log.stacktrace.enabled | bool | `false` | Log stacktrace |
 | httpgateway.log.stacktrace.level | string | `"warn"` | Stacktrace from level |
 | httpgateway.name | string | `"http-gateway"` | Name of component. Used in label selectors |
@@ -469,7 +473,7 @@ global:
 | httpgateway.service.targetPort | string | `"http"` | Target port |
 | httpgateway.service.type | string | `"ClusterIP"` |  |
 | httpgateway.tolerations | object | `{}` | Toleration definition |
-| httpgateway.ui | object | `{"directory":"/usr/local/var/www","enabled":true,"theme":"","webConfiguration":{"deviceOAuthClient":{"audience":null,"authority":"","clientID":null,"providerName":null,"scopes":[]},"deviceProvisioningService":"","httpGatewayAddress":"","m2mOAuthClient":{"audience":null,"authority":"","clientID":null,"scopes":[]},"visibility":{"mainSidebar":{"apiTokens":false,"certificates":true,"chatRoom":true,"configuration":true,"dashboard":false,"deviceFirmwareUpdate":false,"deviceLogs":false,"deviceProvisioning":true,"devices":true,"docs":true,"integrations":false,"pendingCommands":true,"remoteClients":true,"schemaHub":false}},"webOAuthClient":{"audience":"","authority":"","clientID":"","scopes":[]}}}` | For complete http-gateway service configuration see [plgd/http-gateway](https://github.com/plgd-dev/hub/tree/main/http-gateway) |
+| httpgateway.ui | object | `{"directory":"/usr/local/var/www","enabled":true,"theme":"","webConfiguration":{"deviceOAuthClient":{"audience":null,"authority":"","clientID":null,"providerName":null,"scopes":[]},"deviceProvisioningService":"","httpGatewayAddress":"","m2mOAuthClient":{"audience":null,"authority":"","clientAssertionType":null,"clientID":null,"grantType":null,"scopes":[]},"snippetService":"","visibility":{"mainSidebar":{"apiTokens":false,"certificates":true,"chatRoom":true,"configuration":true,"dashboard":false,"deviceFirmwareUpdate":false,"deviceLogs":false,"deviceProvisioning":true,"devices":true,"docs":true,"integrations":false,"pendingCommands":true,"remoteClients":true,"schemaHub":false,"snippetService":true}},"webOAuthClient":{"audience":"","authority":"","clientID":"","scopes":[]}}}` | For complete http-gateway service configuration see [plgd/http-gateway](https://github.com/plgd-dev/hub/tree/main/http-gateway) |
 | httpgateway.uiDomain | string | `nil` | Domain for UI Default: {{ global.domain }} |
 | identitystore.affinity | object | `{}` | Affinity definition |
 | identitystore.apis | object | `{"grpc":{"address":null,"authorization":{"audience":null,"authority":null,"http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}},"ownerClaim":null},"enforcementPolicy":{"minTime":"5s","permitWithoutStream":true},"keepAlive":{"maxConnectionAge":"0s","maxConnectionAgeGrace":"0s","maxConnectionIdle":"0s","time":"2h","timeout":"20s"},"recvMsgSize":4194304,"sendMsgSize":4194304,"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":true,"keyFile":null}}}` | For complete identity service configuration see [plgd/identity](https://github.com/plgd-dev/hub/tree/main/identity) |
@@ -500,7 +504,7 @@ global:
 | identitystore.log.dumpBody | bool | `false` | Dump grpc messages |
 | identitystore.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
 | identitystore.log.encoding | string | `"json"` | The supported values are: "json", "console" |
-| identitystore.log.level | string | `"info"` | Logging enabled from level  |
+| identitystore.log.level | string | `"info"` | Logging enabled from level |
 | identitystore.log.stacktrace.enabled | bool | `false` | Log stacktrace |
 | identitystore.log.stacktrace.level | string | `"warn"` | Stacktrace from level |
 | identitystore.name | string | `"identity-store"` | Name of component. Used in label selectors |
@@ -529,13 +533,18 @@ global:
 | identitystore.tolerations | object | `{}` | Toleration definition |
 | m2moauthserver.affinity | object | `{}` | Affinity definition |
 | m2moauthserver.apis | object | `{"http":{"address":null,"idleTimeout":"30s","readHeaderTimeout":"4s","readTimeout":"8s","tls":{"caPool":null,"certFile":null,"clientCertificateRequired":false,"keyFile":null},"writeTimeout":"16s"}}` | For complete m2m-oauth-server service configuration see [plgd/oauth-server](https://github.com/plgd-dev/hub/tree/main/test/oauth-server) |
+| m2moauthserver.clientServiceSecret.enabled | bool | `false` | Set deployment to use secret for service secret |
+| m2moauthserver.clientServiceSecret.fileName | string | `"secret.dat"` | Name of private key file |
+| m2moauthserver.clientServiceSecret.mountPath | string | `"/secrets/clients/service"` | Mount path |
+| m2moauthserver.clientServiceSecret.secretName | string | `"m2m-service-secret"` | Name of secret |
+| m2moauthserver.clientServiceSecret.volume | string | `"service-secret"` | Volume name |
 | m2moauthserver.config | object | `{"fileName":"service.yaml","mountPath":"/config","volume":"config"}` | m2m-oauth-server service yaml config section |
 | m2moauthserver.config.fileName | string | `"service.yaml"` | Name of configuration file |
 | m2moauthserver.config.mountPath | string | `"/config"` | Mount path |
 | m2moauthserver.config.volume | string | `"config"` | Volume for configuration file |
 | m2moauthserver.deploymentAnnotations | object | `{}` | Additional annotations for m2m-oauth-server deployment |
 | m2moauthserver.deploymentLabels | object | `{}` | Additional labels for m2m-oauth-server deployment |
-| m2moauthserver.domain | string | `nil` | Domain for   apiDomain: Default: m2m-auth.{{ global.domain }} |
+| m2moauthserver.domain | string | `nil` | Domain for oauth. Default {{ global.domain }} |
 | m2moauthserver.enabled | bool | `true` | Enable m2m-oauth-server service |
 | m2moauthserver.extraVolumeMounts | object | `{}` | Optional extra volume mounts |
 | m2moauthserver.extraVolumes | object | `{}` | Optional extra volumes |
@@ -547,14 +556,14 @@ global:
 | m2moauthserver.image.tag | string | `nil` | Image tag. |
 | m2moauthserver.imagePullSecrets | object | `{}` | Image pull secrets |
 | m2moauthserver.ingress.allowHeaders | string | `"Authortity,Method,Path,Scheme,Accept,Accept-Encoding,Accept-Language,Content-Type,auth0-client,Origin,Refer,Sec-Fetch-Dest,Sec-Fetch-Mode,Sec-Fetch-Site,Authorization,DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range"` |  |
-| m2moauthserver.ingress.annotations | object | `{"cert-manager.io/private-key-rotation-policy":"always","ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"HTTPS","nginx.ingress.kubernetes.io/configuration-snippet":"more_set_headers \"Host $host\";\nmore_set_headers \"X-Forwarded-Host $host\";\nmore_set_headers \"X-Forwarded-Proto $scheme\";\nset $cors \"true\";\nif ($request_method = 'OPTIONS') {\n  set $cors \"${cors}options\";\n}\nif ($cors = \"trueoptions\") {\n  add_header 'Access-Control-Allow-Origin' \"$http_origin\";\n  add_header 'Access-Control-Allow-Credentials' 'true';\n  add_header 'Access-Control-Allow-Methods' 'GET, PUT, POST, DELETE, PATCH, OPTIONS';\n  add_header 'Access-Control-Allow-Headers' '{{ .Values.mockoauthserver.ingress.allowHeaders }}';\n  add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range';\n  add_header 'Access-Control-Max-Age' 1728000;\n  add_header 'Content-Type' 'text/plain charset=UTF-8';\n  add_header 'Content-Length' 0;\n  return 204;\n}\nif ($request_method = 'POST') {\nadd_header 'Access-Control-Allow-Credentials' 'true';\n}\nif ($request_method = 'PUT') {\nadd_header 'Access-Control-Allow-Credentials' 'true';\n}\nif ($request_method = 'GET') {\n    add_header 'Access-Control-Allow-Credentials' 'true';\n}\n","nginx.ingress.kubernetes.io/enable-cors":"true"}` | Pre defined map of Ingress annotation |
+| m2moauthserver.ingress.annotations | object | `{"cert-manager.io/private-key-rotation-policy":"always","ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"HTTPS","nginx.ingress.kubernetes.io/enable-cors":"true"}` | Pre defined map of Ingress annotation |
 | m2moauthserver.ingress.customAnnotations | object | `{}` | Custom map of Ingress annotation |
 | m2moauthserver.ingress.enabled | bool | `true` | Enable ingress |
 | m2moauthserver.ingress.paths | list | `["/m2m-oauth-server"]` | Ingress path |
 | m2moauthserver.livenessProbe | object | `{}` | Liveness probe. m2m-oauth-server doesn't have any default liveness probe |
 | m2moauthserver.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
 | m2moauthserver.log.encoding | string | `"json"` | The supported values are: "json", "console" |
-| m2moauthserver.log.level | string | `"info"` | Logging enabled from level  |
+| m2moauthserver.log.level | string | `"info"` | Logging enabled from level |
 | m2moauthserver.log.stacktrace.enabled | bool | `false` | Log stacktrace |
 | m2moauthserver.log.stacktrace.level | string | `"warn"` | Stacktrace from level |
 | m2moauthserver.name | string | `"m2m-oauth-server"` | Name of component. Used in label selectors |
@@ -567,8 +576,12 @@ global:
 | m2moauthserver.oauthSigner.clients[0].jwtPrivateKey.authorization.audience | string | `nil` |  |
 | m2moauthserver.oauthSigner.clients[0].jwtPrivateKey.authorization.endpoints | string | `nil` |  |
 | m2moauthserver.oauthSigner.clients[0].jwtPrivateKey.enabled | bool | `true` |  |
-| m2moauthserver.oauthSigner.clients[0].requireDeviceID | bool | `false` |  |
-| m2moauthserver.oauthSigner.clients[0].requireOwner | bool | `true` |  |
+| m2moauthserver.oauthSigner.clients[1].accessTokenLifetime | string | `"0s"` |  |
+| m2moauthserver.oauthSigner.clients[1].allowedAudiences | list | `[]` |  |
+| m2moauthserver.oauthSigner.clients[1].allowedGrantTypes[0] | string | `"client_credentials"` |  |
+| m2moauthserver.oauthSigner.clients[1].allowedScopes | list | `[]` |  |
+| m2moauthserver.oauthSigner.clients[1].id | string | `"service"` |  |
+| m2moauthserver.oauthSigner.clients[1].secretFile | string | `"{{ include \"plgd-hub.m2moauthserver.getClientServiceSecretFile\" . }}"` |  |
 | m2moauthserver.oauthSigner.deviceIDClaim | string | `nil` |  |
 | m2moauthserver.oauthSigner.domain | string | `nil` |  |
 | m2moauthserver.oauthSigner.ownerClaim | string | `nil` |  |
@@ -579,7 +592,7 @@ global:
 | m2moauthserver.port | int | `9100` | Port for service and POD |
 | m2moauthserver.privateKey.enabled | bool | `false` | Set deployment to use secret for private key |
 | m2moauthserver.privateKey.fileName | string | `"private.key"` | Name of private key file |
-| m2moauthserver.privateKey.mountPath | string | `"/secrets"` | Mount path |
+| m2moauthserver.privateKey.mountPath | string | `"/secrets/keys"` | Mount path |
 | m2moauthserver.privateKey.secretName | string | `"m2m-private-key"` | Name of secret |
 | m2moauthserver.privateKey.volume | string | `"private-key"` | Volume name |
 | m2moauthserver.readinessProbe | object | `{}` | Readiness probe. m2m-oauth-server doesn't have aby default readiness probe |
@@ -622,7 +635,7 @@ global:
 | mockoauthserver.livenessProbe | object | `{}` | Liveness probe. mock-oauth-server doesn't have any default liveness probe |
 | mockoauthserver.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
 | mockoauthserver.log.encoding | string | `"json"` | The supported values are: "json", "console" |
-| mockoauthserver.log.level | string | `"info"` | Logging enabled from level  |
+| mockoauthserver.log.level | string | `"info"` | Logging enabled from level |
 | mockoauthserver.log.stacktrace.enabled | bool | `false` | Log stacktrace |
 | mockoauthserver.log.stacktrace.level | string | `"warn"` | Stacktrace from level |
 | mockoauthserver.name | string | `"mock-oauth-server"` | Name of component. Used in label selectors |
@@ -661,7 +674,7 @@ global:
 | mockoauthserver.service.targetPort | string | `"http"` | Target port |
 | mockoauthserver.service.type | string | `"ClusterIP"` |  |
 | mockoauthserver.tolerations | object | `{}` | Toleration definition |
-| mongodb | object | `{"arbiter":{"enabled":false},"architecture":"replicaset","auth":{"enabled":false},"customLivenessProbe":{"exec":{"command":["/bin/bash","-c","/certs/livenessProbe.sh"]},"failureThreshold":6,"initialDelaySeconds":30,"periodSeconds":20,"successThreshold":1,"timeoutSeconds":10},"customReadinessProbe":{"exec":{"command":["bash","-ec","TLS_OPTIONS='--tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem'\nmongosh $TLS_OPTIONS --eval 'db.hello().isWritablePrimary || db.hello().secondary' | grep -q 'true'\n"]},"failureThreshold":6,"initialDelaySeconds":10,"periodSeconds":20,"successThreshold":1,"timeoutSeconds":10},"enabled":true,"extraEnvVars":[{"name":"MONGODB_EXTRA_FLAGS","value":"--tlsMode=requireTLS --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem"},{"name":"MONGODB_CLIENT_EXTRA_FLAGS","value":"--tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem"}],"extraVolumeMounts":[{"mountPath":"/certs","name":"mongodb-crt"},{"mountPath":"/certs-original","name":"mongodb-cm-crt"},{"mountPath":"/certs/extra/storage","name":"mongodb-extra-ca-pool"}],"extraVolumes":[{"emptyDir":{},"name":"mongodb-crt"},{"name":"mongodb-cm-crt","secret":{"secretName":"mongodb-cm-crt"}},{"name":"mongodb-extra-ca-pool","secret":{"secretName":"mongodb-extra-ca-pool"}}],"fullnameOverride":"mongodb","image":{"debug":true},"initContainers":[{"command":["sh","-c","/bin/bash <<'EOF'\n#!/bin/bash\ncp /usr/local/bin/mongodb-admin-tool /certs\necho '\n#!/bin/bash\nset -e\nINIT=0\nwhile [[ $# -gt 0 ]]; do\n  case $1 in\n    --init)\n      INIT=1\n      shift\n      ;;\n  esac\ndone\n\nCERT_CRT=/certs-original/tls.crt\nCERT_SHA256=/certs/cert.sha256.$(sha256sum -z ${CERT_CRT} | cut -d \" \" -f 1)\nCA=/certs-original/ca.crt\nEXTRA_CA=/certs/extra/storage/ca.crt\nCA_SHA256=$(cat ${CA} ${EXTRA_CA} | sha256sum -z | cut -d \" \" -f 1)\nCA_FILE_SHA256=/certs/ca.sha256.$CA_SHA256\nROTATE_CERTIFICATES=0\nif [ ! -f ${CERT_SHA256} ]; then\n  rm -f /certs/cert.sha256.*\n  cat ${CERT_CRT} > /certs/cert.pem\n  cat /certs-original/tls.key >> /certs/cert.pem\n  touch ${CERT_SHA256}\n  ROTATE_CERTIFICATES=1\nfi\n\nif [ ! -f ${CA_FILE_SHA256} ]; then\n  rm -f /certs/ca.sha256.*\n  cat ${CA} ${EXTRA_CA} > /certs/ca.pem\n  touch ${CA_FILE_SHA256}\n  ROTATE_CERTIFICATES=1\nfi\n\nif [ \"${INIT}\" == \"1\" ]; then\n  exit 0\nfi\n\nif [ \"${ROTATE_CERTIFICATES}\" == \"1\" ]; then\n  echo \"Rotating certificates\"\n  /certs/mongodb-admin-tool --tls --directConnection --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem --eval db.adminCommand\\(\"{rotateCertificates: 1, message: \\\"Rotating certificates\\\"}\"\\)\nelse\n  echo \"Ping database\"\n  /certs/mongodb-admin-tool --tls --directConnection --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem --eval db.adminCommand\\(\\\"ping\\\"\\)\nfi\n' > /certs/livenessProbe.sh\nchmod uga+x /certs/livenessProbe.sh\n/certs/livenessProbe.sh --init\nEOF\n"],"image":"ghcr.io/plgd-dev/hub/mongodb-admin-tool:vnext","imagePullPolicy":"Always","name":"mongo-binary","securityContext":{"runAsGroup":1001,"runAsUser":1001},"volumeMounts":[{"mountPath":"/certs","name":"mongodb-crt"},{"mountPath":"/certs-original","name":"mongodb-cm-crt"},{"mountPath":"/certs/extra/storage","name":"mongodb-extra-ca-pool"}]}],"livenessProbe":{"enabled":false},"persistence":{"enabled":true},"readinessProbe":{"enabled":false},"replicaCount":3,"replicaSetName":"rs0","standbyTool":{"affinity":{},"clients":{"storage":{"mongoDB":{"timeout":"30s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}}},"config":{"fileName":"config.yaml","mountPath":"/config","volume":"config"},"enabled":false,"extraVolumeMounts":{},"extraVolumes":{},"fullnameOverride":null,"image":{"imagePullSecrets":{},"pullPolicy":"Always","registry":"ghcr.io/","repository":"plgd-dev/hub/mongodb-standby-tool","tag":null},"jobAnnotations":{},"jobLabels":{},"log":{"dumpBody":false,"encoderConfig":{"timeEncoder":"rfc3339nano"},"encoding":"json","level":"info","stacktrace":{"enabled":false,"level":"warn"}},"mode":"standby","name":"mongodb-standby-tool","nodeSelector":{},"podAnnotations":{},"podSecurityContext":{},"rbac":{"enabled":false,"roleBindingDefitionTpl":null,"serviceAccountName":"mongodb-standby-tool"},"replicaSet":{"forceUpdate":false,"maxWaitsForReady":30,"secondary":{"priority":10,"votes":1},"standby":{"delays":"10m","members":[]}},"resources":{},"securityContext":{},"tolerations":{}},"tls":{"enabled":false}}` | External mongodb-replica dependency setup |
+| mongodb | object | `{"arbiter":{"enabled":false},"architecture":"replicaset","auth":{"enabled":false},"customLivenessProbe":{"exec":{"command":["/bin/bash","-c","/certs/livenessProbe.sh"]},"failureThreshold":6,"initialDelaySeconds":30,"periodSeconds":20,"successThreshold":1,"timeoutSeconds":10},"customReadinessProbe":{"exec":{"command":["bash","-ec","TLS_OPTIONS='--tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem'\nmongosh $TLS_OPTIONS --eval 'db.hello().isWritablePrimary || db.hello().secondary' | grep -q 'true'\n"]},"failureThreshold":6,"initialDelaySeconds":10,"periodSeconds":20,"successThreshold":1,"timeoutSeconds":10},"enabled":true,"extraEnvVars":[{"name":"MONGODB_EXTRA_FLAGS","value":"--tlsMode=requireTLS --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem"},{"name":"MONGODB_CLIENT_EXTRA_FLAGS","value":"--tls --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem"}],"extraVolumeMounts":[{"mountPath":"/certs","name":"mongodb-crt"},{"mountPath":"/certs-original","name":"mongodb-cm-crt"},{"mountPath":"/certs/extra/storage","name":"mongodb-extra-ca-pool"}],"extraVolumes":[{"emptyDir":{},"name":"mongodb-crt"},{"name":"mongodb-cm-crt","secret":{"secretName":"mongodb-cm-crt"}},{"name":"mongodb-extra-ca-pool","secret":{"secretName":"mongodb-extra-ca-pool"}}],"fullnameOverride":"mongodb","image":{"debug":true},"initContainers":[{"command":["sh","-c","/bin/bash <<'EOF'\n#!/bin/bash\ncp /usr/local/bin/mongodb-admin-tool /certs\necho '\n#!/bin/bash\nset -e\nINIT=0\nwhile [[ $# -gt 0 ]]; do\n  case $1 in\n    --init)\n      INIT=1\n      shift\n      ;;\n  esac\ndone\n\nCERT_CRT=/certs-original/tls.crt\nCERT_SHA256=/certs/cert.sha256.$(sha256sum ${CERT_CRT} | cut -d \" \" -f 1)\nCA=/certs-original/ca.crt\nEXTRA_CA=/dev/null\nif [ -f /certs/extra/storage/ca.crt ]; then\n  EXTRA_CA=/certs/extra/storage/ca.crt\nfi\nCA_SHA256=$(cat ${CA} ${EXTRA_CA} | sha256sum | cut -d \" \" -f 1)\nCA_FILE_SHA256=/certs/ca.sha256.$CA_SHA256\nROTATE_CERTIFICATES=0\nif [ ! -f ${CERT_SHA256} ]; then\n  rm -f /certs/cert.sha256.*\n  cat ${CERT_CRT} > /certs/cert.pem\n  cat /certs-original/tls.key >> /certs/cert.pem\n  touch ${CERT_SHA256}\n  ROTATE_CERTIFICATES=1\nfi\n\nif [ ! -f ${CA_FILE_SHA256} ]; then\n  rm -f /certs/ca.sha256.*\n  cat ${CA} ${EXTRA_CA} > /certs/ca.pem\n  touch ${CA_FILE_SHA256}\n  ROTATE_CERTIFICATES=1\nfi\n\nif [ \"${INIT}\" == \"1\" ]; then\n  exit 0\nfi\n\nif [ \"${ROTATE_CERTIFICATES}\" == \"1\" ]; then\n  echo \"Rotating certificates\"\n  /certs/mongodb-admin-tool --tls --directConnection --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem --eval db.adminCommand\\(\"{rotateCertificates: 1, message: \\\"Rotating certificates\\\"}\"\\)\nelse\n  echo \"Ping database\"\n  /certs/mongodb-admin-tool --tls --directConnection --tlsCertificateKeyFile=/certs/cert.pem --tlsCAFile=/certs/ca.pem --eval db.adminCommand\\(\\\"ping\\\"\\)\nfi\n' > /certs/livenessProbe.sh\nchmod uga+x /certs/livenessProbe.sh\n/certs/livenessProbe.sh --init\nEOF\n"],"image":"ghcr.io/plgd-dev/hub/mongodb-admin-tool:vnext","imagePullPolicy":"Always","name":"mongo-binary","securityContext":{"runAsGroup":1001,"runAsUser":1001},"volumeMounts":[{"mountPath":"/certs","name":"mongodb-crt"},{"mountPath":"/certs-original","name":"mongodb-cm-crt"},{"mountPath":"/certs/extra/storage","name":"mongodb-extra-ca-pool"}]}],"livenessProbe":{"enabled":false},"persistence":{"enabled":true},"readinessProbe":{"enabled":false},"replicaCount":3,"replicaSetName":"rs0","standbyTool":{"affinity":{},"clients":{"storage":{"mongoDB":{"timeout":"30s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}}},"config":{"fileName":"config.yaml","mountPath":"/config","volume":"config"},"enabled":false,"extraVolumeMounts":{},"extraVolumes":{},"fullnameOverride":null,"image":{"imagePullSecrets":{},"pullPolicy":"Always","registry":"ghcr.io/","repository":"plgd-dev/hub/mongodb-standby-tool","tag":null},"jobAnnotations":{},"jobLabels":{},"log":{"dumpBody":false,"encoderConfig":{"timeEncoder":"rfc3339nano"},"encoding":"json","level":"info","stacktrace":{"enabled":false,"level":"warn"}},"mode":"standby","name":"mongodb-standby-tool","nodeSelector":{},"podAnnotations":{},"podSecurityContext":{},"rbac":{"enabled":false,"roleBindingDefitionTpl":null,"serviceAccountName":"mongodb-standby-tool"},"replicaSet":{"forceUpdate":false,"maxWaitsForReady":30,"secondary":{"priority":10,"votes":1},"standby":{"delays":"10m","members":[]}},"resources":{},"securityContext":{},"tolerations":{}},"tls":{"enabled":false}}` | External mongodb-replica dependency setup |
 | mongodb.standbyTool.affinity | object | `{}` | Affinity definition |
 | mongodb.standbyTool.clients.storage.mongoDB.timeout | string | `"30s"` | Timeout for connection to MongoDB and read/write operations |
 | mongodb.standbyTool.clients.storage.mongoDB.tls.caPool | string | `nil` | Path to the CA certificate file |
@@ -687,7 +700,7 @@ global:
 | mongodb.standbyTool.log.dumpBody | bool | `false` | Dump grpc messages |
 | mongodb.standbyTool.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
 | mongodb.standbyTool.log.encoding | string | `"json"` | The supported values are: "json", "console" |
-| mongodb.standbyTool.log.level | string | `"info"` | Logging enabled from level  |
+| mongodb.standbyTool.log.level | string | `"info"` | Logging enabled from level |
 | mongodb.standbyTool.log.stacktrace.enabled | bool | `false` | Log stacktrace |
 | mongodb.standbyTool.log.stacktrace.level | string | `"warn"` | Stacktrace from level |
 | mongodb.standbyTool.mode | string | `"standby"` | Mode of standby job. Supported values: "active", "standby" |
@@ -705,33 +718,7 @@ global:
 | mongodb.standbyTool.tolerations | object | `{}` | Toleration definition |
 | nats | object | `{"config":{"nats":{"tls":{"enabled":true,"merge":{"verify":true},"secretName":"nats-service-crt"}}},"enabled":true,"monitor":{"enabled":false},"natsBox":{"enabled":false},"tlsCA":{"enabled":true,"secretName":"nats-service-crt"}}` | External nats dependency setup |
 | resourceaggregate.affinity | object | `{}` | Affinity definition |
-| resourceaggregate.apis.grpc.address | string | `nil` |  |
-| resourceaggregate.apis.grpc.authorization.audience | string | `nil` |  |
-| resourceaggregate.apis.grpc.authorization.authority | string | `nil` |  |
-| resourceaggregate.apis.grpc.authorization.http.idleConnTimeout | string | `"30s"` |  |
-| resourceaggregate.apis.grpc.authorization.http.maxConnsPerHost | int | `32` |  |
-| resourceaggregate.apis.grpc.authorization.http.maxIdleConns | int | `16` |  |
-| resourceaggregate.apis.grpc.authorization.http.maxIdleConnsPerHost | int | `16` |  |
-| resourceaggregate.apis.grpc.authorization.http.timeout | string | `"10s"` |  |
-| resourceaggregate.apis.grpc.authorization.http.tls.caPool | string | `nil` |  |
-| resourceaggregate.apis.grpc.authorization.http.tls.certFile | string | `nil` |  |
-| resourceaggregate.apis.grpc.authorization.http.tls.keyFile | string | `nil` |  |
-| resourceaggregate.apis.grpc.authorization.http.tls.useSystemCAPool | bool | `true` |  |
-| resourceaggregate.apis.grpc.authorization.ownerClaim | string | `nil` |  |
-| resourceaggregate.apis.grpc.enforcementPolicy.minTime | string | `"5s"` |  |
-| resourceaggregate.apis.grpc.enforcementPolicy.permitWithoutStream | bool | `true` |  |
-| resourceaggregate.apis.grpc.keepAlive.maxConnectionAge | string | `"0s"` |  |
-| resourceaggregate.apis.grpc.keepAlive.maxConnectionAgeGrace | string | `"0s"` |  |
-| resourceaggregate.apis.grpc.keepAlive.maxConnectionIdle | string | `"0s"` |  |
-| resourceaggregate.apis.grpc.keepAlive.time | string | `"2h"` |  |
-| resourceaggregate.apis.grpc.keepAlive.timeout | string | `"20s"` |  |
-| resourceaggregate.apis.grpc.ownerCacheExpiration | string | `"1m"` |  |
-| resourceaggregate.apis.grpc.recvMsgSize | int | `4194304` |  |
-| resourceaggregate.apis.grpc.sendMsgSize | int | `4194304` |  |
-| resourceaggregate.apis.grpc.tls.caPool | string | `nil` |  |
-| resourceaggregate.apis.grpc.tls.certFile | string | `nil` |  |
-| resourceaggregate.apis.grpc.tls.clientCertificateRequired | bool | `true` |  |
-| resourceaggregate.apis.grpc.tls.keyFile | string | `nil` |  |
+| resourceaggregate.apis | object | `{"grpc":{"address":null,"authorization":{"audience":null,"authority":null,"http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}},"ownerClaim":null},"enforcementPolicy":{"minTime":"5s","permitWithoutStream":true},"keepAlive":{"maxConnectionAge":"0s","maxConnectionAgeGrace":"0s","maxConnectionIdle":"0s","time":"2h","timeout":"20s"},"ownerCacheExpiration":"1m","recvMsgSize":4194304,"sendMsgSize":4194304,"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":true,"keyFile":null}}}` | For complete resource-aggregate service configuration see [plgd/resource-aggregate](https://github.com/plgd-dev/hub/tree/main/resource-aggregate) |
 | resourceaggregate.clients | object | `{"eventBus":{"nats":{"flusherTimeout":"30s","jetstream":false,"pendingLimits":{"bytesLimit":"67108864","msgLimit":524288},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"url":null}},"eventStore":{"cqlDB":{"connectTimeout":"10s","hosts":[],"keyspace":{"create":true,"name":"plgdhub","replication":{"class":"SimpleStrategy","replication_factor":1}},"numConnections":16,"port":9142,"reconnectionPolicy":{"constant":{"interval":"3s","maxRetries":3}},"table":"events","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"useHostnameResolution":true},"defaultCommandTimeToLive":null,"mongoDB":{"batchSize":128,"database":"eventStore","maxConnIdleTime":"4m0s","maxPoolSize":16,"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"uri":null},"occMaxRetry":8,"use":"mongoDB"},"identityStore":{"grpc":{"address":null,"keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"recvMsgSize":4194304,"sendMsgSize":4194304,"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}}}}` | For complete resource-aggregate service configuration see [plgd/resource-aggregate](https://github.com/plgd-dev/hub/tree/main/resource-aggregate) |
 | resourceaggregate.clients.eventStore.cqlDB.useHostnameResolution | bool | `true` | Resolve IP address to hostname before validate certificate. If false, the TLS validator will use ip/hostname advertised by the Cassandra node. |
 | resourceaggregate.config | object | `{"fileName":"service.yaml","mountPath":"/config","volume":"config"}` | Service configuration |
@@ -758,7 +745,7 @@ global:
 | resourceaggregate.log.dumpBody | bool | `false` | Dump grpc messages |
 | resourceaggregate.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
 | resourceaggregate.log.encoding | string | `"json"` | The supported values are: "json", "console" |
-| resourceaggregate.log.level | string | `"info"` | Logging enabled from level  |
+| resourceaggregate.log.level | string | `"info"` | Logging enabled from level |
 | resourceaggregate.log.stacktrace.enabled | bool | `false` | Log stacktrace |
 | resourceaggregate.log.stacktrace.level | string | `"warn"` | Stacktrace from level |
 | resourceaggregate.name | string | `"resource-aggregate"` | Name of component. Used in label selectors |
@@ -812,7 +799,7 @@ global:
 | resourcedirectory.log.dumpBody | bool | `false` | Dump grpc messages |
 | resourcedirectory.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
 | resourcedirectory.log.encoding | string | `"json"` | The supported values are: "json", "console" |
-| resourcedirectory.log.level | string | `"info"` | Logging enabled from level  |
+| resourcedirectory.log.level | string | `"info"` | Logging enabled from level |
 | resourcedirectory.log.stacktrace.enabled | bool | `false` | Log stacktrace |
 | resourcedirectory.log.stacktrace.level | string | `"warn"` | Stacktrace from level |
 | resourcedirectory.name | string | `"resource-directory"` | Name of component. Used in label selectors |
@@ -854,7 +841,106 @@ global:
 | scylla.racks[0].volumes[0].secret.secretName | string | `"scylla-dc-1a-crt"` |  |
 | scylla.scyllaImage.tag | string | `"5.2.9"` |  |
 | scylla.sysctls[0] | string | `"fs.aio-max-nr=2097152"` |  |
+| snippetservice.affinity | string | `nil` | Affinity definition |
+| snippetservice.apis | object | `{"grpc":{"address":null,"authorization":{"audience":null,"authority":null,"http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}},"ownerClaim":null},"enforcementPolicy":{"minTime":"5s","permitWithoutStream":true},"keepAlive":{"maxConnectionAge":"0s","maxConnectionAgeGrace":"0s","maxConnectionIdle":"0s","time":"2h","timeout":"20s"},"recvMsgSize":4194304,"sendMsgSize":4194304,"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":false,"keyFile":null}},"http":{"address":null,"idleTimeout":"30s","readHeaderTimeout":"4s","readTimeout":"8s","writeTimeout":"16s"}}` | For complete snippet-service configuration see [plgd/snippet-service](https://github.com/plgd-dev/hub/tree/main/snippet-service) |
+| snippetservice.clients.eventBus.nats.pendingLimits.bytesLimit | string | `"67108864"` |  |
+| snippetservice.clients.eventBus.nats.pendingLimits.msgLimit | string | `"524288"` |  |
+| snippetservice.clients.eventBus.nats.tls.caPool | string | `nil` |  |
+| snippetservice.clients.eventBus.nats.tls.certFile | string | `nil` |  |
+| snippetservice.clients.eventBus.nats.tls.keyFile | string | `nil` |  |
+| snippetservice.clients.eventBus.nats.tls.useSystemCAPool | bool | `false` |  |
+| snippetservice.clients.eventBus.nats.url | string | `""` |  |
+| snippetservice.clients.eventBus.subscriptionID | string | `"snippet-service"` |  |
+| snippetservice.clients.resourceAggregate.grpc.address | string | `""` |  |
+| snippetservice.clients.resourceAggregate.grpc.keepAlive.permitWithoutStream | bool | `true` |  |
+| snippetservice.clients.resourceAggregate.grpc.keepAlive.time | string | `"10s"` |  |
+| snippetservice.clients.resourceAggregate.grpc.keepAlive.timeout | string | `"20s"` |  |
+| snippetservice.clients.resourceAggregate.grpc.recvMsgSize | int | `4194304` |  |
+| snippetservice.clients.resourceAggregate.grpc.sendMsgSize | int | `4194304` |  |
+| snippetservice.clients.resourceAggregate.grpc.tls.caPool | string | `nil` |  |
+| snippetservice.clients.resourceAggregate.grpc.tls.certFile | string | `nil` |  |
+| snippetservice.clients.resourceAggregate.grpc.tls.keyFile | string | `nil` |  |
+| snippetservice.clients.resourceAggregate.grpc.tls.useSystemCAPool | bool | `false` |  |
+| snippetservice.clients.storage.cleanUpExpiredUpdates | string | `"0 * * * *"` |  |
+| snippetservice.clients.storage.mongoDB.database | string | `"snippetService"` |  |
+| snippetservice.clients.storage.mongoDB.maxConnIdleTime | string | `"4m0s"` |  |
+| snippetservice.clients.storage.mongoDB.maxPoolSize | int | `16` |  |
+| snippetservice.clients.storage.mongoDB.tls.caPool | string | `nil` |  |
+| snippetservice.clients.storage.mongoDB.tls.certFile | string | `nil` |  |
+| snippetservice.clients.storage.mongoDB.tls.keyFile | string | `nil` |  |
+| snippetservice.clients.storage.mongoDB.tls.useSystemCAPool | bool | `false` |  |
+| snippetservice.clients.storage.mongoDB.uri | string | `nil` |  |
+| snippetservice.clients.storage.use | string | `"mongoDB"` |  |
+| snippetservice.config | object | `{"fileName":"service.yaml","mountPath":"/config","volume":"config"}` | Service configuration |
+| snippetservice.config.fileName | string | `"service.yaml"` | File name for config file |
+| snippetservice.config.mountPath | string | `"/config"` | Mount path |
+| snippetservice.config.volume | string | `"config"` | Config file volume name |
+| snippetservice.deploymentAnnotations | object | `{}` | Additional annotations for snippet-service deployment |
+| snippetservice.deploymentLabels | object | `{}` | Additional labels for snippet-service deployment |
+| snippetservice.domain | string | `nil` | External domain for snippet-service. Default: api.{{ global.domain }} |
+| snippetservice.enabled | bool | `true` | Enable snippet-service |
+| snippetservice.extraContainers | object | `{}` | Extra POD containers |
+| snippetservice.extraVolumeMounts | string | `nil` | Optional extra volume mounts |
+| snippetservice.extraVolumes | string | `nil` | Optional extra volumes |
+| snippetservice.fullnameOverride | string | `nil` | Full name to override |
+| snippetservice.httpPort | int | `9101` |  |
+| snippetservice.hubId | string | `nil` | Hub ID. Overrides the global.hubId |
+| snippetservice.image.imagePullSecrets | string | `nil` | Image pull secrets |
+| snippetservice.image.pullPolicy | string | `"Always"` | Image pull policy |
+| snippetservice.image.registry | string | `"ghcr.io/"` | Image registry |
+| snippetservice.image.repository | string | `"plgd-dev/hub/snippet-service"` | Image repository |
+| snippetservice.image.tag | string | `nil` | Image tag. |
+| snippetservice.imagePullSecrets | string | `nil` | Image pull secrets |
+| snippetservice.ingress.grpc.annotations | object | `{"cert-manager.io/private-key-rotation-policy":"always","ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"GRPCS","nginx.ingress.kubernetes.io/enable-cors":"true","nginx.org/grpc-services":"{{ include \"plgd-hub.snippetservice.fullname\" . }}-grpc"}` | Pre defined map of Ingress annotation |
+| snippetservice.ingress.grpc.customAnnotations | object | `{}` | Custom map of Ingress annotation |
+| snippetservice.ingress.grpc.enabled | bool | `true` | Enable ingress |
+| snippetservice.ingress.grpc.paths | list | `["/snippetservice.pb.SnippetService"]` | Paths |
+| snippetservice.ingress.grpc.secretName | string | `nil` | Override name of host/tls secret. If not specified, it will be generated |
+| snippetservice.ingress.http.annotations | object | `{"cert-manager.io/private-key-rotation-policy":"always","ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"HTTPS","nginx.ingress.kubernetes.io/enable-cors":"true","nginx.org/grpc-services":"{{ include \"plgd-hub.snippetservice.fullname\" . }}-http"}` | Pre defined map of Ingress annotation |
+| snippetservice.ingress.http.customAnnotations | object | `{}` | Custom map of Ingress annotation |
+| snippetservice.ingress.http.enabled | bool | `true` | Enable ingress |
+| snippetservice.ingress.http.paths | list | `["/snippet-service"]` | Ingress path |
+| snippetservice.ingress.http.secretName | string | `nil` | Override name of host/tls secret. If not specified, it will be generated |
+| snippetservice.initContainersTpl | string | `nil` | Init containers definition |
+| snippetservice.livenessProbe | string | `nil` | Liveness probe. snippet-service doesn't have any default liveness probe |
+| snippetservice.log | object | `{"dumpBody":false,"encoderConfig":{"timeEncoder":"rfc3339nano"},"encoding":"json","level":"info","stacktrace":{"enabled":false,"level":"warn"}}` | Log section |
+| snippetservice.log.dumpBody | bool | `false` | Dump grpc messages |
+| snippetservice.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
+| snippetservice.log.encoding | string | `"json"` | The supported values are: "json", "console" |
+| snippetservice.log.level | string | `"info"` | Logging enabled from level |
+| snippetservice.log.stacktrace.enabled | bool | `false` | Log stacktrace |
+| snippetservice.log.stacktrace.level | string | `"warn"` | Stacktrace from level |
+| snippetservice.name | string | `"snippet-service"` | Name of component. Used in label selectors |
+| snippetservice.nodeSelector | string | `nil` | Node selector |
+| snippetservice.podAnnotations | object | `{}` | Annotations for snippet-service pod |
+| snippetservice.podLabels | object | `{}` | Labels for snippet-service pod |
+| snippetservice.podSecurityContext | object | `{}` | Pod security context |
+| snippetservice.port | int | `9100` | Service and POD port |
+| snippetservice.rbac | object | `{"enabled":false,"roleBindingDefitionTpl":null,"serviceAccountName":"snippet-service"}` | RBAC configuration |
+| snippetservice.rbac.enabled | bool | `false` | Enable RBAC |
+| snippetservice.rbac.roleBindingDefitionTpl | string | `nil` | Template definition for Role/binding etc.. |
+| snippetservice.rbac.serviceAccountName | string | `"snippet-service"` | Name of snippet service SA |
+| snippetservice.readinessProbe | string | `nil` | Readiness probe. snippet-service doesn't have aby default readiness probe |
+| snippetservice.replicas | int | `1` | Number of replicas |
+| snippetservice.resources | string | `nil` | Resources limit |
+| snippetservice.restartPolicy | string | `"Always"` | Restart policy for pod |
+| snippetservice.securityContext | string | `nil` | Security context for pod |
+| snippetservice.service.grpc.annotations | object | `{}` | Annotations for snippet-service |
+| snippetservice.service.grpc.crt.extraDnsNames | list | `[]` | Extra DNS names for service certificate |
+| snippetservice.service.grpc.labels | object | `{}` | Labels for snippet-service |
+| snippetservice.service.grpc.name | string | `"grpc"` | Name |
+| snippetservice.service.grpc.protocol | string | `"TCP"` | Protocol |
+| snippetservice.service.grpc.targetPort | string | `"grpc"` | Target port |
+| snippetservice.service.grpc.type | string | `"ClusterIP"` | Service type |
+| snippetservice.service.http.annotations | object | `{}` | Annotations for snippet service |
+| snippetservice.service.http.crt.extraDnsNames | list | `[]` | Extra DNS names for service certificate |
+| snippetservice.service.http.labels | object | `{}` | Labels for snippet service |
+| snippetservice.service.http.name | string | `"http"` | Name |
+| snippetservice.service.http.protocol | string | `"TCP"` | Protocol |
+| snippetservice.service.http.targetPort | string | `"http"` | Target port |
+| snippetservice.service.http.type | string | `"ClusterIP"` | Service type |
+| snippetservice.tolerations | string | `nil` | Toleration definition |
 
 ----------------------------------------------
-Autogenerated from chart metadata using [helm-docs v1.13.1](https://github.com/norwoodj/helm-docs/releases/v1.13.1)
+Autogenerated from chart metadata using [helm-docs v1.14.2](https://github.com/norwoodj/helm-docs/releases/v1.14.2)
 

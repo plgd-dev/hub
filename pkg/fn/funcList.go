@@ -6,8 +6,8 @@ type FuncList struct {
 }
 
 // Add a function to be called by the Execute method.
-func (c *FuncList) AddFunc(f func()) {
-	c.f = append(c.f, f)
+func (c *FuncList) AddFunc(f ...func()) {
+	c.f = append(c.f, f...)
 }
 
 // Return a function that executions all added functions

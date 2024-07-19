@@ -59,6 +59,8 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+      leadResourceType:
+        enabled: false
   eventStore:
     # expiration time of cached resource in projection
     cacheExpiration: 20m

@@ -51,7 +51,7 @@ spec:
           {{- range .Values.m2moauthserver.command  }}
             - {{ . | quote }}
           {{- end }}
-          {{- end}}
+          {{- end }}
           args:
             - "--config"
             - {{  printf "%s/%s" .Values.m2moauthserver.config.mountPath .Values.m2moauthserver.config.fileName | quote }}

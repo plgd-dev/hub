@@ -44,8 +44,8 @@ func (c *APIsConfig) Validate() error {
 }
 
 type EventBusConfig struct {
-	NATS           natsClient.Config `yaml:"nats" json:"nats"`
-	SubscriptionID string            `yaml:"subscriptionID" json:"subscriptionID"`
+	NATS           natsClient.ConfigSubscriber `yaml:"nats" json:"nats"`
+	SubscriptionID string                      `yaml:"subscriptionID" json:"subscriptionID"`
 }
 
 func (c *EventBusConfig) Validate() error {

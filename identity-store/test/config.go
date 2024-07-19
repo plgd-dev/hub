@@ -25,7 +25,7 @@ func MakeConfig(t require.TestingT) service.Config {
 	cfg.Clients.Storage.CqlDB = &cqldb.Config{}
 	cfg.Clients.Storage.CqlDB.Embedded = config.MakeCqlDBConfig()
 
-	cfg.Clients.Eventbus.NATS = config.MakePublisherConfig()
+	cfg.Clients.Eventbus.NATS = config.MakePublisherConfig(t)
 	cfg.Clients.OpenTelemetryCollector = config.MakeOpenTelemetryCollectorClient()
 
 	err := cfg.Validate()

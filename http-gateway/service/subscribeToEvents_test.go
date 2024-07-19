@@ -10,14 +10,21 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/plgd-dev/device/v2/test/resource/types"
 	"github.com/plgd-dev/go-coap/v3/message"
+	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	grpcgwTest "github.com/plgd-dev/hub/v2/grpc-gateway/test"
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
 	isEvents "github.com/plgd-dev/hub/v2/identity-store/events"
 	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
+	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/publisher"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	raTest "github.com/plgd-dev/hub/v2/resource-aggregate/test"
+	rdTest "github.com/plgd-dev/hub/v2/resource-directory/test"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	httpTest "github.com/plgd-dev/hub/v2/test/http"
@@ -117,16 +124,36 @@ func (u *updateChecker) checkUpdateLightResource(ctx context.Context, t *testing
 }
 
 type resourceFilter struct {
-	httpResourceIdFilter     []string
-	resourceIdFilter         []*pb.ResourceIdFilter
-	backwardResourceIdFilter []string
+	httpResourceIdFilter          []string
+	resourceIdFilter              []*pb.ResourceIdFilter
+	backwardResourceIdFilter      []string
+	leadResourceTypeFilterEnabled bool
 }
 
 func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resourceFilter resourceFilter) {
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	deadline := time.Now().Add(config.TEST_TIMEOUT)
+	ctx, cancel := context.WithDeadline(context.Background(), deadline)
 	defer cancel()
 
-	tearDown := service.SetUp(ctx, t)
+	var opts []service.SetUpOption
+	if resourceFilter.leadResourceTypeFilterEnabled {
+		coapGWCfg := coapgwTest.MakeConfig(t)
+		coapGWCfg.Clients.Eventbus.NATS.LeadResourceType.Enabled = true
+		rdCfg := rdTest.MakeConfig(t)
+		rdCfg.Clients.Eventbus.NATS.LeadResourceType.Enabled = true
+		grpcGWCfg := grpcgwTest.MakeConfig(t)
+		grpcGWCfg.Clients.Eventbus.NATS.LeadResourceType.Enabled = true
+		raCfg := raTest.MakeConfig(t)
+		raCfg.Clients.Eventbus.NATS.LeadResourceType = &natsClient.LeadResourceTypePublisherConfig{
+			Enabled:     true,
+			RegexFilter: []string{types.CORE_LIGHT},
+			UseUUID:     config.LeadResourceUseUUID(),
+		}
+		err := raCfg.Clients.Eventbus.NATS.Validate()
+		require.NoError(t, err)
+		opts = append(opts, service.WithCOAPGWConfig(coapGWCfg), service.WithRDConfig(rdCfg), service.WithGRPCGWConfig(grpcGWCfg), service.WithRAConfig(raCfg))
+	}
+	tearDown := service.SetUp(ctx, t, opts...)
 	defer tearDown()
 
 	token := oauthTest.GetDefaultAccessToken(t)
@@ -158,6 +185,8 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 	wsConn, resp, err := d.Dial(fmt.Sprintf("wss://%v/api/v1/ws/events", config.HTTP_GW_HOST), header)
 	require.NoError(t, err)
 	_ = resp.Body.Close()
+	err = wsConn.SetReadDeadline(deadline)
+	require.NoError(t, err)
 
 	send := func(req *pb.SubscribeToEvents) error {
 		marshaler := runtime.JSONPb{}
@@ -186,6 +215,17 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 		errM = httpTest.Unmarshal(http.StatusOK, reader, &event)
 		return &event, errM
 	}
+
+	deviceIDFilter := []string{}
+	leadResourceTypeFilter := []string{}
+	if resourceFilter.leadResourceTypeFilterEnabled {
+		deviceIDFilter = []string{deviceID}
+		if config.LeadResourceUseUUID() {
+			leadResourceTypeFilter = []string{publisher.ResourceTypeToUUID(types.CORE_LIGHT)}
+		} else {
+			leadResourceTypeFilter = []string{types.CORE_LIGHT}
+		}
+	}
 	createResourceSub := &pb.SubscribeToEvents{
 		CorrelationId: "testToken",
 		Action: &pb.SubscribeToEvents_CreateSubscription_{
@@ -196,8 +236,10 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 					pb.SubscribeToEvents_CreateSubscription_UNREGISTERED,
 					pb.SubscribeToEvents_CreateSubscription_RESOURCE_CHANGED,
 				},
-				ResourceIdFilter:     resourceFilter.resourceIdFilter,
-				HttpResourceIdFilter: resourceFilter.httpResourceIdFilter,
+				ResourceIdFilter:       resourceFilter.resourceIdFilter,
+				HttpResourceIdFilter:   resourceFilter.httpResourceIdFilter,
+				DeviceIdFilter:         deviceIDFilter,
+				LeadResourceTypeFilter: leadResourceTypeFilter,
 			},
 		},
 	}
@@ -207,7 +249,6 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 	} else {
 		err = send(createResourceSub)
 	}
-
 	require.NoError(t, err)
 
 	ev, err := recv()
@@ -226,7 +267,13 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 	pbTest.CmpEvent(t, expectedEvent, ev, "")
 	baseSubID := ev.GetSubscriptionId()
 
+	deferedCleanUp := true
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, nil)
+	defer func() {
+		if deferedCleanUp {
+			shutdownDevSim()
+		}
+	}()
 
 	ev, err = recv()
 	require.NoError(t, err)
@@ -262,6 +309,7 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 					pb.SubscribeToEvents_CreateSubscription_RESOURCE_UPDATE_PENDING,
 					pb.SubscribeToEvents_CreateSubscription_RESOURCE_UPDATED,
 				},
+				LeadResourceTypeFilter: leadResourceTypeFilter,
 			},
 		},
 	})
@@ -301,6 +349,7 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 					pb.SubscribeToEvents_CreateSubscription_RESOURCE_RETRIEVE_PENDING,
 					pb.SubscribeToEvents_CreateSubscription_RESOURCE_RETRIEVED,
 				},
+				LeadResourceTypeFilter: leadResourceTypeFilter,
 			},
 		},
 	})
@@ -358,6 +407,7 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 		CorrelationId: "receivePending + resourceReceived",
 	}
 	pbTest.CmpEvent(t, expectedEvent, ev, "")
+	deferedCleanUp = false
 	shutdownDevSim()
 
 	run := true
@@ -389,11 +439,7 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 func TestRequestHandlerSubscribeToEventsResourceIDFilter(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	testRequestHandlerSubscribeToEvents(t, deviceID, resourceFilter{
-		resourceIdFilter: []*pb.ResourceIdFilter{
-			{
-				ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")),
-			},
-		},
+		resourceIdFilter: []*pb.ResourceIdFilter{{ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1"))}},
 	})
 }
 
@@ -408,5 +454,12 @@ func TestRequestHandlerSubscribeToEventsBackwardResourceIDFilter(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 	testRequestHandlerSubscribeToEvents(t, deviceID, resourceFilter{
 		backwardResourceIdFilter: []string{commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1")).ToString()},
+	})
+}
+
+func TestRequestHandlerSubscribeToEventsDeviceIDAndLeadResourceTypeFilter(t *testing.T) {
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+	testRequestHandlerSubscribeToEvents(t, deviceID, resourceFilter{
+		leadResourceTypeFilterEnabled: true,
 	})
 }

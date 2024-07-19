@@ -8,7 +8,6 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
-	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 )
 
@@ -58,7 +57,7 @@ func (h *createHandler) recv(ctx context.Context) (*events.ResourceCreated, erro
 // SyncCreateResource sends create resource command to resource aggregate and wait for resource created event from eventbus.
 func (c *Client) SyncCreateResource(ctx context.Context, owner string, req *commands.CreateResourceRequest) (*events.ResourceCreated, error) {
 	h := newCreateHandler(req.GetCorrelationId())
-	subject := utils.GetResourceEventSubject(owner, req.GetResourceId(), (&events.ResourceCreated{}).EventType())
+	subject := c.subscriber.GetResourceEventSubjects(owner, req.GetResourceId(), (&events.ResourceCreated{}).EventType())
 	obs, err := c.subscriber.Subscribe(ctx, req.GetCorrelationId(), subject, h)
 	if err != nil {
 		return nil, fmt.Errorf("cannot subscribe to eventbus: %w", err)

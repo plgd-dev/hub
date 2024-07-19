@@ -45,16 +45,29 @@ data:
         nats:
           url:{{ printf " " }}{{- include "plgd-hub.natsUri" (list $ .clients.eventBus.nats.url) | quote }}
           flusherTimeout: {{ .clients.eventBus.nats.flusherTimeout | quote }}
-          jetstream: {{ .clients.eventBus.nats.jetstream }}
           tls:
             {{- $natsTls := .clients.eventBus.nats.tls }}
             {{- include "plgd-hub.internalCertificateConfig" (list $ $natsTls $resourceAggregateCertPath) | indent 10 }}
             useSystemCAPool: {{ .clients.eventBus.nats.tls.useSystemCAPool }}
+          jetstream: {{ .clients.eventBus.nats.jetstream }}
+          {{- $leadResourceType := .clients.eventBus.nats.leadResourceType | default $.Values.global.nats.leadResourceType }}
+          {{- if $leadResourceType }}
+          leadResourceType:
+            enabled: {{ $leadResourceType.enabled | default false }}
+            {{- if $leadResourceType.regexFilter }}
+            regexFilter: 
+            {{- range $leadResourceType.regexFilter }}
+              - {{ . | quote }}
+            {{- end }}
+            {{- end }}
+            filter: {{ $leadResourceType.filter | quote }}
+            useUUID: {{ $leadResourceType.useUUID | default false }}
+          {{- end }}
       eventStore:
         defaultCommandTimeToLive: {{ .clients.eventStore.defaultCommandTimeToLive | default $.Values.global.defaultCommandTimeToLive | quote }}
         occMaxRetry: {{ .clients.eventStore.occMaxRetry }}
         snapshotThreshold: 8
-        use: {{ include "plgd-hub.useDatabase" (list $ . .clients.eventStore.use)  | quote }}
+        use: {{ include "plgd-hub.useDatabase" (list $ . .clients.eventStore.use) | quote }}
         mongoDB:
           uri:{{ printf " " }}{{- include "plgd-hub.mongoDBUri" (list $ .clients.eventStore.mongoDB.uri)  | quote }}
           database: {{ .clients.eventStore.mongoDB.database }}

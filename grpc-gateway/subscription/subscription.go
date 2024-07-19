@@ -3,6 +3,7 @@ package subscription
 import (
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/google/uuid"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
@@ -25,8 +26,28 @@ func (s set) Has(a uuid.UUID) bool {
 	return ok
 }
 
+type leadResourceTypeFilter struct {
+	enabled bool
+	filter  []string
+}
+
+func makeLeadResourceTypeFilter(enabled bool, filter []string) leadResourceTypeFilter {
+	lrt := leadResourceTypeFilter{
+		enabled: enabled,
+	}
+	if enabled {
+		lrt.filter = filter
+	}
+	return lrt
+}
+
+type subjectFilters struct {
+	resourceFilters        map[uuid.UUID]*commands.ResourceId
+	leadResourceTypeFilter leadResourceTypeFilter
+}
+
 type subInit struct {
-	deviceHrefFilters map[uuid.UUID]*commands.ResourceId
+	filters subjectFilters
 }
 
 type Sub struct {
@@ -106,7 +127,7 @@ func (s *Sub) setFilters(filter *commands.ResourceId) (bool, error) {
 func (s *Sub) Init(owner string, subCache *SubscriptionsCache) error {
 	init := s.init
 	s.init = nil
-	for _, filter := range init.deviceHrefFilters {
+	for _, filter := range init.filters.resourceFilters {
 		wantContinue, err := s.setFilters(filter)
 		if err != nil {
 			return err
@@ -115,7 +136,7 @@ func (s *Sub) Init(owner string, subCache *SubscriptionsCache) error {
 			break
 		}
 	}
-	subjects := ConvertToSubjects(owner, init.deviceHrefFilters, s.filter)
+	subjects := ConvertToSubjects(owner, init.filters, s.filter)
 	var closeFn fn.FuncList
 	for _, subject := range subjects {
 		closeSub, err := subCache.Subscribe(subject, s.ProcessEvent)
@@ -234,7 +255,6 @@ func toFilters(req *pb.SubscribeToEvents_CreateSubscription) ([]string, []string
 func normalizeFilters(req *pb.SubscribeToEvents_CreateSubscription) ([]string, []string, []string, FilterBitmask) {
 	bitmask := EventsFilterToBitmask(req.GetEventFilter())
 	filterDeviceIDs, filterHrefs, filterResourceIDs := toFilters(req)
-
 	for _, d := range req.GetDeviceIdFilter() {
 		if d != "*" {
 			filterDeviceIDs = append(filterDeviceIDs, d)
@@ -289,57 +309,81 @@ func addResourceIdFilters(filterSlice []*pb.ResourceIdFilter, deviceHrefFilters 
 	}
 }
 
-func getFilters(req *pb.SubscribeToEvents_CreateSubscription) (map[uuid.UUID]*commands.ResourceId, FilterBitmask) {
+func getLeadResourceTypeFilter(req *pb.SubscribeToEvents_CreateSubscription, leadRTFilterEnabled bool) leadResourceTypeFilter {
+	if !leadRTFilterEnabled {
+		return makeLeadResourceTypeFilter(false, nil)
+	}
+
+	var lrtFilter []string
+	if slices.Contains(req.GetLeadResourceTypeFilter(), ">") {
+		// - in NATS the ">" wildcard matches one or more subjects, so there is no need for any other filters when leadRTFilter is ">"
+		// - "*" will subscribe to all events that have been published with lead resource type, but not events that have been published without it
+		// - if no leadRTFilter is provided, then it will subscribe events with and without a lead resource type
+		lrtFilter = []string{">"}
+	} else {
+		lrtFilter = strings.Unique(req.GetLeadResourceTypeFilter())
+	}
+	return makeLeadResourceTypeFilter(true, lrtFilter)
+}
+
+func getFilters(req *pb.SubscribeToEvents_CreateSubscription, leadRTFilterEnabled bool) (subjectFilters, FilterBitmask) {
 	filterDeviceIDs, filterHrefs, filterResourceIDs, bitmask := normalizeFilters(req)
-	// all events
+
+	leadRTFilter := getLeadResourceTypeFilter(req, leadRTFilterEnabled)
+	// all events or just filtered by leading resource type
 	if len(filterDeviceIDs) == 0 && len(filterHrefs) == 0 && len(filterResourceIDs) == 0 {
-		return nil, bitmask
-	}
-	deviceHrefFilters := make(map[uuid.UUID]*commands.ResourceId)
-
-	if len(filterDeviceIDs) == 0 && len(req.GetResourceIdFilter()) == 0 {
-		addHrefFilters(filterHrefs, deviceHrefFilters)
-		return deviceHrefFilters, bitmask
+		return subjectFilters{
+			leadResourceTypeFilter: leadRTFilter,
+		}, bitmask
 	}
 
-	if len(filterHrefs) == 0 && len(req.GetResourceIdFilter()) == 0 {
-		addDeviceFilters(filterDeviceIDs, deviceHrefFilters)
-		return deviceHrefFilters, bitmask
+	sf := subjectFilters{
+		resourceFilters:        make(map[uuid.UUID]*commands.ResourceId),
+		leadResourceTypeFilter: leadRTFilter,
 	}
 
-	if len(filterDeviceIDs) == 0 && len(filterHrefs) == 0 {
-		addResourceIdFilters(req.GetResourceIdFilter(), deviceHrefFilters)
-		return deviceHrefFilters, bitmask
+	if len(req.GetResourceIdFilter()) == 0 {
+		if len(filterDeviceIDs) == 0 {
+			addHrefFilters(filterHrefs, sf.resourceFilters)
+			return sf, bitmask
+		}
+
+		if len(filterHrefs) == 0 {
+			addDeviceFilters(filterDeviceIDs, sf.resourceFilters)
+			return sf, bitmask
+		}
 	}
 
 	if len(filterDeviceIDs) == 0 {
-		addHrefFilters(filterHrefs, deviceHrefFilters)
-		addResourceIdFilters(req.GetResourceIdFilter(), deviceHrefFilters)
-		return deviceHrefFilters, bitmask
+		if len(filterHrefs) != 0 {
+			addHrefFilters(filterHrefs, sf.resourceFilters)
+		}
+		addResourceIdFilters(req.GetResourceIdFilter(), sf.resourceFilters)
+		return sf, bitmask
 	}
 
 	if len(filterHrefs) == 0 {
-		addDeviceFilters(filterDeviceIDs, deviceHrefFilters)
-		addResourceIdFilters(req.GetResourceIdFilter(), deviceHrefFilters)
-		return deviceHrefFilters, bitmask
+		addDeviceFilters(filterDeviceIDs, sf.resourceFilters)
+		addResourceIdFilters(req.GetResourceIdFilter(), sf.resourceFilters)
+		return sf, bitmask
 	}
 
 	for _, d := range filterDeviceIDs {
 		for _, h := range filterHrefs {
-			deviceHrefFilters[commands.NewResourceID(d, h).ToUUID()] = commands.NewResourceID(d, h)
+			sf.resourceFilters[commands.NewResourceID(d, h).ToUUID()] = commands.NewResourceID(d, h)
 		}
 	}
 
-	addResourceIdFilters(req.GetResourceIdFilter(), deviceHrefFilters)
+	addResourceIdFilters(req.GetResourceIdFilter(), sf.resourceFilters)
 
-	return deviceHrefFilters, bitmask
+	return sf, bitmask
 }
 
-func New(send SendEventFunc, correlationID string, req *pb.SubscribeToEvents_CreateSubscription) *Sub {
+func New(send SendEventFunc, correlationID string, leadRTEnabled bool, req *pb.SubscribeToEvents_CreateSubscription) *Sub {
 	// for backward compatibility and http api
 	req.ResourceIdFilter = append(req.ResourceIdFilter, req.ConvertHTTPResourceIDFilter()...)
 
-	deviceHrefFilters, bitmask := getFilters(req)
+	filters, bitmask := getFilters(req, leadRTEnabled)
 	id := uuid.NewString()
 	var closeAtomic atomic.Value
 	closeAtomic.Store(func() {
@@ -351,7 +395,7 @@ func New(send SendEventFunc, correlationID string, req *pb.SubscribeToEvents_Cre
 		req:    req,
 		id:     id,
 		init: &subInit{
-			deviceHrefFilters: deviceHrefFilters,
+			filters: filters,
 		},
 		filteredHrefIDs:     make(set),
 		filteredDeviceIDs:   make(set),
