@@ -36,7 +36,7 @@ paths:
                   description: "The name of the token which will be used in the name claim."
                 expiration:
                   type: integer
-                  description: "The requested expiration time in seconds from the client. If not provided, the token will be max allowed by client."
+                  description: "The requested expiration time in unit timestamp seconds from the client. If not provided, the token will use the maximum allowed by the client, or if it exceeds the maximum allowed, an error will occur."
                 scope:
                   type: string
                   description: "The scopes that are requested, separated by space. Must be a subset of the allowed scopes for the client."
