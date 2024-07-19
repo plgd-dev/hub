@@ -3,8 +3,8 @@ package pb
 const (
 	ExpirationKey           = "expiration"
 	OwnerKey                = "owner"
-	BlackListedFlagKey      = "blacklisted.flag"
-	BlackListedTimestampKey = "blacklisted.timestamp"
+	BlackListedFlagKey      = BlackListedKey + ".flag"
+	BlackListedTimestampKey = BlackListedKey + ".timestamp"
 	BlackListedKey          = "blacklisted"
 	TimestampKey            = "timestamp"
 	AudienceKey             = "audience"

@@ -21,7 +21,7 @@ type RequestHandler struct {
 	mux                   *runtime.ServeMux
 }
 
-// NewHTTP returns HTTP handler
+// NewRequestHandler returns HTTP handler
 func NewRequestHandler(config *Config, r *mux.Router, m2mOAuthServiceServer *grpcService.M2MOAuthServiceServer) (*RequestHandler, error) {
 	requestHandler := &RequestHandler{
 		config:                config,

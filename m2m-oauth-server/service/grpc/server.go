@@ -38,7 +38,7 @@ func NewM2MOAuthServerServer(store store.Store, signer *oauthsigner.OAuthSigner,
 }
 
 func (s *M2MOAuthServiceServer) getOwner(ctx context.Context) (string, error) {
-	ownerFromToken, err := pkgGrpc.OwnerFromTokenMD(ctx, s.signer.Config.OwnerClaim)
+	ownerFromToken, err := pkgGrpc.OwnerFromTokenMD(ctx, s.signer.GetOwnerClaim())
 	if err != nil {
 		return "", err
 	}
@@ -62,12 +62,12 @@ func errCannotCreateToken(err error) error {
 
 func (s *M2MOAuthServiceServer) CreateToken(ctx context.Context, req *pb.CreateTokenRequest) (*pb.CreateTokenResponse, error) {
 	tokenReq := tokenRequest{
-		host:               s.signer.Config.GetDomain(),
+		host:               s.signer.GetDomain(),
 		tokenType:          oauthsigner.AccessTokenType_JWT,
 		issuedAt:           time.Now(),
 		CreateTokenRequest: req,
 	}
-	clientCfg := s.signer.Config.Clients.Find(tokenReq.CreateTokenRequest.GetClientId())
+	clientCfg := s.signer.GetClients().Find(tokenReq.CreateTokenRequest.GetClientId())
 	if clientCfg == nil {
 		return nil, status.Errorf(codes.Unauthenticated, "%v", errCannotCreateToken(fmt.Errorf("client(%v) not found", tokenReq.CreateTokenRequest.GetClientId())))
 	}
@@ -84,8 +84,8 @@ func (s *M2MOAuthServiceServer) CreateToken(ctx context.Context, req *pb.CreateT
 		}
 	}
 	tokenReq.scopes = strings.Join(req.GetScope(), " ")
-	tokenReq.deviceIDClaim = s.signer.Config.DeviceIDClaim
-	tokenReq.ownerClaim = s.signer.Config.OwnerClaim
+	tokenReq.deviceIDClaim = s.signer.GetDeviceIDClaim()
+	tokenReq.ownerClaim = s.signer.GetOwnerClaim()
 	tokenReq.id = uuid.NewString()
 	tokenReq.expiration = getExpirationTime(clientCfg, tokenReq)
 	tokenReq.subject = getSubject(clientCfg, tokenReq)
@@ -162,5 +162,5 @@ func (s *M2MOAuthServiceServer) GetJWK() jwk.Key {
 }
 
 func (s *M2MOAuthServiceServer) GetDomain() string {
-	return s.signer.Config.GetDomain()
+	return s.signer.GetDomain()
 }

@@ -30,11 +30,11 @@ data:
           # 0s - means infinity
           maxConnectionIdle: {{ .apis.grpc.keepAlive.maxConnectionIdle }}
           # 0s - means infinity
-          maxConnectionAge: {{ .apis.grpc.keepAlive.maxConnectionIdle }}
+          maxConnectionAge: {{ .apis.grpc.keepAlive.maxConnectionAge }}
           # 0s - means infinity
           maxConnectionAgeGrace: {{ .apis.grpc.keepAlive.maxConnectionAgeGrace }}
-          time: {{ .apis.grpc.keepAlive.maxConnectionIdle }}
-          timeout: {{ .apis.grpc.keepAlive.maxConnectionIdle }}
+          time: {{ .apis.grpc.keepAlive.time }}
+          timeout: {{ .apis.grpc.keepAlive.timeout }}
         tls:
           {{- $tls := .apis.grpc.tls }}
           {{- include "plgd-hub.internalCertificateConfig" (list $ $tls $cert ) | indent 8 }}

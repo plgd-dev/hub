@@ -153,7 +153,3 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		store:   db,
 	}, nil
 }
-
-func (s *Service) SnippetServiceStore() store.Store {
-	return s.store
-}

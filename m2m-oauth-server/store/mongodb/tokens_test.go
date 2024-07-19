@@ -15,7 +15,7 @@ func TestGetTokens(t *testing.T) {
 	s, cleanUpStore := test.NewMongoStore(t)
 	defer cleanUpStore()
 
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT*100)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
 	// Set the owner and request parameters
@@ -123,7 +123,7 @@ func TestBlacklistTokens(t *testing.T) {
 	s, cleanUpStore := test.NewMongoStore(t)
 	defer cleanUpStore()
 
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT*100)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
 	owner := "testOwner"
@@ -216,7 +216,7 @@ func TestDeleteTokens(t *testing.T) {
 	s, cleanUpStore := test.NewMongoStore(t)
 	defer cleanUpStore()
 
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT*100)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
 	owner := "testOwner"

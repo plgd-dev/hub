@@ -23,7 +23,7 @@ func setKeyError(key string, err error) error {
 type OAuthSigner struct {
 	privateKeyJWTValidators map[string]*validator.Validator
 	closer                  fn.FuncList
-	Config                  Config
+	config                  Config
 	accessTokenKey          interface{}
 	accessTokenJwkKey       jwk.Key
 }
@@ -55,7 +55,7 @@ func New(ctx context.Context, config Config, getOpenIDConfiguration validator.Ge
 	return &OAuthSigner{
 		privateKeyJWTValidators: privateKeyJWTValidators,
 		closer:                  closer,
-		Config:                  config,
+		config:                  config,
 		accessTokenKey:          accessTokenKey,
 		accessTokenJwkKey:       accessTokenJwkKey,
 	}, nil
@@ -96,4 +96,20 @@ func (s *OAuthSigner) Sign(token jwt.Token) ([]byte, error) {
 
 func (s *OAuthSigner) Close() {
 	s.closer.Execute()
+}
+
+func (s *OAuthSigner) GetDomain() string {
+	return s.config.GetDomain()
+}
+
+func (s *OAuthSigner) GetOwnerClaim() string {
+	return s.config.OwnerClaim
+}
+
+func (s *OAuthSigner) GetDeviceIDClaim() string {
+	return s.config.DeviceIDClaim
+}
+
+func (s *OAuthSigner) GetClients() OAuthClientsConfig {
+	return s.config.Clients
 }

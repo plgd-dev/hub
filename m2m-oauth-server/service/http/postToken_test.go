@@ -67,7 +67,7 @@ func TestPostToken(t *testing.T) {
 			},
 		},
 		{
-			name: "snippetServiceToken - JWT",
+			name: "ownerToken - JWT",
 			args: m2mOauthServerTest.AccessTokenOptions{
 				Ctx:       context.Background(),
 				ClientID:  m2mOauthServerTest.JWTPrivateKeyOAuthClient.ID,
@@ -93,7 +93,7 @@ func TestPostToken(t *testing.T) {
 			wantCode: http.StatusUnauthorized,
 		},
 		{
-			name: "snippetServiceToken - invalid JWT",
+			name: "ownerToken - invalid JWT",
 			args: m2mOauthServerTest.AccessTokenOptions{
 				Ctx:       context.Background(),
 				ClientID:  m2mOauthServerTest.JWTPrivateKeyOAuthClient.ID,

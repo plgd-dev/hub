@@ -26,7 +26,7 @@ func New(config Config, m2mOAuthServiceServer *M2MOAuthServiceServer, validator 
 	}
 	pb.RegisterM2MOAuthServiceServer(server.Server, m2mOAuthServiceServer)
 
-	// SnippetService needs to stop gracefully to ensure that all commands are processed.
+	// M2MOAuthService needs to stop gracefully to ensure that all commands are processed.
 	server.SetGracefulStop(true)
 
 	return &Service{

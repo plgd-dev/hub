@@ -115,9 +115,6 @@ func getExpirationTime(clientCfg *oauthsigner.Client, tokenReq tokenRequest) tim
 		return time.Time{}
 	}
 	if tokenReq.CreateTokenRequest.GetExpiration() == 0 {
-		if clientCfg.AccessTokenLifetime == 0 {
-			return time.Time{}
-		}
 		return tokenReq.issuedAt.Add(clientCfg.AccessTokenLifetime)
 	}
 	wantExpiration := time.Unix(tokenReq.CreateTokenRequest.GetExpiration(), 0)
@@ -267,7 +264,7 @@ func (s *M2MOAuthServiceServer) validateClientAssertion(ctx context.Context, tok
 	}
 	tokenReq.originalTokenClaims = token
 	claims := pkgJwt.Claims(token)
-	owner, err := claims.GetOwner(s.signer.Config.OwnerClaim)
+	owner, err := claims.GetOwner(s.signer.GetOwnerClaim())
 	if err != nil {
 		return fmt.Errorf("invalid client assertion - claim owner: %w", err)
 	}
@@ -277,10 +274,10 @@ func (s *M2MOAuthServiceServer) validateClientAssertion(ctx context.Context, tok
 		return fmt.Errorf("invalid client assertion - claim sub: %w", err)
 	}
 	tokenReq.subject = sub
-	if s.signer.Config.DeviceIDClaim == "" {
+	if s.signer.GetDeviceIDClaim() == "" {
 		return nil
 	}
-	deviceID, err := claims.GetDeviceID(s.signer.Config.DeviceIDClaim)
+	deviceID, err := claims.GetDeviceID(s.signer.GetDeviceIDClaim())
 	if err == nil {
 		tokenReq.deviceID = deviceID
 	}

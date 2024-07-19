@@ -27,10 +27,6 @@ var (
 	ErrPartialDelete   = errors.New("some errors occurred while deleting")
 )
 
-func IsDuplicateKeyError(err error) bool {
-	return mongo.IsDuplicateKeyError(err)
-}
-
 type BsonMapper interface {
 	FromBsonMap(m map[string]interface{}) error
 }
