@@ -66,7 +66,7 @@ type OAuthClient struct {
 	ClientId            string   `protobuf:"bytes,1,opt,name=client_id,json=clientId,proto3" json:"client_id,omitempty" yaml:"clientID"` // @gotags: yaml:"clientID"
 	Audience            string   `protobuf:"bytes,2,opt,name=audience,proto3" json:"audience,omitempty"`
 	Scopes              []string `protobuf:"bytes,3,rep,name=scopes,proto3" json:"scopes,omitempty"`
-	ProviderName        string   `protobuf:"bytes,4,opt,name=provider_name,json=providerName,proto3" json:"provider_name,omitempty" yaml:"providerName"`                               // @gotags: yaml:"providerName"
+	ProviderName        string   `protobuf:"bytes,4,opt,name=provider_name,json=providerName,proto3" json:"provider_name,omitempty" yaml:"providerName"`                        // @gotags: yaml:"providerName"
 	ClientAssertionType string   `protobuf:"bytes,5,opt,name=client_assertion_type,json=clientAssertionType,proto3" json:"client_assertion_type,omitempty" yaml:"clientAssertionType"` // @gotags: yaml:"clientAssertionType"
 	Authority           string   `protobuf:"bytes,6,opt,name=authority,proto3" json:"authority,omitempty"`
 	GrantType           string   `protobuf:"bytes,7,opt,name=grant_type,json=grantType,proto3" json:"grant_type,omitempty" yaml:"grantType"` // @gotags: yaml:"grantType"

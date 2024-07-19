@@ -87,7 +87,7 @@ message CreateTokenRequest {
   repeated string audience = 3;
   // Requested token scopes
   repeated string scope = 4;
-  // Requested token expiration in Unix timestamp seconds
+  // The requested expiration time in unit timestamp seconds from the client. If not provided, the token will use the maximum allowed by the client, or if it exceeds the maximum allowed, an error will occur.
   int64 expiration = 5;
   // Client assertion type
   string client_assertion_type = 6;

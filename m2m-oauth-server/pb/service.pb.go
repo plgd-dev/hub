@@ -341,7 +341,7 @@ type CreateTokenRequest struct {
 	Audience []string `protobuf:"bytes,3,rep,name=audience,proto3" json:"audience,omitempty"`
 	// Requested token scopes
 	Scope []string `protobuf:"bytes,4,rep,name=scope,proto3" json:"scope,omitempty"`
-	// Requested token expiration in Unix timestamp seconds
+	// The requested expiration time in unit timestamp seconds from the client. If not provided, the token will use the maximum allowed by the client, or if it exceeds the maximum allowed, an error will occur.
 	Expiration int64 `protobuf:"varint,5,opt,name=expiration,proto3" json:"expiration,omitempty"`
 	// Client assertion type
 	ClientAssertionType string `protobuf:"bytes,6,opt,name=client_assertion_type,json=clientAssertionType,proto3" json:"client_assertion_type,omitempty"`

@@ -67,7 +67,7 @@
 | client_secret | [string](#string) |  | Client Secret |
 | audience | [string](#string) | repeated | Requested token Audience |
 | scope | [string](#string) | repeated | Requested token scopes |
-| expiration | [int64](#int64) |  | Requested token expiration in Unix timestamp seconds |
+| expiration | [int64](#int64) |  | The requested expiration time in unit timestamp seconds from the client. If not provided, the token will use the maximum allowed by the client, or if it exceeds the maximum allowed, an error will occur. |
 | client_assertion_type | [string](#string) |  | Client assertion type |
 | client_assertion | [string](#string) |  | Client assertion |
 | token_name | [string](#string) |  | Token name |

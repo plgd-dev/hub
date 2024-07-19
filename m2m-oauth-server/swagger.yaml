@@ -266,7 +266,7 @@ components:
           items:
             type: string
         expiration:
-          title: Requested token expiration in Unix timestamp seconds
+          title: The requested expiration time in unit timestamp seconds from the client. If not provided, the token will use the maximum allowed by the client, or if it exceeds the maximum allowed, an error will occur.
           type: string
           format: int64
         clientAssertionType:

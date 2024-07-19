@@ -219,7 +219,7 @@
         "expiration": {
           "type": "string",
           "format": "int64",
-          "title": "Requested token expiration in Unix timestamp seconds"
+          "description": "The requested expiration time in unit timestamp seconds from the client. If not provided, the token will use the maximum allowed by the client, or if it exceeds the maximum allowed, an error will occur."
         },
         "clientAssertionType": {
           "type": "string",
