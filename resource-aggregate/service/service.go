@@ -71,7 +71,12 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		otelClient.Close()
 		return nil, fmt.Errorf("cannot create nats client %w", err)
 	}
-	publisher, err := publisher.New(naClient.GetConn(), config.Clients.Eventbus.NATS.JetStream, publisher.WithMarshaler(utils.Marshal), publisher.WithFlusherTimeout(config.Clients.Eventbus.NATS.Config.FlusherTimeout))
+	opts := []publisher.Option{publisher.WithMarshaler(utils.Marshal), publisher.WithFlusherTimeout(config.Clients.Eventbus.NATS.Config.FlusherTimeout)}
+	if config.Clients.Eventbus.NATS.LeadResourceType.IsEnabled() {
+		lrt := config.Clients.Eventbus.NATS.LeadResourceType
+		opts = append(opts, publisher.WithLeadResourceType(lrt.GetCompiledRegexFilter(), lrt.Filter, lrt.UseUUID))
+	}
+	publisher, err := publisher.New(naClient.GetConn(), config.Clients.Eventbus.NATS.JetStream, opts...)
 	if err != nil {
 		naClient.Close()
 		closeEventStore()

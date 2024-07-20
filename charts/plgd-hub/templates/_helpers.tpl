@@ -199,7 +199,7 @@ tls:
   {{- $endpoints = $authorization.endpoints }}
   {{- end }}
   {{- end }}
-  {{- end}}
+  {{- end }}
   {{- if not $audience }}
   {{- $audience = $.Values.global.audience }}
   {{- end }}
@@ -209,7 +209,7 @@ tls:
   {{- $mapEndpoints := include "plgd-hub.authorizationFilterEndpoints" (list $ $endpoints) | fromYaml }}
   {{- if eq (len $mapEndpoints.Values) 0 }}
   {{- fail (printf "%s.endpoints or global.authorization.endpoints is required" $prefix) }}
-  {{- end}}
+  {{- end }}
   audience: {{ include "plgd-hub.resolveTemplateString" (list $ $audience) }}
   endpoints:
     {{- range $mapEndpoints.Values }}

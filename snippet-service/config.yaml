@@ -52,6 +52,7 @@ apis:
     idleTimeout: 30s
 clients:
   storage:
+    cleanUpExpiredUpdates: "0 * * * *"
     use: mongoDB
     mongoDB:
       uri:
@@ -90,8 +91,9 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
-  resourceUpdater:
-    cleanUpExpiredUpdates: "0 * * * *"
+      leadResourceType:
+        enabled: false
+  resourceAggregate:
     grpc:
       address: ""
       sendMsgSize: 4194304

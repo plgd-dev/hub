@@ -55,6 +55,11 @@ data:
             {{- $natsTls := .clients.eventBus.nats.tls }}
             {{- include "plgd-hub.internalCertificateConfig" (list $ $natsTls $grpcGatewayCertPath ) | indent 10 }}
             useSystemCAPool: {{ .clients.eventBus.nats.tls.useSystemCAPool }}
+          {{- if or .clients.eventBus.nats.leadResourceType $.Values.global.nats.leadResourceType }}
+          {{- $leadResourceType := .clients.eventBus.nats.leadResourceType | default $.Values.global.nats.leadResourceType }}
+          leadResourceType:
+            enabled: {{ $leadResourceType.enabled }}
+          {{- end }}
       identityStore:
         grpc:
           {{- $authorizationServer := .clients.identityStore.grpc.address }}

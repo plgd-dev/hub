@@ -29,7 +29,6 @@ import (
 	storeCqlDB "github.com/plgd-dev/hub/v2/snippet-service/store/cqldb"
 	storeMongo "github.com/plgd-dev/hub/v2/snippet-service/store/mongodb"
 	"github.com/plgd-dev/hub/v2/snippet-service/test"
-	"github.com/plgd-dev/hub/v2/snippet-service/updater"
 	hubTest "github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/plgd-dev/hub/v2/test/device/bridge"
@@ -77,7 +76,9 @@ func TestServiceNew(t *testing.T) {
 			cfg: service.Config{
 				Clients: service.ClientsConfig{
 					Storage: storeConfig.Config{
-						Use: "invalid",
+						Config: database.Config[*storeMongo.Config, *storeCqlDB.Config]{
+							Use: "invalid",
+						},
 					},
 				},
 			},
@@ -88,10 +89,12 @@ func TestServiceNew(t *testing.T) {
 			cfg: service.Config{
 				Clients: service.ClientsConfig{
 					Storage: storeConfig.Config{
-						Use: database.MongoDB,
-						MongoDB: &storeMongo.Config{
-							Mongo: mongodb.Config{
-								URI: "invalid",
+						Config: database.Config[*storeMongo.Config, *storeCqlDB.Config]{
+							Use: database.MongoDB,
+							MongoDB: &storeMongo.Config{
+								Mongo: mongodb.Config{
+									URI: "invalid",
+								},
 							},
 						},
 					},
@@ -104,18 +107,29 @@ func TestServiceNew(t *testing.T) {
 			cfg: service.Config{
 				Clients: service.ClientsConfig{
 					Storage: storeConfig.Config{
-						Use:   database.CqlDB,
-						CqlDB: &storeCqlDB.Config{},
+						Config: database.Config[*storeMongo.Config, *storeCqlDB.Config]{
+							Use:   database.CqlDB,
+							CqlDB: &storeCqlDB.Config{},
+						},
 					},
 				},
 			},
 			wantErr: true,
 		},
 		{
+			name: "invalid expired updates checker config",
+			cfg: func() service.Config {
+				cfg := test.MakeConfig(t)
+				cfg.Clients.Storage.CleanUpExpiredUpdates = "invalid"
+				return cfg
+			}(),
+			wantErr: true,
+		},
+		{
 			name: "invalid resource subscriber config",
 			cfg: func() service.Config {
 				cfg := test.MakeConfig(t)
-				cfg.Clients.EventBus.NATS = natsClient.Config{}
+				cfg.Clients.EventBus.NATS = natsClient.ConfigSubscriber{}
 				return cfg
 			}(),
 			wantErr: true,
@@ -124,7 +138,7 @@ func TestServiceNew(t *testing.T) {
 			name: "invalid resource aggregate client config",
 			cfg: func() service.Config {
 				cfg := test.MakeConfig(t)
-				cfg.Clients.ResourceUpdater = updater.ResourceUpdaterConfig{}
+				cfg.Clients.ResourceAggregate = service.ResourceAggregateConfig{}
 				return cfg
 			}(),
 			wantErr: true,
@@ -186,8 +200,8 @@ func TestService(t *testing.T) {
 
 	snippetCfg := test.MakeConfig(t)
 	const interval = time.Second
-	snippetCfg.Clients.ResourceUpdater.CleanUpExpiredUpdates = "*/1 * * * * *"
-	snippetCfg.Clients.ResourceUpdater.ExtendCronParserBySeconds = true
+	snippetCfg.Clients.Storage.CleanUpExpiredUpdates = "*/1 * * * * *"
+	snippetCfg.Clients.Storage.ExtendCronParserBySeconds = true
 	_, shutdownSnippetService := test.New(t, snippetCfg)
 	defer shutdownSnippetService()
 
@@ -367,6 +381,15 @@ func TestService(t *testing.T) {
 	_, shutdownDevSim := hubTest.OnboardDevSim(ctx, t, grpcClient.GrpcGatewayClient(), deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, hubTest.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
+	defer func() {
+		// restore state
+		err = grpcClient.UpdateResource(ctx, deviceID, hubTest.TestResourceLightInstanceHref("1"), map[string]interface{}{
+			"state": false,
+			"power": uint64(0),
+		}, nil)
+		require.NoError(t, err)
+	}()
+
 	// -> wait for /conf1 to be applied -> for /not/existing resource this should start-up the timeout timer
 	notExistingConf1ID := conf1.GetId() + "." + notExistingResourceHref
 	var appliedConf1Status pb.AppliedConfiguration_Resource_Status
@@ -456,13 +479,6 @@ func TestService(t *testing.T) {
 	require.Equal(t, configuration.ResourceURI, conConf3.GetHref())
 	require.Equal(t, pb.AppliedConfiguration_Resource_DONE, conConf3.GetStatus())
 	require.Equal(t, commands.Status_ERROR, conConf3.GetResourceUpdated().GetStatus())
-
-	// restore state
-	err = grpcClient.UpdateResource(ctx, deviceID, hubTest.TestResourceLightInstanceHref("1"), map[string]interface{}{
-		"state": false,
-		"power": uint64(0),
-	}, nil)
-	require.NoError(t, err)
 }
 
 func getBridgeDeviceResources(ctx context.Context, t *testing.T, bd *bridge.Device, numResources int) (map[string]map[string]interface{}, func()) {

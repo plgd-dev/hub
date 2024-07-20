@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -185,24 +186,63 @@ func MakeHttpServerConfig() httpServer.Config {
 	}
 }
 
-func MakePublisherConfig() natsClient.ConfigPublisher {
-	return natsClient.ConfigPublisher{
+func LeadResourceIsEnabled() bool {
+	filter := os.Getenv("TEST_LEAD_RESOURCE_TYPE_FILTER")
+	regexFilter := os.Getenv("TEST_LEAD_RESOURCE_TYPE_REGEX_FILTER")
+	return filter != "" || regexFilter != ""
+}
+
+func LeadResourceUseUUID() bool {
+	return os.Getenv("TEST_LEAD_RESOURCE_TYPE_USE_UUID") == TRUE_STRING
+}
+
+func MakePublisherConfig(t require.TestingT) natsClient.ConfigPublisher {
+	cp := natsClient.ConfigPublisher{
 		Config: natsClient.Config{
 			URL:            NATS_URL,
 			TLS:            MakeTLSClientConfig(),
 			FlusherTimeout: time.Second * 30,
 		},
 	}
+	filterIn := os.Getenv("TEST_LEAD_RESOURCE_TYPE_FILTER")
+	regexFilterIn := os.Getenv("TEST_LEAD_RESOURCE_TYPE_REGEX_FILTER")
+	if filterIn == "" && regexFilterIn == "" {
+		return cp
+	}
+	lrt := &natsClient.LeadResourceTypePublisherConfig{
+		Enabled: true,
+		UseUUID: LeadResourceUseUUID(),
+	}
+	if filterIn != "" {
+		err := natsClient.CheckResourceTypeFilterString(filterIn)
+		require.NoError(t, err)
+		lrt.Filter = natsClient.LeadResourceTypeFilter(filterIn)
+	}
+	if regexFilterIn != "" {
+		rfs := strings.Split(regexFilterIn, ",")
+		for _, rf := range rfs {
+			_, err := regexp.Compile(rf)
+			require.NoError(t, err)
+		}
+		lrt.RegexFilter = rfs
+	}
+	cp.LeadResourceType = lrt
+	return cp
 }
 
-func MakeSubscriberConfig() natsClient.Config {
-	return natsClient.Config{
-		URL: NATS_URL,
-		PendingLimits: natsClient.PendingLimitsConfig{
-			MsgLimit:   524288,
-			BytesLimit: 67108864,
+func MakeSubscriberConfig() natsClient.ConfigSubscriber {
+	return natsClient.ConfigSubscriber{
+		Config: natsClient.Config{
+			URL: NATS_URL,
+			PendingLimits: natsClient.PendingLimitsConfig{
+				MsgLimit:   524288,
+				BytesLimit: 67108864,
+			},
+			TLS: MakeTLSClientConfig(),
 		},
-		TLS: MakeTLSClientConfig(),
+		LeadResourceType: &natsClient.LeadResourceTypeSubscriberConfig{
+			Enabled: LeadResourceIsEnabled(),
+		},
 	}
 }
 

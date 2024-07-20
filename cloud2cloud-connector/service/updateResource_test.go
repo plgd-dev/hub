@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"testing"
+	"time"
 
 	"github.com/plgd-dev/device/v2/schema/device"
 	"github.com/plgd-dev/device/v2/schema/interfaces"
@@ -133,9 +134,9 @@ func testRequestHandlerUpdateResource(t *testing.T, events store.Events) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	const timeoutWithPull = config.TEST_TIMEOUT + time.Second*10 // longer timeout is needed because of the 10s sleep in SetUpClouds
+	ctx, cancel := context.WithTimeout(context.Background(), timeoutWithPull)
 	defer cancel()
-
 	tearDown := c2cConnectorTest.SetUpClouds(ctx, t, deviceID, events)
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetAccessToken(t, c2cConnectorTest.OAUTH_HOST, oauthTest.ClientTest, nil))

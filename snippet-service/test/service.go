@@ -14,7 +14,6 @@ import (
 	storeConfig "github.com/plgd-dev/hub/v2/snippet-service/store/config"
 	storeCqlDB "github.com/plgd-dev/hub/v2/snippet-service/store/cqldb"
 	storeMongo "github.com/plgd-dev/hub/v2/snippet-service/store/mongodb"
-	"github.com/plgd-dev/hub/v2/snippet-service/updater"
 	"github.com/plgd-dev/hub/v2/test/config"
 	httpTest "github.com/plgd-dev/hub/v2/test/http"
 	"github.com/stretchr/testify/require"
@@ -41,11 +40,9 @@ func MakeAPIsConfig() service.APIsConfig {
 	}
 }
 
-func MakeResourceUpdaterConfig() updater.ResourceUpdaterConfig {
-	return updater.ResourceUpdaterConfig{
-		Connection:                config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST),
-		CleanUpExpiredUpdates:     "0 * * * *",
-		ExtendCronParserBySeconds: false,
+func MakeResourceAggregateConfig() service.ResourceAggregateConfig {
+	return service.ResourceAggregateConfig{
+		Connection: config.MakeGrpcClientConfig(config.RESOURCE_AGGREGATE_HOST),
 	}
 }
 
@@ -57,7 +54,7 @@ func MakeClientsConfig() service.ClientsConfig {
 			NATS:           config.MakeSubscriberConfig(),
 			SubscriptionID: "snippet-service",
 		},
-		ResourceUpdater: MakeResourceUpdaterConfig(),
+		ResourceAggregate: MakeResourceAggregateConfig(),
 	}
 }
 
@@ -65,19 +62,23 @@ func MakeStoreConfig() storeConfig.Config {
 	return storeConfig.Config{
 		// TODO: add cqldb support
 		// Use: config.ACTIVE_DATABASE(),
-		Use: database.MongoDB,
-		MongoDB: &storeMongo.Config{
-			Mongo: mongodb.Config{
-				MaxPoolSize:     16,
-				MaxConnIdleTime: time.Minute * 4,
-				URI:             config.MONGODB_URI,
-				Database:        "snippetService",
-				TLS:             config.MakeTLSClientConfig(),
+		CleanUpExpiredUpdates:     "0 * * * *",
+		ExtendCronParserBySeconds: false,
+		Config: database.Config[*storeMongo.Config, *storeCqlDB.Config]{
+			Use: database.MongoDB,
+			MongoDB: &storeMongo.Config{
+				Mongo: mongodb.Config{
+					MaxPoolSize:     16,
+					MaxConnIdleTime: time.Minute * 4,
+					URI:             config.MONGODB_URI,
+					Database:        "snippetService",
+					TLS:             config.MakeTLSClientConfig(),
+				},
 			},
-		},
-		CqlDB: &storeCqlDB.Config{
-			Embedded: config.MakeCqlDBConfig(),
-			Table:    "snippets",
+			CqlDB: &storeCqlDB.Config{
+				Embedded: config.MakeCqlDBConfig(),
+				Table:    "snippets",
+			},
 		},
 	}
 }

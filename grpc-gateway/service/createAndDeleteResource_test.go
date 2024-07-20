@@ -21,7 +21,7 @@ import (
 	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
-	"github.com/plgd-dev/hub/v2/test/service"
+	hubTestService "github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -39,12 +39,7 @@ func subscribeToAllEvents(ctx context.Context, t *testing.T, c pb.GrpcGatewayCli
 	require.NoError(t, err)
 	ev, err := subClient.Recv()
 	require.NoError(t, err)
-	expectedEvent := &pb.Event{
-		SubscriptionId: ev.GetSubscriptionId(),
-		CorrelationId:  correlationID,
-		Type:           pbTest.OperationProcessedOK(),
-	}
-	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
+	test.CheckProtobufs(t, pbTest.NewOperationProcessedOK(ev.GetSubscriptionId(), correlationID), ev, test.RequireToCheckFunc(require.Equal))
 	return subClient, ev.GetSubscriptionId()
 }
 
@@ -293,7 +288,7 @@ func TestCreateAndDeleteResource(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := service.SetUp(ctx, t)
+	tearDown := hubTestService.SetUp(ctx, t)
 	defer tearDown()
 
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))

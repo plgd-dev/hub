@@ -23,7 +23,7 @@ func MakeConfig(t require.TestingT) service.Config {
 
 	cfg.Clients.IdentityStore.Connection = config.MakeGrpcClientConfig(config.IDENTITY_STORE_HOST)
 
-	cfg.Clients.Eventbus.NATS = config.MakePublisherConfig()
+	cfg.Clients.Eventbus.NATS = config.MakePublisherConfig(t)
 
 	cfg.Clients.Eventstore.Connection.Use = config.ACTIVE_DATABASE()
 	cfg.Clients.Eventstore.Connection.MongoDB = config.MakeEventsStoreMongoDBConfig()

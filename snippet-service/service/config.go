@@ -7,12 +7,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/plgd-dev/hub/v2/pkg/config"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
 	httpServer "github.com/plgd-dev/hub/v2/pkg/net/http/server"
 	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 	grpcService "github.com/plgd-dev/hub/v2/snippet-service/service/grpc"
 	storeConfig "github.com/plgd-dev/hub/v2/snippet-service/store/config"
-	"github.com/plgd-dev/hub/v2/snippet-service/updater"
 )
 
 type HTTPConfig struct {
@@ -44,8 +44,8 @@ func (c *APIsConfig) Validate() error {
 }
 
 type EventBusConfig struct {
-	NATS           natsClient.Config `yaml:"nats" json:"nats"`
-	SubscriptionID string            `yaml:"subscriptionID" json:"subscriptionID"`
+	NATS           natsClient.ConfigSubscriber `yaml:"nats" json:"nats"`
+	SubscriptionID string                      `yaml:"subscriptionID" json:"subscriptionID"`
 }
 
 func (c *EventBusConfig) Validate() error {
@@ -58,11 +58,22 @@ func (c *EventBusConfig) Validate() error {
 	return nil
 }
 
+type ResourceAggregateConfig struct {
+	Connection grpcClient.Config `yaml:"grpc" json:"grpc"`
+}
+
+func (c *ResourceAggregateConfig) Validate() error {
+	if err := c.Connection.Validate(); err != nil {
+		return fmt.Errorf("grpc.%w", err)
+	}
+	return nil
+}
+
 type ClientsConfig struct {
-	Storage                storeConfig.Config            `yaml:"storage" json:"storage"`
-	OpenTelemetryCollector otelClient.Config             `yaml:"openTelemetryCollector" json:"openTelemetryCollector"`
-	EventBus               EventBusConfig                `yaml:"eventBus" json:"eventBus"`
-	ResourceUpdater        updater.ResourceUpdaterConfig `yaml:"resourceUpdater" json:"resourceUpdater"`
+	Storage                storeConfig.Config      `yaml:"storage" json:"storage"`
+	OpenTelemetryCollector otelClient.Config       `yaml:"openTelemetryCollector" json:"openTelemetryCollector"`
+	EventBus               EventBusConfig          `yaml:"eventBus" json:"eventBus"`
+	ResourceAggregate      ResourceAggregateConfig `yaml:"resourceAggregate" json:"resourceAggregate"`
 }
 
 func (c *ClientsConfig) Validate() error {
@@ -75,8 +86,8 @@ func (c *ClientsConfig) Validate() error {
 	if err := c.EventBus.Validate(); err != nil {
 		return fmt.Errorf("eventBus.%w", err)
 	}
-	if err := c.ResourceUpdater.Validate(); err != nil {
-		return fmt.Errorf("resourceUpdater.%w", err)
+	if err := c.ResourceAggregate.Validate(); err != nil {
+		return fmt.Errorf("resourceAggregate.%w", err)
 	}
 	return nil
 }

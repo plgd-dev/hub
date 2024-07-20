@@ -236,7 +236,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		return nil, fmt.Errorf("cannot create job queue %w", err)
 	}
 
-	nats, err := natsClient.New(config.Clients.Eventbus.NATS, fileWatcher, logger)
+	nats, err := natsClient.New(config.Clients.Eventbus.NATS.Config, fileWatcher, logger)
 	if err != nil {
 		otelClient.Close()
 		queue.Release()
@@ -246,7 +246,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	nats.AddCloseFunc(queue.Release)
 
 	resourceSubscriber, err := subscriber.New(nats.GetConn(),
-		config.Clients.Eventbus.NATS.PendingLimits,
+		config.Clients.Eventbus.NATS.PendingLimits, config.Clients.Eventbus.NATS.LeadResourceType.IsEnabled(),
 		logger,
 		subscriber.WithGoPool(func(f func()) error { return queue.Submit(f) }),
 		subscriber.WithUnmarshaler(utils.Unmarshal))

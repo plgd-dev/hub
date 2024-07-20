@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"sync/atomic"
 
 	"github.com/plgd-dev/hub/v2/pkg/config/database"
 	"github.com/plgd-dev/hub/v2/pkg/fn"
@@ -32,15 +33,27 @@ type Service struct {
 	resourceSubscriber *ResourceSubscriber
 }
 
-func createStore(ctx context.Context, config storeConfig.Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (store.Store, error) {
-	if config.Use == database.MongoDB {
-		s, err := mongodb.New(ctx, config.MongoDB, fileWatcher, logger, tracerProvider)
-		if err != nil {
-			return nil, fmt.Errorf("mongodb: %w", err)
-		}
-		return s, nil
+func createStore(ctx context.Context, config storeConfig.Config, onCheckForExpired func(), fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (store.Store, error) {
+	if config.Use != database.MongoDB {
+		return nil, fmt.Errorf("invalid store use('%v')", config.Use)
 	}
-	return nil, fmt.Errorf("invalid store use('%v')", config.Use)
+	s, err := mongodb.New(ctx, config.MongoDB, fileWatcher, logger, tracerProvider)
+	if err != nil {
+		return nil, fmt.Errorf("mongodb: %w", err)
+	}
+	if config.CleanUpExpiredUpdates != "" {
+		scheduler, err := NewExpiredUpdatesChecker(config.CleanUpExpiredUpdates, config.ExtendCronParserBySeconds, onCheckForExpired)
+		if err != nil {
+			return nil, fmt.Errorf("cannot create scheduler: %w", err)
+		}
+		s.AddCloseFunc(func() {
+			err2 := scheduler.Shutdown()
+			if err2 != nil {
+				log.Errorf("failed to shutdown scheduler: %w", err2)
+			}
+		})
+	}
+	return s, nil
 }
 
 func newHttpService(ctx context.Context, config HTTPConfig, validatorConfig validator.Config, tlsConfig certManagerServer.Config, ss *grpcService.SnippetServiceServer, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*httpService.Service, func(), error) {
@@ -84,8 +97,15 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	var closerFn fn.FuncList
 	closerFn.AddFunc(otelClient.Close)
 	tracerProvider := otelClient.GetTracerProvider()
+	var resourceUpdater atomic.Pointer[updater.ResourceUpdater]
 
-	db, err := createStore(ctx, config.Clients.Storage, fileWatcher, logger, tracerProvider)
+	db, err := createStore(ctx, config.Clients.Storage, func() {
+		ru := resourceUpdater.Load()
+		if ru == nil {
+			return
+		}
+		ru.TimeoutPendingResourceUpdates()
+	}, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		closerFn.Execute()
 		return nil, fmt.Errorf("cannot create store: %w", err)
@@ -96,19 +116,21 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		}
 	})
 
-	resourceUpdater, err := updater.NewResourceUpdater(ctx, config.Clients.ResourceUpdater, db, fileWatcher, logger, tracerProvider)
+	ru, err := updater.NewResourceUpdater(ctx, config.Clients.ResourceAggregate.Connection, db, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		closerFn.Execute()
 		return nil, fmt.Errorf("cannot create resource change handler: %w", err)
 	}
+	resourceUpdater.Store(ru)
+
 	closerFn.AddFunc(func() {
-		errC := resourceUpdater.Close()
+		errC := ru.Close()
 		if errC != nil {
 			log.Errorf("failed to close resource change handler: %w", errC)
 		}
 	})
 
-	resourceSubscriber, err := NewResourceSubscriber(ctx, config.Clients.EventBus.NATS, config.Clients.EventBus.SubscriptionID, fileWatcher, logger, resourceUpdater)
+	resourceSubscriber, err := NewResourceSubscriber(ctx, config.Clients.EventBus.NATS, config.Clients.EventBus.SubscriptionID, fileWatcher, logger, resourceUpdater.Load())
 	if err != nil {
 		closerFn.Execute()
 		return nil, fmt.Errorf("cannot create resource subscriber: %w", err)
@@ -120,7 +142,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		}
 	})
 
-	snippetService := grpcService.NewSnippetServiceServer(db, resourceUpdater, config.APIs.GRPC.Authorization.OwnerClaim, config.HubID, logger)
+	snippetService := grpcService.NewSnippetServiceServer(db, resourceUpdater.Load(), config.APIs.GRPC.Authorization.OwnerClaim, config.HubID, logger)
 
 	grpcService, grpcServiceClose, err := newGrpcService(ctx, config.APIs.GRPC, snippetService, fileWatcher, logger, tracerProvider)
 	if err != nil {
@@ -144,7 +166,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		Service: s,
 
 		store:              db,
-		resourceUpdater:    resourceUpdater,
+		resourceUpdater:    resourceUpdater.Load(),
 		resourceSubscriber: resourceSubscriber,
 	}, nil
 }

@@ -17,6 +17,7 @@ import (
 	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/service"
 	grpcgwService "github.com/plgd-dev/hub/v2/grpc-gateway/test"
 	isEvents "github.com/plgd-dev/hub/v2/identity-store/events"
 	idService "github.com/plgd-dev/hub/v2/identity-store/test"
@@ -31,10 +32,10 @@ import (
 	rdTest "github.com/plgd-dev/hub/v2/resource-directory/test"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
-	"github.com/plgd-dev/hub/v2/test/oauth-server/service"
+	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
-	serviceTest "github.com/plgd-dev/hub/v2/test/service"
+	hubTestService "github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
@@ -47,7 +48,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := serviceTest.SetUp(ctx, t)
+	tearDown := hubTestService.SetUp(ctx, t)
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
@@ -114,10 +115,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 				},
 			},
 			want: []*pb.Event{
-				{
-					Type:          pbTest.OperationProcessedOK(),
-					CorrelationId: "testToken1",
-				},
+				pbTest.NewOperationProcessedOK("", "testToken1"),
 				{
 					Type: &pb.Event_DeviceRegistered_{
 						DeviceRegistered: &pb.Event_DeviceRegistered{
@@ -146,10 +144,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 				},
 			},
 			want: []*pb.Event{
-				{
-					Type:          pbTest.OperationProcessedOK(),
-					CorrelationId: "testToken2",
-				},
+				pbTest.NewOperationProcessedOK("", "testToken2"),
 				{
 					Type: &pb.Event_DeviceMetadataUpdated{
 						DeviceMetadataUpdated: &events.DeviceMetadataUpdated{
@@ -162,7 +157,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 							TwinSynchronization: &commands.TwinSynchronization{
 								State: commands.TwinSynchronization_IN_SYNC,
 							},
-							AuditContext: commands.NewAuditContext(service.DeviceUserID, "", service.DeviceUserID),
+							AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
 						},
 					},
 					CorrelationId: "testToken2",
@@ -186,10 +181,7 @@ func TestRequestHandlerSubscribeToEvents(t *testing.T) {
 				},
 			},
 			want: []*pb.Event{
-				{
-					Type:          pbTest.OperationProcessedOK(),
-					CorrelationId: "testToken3",
-				},
+				pbTest.NewOperationProcessedOK("", "testToken3"),
 				pbTest.ResourceLinkToPublishEvent(deviceID, "testToken3", resourceLinks),
 			},
 		},
@@ -230,7 +222,7 @@ func TestRequestHandlerSubscribeForCreateEvents(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := serviceTest.SetUp(ctx, t)
+	tearDown := hubTestService.SetUp(ctx, t)
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
@@ -264,12 +256,8 @@ func TestRequestHandlerSubscribeForCreateEvents(t *testing.T) {
 
 	ev, err := client.Recv()
 	require.NoError(t, err)
-	expectedEvent := &pb.Event{
-		SubscriptionId: ev.GetSubscriptionId(),
-		Type:           pbTest.OperationProcessedOK(),
-		CorrelationId:  "testToken",
-	}
-	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
+	test.CheckProtobufs(t, pbTest.NewOperationProcessedOK(ev.GetSubscriptionId(), "testToken"), ev, test.RequireToCheckFunc(require.Equal))
+	subID := ev.GetSubscriptionId()
 
 	const switchID = "1"
 	switchData := test.MakeSwitchResourceDefaultData()
@@ -305,6 +293,47 @@ func TestRequestHandlerSubscribeForCreateEvents(t *testing.T) {
 			ResourceCreated: pbTest.MakeResourceCreated(t, deviceID, test.TestResourceSwitchesHref, test.TestResourceSwitchesResourceTypes, "", switchData),
 		},
 	}, ev, "")
+
+	// fail to cancel subscription - invalid subscriptionId
+	err = client.Send(&pb.SubscribeToEvents{
+		CorrelationId: "failCancel",
+		Action: &pb.SubscribeToEvents_CancelSubscription_{
+			CancelSubscription: &pb.SubscribeToEvents_CancelSubscription{
+				SubscriptionId: "invalid",
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	ev, err = client.Recv()
+	require.NoError(t, err)
+	pbTest.CmpEvent(t, service.NewOperationProcessed(ev.GetSubscriptionId(), "failCancel", pb.Event_OperationProcessed_ErrorStatus_NOT_FOUND,
+		ev.GetOperationProcessed().GetErrorStatus().GetMessage()), ev, "")
+
+	// cancel subscription
+	err = client.Send(&pb.SubscribeToEvents{
+		CorrelationId: "cancel",
+		Action: &pb.SubscribeToEvents_CancelSubscription_{
+			CancelSubscription: &pb.SubscribeToEvents_CancelSubscription{
+				SubscriptionId: subID,
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	ev, err = client.Recv()
+	require.NoError(t, err)
+	pbTest.CmpEvent(t, &pb.Event{
+		SubscriptionId: subID,
+		Type: &pb.Event_SubscriptionCanceled_{
+			SubscriptionCanceled: &pb.Event_SubscriptionCanceled{},
+		},
+		CorrelationId: "cancel",
+	}, ev, "")
+
+	ev, err = client.Recv()
+	require.NoError(t, err)
+	pbTest.CmpEvent(t, pbTest.NewOperationProcessedOK(subID, "cancel"), ev, "")
 }
 
 func TestRequestHandlerSubscribeForHrefEvents(t *testing.T) {
@@ -312,7 +341,7 @@ func TestRequestHandlerSubscribeForHrefEvents(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	tearDown := serviceTest.SetUp(ctx, t)
+	tearDown := hubTestService.SetUp(ctx, t)
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
@@ -345,12 +374,7 @@ func TestRequestHandlerSubscribeForHrefEvents(t *testing.T) {
 
 	ev, err := client.Recv()
 	require.NoError(t, err)
-	expectedEvent := &pb.Event{
-		SubscriptionId: ev.GetSubscriptionId(),
-		Type:           pbTest.OperationProcessedOK(),
-		CorrelationId:  "testToken",
-	}
-	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
+	test.CheckProtobufs(t, pbTest.NewOperationProcessedOK(ev.GetSubscriptionId(), "testToken"), ev, test.RequireToCheckFunc(require.Equal))
 
 	const switchID = "1"
 	switchData := test.MakeSwitchResourceDefaultData()
@@ -468,7 +492,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 							UpdatePending: &events.DeviceMetadataUpdatePending_TwinEnabled{
 								TwinEnabled: false,
 							},
-							AuditContext: commands.NewAuditContext(service.DeviceUserID, "", service.DeviceUserID),
+							AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
 						},
 					},
 				},
@@ -479,7 +503,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 								DeviceId: deviceID,
 								Href:     platform.ResourceURI,
 							},
-							AuditContext:  commands.NewAuditContext(service.DeviceUserID, "", service.DeviceUserID),
+							AuditContext:  commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
 							ResourceTypes: []string{platform.ResourceType},
 						},
 					},
@@ -499,7 +523,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 								DeviceId: deviceID,
 								Href:     device.ResourceURI,
 							},
-							AuditContext:  commands.NewAuditContext(service.DeviceUserID, "", service.DeviceUserID),
+							AuditContext:  commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
 							ResourceTypes: test.TestResourceDeviceResourceTypes,
 						},
 					},
@@ -531,7 +555,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 								DeviceId: deviceID,
 								Href:     platform.ResourceURI,
 							},
-							AuditContext:  commands.NewAuditContext(service.DeviceUserID, "", service.DeviceUserID),
+							AuditContext:  commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
 							ResourceTypes: []string{platform.ResourceType},
 						},
 					},
@@ -576,7 +600,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 								DeviceId: deviceID,
 								Href:     device.ResourceURI,
 							},
-							AuditContext:  commands.NewAuditContext(service.DeviceUserID, "", service.DeviceUserID),
+							AuditContext:  commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
 							ResourceTypes: test.TestResourceDeviceResourceTypes,
 						},
 					},
@@ -620,7 +644,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 							UpdatePending: &events.DeviceMetadataUpdatePending_TwinEnabled{
 								TwinEnabled: false,
 							},
-							AuditContext: commands.NewAuditContext(service.DeviceUserID, "", service.DeviceUserID),
+							AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
 						},
 					},
 				},
@@ -631,7 +655,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	serviceTest.ClearDB(ctx, t)
+	hubTestService.ClearDB(ctx, t)
 	oauthShutdown := oauthTest.SetUp(t)
 	authShutdown := idService.SetUp(t)
 	raShutdown := raTest.SetUp(t)
@@ -751,12 +775,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 
 			ev, err := client.Recv()
 			require.NoError(t, err)
-			expectedEvent := &pb.Event{
-				SubscriptionId: ev.GetSubscriptionId(),
-				Type:           pbTest.OperationProcessedOK(),
-				CorrelationId:  correlationID,
-			}
-			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
+			test.CheckProtobufs(t, pbTest.NewOperationProcessedOK(ev.GetSubscriptionId(), correlationID), ev, test.RequireToCheckFunc(require.Equal))
 			subscriptionID := ev.GetSubscriptionId()
 			fmt.Printf("sub %v\n", subscriptionID)
 
@@ -792,7 +811,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 			// cancellation event
 			ev, err = client.Recv()
 			require.NoError(t, err)
-			expectedEvent = &pb.Event{
+			expectedEvent := &pb.Event{
 				SubscriptionId: subscriptionID,
 				Type: &pb.Event_SubscriptionCanceled_{
 					SubscriptionCanceled: &pb.Event_SubscriptionCanceled{},
@@ -804,12 +823,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 			// response for close subscription
 			ev, err = client.Recv()
 			require.NoError(t, err)
-			expectedEvent = &pb.Event{
-				SubscriptionId: subscriptionID,
-				Type:           pbTest.OperationProcessedOK(),
-				CorrelationId:  correlationID,
-			}
-			test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
+			test.CheckProtobufs(t, pbTest.NewOperationProcessedOK(subscriptionID, correlationID), ev, test.RequireToCheckFunc(require.Equal))
 		})
 	}
 }
@@ -823,7 +837,7 @@ func TestRequestHandlerIssue270(t *testing.T) {
 	rdCfg := rdTest.MakeConfig(t)
 	grpcgwCfg := grpcgwService.MakeConfig(t)
 
-	tearDown := serviceTest.SetUp(ctx, t, serviceTest.WithCOAPGWConfig(coapgwCfg), serviceTest.WithRDConfig(rdCfg), serviceTest.WithGRPCGWConfig(grpcgwCfg))
+	tearDown := hubTestService.SetUp(ctx, t, hubTestService.WithCOAPGWConfig(coapgwCfg), hubTestService.WithRDConfig(rdCfg), hubTestService.WithGRPCGWConfig(grpcgwCfg))
 	defer tearDown()
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
@@ -860,17 +874,12 @@ func TestRequestHandlerIssue270(t *testing.T) {
 
 	ev, err := client.Recv()
 	require.NoError(t, err)
-	expectedEvent := &pb.Event{
-		SubscriptionId: ev.GetSubscriptionId(),
-		Type:           pbTest.OperationProcessedOK(),
-		CorrelationId:  "testToken",
-	}
 	fmt.Printf("SUBSCRIPTION ID: %v\n", ev.GetSubscriptionId())
-	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
+	test.CheckProtobufs(t, pbTest.NewOperationProcessedOK(ev.GetSubscriptionId(), "testToken"), ev, test.RequireToCheckFunc(require.Equal))
 
 	ev, err = client.Recv()
 	require.NoError(t, err)
-	expectedEvent = &pb.Event{
+	expectedEvent := &pb.Event{
 		SubscriptionId: ev.GetSubscriptionId(),
 		Type: &pb.Event_DeviceRegistered_{
 			DeviceRegistered: &pb.Event_DeviceRegistered{
@@ -916,7 +925,7 @@ func TestRequestHandlerIssue270(t *testing.T) {
 				TwinSynchronization: &commands.TwinSynchronization{
 					State: commands.TwinSynchronization_IN_SYNC,
 				},
-				AuditContext: commands.NewAuditContext(service.DeviceUserID, "", service.DeviceUserID),
+				AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
 			},
 		},
 		CorrelationId: "testToken",
@@ -972,7 +981,7 @@ func waitForDevice(t *testing.T, client pb.GrpcGateway_SubscribeToEventsClient, 
 						Protocol: test.StringToApplicationProtocol(config.ACTIVE_COAP_SCHEME),
 					},
 					TwinEnabled:  true,
-					AuditContext: commands.NewAuditContext(service.DeviceUserID, "", service.DeviceUserID),
+					AuditContext: commands.NewAuditContext(oauthService.DeviceUserID, "", oauthService.DeviceUserID),
 				},
 			},
 			CorrelationId: "testToken",
@@ -994,7 +1003,7 @@ func TestCoAPGatewayServiceHeartbeat(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*3)
 	defer cancel()
 
-	tearDown := serviceTest.SetUpServices(ctx, t, serviceTest.SetUpServicesCertificateAuthority|serviceTest.SetUpServicesGrpcGateway|serviceTest.SetUpServicesId|serviceTest.SetUpServicesResourceDirectory|serviceTest.SetUpServicesOAuth)
+	tearDown := hubTestService.SetUpServices(ctx, t, hubTestService.SetUpServicesCertificateAuthority|hubTestService.SetUpServicesGrpcGateway|hubTestService.SetUpServicesId|hubTestService.SetUpServicesResourceDirectory|hubTestService.SetUpServicesOAuth)
 	defer tearDown()
 
 	racfg := raTest.MakeConfig(t)
@@ -1037,12 +1046,7 @@ func TestCoAPGatewayServiceHeartbeat(t *testing.T) {
 
 	ev, err := client.Recv()
 	require.NoError(t, err)
-	expectedEvent := &pb.Event{
-		SubscriptionId: ev.GetSubscriptionId(),
-		Type:           pbTest.OperationProcessedOK(),
-		CorrelationId:  "testToken",
-	}
-	test.CheckProtobufs(t, expectedEvent, ev, test.RequireToCheckFunc(require.Equal))
+	test.CheckProtobufs(t, pbTest.NewOperationProcessedOK(ev.GetSubscriptionId(), "testToken"), ev, test.RequireToCheckFunc(require.Equal))
 
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
@@ -1078,7 +1082,7 @@ func TestCoAPGatewayServiceHeartbeat(t *testing.T) {
 				},
 				TwinEnabled:         true,
 				TwinSynchronization: &commands.TwinSynchronization{},
-				AuditContext:        commands.NewAuditContext(raService.ServiceUserID, "", service.DeviceUserID),
+				AuditContext:        commands.NewAuditContext(raService.ServiceUserID, "", oauthService.DeviceUserID),
 			},
 		},
 		CorrelationId: "testToken",
@@ -1119,7 +1123,7 @@ func TestCoAPGatewayServiceHeartbeat(t *testing.T) {
 				},
 				TwinEnabled:         true,
 				TwinSynchronization: &commands.TwinSynchronization{},
-				AuditContext:        commands.NewAuditContext(raService.ServiceUserID, "", service.DeviceUserID),
+				AuditContext:        commands.NewAuditContext(raService.ServiceUserID, "", oauthService.DeviceUserID),
 			},
 		},
 		CorrelationId: "testToken",
