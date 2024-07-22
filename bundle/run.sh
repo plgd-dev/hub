@@ -816,10 +816,21 @@ cat /configs/resource-aggregate.yaml | yq e "\
   .clients.eventStore.cqlDB.hosts = [ \"${SCYLLA_HOSTNAME}\" ] |
   .clients.eventStore.cqlDB.port = ${SCYLLA_PORT} |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
+  .clients.eventBus.nats.leadResourceType.enabled = ${LEAD_RESOURCE_TYPE_ENABLED} |
+  .clients.eventBus.nats.leadResourceType.filter = \"${LEAD_RESOURCE_TYPE_FILTER}\" |
+  .clients.eventBus.nats.leadResourceType.useUUID = ${LEAD_RESOURCE_TYPE_USE_UUID} |
   .clients.eventBus.nats.jetstream = ${JETSTREAM} |
   .clients.identityStore.grpc.address = \"${IDENTITY_STORE_ADDRESS}\"
 " - > /data/resource-aggregate.yaml
 fi
+
+# split LEAD_RESOURCE_TYPE_REGEX_FILTER by comma and add each value to the yaml
+ORIG_IFS=$IFS
+IFS=, read -ra values <<< "$LEAD_RESOURCE_TYPE_REGEX_FILTER"
+IFS=$ORIG_IFS
+for v in "${values[@]}"; do
+   yq e -i ".clients.eventBus.nats.leadResourceType.regexFilter += \"$v\"" /data/resource-aggregate.yaml
+done
 
 echo "starting resource-aggregate"
 resource-aggregate --config /data/resource-aggregate.yaml >$LOGS_PATH/resource-aggregate.log 2>&1 &
@@ -865,6 +876,7 @@ cat /configs/resource-directory.yaml | yq e "\
   .clients.eventStore.cqlDB.hosts = [ \"${SCYLLA_HOSTNAME}\" ] |
   .clients.eventStore.cqlDB.port = ${SCYLLA_PORT} |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
+  .clients.eventBus.nats.leadResourceType.enabled = ${LEAD_RESOURCE_TYPE_ENABLED} |
   .clients.identityStore.grpc.address = \"${IDENTITY_STORE_ADDRESS}\" |
   .publicConfiguration.authority = \"https://${OAUTH_ENDPOINT}\" |
   .publicConfiguration.coapGateway = \"${COAP_GATEWAY_SCHEME}://${COAP_GATEWAY_EXTERNAL_ADDRESS}\" |
@@ -929,6 +941,7 @@ cat /configs/coap-gateway.yaml | yq e "\
   .clients.openTelemetryCollector.grpc.tls.certFile = \"${OPEN_TELEMETRY_EXPORTER_CERT_FILE}\" |
   .clients.openTelemetryCollector.grpc.tls.useSystemCAPool = true |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
+  .clients.eventBus.nats.leadResourceType.enabled = ${LEAD_RESOURCE_TYPE_ENABLED} |
   .clients.identityStore.grpc.address = \"${IDENTITY_STORE_ADDRESS}\" |
   .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
   .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
@@ -984,6 +997,7 @@ cat /configs/coap-gateway.yaml | yq e "\
   .clients.openTelemetryCollector.grpc.tls.certFile = \"${OPEN_TELEMETRY_EXPORTER_CERT_FILE}\" |
   .clients.openTelemetryCollector.grpc.tls.useSystemCAPool = true |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
+  .clients.eventBus.nats.leadResourceType.enabled = ${LEAD_RESOURCE_TYPE_ENABLED} |
   .clients.identityStore.grpc.address = \"${IDENTITY_STORE_ADDRESS}\" |
   .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
   .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
@@ -1067,6 +1081,7 @@ cat /configs/grpc-gateway.yaml | yq e "\
   .clients.openTelemetryCollector.grpc.tls.useSystemCAPool = true |
   .clients.identityStore.grpc.address = \"${IDENTITY_STORE_ADDRESS}\" |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
+  .clients.eventBus.nats.leadResourceType.enabled = ${LEAD_RESOURCE_TYPE_ENABLED} |
   .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
   .clients.resourceDirectory.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
   .clients.certificateAuthority.grpc.address = \"${CERTIFICATE_AUTHORITY_ADDRESS}\"
@@ -1165,6 +1180,7 @@ cat /configs/cloud2cloud-gateway.yaml | yq e "\
   .clients.openTelemetryCollector.grpc.tls.certFile = \"${OPEN_TELEMETRY_EXPORTER_CERT_FILE}\" |
   .clients.openTelemetryCollector.grpc.tls.useSystemCAPool = true |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
+  .clients.eventBus.nats.leadResourceType.enabled = ${LEAD_RESOURCE_TYPE_ENABLED} |
   .clients.grpcGateway.grpc.address = \"${GRPC_GATEWAY_ADDRESS}\" |
   .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
   .clients.storage.mongoDB.uri = \"${MONGODB_URI}\" |
@@ -1218,6 +1234,7 @@ cat /configs/cloud2cloud-connector.yaml | yq e "\
   .clients.openTelemetryCollector.grpc.tls.useSystemCAPool = true |
   .clients.identityStore.grpc.address = \"${IDENTITY_STORE_ADDRESS}\" |
   .clients.eventBus.nats.url = \"${NATS_URL}\" |
+  .clients.eventBus.nats.leadResourceType.enabled = ${LEAD_RESOURCE_TYPE_ENABLED} |
   .clients.grpcGateway.grpc.address = \"${GRPC_GATEWAY_ADDRESS}\" |
   .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
   .clients.storage.mongoDB.uri = \"${MONGODB_URI}\"
