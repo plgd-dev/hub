@@ -195,11 +195,17 @@ COPY bundle/scylla /scylla
 # global
 ENV FQDN="localhost"
 ENV LOG_DEBUG=false
-ENV JETSTREAM=false
 # supported values: mongo, scylla
 ENV DATABASE=mongo
 ENV OVERRIDE_FILES=false
 ENV HUB_ID="afd434f8-bf61-4729-a258-3c1a67fb0287"
+
+# global - NATS
+ENV LEAD_RESOURCE_TYPE_ENABLED=false
+ENV LEAD_RESOURCE_TYPE_REGEX_FILTER=""
+ENV LEAD_RESOURCE_TYPE_FILTER=""
+ENV LEAD_RESOURCE_TYPE_USE_UUID=false
+ENV JETSTREAM=false
 
 # global - open telemetry collector client
 ENV OPEN_TELEMETRY_EXPORTER_ENABLED=false
