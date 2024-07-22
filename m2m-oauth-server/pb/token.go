@@ -1,13 +1,10 @@
 package pb
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
-	"strconv"
 
-	"github.com/hashicorp/go-multierror"
-	"google.golang.org/protobuf/encoding/protojson"
+	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
 )
 
 var errTokenIsNil = errors.New("Token is nil")
@@ -31,160 +28,58 @@ func (x *Token) Validate() error {
 	return nil
 }
 
-func (x *Token) ToMap() (map[string]interface{}, error) {
-	v := protojson.MarshalOptions{
-		AllowPartial:    true,
-		EmitUnpopulated: true,
+func (x *Token) jsonToBSONTag(json map[string]interface{}) error {
+	json["_id"] = x.GetId()
+	delete(json, "id")
+	if _, err := pkgMongo.ConvertStringValueToInt64(json, false, "."+IssuedAtKey); err != nil {
+		return fmt.Errorf("cannot convert issueAt to int64: %w", err)
 	}
-	data, err := v.Marshal(x)
-	if err != nil {
-		return nil, err
+	if _, err := pkgMongo.ConvertStringValueToInt64(json, true, "."+ExpirationKey); err != nil {
+		return fmt.Errorf("cannot convert expiration to int64: %w", err)
 	}
-	var m map[string]interface{}
-	err = json.Unmarshal(data, &m)
-	if err != nil {
-		return nil, err
+	if _, err := pkgMongo.ConvertStringValueToInt64(json, true, "."+BlackListedKey+"."+TimestampKey); err != nil {
+		return fmt.Errorf("cannot convert blacklisted.timestamp to int64: %w", err)
 	}
-	return m, nil
+	return nil
 }
 
-func replaceStrToInt64(m map[string]interface{}, keys ...string) error {
-	var errs *multierror.Error
-	for _, k := range keys {
-		exp, ok := m[k]
-		if ok {
-			str, ok := exp.(string)
-			if ok {
-				i, err := strconv.ParseInt(str, 10, 64)
-				if err != nil {
-					errs = multierror.Append(errs, fmt.Errorf("cannot convert key %v to int64, %w", k, err))
-				} else {
-					m[k] = i
-				}
-			}
-		}
+func (x *Token) MarshalBSON() ([]byte, error) {
+	if x == nil {
+		return nil, errTokenIsNil
 	}
-	return errs.ErrorOrNil()
+	return pkgMongo.MarshalProtoBSON(x, x.jsonToBSONTag)
 }
 
-func replaceInt64ToStr(m map[string]interface{}, keys ...string) {
-	for _, k := range keys {
-		exp, ok := m[k]
-		if ok {
-			i, ok := exp.(int64)
-			if ok {
-				m[k] = strconv.FormatInt(i, 10)
-			}
-		}
-	}
-}
-
-func (x *Token) ToBsonMap() (map[string]interface{}, error) {
-	m, err := x.ToMap()
-	if err != nil {
-		return nil, err
-	}
-	m["_id"] = x.GetId()
-	delete(m, "id")
-	err = replaceStrToInt64(m, ExpirationKey, TimestampKey)
-	if err != nil {
-		return nil, err
-	}
-	blackListed, ok := m[BlackListedKey]
-	if ok {
-		mapBlacklisted, ok := blackListed.(map[string]interface{})
-		if ok {
-			err = replaceStrToInt64(mapBlacklisted, TimestampKey)
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
-	return m, nil
-}
-
-func (x *Token) FromMap(m map[string]interface{}) error {
+func (x *Token) UnmarshalBSON(data []byte) error {
 	if x == nil {
 		return errTokenIsNil
 	}
-	data, err := json.Marshal(m)
-	if err != nil {
-		return err
-	}
-	v := protojson.UnmarshalOptions{
-		AllowPartial:   true,
-		DiscardUnknown: true,
-	}
-	return v.Unmarshal(data, x)
-}
-
-func (x *Token) FromBsonMap(m map[string]interface{}) error {
-	if x == nil {
-		return errTokenIsNil
-	}
-	m["id"] = m["_id"]
-	delete(m, "_id")
-
-	replaceInt64ToStr(m, ExpirationKey, TimestampKey)
-	blackListed, ok := m[BlackListedKey]
-	if ok {
-		mapBlacklisted, ok := blackListed.(map[string]interface{})
+	var id string
+	update := func(json map[string]interface{}) error {
+		idI, ok := json["_id"]
 		if ok {
-			replaceInt64ToStr(mapBlacklisted, TimestampKey)
+			id = idI.(string)
 		}
+		delete(json, "_id")
+		return nil
 	}
-
-	return x.FromMap(m)
-}
-
-func (x *Token_BlackListed) ToMap() (map[string]interface{}, error) {
-	v := protojson.MarshalOptions{
-		AllowPartial:    true,
-		EmitUnpopulated: true,
-	}
-	data, err := v.Marshal(x)
-	if err != nil {
-		return nil, err
-	}
-	var m map[string]interface{}
-	err = json.Unmarshal(data, &m)
-	if err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-func (x *Token_BlackListed) FromMap(m map[string]interface{}) error {
-	if x == nil {
-		return errors.New("Token_BlackListed is nil")
-	}
-	data, err := json.Marshal(m)
+	err := pkgMongo.UnmarshalProtoBSON(data, x, update)
 	if err != nil {
 		return err
 	}
-	v := protojson.UnmarshalOptions{
-		AllowPartial:   true,
-		DiscardUnknown: true,
+	if x.GetId() == "" && id != "" {
+		x.Id = id
 	}
-	return v.Unmarshal(data, x)
+	return nil
 }
 
-func (x *Token_BlackListed) ToBsonMap() (map[string]interface{}, error) {
-	m, err := x.ToMap()
-	if err != nil {
-		return nil, err
+func (x *Token_BlackListed) jsonToBSONTag(json map[string]interface{}) error {
+	if _, err := pkgMongo.ConvertStringValueToInt64(json, false, "."+TimestampKey); err != nil {
+		return fmt.Errorf("cannot convert timestamp to int64: %w", err)
 	}
-	err = replaceStrToInt64(m, TimestampKey)
-	if err != nil {
-		return nil, err
-	}
-	return m, nil
+	return nil
 }
 
-func (x *Token_BlackListed) FromBsonMap(m map[string]interface{}) error {
-	if x == nil {
-		return errors.New("Token_BlackListed is nil")
-	}
-	replaceInt64ToStr(m, TimestampKey)
-	return x.FromMap(m)
+func (x *Token_BlackListed) MarshalBSON() ([]byte, error) {
+	return pkgMongo.MarshalProtoBSON(x, x.jsonToBSONTag)
 }

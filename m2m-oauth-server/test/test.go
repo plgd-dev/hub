@@ -142,6 +142,7 @@ type AccessTokenOptions struct {
 	Audience     string
 	JWT          string
 	PostForm     bool
+	Expiration   time.Time
 	Ctx          context.Context
 }
 
@@ -193,6 +194,12 @@ func WithPostFrom(enabled bool) func(opts *AccessTokenOptions) {
 	}
 }
 
+func WithExpiration(expiration time.Time) func(opts *AccessTokenOptions) {
+	return func(opts *AccessTokenOptions) {
+		opts.Expiration = expiration
+	}
+}
+
 func WithContext(ctx context.Context) func(opts *AccessTokenOptions) {
 	return func(opts *AccessTokenOptions) {
 		opts.Ctx = ctx
@@ -228,6 +235,9 @@ func GetAccessToken(t *testing.T, expectedCode int, opts ...func(opts *AccessTok
 	if options.JWT != "" {
 		reqBody[uri.ClientAssertionKey] = options.JWT
 		reqBody[uri.ClientAssertionTypeKey] = uri.ClientAssertionTypeJWT
+	}
+	if !options.Expiration.IsZero() {
+		reqBody[uri.ExpirationKey] = options.Expiration.Unix()
 	}
 	var data []byte
 	if options.PostForm {

@@ -8,4 +8,5 @@ const (
 	BlackListedKey          = "blacklisted"
 	TimestampKey            = "timestamp"
 	AudienceKey             = "audience"
+	IssuedAtKey             = "issuedAt"
 )

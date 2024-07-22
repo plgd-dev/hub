@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	oauthsigner "github.com/plgd-dev/hub/v2/m2m-oauth-server/oauthSigner"
@@ -82,6 +83,22 @@ func TestPostToken(t *testing.T) {
 			},
 		},
 		{
+			name: "ownerToken with expiration- JWT",
+			args: m2mOauthServerTest.AccessTokenOptions{
+				Ctx:        context.Background(),
+				ClientID:   m2mOauthServerTest.JWTPrivateKeyOAuthClient.ID,
+				GrantType:  string(oauthsigner.GrantTypeClientCredentials),
+				Host:       config.M2M_OAUTH_SERVER_HTTP_HOST,
+				JWT:        token,
+				Expiration: time.Now().Add(time.Hour),
+			},
+			wantCode: http.StatusOK,
+			want: want{
+				owner:                    "1",
+				existOriginalTokenClaims: true,
+			},
+		},
+		{
 			name: "invalid client",
 			args: m2mOauthServerTest.AccessTokenOptions{
 				Ctx:       context.Background(),
@@ -100,6 +117,18 @@ func TestPostToken(t *testing.T) {
 				GrantType: string(oauthsigner.GrantTypeClientCredentials),
 				Host:      config.M2M_OAUTH_SERVER_HTTP_HOST,
 				JWT:       invalidToken,
+			},
+			wantCode: http.StatusUnauthorized,
+		},
+		{
+			name: "invalid expiration",
+			args: m2mOauthServerTest.AccessTokenOptions{
+				Ctx:        context.Background(),
+				ClientID:   m2mOauthServerTest.JWTPrivateKeyOAuthClient.ID,
+				GrantType:  string(oauthsigner.GrantTypeClientCredentials),
+				Host:       config.M2M_OAUTH_SERVER_HTTP_HOST,
+				JWT:        token,
+				Expiration: time.Now().Add(-time.Hour),
 			},
 			wantCode: http.StatusUnauthorized,
 		},

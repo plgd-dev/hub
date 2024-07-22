@@ -27,10 +27,6 @@ var (
 	ErrPartialDelete   = errors.New("some errors occurred while deleting")
 )
 
-type BsonMapper interface {
-	FromBsonMap(m map[string]interface{}) error
-}
-
 type MongoIterator[T any] struct {
 	Cursor *mongo.Cursor
 }
@@ -38,15 +34,6 @@ type MongoIterator[T any] struct {
 func (i *MongoIterator[T]) Next(ctx context.Context, s *T) bool {
 	if !i.Cursor.Next(ctx) {
 		return false
-	}
-	var tmp interface{} = s
-	if tmp, ok := tmp.(BsonMapper); ok {
-		var mapValue map[string]interface{}
-		err := i.Cursor.Decode(&mapValue)
-		if err == nil {
-			err = tmp.FromBsonMap(mapValue)
-		}
-		return err == nil
 	}
 	err := i.Cursor.Decode(s)
 	return err == nil

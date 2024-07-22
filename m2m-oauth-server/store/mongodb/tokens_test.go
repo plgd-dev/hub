@@ -18,16 +18,19 @@ func TestGetTokens(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
+	expiration := time.Now().Add(time.Minute * 10).Unix()
+
 	// Set the owner and request parameters
 	owner := "testOwner"
 	tokens := []*pb.Token{
 		{
-			Id:       "token1",
-			Owner:    owner,
-			Version:  0,
-			Name:     "name1",
-			IssuedAt: time.Now().Unix(),
-			ClientId: "client1",
+			Id:         "token1",
+			Owner:      owner,
+			Version:    0,
+			Name:       "name1",
+			IssuedAt:   time.Now().Unix(),
+			ClientId:   "client1",
+			Expiration: expiration,
 		},
 		{
 			Id:       "token2",
@@ -50,9 +53,9 @@ func TestGetTokens(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
-		args    args
-		wantLen int
+		name string
+		args args
+		want []*pb.Token
 	}{
 		{
 			name: "all tokens",
@@ -61,7 +64,9 @@ func TestGetTokens(t *testing.T) {
 				owner: owner,
 				req:   &pb.GetTokensRequest{},
 			},
-			wantLen: 1,
+			want: []*pb.Token{
+				tokens[0],
+			},
 		},
 		{
 			name: "all tokens including blacklisted",
@@ -72,7 +77,7 @@ func TestGetTokens(t *testing.T) {
 					IncludeBlacklisted: true,
 				},
 			},
-			wantLen: 2,
+			want: tokens,
 		},
 		{
 			name: "certain token",
@@ -84,7 +89,9 @@ func TestGetTokens(t *testing.T) {
 					IncludeBlacklisted: true,
 				},
 			},
-			wantLen: 1,
+			want: []*pb.Token{
+				tokens[1],
+			},
 		},
 		{
 			name: "all tokens another owner",
@@ -93,7 +100,7 @@ func TestGetTokens(t *testing.T) {
 				owner: "anotherOwner",
 				req:   &pb.GetTokensRequest{},
 			},
-			wantLen: 0,
+			want: nil,
 		},
 	}
 
@@ -114,7 +121,18 @@ func TestGetTokens(t *testing.T) {
 			// Call the GetTokens method
 			err := s.GetTokens(tt.args.ctx, tt.args.owner, tt.args.req, process)
 			require.NoError(t, err)
-			require.Len(t, result, tt.wantLen)
+			require.Len(t, result, len(tt.want))
+			for _, token := range tt.want {
+				require.Contains(t, result, token.GetId())
+				require.Equal(t, token.GetExpiration(), result[token.GetId()].GetExpiration())
+				require.Equal(t, token.GetIssuedAt(), result[token.GetId()].GetIssuedAt())
+				require.Equal(t, token.GetClientId(), result[token.GetId()].GetClientId())
+				require.Equal(t, token.GetOwner(), result[token.GetId()].GetOwner())
+				require.Equal(t, token.GetVersion(), result[token.GetId()].GetVersion())
+				require.Equal(t, token.GetName(), result[token.GetId()].GetName())
+				require.Equal(t, token.GetBlacklisted().GetFlag(), result[token.GetId()].GetBlacklisted().GetFlag())
+				require.Equal(t, token.GetBlacklisted().GetTimestamp(), result[token.GetId()].GetBlacklisted().GetTimestamp())
+			}
 		})
 	}
 }

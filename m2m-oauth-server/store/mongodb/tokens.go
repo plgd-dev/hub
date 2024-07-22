@@ -28,11 +28,7 @@ func (s *Store) CreateToken(ctx context.Context, owner string, token *pb.Token) 
 	if err != nil {
 		return nil, err
 	}
-	m, err := token.ToBsonMap()
-	if err != nil {
-		return nil, err
-	}
-	_, err = s.Store.Collection(tokensCol).InsertOne(ctx, m)
+	_, err = s.Store.Collection(tokensCol).InsertOne(ctx, token)
 	if err != nil {
 		return nil, err
 	}
@@ -158,15 +154,11 @@ func (s *Store) BlacklistTokens(ctx context.Context, owner string, req *pb.Black
 		Flag:      true,
 		Timestamp: time.Now().Unix(),
 	}
-	value, err := blacklisted.ToBsonMap()
-	if err != nil {
-		return nil, err
-	}
 
 	update := bson.D{
 		{
 			Key: mongodb.Set, Value: bson.M{
-				pb.BlackListedKey: value,
+				pb.BlackListedKey: &blacklisted,
 			},
 		},
 	}

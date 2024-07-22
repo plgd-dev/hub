@@ -49,6 +49,7 @@ func createStore(ctx context.Context, config storeConfig.Config, fileWatcher *fs
 			}
 		})
 		if err2 != nil {
+			s.Close(ctx)
 			return nil, fmt.Errorf("cannot create scheduler: %w", err2)
 		}
 		s.AddCloseFunc(func() {
