@@ -57,6 +57,32 @@ func handleSlice(slice []any, permitMissingPaths bool, remainingParts []string) 
 	return parents, errs.ErrorOrNil()
 }
 
+func iterateOverMap(curr map[string]any, permitMissingPaths bool, part string) (any, error) {
+	var current any
+	if value, exists := curr[part]; exists {
+		current = value
+	} else if permitMissingPaths {
+		return nil, nil
+	} else {
+		return nil, fmt.Errorf("path segment %s: %w", part, ErrPathNotFound)
+	}
+	return current, nil
+}
+
+func iterateOverSlice(curr []any, permitMissingPaths bool, part string) (any, error) {
+	index, err := strconv.Atoi(part)
+	if err != nil {
+		return nil, fmt.Errorf("invalid array index %s", part)
+	}
+	if index < 0 || index >= len(curr) {
+		if permitMissingPaths {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("index out of range %d: %w", index, ErrPathNotFound)
+	}
+	return curr[index], nil
+}
+
 func findParents(current any, permitMissingPaths bool, parts []string) ([]any, error) {
 	for idx, part := range parts {
 		if part == "" {
@@ -64,28 +90,26 @@ func findParents(current any, permitMissingPaths bool, parts []string) ([]any, e
 		}
 		switch curr := current.(type) {
 		case map[string]any:
-			if value, exists := curr[part]; exists {
-				current = value
-			} else if permitMissingPaths {
+			var err error
+			current, err = iterateOverMap(curr, permitMissingPaths, part)
+			if err != nil {
+				return nil, err
+			}
+			if current == nil {
 				return nil, nil
-			} else {
-				return nil, fmt.Errorf("path segment %s: %w", part, ErrPathNotFound)
 			}
 		case []any:
-			if part == "" || part == "*" {
+			if part == "*" {
 				return handleSlice(curr, permitMissingPaths, parts[idx+1:])
 			}
-			index, err := strconv.Atoi(part)
+			var err error
+			current, err = iterateOverSlice(curr, permitMissingPaths, part)
 			if err != nil {
-				return nil, fmt.Errorf("invalid array index %s", part)
+				return nil, err
 			}
-			if index < 0 || index >= len(curr) {
-				if permitMissingPaths {
-					return nil, nil
-				}
-				return nil, fmt.Errorf("index out of range %d: %w", index, ErrPathNotFound)
+			if current == nil {
+				return nil, nil
 			}
-			current = curr[index]
 		default:
 			return nil, fmt.Errorf("unsupported type %T at path segment %s", current, part)
 		}
@@ -118,9 +142,9 @@ func setMap(data any, permitMissingPaths bool, path string, parent map[string]an
 	if !ok {
 		return data, fmt.Errorf("expected string at path %s, but found %T", path, value)
 	}
-	intVal, err := strconv.ParseInt(strVal, 10, 64)
+	intVal, err := setDirectValue(strVal, path)
 	if err != nil {
-		return data, fmt.Errorf("error converting string to int64 at path %s: %w", path, err)
+		return data, err
 	}
 	parent[lastPart] = intVal
 
@@ -135,9 +159,9 @@ func setSliceValue(data any, permitMissingPaths bool, path string, parent []any,
 		return data, fmt.Errorf("index out of range %d", index)
 	}
 	if value, ok := parent[index].(string); ok {
-		intVal, err := strconv.ParseInt(value, 10, 64)
+		intVal, err := setDirectValue(value, path)
 		if err != nil {
-			return data, fmt.Errorf("error converting string to int64 at path %s: %w", path, err)
+			return data, err
 		}
 		parent[index] = intVal
 	} else {
@@ -147,7 +171,7 @@ func setSliceValue(data any, permitMissingPaths bool, path string, parent []any,
 }
 
 func setSlice(data any, permitMissingPaths bool, path string, parent []any, lastPart string) (out any, err error) {
-	if lastPart == "" || lastPart == "*" {
+	if lastPart == "*" {
 		out = data
 		for i := range parent {
 			out, err = setSliceValue(out, permitMissingPaths, path, parent, i)
@@ -164,31 +188,35 @@ func setSlice(data any, permitMissingPaths bool, path string, parent []any, last
 	return setSliceValue(data, permitMissingPaths, path, parent, index)
 }
 
-func setDirectValue(data any, path string) (out any, err error) {
-	intVal, err := strconv.ParseInt(data.(string), 10, 64)
+func setDirectValue(data string, path string) (out int64, err error) {
+	intVal, err := strconv.ParseInt(data, 10, 64)
 	if err != nil {
-		return data, fmt.Errorf("error converting string to int64 at path %s: %w", path, err)
+		return -1, fmt.Errorf("error converting string to int64 at path %s: %w", path, err)
 	}
 	return intVal, nil
 }
 
-func convertPath(data any, permitMissingPaths bool, path string) (out any, err error) {
-	var parentsRaw []any
-	var lastPart string
-	var parts []string
+func processPath(data any, permitMissingPaths bool, path string) (parentsRaw []any, parts []string, lastPart string, err error) {
 	if path == "." {
-		parentsRaw = []any{data}
-	} else {
-		parts = splitPath(path)
-		if len(parts) == 0 {
-			return data, errors.New("empty path")
-		}
+		return []any{data}, nil, "", nil
+	}
+	parts = splitPath(path)
+	if len(parts) == 0 {
+		return nil, nil, "", errors.New("empty path")
+	}
 
-		lastPart = parts[len(parts)-1]
-		parentsRaw, err = findParents(data, permitMissingPaths, parts[:len(parts)-1])
-		if err != nil {
-			return data, fmt.Errorf("error finding parent for path %s: %w", path, err)
-		}
+	lastPart = parts[len(parts)-1]
+	parentsRaw, err = findParents(data, permitMissingPaths, parts[:len(parts)-1])
+	if err != nil {
+		return nil, nil, "", fmt.Errorf("error finding parent for path %s: %w", path, err)
+	}
+	return parentsRaw, parts, lastPart, nil
+}
+
+func convertPath(data any, permitMissingPaths bool, path string) (out any, err error) {
+	parentsRaw, parts, lastPart, err := processPath(data, permitMissingPaths, path)
+	if err != nil {
+		return data, err
 	}
 
 	out = data
