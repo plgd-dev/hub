@@ -35,7 +35,7 @@ func TestOffboard(t *testing.T) {
 	ctx, cancel := context.WithDeadline(context.Background(), deadline)
 	defer cancel()
 
-	const services = service.SetUpServicesOAuth | service.SetUpServicesGrpcGateway
+	const services = service.SetUpServicesOAuth | service.SetUpServicesMachine2MachineOAuth | service.SetUpServicesGrpcGateway
 	tearDown := service.SetUpServices(ctx, t, services)
 	defer tearDown()
 
@@ -188,7 +188,7 @@ func TestOffboardWithoutSignIn(t *testing.T) {
 	ctx, cancel := context.WithDeadline(context.Background(), deadline)
 	defer cancel()
 
-	const services = service.SetUpServicesOAuth | service.SetUpServicesGrpcGateway
+	const services = service.SetUpServicesOAuth | service.SetUpServicesMachine2MachineOAuth | service.SetUpServicesGrpcGateway
 	tearDown := service.SetUpServices(ctx, t, services)
 	defer tearDown()
 
@@ -251,7 +251,7 @@ func TestOffboardWithSignIn(t *testing.T) {
 	ctx, cancel := context.WithDeadline(context.Background(), deadline)
 	defer cancel()
 
-	const services = service.SetUpServicesOAuth | service.SetUpServicesGrpcGateway
+	const services = service.SetUpServicesOAuth | service.SetUpServicesMachine2MachineOAuth | service.SetUpServicesGrpcGateway
 	tearDown := service.SetUpServices(ctx, t, services)
 	defer tearDown()
 
@@ -316,7 +316,7 @@ func TestOffboardWithSignInByRefreshToken(t *testing.T) {
 	ctx, cancel := context.WithDeadline(context.Background(), deadline)
 	defer cancel()
 
-	const services = service.SetUpServicesOAuth | service.SetUpServicesGrpcGateway
+	const services = service.SetUpServicesOAuth | service.SetUpServicesMachine2MachineOAuth | service.SetUpServicesGrpcGateway
 	tearDown := service.SetUpServices(ctx, t, services)
 	defer tearDown()
 
@@ -393,7 +393,7 @@ func TestOffboardWithRepeat(t *testing.T) {
 	ctx, cancel := context.WithDeadline(context.Background(), deadline)
 	defer cancel()
 
-	const services = service.SetUpServicesOAuth | service.SetUpServicesGrpcGateway
+	const services = service.SetUpServicesOAuth | service.SetUpServicesMachine2MachineOAuth | service.SetUpServicesGrpcGateway
 	tearDown := service.SetUpServices(ctx, t, services)
 	defer tearDown()
 
@@ -455,7 +455,7 @@ func TestOffboardInterrupt(t *testing.T) {
 	ctx, cancel := context.WithDeadline(context.Background(), deadline)
 	defer cancel()
 
-	const services = service.SetUpServicesOAuth | service.SetUpServicesGrpcGateway
+	const services = service.SetUpServicesOAuth | service.SetUpServicesMachine2MachineOAuth | service.SetUpServicesGrpcGateway
 	tearDown := service.SetUpServices(ctx, t, services)
 	defer tearDown()
 

@@ -12,6 +12,7 @@ import (
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgHttpPb "github.com/plgd-dev/hub/v2/pkg/net/http/pb"
 	snippetPb "github.com/plgd-dev/hub/v2/snippet-service/pb"
 	snippetHttp "github.com/plgd-dev/hub/v2/snippet-service/service/http"
 	snippetTest "github.com/plgd-dev/hub/v2/snippet-service/test"
@@ -46,7 +47,7 @@ func TestRequestHandlerUpdateCondition(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	shutDown := service.SetUpServices(ctx, t, service.SetUpServicesOAuth)
+	shutDown := service.SetUpServices(ctx, t, service.SetUpServicesOAuth|service.SetUpServicesMachine2MachineOAuth)
 	defer shutDown()
 
 	_, shutdownHttp := snippetTest.SetUp(t)
@@ -177,7 +178,7 @@ func TestRequestHandlerUpdateCondition(t *testing.T) {
 			require.Equal(t, tt.wantHTTPCode, resp.StatusCode)
 
 			var got snippetPb.Condition
-			err = httpTest.Unmarshal(resp.StatusCode, resp.Body, &got)
+			err = pkgHttpPb.Unmarshal(resp.StatusCode, resp.Body, &got)
 			if tt.wantErr {
 				require.Error(t, err)
 				return

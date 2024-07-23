@@ -12,7 +12,7 @@ import (
 type (
 	ClaimsFunc = func(ctx context.Context, method, uri string) jwt.ClaimsValidator
 	Validator  interface {
-		ParseWithClaims(token string, claims jwt.Claims) error
+		ParseWithClaims(ctx context.Context, token string, claims jwt.Claims) error
 	}
 	Interceptor = func(ctx context.Context, method, uri string) (context.Context, error)
 )
@@ -34,7 +34,7 @@ func validateJWTWithValidator(validator Validator, claims ClaimsFunc) Intercepto
 		if err != nil {
 			return nil, err
 		}
-		err = validator.ParseWithClaims(token, claims(ctx, method, uri))
+		err = validator.ParseWithClaims(ctx, token, claims(ctx, method, uri))
 		if err != nil {
 			return nil, fmt.Errorf("invalid token: %w", err)
 		}

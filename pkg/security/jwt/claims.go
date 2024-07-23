@@ -179,3 +179,22 @@ func getIssuer(token *jwt.Token) (string, error) {
 		return "", fmt.Errorf("unsupported type %T", token.Claims)
 	}
 }
+
+func getID(claims jwt.Claims) (string, error) {
+	switch c := claims.(type) {
+	case interface{ GetID() (string, error) }:
+		id, err := c.GetID()
+		if err != nil {
+			return "", ErrMissingID
+		}
+		return id, nil
+	case jwt.MapClaims:
+		id, ok := c[ClaimID].(string)
+		if !ok {
+			return "", ErrMissingID
+		}
+		return id, nil
+	default:
+		return "", fmt.Errorf("unsupported type %T", claims)
+	}
+}

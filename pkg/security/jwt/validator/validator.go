@@ -44,12 +44,19 @@ func (v *Validator) GetParser() *jwtValidator.Validator {
 type GetOpenIDConfigurationFunc func(ctx context.Context, c *http.Client, authority string) (openid.Config, error)
 
 type Options struct {
-	getOpenIDConfiguration GetOpenIDConfigurationFunc
+	getOpenIDConfiguration    GetOpenIDConfigurationFunc
+	trustVerificationDisabled bool
 }
 
 func WithGetOpenIDConfiguration(f GetOpenIDConfigurationFunc) func(o *Options) {
 	return func(o *Options) {
 		o.getOpenIDConfiguration = f
+	}
+}
+
+func WithTrustVerificationDisabled() func(o *Options) {
+	return func(o *Options) {
+		o.trustVerificationDisabled = true
 	}
 }
 
@@ -64,6 +71,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	keys := jwtValidator.NewMultiKeyCache()
 	var onClose fn.FuncList
 	openIDConfigurations := make([]openid.Config, 0, len(config.Endpoints))
+	clients := make(map[string]*jwtValidator.Client, len(config.Endpoints))
 	for _, authority := range config.Endpoints {
 		httpClient, err := client.New(authority.HTTP, fileWatcher, logger, tracerProvider)
 		if err != nil {
@@ -87,11 +95,19 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		issuer := pkgHttpUri.CanonicalURI(openIDCfg.Issuer)
 		keys.Add(issuer, openIDCfg.JWKSURL, httpClient.HTTP())
 		openIDConfigurations = append(openIDConfigurations, openIDCfg)
+		if !options.trustVerificationDisabled && openIDCfg.PlgdTokensEndpoint != "" {
+			clients[issuer] = jwtValidator.NewClient(httpClient.HTTP(), openIDCfg.PlgdTokensEndpoint)
+		}
+	}
+
+	var vopts []jwtValidator.Option
+	if len(clients) > 0 {
+		vopts = append(vopts, jwtValidator.WithTrustVerification(clients))
 	}
 
 	return &Validator{
 		openIDConfigurations: openIDConfigurations,
-		validator:            jwtValidator.NewValidator(keys, logger),
+		validator:            jwtValidator.NewValidator(keys, logger, vopts...),
 		audience:             config.Audience,
 	}, nil
 }
@@ -104,6 +120,6 @@ func (v *Validator) OpenIDConfiguration() []openid.Config {
 	return v.openIDConfigurations
 }
 
-func (v *Validator) ParseWithClaims(token string, claims jwt.Claims) error {
-	return v.validator.ParseWithClaims(token, claims)
+func (v *Validator) ParseWithClaims(ctx context.Context, token string, claims jwt.Claims) error {
+	return v.validator.ParseWithClaims(ctx, token, claims)
 }

@@ -18,6 +18,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgHttpPb "github.com/plgd-dev/hub/v2/pkg/net/http/pb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/subscriber"
@@ -107,7 +108,7 @@ func updateResource(t *testing.T, req *pb.UpdateResourceRequest, token string) e
 	}()
 
 	var got pb.UpdateResourceResponse
-	err = httpTest.Unmarshal(resp.StatusCode, resp.Body, &got)
+	err = pkgHttpPb.Unmarshal(resp.StatusCode, resp.Body, &got)
 	if err != nil {
 		return err
 	}
@@ -175,7 +176,7 @@ func TestRequestHandlerUpdateDeviceMetadata(t *testing.T) {
 		}(resp)
 
 		var got pb.UpdateDeviceMetadataResponse
-		errM = httpTest.Unmarshal(resp.StatusCode, resp.Body, &got)
+		errM = pkgHttpPb.Unmarshal(resp.StatusCode, resp.Body, &got)
 		return errM
 	}
 

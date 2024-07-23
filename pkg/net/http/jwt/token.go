@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	pkgJwt "github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -34,4 +35,16 @@ func tokenFromCtx(ctx context.Context) (string, error) {
 		return token, nil
 	}
 	return "", status.Errorf(codes.Unauthenticated, "token not found")
+}
+
+func SubjectFromToken(token string) (string, bool) {
+	claims, err := pkgJwt.ParseToken(token)
+	if err != nil {
+		return "", false
+	}
+	subject, err := claims.GetSubject()
+	if err != nil {
+		return "", false
+	}
+	return subject, true
 }

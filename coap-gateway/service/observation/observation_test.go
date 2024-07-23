@@ -44,7 +44,7 @@ func TestIsResourceObservableWithInterface(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	const services = service.SetUpServicesOAuth | service.SetUpServicesId | service.SetUpServicesResourceDirectory |
+	const services = service.SetUpServicesMachine2MachineOAuth | service.SetUpServicesOAuth | service.SetUpServicesId | service.SetUpServicesResourceDirectory |
 		service.SetUpServicesGrpcGateway
 	tearDown := service.SetUpServices(ctx, t, services)
 	defer tearDown()

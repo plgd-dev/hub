@@ -12,6 +12,7 @@ import (
 	"github.com/plgd-dev/hub/v2/m2m-oauth-server/pb"
 	m2mOauthServerTest "github.com/plgd-dev/hub/v2/m2m-oauth-server/test"
 	"github.com/plgd-dev/hub/v2/m2m-oauth-server/uri"
+	pkgHttpPb "github.com/plgd-dev/hub/v2/pkg/net/http/pb"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	testHttp "github.com/plgd-dev/hub/v2/test/http"
@@ -68,7 +69,7 @@ func TestCreateToken(t *testing.T) {
 			require.Equal(t, tt.wantHTTPCode, resp.StatusCode)
 
 			var got pb.CreateTokenResponse
-			err = testHttp.Unmarshal(resp.StatusCode, resp.Body, &got)
+			err = pkgHttpPb.Unmarshal(resp.StatusCode, resp.Body, &got)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
