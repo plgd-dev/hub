@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
+	pkgHttpUri "github.com/plgd-dev/hub/v2/pkg/net/http/uri"
 	pkgStrings "github.com/plgd-dev/hub/v2/pkg/strings"
 )
 
@@ -157,4 +158,24 @@ func ParseToken(token string) (Claims, error) {
 		return nil, err
 	}
 	return claims, nil
+}
+
+func getIssuer(token *jwt.Token) (string, error) {
+	if token == nil {
+		return "", ErrMissingToken
+	}
+	if token.Claims == nil {
+		return "", ErrMissingClaims
+	}
+
+	switch claims := token.Claims.(type) {
+	case interface{ GetIssuer() (string, error) }:
+		issuer, err := claims.GetIssuer()
+		if err != nil {
+			return "", ErrMissingIssuer
+		}
+		return pkgHttpUri.CanonicalURI(issuer), nil
+	default:
+		return "", fmt.Errorf("unsupported type %T", token.Claims)
+	}
 }

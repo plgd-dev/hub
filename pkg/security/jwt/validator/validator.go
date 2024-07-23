@@ -11,6 +11,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/http/client"
+	pkgHttpUri "github.com/plgd-dev/hub/v2/pkg/net/http/uri"
 	jwtValidator "github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/pkg/security/openid"
 	"go.opentelemetry.io/otel/trace"
@@ -43,18 +44,18 @@ func (v *Validator) GetParser() *jwtValidator.Validator {
 type GetOpenIDConfigurationFunc func(ctx context.Context, c *http.Client, authority string) (openid.Config, error)
 
 type Options struct {
-	GetOpenIDConfiguration GetOpenIDConfigurationFunc
+	getOpenIDConfiguration GetOpenIDConfigurationFunc
 }
 
 func WithGetOpenIDConfiguration(f GetOpenIDConfigurationFunc) func(o *Options) {
 	return func(o *Options) {
-		o.GetOpenIDConfiguration = f
+		o.getOpenIDConfiguration = f
 	}
 }
 
 func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, opts ...func(o *Options)) (*Validator, error) {
 	options := Options{
-		GetOpenIDConfiguration: openid.GetConfiguration,
+		getOpenIDConfiguration: openid.GetConfiguration,
 	}
 	for _, o := range opts {
 		o(&options)
@@ -72,24 +73,25 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		ctx2, cancel := context.WithTimeout(ctx, authority.HTTP.Timeout)
 		defer cancel()
 
-		if options.GetOpenIDConfiguration == nil {
+		if options.getOpenIDConfiguration == nil {
 			return nil, errors.New("GetOpenIDConfiguration is nil")
 		}
 
-		openIDCfg, err := options.GetOpenIDConfiguration(ctx2, httpClient.HTTP(), authority.Authority)
+		openIDCfg, err := options.getOpenIDConfiguration(ctx2, httpClient.HTTP(), authority.Authority)
 		if err != nil {
 			onClose.Execute()
 			httpClient.Close()
 			return nil, fmt.Errorf("cannot get openId configuration: %w", err)
 		}
 		onClose.AddFunc(httpClient.Close)
-		keys.Add(openIDCfg.Issuer, openIDCfg.JWKSURL, httpClient.HTTP())
+		issuer := pkgHttpUri.CanonicalURI(openIDCfg.Issuer)
+		keys.Add(issuer, openIDCfg.JWKSURL, httpClient.HTTP())
 		openIDConfigurations = append(openIDConfigurations, openIDCfg)
 	}
 
 	return &Validator{
 		openIDConfigurations: openIDConfigurations,
-		validator:            jwtValidator.NewValidator(keys),
+		validator:            jwtValidator.NewValidator(keys, logger),
 		audience:             config.Audience,
 	}, nil
 }

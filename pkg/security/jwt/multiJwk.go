@@ -13,6 +13,7 @@ import (
 var (
 	ErrMissingClaims = errors.New("missing claims")
 	ErrMissingIssuer = errors.New("missing issuer")
+	ErrMissingID     = errors.New("missing jti")
 )
 
 type MultiKeyCache struct {
@@ -31,32 +32,6 @@ func (c *MultiKeyCache) Add(authority, url string, client *http.Client) {
 
 func (c *MultiKeyCache) GetOrFetchKey(token *jwt.Token) (interface{}, error) {
 	return c.GetOrFetchKeyWithContext(context.Background(), token)
-}
-
-func getIssuer(token *jwt.Token) (string, error) {
-	if token == nil {
-		return "", ErrMissingToken
-	}
-	if token.Claims == nil {
-		return "", ErrMissingClaims
-	}
-
-	switch claims := token.Claims.(type) {
-	case jwt.MapClaims:
-		issuer, ok := claims["iss"].(string)
-		if !ok {
-			return "", ErrMissingIssuer
-		}
-		return strings.TrimSuffix(issuer, "/"), nil
-	case interface{ GetIssuer() (string, error) }:
-		issuer, err := claims.GetIssuer()
-		if err != nil {
-			return "", ErrMissingIssuer
-		}
-		return strings.TrimSuffix(issuer, "/"), nil
-	default:
-		return "", fmt.Errorf("unsupported type %T", token.Claims)
-	}
 }
 
 func checkForError(token *jwt.Token) error {

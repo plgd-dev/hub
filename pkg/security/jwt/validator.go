@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 )
 
 type KeyCacheI interface {
@@ -14,7 +15,8 @@ type KeyCacheI interface {
 }
 
 type Validator struct {
-	keys KeyCacheI
+	keys   KeyCacheI
+	logger log.Logger
 }
 
 var (
@@ -22,8 +24,11 @@ var (
 	ErrCannotParseToken = errors.New("could not parse token")
 )
 
-func NewValidator(keyCache KeyCacheI) *Validator {
-	return &Validator{keys: keyCache}
+func NewValidator(keyCache KeyCacheI, logger log.Logger) *Validator {
+	return &Validator{
+		keys:   keyCache,
+		logger: logger,
+	}
 }
 
 func errParseToken(err error) error {
@@ -55,7 +60,6 @@ func (v *Validator) ParseWithContext(ctx context.Context, token string) (jwt.Map
 	if !ok {
 		return nil, errParseTokenInvalidClaimsType(t)
 	}
-
 	return c, nil
 }
 
