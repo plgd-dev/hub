@@ -14,6 +14,7 @@ import (
 	"github.com/plgd-dev/hub/v2/m2m-oauth-server/pb"
 	m2mOauthServerTest "github.com/plgd-dev/hub/v2/m2m-oauth-server/test"
 	"github.com/plgd-dev/hub/v2/m2m-oauth-server/uri"
+	pkgHttpPb "github.com/plgd-dev/hub/v2/pkg/net/http/pb"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
@@ -40,7 +41,7 @@ func createTokens(ctx context.Context, t *testing.T, createTokens []*pb.CreateTo
 		}()
 		require.Equal(t, http.StatusOK, resp.StatusCode)
 		var got pb.CreateTokenResponse
-		err = testHttp.Unmarshal(resp.StatusCode, resp.Body, &got)
+		err = pkgHttpPb.Unmarshal(resp.StatusCode, resp.Body, &got)
 		require.NoError(t, err)
 		claims, err := jwt.ParseToken(got.GetAccessToken())
 		require.NoError(t, err)
@@ -255,7 +256,7 @@ func TestGetTokens(t *testing.T) {
 			var got []*pb.Token
 			for {
 				var gotToken pb.Token
-				err := testHttp.Unmarshal(resp.StatusCode, resp.Body, &gotToken)
+				err := pkgHttpPb.Unmarshal(resp.StatusCode, resp.Body, &gotToken)
 				if errors.Is(err, io.EOF) {
 					break
 				}

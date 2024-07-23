@@ -11,6 +11,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/plgd-dev/device/v2/schema"
 	c2curi "github.com/plgd-dev/hub/v2/cloud2cloud-connector/uri"
+	m2mOauthUri "github.com/plgd-dev/hub/v2/m2m-oauth-server/uri"
 	"github.com/plgd-dev/hub/v2/pkg/config/database"
 	"github.com/plgd-dev/hub/v2/pkg/config/property/urischeme"
 	pkgCqldb "github.com/plgd-dev/hub/v2/pkg/cqldb"
@@ -297,6 +298,10 @@ func MakeValidatorConfig() validator.Config {
 		Endpoints: []validator.AuthorityConfig{
 			{
 				Authority: http.HTTPS_SCHEME + OAUTH_SERVER_HOST,
+				HTTP:      MakeHttpClientConfig(),
+			},
+			{
+				Authority: http.HTTPS_SCHEME + M2M_OAUTH_SERVER_HTTP_HOST + m2mOauthUri.Base,
 				HTTP:      MakeHttpClientConfig(),
 			},
 		},

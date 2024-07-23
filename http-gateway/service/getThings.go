@@ -329,12 +329,15 @@ func ThingSetSecurity(td *wotTD.ThingDescription, openIDConfigs []openid.Config)
 	td.Security = &wotTD.TypeDeclaration{}
 	td.SecurityDefinitions = make(map[string]wotTD.SecurityScheme)
 	for idx := range openIDConfigs {
-		td.SecurityDefinitions[toSecurityName(idx)] = wotTD.SecurityScheme{
-			Scheme:        "oauth2",
-			Flow:          bridgeDeviceTD.StringToPtr("code"),
-			Authorization: &(openIDConfigs[idx].AuthURL),
-			Token:         &(openIDConfigs[idx].TokenURL),
+		ss := wotTD.SecurityScheme{
+			Scheme: "oauth2",
+			Flow:   bridgeDeviceTD.StringToPtr("code"),
+			Token:  &(openIDConfigs[idx].TokenURL),
 		}
+		if openIDConfigs[idx].AuthURL != "" {
+			ss.Authorization = &(openIDConfigs[idx].AuthURL)
+		}
+		td.SecurityDefinitions[toSecurityName(idx)] = ss
 		td.Security.StringArray = append(td.Security.StringArray, toSecurityName(idx))
 	}
 }

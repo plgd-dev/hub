@@ -10,7 +10,9 @@ import (
 
 	"github.com/plgd-dev/device/v2/test/resource/types"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
-	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	m2mOauthTest "github.com/plgd-dev/hub/v2/m2m-oauth-server/test"
+	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgJwt "github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/hub/v2/test"
@@ -24,6 +26,25 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
+func getResources(ctx context.Context, c pb.GrpcGatewayClient, req *pb.GetResourcesRequest) ([]*pb.Resource, error) {
+	client, err := c.GetResources(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	values := make([]*pb.Resource, 0, 1)
+	for {
+		value, err := client.Recv()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		values = append(values, value)
+	}
+	return values, nil
+}
+
 func TestRequestHandlerGetResources(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 
@@ -32,7 +53,7 @@ func TestRequestHandlerGetResources(t *testing.T) {
 
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
+	ctx = pkgGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
@@ -180,17 +201,8 @@ func TestRequestHandlerGetResources(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			client, err := c.GetResources(ctx, tt.args.req)
+			values, err := getResources(ctx, c, tt.args.req)
 			require.NoError(t, err)
-			values := make([]*pb.Resource, 0, 1)
-			for {
-				value, err := client.Recv()
-				if errors.Is(err, io.EOF) {
-					break
-				}
-				require.NoError(t, err)
-				values = append(values, value)
-			}
 			if tt.cmpFn != nil {
 				tt.cmpFn(t, tt.want, values)
 				return
@@ -198,4 +210,64 @@ func TestRequestHandlerGetResources(t *testing.T) {
 			pbTest.CmpResourceValues(t, tt.want, values)
 		})
 	}
+}
+
+func TestRequestHandlerGetResourcesWithBlacklistedToken(t *testing.T) {
+	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
+
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT*100)
+	defer cancel()
+
+	tearDown := service.SetUp(ctx, t)
+	defer tearDown()
+	validTokenStr := oauthTest.GetDefaultAccessToken(t)
+	ctxWithToken := pkgGrpc.CtxWithToken(ctx, validTokenStr)
+
+	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
+	})))
+	require.NoError(t, err)
+	defer func() {
+		_ = conn.Close()
+	}()
+	c := pb.NewGrpcGatewayClient(conn)
+
+	_, shutdownDevSim := test.OnboardDevSim(ctxWithToken, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
+	defer shutdownDevSim()
+
+	req := &pb.GetResourcesRequest{ResourceIdFilter: []*pb.ResourceIdFilter{{ResourceId: commands.NewResourceID(deviceID, test.TestResourceLightInstanceHref("1"))}}}
+	exp := &pb.Resource{
+		Types: []string{types.CORE_LIGHT},
+		Data: pbTest.MakeResourceChanged(t, deviceID, test.TestResourceLightInstanceHref("1"), test.TestResourceLightInstanceResourceTypes, "",
+			map[string]interface{}{
+				"state": false,
+				"power": uint64(0),
+				"name":  "Light",
+			}),
+	}
+
+	tokenStr := m2mOauthTest.GetDefaultAccessToken(t)
+	values, err := getResources(pkgGrpc.CtxWithToken(ctx, tokenStr), c, req)
+	require.NoError(t, err)
+	require.NotEmpty(t, values)
+	pbTest.CmpResourceValues(t, []*pb.Resource{exp.Clone()}, values)
+
+	// invalid token
+	_, err = getResources(pkgGrpc.CtxWithToken(ctx, "invalid"), c, req)
+	require.Error(t, err)
+
+	// blacklist the token
+	token, err := pkgJwt.ParseToken(tokenStr)
+	require.NoError(t, err)
+	tokenID, err := token.GetID()
+	require.NoError(t, err)
+	m2mOauthTest.BlacklistTokens(ctx, t, []string{tokenID}, validTokenStr)
+	_, err = getResources(pkgGrpc.CtxWithToken(ctx, tokenStr), c, req)
+	require.ErrorContains(t, err, pkgJwt.ErrBlackListedToken.Error())
+
+	// non-blacklisted tokens should still work
+	values, err = getResources(pkgGrpc.CtxWithToken(ctx, validTokenStr), c, req)
+	require.NoError(t, err)
+	require.NotEmpty(t, values)
+	pbTest.CmpResourceValues(t, []*pb.Resource{exp.Clone()}, values)
 }

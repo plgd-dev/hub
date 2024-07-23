@@ -19,6 +19,7 @@ import (
 	isEvents "github.com/plgd-dev/hub/v2/identity-store/events"
 	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgHttpPb "github.com/plgd-dev/hub/v2/pkg/net/http/pb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/publisher"
@@ -27,7 +28,6 @@ import (
 	rdTest "github.com/plgd-dev/hub/v2/resource-directory/test"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
-	httpTest "github.com/plgd-dev/hub/v2/test/http"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/plgd-dev/hub/v2/test/service"
@@ -212,7 +212,7 @@ func testRequestHandlerSubscribeToEvents(t *testing.T, deviceID string, resource
 			return nil, errM
 		}
 		var event pb.Event
-		errM = httpTest.Unmarshal(http.StatusOK, reader, &event)
+		errM = pkgHttpPb.Unmarshal(http.StatusOK, reader, &event)
 		return &event, errM
 	}
 
