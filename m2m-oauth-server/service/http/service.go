@@ -10,6 +10,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgHttpJwt "github.com/plgd-dev/hub/v2/pkg/net/http/jwt"
 	httpService "github.com/plgd-dev/hub/v2/pkg/net/http/service"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
 	"go.opentelemetry.io/otel/trace"
@@ -23,7 +24,7 @@ type Service struct {
 
 // New parses configuration and creates new Server with provided store and bus
 func New(serviceName string, config Config, m2mOAuthServiceServer *grpcService.M2MOAuthServiceServer, validator *validator.Validator, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*Service, error) {
-	whiteList := []pkgHttp.RequestMatcher{
+	whiteList := []pkgHttpJwt.RequestMatcher{
 		{
 			Method: http.MethodGet,
 			URI:    regexp.MustCompile(regexp.QuoteMeta(uri.JWKs)),

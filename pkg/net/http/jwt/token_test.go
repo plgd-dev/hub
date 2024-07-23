@@ -1,4 +1,4 @@
-package http
+package jwt
 
 import (
 	"context"
@@ -9,15 +9,15 @@ import (
 
 func TestCtxWithToken(t *testing.T) {
 	ctx := context.Background()
-	token, err := tokenFromCtx(ctxWithToken(ctx, "a"))
+	token, err := tokenFromCtx(CtxWithToken(ctx, "a"))
 	require.NoError(t, err)
 	require.Equal(t, "a", token)
 
-	token, err = tokenFromCtx(ctxWithToken(ctx, bearerKey+" b"))
+	token, err = tokenFromCtx(CtxWithToken(ctx, bearerKey+" b"))
 	require.NoError(t, err)
 	require.Equal(t, "b", token)
 
-	token, err = tokenFromCtx(ctxWithToken(ctx, "Bearer c"))
+	token, err = tokenFromCtx(CtxWithToken(ctx, "Bearer c"))
 	require.NoError(t, err)
 	require.Equal(t, "c", token)
 }

@@ -13,7 +13,8 @@ import (
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/uri"
 	"github.com/plgd-dev/hub/v2/pkg/log"
-	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgHttpJwt "github.com/plgd-dev/hub/v2/pkg/net/http/jwt"
 	pkgOAuth2 "github.com/plgd-dev/hub/v2/pkg/security/oauth2"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -78,11 +79,11 @@ func healthCheck(w http.ResponseWriter, _ *http.Request) {
 }
 
 // NewHTTP returns HTTP handler
-func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Interceptor, logger log.Logger) (http.Handler, error) {
+func NewHTTP(requestHandler *RequestHandler, authInterceptor pkgHttpJwt.Interceptor, logger log.Logger) (http.Handler, error) {
 	r := router.NewRouter()
 	r.StrictSlash(true)
-	r.Use(kitNetHttp.CreateLoggingMiddleware(kitNetHttp.WithLogger(logger)))
-	r.Use(kitNetHttp.CreateAuthMiddleware(authInterceptor, func(_ context.Context, w http.ResponseWriter, r *http.Request, err error) {
+	r.Use(pkgHttp.CreateLoggingMiddleware(pkgHttp.WithLogger(logger)))
+	r.Use(pkgHttp.CreateAuthMiddleware(authInterceptor, func(_ context.Context, w http.ResponseWriter, r *http.Request, err error) {
 		logAndWriteErrorResponse(fmt.Errorf("cannot process request on %v: %w", r.RequestURI, err), http.StatusUnauthorized, w)
 	}))
 

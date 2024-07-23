@@ -3,10 +3,14 @@ package http
 const (
 	ApplicationProtoJsonContentType = "application/protojson"
 
-	CorrelationIDHeaderKey      = "Correlation-Id"
+	AcceptHeaderKey             = "Accept"
+	AuthorizationHeaderKey      = "Authorization"
+	ConnectionHeaderKey         = "Connection"
 	ContentLengthHeaderKey      = "Content-Length"
 	ContentTypeHeaderKey        = "Content-Type"
 	ContentTypeOptionsHeaderKey = "X-Content-Type-Options"
-	AcceptHeaderKey             = "Accept"
+	CorrelationIDHeaderKey      = "Correlation-Id"
 	ETagHeaderKey               = "ETag"
+
+	AuthorizationBearerPrefix = "Bearer "
 )
