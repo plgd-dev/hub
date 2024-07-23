@@ -66,8 +66,7 @@ message Token { // driven by resource change event
 
 message GetTokensRequest {
   repeated string id_filter = 1;
-  repeated string audience_filter = 2;
-  bool include_blacklisted = 3;
+  bool include_blacklisted = 2;
 }
 
 message BlacklistTokensRequest {

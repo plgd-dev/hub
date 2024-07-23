@@ -108,19 +108,25 @@ func setOriginTokenClaims(token jwt.Token, tokenReq tokenRequest) error {
 }
 
 func getExpirationTime(clientCfg *oauthsigner.Client, tokenReq tokenRequest) time.Time {
+	var wantExpiration time.Time
+	if tokenReq.CreateTokenRequest.GetExpiration() > 0 {
+		wantExpiration = time.Unix(tokenReq.CreateTokenRequest.GetExpiration(), 0)
+	}
+	if !wantExpiration.IsZero() && tokenReq.issuedAt.After(wantExpiration) {
+		return time.Time{}
+	}
 	if clientCfg.AccessTokenLifetime == 0 {
-		if tokenReq.CreateTokenRequest.GetExpiration() > 0 {
-			return time.Unix(tokenReq.CreateTokenRequest.GetExpiration(), 0)
+		if !wantExpiration.IsZero() {
+			return wantExpiration
 		}
 		return time.Time{}
 	}
-	if tokenReq.CreateTokenRequest.GetExpiration() == 0 {
+	if wantExpiration.IsZero() {
 		return tokenReq.issuedAt.Add(clientCfg.AccessTokenLifetime)
 	}
-	wantExpiration := time.Unix(tokenReq.CreateTokenRequest.GetExpiration(), 0)
-	clientWantExpiration := tokenReq.issuedAt.Add(clientCfg.AccessTokenLifetime)
-	if clientWantExpiration.Before(wantExpiration) {
-		return clientWantExpiration
+	clientExpiration := tokenReq.issuedAt.Add(clientCfg.AccessTokenLifetime)
+	if clientExpiration.Before(wantExpiration) {
+		return clientExpiration
 	}
 	return wantExpiration
 }

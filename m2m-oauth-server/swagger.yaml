@@ -143,14 +143,6 @@ paths:
           type: array
           items:
             type: string
-      - name: audienceFilter
-        in: query
-        style: form
-        explode: true
-        schema:
-          type: array
-          items:
-            type: string
       - name: includeBlacklisted
         in: query
         schema:

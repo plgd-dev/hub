@@ -83,36 +83,48 @@ func iterateOverSlice(curr []any, permitMissingPaths bool, part string) (any, er
 	return curr[index], nil
 }
 
+func nextCurrent(current any, permitMissingPaths bool, parts []string, idx int) ([]any, any, error) {
+	part := parts[idx]
+	if part == "" {
+		return nil, current, nil
+	}
+	var err error
+	switch curr := current.(type) {
+	case map[string]any:
+		current, err = iterateOverMap(curr, permitMissingPaths, part)
+	case []any:
+		if part == "*" {
+			val, err2 := handleSlice(curr, permitMissingPaths, parts[idx+1:])
+			return val, nil, err2
+		}
+		current, err = iterateOverSlice(curr, permitMissingPaths, part)
+	default:
+		return nil, nil, fmt.Errorf("unsupported type %T at path segment %s", current, part)
+	}
+	if err != nil {
+		return nil, nil, err
+	}
+	if current == nil {
+		return nil, nil, nil
+	}
+	return nil, current, nil
+}
+
 func findParents(current any, permitMissingPaths bool, parts []string) ([]any, error) {
-	for idx, part := range parts {
-		if part == "" {
-			continue
+	for idx := range parts {
+		var result []any
+		var err error
+		result, next, err := nextCurrent(current, permitMissingPaths, parts, idx)
+		if err != nil {
+			return nil, err
 		}
-		switch curr := current.(type) {
-		case map[string]any:
-			var err error
-			current, err = iterateOverMap(curr, permitMissingPaths, part)
-			if err != nil {
-				return nil, err
-			}
-			if current == nil {
-				return nil, nil
-			}
-		case []any:
-			if part == "*" {
-				return handleSlice(curr, permitMissingPaths, parts[idx+1:])
-			}
-			var err error
-			current, err = iterateOverSlice(curr, permitMissingPaths, part)
-			if err != nil {
-				return nil, err
-			}
-			if current == nil {
-				return nil, nil
-			}
-		default:
-			return nil, fmt.Errorf("unsupported type %T at path segment %s", current, part)
+		if result != nil {
+			return result, nil
 		}
+		if next == nil {
+			return nil, nil
+		}
+		current = next
 	}
 	return []any{current}, nil
 }

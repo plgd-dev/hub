@@ -105,7 +105,6 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | id_filter | [string](#string) | repeated |  |
-| audience_filter | [string](#string) | repeated |  |
 | include_blacklisted | [bool](#bool) |  |  |
 
 

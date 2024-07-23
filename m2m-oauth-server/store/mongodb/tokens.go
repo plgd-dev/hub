@@ -47,10 +47,6 @@ func toFilter(owner string, req *pb.GetTokensRequest) (filter bson.D, hint inter
 	} else {
 		setIdOwnerHint = false
 	}
-	if len(req.GetAudienceFilter()) > 0 {
-		filter = append(filter, bson.E{Key: pb.AudienceKey, Value: bson.M{mongodb.In: req.GetAudienceFilter()}})
-		setIdOwnerHint = false
-	}
 	if !req.GetIncludeBlacklisted() {
 		setIdOwnerHint = false
 		filter = append(filter,

@@ -103,16 +103,6 @@
             "collectionFormat": "multi"
           },
           {
-            "name": "audienceFilter",
-            "in": "query",
-            "required": false,
-            "type": "array",
-            "items": {
-              "type": "string"
-            },
-            "collectionFormat": "multi"
-          },
-          {
             "name": "includeBlacklisted",
             "in": "query",
             "required": false,

@@ -99,6 +99,18 @@ func TestPostToken(t *testing.T) {
 			},
 		},
 		{
+			name: "ownerToken with over time expiration- JWT",
+			args: m2mOauthServerTest.AccessTokenOptions{
+				Ctx:        context.Background(),
+				ClientID:   m2mOauthServerTest.JWTPrivateKeyOAuthClient.ID,
+				GrantType:  string(oauthsigner.GrantTypeClientCredentials),
+				Host:       config.M2M_OAUTH_SERVER_HTTP_HOST,
+				JWT:        token,
+				Expiration: time.Now().Add(time.Hour * 24 * 365),
+			},
+			wantCode: http.StatusUnauthorized,
+		},
+		{
 			name: "invalid client",
 			args: m2mOauthServerTest.AccessTokenOptions{
 				Ctx:       context.Background(),
@@ -134,7 +146,9 @@ func TestPostToken(t *testing.T) {
 		},
 	}
 
-	webTearDown := m2mOauthServerTest.SetUp(t)
+	cfg := m2mOauthServerTest.MakeConfig(t)
+	cfg.OAuthSigner.Clients.Find(m2mOauthServerTest.JWTPrivateKeyOAuthClient.ID).AccessTokenLifetime = time.Hour * 24
+	webTearDown := m2mOauthServerTest.New(t, cfg)
 	defer webTearDown()
 
 	for _, tt := range tests {
