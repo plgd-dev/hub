@@ -1,8 +1,9 @@
 const express = require('express')
-const { checkError, loadResponseFromFile } = require('../utils')
+const { checkError, loadResponseFromFile, loadResponseStreamFromFile } = require('../utils')
 const path = require('path')
 const { check } = require('express-validator')
 const escapeHtml = require('escape-html')
+const get = require('lodash/get')
 
 const router = express.Router()
 
@@ -29,9 +30,9 @@ router.get('/api/v1/devices', (req, res) => {
         checkError(req, res)
 
         if (deletedDevice) {
-            loadResponseFromFile(path.join('devices', 'list', 'list-deleted-state.json'), res)
+            loadResponseStreamFromFile(path.join('devices', 'list', 'list-deleted-state.json'), res)
         } else {
-            loadResponseFromFile(path.join('devices', 'list', 'list.json'), res)
+            loadResponseStreamFromFile(path.join('devices', 'list', 'list.json'), res)
         }
     } catch (e) {
         res.status(500).send(escapeHtml(e.toString()))
@@ -151,28 +152,23 @@ router.put('/api/v1/devices/:deviceId/resources/color', deviceIdCheck, (req, res
     }
 })
 
-router.get('/api/v1/resource-links', deviceIdCheck, (req, res) => {
+router.get('/api/v1/resource-links', (req, res) => {
     try {
         checkError(req, res)
-        loadResponseFromFile(path.join('devices', 'detail', `${req.query['device_id_filter']}-resource-links.json`), res)
+        let filter = get(req.query, 'device_id_filter', null)
+
+        loadResponseFromFile(path.join('devices', 'detail', `${filter}-resource-links.json`), res)
     } catch (e) {
         res.status(500).send(e.toString())
     }
 })
 
-// router.get('/api/v1/provisioning-records', deviceIdCheck, (req, res) => {
-//     try {
-//         checkError(req, res)
-//         loadResponseFromFile(path.join('devices', 'detail', `${req.query['deviceIdFilter']}-provisioning-records.json`), res)
-//     } catch (e) {
-//         res.status(500).send(escapeHtml(e.toString()))
-//     }
-// })
-
-router.get('/api/v1/signing/records', deviceIdCheck, (req, res) => {
+router.get('/api/v1/signing/records', (req, res) => {
     try {
         checkError(req, res)
-        loadResponseFromFile(path.join('devices', 'detail', `${req.query['deviceIdFilter']}-signin-records.json`), res)
+        let filter = get(req.query, 'deviceIdFilter', null)
+
+        loadResponseFromFile(path.join('devices', 'detail', `${filter}-signin-records.json`), res)
     } catch (e) {
         res.status(500).send(escapeHtml(e.toString()))
     }

@@ -1,4 +1,5 @@
 import { chromium, expect, FullConfig } from '@playwright/test'
+import { login } from './tests/utils'
 
 async function globalSetup(config: FullConfig) {
     const wellKnowConfigurationAddress = process.env.REACT_APP_HTTP_WELL_KNOW_CONFIGURATION_ADDRESS
@@ -12,19 +13,31 @@ async function globalSetup(config: FullConfig) {
 
     process.env.WELL_KNOWN_CONFIG = JSON.stringify(data)
 
-    await page.goto('http://localhost:3000/')
+    await login(page)
 
-    // keycloak login page
-    await expect(page).toHaveTitle(/Login | plgd.dev/, { timeout: 30000 })
+    const r = await page.request.get('https://api.github.com/repos/plgd-dev/hub/releases/latest')
+    const body = await r.json()
 
-    await expect(page).toHaveURL(/auth.plgd.cloud/)
-
-    // login data
-    await page.locator('#email').fill(process.env.REACT_APP_TEST_LOGIN_USERNAME || '')
-    await page.locator('#password').fill(process.env.REACT_APP_TEST_LOGIN_PASSWORD || '')
-    await page.getByRole('button', { name: 'Sign In' }).click()
+    const versionData = {
+        requestedDatetime: new Date(),
+        latest: body.tag_name.replace('v', ''),
+        latest_url: body.html_url,
+    }
 
     await page.context().storageState({ path: 'storageState.json' })
+
+    const storage = await page.context().storageState()
+
+    const root = JSON.parse(storage.origins[0].localStorage.find((x) => x.name === 'persist:root')?.value || '{}')
+    const rootApp = { ...JSON.parse(root['app'] || '{}'), version: versionData }
+
+    const newRoot = JSON.stringify({ ...root, app: JSON.stringify(rootApp) })
+
+    await page.waitForLoadState('networkidle')
+    await page.evaluate((newRoot) => localStorage.setItem('persist:root', JSON.stringify(newRoot)), newRoot)
+
+    await page.context().storageState({ path: 'storageState.json' })
+
     await browser.close()
 }
 

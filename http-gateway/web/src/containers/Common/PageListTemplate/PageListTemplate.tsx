@@ -81,21 +81,24 @@ const PageListTemplate: FC<Props> = (props) => {
                             ...(isFunction(onInvoke) && i18n.invoke
                                 ? [
                                       {
-                                          onClick: () => onInvoke(row.original.id),
-                                          label: i18n.invoke,
+                                          dataTestId: tableDataTestId?.concat(`-row-${row.id}`).concat('-invoke'),
                                           icon: <IconIntegrations />,
+                                          label: i18n.invoke,
+                                          onClick: () => onInvoke(row.original.id),
                                       },
                                   ]
                                 : []),
                             {
-                                onClick: () => handleOpenDeleteModal(false, [row.original.id]),
-                                label: i18n.delete,
+                                dataTestId: tableDataTestId?.concat(`-row-${row.id}`).concat('-delete'),
                                 icon: <IconTrash />,
+                                label: i18n.delete,
+                                onClick: () => handleOpenDeleteModal(false, [row.original.id]),
                             },
                             {
-                                onClick: () => onDetailClick(row.original.id),
-                                label: i18n.view,
+                                dataTestId: tableDataTestId?.concat(`-row-${row.id}`).concat('-detail'),
                                 icon: <IconArrowDetail />,
+                                label: i18n.view,
+                                onClick: () => onDetailClick(row.original.id),
                             },
                         ]}
                     />

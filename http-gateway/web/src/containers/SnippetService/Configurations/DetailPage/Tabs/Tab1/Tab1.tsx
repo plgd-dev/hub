@@ -25,6 +25,7 @@ import { useValidationsSchema } from '../../validationSchema'
 import { Props, Inputs, ResourceTypeEnhanced } from './Tab1.types'
 import JsonConfigModal from '@/containers/SnippetService/Configurations/DetailPage/JsonConfigModal'
 import { hasConfigurationResourceError, hasInvalidConfigurationResource } from '@/containers/SnippetService/utils'
+import testId from '@/testId'
 
 const { NS } = commandTimeoutUnits
 
@@ -113,14 +114,16 @@ const Tab1: FC<Props> = (props) => {
                     <TableActionButton
                         items={[
                             {
-                                onClick: () => setDeleteResource(resources.find((r) => r.href === row.original.href)),
-                                label: _(g.delete),
+                                dataTestId: testId.snippetService.configurations.addPage.form.resourceTable.concat(`-row-${row.id}-delete`),
                                 icon: <IconTrash />,
+                                label: _(g.delete),
+                                onClick: () => setDeleteResource(resources.find((r) => r.href === row.original.href)),
                             },
                             {
-                                onClick: () => setUpdateResource(row.original.href),
-                                label: _(g.edit),
+                                dataTestId: testId.snippetService.configurations.addPage.form.resourceTable.concat(`-row-${row.id}-edit`),
                                 icon: <IconEdit />,
+                                label: _(g.edit),
+                                onClick: () => setUpdateResource(row.original.href),
                             },
                         ]}
                     />
@@ -147,7 +150,12 @@ const Tab1: FC<Props> = (props) => {
                             attribute: _(g.name),
                             value: (
                                 <FormGroup error={errors.name ? _(g.requiredField, { field: _(g.name) }) : undefined} id='name'>
-                                    <FormInput {...register('name')} onBlur={(e) => updateField('name', e.target.value)} placeholder={_(g.name)} />
+                                    <FormInput
+                                        {...register('name')}
+                                        dataTestId={testId.snippetService.configurations.addPage.form.name}
+                                        onBlur={(e) => updateField('name', e.target.value)}
+                                        placeholder={_(g.name)}
+                                    />
                                 </FormGroup>
                             ),
                         },
@@ -156,7 +164,12 @@ const Tab1: FC<Props> = (props) => {
 
                 <Spacer style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }} type='mt-8 mb-4'>
                     <Headline type='h5'>{_(g.listOfResources)}</Headline>
-                    <Button onClick={() => setCreateResource(true)} size={buttonSizes.SMALL} variant={buttonVariants.PRIMARY}>
+                    <Button
+                        dataTestId={testId.snippetService.configurations.addPage.form.addResourceButton}
+                        onClick={() => setCreateResource(true)}
+                        size={buttonSizes.SMALL}
+                        variant={buttonVariants.PRIMARY}
+                    >
                         {_(confT.addResources)}
                     </Button>
                 </Spacer>
@@ -166,6 +179,7 @@ const Tab1: FC<Props> = (props) => {
                 <Table
                     columns={columns}
                     data={resources}
+                    dataTestId={testId.snippetService.configurations.addPage.form.resourceTable}
                     defaultPageSize={10}
                     defaultSortBy={[
                         {
@@ -184,6 +198,7 @@ const Tab1: FC<Props> = (props) => {
                 />
 
                 <JsonConfigModal
+                    dataTestId={testId.snippetService.configurations.addPage.form.createResourceModal}
                     disabled={loading}
                     isUpdateModal={updateResource !== undefined}
                     onClose={() => {

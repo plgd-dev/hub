@@ -3,7 +3,7 @@
     "result": {
       "id": "48998f7d-2a70-46a4-8a68-745b69d55489",
       "version": "0",
-      "name": "my-cfg-1",
+      "name": "my-cfg-0",
       "resources": [
         {
           "href": "/not/existing",
@@ -26,7 +26,7 @@
   "result": {
     "id": "48998f7d-2a70-46a4-8a68-745b69d55489",
     "version": "1",
-    "name": "my-cfg-11",
+    "name": "my-cfg-1",
     "resources": [
       {
         "href": "/not/existing",

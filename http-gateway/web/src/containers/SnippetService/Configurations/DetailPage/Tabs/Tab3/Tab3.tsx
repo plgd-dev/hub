@@ -23,6 +23,7 @@ import { messages as g } from '@/containers/Global.i18n'
 import { pages } from '@/routes'
 import { getAppliedConfigurationStatusStatus, getAppliedConfigurationStatusValue } from '@/containers/SnippetService/utils'
 import { AppliedConfigurationStatusType } from '@/containers/SnippetService/ServiceSnippet.types'
+import testId from '@/testId'
 
 const Tab3: FC<Props> = (props) => {
     const { data, loading, isActiveTab } = props
@@ -44,6 +45,7 @@ const Tab3: FC<Props> = (props) => {
                 accessor: 'configurationName',
                 Cell: ({ value, row }: { value: string; row: any }) => (
                     <a
+                        data-test-id={testId.snippetService.configurations.detail.appliedConfigurationsTable.concat('-detail-link-name')}
                         href={generatePath(pages.SNIPPET_SERVICE.APPLIED_CONFIGURATIONS.DETAIL.LINK, {
                             appliedConfigurationId: row.original.id,
                             tab: '',
@@ -93,6 +95,7 @@ const Tab3: FC<Props> = (props) => {
                     } else {
                         return (
                             <Tag
+                                dataTestId={testId.snippetService.configurations.detail.appliedConfigurationsTable.concat(`-row-${row.id}-condition`)}
                                 onClick={() =>
                                     `${navigate(
                                         generatePath(pages.SNIPPET_SERVICE.CONDITIONS.DETAIL.LINK, { conditionId: row.original.conditionId.id, tab: '' })
@@ -116,6 +119,7 @@ const Tab3: FC<Props> = (props) => {
                     <TableActionButton
                         items={[
                             {
+                                dataTestId: testId.snippetService.configurations.detail.appliedConfigurationsTable.concat('-detail'),
                                 onClick: () =>
                                     navigate(
                                         generatePath(pages.SNIPPET_SERVICE.APPLIED_CONFIGURATIONS.DETAIL.LINK, {
@@ -145,6 +149,7 @@ const Tab3: FC<Props> = (props) => {
                 <Table
                     columns={columns}
                     data={data || []}
+                    dataTestId={testId.snippetService.configurations.detail.appliedConfigurationsTable}
                     defaultPageSize={10}
                     defaultSortBy={[
                         {

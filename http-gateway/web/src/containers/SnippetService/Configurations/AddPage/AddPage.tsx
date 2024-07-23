@@ -138,6 +138,7 @@ const AddPage: FC<any> = () => {
                     <BottomPanel
                         actionPrimary={
                             <Button
+                                dataTestId={testId.snippetService.configurations.addPage.form.addButton}
                                 disabled={hasError || resourcesError || !dirty || !rehydrated}
                                 loading={loadingState}
                                 loadingText={_(g.loading)}
@@ -148,7 +149,12 @@ const AddPage: FC<any> = () => {
                             </Button>
                         }
                         actionSecondary={
-                            <Button disabled={loadingState || !dirty || !rehydrated} onClick={handleReset} variant='secondary'>
+                            <Button
+                                dataTestId={testId.snippetService.configurations.addPage.form.resetButton}
+                                disabled={loadingState || !dirty || !rehydrated}
+                                onClick={handleReset}
+                                variant='secondary'
+                            >
                                 {_(g.reset)}
                             </Button>
                         }

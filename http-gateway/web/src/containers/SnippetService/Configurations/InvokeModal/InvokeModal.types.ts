@@ -1,5 +1,6 @@
 export type Props = {
-    show: boolean
+    dataTestId?: string
     handleClose: () => void
     handleInvoke: (name: string[], force: boolean) => void
+    show: boolean
 }

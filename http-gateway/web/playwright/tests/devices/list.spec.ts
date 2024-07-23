@@ -5,13 +5,15 @@ const urlBase = 'http://localhost:3000'
 
 test('devices-list-open', async ({ page }) => {
     await page.goto(urlBase)
+    await page.setViewportSize({ width: 1600, height: 800 })
     await page.getByTestId(testId.menu.devices).click()
     await expect(page).toHaveTitle(/Devices | plgd Dashboard/)
-    await expect(page).toHaveScreenshot({ fullPage: true, omitBackground: true })
+    await expect(page).toHaveScreenshot({ fullPage: true, omitBackground: true, animations: 'disabled' })
 })
 
 test('devices-list-open-detail', async ({ page }) => {
     await page.goto(urlBase)
+    await page.setViewportSize({ width: 1600, height: 800 })
     await page.getByTestId(testId.menu.devices).click()
     await expect(page).toHaveTitle(/Devices | plgd Dashboard/)
     await expect(page.getByTestId('device-row-0')).toBeVisible()
