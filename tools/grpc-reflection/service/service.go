@@ -4,12 +4,14 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	certAuthorityPb "github.com/plgd-dev/hub/v2/certificate-authority/pb"
+	grpcGatewayPb "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
 	"github.com/plgd-dev/hub/v2/pkg/service"
+	snippetServicePb "github.com/plgd-dev/hub/v2/snippet-service/pb"
 	"go.opentelemetry.io/otel/trace/noop"
 	"google.golang.org/grpc/reflection"
 )
@@ -32,9 +34,12 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 
 	for _, service := range config.APIs.GRPC.ReflectedServices {
 		switch service {
-		case "GrpcGateway":
-			pb.RegisterGrpcGatewayServer(server.Server, &pb.UnimplementedGrpcGatewayServer{})
-			// Add cases for other services here
+		case grpcGatewayPb.GrpcGateway_ServiceDesc.ServiceName:
+			grpcGatewayPb.RegisterGrpcGatewayServer(server.Server, &grpcGatewayPb.UnimplementedGrpcGatewayServer{})
+		case certAuthorityPb.CertificateAuthority_ServiceDesc.ServiceName:
+			certAuthorityPb.RegisterCertificateAuthorityServer(server.Server, &certAuthorityPb.UnimplementedCertificateAuthorityServer{})
+		case snippetServicePb.SnippetService_ServiceDesc.ServiceName:
+			snippetServicePb.RegisterSnippetServiceServer(server.Server, &snippetServicePb.UnimplementedSnippetServiceServer{})
 		}
 	}
 	// Register the reflection service

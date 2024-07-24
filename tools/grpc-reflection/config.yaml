@@ -9,9 +9,11 @@ log:
 
 apis:
   grpc:
-    address: "0.0.0.0:9109"
+    address: "0.0.0.0:9100"
     reflectedServices:
-      - GrpcGateway
+      - grpcgateway.pb.GrpcGateway
+      - certificateauthority.pb.CertificateAuthority
+      - snippetservice.pb.SnippetService
     sendMsgSize: 4194304
     recvMsgSize: 4194304
     keepAlive:
@@ -21,7 +23,7 @@ apis:
       time: 2h                      # Keep-alive time
       timeout: 20s                  # Keep-alive timeout
     tls:
-          caPool: "/secrets/public/rootca.crt"
-          keyFile: "/secrets/private/cert.key"
-          certFile: "/secrets/public/cert.crt"
+      caPool: "/secrets/public/rootca.crt"
+      keyFile: "/secrets/private/cert.key"
+      certFile: "/secrets/public/cert.crt"
       clientCertificateRequired: false

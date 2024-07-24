@@ -1,0 +1,39 @@
+{{- $createServiceCert := include "plgd-hub.grpcreflection.serviceCertName" . }}
+{{- if and $createServiceCert .Values.certmanager.enabled .Values.grpcreflection.enabled }}
+{{- $serviceCertName := include "plgd-hub.grpcreflection.serviceCertName" . }}
+{{- $serviceDns := include "plgd-hub.grpcreflection.fullname" . }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ $serviceCertName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plgd-hub.labels" . | nindent 4 }}
+    {{- with .Values.certmanager.internal.labels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+  {{- with .Values.certmanager.internal.annotations }}
+  annotations:
+  {{- . | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  secretName: {{ $serviceCertName }}
+  privateKey:
+    algorithm: {{ .Values.certmanager.internal.cert.key.algorithm | default .Values.certmanager.default.cert.key.algorithm }}
+    size: {{ .Values.certmanager.internal.cert.key.size | default .Values.certmanager.default.cert.key.size }}
+  usages:
+    - server auth
+    - client auth
+  dnsNames:
+    - {{ printf "%s.%s.svc.%s" $serviceDns .Release.Namespace .Values.cluster.dns | quote }}
+    - {{ $serviceDns | quote }}
+    {{- if .Values.grpcreflection.service.crt.extraDnsNames }}
+    {{- toYaml .Values.grpcreflection.service.crt.extraDnsNames | nindent 4 }}
+    {{- end }}
+  duration: {{ .Values.certmanager.internal.cert.duration | default .Values.certmanager.default.cert.duration }}
+  renewBefore: {{ .Values.certmanager.internal.cert.renewBefore | default .Values.certmanager.default.cert.renewBefore }}
+  issuerRef:
+    name: {{ .Values.certmanager.internal.issuer.name | default .Values.certmanager.default.issuer.name }}
+    kind: {{ .Values.certmanager.internal.issuer.kind | default .Values.certmanager.default.issuer.kind }}
+    group: {{ .Values.certmanager.internal.issuer.group | default .Values.certmanager.default.issuer.group }}
+{{- end }}
