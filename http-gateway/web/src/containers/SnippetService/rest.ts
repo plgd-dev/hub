@@ -5,6 +5,8 @@ import { FetchApiReturnType } from '@shared-ui/common/types/API.types'
 
 import { SecurityConfig } from '@/containers/App/App.types'
 import { DELETE_CHUNK_SIZE, SnippetServiceApiEndpoints } from '@/containers/SnippetService/constants'
+import { CreateTokenReturnType, OpenidConfigurationReturnType } from '@/containers/ApiTokens/ApiTokens.types'
+import { CLIENT_ASSERTION_TYPE, GRANT_TYPE } from '@/containers/ApiTokens/constants'
 
 const getWellKnow = () => security.getWellKnownConfig()
 
@@ -128,7 +130,7 @@ export const deleteAppliedConfigurationApi = (ids: string[]) => {
     )
 }
 
-export const getOauthToken: () => Promise<string> = async () => {
+export const getOauthToken: (conditionName: string) => Promise<string> = async (conditionName: string) => {
     const { cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
     const { unauthorizedCallback, m2mOauthClient } = security.getWellKnownConfig()
 
@@ -140,7 +142,7 @@ export const getOauthToken: () => Promise<string> = async () => {
                 }),
             'get-m2mOauthClient-wellKnow-configuration'
         )
-            .then((result: FetchApiReturnType<{ issuer: string; jwks_uri: string; token_endpoint: string }>) => {
+            .then((result: FetchApiReturnType<OpenidConfigurationReturnType>) => {
                 if (result.data) {
                     withTelemetry(
                         () =>
@@ -149,15 +151,16 @@ export const getOauthToken: () => Promise<string> = async () => {
                                 cancelRequestDeadlineTimeout,
                                 unauthorizedCallback,
                                 body: {
+                                    token_name: conditionName,
                                     client_assertion: security.getAccessToken(),
-                                    client_assertion_type: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer', // hardcoded
+                                    client_assertion_type: CLIENT_ASSERTION_TYPE,
                                     client_id: m2mOauthClient.clientId,
-                                    grant_type: 'client_credentials', // hardcoded
+                                    grant_type: GRANT_TYPE,
                                 },
                             }),
                         'get-m2mOauthClient-token'
-                    ).then((result: FetchApiReturnType<{ access_token: string; scope: string; token_type: string }>) => {
-                        resolve(result.data?.access_token || '')
+                    ).then((result: FetchApiReturnType<CreateTokenReturnType>) => {
+                        resolve(result.data?.accessToken || '')
                     })
                 }
             })

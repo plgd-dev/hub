@@ -55,7 +55,7 @@ const parseFilters = (query, key) => {
     if (Array.isArray(filters)) {
         return uniq(filters)
     } else {
-        return filters?.replace('/all', '')?.replace(/\/[0-9]+/g, '')
+        return filters?.replace('/all', '')?.replace(/\/d+/g, '')
     }
 }
 
@@ -127,9 +127,7 @@ router.put('/api/v1/configurations/:configurationId', configurationIdCheck, (req
 router.get('/api/v1/conditions', (req, res) => {
     try {
         checkError(req, res)
-        const filter = get(req.query, 'httpIdFilter', null)
-            ?.replace('/all', '')
-            ?.replace(/\/[0-9]+/g, '')
+        const filter = get(req.query, 'httpIdFilter', null)?.replace('/all', '')?.replace(/\/d+/g, '')
 
         // detail page
         if (filter) {

@@ -60,6 +60,10 @@ const ConditionsAddPage = lazy(() => import('./containers/SnippetService/Conditi
 const AppliedConfigurationListPage = lazy(() => import('@/containers/SnippetService/AppliedConfigurations/ListPage'))
 const AppliedConfigurationDetailPage = lazy(() => import('@/containers/SnippetService/AppliedConfigurations/DetailPage'))
 
+// API tokens
+const ApiTokensListPage = lazy(() => import('@/containers/ApiTokens/ListPage'))
+const ApiTokensDetailPage = lazy(() => import('@/containers/ApiTokens/DetailPage'))
+
 // Certificates
 const CertificatesListPage = lazy(() => import('./containers/Certificates'))
 const CertificatesDetailPage = lazy(() => import('@/containers/Certificates/DetailPage'))
@@ -172,6 +176,10 @@ export const pages = {
     CERTIFICATES: {
         LINK: '/certificates',
         DETAIL: '/certificates/:certificateId',
+    },
+    API_TOKENS: {
+        LINK: '/api-tokens',
+        DETAIL: '/api-tokens/:apiTokenId',
     },
 }
 
@@ -319,6 +327,7 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                         id: '112',
                         title: <MenuTranslate id='menuConditions' />,
                         link: '/conditions',
+                        dataTestId: testId.menu.snippetService.conditions,
                         paths: [
                             pages.SNIPPET_SERVICE.CONDITIONS.LINK,
                             pages.SNIPPET_SERVICE.CONDITIONS.DETAIL.LINK,
@@ -328,6 +337,7 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                     {
                         id: '113',
                         title: <MenuTranslate id='menuAppliedConfigurations' />,
+                        dataTestId: testId.menu.snippetService.appliedConfigurations,
                         link: '/applied-configurations',
                         paths: [
                             pages.SNIPPET_SERVICE.APPLIED_CONFIGURATIONS.LINK,
@@ -367,10 +377,11 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                 icon: <IconLock />,
                 id: '14',
                 title: <MenuTranslate id='menuApiTokens' />,
-                link: '/api-tokens',
-                paths: ['/api-tokens'],
+                link: pages.API_TOKENS.LINK,
+                paths: [pages.API_TOKENS.LINK, pages.API_TOKENS.DETAIL],
                 exact: true,
-                visibility: menuConfig.apiTokens === false ? false : 'disabled',
+                // visibility: menuConfig.apiTokens === false ? false : 'disabled',
+                visibility: true,
             },
             {
                 icon: <IconNet />,
@@ -520,6 +531,12 @@ export const Routes = () => {
                     <Route element={withSuspense(<AppliedConfigurationDetailPage />)} path=':appliedConfigurationId' />
                     <Route element={withSuspense(<AppliedConfigurationListPage />)} path='' />
                 </Route>
+            </Route>
+
+            {/* ***** CONFIGURATION ***** */}
+            <Route path='/api-tokens'>
+                <Route element={withSuspense(<ApiTokensListPage />)} path='' />
+                <Route element={withSuspense(<ApiTokensDetailPage />)} path=':apiTokenId' />
             </Route>
 
             {/* ***** CONFIGURATION ***** */}

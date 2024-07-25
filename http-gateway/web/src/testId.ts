@@ -7,6 +7,8 @@ const testId = {
         snippetService: {
             link: 'hub-menu-item-snippet-service',
             configurations: 'hub-menu-item-snippet-service-configurations',
+            conditions: 'hub-menu-item-snippet-service-conditions',
+            appliedConfigurations: 'hub-menu-item-snippet-service-applied-configurations',
         },
     },
     devices: {
@@ -127,6 +129,10 @@ const testId = {
             },
         },
         conditions: {
+            list: {
+                table: 'hub-snippet-service-conditions-list-table',
+                addButton: 'hub-snippet-service-conditions-list-add-button',
+            },
             detail: {
                 deleteButton: 'hub-snippet-service-conditions-detail-delete-button',
                 deleteButtonConfirm: 'hub-snippet-service-conditions-detail-delete-button-confirm',
@@ -134,6 +140,25 @@ const testId = {
                 tabGeneral: 'hub-snippet-service-conditions-detail-tab-general',
                 tabFilters: 'hub-snippet-service-conditions-detail-tab-filters',
                 tabApiAccessToken: 'hub-snippet-service-conditions-detail-tab-api-access-token',
+            },
+            addPage: {
+                wizard: 'hub-snippet-service-conditions-add-page-wizard',
+                step1: {
+                    form: {
+                        name: 'hub-snippet-service-conditions-add-page-form-name',
+                    },
+                    buttons: 'hub-snippet-service-conditions-add-page-step1-buttons',
+                },
+                step2: {
+                    filterDeviceId: 'hub-snippet-service-conditions-add-page-step2-filter-device-id',
+                    selectDeviceId: 'hub-snippet-service-conditions-add-page-step2-select-device-id',
+                    selectDeviceIdReset: 'hub-snippet-service-conditions-add-page-step2-select-device-id-reset',
+                    selectDeviceIdDone: 'hub-snippet-service-conditions-add-page-step2-select-device-id-done',
+                    resourceType: 'hub-snippet-service-conditions-add-page-step2-resource-type',
+                    hrefFilter: 'hub-snippet-service-conditions-add-page-step2-href-filter',
+                    jqExpressionFilter: 'hub-snippet-service-conditions-add-page-step2-jq-expression-filter',
+                    buttons: 'hub-snippet-service-conditions-add-page-step2-buttons',
+                },
             },
         },
         appliedConfigurations: {
@@ -144,6 +169,13 @@ const testId = {
                 tabGeneral: 'hub-snippet-service-applied-configurations-detail-tab-general',
                 tabListOfResources: 'hub-snippet-service-applied-configurations-detail-tab-list-of-resources',
             },
+        },
+    },
+    apiTokens: {
+        detail: {
+            deleteButton: 'hub-snippet-service-api-tokens-detail-delete-button',
+            deleteButtonCancel: 'hub-snippet-service-api-tokens-detail-delete-button-cancel',
+            deleteButtonConfirm: 'hub-snippet-service-api-tokens-detail-delete-button-confirm',
         },
     },
 }

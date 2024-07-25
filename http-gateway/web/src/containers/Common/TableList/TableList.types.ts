@@ -9,6 +9,7 @@ export type Props = {
     }[]
     globalSearch?: boolean
     i18n: {
+        delete?: string
         singleSelected: string
         multiSelected: string
         tablePlaceholder?: string

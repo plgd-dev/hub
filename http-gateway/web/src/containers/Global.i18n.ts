@@ -486,4 +486,20 @@ export const messages = defineMessages({
         id: 'global.generate',
         defaultMessage: 'Generate',
     },
+    note: {
+        id: 'global.note',
+        defaultMessage: 'Note',
+    },
+    days: {
+        id: 'global.days',
+        defaultMessage: 'days',
+    },
+    custom: {
+        id: 'global.custom',
+        defaultMessage: 'Custom',
+    },
+    revoke: {
+        id: 'global.revoke',
+        defaultMessage: 'Revoke',
+    },
 })

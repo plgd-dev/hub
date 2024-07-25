@@ -87,7 +87,7 @@ const TableList: FC<Props> = (props) => {
                     <TableSelectionPanel
                         actionPrimary={
                             <Button onClick={() => onDeleteClick(isAllSelected, selected)} variant='primary'>
-                                {_(g.delete)}
+                                {i18n.delete || _(g.delete)}
                             </Button>
                         }
                         actionSecondary={

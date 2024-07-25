@@ -22,7 +22,6 @@ app.use(
 )
 
 app.use(bodyParser.urlencoded({ extended: true }))
-// app.use(bodyParser.json())
 
 // ----- PENDING COMMANDS -----
 app.get('/api/v1/pending-commands', function (req, res) {

@@ -44,7 +44,9 @@ const PageListTemplate: FC<Props> = (props) => {
         try {
             setDeleting(true)
 
-            await deleteApiMethod(selected)
+            if (isFunction(deleteApiMethod)) {
+                await deleteApiMethod(selected)
+            }
 
             handleCloseDeleteModal()
 
@@ -88,12 +90,16 @@ const PageListTemplate: FC<Props> = (props) => {
                                       },
                                   ]
                                 : []),
-                            {
-                                dataTestId: tableDataTestId?.concat(`-row-${row.id}`).concat('-delete'),
-                                icon: <IconTrash />,
-                                label: i18n.delete,
-                                onClick: () => handleOpenDeleteModal(false, [row.original.id]),
-                            },
+                            ...(isFunction(deleteApiMethod)
+                                ? [
+                                      {
+                                          dataTestId: tableDataTestId?.concat(`-row-${row.id}`).concat('-delete'),
+                                          icon: <IconTrash />,
+                                          label: i18n.delete,
+                                          onClick: () => handleOpenDeleteModal(false, [row.original.id]),
+                                      },
+                                  ]
+                                : []),
                             {
                                 dataTestId: tableDataTestId?.concat(`-row-${row.id}`).concat('-detail'),
                                 icon: <IconArrowDetail />,
@@ -123,7 +129,7 @@ const PageListTemplate: FC<Props> = (props) => {
                     },
                 ]}
                 globalSearch={globalSearch}
-                i18n={pick(i18n, ['singleSelected', 'multiSelected', 'tablePlaceholder'])}
+                i18n={pick(i18n, ['singleSelected', 'multiSelected', 'tablePlaceholder', 'delete'])}
                 loading={loading}
                 onDeleteClick={handleOpenDeleteModal}
                 unselectRowsToken={unselectRowsToken}
