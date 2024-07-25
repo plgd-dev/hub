@@ -63,7 +63,7 @@ func createStore(ctx context.Context, config storeConfig.Config, fileWatcher *fs
 }
 
 func newHttpService(ctx context.Context, config HTTPConfig, validatorConfig validator.Config, getOpenIDConfiguration validator.GetOpenIDConfigurationFunc, tlsConfig certManagerServer.Config, ss *grpcService.M2MOAuthServiceServer, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*httpService.Service, func(), error) {
-	httpValidator, err := validator.New(ctx, validatorConfig, fileWatcher, logger, tracerProvider, validator.WithGetOpenIDConfiguration(getOpenIDConfiguration), validator.WithTrustVerificationDisabled())
+	httpValidator, err := validator.New(ctx, validatorConfig, fileWatcher, logger, tracerProvider, validator.WithGetOpenIDConfiguration(getOpenIDConfiguration))
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create http validator: %w", err)
 	}
@@ -83,7 +83,7 @@ func newHttpService(ctx context.Context, config HTTPConfig, validatorConfig vali
 }
 
 func newGrpcService(ctx context.Context, config grpcService.Config, getOpenIDConfiguration validator.GetOpenIDConfigurationFunc, ss *grpcService.M2MOAuthServiceServer, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*grpcService.Service, func(), error) {
-	grpcValidator, err := validator.New(ctx, config.Authorization.Config, fileWatcher, logger, tracerProvider, validator.WithGetOpenIDConfiguration(getOpenIDConfiguration), validator.WithTrustVerificationDisabled())
+	grpcValidator, err := validator.New(ctx, config.Authorization.Config, fileWatcher, logger, tracerProvider, validator.WithGetOpenIDConfiguration(getOpenIDConfiguration))
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create grpc validator: %w", err)
 	}

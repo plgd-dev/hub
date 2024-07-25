@@ -113,6 +113,8 @@ data:
                   http: {{- .http | toYaml | nindent 20 }}
               {{- end }}
               {{- end }}
+              tokenTrustVerification:
+                enabled: false
           {{- end }}
           {{- end }}
         {{- end }}

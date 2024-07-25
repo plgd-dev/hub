@@ -43,6 +43,8 @@ apis:
           keyFile: "/secrets/private/cert.key"
           certFile: "/secrets/public/cert.crt"
           useSystemCAPool: false
+      tokenTrustVerification:
+        enabled: false
 clients:
   storage:
     cleanUpDeletedTokens: 0 * * * *
