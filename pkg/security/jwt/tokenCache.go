@@ -3,8 +3,8 @@ package jwt
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/plgd-dev/go-coap/v3/pkg/cache"
-	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 )
 
 type TokenRecord struct {
@@ -12,50 +12,56 @@ type TokenRecord struct {
 }
 
 type TokenCache struct {
-	cache *cache.Cache[string, TokenRecord]
+	cache      *cache.Cache[uuid.UUID, TokenRecord]
+	expiration time.Duration
 }
 
-func NewTokenCache() *TokenCache {
+func NewTokenCache(expiration time.Duration) *TokenCache {
 	return &TokenCache{
-		cache: cache.NewCache[string, TokenRecord](),
+		cache:      cache.NewCache[uuid.UUID, TokenRecord](),
+		expiration: expiration,
 	}
 }
 
-func getCacheKey(tokenID, issuer string) string {
-	return tokenID + "." + issuer
+func getCacheKeyID(tokenID, issuer string) uuid.UUID {
+	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(tokenID+"."+issuer))
 }
 
 func (t *TokenCache) Load(tokenID, issuer string) (TokenRecord, bool) {
-	key := getCacheKey(tokenID, issuer)
-	value := t.cache.Load(key)
+	keyID := getCacheKeyID(tokenID, issuer)
+	value := t.cache.Load(keyID)
 	if value == nil {
 		return TokenRecord{}, false
 	}
 	return value.Data(), true
 }
 
-func (t *TokenCache) AddBlacklisted(tokenID, issuer string, expiresAt int64) {
-	key := getCacheKey(tokenID, issuer)
+func (t *TokenCache) AddBlacklisted(tokenID, issuer string, validUntil time.Time) {
+	// pkgTime.Unix(expiresAt, 0)
+	keyID := getCacheKeyID(tokenID, issuer)
 	// use Replace
 	//// if not in cache -> add
 	//// if in cache ->
 	////    - previously whitelisted -> replace
 	////    - previously blacklisted -> replace is not necessary, but it doesn't break anything
-	t.cache.Replace(key, cache.NewElement(TokenRecord{Blacklisted: true}, pkgTime.Unix(expiresAt, 0), nil))
+	t.cache.Replace(keyID, cache.NewElement(TokenRecord{Blacklisted: true}, validUntil, nil))
 }
 
 func (t *TokenCache) AddWhitelisted(tokenID, issuer string) bool {
-	key := getCacheKey(tokenID, issuer)
+	keyID := getCacheKeyID(tokenID, issuer)
+	var validUntil time.Time
+	if t.expiration > 0 {
+		validUntil = time.Now().Add(t.expiration)
+	}
 	// use ReplaceWithFunc
 	//// if not in cache -> add
 	//// if in cache ->
 	////    - previously whitelisted -> replace the record to extend the expiration time
 	////    - previously blacklisted -> cannot replace, blacklisted tokens stay blacklisted until expiration
-	//// TODO: configure expiration interval -> for now use 10s
-	newTr := cache.NewElement(TokenRecord{Blacklisted: false}, time.Now().Add(10*time.Second), nil)
+	newTr := cache.NewElement(TokenRecord{Blacklisted: false}, validUntil, nil)
 	var actual *cache.Element[TokenRecord]
 	now := time.Now()
-	t.cache.ReplaceWithFunc(key, func(oldValue *cache.Element[TokenRecord], oldLoaded bool) (*cache.Element[TokenRecord], bool) {
+	t.cache.ReplaceWithFunc(keyID, func(oldValue *cache.Element[TokenRecord], oldLoaded bool) (*cache.Element[TokenRecord], bool) {
 		if oldLoaded && oldValue.Data().Blacklisted {
 			// blacklisted tokens stay blacklisted until expiration
 			if !oldValue.IsExpired(now) {

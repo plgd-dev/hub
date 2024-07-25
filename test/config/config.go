@@ -63,6 +63,7 @@ const (
 	OPENTELEMETRY_COLLECTOR_HOST    = "localhost:55690"
 	TRUE_STRING                     = "true"
 	M2M_OAUTH_PRIVATE_KEY_CLIENT_ID = "JWTPrivateKeyClient"
+	VALIDATOR_CACHE_EXPIRATION      = time.Second * 10
 )
 
 var (
@@ -304,6 +305,10 @@ func MakeValidatorConfig() validator.Config {
 				Authority: http.HTTPS_SCHEME + M2M_OAUTH_SERVER_HTTP_HOST + m2mOauthUri.Base,
 				HTTP:      MakeHttpClientConfig(),
 			},
+		},
+		TokenVerification: validator.TokenTrustVerificationConfig{
+			Enabled:         true,
+			CacheExpiration: VALIDATOR_CACHE_EXPIRATION,
 		},
 	}
 }

@@ -10,6 +10,7 @@ import (
 
 	"github.com/plgd-dev/device/v2/test/resource/types"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	grpcgwTest "github.com/plgd-dev/hub/v2/grpc-gateway/test"
 	m2mOauthTest "github.com/plgd-dev/hub/v2/m2m-oauth-server/test"
 	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	pkgJwt "github.com/plgd-dev/hub/v2/pkg/security/jwt"
@@ -218,7 +219,9 @@ func TestRequestHandlerGetResourcesWithBlacklistedToken(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT*100)
 	defer cancel()
 
-	tearDown := service.SetUp(ctx, t)
+	grpcCfg := grpcgwTest.MakeConfig(t)
+	grpcCfg.APIs.GRPC.Authorization.TokenVerification.CacheExpiration = time.Second * 2
+	tearDown := service.SetUp(ctx, t, service.WithGRPCGWConfig(grpcCfg))
 	defer tearDown()
 	validTokenStr := oauthTest.GetDefaultAccessToken(t)
 	ctxWithToken := pkgGrpc.CtxWithToken(ctx, validTokenStr)
@@ -256,8 +259,8 @@ func TestRequestHandlerGetResourcesWithBlacklistedToken(t *testing.T) {
 	_, err = getResources(pkgGrpc.CtxWithToken(ctx, "invalid"), c, req)
 	require.Error(t, err)
 
-	// whitelisted tokens expire after 10 seconds
-	time.Sleep(time.Second * 10)
+	// whitelisted tokens expire
+	time.Sleep(grpcCfg.APIs.GRPC.Authorization.TokenVerification.CacheExpiration + time.Second)
 
 	// blacklist the token
 	token, err := pkgJwt.ParseToken(tokenStr)

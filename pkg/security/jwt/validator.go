@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/plgd-dev/hub/v2/m2m-oauth-server/pb"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgHttpPb "github.com/plgd-dev/hub/v2/pkg/net/http/pb"
 	pkgHttpUri "github.com/plgd-dev/hub/v2/pkg/net/http/uri"
+	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 )
 
 type KeyCacheI interface {
@@ -47,8 +49,9 @@ var (
 )
 
 type config struct {
-	clients     map[string]*Client
-	verifyTrust bool
+	verifyTrust     bool
+	clients         map[string]*Client
+	cacheExpiration time.Duration
 }
 
 type Option interface {
@@ -61,10 +64,11 @@ func (o optionFunc) apply(c *config) {
 	o(c)
 }
 
-func WithTrustVerification(clients map[string]*Client) Option {
+func WithTrustVerification(clients map[string]*Client, cacheExpiration time.Duration) Option {
 	return optionFunc(func(c *config) {
 		c.verifyTrust = true
 		c.clients = clients
+		c.cacheExpiration = cacheExpiration
 	})
 }
 
@@ -73,13 +77,16 @@ func NewValidator(keyCache KeyCacheI, logger log.Logger, opts ...Option) *Valida
 	for _, opt := range opts {
 		opt.apply(c)
 	}
-	return &Validator{
+	v := &Validator{
 		keys:        keyCache,
 		logger:      logger,
-		tokenCache:  NewTokenCache(),
 		clients:     c.clients,
 		verifyTrust: c.verifyTrust,
 	}
+	if c.verifyTrust {
+		v.tokenCache = NewTokenCache(c.cacheExpiration)
+	}
+	return v
 }
 
 func errParseToken(err error) error {
@@ -143,10 +150,6 @@ func (v *Validator) checkTrust(ctx context.Context, token string, claims jwt.Cla
 		}
 	}()
 
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected statusCode %v", resp.StatusCode)
-	}
-
 	var gotToken pb.Token
 	err = pkgHttpPb.Unmarshal(resp.StatusCode, resp.Body, &gotToken)
 	if err != nil {
@@ -157,9 +160,10 @@ func (v *Validator) checkTrust(ctx context.Context, token string, claims jwt.Cla
 		Blacklisted: gotToken.GetBlacklisted().GetFlag(),
 	}
 	if tr.Blacklisted {
-		v.tokenCache.AddBlacklisted(tokenID, issuer, gotToken.GetExpiration())
+		v.tokenCache.AddBlacklisted(tokenID, issuer, pkgTime.Unix(gotToken.GetExpiration(), 0))
 		return ErrBlackListedToken
 	}
+	//// TODO: configure expiration interval -> for now use 10s
 	if !v.tokenCache.AddWhitelisted(tokenID, issuer) {
 		return ErrBlackListedToken
 	}
@@ -168,6 +172,10 @@ func (v *Validator) checkTrust(ctx context.Context, token string, claims jwt.Cla
 
 func (v *Validator) Parse(token string) (jwt.MapClaims, error) {
 	return v.ParseWithContext(context.Background(), token)
+}
+
+func errVerifyTrust(err error) error {
+	return fmt.Errorf("%w: %w", ErrCannotVerifyTrust, err)
 }
 
 func (v *Validator) ParseWithContext(ctx context.Context, token string) (jwt.MapClaims, error) {
@@ -189,7 +197,7 @@ func (v *Validator) ParseWithContext(ctx context.Context, token string) (jwt.Map
 	}
 	if v.verifyTrust {
 		if err = v.checkTrust(ctx, token, claims); err != nil {
-			return nil, fmt.Errorf("%w: %w", ErrCannotVerifyTrust, err)
+			return nil, errVerifyTrust(err)
 		}
 	}
 	return claims, nil
@@ -206,7 +214,7 @@ func (v *Validator) ParseWithClaims(ctx context.Context, token string, claims jw
 	}
 	if v.verifyTrust {
 		if err = v.checkTrust(ctx, token, claims); err != nil {
-			return fmt.Errorf("%w: %w", ErrCannotVerifyTrust, err)
+			return errVerifyTrust(err)
 		}
 	}
 	return nil

@@ -44,19 +44,12 @@ func (v *Validator) GetParser() *jwtValidator.Validator {
 type GetOpenIDConfigurationFunc func(ctx context.Context, c *http.Client, authority string) (openid.Config, error)
 
 type Options struct {
-	getOpenIDConfiguration    GetOpenIDConfigurationFunc
-	trustVerificationDisabled bool
+	getOpenIDConfiguration GetOpenIDConfigurationFunc
 }
 
 func WithGetOpenIDConfiguration(f GetOpenIDConfigurationFunc) func(o *Options) {
 	return func(o *Options) {
 		o.getOpenIDConfiguration = f
-	}
-}
-
-func WithTrustVerificationDisabled() func(o *Options) {
-	return func(o *Options) {
-		o.trustVerificationDisabled = true
 	}
 }
 
@@ -95,14 +88,14 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		issuer := pkgHttpUri.CanonicalURI(openIDCfg.Issuer)
 		keys.Add(issuer, openIDCfg.JWKSURL, httpClient.HTTP())
 		openIDConfigurations = append(openIDConfigurations, openIDCfg)
-		if !options.trustVerificationDisabled && openIDCfg.PlgdTokensEndpoint != "" {
+		if config.TokenVerification.Enabled && openIDCfg.PlgdTokensEndpoint != "" {
 			clients[issuer] = jwtValidator.NewClient(httpClient.HTTP(), openIDCfg.PlgdTokensEndpoint)
 		}
 	}
 
 	var vopts []jwtValidator.Option
 	if len(clients) > 0 {
-		vopts = append(vopts, jwtValidator.WithTrustVerification(clients))
+		vopts = append(vopts, jwtValidator.WithTrustVerification(clients, config.TokenVerification.CacheExpiration))
 	}
 
 	return &Validator{

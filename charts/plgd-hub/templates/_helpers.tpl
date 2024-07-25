@@ -220,6 +220,15 @@ tls:
         {{- include "plgd-hub.httpConfig" (list $ .http $certPath ) | indent 8 }}
     {{- end }}
     {{- end }}
+  tokenTrustVerification:
+    {{- $tokenTrustVerification := $authorization.tokenTrustVerification }}
+    {{- if not $tokenTrustVerification }}
+    {{- $tokenTrustVerification = $.Values.global.authorization.tokenTrustVerification }}
+    {{- end }}
+    enabled: {{ $tokenTrustVerification.enabled | default false }}
+    {{- if $tokenTrustVerification.enabled }}
+    cacheExpiration: {{ $tokenTrustVerification.cacheExpiration }}
+    {{- end }}
 {{- end }}
 
 {{- define "plgd-hub.authorizationConfig" }}

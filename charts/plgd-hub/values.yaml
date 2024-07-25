@@ -51,6 +51,9 @@ global:
             keyFile:
             certFile:
             useSystemCAPool: true
+    tokenTrustVerification:
+      enabled: true
+      cacheExpiration: 30s
   # -- Enable *.{{ global.domain }} for all external domain
   enableWildCartCert: true
   # -- Sets cloud to standby mode
