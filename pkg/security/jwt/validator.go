@@ -8,7 +8,6 @@ import (
 	"net/url"
 
 	"github.com/golang-jwt/jwt/v5"
-	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
 	"github.com/plgd-dev/hub/v2/m2m-oauth-server/pb"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgHttpPb "github.com/plgd-dev/hub/v2/pkg/net/http/pb"
@@ -37,7 +36,7 @@ type Validator struct {
 	logger      log.Logger
 	clients     map[string]*Client
 	verifyTrust bool
-	// tokenCache  TokenCache
+	tokenCache  *TokenCache
 }
 
 var (
@@ -75,9 +74,9 @@ func NewValidator(keyCache KeyCacheI, logger log.Logger, opts ...Option) *Valida
 		opt.apply(c)
 	}
 	return &Validator{
-		keys:   keyCache,
-		logger: logger,
-		// tokenCache:  make(TokenCache),
+		keys:        keyCache,
+		logger:      logger,
+		tokenCache:  NewTokenCache(),
 		clients:     c.clients,
 		verifyTrust: c.verifyTrust,
 	}
@@ -91,7 +90,7 @@ func errParseTokenInvalidClaimsType(t *jwt.Token) error {
 	return fmt.Errorf("%w: unsupported type %T", ErrCannotParseToken, t.Claims)
 }
 
-func (v *Validator) checkTrust(ctx context.Context, claims jwt.Claims) error {
+func (v *Validator) checkTrust(ctx context.Context, token string, claims jwt.Claims) error {
 	issuer, err := claims.GetIssuer()
 	if err != nil {
 		return err
@@ -100,8 +99,7 @@ func (v *Validator) checkTrust(ctx context.Context, claims jwt.Claims) error {
 
 	client, ok := v.clients[issuer]
 	if !ok {
-		// TODO: set to debug
-		v.logger.Infof("client not set for issuer %v, trust verification skipped", issuer)
+		v.logger.Debugf("client not set for issuer %v, trust verification skipped", issuer)
 		return nil
 	}
 
@@ -110,14 +108,13 @@ func (v *Validator) checkTrust(ctx context.Context, claims jwt.Claims) error {
 		return err
 	}
 
-	// tr, ok := v.tokenCache.Get(tokenID, issuer)
-	// if ok {
-	// 	// TODO: check expiration
-	// 	if tr.Blacklisted {
-	// 		return ErrBlackListedToken
-	// 	}
-	// 	return nil
-	// }
+	tr, ok := v.tokenCache.Load(tokenID, issuer)
+	if ok {
+		if tr.Blacklisted {
+			return ErrBlackListedToken
+		}
+		return nil
+	}
 
 	uri, err := url.Parse(client.tokenEndpoint)
 	if err != nil {
@@ -132,11 +129,6 @@ func (v *Validator) checkTrust(ctx context.Context, claims jwt.Claims) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri.String(), nil)
 	if err != nil {
 		return fmt.Errorf("cannot create request for GET %v: %w", uri.String(), err)
-	}
-
-	token, err := grpc_auth.AuthFromMD(ctx, "bearer")
-	if err != nil {
-		return fmt.Errorf("cannot get token from context: %w", err)
 	}
 
 	req.Header.Set("Accept", "application/protojson")
@@ -161,18 +153,16 @@ func (v *Validator) checkTrust(ctx context.Context, claims jwt.Claims) error {
 		return err
 	}
 
-	// tr = TokenRecord{
-	// 	Expiration:  gotToken.GetExpiration(),
-	// 	Blacklisted: gotToken.GetBlacklisted().GetFlag(),
-	// }
-	// v.tokenCache.Add(tokenID, issuer, tr)
-	// if tr.Blacklisted {
-	// 	return ErrBlackListedToken
-	// }
-	if gotToken.GetBlacklisted().GetFlag() {
+	tr = TokenRecord{
+		Blacklisted: gotToken.GetBlacklisted().GetFlag(),
+	}
+	if tr.Blacklisted {
+		v.tokenCache.AddBlacklisted(tokenID, issuer, gotToken.GetExpiration())
 		return ErrBlackListedToken
 	}
-
+	if !v.tokenCache.AddWhitelisted(tokenID, issuer) {
+		return ErrBlackListedToken
+	}
 	return nil
 }
 
@@ -193,16 +183,16 @@ func (v *Validator) ParseWithContext(ctx context.Context, token string) (jwt.Map
 	if err != nil {
 		return nil, errParseToken(err)
 	}
-	c, ok := t.Claims.(jwt.MapClaims)
+	claims, ok := t.Claims.(jwt.MapClaims)
 	if !ok {
 		return nil, errParseTokenInvalidClaimsType(t)
 	}
 	if v.verifyTrust {
-		if err = v.checkTrust(ctx, c); err != nil {
+		if err = v.checkTrust(ctx, token, claims); err != nil {
 			return nil, fmt.Errorf("%w: %w", ErrCannotVerifyTrust, err)
 		}
 	}
-	return c, nil
+	return claims, nil
 }
 
 func (v *Validator) ParseWithClaims(ctx context.Context, token string, claims jwt.Claims) error {
@@ -215,10 +205,9 @@ func (v *Validator) ParseWithClaims(ctx context.Context, token string, claims jw
 		return errParseToken(err)
 	}
 	if v.verifyTrust {
-		if err = v.checkTrust(ctx, claims); err != nil {
+		if err = v.checkTrust(ctx, token, claims); err != nil {
 			return fmt.Errorf("%w: %w", ErrCannotVerifyTrust, err)
 		}
 	}
-
 	return nil
 }

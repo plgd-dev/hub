@@ -256,6 +256,9 @@ func TestRequestHandlerGetResourcesWithBlacklistedToken(t *testing.T) {
 	_, err = getResources(pkgGrpc.CtxWithToken(ctx, "invalid"), c, req)
 	require.Error(t, err)
 
+	// whitelisted tokens expire after 10 seconds
+	time.Sleep(time.Second * 10)
+
 	// blacklist the token
 	token, err := pkgJwt.ParseToken(tokenStr)
 	require.NoError(t, err)
