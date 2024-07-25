@@ -95,7 +95,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 
 	var vopts []jwtValidator.Option
 	if len(clients) > 0 {
-		vopts = append(vopts, jwtValidator.WithTrustVerification(clients, config.TokenVerification.CacheExpiration))
+		vopts = append(vopts, jwtValidator.WithTrustVerification(clients, config.TokenVerification.CacheExpiration, ctx.Done()))
 	}
 
 	return &Validator{

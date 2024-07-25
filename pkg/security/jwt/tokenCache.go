@@ -124,6 +124,58 @@ func (tc *tokenIssuerCache) setTokenRecord(tokenID uuid.UUID, tr *tokenRecord) {
 	tc.tokens[tokenID] = tf
 }
 
+func (tc *tokenIssuerCache) checkExpirations(now time.Time) {
+	expired := make(map[uuid.UUID]*tokenRecord, 8)
+	tc.mutex.Lock()
+	for tokenID, tf := range tc.tokens {
+		if tr, ok := tf.tokenOrFuture.(*tokenRecord); ok && tr.IsExpired(now) {
+			if tr.onExpire != nil {
+				expired[tokenID] = tr
+			}
+			delete(tc.tokens, tokenID)
+		}
+	}
+	tc.mutex.Unlock()
+	for tokenID, tr := range expired {
+		tr.onExpire(tokenID)
+	}
+}
+
+func (tc *tokenIssuerCache) verifyTokenByRequest(ctx context.Context, token, tokenID string) (*pb.Token, error) {
+	uri, err := url.Parse(tc.tokenEndpoint)
+	if err != nil {
+		return nil, fmt.Errorf("cannot parse tokenEndpoint %v: %w", tc.tokenEndpoint, err)
+	}
+	query := uri.Query()
+	query.Add("idFilter", tokenID)
+	query.Add("includeBlacklisted", "true")
+	uri.RawQuery = query.Encode()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri.String(), nil)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create request for GET %v: %w", uri.String(), err)
+	}
+
+	// TODO: "Accept" -> pktNetHttp.AcceptHeaderKey: import cycle, must move to another package
+	req.Header.Set("Accept", "application/protojson")
+	req.Header.Set("Authorization", "bearer "+token)
+	resp, err := tc.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("cannot send request for GET %v: %w", tc.tokenEndpoint, err)
+	}
+
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	var gotToken pb.Token
+	err = pkgHttpPb.Unmarshal(resp.StatusCode, resp.Body, &gotToken)
+	if err != nil {
+		return nil, err
+	}
+	return &gotToken, nil
+}
+
 type TokenCache struct {
 	expiration time.Duration
 	cache      map[string]*tokenIssuerCache
@@ -135,11 +187,9 @@ func NewTokenCache(clients map[string]*Client, expiration time.Duration, logger 
 		expiration: expiration,
 		logger:     logger,
 	}
-	if len(clients) > 0 {
-		tc.cache = make(map[string]*tokenIssuerCache)
-		for issuer, client := range clients {
-			tc.cache[issuer] = newTokenIssuerCache(client)
-		}
+	tc.cache = make(map[string]*tokenIssuerCache)
+	for issuer, client := range clients {
+		tc.cache[issuer] = newTokenIssuerCache(client)
 	}
 	return tc
 }
@@ -161,7 +211,7 @@ func (t *TokenCache) getValidUntil(token *pb.Token) time.Time {
 }
 
 func (t *TokenCache) VerifyTrust(ctx context.Context, issuer, token string, tokenClaims jwt.Claims) error {
-	ic, ok := t.cache[issuer]
+	tc, ok := t.cache[issuer]
 	if !ok {
 		t.logger.Debugf("client not set for issuer %v, trust verification skipped", issuer)
 		return nil
@@ -175,7 +225,7 @@ func (t *TokenCache) VerifyTrust(ctx context.Context, issuer, token string, toke
 		return err
 	}
 	t.logger.Debugf("checking trust for issuer(%v) for token(id=%s)", issuer, tokenID)
-	tf, set := ic.getValidTokenRecordOrFuture(tokenUUID)
+	tf, set := tc.getValidTokenRecordOrFuture(tokenUUID)
 	if set == nil {
 		tv, errG := tf.Get(ctx)
 		if errG != nil {
@@ -188,43 +238,10 @@ func (t *TokenCache) VerifyTrust(ctx context.Context, issuer, token string, toke
 		return nil
 	}
 
-	uri, err := url.Parse(ic.tokenEndpoint)
-	if err != nil {
-		ic.removeToken(tokenUUID)
-		set(nil, err)
-		return fmt.Errorf("cannot parse tokenEndpoint %v: %w", ic.tokenEndpoint, err)
-	}
-	query := uri.Query()
-	query.Add("idFilter", tokenID)
-	query.Add("includeBlacklisted", "true")
-	uri.RawQuery = query.Encode()
-
 	t.logger.Debugf("requesting token(id=%s) verification by m2m", tokenID)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri.String(), nil)
+	respToken, err := tc.verifyTokenByRequest(ctx, token, tokenID)
 	if err != nil {
-		ic.removeToken(tokenUUID)
-		set(nil, err)
-		return fmt.Errorf("cannot create request for GET %v: %w", uri.String(), err)
-	}
-
-	req.Header.Set("Accept", "application/protojson")
-	req.Header.Set("Authorization", "bearer "+token)
-	resp, err := ic.client.Do(req)
-	if err != nil {
-		ic.removeToken(tokenUUID)
-		set(nil, err)
-		return fmt.Errorf("cannot send request for GET %v: %w", ic.tokenEndpoint, err)
-	}
-	defer func() {
-		if errC := resp.Body.Close(); errC != nil {
-			t.logger.Errorf("cannot close response body: %w", errC)
-		}
-	}()
-
-	var gotToken pb.Token
-	err = pkgHttpPb.Unmarshal(resp.StatusCode, resp.Body, &gotToken)
-	if err != nil {
-		ic.removeToken(tokenUUID)
+		tc.removeToken(tokenUUID)
 		set(nil, err)
 		return err
 	}
@@ -236,15 +253,21 @@ func (t *TokenCache) VerifyTrust(ctx context.Context, issuer, token string, toke
 		}
 	}
 
-	blacklisted := gotToken.GetBlacklisted().GetFlag()
-	validUntil := t.getValidUntil(&gotToken)
+	blacklisted := respToken.GetBlacklisted().GetFlag()
+	validUntil := t.getValidUntil(respToken)
 	tr := newTokenRecord(blacklisted, validUntil, onExpire)
 	t.logger.Debugf("token(id=%s) set (blacklisted=%v, validUntil=%v)", tokenID, blacklisted, validUntil)
-	ic.setTokenRecord(tokenUUID, tr)
+	tc.setTokenRecord(tokenUUID, tr)
 	set(tr, nil)
 
 	if blacklisted {
 		return ErrBlackListedToken
 	}
 	return nil
+}
+
+func (t *TokenCache) CheckExpirations(now time.Time) {
+	for _, ic := range t.cache {
+		ic.checkExpirations(now)
+	}
 }

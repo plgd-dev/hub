@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/plgd-dev/go-coap/v3/pkg/runner/periodic"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgHttpUri "github.com/plgd-dev/hub/v2/pkg/net/http/uri"
 )
@@ -33,6 +34,7 @@ type config struct {
 	verifyTrust     bool
 	clients         map[string]*Client
 	cacheExpiration time.Duration
+	stop            <-chan struct{}
 }
 
 type Option interface {
@@ -45,11 +47,12 @@ func (o optionFunc) apply(c *config) {
 	o(c)
 }
 
-func WithTrustVerification(clients map[string]*Client, cacheExpiration time.Duration) Option {
+func WithTrustVerification(clients map[string]*Client, cacheExpiration time.Duration, stop <-chan struct{}) Option {
 	return optionFunc(func(c *config) {
 		c.verifyTrust = true
 		c.clients = clients
 		c.cacheExpiration = cacheExpiration
+		c.stop = stop
 	})
 }
 
@@ -62,8 +65,13 @@ func NewValidator(keyCache KeyCacheI, logger log.Logger, opts ...Option) *Valida
 		keys:        keyCache,
 		verifyTrust: c.verifyTrust,
 	}
-	if c.verifyTrust {
+	if c.verifyTrust && len(c.clients) > 0 {
 		v.tokenCache = NewTokenCache(c.clients, c.cacheExpiration, logger)
+		add := periodic.New(c.stop, c.cacheExpiration/2)
+		add(func(now time.Time) bool {
+			v.tokenCache.CheckExpirations(now)
+			return true
+		})
 	}
 	return v
 }

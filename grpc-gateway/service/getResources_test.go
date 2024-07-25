@@ -218,8 +218,7 @@ func TestRequestHandlerGetResources(t *testing.T) {
 
 func TestRequestHandlerGetResourcesWithM2MTokenVerification(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
-
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT*100)
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
 	grpcCfg := grpcgwTest.MakeConfig(t)
@@ -272,6 +271,7 @@ func TestRequestHandlerGetResourcesWithM2MTokenVerification(t *testing.T) {
 	tokenID, err := token.GetID()
 	require.NoError(t, err)
 	m2mOauthTest.BlacklistTokens(ctx, t, []string{tokenID}, validTokenStr)
+	// request should fail
 	_, err = getResources(pkgGrpc.CtxWithToken(ctx, tokenStr), c, req)
 	require.ErrorContains(t, err, pkgJwt.ErrBlackListedToken.Error())
 
@@ -285,17 +285,38 @@ func TestRequestHandlerGetResourcesWithM2MTokenVerification(t *testing.T) {
 	require.NotEmpty(t, values)
 	pbTest.CmpResourceValues(t, []*pb.Resource{exp.Clone()}, values)
 
-	// parallel requests -> cache should be used, only a single request should be made
+	// parallel whitelisted requests -> cache should be used, only a single request should be made
 	var wg sync.WaitGroup
-	newValidTokenStr := m2mOauthTest.GetDefaultAccessToken(t)
+	tokenStr2 := m2mOauthTest.GetDefaultAccessToken(t)
 	for range 5 {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			values, err := getResources(pkgGrpc.CtxWithToken(ctx, newValidTokenStr), c, req)
-			assert.NoError(t, err)
-			assert.NotEmpty(t, values)
-			pbTest.CmpResourceValues(t, []*pb.Resource{exp.Clone()}, values)
+			values2, err2 := getResources(pkgGrpc.CtxWithToken(ctx, tokenStr2), c, req)
+			assert.NoError(t, err2)
+			assert.NotEmpty(t, values2)
+			pbTest.CmpResourceValues(t, []*pb.Resource{exp.Clone()}, values2)
+		}()
+	}
+	wg.Wait()
+
+	// wait for expiration
+	time.Sleep(grpcCfg.APIs.GRPC.Authorization.TokenVerification.CacheExpiration)
+
+	// blacklist the token
+	tokenStr3 := m2mOauthTest.GetDefaultAccessToken(t)
+	token, err = pkgJwt.ParseToken(tokenStr3)
+	require.NoError(t, err)
+	tokenID, err = token.GetID()
+	require.NoError(t, err)
+	m2mOauthTest.BlacklistTokens(ctx, t, []string{tokenID}, validTokenStr)
+	// parallel blacklisted requests -> cache should be used, only a single request should be made
+	for range 5 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			_, err2 := getResources(pkgGrpc.CtxWithToken(ctx, tokenStr3), c, req)
+			assert.ErrorContains(t, err2, pkgJwt.ErrBlackListedToken.Error())
 		}()
 	}
 	wg.Wait()
