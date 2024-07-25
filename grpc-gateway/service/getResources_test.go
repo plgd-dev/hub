@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"io"
+	"sync"
 	"testing"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	grpcgwTest "github.com/plgd-dev/hub/v2/grpc-gateway/test"
 	m2mOauthTest "github.com/plgd-dev/hub/v2/m2m-oauth-server/test"
+	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	pkgJwt "github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
@@ -22,6 +24,7 @@ import (
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/plgd-dev/hub/v2/test/service"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -213,7 +216,7 @@ func TestRequestHandlerGetResources(t *testing.T) {
 	}
 }
 
-func TestRequestHandlerGetResourcesWithBlacklistedToken(t *testing.T) {
+func TestRequestHandlerGetResourcesWithM2MTokenVerification(t *testing.T) {
 	deviceID := test.MustFindDeviceByName(test.TestDeviceName)
 
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT*100)
@@ -221,6 +224,7 @@ func TestRequestHandlerGetResourcesWithBlacklistedToken(t *testing.T) {
 
 	grpcCfg := grpcgwTest.MakeConfig(t)
 	grpcCfg.APIs.GRPC.Authorization.TokenVerification.CacheExpiration = time.Second * 2
+	grpcCfg.Log.Level = log.DebugLevel
 	tearDown := service.SetUp(ctx, t, service.WithGRPCGWConfig(grpcCfg))
 	defer tearDown()
 	validTokenStr := oauthTest.GetDefaultAccessToken(t)
@@ -271,9 +275,28 @@ func TestRequestHandlerGetResourcesWithBlacklistedToken(t *testing.T) {
 	_, err = getResources(pkgGrpc.CtxWithToken(ctx, tokenStr), c, req)
 	require.ErrorContains(t, err, pkgJwt.ErrBlackListedToken.Error())
 
+	// repeated requests should still fail, but use the cache
+	_, err = getResources(pkgGrpc.CtxWithToken(ctx, tokenStr), c, req)
+	require.ErrorContains(t, err, pkgJwt.ErrBlackListedToken.Error())
+
 	// non-blacklisted tokens should still work
 	values, err = getResources(pkgGrpc.CtxWithToken(ctx, validTokenStr), c, req)
 	require.NoError(t, err)
 	require.NotEmpty(t, values)
 	pbTest.CmpResourceValues(t, []*pb.Resource{exp.Clone()}, values)
+
+	// parallel requests -> cache should be used, only a single request should be made
+	var wg sync.WaitGroup
+	newValidTokenStr := m2mOauthTest.GetDefaultAccessToken(t)
+	for range 5 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			values, err := getResources(pkgGrpc.CtxWithToken(ctx, newValidTokenStr), c, req)
+			assert.NoError(t, err)
+			assert.NotEmpty(t, values)
+			pbTest.CmpResourceValues(t, []*pb.Resource{exp.Clone()}, values)
+		}()
+	}
+	wg.Wait()
 }

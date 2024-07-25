@@ -4,16 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
-	"net/url"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/plgd-dev/hub/v2/m2m-oauth-server/pb"
 	"github.com/plgd-dev/hub/v2/pkg/log"
-	pkgHttpPb "github.com/plgd-dev/hub/v2/pkg/net/http/pb"
 	pkgHttpUri "github.com/plgd-dev/hub/v2/pkg/net/http/uri"
-	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 )
 
 type KeyCacheI interface {
@@ -21,22 +16,8 @@ type KeyCacheI interface {
 	GetOrFetchKeyWithContext(ctx context.Context, token *jwt.Token) (interface{}, error)
 }
 
-type Client struct {
-	*http.Client
-	tokenEndpoint string
-}
-
-func NewClient(client *http.Client, tokenEndpoint string) *Client {
-	return &Client{
-		Client:        client,
-		tokenEndpoint: tokenEndpoint,
-	}
-}
-
 type Validator struct {
 	keys        KeyCacheI
-	logger      log.Logger
-	clients     map[string]*Client
 	verifyTrust bool
 	tokenCache  *TokenCache
 }
@@ -79,12 +60,10 @@ func NewValidator(keyCache KeyCacheI, logger log.Logger, opts ...Option) *Valida
 	}
 	v := &Validator{
 		keys:        keyCache,
-		logger:      logger,
-		clients:     c.clients,
 		verifyTrust: c.verifyTrust,
 	}
 	if c.verifyTrust {
-		v.tokenCache = NewTokenCache(c.cacheExpiration)
+		v.tokenCache = NewTokenCache(c.clients, c.cacheExpiration, logger)
 	}
 	return v
 }
@@ -103,71 +82,7 @@ func (v *Validator) checkTrust(ctx context.Context, token string, claims jwt.Cla
 		return err
 	}
 	issuer = pkgHttpUri.CanonicalURI(issuer)
-
-	client, ok := v.clients[issuer]
-	if !ok {
-		v.logger.Debugf("client not set for issuer %v, trust verification skipped", issuer)
-		return nil
-	}
-
-	tokenID, err := getID(claims)
-	if err != nil {
-		return err
-	}
-
-	tr, ok := v.tokenCache.Load(tokenID, issuer)
-	if ok {
-		if tr.Blacklisted {
-			return ErrBlackListedToken
-		}
-		return nil
-	}
-
-	uri, err := url.Parse(client.tokenEndpoint)
-	if err != nil {
-		return fmt.Errorf("cannot parse tokenEndpoint %v: %w", client.tokenEndpoint, err)
-	}
-	query := uri.Query()
-	query.Add("idFilter", tokenID)
-	query.Add("includeBlacklisted", "true")
-	uri.RawQuery = query.Encode()
-
-	v.logger.Infof("checking trust for issuer %v for token(id=%s)", issuer, tokenID)
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri.String(), nil)
-	if err != nil {
-		return fmt.Errorf("cannot create request for GET %v: %w", uri.String(), err)
-	}
-
-	req.Header.Set("Accept", "application/protojson")
-	req.Header.Set("Authorization", "bearer "+token)
-	resp, err := client.Do(req)
-	if err != nil {
-		return fmt.Errorf("cannot send request for GET %v: %w", client.tokenEndpoint, err)
-	}
-	defer func() {
-		if errC := resp.Body.Close(); errC != nil {
-			v.logger.Errorf("cannot close response body: %w", errC)
-		}
-	}()
-
-	var gotToken pb.Token
-	err = pkgHttpPb.Unmarshal(resp.StatusCode, resp.Body, &gotToken)
-	if err != nil {
-		return err
-	}
-
-	tr = TokenRecord{
-		Blacklisted: gotToken.GetBlacklisted().GetFlag(),
-	}
-	if tr.Blacklisted {
-		v.tokenCache.AddBlacklisted(tokenID, issuer, pkgTime.Unix(gotToken.GetExpiration(), 0))
-		return ErrBlackListedToken
-	}
-	//// TODO: configure expiration interval -> for now use 10s
-	if !v.tokenCache.AddWhitelisted(tokenID, issuer) {
-		return ErrBlackListedToken
-	}
-	return nil
+	return v.tokenCache.VerifyTrust(ctx, issuer, token, claims)
 }
 
 func (v *Validator) Parse(token string) (jwt.MapClaims, error) {
