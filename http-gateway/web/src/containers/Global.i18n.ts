@@ -502,4 +502,12 @@ export const messages = defineMessages({
         id: 'global.revoke',
         defaultMessage: 'Revoke',
     },
+    confirm: {
+        id: 'global.confirm',
+        defaultMessage: 'Confirm',
+    },
+    clear: {
+        id: 'global.clear',
+        defaultMessage: 'Clear',
+    },
 })

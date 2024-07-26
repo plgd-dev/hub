@@ -117,7 +117,15 @@ const AddNewTokenModal: FC<Props> = (props) => {
                 <Show.When isTrue={expiration === -1}>
                     <FormGroup compactFormComponentsView={false} id='expirationDate'>
                         <FormLabel text={_(t.expirationDate)} />
-                        <DatePicker onChange={(d) => setPickedExpiration(d)} />
+                        <DatePicker
+                            bottomButtons
+                            i18n={{
+                                clear: _(g.clear),
+                                confirm: _(g.confirm),
+                            }}
+                            minDate={new Date()}
+                            onChange={(d) => setPickedExpiration(d)}
+                        />
                     </FormGroup>
                 </Show.When>
             </Show>
