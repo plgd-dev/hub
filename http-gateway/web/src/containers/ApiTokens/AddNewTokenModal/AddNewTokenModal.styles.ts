@@ -17,3 +17,7 @@ export const copyIcon = (theme: ThemeType) => css`
     flex: 0 0 16px;
     cursor: pointer;
 `
+
+export const expNote = (theme: ThemeType) => css`
+    color: ${getTheme(theme, `colorPalette.neutral500`, colors.neutral500)};
+`

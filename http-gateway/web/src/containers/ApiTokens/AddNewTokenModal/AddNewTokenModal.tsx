@@ -112,7 +112,7 @@ const AddNewTokenModal: FC<Props> = (props) => {
             </FormGroup>
             <Show>
                 <Show.When isTrue={expiration > 0 && !tokenData}>
-                    <p>{_(t.tokenExpireOn, { date: formatDate(currentDate, dateFormat as Intl.DateTimeFormatOptions) })}</p>
+                    <p css={styles.expNote}>{_(t.tokenExpireOn, { date: formatDate(currentDate, dateFormat as Intl.DateTimeFormatOptions) })}</p>
                 </Show.When>
                 <Show.When isTrue={expiration === -1}>
                     <FormGroup compactFormComponentsView={false} id='expirationDate'>

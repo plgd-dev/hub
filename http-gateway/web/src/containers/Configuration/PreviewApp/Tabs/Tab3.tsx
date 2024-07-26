@@ -14,6 +14,7 @@ const components = [
     },
     { render: lazy(() => import('@shared-ui/stories/Form/Checkbox.snip')), name: 'Checkbox' },
     { render: lazy(() => import('@shared-ui/stories/Form/ColorPicker.snip')), name: 'ColorPicker' },
+    { render: lazy(() => import('@shared-ui/stories/Form/DatePicker.snip')), name: 'DatePicker' },
     { render: lazy(() => import('@shared-ui/stories/Form/Dropzone.snip')), name: 'Dropzone' },
     { render: lazy(() => import('@shared-ui/stories/Form/FormGroup.snip')), name: 'FormGroup' },
     { render: lazy(() => import('@shared-ui/stories/Form/FormInput.snip')), name: 'FormInput' },
