@@ -43,7 +43,6 @@ func (d *Decoder) Unmarshal(code int, input io.Reader, v protoreflect.ProtoMessa
 	if err != nil {
 		return err
 	}
-
 	d.logger.Debugf("data: %s\n", data)
 
 	if code != http.StatusOK {

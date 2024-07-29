@@ -113,15 +113,27 @@ func (tc *tokenIssuerCache) getValidTokenRecordOrFuture(tokenID uuid.UUID) (toke
 	return tf, nil
 }
 
-func (tc *tokenIssuerCache) removeToken(tokenID uuid.UUID) {
+func (tc *tokenIssuerCache) removeTokenRecord(tokenID uuid.UUID) {
+	tc.mutex.Lock()
+	defer tc.mutex.Unlock()
 	delete(tc.tokens, tokenID)
 }
 
-func (tc *tokenIssuerCache) setTokenRecord(tokenID uuid.UUID, tr *tokenRecord) {
+func (tc *tokenIssuerCache) removeTokenRecordAndSetErrorOnFuture(tokenUUID uuid.UUID, setTRFuture future.SetFunc, err error) {
+	tc.removeTokenRecord(tokenUUID)
+	setTRFuture(nil, err)
+}
+
+func (tc *tokenIssuerCache) setTokenRecord(tokenUUID uuid.UUID, tr *tokenRecord) {
 	tf := makeTokenOrFuture(tr, nil)
 	tc.mutex.Lock()
 	defer tc.mutex.Unlock()
-	tc.tokens[tokenID] = tf
+	tc.tokens[tokenUUID] = tf
+}
+
+func (tc *tokenIssuerCache) setTokenRecordAndWaitingFuture(tokenUUID uuid.UUID, tr *tokenRecord, setTRFuture future.SetFunc) {
+	tc.setTokenRecord(tokenUUID, tr)
+	setTRFuture(tr, nil)
 }
 
 func (tc *tokenIssuerCache) checkExpirations(now time.Time) {
@@ -156,7 +168,6 @@ func (tc *tokenIssuerCache) verifyTokenByRequest(ctx context.Context, token, tok
 		return nil, fmt.Errorf("cannot create request for GET %v: %w", uri.String(), err)
 	}
 
-	// TODO: "Accept" -> pktNetHttp.AcceptHeaderKey: import cycle, must move to another package
 	req.Header.Set("Accept", "application/protojson")
 	req.Header.Set("Authorization", "bearer "+token)
 	resp, err := tc.client.Do(req)
@@ -210,17 +221,26 @@ func (t *TokenCache) getValidUntil(token *pb.Token) time.Time {
 	return time.Now().Add(t.expiration)
 }
 
+func getTokenUUID(tokenClaims jwt.Claims) (string, uuid.UUID, error) {
+	tokenID, err := getID(tokenClaims)
+	if err != nil {
+		return "", uuid.Nil, err
+	}
+	tokenUUID, err := uuid.Parse(tokenID)
+	if err != nil {
+		return "", uuid.Nil, err
+	}
+	return tokenID, tokenUUID, nil
+}
+
 func (t *TokenCache) VerifyTrust(ctx context.Context, issuer, token string, tokenClaims jwt.Claims) error {
 	tc, ok := t.cache[issuer]
 	if !ok {
 		t.logger.Debugf("client not set for issuer %v, trust verification skipped", issuer)
 		return nil
 	}
-	tokenID, err := getID(tokenClaims)
-	if err != nil {
-		return err
-	}
-	tokenUUID, err := uuid.Parse(tokenID)
+
+	tokenID, tokenUUID, err := getTokenUUID(tokenClaims)
 	if err != nil {
 		return err
 	}
@@ -241,8 +261,7 @@ func (t *TokenCache) VerifyTrust(ctx context.Context, issuer, token string, toke
 	t.logger.Debugf("requesting token(id=%s) verification by m2m", tokenID)
 	respToken, err := tc.verifyTokenByRequest(ctx, token, tokenID)
 	if err != nil {
-		tc.removeToken(tokenUUID)
-		set(nil, err)
+		tc.removeTokenRecordAndSetErrorOnFuture(tokenUUID, set, err)
 		return err
 	}
 
@@ -257,8 +276,7 @@ func (t *TokenCache) VerifyTrust(ctx context.Context, issuer, token string, toke
 	validUntil := t.getValidUntil(respToken)
 	tr := newTokenRecord(blacklisted, validUntil, onExpire)
 	t.logger.Debugf("token(id=%s) set (blacklisted=%v, validUntil=%v)", tokenID, blacklisted, validUntil)
-	tc.setTokenRecord(tokenUUID, tr)
-	set(tr, nil)
+	tc.setTokenRecordAndWaitingFuture(tokenUUID, tr, set)
 
 	if blacklisted {
 		return ErrBlackListedToken
