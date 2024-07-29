@@ -74,6 +74,7 @@ const PendingCommandsListPage = lazy(() => import('./containers/PendingCommands/
 // Internal
 const MockApp = lazy(() => import('@shared-ui/app/clientApp/MockApp'))
 const ConfigurationPage = lazy(() => import('./containers/Configuration'))
+const TestPage = lazy(() => import('./containers/Test'))
 
 const MenuTranslate = (props: { id: string }) => {
     const { id } = props
@@ -533,7 +534,7 @@ export const Routes = () => {
                 </Route>
             </Route>
 
-            {/* ***** CONFIGURATION ***** */}
+            {/* ***** API TOKENS ***** */}
             <Route path='/api-tokens'>
                 <Route element={withSuspense(<ApiTokensListPage />)} path='' />
                 <Route element={withSuspense(<ApiTokensDetailPage />)} path=':apiTokenId' />
@@ -548,6 +549,7 @@ export const Routes = () => {
             {/* ***** OTHERS ***** */}
             <Route element={withSuspense(<PendingCommandsListPage />)} path='/pending-commands' />
             <Route element={withSuspense(<MockApp />)} path='/devices-code-redirect/*' />
+            <Route element={withSuspense(<TestPage />)} path='/test' />
             <Route element={<NotFoundPage message={_(t.notFoundPageDefaultMessage)} title={_(t.pageTitle)} />} path='*' />
         </RoutesGroup>
     )
