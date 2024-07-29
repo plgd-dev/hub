@@ -13,7 +13,6 @@ import (
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	grpcgwTest "github.com/plgd-dev/hub/v2/grpc-gateway/test"
 	m2mOauthTest "github.com/plgd-dev/hub/v2/m2m-oauth-server/test"
-	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	pkgJwt "github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
@@ -223,7 +222,6 @@ func TestRequestHandlerGetResourcesWithM2MTokenVerification(t *testing.T) {
 
 	grpcCfg := grpcgwTest.MakeConfig(t)
 	grpcCfg.APIs.GRPC.Authorization.TokenVerification.CacheExpiration = time.Second * 2
-	grpcCfg.Log.Level = log.DebugLevel
 	tearDown := service.SetUp(ctx, t, service.WithGRPCGWConfig(grpcCfg))
 	defer tearDown()
 	validTokenStr := oauthTest.GetDefaultAccessToken(t)
