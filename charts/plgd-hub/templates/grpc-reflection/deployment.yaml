@@ -85,8 +85,7 @@ spec:
               mountPath: {{ $cert }}
             {{- end }}
             {{- if .Values.global.authorizationCAPool }}
-            - name: {{ .Values.extraAuthorizationCAPool.name }}
-              mountPath: {{ .Values.extraAuthorizationCAPool.mountPath }}
+              {{- include "plgd-hub.extraCAPoolMount" (list . .Values.extraCAPool.internal) | nindent 12 }}
             {{- end }}
             {{- with .Values.grpcreflection.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
@@ -104,9 +103,7 @@ spec:
             secretName: {{ include "plgd-hub.grpcreflection.serviceCertName" . }}
         {{- end }}
         {{- if .Values.global.authorizationCAPool }}
-        - name: {{ .Values.extraAuthorizationCAPool.name }}
-          secret:
-            secretName: {{ .Values.extraAuthorizationCAPool.name }}
+          {{- include "plgd-hub.extraCAPoolVolume" (list . .Values.extraCAPool.internal) | nindent 8 }}
         {{- end }}
         {{- with .Values.grpcreflection.extraVolumes }}
         {{- toYaml . | nindent 8 }}

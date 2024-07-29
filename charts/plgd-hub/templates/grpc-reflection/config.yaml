@@ -40,9 +40,10 @@ data:
           maxConnectionAgeGrace: {{ .apis.grpc.keepAlive.maxConnectionAgeGrace }}
           time: {{ .apis.grpc.keepAlive.time }}
           timeout: {{ .apis.grpc.keepAlive.timeout }}
-        tls:
-          {{- $tls := .apis.grpc.tls }}
-          {{- include "plgd-hub.certificateConfig" (list $ $tls $grpcReflectionCertPath) | indent 8 }}
+          tls:
+            {{- $tls := .apis.grpc.tls }}
+            {{- include "plgd-hub.internalCertificateConfig" (list $ $tls $grpcReflectionCertPath) | indent 8 }}
+
           clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
   {{- end }}
 {{- end }}

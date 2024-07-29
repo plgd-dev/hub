@@ -11,13 +11,6 @@
 {{- end }}
 {{- end }}
 
-{{- define  "plgd-hub.grpcreflection.image" -}}
-    {{- $registryName := .Values.grpcreflection.image.registry | default "" -}}
-    {{- $repositoryName := .Values.grpcreflection.image.repository -}}
-    {{- $tag := .Values.grpcreflection.image.tag | default .Chart.AppVersion | toString -}}
-    {{- printf "%s%s:%s" $registryName $repositoryName  $tag -}}
-{{- end -}}
-
 {{- define  "plgd-hub.grpcreflection.configName" -}}
     {{- $fullName :=  include "plgd-hub.grpcreflection.fullname" . -}}
     {{- printf "%s-cfg" $fullName }}
