@@ -1,6 +1,7 @@
 export type Props = {
     columns: any
     data: any
+    dataTestId?: string
     deleteApiMethod?: (selected: string[]) => Promise<any[]>
     globalSearch?: boolean
     i18n: {

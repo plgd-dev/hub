@@ -12,6 +12,8 @@ import { tagVariants } from '@shared-ui/components/Atomic/Tag/constants'
 import StatusPill from '@shared-ui/components/Atomic/StatusPill'
 import { states } from '@shared-ui/components/Atomic/StatusPill/constants'
 import Spacer from '@shared-ui/components/Atomic/Spacer'
+import StatusTag from '@shared-ui/components/Atomic/StatusTag'
+import { tagVariants as statusTagVariants } from '@shared-ui/components/Atomic/StatusTag/constants'
 
 import PageLayout from '@/containers/Common/PageLayout'
 import { messages as confT } from '../../SnippetService.i18n'
@@ -22,8 +24,6 @@ import { pages } from '@/routes'
 import PageListTemplate from '@/containers/Common/PageListTemplate/PageListTemplate'
 import { deleteConditionsApi } from '@/containers/SnippetService/rest'
 import DateFormat from '@/containers/PendingCommands/DateFormat'
-import StatusTag from '@shared-ui/components/Atomic/StatusTag'
-import { tagVariants as statusTagVariants } from '@shared-ui/components/Atomic/StatusTag/constants'
 import testId from '@/testId'
 
 const ListPage: FC<any> = () => {
@@ -131,6 +131,7 @@ const ListPage: FC<any> = () => {
             <PageListTemplate
                 columns={columns}
                 data={data}
+                dataTestId={testId.snippetService.conditions.list.pageTemplate}
                 deleteApiMethod={deleteConditionsApi}
                 i18n={{
                     singleSelected: _(confT.condition),

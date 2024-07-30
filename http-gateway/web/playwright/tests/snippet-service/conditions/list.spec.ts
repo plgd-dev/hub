@@ -27,7 +27,7 @@ test('snippet-service-configurations-list-link-to-detail-icon', async ({ page })
     await page.getByTestId(testId.menu.snippetService.link).click()
     await page.getByTestId(testId.menu.snippetService.conditions).click()
 
-    page.setViewportSize({ width: 1600, height: 800 })
+    await page.setViewportSize({ width: 1600, height: 800 })
 
     await expect(page.getByTestId(`${testId.snippetService.conditions.list.table}-row-0-detail`)).toBeVisible()
     await page.getByTestId(`${testId.snippetService.conditions.list.table}-row-0-detail`).click()
@@ -40,7 +40,7 @@ test('snippet-service-configurations-list-add-open-close', async ({ page }) => {
     await page.getByTestId(testId.menu.snippetService.link).click()
     await page.getByTestId(testId.menu.snippetService.conditions).click()
 
-    page.setViewportSize({ width: 1600, height: 800 })
+    await page.setViewportSize({ width: 1600, height: 800 })
 
     await expect(page.getByTestId(testId.snippetService.conditions.list.addButton)).toBeVisible()
     await page.getByTestId(testId.snippetService.conditions.list.addButton).click()
@@ -82,7 +82,7 @@ test('snippet-service-configurations-list-add', async ({ page }) => {
     await page.getByTestId(testId.menu.snippetService.link).click()
     await page.getByTestId(testId.menu.snippetService.conditions).click()
 
-    page.setViewportSize({ width: 1600, height: 800 })
+    await page.setViewportSize({ width: 1600, height: 800 })
 
     await expect(page.getByTestId(testId.snippetService.conditions.list.addButton)).toBeVisible()
     await page.getByTestId(testId.snippetService.conditions.list.addButton).click()
@@ -207,4 +207,26 @@ test('snippet-service-configurations-list-add', async ({ page }) => {
 
     await expect(page).toHaveURL(/\/snippet-service\/conditions/)
     await expect(page).toHaveTitle(/Conditions | plgd Dashboard/)
+})
+
+test('snippet-service-configurations-list-delete', async ({ page }) => {
+    await page.goto('')
+    await page.getByTestId(testId.menu.snippetService.link).click()
+    await page.getByTestId(testId.menu.snippetService.conditions).click()
+
+    await page.setViewportSize({ width: 1600, height: 800 })
+
+    await expect(page.getByTestId(`${testId.snippetService.conditions.list.table}-row-0-delete`)).toBeVisible()
+    await page.getByTestId(`${testId.snippetService.conditions.list.table}-row-0-delete`).click()
+
+    await expect(page.getByTestId(`${testId.snippetService.conditions.list.pageTemplate}-delete-modal`)).toBeVisible()
+
+    await expect(page).toHaveScreenshot({ fullPage: true, omitBackground: true, animations: 'disabled' })
+
+    await expect(page.getByTestId(`${testId.snippetService.conditions.list.pageTemplate}-delete-modal-cancel`)).toBeVisible()
+    await expect(page.getByTestId(`${testId.snippetService.conditions.list.pageTemplate}-delete-modal-delete`)).toBeVisible()
+
+    await page.getByTestId(`${testId.snippetService.conditions.list.pageTemplate}-delete-modal-delete`).click()
+
+    await expect(page.getByTestId(`${testId.snippetService.conditions.list.table}-row-0-delete`)).not.toBeVisible()
 })

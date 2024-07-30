@@ -1,5 +1,4 @@
 import React, { FC, useCallback, useMemo, useState } from 'react'
-import TableList from '@/containers/Common/TableList/TableList'
 import pick from 'lodash/pick'
 import isFunction from 'lodash/isFunction'
 
@@ -10,11 +9,13 @@ import IconTrash from '@shared-ui/components/Atomic/Icon/components/IconTrash'
 import DeleteModal from '@shared-ui/components/Atomic/Modal/components/DeleteModal'
 
 import { Props, defaultProps } from './PageListTemplate.types'
+import TableList from '@/containers/Common/TableList/TableList'
 
 const PageListTemplate: FC<Props> = (props) => {
     const {
         columns: columnsProp,
         data,
+        dataTestId,
         globalSearch,
         loading,
         deleteApiMethod,
@@ -136,6 +137,7 @@ const PageListTemplate: FC<Props> = (props) => {
             />
 
             <DeleteModal
+                dataTestId={dataTestId?.concat('-delete-modal')}
                 deleteInformation={
                     selectedCount === 1
                         ? [
@@ -146,17 +148,19 @@ const PageListTemplate: FC<Props> = (props) => {
                 }
                 footerActions={[
                     {
+                        dataTestId: dataTestId?.concat('-delete-modal-cancel'),
+                        disabled: loading,
                         label: i18n.cancel,
                         onClick: handleCloseDeleteModal,
                         variant: 'tertiary',
-                        disabled: loading,
                     },
                     {
+                        dataTestId: dataTestId?.concat('-delete-modal-delete'),
                         label: i18n.delete,
-                        onClick: deleteMethod,
-                        variant: 'primary',
                         loading: deleting,
                         loadingText: i18n.loading,
+                        onClick: deleteMethod,
+                        variant: 'primary',
                     },
                 ]}
                 fullSizeButtons={selectedCount > 1}

@@ -132,6 +132,7 @@ const testId = {
             list: {
                 table: 'hub-snippet-service-conditions-list-table',
                 addButton: 'hub-snippet-service-conditions-list-add-button',
+                pageTemplate: 'hub-snippet-service-conditions-list-page-template',
             },
             detail: {
                 deleteButton: 'hub-snippet-service-conditions-detail-delete-button',
