@@ -141,6 +141,16 @@ const testId = {
                 tabGeneral: 'hub-snippet-service-conditions-detail-tab-general',
                 tabFilters: 'hub-snippet-service-conditions-detail-tab-filters',
                 tabApiAccessToken: 'hub-snippet-service-conditions-detail-tab-api-access-token',
+                versionSelector: 'hub-snippet-service-conditions-detail-version-selector',
+                deleteModal: 'hub-snippet-service-conditions-detail-delete-modal',
+                tab1: {
+                    form: {
+                        name: 'hub-snippet-service-conditions-detail-tab1-form-name',
+                    },
+                },
+                bottomPanel: 'hub-snippet-service-conditions-detail-bottom-panel',
+                bottomPanelSave: 'hub-snippet-service-conditions-detail-bottom-panel-save',
+                bottomPanelReset: 'hub-snippet-service-conditions-detail-bottom-panel-reset',
             },
             addPage: {
                 wizard: 'hub-snippet-service-conditions-add-page-wizard',

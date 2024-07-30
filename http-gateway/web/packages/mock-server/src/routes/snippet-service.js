@@ -11,6 +11,7 @@ const router = express.Router()
 let configurationsAdd = false
 let configurationsDeleted = false
 let conditionDeleted = false
+let conditionUpdated = false
 
 const configurationIdCheck = [check('configurationId').notEmpty().withMessage('Configuration ID must be alphanumeric')]
 
@@ -31,6 +32,7 @@ router.get('/api/v1/conditions/api-reset', (req, res) => {
     try {
         checkError(req, res)
         conditionDeleted = false
+        conditionUpdated = false
 
         res.send('OK')
     } catch (e) {
@@ -147,6 +149,9 @@ router.get('/api/v1/conditions', (req, res) => {
         } else if (conditionDeleted) {
             // list page after delete
             loadResponseStreamFromFile(path.join('snippet-service', 'conditions', 'list', `listEmpty.json`), res)
+        } else if (conditionUpdated) {
+            // list page after delete
+            loadResponseStreamFromFile(path.join('snippet-service', 'conditions', 'list', `listUpdate.json`), res)
         } else {
             // list page
             loadResponseStreamFromFile(path.join('snippet-service', 'conditions', 'list', `list.json`), res)
@@ -169,6 +174,16 @@ router.delete('/api/v1/conditions', (req, res) => {
     try {
         checkError(req, res)
         conditionDeleted = true
+        res.status(200).send('OK')
+    } catch (e) {
+        res.status(500).send(escapeHtml(e.toString()))
+    }
+})
+
+router.put('/api/v1/conditions/:conditionId', configurationIdCheck, (req, res) => {
+    try {
+        checkError(req, res)
+        conditionUpdated = true
         res.status(200).send('OK')
     } catch (e) {
         res.status(500).send(escapeHtml(e.toString()))

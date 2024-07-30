@@ -1,6 +1,7 @@
 import { test, expect, Page } from '@playwright/test'
 import testId from '../../../../src/testId'
 import { JTW_TOKEN } from '../../constants'
+import { addAndCheckFilter, openConditionFilter, removeAndCheck } from '../../utils'
 
 test('snippet-service-configurations-list-open', async ({ page }) => {
     await page.goto('')
@@ -55,27 +56,6 @@ test('snippet-service-configurations-list-add-open-close', async ({ page }) => {
     await page.getByTestId(`${testId.snippetService.conditions.addPage.wizard}-close`).click()
     await expect(page).toHaveTitle(/Conditions | plgd Dashboard/)
 })
-
-const openConditionFilter = async (page: Page, locator: string) => {
-    await expect(page.getByTestId(locator)).toBeVisible()
-    await page.getByTestId(`${locator}-header`).click()
-    await expect(page.getByTestId(`${locator}-content`)).toBeVisible()
-}
-
-const addAndCheckFilter = async (page: Page, locator: string) => {
-    await page.getByTestId(`${locator}-input`).fill('/oic/p')
-    await page.getByTestId(`${locator}-addButton`).click()
-
-    await expect(page.getByTestId(`${locator}-content-table-row-0-attribute`)).toBeVisible()
-    await expect(page.getByTestId(`${locator}-content-table-row-0-value`)).toBeVisible()
-}
-
-const removeAndCheck = async (page: Page, locator: string) => {
-    await page.getByTestId(`${locator}-content-table-row-0-remove`).click()
-
-    await expect(page.getByTestId(`${locator}-content-table-row-0-attribute`)).not.toBeVisible()
-    await expect(page.getByTestId(`${locator}-content-table-row-0-value`)).not.toBeVisible()
-}
 
 test('snippet-service-configurations-list-add', async ({ page }) => {
     await page.goto('')
