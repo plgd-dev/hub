@@ -139,7 +139,7 @@ const Tab3: FC<Props> = (props) => {
                     </Spacer>
                     <Row>
                         {chunks.map((chunk, key) => (
-                            <Column key={key} xxl={6}>
+                            <Column key={`chunk-col-${key}`} xxl={6}>
                                 <SimpleStripTable leftColSize={6} rightColSize={6} rows={chunk} />
                             </Column>
                         ))}

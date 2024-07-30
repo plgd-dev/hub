@@ -30,16 +30,17 @@ const DetailPage: FC<any> = () => {
         [data]
     )
 
-    const claimsData = useMemo(() => {
-        // const formater: { [key: string]: (value: string | number) => string } = { exp: (val: string | number) => formatDateValue(val) }
-        return parseClaimData({
-            data,
-            hidden: ['issuedAt', 'version', 'expiration', 'name'],
-            dateFormat: ['auth_time'],
-            formatTime,
-            formatDate,
-        })
-    }, [data, formatDate, formatTime])
+    const claimsData = useMemo(
+        () =>
+            parseClaimData({
+                data,
+                hidden: ['issuedAt', 'version', 'expiration', 'name'],
+                dateFormat: ['auth_time'],
+                formatTime,
+                formatDate,
+            }),
+        [data, formatDate, formatTime]
+    )
 
     const chunks = useMemo(() => chunk(claimsData, 2), [claimsData])
 
@@ -87,7 +88,7 @@ const DetailPage: FC<any> = () => {
                     </Spacer>
                     <Row>
                         {chunks.map((chunk, key) => (
-                            <Column key={key} xxl={6}>
+                            <Column key={`chunk-col-${key}`} xxl={6}>
                                 <SimpleStripTable leftColSize={6} rightColSize={6} rows={chunk} />
                             </Column>
                         ))}
