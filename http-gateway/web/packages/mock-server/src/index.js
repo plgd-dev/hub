@@ -1,8 +1,9 @@
 const express = require('express')
 const cors = require('cors')
 const axios = require('axios')
-const { checkError, loadResponseStreamFromFile } = require('./utils')
+const { checkError, loadResponseStreamFromFile, loadResponseFromFile } = require('./utils')
 const bodyParser = require('body-parser')
+const path = require('path')
 
 const devices = require('./routes/devices')
 const dps = require('./routes/dps')
@@ -68,6 +69,24 @@ app.get('/repos/plgd-dev/hub/releases/latest', (req, res) => {
         } else {
             res.send(versionData)
         }
+    } catch (e) {
+        res.status(500).send(e.toString())
+    }
+})
+
+app.get('/m2m-oauth-server/.well-known/openid-configuration', (req, res) => {
+    try {
+        checkError(req, res)
+        axios.get('https://try.plgd.cloud/m2m-oauth-server/.well-known/openid-configuration').then((r) => res.send(r.data))
+    } catch (e) {
+        res.status(500).send(e.toString())
+    }
+})
+
+app.post('/m2m-oauth-server/api/v1/tokens', (req, res) => {
+    try {
+        checkError(req, res)
+        loadResponseFromFile(path.join('api-tokens', 'create-no-expiration.json'), res)
     } catch (e) {
         res.status(500).send(e.toString())
     }

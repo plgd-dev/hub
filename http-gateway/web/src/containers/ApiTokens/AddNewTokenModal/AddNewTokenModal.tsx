@@ -92,7 +92,7 @@ const AddNewTokenModal: FC<Props> = (props) => {
         <div>
             <FormGroup compactFormComponentsView={false} id='note'>
                 <FormLabel required text={_(g.name)} />
-                <FormInput onChange={(e) => setName(e.target.value)} value={name} />
+                <FormInput dataTestId={dataTestId?.concat('-form-name')} onChange={(e) => setName(e.target.value)} value={name} />
             </FormGroup>
             <FormGroup compactFormComponentsView={false} id='expiration'>
                 <FormLabel required text={_(t.expiration)} />

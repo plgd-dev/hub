@@ -20,6 +20,7 @@ import { messages as g } from '@/containers/Global.i18n'
 import { useConfigurationList } from '@/containers/SnippetService/hooks'
 import AddNewTokenModal from '@/containers/ApiTokens/AddNewTokenModal'
 import { CreateTokenReturnType } from '@/containers/ApiTokens/ApiTokens.types'
+import testId from '@/testId'
 
 const Step3: FC<Props> = (props) => {
     const { defaultFormData, onFinish } = props
@@ -79,6 +80,7 @@ const Step3: FC<Props> = (props) => {
                 <FormLabel required text={_(confT.selectConfiguration)} />
                 <FormSelect
                     isClearable
+                    dataTestId={testId.snippetService.conditions.addPage.step3.selectConfiguration}
                     error={!!errors.configurationId}
                     onChange={(option: OptionType) => {
                         const v = option ? option.value : ''
@@ -93,6 +95,7 @@ const Step3: FC<Props> = (props) => {
             <FormGroup error={errors.apiAccessToken ? _(g.requiredField, { field: _(g.name) }) : undefined} id='apiAccessToken'>
                 <FormLabel required text={_(confT.APIAccessToken)} />
                 <FormTextarea
+                    dataTestId={testId.snippetService.conditions.addPage.step3.apiToken}
                     {...register('apiAccessToken', { required: true, validate: (val) => val !== '' })}
                     onBlur={(e) => updateField('apiAccessToken', e.target.value)}
                     style={{ height: 450 }}
@@ -103,6 +106,7 @@ const Step3: FC<Props> = (props) => {
                 <>
                     <Spacer type='mt-3'>
                         <Button
+                            dataTestId={testId.snippetService.conditions.addPage.step3.generateApiToken}
                             loading={loading}
                             loadingText={_(g.loading)}
                             onClick={(e) => {
@@ -116,6 +120,7 @@ const Step3: FC<Props> = (props) => {
                         </Button>
                     </Spacer>
                     <AddNewTokenModal
+                        dataTestId={testId.snippetService.conditions.addPage.step3.generateApiTokenModal}
                         defaultName={`${defaultFormData.name}-condition` || ''}
                         handleClose={() => setAddTokenModal(false)}
                         onSubmit={handleUpdateToken}
@@ -125,6 +130,7 @@ const Step3: FC<Props> = (props) => {
             )}
 
             <StepButtons
+                dataTestId={testId.snippetService.conditions.addPage.step3.buttons}
                 disableNext={!configurationId || !apiAccessToken || Object.keys(errors).length > 0}
                 i18n={{
                     back: _(g.back),

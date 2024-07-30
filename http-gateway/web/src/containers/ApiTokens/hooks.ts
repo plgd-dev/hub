@@ -2,14 +2,12 @@ import { useContext, useEffect, useState } from 'react'
 
 import AppContext from '@shared-ui/app/share/AppContext'
 import { useStreamApi } from '@shared-ui/common/hooks'
-import { security } from '@shared-ui/common/services'
 
 import { getApiTokenUrlApi } from '@/containers/ApiTokens/rest'
 import { ApiTokensApiEndpoints } from '@/containers/ApiTokens/constants'
 
 export const useApiTokensList = (requestActive = true) => {
     const { telemetryWebTracer, unauthorizedCallback } = useContext(AppContext)
-    const { m2mOauthClient } = security.getWellKnownConfig()
 
     const [url, setUrl] = useState('')
 
@@ -19,7 +17,7 @@ export const useApiTokensList = (requestActive = true) => {
                 setUrl(`${result}${ApiTokensApiEndpoints.API_TOKENS}`)
             })
         }
-    }, [m2mOauthClient.authority, requestActive])
+    }, [requestActive])
 
     return useStreamApi(url, {
         telemetryWebTracer,
@@ -31,7 +29,6 @@ export const useApiTokensList = (requestActive = true) => {
 
 export const useApiTokenDetail = (id: string, requestActive = true) => {
     const { telemetryWebTracer, unauthorizedCallback } = useContext(AppContext)
-    const { m2mOauthClient } = security.getWellKnownConfig()
 
     const [url, setUrl] = useState('')
     const [data, setData] = useState<any>({})
@@ -43,7 +40,7 @@ export const useApiTokenDetail = (id: string, requestActive = true) => {
                 setUrl(`${result}${ApiTokensApiEndpoints.API_TOKENS}?idFilter=${id}`)
             })
         }
-    }, [id, m2mOauthClient.authority, requestActive])
+    }, [id, requestActive])
 
     const {
         data: tokenData,

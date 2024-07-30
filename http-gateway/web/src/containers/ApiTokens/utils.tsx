@@ -9,8 +9,8 @@ import { formatDateVal } from '@/containers/PendingCommands/DateFormat'
 
 export const getExpiration = (
     value: string | number,
-    formatDate: any,
-    formatTime: any,
+    formatDate: (date: Date) => string,
+    formatTime: (time: Date) => string,
     i18n: {
         expiredText: (date: string) => string
         expiresOn: (date: string) => string
@@ -20,7 +20,7 @@ export const getExpiration = (
     const currentDate = new Date()
     const v = typeof value === 'string' ? parseInt(value, 10) : value
     const val = new Date(v * 1000)
-    const formatedDate = `${formatDateVal(val, formatDate, formatTime)}`
+    const formattedDate = `${formatDateVal(val, formatDate, formatTime)}`
 
     if (v === 0) {
         return (
@@ -36,7 +36,7 @@ export const getExpiration = (
             <StatusTag lowercase={false} size={tagSizes.MEDIUM} variant={statusTagVariants.ERROR}>
                 <>
                     <IconWarning />
-                    {i18n.expiredText(formatedDate)}
+                    {i18n.expiredText(formattedDate)}
                 </>
             </StatusTag>
         )
@@ -45,7 +45,7 @@ export const getExpiration = (
             <StatusTag lowercase={false} size={tagSizes.MEDIUM} variant={statusTagVariants.INFO}>
                 <>
                     <IconInfo />
-                    {i18n.expiresOn(formatedDate)}
+                    {i18n.expiresOn(formattedDate)}
                 </>
             </StatusTag>
         )
@@ -53,7 +53,7 @@ export const getExpiration = (
 }
 
 const formatDateValue = (value: string | number, formatDate: any, formatTime: any) => {
-    const val = typeof value === 'string' ? parseInt(value, 0) : value
+    const val = typeof value === 'string' ? parseInt(value, 10) : value
     return formatDateVal(new Date(val * 1000), formatDate, formatTime)
 }
 
@@ -79,7 +79,7 @@ export const parseClaimData = (options: ParseClaimDataType) => {
 
     const getValue = (key: string, claim: any) => {
         if (typeof claim === 'string' || typeof claim === 'number') {
-            return dateFormat && dateFormat.includes(key) ? formatDateValue(claim, formatDate, formatTime) : claim
+            return dateFormat?.includes(key) ? formatDateValue(claim, formatDate, formatTime) : claim
         }
 
         if (typeof claim === 'boolean') {

@@ -159,6 +159,13 @@ const testId = {
                     jqExpressionFilter: 'hub-snippet-service-conditions-add-page-step2-jq-expression-filter',
                     buttons: 'hub-snippet-service-conditions-add-page-step2-buttons',
                 },
+                step3: {
+                    selectConfiguration: 'hub-snippet-service-conditions-add-page-step3-select-configuration',
+                    apiToken: 'hub-snippet-service-conditions-add-page-step3-api-token',
+                    generateApiToken: 'hub-snippet-service-conditions-add-page-step3-generate-api-token',
+                    generateApiTokenModal: 'hub-snippet-service-conditions-add-page-step3-generate-api-token-modal',
+                    buttons: 'hub-snippet-service-conditions-add-page-step3-buttons',
+                },
             },
         },
         appliedConfigurations: {

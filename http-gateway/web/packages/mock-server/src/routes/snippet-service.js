@@ -55,7 +55,7 @@ const parseFilters = (query, key) => {
     if (Array.isArray(filters)) {
         return uniq(filters)
     } else {
-        return filters?.replace('/all', '')?.replace(/\/d+/g, '')
+        return filters?.replace('/all', '')?.replace(/\d+/g, '')
     }
 }
 
@@ -127,7 +127,7 @@ router.put('/api/v1/configurations/:configurationId', configurationIdCheck, (req
 router.get('/api/v1/conditions', (req, res) => {
     try {
         checkError(req, res)
-        const filter = get(req.query, 'httpIdFilter', null)?.replace('/all', '')?.replace(/\/d+/g, '')
+        const filter = get(req.query, 'httpIdFilter', null)?.replace('/all', '')?.replace(/\d+/g, '')
 
         // detail page
         if (filter) {
@@ -136,6 +136,15 @@ router.get('/api/v1/conditions', (req, res) => {
             // list page
             loadResponseStreamFromFile(path.join('snippet-service', 'conditions', 'list', `list.json`), res)
         }
+    } catch (e) {
+        res.status(500).send(escapeHtml(e.toString()))
+    }
+})
+
+router.post('/api/v1/conditions', (req, res) => {
+    try {
+        checkError(req, res)
+        res.status(200).send('OK')
     } catch (e) {
         res.status(500).send(escapeHtml(e.toString()))
     }
