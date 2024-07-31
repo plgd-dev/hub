@@ -63,26 +63,40 @@ router.get('/api/v1/configurations/applied', (req, res) => {
     }
 })
 
+const removeVersionFromFilter = (filters) => {
+    const filter = filters?.split('/')
+    let version = undefined
+
+    if (!filter[filter.length - 1].includes('-')) {
+        version = filter.pop()
+    }
+
+    return [filter.join('/'), version]
+}
+
 const parseFilters = (query, key) => {
-    const filters = get(query, key, null)
+    let filters = get(query, key, null).replace('/all', '')
 
     if (Array.isArray(filters)) {
-        return uniq(filters)
-    } else {
-        return filters?.replace('/all', '')?.replace(/\/d+/g, '')
+        filters = uniq(filters)[0]
     }
+
+    return removeVersionFromFilter(filters)
 }
 
 router.get('/api/v1/configurations', (req, res) => {
     try {
         checkError(req, res)
 
-        const parsedFilter = parseFilters(req.query, 'httpIdFilter')
-        const filter = Array.isArray(parsedFilter) ? parsedFilter[0] : parsedFilter
+        const [filter, version] = parseFilters(req.query, 'httpIdFilter')
+
+        console.log('parsedFilter')
+        console.log(filter)
+        console.log(version)
 
         // detail page
         if (filter) {
-            loadResponseStreamFromFile(path.join('snippet-service', 'configurations', 'detail', `${filter}.json`), res)
+            loadResponseStreamFromFile(path.join('snippet-service', 'configurations', 'detail', `${filter}.json`), res, version)
         } else if (configurationsAdd) {
             // list page after add
             loadResponseStreamFromFile(path.join('snippet-service', 'configurations', 'list', `listAdd.json`), res)
@@ -141,7 +155,9 @@ router.put('/api/v1/configurations/:configurationId', configurationIdCheck, (req
 router.get('/api/v1/conditions', (req, res) => {
     try {
         checkError(req, res)
-        const filter = get(req.query, 'httpIdFilter', null)?.replace('/all', '')?.replace(/\/d+/g, '')
+        const filter = get(req.query, 'httpIdFilter', null)
+            ?.replace('/all', '')
+            ?.replace(/\/d+.json/, '.json')
 
         // detail page
         if (filter) {
