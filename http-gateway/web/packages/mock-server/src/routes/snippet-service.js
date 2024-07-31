@@ -65,7 +65,7 @@ router.get('/api/v1/configurations/applied', (req, res) => {
 
 const removeVersionFromFilter = (filters) => {
     const filter = filters?.split('/')
-    let version = undefined
+    let version = null
 
     if (!filter[filter.length - 1].includes('-')) {
         version = filter.pop()
@@ -89,10 +89,6 @@ router.get('/api/v1/configurations', (req, res) => {
         checkError(req, res)
 
         const [filter, version] = parseFilters(req.query, 'httpIdFilter')
-
-        console.log('parsedFilter')
-        console.log(filter)
-        console.log(version)
 
         // detail page
         if (filter) {
@@ -155,13 +151,11 @@ router.put('/api/v1/configurations/:configurationId', configurationIdCheck, (req
 router.get('/api/v1/conditions', (req, res) => {
     try {
         checkError(req, res)
-        const filter = get(req.query, 'httpIdFilter', null)
-            ?.replace('/all', '')
-            ?.replace(/\/d+.json/, '.json')
+        const [filter, version] = parseFilters(req.query, 'httpIdFilter')
 
         // detail page
         if (filter) {
-            loadResponseStreamFromFile(path.join('snippet-service', 'conditions', 'detail', `${filter}.json`), res)
+            loadResponseStreamFromFile(path.join('snippet-service', 'conditions', 'detail', `${filter}.json`), res, version)
         } else if (conditionDeleted) {
             // list page after delete
             loadResponseStreamFromFile(path.join('snippet-service', 'conditions', 'list', `listEmpty.json`), res)

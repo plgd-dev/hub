@@ -117,7 +117,7 @@ const ListPage: FC<any> = () => {
     )
 
     return (
-        <PageLayout breadcrumbs={breadcrumbs} loading={loading} title={_(confT.appliedConfiguration)}>
+        <PageLayout breadcrumbs={breadcrumbs} loading={loading} title={_(confT.appliedConfigurations)}>
             <PageListTemplate
                 columns={columns}
                 data={data}

@@ -1,4 +1,4 @@
-import { test, expect, Page } from '@playwright/test'
+import { test, expect } from '@playwright/test'
 import testId from '../../../../src/testId'
 import { JTW_TOKEN } from '../../constants'
 import { addAndCheckFilter, openConditionFilter, removeAndCheck } from '../../utils'
