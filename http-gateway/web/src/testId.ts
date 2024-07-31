@@ -186,6 +186,18 @@ const testId = {
                 deleteButtonCancel: 'hub-snippet-service-applied-configurations-detail-delete-button-cancel',
                 tabGeneral: 'hub-snippet-service-applied-configurations-detail-tab-general',
                 tabListOfResources: 'hub-snippet-service-applied-configurations-detail-tab-list-of-resources',
+                deleteModal: 'hub-snippet-service-applied-configurations-detail-delete-modal',
+                tab1: {
+                    configurationLink: 'hub-snippet-service-applied-configurations-detail-tab1-configuration-link',
+                    conditionLink: 'hub-snippet-service-applied-configurations-detail-tab1-condition-link',
+                },
+                tab2: {
+                    resourceToggleCreator: 'hub-snippet-service-applied-configurations-detail-resource-toggle-creator',
+                },
+            },
+            list: {
+                pageTemplate: 'hub-snippet-service-applied-configurations-list-page-template',
+                table: 'hub-snippet-service-applied-configurations-list-table',
             },
         },
     },

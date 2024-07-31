@@ -118,7 +118,7 @@ test('snippet-service-conditions-detail-tab-2', async ({ page }) => {
     await expect(page).toHaveTitle(/Conditions | plgd Dashboard/)
 })
 
-test('snippet-service-conditions-detail-tab-1', async ({ page }) => {
+test('snippet-service-conditions-detail-tab-3', async ({ page }) => {
     await openConditionItem(page)
 
     await page.getByTestId(testId.snippetService.conditions.detail.tabApiAccessToken).click()
