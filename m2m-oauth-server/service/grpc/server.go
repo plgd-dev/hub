@@ -141,18 +141,18 @@ func (s *M2MOAuthServiceServer) GetTokens(req *pb.GetTokensRequest, srv pb.M2MOA
 	return nil
 }
 
-func errCannotBlacklistTokens(err error) error {
+func errCannotDeleteTokens(err error) error {
 	return fmt.Errorf("cannot blacklist tokens: %w", err)
 }
 
-func (s *M2MOAuthServiceServer) BlacklistTokens(ctx context.Context, req *pb.BlacklistTokensRequest) (*pb.BlacklistTokensResponse, error) {
+func (s *M2MOAuthServiceServer) DeleteTokens(ctx context.Context, req *pb.DeleteTokensRequest) (*pb.DeleteTokensResponse, error) {
 	owner, err := s.getOwner(ctx)
 	if err != nil {
 		return nil, err
 	}
-	resp, err := s.store.BlacklistTokens(ctx, owner, req)
+	resp, err := s.store.DeleteTokens(ctx, owner, req)
 	if err != nil {
-		return nil, status.Errorf(getGRPCErrorCode(err), "%v", errCannotBlacklistTokens(err))
+		return nil, status.Errorf(getGRPCErrorCode(err), "%v", errCannotDeleteTokens(err))
 	}
 	return resp, nil
 }

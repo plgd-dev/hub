@@ -19,9 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	M2MOAuthService_CreateToken_FullMethodName     = "/m2moauthserver.pb.M2MOAuthService/CreateToken"
-	M2MOAuthService_GetTokens_FullMethodName       = "/m2moauthserver.pb.M2MOAuthService/GetTokens"
-	M2MOAuthService_BlacklistTokens_FullMethodName = "/m2moauthserver.pb.M2MOAuthService/BlacklistTokens"
+	M2MOAuthService_CreateToken_FullMethodName  = "/m2moauthserver.pb.M2MOAuthService/CreateToken"
+	M2MOAuthService_GetTokens_FullMethodName    = "/m2moauthserver.pb.M2MOAuthService/GetTokens"
+	M2MOAuthService_DeleteTokens_FullMethodName = "/m2moauthserver.pb.M2MOAuthService/DeleteTokens"
 )
 
 // M2MOAuthServiceClient is the client API for M2MOAuthService service.
@@ -32,8 +32,8 @@ type M2MOAuthServiceClient interface {
 	CreateToken(ctx context.Context, in *CreateTokenRequest, opts ...grpc.CallOption) (*CreateTokenResponse, error)
 	// Returns all tokens of the owner
 	GetTokens(ctx context.Context, in *GetTokensRequest, opts ...grpc.CallOption) (M2MOAuthService_GetTokensClient, error)
-	// Blacklists/revokes tokens
-	BlacklistTokens(ctx context.Context, in *BlacklistTokensRequest, opts ...grpc.CallOption) (*BlacklistTokensResponse, error)
+	// Deletes/blacklist tokens
+	DeleteTokens(ctx context.Context, in *DeleteTokensRequest, opts ...grpc.CallOption) (*DeleteTokensResponse, error)
 }
 
 type m2MOAuthServiceClient struct {
@@ -85,9 +85,9 @@ func (x *m2MOAuthServiceGetTokensClient) Recv() (*Token, error) {
 	return m, nil
 }
 
-func (c *m2MOAuthServiceClient) BlacklistTokens(ctx context.Context, in *BlacklistTokensRequest, opts ...grpc.CallOption) (*BlacklistTokensResponse, error) {
-	out := new(BlacklistTokensResponse)
-	err := c.cc.Invoke(ctx, M2MOAuthService_BlacklistTokens_FullMethodName, in, out, opts...)
+func (c *m2MOAuthServiceClient) DeleteTokens(ctx context.Context, in *DeleteTokensRequest, opts ...grpc.CallOption) (*DeleteTokensResponse, error) {
+	out := new(DeleteTokensResponse)
+	err := c.cc.Invoke(ctx, M2MOAuthService_DeleteTokens_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -102,8 +102,8 @@ type M2MOAuthServiceServer interface {
 	CreateToken(context.Context, *CreateTokenRequest) (*CreateTokenResponse, error)
 	// Returns all tokens of the owner
 	GetTokens(*GetTokensRequest, M2MOAuthService_GetTokensServer) error
-	// Blacklists/revokes tokens
-	BlacklistTokens(context.Context, *BlacklistTokensRequest) (*BlacklistTokensResponse, error)
+	// Deletes/blacklist tokens
+	DeleteTokens(context.Context, *DeleteTokensRequest) (*DeleteTokensResponse, error)
 	mustEmbedUnimplementedM2MOAuthServiceServer()
 }
 
@@ -117,8 +117,8 @@ func (UnimplementedM2MOAuthServiceServer) CreateToken(context.Context, *CreateTo
 func (UnimplementedM2MOAuthServiceServer) GetTokens(*GetTokensRequest, M2MOAuthService_GetTokensServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetTokens not implemented")
 }
-func (UnimplementedM2MOAuthServiceServer) BlacklistTokens(context.Context, *BlacklistTokensRequest) (*BlacklistTokensResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method BlacklistTokens not implemented")
+func (UnimplementedM2MOAuthServiceServer) DeleteTokens(context.Context, *DeleteTokensRequest) (*DeleteTokensResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteTokens not implemented")
 }
 func (UnimplementedM2MOAuthServiceServer) mustEmbedUnimplementedM2MOAuthServiceServer() {}
 
@@ -172,20 +172,20 @@ func (x *m2MOAuthServiceGetTokensServer) Send(m *Token) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func _M2MOAuthService_BlacklistTokens_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(BlacklistTokensRequest)
+func _M2MOAuthService_DeleteTokens_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteTokensRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(M2MOAuthServiceServer).BlacklistTokens(ctx, in)
+		return srv.(M2MOAuthServiceServer).DeleteTokens(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: M2MOAuthService_BlacklistTokens_FullMethodName,
+		FullMethod: M2MOAuthService_DeleteTokens_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(M2MOAuthServiceServer).BlacklistTokens(ctx, req.(*BlacklistTokensRequest))
+		return srv.(M2MOAuthServiceServer).DeleteTokens(ctx, req.(*DeleteTokensRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -202,8 +202,8 @@ var M2MOAuthService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _M2MOAuthService_CreateToken_Handler,
 		},
 		{
-			MethodName: "BlacklistTokens",
-			Handler:    _M2MOAuthService_BlacklistTokens_Handler,
+			MethodName: "DeleteTokens",
+			Handler:    _M2MOAuthService_DeleteTokens_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

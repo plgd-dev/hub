@@ -50,10 +50,10 @@ type Store interface {
 	GetTokens(ctx context.Context, owner string, query *pb.GetTokensRequest, p ProcessTokens) error
 
 	// DeleteTokens deletes blacklisted expired tokens from the database.
-	DeleteTokens(ctx context.Context, now time.Time) error
+	DeleteBlacklistedTokens(ctx context.Context, now time.Time) error
 
-	// Set tokens as blacklisted
-	BlacklistTokens(ctx context.Context, owner string, req *pb.BlacklistTokensRequest) (*pb.BlacklistTokensResponse, error)
+	// Delete or set tokens as blacklisted
+	DeleteTokens(ctx context.Context, owner string, req *pb.DeleteTokensRequest) (*pb.DeleteTokensResponse, error)
 
 	Close(ctx context.Context) error
 }

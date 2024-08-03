@@ -268,7 +268,7 @@ func TestRequestHandlerGetResourcesWithM2MTokenVerification(t *testing.T) {
 	require.NoError(t, err)
 	tokenID, err := token.GetID()
 	require.NoError(t, err)
-	m2mOauthTest.BlacklistTokens(ctx, t, []string{tokenID}, validTokenStr)
+	m2mOauthTest.DeleteTokens(ctx, t, []string{tokenID}, validTokenStr)
 	// request should fail
 	_, err = getResources(pkgGrpc.CtxWithToken(ctx, tokenStr), c, req)
 	require.ErrorContains(t, err, pkgJwt.ErrBlackListedToken.Error())
@@ -307,7 +307,7 @@ func TestRequestHandlerGetResourcesWithM2MTokenVerification(t *testing.T) {
 	require.NoError(t, err)
 	tokenID, err = token.GetID()
 	require.NoError(t, err)
-	m2mOauthTest.BlacklistTokens(ctx, t, []string{tokenID}, validTokenStr)
+	m2mOauthTest.DeleteTokens(ctx, t, []string{tokenID}, validTokenStr)
 	// parallel blacklisted requests -> cache should be used, only a single request should be made
 	for range 5 {
 		wg.Add(1)

@@ -93,41 +93,6 @@ paths:
           description: OpenID Configuration retrieved successfully
         '404':
           description: OpenID Configuration not found. The requested OpenID Configuration does not exist.
-  /m2m-oauth-server/api/v1/blacklist:
-    post:
-      tags:
-      - Tokens
-      summary: Blacklists/revokes tokens
-      operationId: M2MOAuthService_BlacklistTokens
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/pbBlacklistTokensRequest'
-          application/protojson:
-            schema:
-              $ref: '#/components/schemas/pbBlacklistTokensRequest'
-        required: true
-      responses:
-        "200":
-          description: A successful response.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/pbBlacklistTokensResponse'
-            application/protojson:
-              schema:
-                $ref: '#/components/schemas/pbBlacklistTokensResponse'
-        default:
-          description: An unexpected error response.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/rpcStatus'
-            application/protojson:
-              schema:
-                $ref: '#/components/schemas/rpcStatus'
-      x-codegen-request-body-name: body
   /m2m-oauth-server/api/v1/tokens:
     get:
       tags:
@@ -212,6 +177,39 @@ paths:
               schema:
                 $ref: '#/components/schemas/rpcStatus'
       x-codegen-request-body-name: body
+    delete:
+      tags:
+      - Tokens
+      summary: Deletes/blacklists tokens
+      operationId: M2MOAuthService_DeleteTokens
+      parameters:
+      - name: idFilter
+        in: query
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/pbDeleteTokensResponse'
+            application/protojson:
+              schema:
+                $ref: '#/components/schemas/pbDeleteTokensResponse'
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/rpcStatus'
+            application/protojson:
+              schema:
+                $ref: '#/components/schemas/rpcStatus'
 components:
   schemas:
     TokenBlackListed:
@@ -225,17 +223,13 @@ components:
           title: Unix timestamp in s when the token has been blacklisted
           type: string
           format: int64
-    pbBlacklistTokensRequest:
+    pbDeleteTokensResponse:
       type: object
       properties:
-        idFilter:
-          type: array
-          items:
-            type: string
-    pbBlacklistTokensResponse:
-      type: object
-      properties:
-        count:
+        blacklistedCount:
+          type: string
+          format: int64
+        deletedCount:
           type: string
           format: int64
     pbCreateTokenRequest:

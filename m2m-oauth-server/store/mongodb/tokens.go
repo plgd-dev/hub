@@ -107,7 +107,7 @@ func (s *Store) GetTokens(ctx context.Context, owner string, req *pb.GetTokensRe
 	return processCursor(ctx, cur, process)
 }
 
-func (s *Store) DeleteTokens(ctx context.Context, now time.Time) error {
+func (s *Store) DeleteBlacklistedTokens(ctx context.Context, now time.Time) error {
 	deleteFilter := bson.D{
 		{Key: pb.ExpirationKey, Value: bson.M{"$lt": now.Unix()}},
 		{Key: pb.ExpirationKey, Value: bson.M{"$gt": int64(0)}},
@@ -117,16 +117,17 @@ func (s *Store) DeleteTokens(ctx context.Context, now time.Time) error {
 	return err
 }
 
-func (s *Store) BlacklistTokens(ctx context.Context, owner string, req *pb.BlacklistTokensRequest) (*pb.BlacklistTokensResponse, error) {
+func (s *Store) DeleteTokens(ctx context.Context, owner string, req *pb.DeleteTokensRequest) (*pb.DeleteTokensResponse, error) {
 	if owner == "" {
 		return nil, store.ErrInvalidArgument
 	}
+	now := time.Now()
 	filter := bson.D{
 		{Key: pb.OwnerKey, Value: owner},
 		{
 			Key: mongodb.Or, Value: bson.A{
 				bson.M{
-					pb.ExpirationKey: bson.M{"$gte": time.Now().Unix()},
+					pb.ExpirationKey: bson.M{"$gte": now.Unix()},
 				},
 				bson.M{
 					pb.ExpirationKey: bson.M{mongodb.Exists: false},
@@ -162,7 +163,22 @@ func (s *Store) BlacklistTokens(ctx context.Context, owner string, req *pb.Black
 	if err != nil {
 		return nil, err
 	}
-	return &pb.BlacklistTokensResponse{
-		Count: ret.MatchedCount,
+	deleteFilter := bson.D{
+		{Key: pb.OwnerKey, Value: owner},
+		{Key: pb.ExpirationKey, Value: bson.M{"$lt": now.Unix()}},
+		{Key: pb.ExpirationKey, Value: bson.M{"$gt": int64(0)}},
+	}
+	if len(req.GetIdFilter()) > 0 {
+		deleteFilter = append(deleteFilter, bson.E{Key: "_id", Value: bson.M{mongodb.In: req.GetIdFilter()}})
+	}
+
+	deleteRet, err := s.Store.Collection(tokensCol).DeleteMany(ctx, deleteFilter)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.DeleteTokensResponse{
+		BlacklistedCount: ret.MatchedCount,
+		DeletedCount:     deleteRet.DeletedCount,
 	}, nil
 }

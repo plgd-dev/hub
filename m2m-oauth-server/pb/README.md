@@ -4,10 +4,10 @@
 ## Table of Contents
 
 - [m2m-oauth-server/pb/service.proto](#m2m-oauth-server_pb_service-proto)
-    - [BlacklistTokensRequest](#m2moauthserver-pb-BlacklistTokensRequest)
-    - [BlacklistTokensResponse](#m2moauthserver-pb-BlacklistTokensResponse)
     - [CreateTokenRequest](#m2moauthserver-pb-CreateTokenRequest)
     - [CreateTokenResponse](#m2moauthserver-pb-CreateTokenResponse)
+    - [DeleteTokensRequest](#m2moauthserver-pb-DeleteTokensRequest)
+    - [DeleteTokensResponse](#m2moauthserver-pb-DeleteTokensResponse)
     - [GetTokensRequest](#m2moauthserver-pb-GetTokensRequest)
     - [Token](#m2moauthserver-pb-Token)
     - [Token.BlackListed](#m2moauthserver-pb-Token-BlackListed)
@@ -22,36 +22,6 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## m2m-oauth-server/pb/service.proto
-
-
-
-<a name="m2moauthserver-pb-BlacklistTokensRequest"></a>
-
-### BlacklistTokensRequest
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| id_filter | [string](#string) | repeated |  |
-
-
-
-
-
-
-<a name="m2moauthserver-pb-BlacklistTokensResponse"></a>
-
-### BlacklistTokensResponse
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| count | [int64](#int64) |  |  |
-
-
-
 
 
 
@@ -90,6 +60,37 @@
 | token_type | [string](#string) |  |  |
 | expires_in | [int64](#int64) |  |  |
 | scope | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="m2moauthserver-pb-DeleteTokensRequest"></a>
+
+### DeleteTokensRequest
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id_filter | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="m2moauthserver-pb-DeleteTokensResponse"></a>
+
+### DeleteTokensResponse
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| blacklisted_count | [int64](#int64) |  |  |
+| deleted_count | [int64](#int64) |  |  |
 
 
 
@@ -171,7 +172,7 @@ driven by resource change event
 | ----------- | ------------ | ------------- | ------------|
 | CreateToken | [CreateTokenRequest](#m2moauthserver-pb-CreateTokenRequest) | [CreateTokenResponse](#m2moauthserver-pb-CreateTokenResponse) | Creates a new token |
 | GetTokens | [GetTokensRequest](#m2moauthserver-pb-GetTokensRequest) | [Token](#m2moauthserver-pb-Token) stream | Returns all tokens of the owner |
-| BlacklistTokens | [BlacklistTokensRequest](#m2moauthserver-pb-BlacklistTokensRequest) | [BlacklistTokensResponse](#m2moauthserver-pb-BlacklistTokensResponse) | Blacklists/revokes tokens |
+| DeleteTokens | [DeleteTokensRequest](#m2moauthserver-pb-DeleteTokensRequest) | [DeleteTokensResponse](#m2moauthserver-pb-DeleteTokensResponse) | Deletes/blacklist tokens |
 
  
 

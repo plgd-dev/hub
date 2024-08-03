@@ -179,19 +179,19 @@
             <ul>
               
                 <li>
-                  <a href="#m2moauthserver.pb.BlacklistTokensRequest"><span class="badge">M</span>BlacklistTokensRequest</a>
-                </li>
-              
-                <li>
-                  <a href="#m2moauthserver.pb.BlacklistTokensResponse"><span class="badge">M</span>BlacklistTokensResponse</a>
-                </li>
-              
-                <li>
                   <a href="#m2moauthserver.pb.CreateTokenRequest"><span class="badge">M</span>CreateTokenRequest</a>
                 </li>
               
                 <li>
                   <a href="#m2moauthserver.pb.CreateTokenResponse"><span class="badge">M</span>CreateTokenResponse</a>
+                </li>
+              
+                <li>
+                  <a href="#m2moauthserver.pb.DeleteTokensRequest"><span class="badge">M</span>DeleteTokensRequest</a>
+                </li>
+              
+                <li>
+                  <a href="#m2moauthserver.pb.DeleteTokensResponse"><span class="badge">M</span>DeleteTokensResponse</a>
                 </li>
               
                 <li>
@@ -227,54 +227,6 @@
       </div>
       <p></p>
 
-      
-        <h3 id="m2moauthserver.pb.BlacklistTokensRequest">BlacklistTokensRequest</h3>
-        <p></p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>id_filter</td>
-                  <td><a href="#string">string</a></td>
-                  <td>repeated</td>
-                  <td><p> </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
-      
-        <h3 id="m2moauthserver.pb.BlacklistTokensResponse">BlacklistTokensResponse</h3>
-        <p></p>
-
-        
-          <table class="field-table">
-            <thead>
-              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
-            </thead>
-            <tbody>
-              
-                <tr>
-                  <td>count</td>
-                  <td><a href="#int64">int64</a></td>
-                  <td></td>
-                  <td><p> </p></td>
-                </tr>
-              
-            </tbody>
-          </table>
-
-          
-
-        
       
         <h3 id="m2moauthserver.pb.CreateTokenRequest">CreateTokenRequest</h3>
         <p></p>
@@ -391,6 +343,61 @@
                   <td>scope</td>
                   <td><a href="#string">string</a></td>
                   <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="m2moauthserver.pb.DeleteTokensRequest">DeleteTokensRequest</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>id_filter</td>
+                  <td><a href="#string">string</a></td>
+                  <td>repeated</td>
+                  <td><p> </p></td>
+                </tr>
+              
+            </tbody>
+          </table>
+
+          
+
+        
+      
+        <h3 id="m2moauthserver.pb.DeleteTokensResponse">DeleteTokensResponse</h3>
+        <p></p>
+
+        
+          <table class="field-table">
+            <thead>
+              <tr><td>Field</td><td>Type</td><td>Label</td><td>Description</td></tr>
+            </thead>
+            <tbody>
+              
+                <tr>
+                  <td>blacklisted_count</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
+                  <td><p> </p></td>
+                </tr>
+              
+                <tr>
+                  <td>deleted_count</td>
+                  <td><a href="#int64">int64</a></td>
+                  <td></td>
                   <td><p> </p></td>
                 </tr>
               
@@ -593,10 +600,10 @@
               </tr>
             
               <tr>
-                <td>BlacklistTokens</td>
-                <td><a href="#m2moauthserver.pb.BlacklistTokensRequest">BlacklistTokensRequest</a></td>
-                <td><a href="#m2moauthserver.pb.BlacklistTokensResponse">BlacklistTokensResponse</a></td>
-                <td><p>Blacklists/revokes tokens</p></td>
+                <td>DeleteTokens</td>
+                <td><a href="#m2moauthserver.pb.DeleteTokensRequest">DeleteTokensRequest</a></td>
+                <td><a href="#m2moauthserver.pb.DeleteTokensResponse">DeleteTokensResponse</a></td>
+                <td><p>Deletes/blacklist tokens</p></td>
               </tr>
             
           </tbody>
@@ -640,10 +647,10 @@
               
               
               <tr>
-                <td>BlacklistTokens</td>
-                <td>POST</td>
-                <td>/m2m-oauth-server/api/v1/blacklist</td>
-                <td>*</td>
+                <td>DeleteTokens</td>
+                <td>DELETE</td>
+                <td>/m2m-oauth-server/api/v1/tokens</td>
+                <td></td>
               </tr>
               
             
