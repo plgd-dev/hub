@@ -131,9 +131,9 @@ const AddNewTokenModal: FC<Props> = (props) => {
             </Show>
             <Show>
                 <Show.When isTrue={!!showToken && !!tokenData}>
-                    <Alert>{_(t.tokenExpNote)}</Alert>
+                    <Alert dataTestId={dataTestId?.concat('-alert')}>{_(t.tokenExpNote)}</Alert>
                     <Spacer type='mt-4'>
-                        <div css={styles.copyBox}>
+                        <div css={styles.copyBox} data-test-id={dataTestId?.concat('-copy')}>
                             {truncate(tokenData, { length: 60 })}
                             <Tooltip content={_(g.copy)} css={styles.copyIcon} id='copyIcon' portalTarget={undefined}>
                                 <IconCopy onClick={() => copyToClipboard(tokenData || '')} />
@@ -204,7 +204,7 @@ const AddNewTokenModal: FC<Props> = (props) => {
                     variant: 'secondary',
                 },
                 {
-                    dataTestId: dataTestId?.concat('-invoke'),
+                    dataTestId: dataTestId?.concat('-generate'),
                     label: _(t.generateToken),
                     disabled: !name,
                     onClick: () => {

@@ -3,6 +3,7 @@ const testId = {
         logout: 'hub-app-logout',
     },
     menu: {
+        apiTokens: 'hub-menu-item-api-tokens',
         devices: 'hub-menu-item-devices',
         snippetService: {
             link: 'hub-menu-item-snippet-service',
@@ -206,6 +207,12 @@ const testId = {
             deleteButton: 'hub-snippet-service-api-tokens-detail-delete-button',
             deleteButtonCancel: 'hub-snippet-service-api-tokens-detail-delete-button-cancel',
             deleteButtonConfirm: 'hub-snippet-service-api-tokens-detail-delete-button-confirm',
+        },
+        list: {
+            table: 'hub-snippet-service-api-tokens-list-table',
+            createTokenButton: 'hub-snippet-service-api-tokens-list-create-token-button',
+            addModal: 'hub-snippet-service-api-tokens-list-add-modal',
+            page: 'hub-snippet-service-api-tokens-list-page',
         },
     },
 }

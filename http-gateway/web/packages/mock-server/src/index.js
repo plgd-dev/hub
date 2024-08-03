@@ -8,6 +8,7 @@ const path = require('path')
 const devices = require('./routes/devices')
 const dps = require('./routes/dps')
 const snippetService = require('./routes/snippet-service')
+const apiTokens = require('./routes/api-tokens')
 
 const app = express()
 const port = 8181
@@ -46,7 +47,7 @@ app.get('/.well-known/configuration', (req, res) => {
 app.get('/theme/theme.json', (req, res) => {
     try {
         checkError(req, res)
-        axios.get('https://try.plgd.cloud/theme/theme.json').then((r) => res.send(r.data))
+        axios.get('http://localhost:3000/theme/theme.json').then((r) => res.send(r.data))
     } catch (e) {
         res.status(500).send(e.toString())
     }
@@ -74,27 +75,10 @@ app.get('/repos/plgd-dev/hub/releases/latest', (req, res) => {
     }
 })
 
-app.get('/m2m-oauth-server/.well-known/openid-configuration', (req, res) => {
-    try {
-        checkError(req, res)
-        axios.get('https://try.plgd.cloud/m2m-oauth-server/.well-known/openid-configuration').then((r) => res.send(r.data))
-    } catch (e) {
-        res.status(500).send(e.toString())
-    }
-})
-
-app.post('/m2m-oauth-server/api/v1/tokens', (req, res) => {
-    try {
-        checkError(req, res)
-        loadResponseFromFile(path.join('api-tokens', 'create-no-expiration.json'), res)
-    } catch (e) {
-        res.status(500).send(e.toString())
-    }
-})
-
 app.use(devices)
 app.use(dps)
 app.use('/snippet-service', snippetService)
+app.use('/m2m-oauth-server', apiTokens)
 
 app.listen(port, () => {
     console.log(`HUB API mock server listening on port ${port}`)

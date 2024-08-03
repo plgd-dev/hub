@@ -28,6 +28,7 @@ router.get('/api/v1/configurations/api-reset', (req, res) => {
         res.status(500).send(escapeHtml(e.toString()))
     }
 })
+
 router.get('/api/v1/applied-configurations/api-reset', (req, res) => {
     try {
         checkError(req, res)

@@ -21,7 +21,8 @@ export const getApiTokenUrlApi: () => Promise<string> = () => {
         )
             .then((result: FetchApiReturnType<OpenidConfigurationReturnType>) => {
                 if (result.data) {
-                    resolve(result?.data?.token_endpoint.split('m2m-oauth-server')[0])
+                    const url = result?.data?.token_endpoint.split('m2m-oauth-server')[0]
+                    resolve(url.endsWith('/') ? url.slice(0, -1) : url)
                 } else {
                     reject(false)
                 }
@@ -35,9 +36,8 @@ export const getApiTokenUrlApi: () => Promise<string> = () => {
 export const createApiTokenApi = async (body: any) => {
     const { cancelRequestDeadlineTimeout } = security.getGeneralConfig() as SecurityConfig
 
-    return getApiTokenUrlApi().then((result) => {
-        const url = result.endsWith('/') ? result.slice(0, -1) : result
-        return withTelemetry(
+    return getApiTokenUrlApi().then((url) =>
+        withTelemetry(
             () =>
                 fetchApi(`${url}${ApiTokensApiEndpoints.API_TOKENS}`, {
                     method: 'POST',
@@ -46,7 +46,7 @@ export const createApiTokenApi = async (body: any) => {
                 }),
             'create-api-token'
         )
-    })
+    )
 }
 
 export const removeApiTokenApi = (ids: string[], chunkSize = 50) => {
@@ -54,23 +54,20 @@ export const removeApiTokenApi = (ids: string[], chunkSize = 50) => {
 
     const chunks = chunk(ids, chunkSize)
     return Promise.all(
-        chunks.map((ids) => {
-            return getApiTokenUrlApi().then((result) => {
-                const url = result.endsWith('/') ? result.slice(0, -1) : result
-                // const idsString = ids.map((id) => `${filterName}=${id}`).join('&')
-
-                return withTelemetry(
-                    () =>
-                        fetchApi(`${url}${ApiTokensApiEndpoints.API_TOKENS_BLACKLIST}`, {
-                            method: 'POST',
-                            cancelRequestDeadlineTimeout,
-                            body: {
-                                idFilter: ids,
-                            },
-                        }),
-                    `api-tokens-blacklist-${ids.join('-')}`
-                )
-            })
+        chunks.map(async (ids) => {
+            const idsString = ids.map((id) => `idFilter=${id}`).join('&')
+            const url = await getApiTokenUrlApi()
+            return withTelemetry(
+                () =>
+                    fetchApi(`${url}${ApiTokensApiEndpoints.API_TOKENS}?${idsString}`, {
+                        method: 'DELETE',
+                        cancelRequestDeadlineTimeout,
+                        body: {
+                            idFilter: ids,
+                        },
+                    }),
+                `api-tokens-blacklist-${ids.join('-')}`
+            )
         })
     )
 }

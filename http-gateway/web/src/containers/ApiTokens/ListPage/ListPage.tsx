@@ -19,6 +19,7 @@ import { useApiTokensList } from '@/containers/ApiTokens/hooks'
 import { formatDateVal } from '@/containers/PendingCommands/DateFormat'
 import { removeApiTokenApi } from '@/containers/ApiTokens/rest'
 import { getExpiration } from '@/containers/ApiTokens/utils'
+import testId from '@/testId'
 
 const ListPage: FC<any> = () => {
     const { formatMessage: _, formatDate, formatTime } = useIntl()
@@ -44,6 +45,7 @@ const ListPage: FC<any> = () => {
                 accessor: 'name',
                 Cell: ({ value, row }: { value: string | number; row: any }) => (
                     <a
+                        data-test-id={`${testId.apiTokens.list.table}-row-${row.id}-name`}
                         href={generatePath(pages.API_TOKENS.DETAIL, { apiTokenId: row.original.id })}
                         onClick={(e) => {
                             e.preventDefault()
@@ -82,7 +84,7 @@ const ListPage: FC<any> = () => {
         <PageLayout
             breadcrumbs={breadcrumbs}
             header={
-                <Button icon={<IconPlus />} onClick={() => setAddModal(true)} variant='primary'>
+                <Button dataTestId={testId.apiTokens.list.createTokenButton} icon={<IconPlus />} onClick={() => setAddModal(true)} variant='primary'>
                     {_(t.generateNewToken)}
                 </Button>
             }
@@ -92,6 +94,7 @@ const ListPage: FC<any> = () => {
             <PageListTemplate
                 columns={columns}
                 data={data}
+                dataTestId={testId.apiTokens.list.page}
                 deleteApiMethod={removeApiTokenApi}
                 i18n={{
                     singleSelected: _(t.apiToken),
@@ -122,8 +125,9 @@ const ListPage: FC<any> = () => {
                 }}
                 onDetailClick={(id: string) => navigate(generatePath(pages.API_TOKENS.DETAIL, { apiTokenId: id }))}
                 refresh={refresh}
+                tableDataTestId={testId.apiTokens.list.table}
             />
-            <AddNewTokenModal showToken handleClose={() => setAddModal(false)} refresh={refresh} show={addModal} />
+            <AddNewTokenModal showToken dataTestId={testId.apiTokens.list.addModal} handleClose={() => setAddModal(false)} refresh={refresh} show={addModal} />
         </PageLayout>
     )
 }

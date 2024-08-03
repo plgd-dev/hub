@@ -1,19 +1,23 @@
-import { expect, test } from '@playwright/test'
+import { expect, Page, test } from '@playwright/test'
 import testId from '../../../../src/testId'
 
-test('snippet-service-applied-configurations-list-open', async ({ page }) => {
+const openAppliedConfigurationsList = async (page: Page) => {
     await page.goto('')
     await page.getByTestId(testId.menu.snippetService.link).click()
     await page.getByTestId(testId.menu.snippetService.appliedConfigurations).click()
+
+    await page.setViewportSize({ width: 1600, height: 800 })
+}
+
+test('snippet-service-applied-configurations-list-open', async ({ page }) => {
+    await openAppliedConfigurationsList(page)
 
     await expect(page).toHaveTitle(/Applied Configurations | plgd Dashboard/)
     await expect(page).toHaveScreenshot({ fullPage: true, omitBackground: true, animations: 'disabled' })
 })
 
 test('snippet-service-applied-configurations-list-open-detail-name', async ({ page }) => {
-    await page.goto('')
-    await page.getByTestId(testId.menu.snippetService.link).click()
-    await page.getByTestId(testId.menu.snippetService.appliedConfigurations).click()
+    await openAppliedConfigurationsList(page)
 
     await expect(page.getByTestId(`${testId.snippetService.appliedConfigurations.list.table}-row-0`)).toBeVisible()
     await expect(page.getByTestId(`${testId.snippetService.appliedConfigurations.list.table}-row-0-name`)).toBeVisible()
@@ -23,11 +27,7 @@ test('snippet-service-applied-configurations-list-open-detail-name', async ({ pa
 })
 
 test('snippet-service-applied-configurations-list-open-detail-link', async ({ page }) => {
-    await page.goto('')
-    await page.getByTestId(testId.menu.snippetService.link).click()
-    await page.getByTestId(testId.menu.snippetService.appliedConfigurations).click()
-
-    await page.setViewportSize({ width: 1600, height: 800 })
+    await openAppliedConfigurationsList(page)
 
     await expect(page.getByTestId(`${testId.snippetService.appliedConfigurations.list.table}-row-0`)).toBeVisible()
     await expect(page.getByTestId(`${testId.snippetService.appliedConfigurations.list.table}-row-0-detail`)).toBeVisible()
@@ -37,11 +37,7 @@ test('snippet-service-applied-configurations-list-open-detail-link', async ({ pa
 })
 
 test('snippet-service-applied-configurations-list-delete', async ({ page }) => {
-    await page.goto('')
-    await page.getByTestId(testId.menu.snippetService.link).click()
-    await page.getByTestId(testId.menu.snippetService.appliedConfigurations).click()
-
-    await page.setViewportSize({ width: 1600, height: 800 })
+    await openAppliedConfigurationsList(page)
 
     await expect(page.getByTestId(`${testId.snippetService.appliedConfigurations.list.table}-row-0`)).toBeVisible()
     await expect(page.getByTestId(`${testId.snippetService.appliedConfigurations.list.table}-row-0-delete`)).toBeVisible()
@@ -61,11 +57,7 @@ test('snippet-service-applied-configurations-list-delete', async ({ page }) => {
 })
 
 test('snippet-service-applied-configurations-list-link', async ({ page }) => {
-    await page.goto('')
-    await page.getByTestId(testId.menu.snippetService.link).click()
-    await page.getByTestId(testId.menu.snippetService.appliedConfigurations).click()
-
-    await page.setViewportSize({ width: 1600, height: 800 })
+    await openAppliedConfigurationsList(page)
 
     await expect(page.getByTestId(`${testId.snippetService.appliedConfigurations.list.table}-row-0`)).toBeVisible()
     await expect(page.getByTestId(`${testId.snippetService.appliedConfigurations.list.table}-row-0-condition`)).toBeVisible()

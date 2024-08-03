@@ -1,21 +1,24 @@
-import { test, expect } from '@playwright/test'
+import { test, expect, Page } from '@playwright/test'
 import testId from '../../../../src/testId'
 import { JTW_TOKEN } from '../../constants'
 import { addAndCheckFilter, openConditionFilter, removeAndCheck } from '../../utils'
 
-test('snippet-service-configurations-list-open', async ({ page }) => {
+const openConditionsList = async (page: Page) => {
     await page.goto('')
     await page.getByTestId(testId.menu.snippetService.link).click()
     await page.getByTestId(testId.menu.snippetService.conditions).click()
+    await page.setViewportSize({ width: 1600, height: 800 })
+}
+
+test('snippet-service-configurations-list-open', async ({ page }) => {
+    await openConditionsList(page)
 
     await expect(page).toHaveTitle(/Conditions | plgd Dashboard/)
     await expect(page).toHaveScreenshot({ fullPage: true, omitBackground: true, animations: 'disabled' })
 })
 
 test('snippet-service-configurations-list-link-to-detail-name', async ({ page }) => {
-    await page.goto('')
-    await page.getByTestId(testId.menu.snippetService.link).click()
-    await page.getByTestId(testId.menu.snippetService.conditions).click()
+    await openConditionsList(page)
 
     await expect(page.getByTestId(`${testId.snippetService.conditions.list.table}-row-0-name`)).toBeVisible()
     await page.getByTestId(`${testId.snippetService.conditions.list.table}-row-0-name`).click()
@@ -24,11 +27,7 @@ test('snippet-service-configurations-list-link-to-detail-name', async ({ page })
 })
 
 test('snippet-service-configurations-list-link-to-detail-icon', async ({ page }) => {
-    await page.goto('')
-    await page.getByTestId(testId.menu.snippetService.link).click()
-    await page.getByTestId(testId.menu.snippetService.conditions).click()
-
-    await page.setViewportSize({ width: 1600, height: 800 })
+    await openConditionsList(page)
 
     await expect(page.getByTestId(`${testId.snippetService.conditions.list.table}-row-0-detail`)).toBeVisible()
     await page.getByTestId(`${testId.snippetService.conditions.list.table}-row-0-detail`).click()
@@ -37,11 +36,7 @@ test('snippet-service-configurations-list-link-to-detail-icon', async ({ page })
 })
 
 test('snippet-service-configurations-list-add-open-close', async ({ page }) => {
-    await page.goto('')
-    await page.getByTestId(testId.menu.snippetService.link).click()
-    await page.getByTestId(testId.menu.snippetService.conditions).click()
-
-    await page.setViewportSize({ width: 1600, height: 800 })
+    await openConditionsList(page)
 
     await expect(page.getByTestId(testId.snippetService.conditions.list.addButton)).toBeVisible()
     await page.getByTestId(testId.snippetService.conditions.list.addButton).click()
@@ -58,11 +53,7 @@ test('snippet-service-configurations-list-add-open-close', async ({ page }) => {
 })
 
 test('snippet-service-configurations-list-add', async ({ page }) => {
-    await page.goto('')
-    await page.getByTestId(testId.menu.snippetService.link).click()
-    await page.getByTestId(testId.menu.snippetService.conditions).click()
-
-    await page.setViewportSize({ width: 1600, height: 800 })
+    await openConditionsList(page)
 
     await expect(page.getByTestId(testId.snippetService.conditions.list.addButton)).toBeVisible()
     await page.getByTestId(testId.snippetService.conditions.list.addButton).click()
@@ -190,11 +181,7 @@ test('snippet-service-configurations-list-add', async ({ page }) => {
 })
 
 test('snippet-service-configurations-list-delete', async ({ page }) => {
-    await page.goto('')
-    await page.getByTestId(testId.menu.snippetService.link).click()
-    await page.getByTestId(testId.menu.snippetService.conditions).click()
-
-    await page.setViewportSize({ width: 1600, height: 800 })
+    await openConditionsList(page)
 
     await expect(page.getByTestId(`${testId.snippetService.conditions.list.table}-row-0-delete`)).toBeVisible()
     await page.getByTestId(`${testId.snippetService.conditions.list.table}-row-0-delete`).click()
