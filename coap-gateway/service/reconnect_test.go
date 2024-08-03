@@ -15,11 +15,9 @@ import (
 	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
 	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
-	idTest "github.com/plgd-dev/hub/v2/identity-store/test"
-	raTest "github.com/plgd-dev/hub/v2/resource-aggregate/test"
 	rdTest "github.com/plgd-dev/hub/v2/resource-directory/test"
 	test "github.com/plgd-dev/hub/v2/test"
-	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	"github.com/plgd-dev/hub/v2/test/service"
 	testService "github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -59,19 +57,12 @@ func TestReconnectNATSAndGrpcGateway(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), TestExchangeTimeout)
 	defer cancel()
 	testService.ClearDB(ctx, t)
-	oauthShutdown := oauthTest.SetUp(t)
-	auShutdown := idTest.SetUp(t)
-	raShutdown := raTest.SetUp(t)
-	rdShutdown := rdTest.SetUp(t)
 	coapgwCfg := coapgwTest.MakeConfig(t)
 	coapgwCfg.Log.DumpBody = true
-	gwShutdown := coapgwTest.New(t, coapgwCfg)
-	defer func() {
-		gwShutdown()
-		raShutdown()
-		auShutdown()
-		oauthShutdown()
-	}()
+	teardown := testService.SetUpServices(ctx, t, testService.SetUpServicesOAuth|service.SetUpServicesMachine2MachineOAuth|service.SetUpServicesMachine2MachineOAuth|testService.SetUpServicesCertificateAuthority|testService.SetUpServicesId|testService.SetUpServicesResourceAggregate|
+		testService.SetUpServicesCoapGateway, testService.WithCOAPGWConfig(coapgwCfg))
+	defer teardown()
+	rdShutdown := rdTest.SetUp(t)
 
 	co := testCoapDial(t, "", true, true, time.Now().Add(time.Minute))
 	if co == nil {

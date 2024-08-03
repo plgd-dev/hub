@@ -10,7 +10,7 @@ import (
 	"github.com/plgd-dev/go-coap/v3/pkg/cache"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
-	kitHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgHttpUri "github.com/plgd-dev/hub/v2/pkg/net/http/uri"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -88,7 +88,7 @@ func cancelResourceSubscription(ctx context.Context, traceProvider trace.TracerP
 func (s *SubscriptionManager) handleResourceChangedEvent(ctx context.Context, subscriptionData SubscriptionData, header events.EventHeader, body []byte) error {
 	coapContentFormat := stringToSupportedMediaType(header.ContentType)
 	_, err := s.raClient.NotifyResourceChanged(ctx, &commands.NotifyResourceChangedRequest{
-		ResourceId: commands.NewResourceID(subscriptionData.subscription.DeviceID, kitHttp.CanonicalHref(subscriptionData.subscription.Href)),
+		ResourceId: commands.NewResourceID(subscriptionData.subscription.DeviceID, pkgHttpUri.CanonicalHref(subscriptionData.subscription.Href)),
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: subscriptionData.linkedAccount.ID + "." + subscriptionData.subscription.ID,
 			Sequence:     header.SequenceNumber,

@@ -7,7 +7,6 @@ import (
 
 	"github.com/plgd-dev/device/v2/schema/platform"
 	pbIS "github.com/plgd-dev/hub/v2/identity-store/pb"
-	idService "github.com/plgd-dev/hub/v2/identity-store/test"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
@@ -17,6 +16,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	hubTestService "github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace/noop"
 )
@@ -27,18 +27,13 @@ func TestPublishUnpublish(t *testing.T) {
 
 	fmt.Println("cfg: ", cfg)
 
-	oauthShutdown := oauthTest.SetUp(t)
-	defer oauthShutdown()
+	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	defer cancel()
+	const services = hubTestService.SetUpServicesMachine2MachineOAuth | hubTestService.SetUpServicesOAuth | hubTestService.SetUpServicesId | hubTestService.SetUpServicesResourceAggregate
+	tearDown := hubTestService.SetUpServices(ctx, t, services, hubTestService.WithRAConfig(cfg))
+	defer tearDown()
 
-	idShutdown := idService.SetUp(t)
-	defer idShutdown()
-	logCfg := log.MakeDefaultConfig()
-	logCfg.Level = log.DebugLevel
-	log.Setup(logCfg)
-	raShutdown := raTest.New(t, cfg)
-	defer raShutdown()
-
-	ctx := kitNetGrpc.CtxWithToken(context.Background(), oauthTest.GetDefaultAccessToken(t))
+	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	fileWatcher, err := fsnotify.NewWatcher(log.Get())
 	require.NoError(t, err)
@@ -74,8 +69,6 @@ func TestPublishUnpublish(t *testing.T) {
 		require.NoError(t, err)
 	}()
 
-	logCfg.Level = log.DebugLevel
-	log.Setup(logCfg)
 	pubReq := testMakePublishResourceRequest(deviceID, []string{href})
 	_, err = raClient.PublishResourceLinks(ctx, pubReq)
 	require.NoError(t, err)

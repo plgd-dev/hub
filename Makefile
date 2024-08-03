@@ -47,7 +47,7 @@ CERT_TOOL_SIGN_ALG ?= ECDSA-SHA256
 CERT_TOOL_ELLIPTIC_CURVE ?= P256
 CERT_TOOL_IMAGE = ghcr.io/plgd-dev/hub/cert-tool:vnext
 
-SUBDIRS := bundle certificate-authority cloud2cloud-connector cloud2cloud-gateway coap-gateway grpc-gateway resource-aggregate resource-directory http-gateway identity-store snippet-service test/oauth-server tools/cert-tool
+SUBDIRS := bundle certificate-authority cloud2cloud-connector cloud2cloud-gateway coap-gateway grpc-gateway resource-aggregate resource-directory http-gateway identity-store snippet-service m2m-oauth-server test/oauth-server tools/cert-tool
 .PHONY: $(SUBDIRS) push proto/generate clean build test env mongo nats certificates hub-build http-gateway-www simulators
 
 default: build

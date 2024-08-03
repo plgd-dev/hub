@@ -92,8 +92,11 @@ func (r *AppliedConfiguration_Resource) Clone() *AppliedConfiguration_Resource {
 	}
 }
 
-func (r *AppliedConfiguration_Resource) jsonToBSONTag(json map[string]interface{}) {
-	pkgMongo.ConvertStringValueToInt64(json, "validUntil")
+func (r *AppliedConfiguration_Resource) jsonToBSONTag(json map[string]interface{}) error {
+	if _, err := pkgMongo.ConvertStringValueToInt64(json, true, "."+ValidUntil); err != nil {
+		return fmt.Errorf("cannot convert .validUntil to int64: %w", err)
+	}
+	return nil
 }
 
 func (r *AppliedConfiguration_Resource) MarshalBSON() ([]byte, error) {
@@ -133,10 +136,17 @@ func (c *AppliedConfiguration) Clone() *AppliedConfiguration {
 	}
 }
 
-func (c *AppliedConfiguration) jsonToBSONTag(json map[string]interface{}) {
-	pkgMongo.ConvertStringValueToInt64(json, "configurationId.version")
-	pkgMongo.ConvertStringValueToInt64(json, "conditionId.version")
-	pkgMongo.ConvertStringValueToInt64(json, "resources.validUntil")
+func (c *AppliedConfiguration) jsonToBSONTag(json map[string]interface{}) error {
+	if _, err := pkgMongo.ConvertStringValueToInt64(json, true, "."+ConfigurationIDKey+"."+VersionKey); err != nil {
+		return fmt.Errorf("cannot convert configurationId.version to int64: %w", err)
+	}
+	if _, err := pkgMongo.ConvertStringValueToInt64(json, true, "."+ConditionIDKey+"."+VersionKey); err != nil {
+		return fmt.Errorf("cannot convert conditionId.version to int64: %w", err)
+	}
+	if _, err := pkgMongo.ConvertStringValueToInt64(json, true, "."+ResourcesKey+".[*]."+ValidUntil); err != nil {
+		return fmt.Errorf("cannot convert resources.validUntil to int64: %w", err)
+	}
+	return nil
 }
 
 func (c *AppliedConfiguration) MarshalBSON() ([]byte, error) {

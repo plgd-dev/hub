@@ -9,8 +9,8 @@ import (
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgHttpPb "github.com/plgd-dev/hub/v2/pkg/net/http/pb"
 	"github.com/plgd-dev/hub/v2/test/config"
-	httpTest "github.com/plgd-dev/hub/v2/test/http"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/stretchr/testify/assert"
@@ -23,7 +23,7 @@ func doPendingCommand(t *testing.T, request *http.Request) (*pb.CancelPendingCom
 		_ = resp.Body.Close()
 	}()
 	var v pb.CancelPendingCommandsResponse
-	err := httpTest.Unmarshal(resp.StatusCode, resp.Body, &v)
+	err := pkgHttpPb.Unmarshal(resp.StatusCode, resp.Body, &v)
 	return &v, resp.StatusCode, err
 }
 

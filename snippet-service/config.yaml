@@ -44,6 +44,9 @@ apis:
           keyFile: "/secrets/private/cert.key"
           certFile: "/secrets/public/cert.crt"
           useSystemCAPool: false
+      tokenTrustVerification:
+        enabled: true
+        cacheExpiration: 30s
   http:
     address: "0.0.0.0:9101"
     readTimeout: 8s

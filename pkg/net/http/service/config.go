@@ -7,7 +7,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/config"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
-	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgHttpJwt "github.com/plgd-dev/hub/v2/pkg/net/http/jwt"
 	"github.com/plgd-dev/hub/v2/pkg/net/http/server"
 	"github.com/plgd-dev/hub/v2/pkg/net/listener"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
@@ -21,8 +21,8 @@ type Config struct {
 	ServiceName          string
 	FileWatcher          *fsnotify.Watcher
 	Logger               log.Logger
-	WhiteEndpointList    []kitNetHttp.RequestMatcher
-	AuthRules            map[string][]kitNetHttp.AuthArgs
+	WhiteEndpointList    []pkgHttpJwt.RequestMatcher
+	AuthRules            map[string][]pkgHttpJwt.AuthArgs
 	TraceProvider        trace.TracerProvider
 	Validator            *validator.Validator
 	QueryCaseInsensitive map[string]string

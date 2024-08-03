@@ -11,7 +11,7 @@ import (
 
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/hub/v2/pkg/log"
-	pkgJwt "github.com/plgd-dev/hub/v2/pkg/security/jwt"
+	pkgHttpJwt "github.com/plgd-dev/hub/v2/pkg/net/http/jwt"
 	"go.opentelemetry.io/otel/trace"
 	rpcStatus "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc/status"
@@ -229,14 +229,11 @@ func createLogRequest(r *http.Request) *request {
 	}
 	token := strings.SplitN(bearer, " ", 2)
 	if len(token) == 2 && strings.ToLower(token[0]) == "bearer" {
-		claims, err := pkgJwt.ParseToken(token[1])
-		if err != nil {
+		subject, ok := pkgHttpJwt.SubjectFromToken(token[1])
+		if !ok {
 			return &req
 		}
-		subject, err := claims.GetSubject()
-		if err != nil {
-			return &req
-		}
+
 		req.JWT = &jwtMember{
 			Sub: subject,
 		}
