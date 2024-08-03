@@ -121,12 +121,13 @@ func (s *Store) BlacklistTokens(ctx context.Context, owner string, req *pb.Black
 	if owner == "" {
 		return nil, store.ErrInvalidArgument
 	}
+	now := time.Now()
 	filter := bson.D{
 		{Key: pb.OwnerKey, Value: owner},
 		{
 			Key: mongodb.Or, Value: bson.A{
 				bson.M{
-					pb.ExpirationKey: bson.M{"$gte": time.Now().Unix()},
+					pb.ExpirationKey: bson.M{"$gte": now.Unix()},
 				},
 				bson.M{
 					pb.ExpirationKey: bson.M{mongodb.Exists: false},
@@ -162,7 +163,22 @@ func (s *Store) BlacklistTokens(ctx context.Context, owner string, req *pb.Black
 	if err != nil {
 		return nil, err
 	}
+	deleteFilter := bson.D{
+		{Key: pb.OwnerKey, Value: owner},
+		{Key: pb.ExpirationKey, Value: bson.M{"$lt": now.Unix()}},
+		{Key: pb.ExpirationKey, Value: bson.M{"$gt": int64(0)}},
+	}
+	if len(req.GetIdFilter()) > 0 {
+		deleteFilter = append(deleteFilter, bson.E{Key: "_id", Value: bson.M{mongodb.In: req.GetIdFilter()}})
+	}
+
+	deleteRet, err := s.Store.Collection(tokensCol).DeleteMany(ctx, deleteFilter)
+	if err != nil {
+		return nil, err
+	}
+
 	return &pb.BlacklistTokensResponse{
-		Count: ret.MatchedCount,
+		BlacklistedCount: ret.MatchedCount,
+		DeletedCount:     deleteRet.DeletedCount,
 	}, nil
 }

@@ -170,6 +170,15 @@ func TestBlacklistTokens(t *testing.T) {
 			IssuedAt: time.Now().Unix(),
 			ClientId: "client1",
 		},
+		{
+			Id:         "token4",
+			Owner:      owner,
+			Version:    0,
+			Name:       "name3",
+			IssuedAt:   time.Now().Add(-time.Hour).Unix(),
+			Expiration: time.Now().Add(-time.Minute).Unix(),
+			ClientId:   "client1",
+		},
 	}
 
 	for _, token := range tokens {
@@ -178,12 +187,13 @@ func TestBlacklistTokens(t *testing.T) {
 	}
 
 	req := &pb.BlacklistTokensRequest{
-		IdFilter: []string{"token1", "token2"},
+		IdFilter: []string{"token1", "token2", "token4"},
 	}
 
 	resp, err := s.BlacklistTokens(ctx, owner, req)
 	require.NoError(t, err)
-	require.Equal(t, int64(2), resp.GetCount())
+	require.Equal(t, int64(2), resp.GetBlacklistedCount())
+	require.Equal(t, int64(1), resp.GetDeletedCount())
 
 	blacklistedTokens := []*pb.Token{
 		{

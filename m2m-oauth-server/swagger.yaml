@@ -235,7 +235,10 @@ components:
     pbBlacklistTokensResponse:
       type: object
       properties:
-        count:
+        blacklistedCount:
+          type: string
+          format: int64
+        deletedCount:
           type: string
           format: int64
     pbCreateTokenRequest:

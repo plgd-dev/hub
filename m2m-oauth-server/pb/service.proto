@@ -74,7 +74,8 @@ message BlacklistTokensRequest {
 }
 
 message BlacklistTokensResponse {
-  int64 count = 1;
+  int64 blacklisted_count = 1;
+  int64 deleted_count = 2;
 }
 
 message CreateTokenRequest {

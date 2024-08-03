@@ -48,7 +48,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| count | [int64](#int64) |  |  |
+| blacklisted_count | [int64](#int64) |  |  |
+| deleted_count | [int64](#int64) |  |  |
 
 
 
