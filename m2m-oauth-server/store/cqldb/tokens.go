@@ -15,10 +15,10 @@ func (s *Store) GetTokens(context.Context, string, *pb.GetTokensRequest, store.P
 	return store.ErrNotSupported
 }
 
-func (s *Store) DeleteTokens(context.Context) error {
+func (s *Store) DeleteBlacklistedTokens(context.Context) error {
 	return store.ErrNotSupported
 }
 
-func (s *Store) BlacklistTokens(context.Context, string, *pb.BlacklistTokensRequest) (*pb.BlacklistTokensResponse, error) {
+func (s *Store) DeleteTokens(context.Context, string, *pb.DeleteTokensRequest) (*pb.DeleteTokensResponse, error) {
 	return nil, store.ErrNotSupported
 }

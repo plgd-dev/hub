@@ -16,6 +16,7 @@ const (
 	ClientAssertionKey     = "client_assertion"
 	TokenTypeKey           = "token_type"
 	ExpiresInKey           = "expires_in"
+	IDFilterQuery          = "idFilter"
 
 	OriginalTokenClaims = "https://plgd.dev/originalClaims"
 
@@ -25,5 +26,4 @@ const (
 	JWKs                = Base + "/.well-known/jwks.json"
 	OpenIDConfiguration = Base + "/.well-known/openid-configuration"
 	Tokens              = API + "/tokens"
-	BlacklistTokens     = API + "/blacklist"
 )

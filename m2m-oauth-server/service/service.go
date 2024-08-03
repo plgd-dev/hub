@@ -43,7 +43,7 @@ func createStore(ctx context.Context, config storeConfig.Config, fileWatcher *fs
 	}
 	if config.CleanUpDeletedTokens != "" {
 		scheduler, err2 := NewExpiredUpdatesChecker(config.CleanUpDeletedTokens, config.ExtendCronParserBySeconds, func() {
-			err2 := s.DeleteTokens(ctx, time.Now())
+			err2 := s.DeleteBlacklistedTokens(ctx, time.Now())
 			if err2 != nil {
 				log.Errorf("cannot delete expired tokens: %v", err2)
 			}

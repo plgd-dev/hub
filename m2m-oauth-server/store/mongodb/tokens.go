@@ -107,7 +107,7 @@ func (s *Store) GetTokens(ctx context.Context, owner string, req *pb.GetTokensRe
 	return processCursor(ctx, cur, process)
 }
 
-func (s *Store) DeleteTokens(ctx context.Context, now time.Time) error {
+func (s *Store) DeleteBlacklistedTokens(ctx context.Context, now time.Time) error {
 	deleteFilter := bson.D{
 		{Key: pb.ExpirationKey, Value: bson.M{"$lt": now.Unix()}},
 		{Key: pb.ExpirationKey, Value: bson.M{"$gt": int64(0)}},
@@ -117,7 +117,7 @@ func (s *Store) DeleteTokens(ctx context.Context, now time.Time) error {
 	return err
 }
 
-func (s *Store) BlacklistTokens(ctx context.Context, owner string, req *pb.BlacklistTokensRequest) (*pb.BlacklistTokensResponse, error) {
+func (s *Store) DeleteTokens(ctx context.Context, owner string, req *pb.DeleteTokensRequest) (*pb.DeleteTokensResponse, error) {
 	if owner == "" {
 		return nil, store.ErrInvalidArgument
 	}
@@ -177,7 +177,7 @@ func (s *Store) BlacklistTokens(ctx context.Context, owner string, req *pb.Black
 		return nil, err
 	}
 
-	return &pb.BlacklistTokensResponse{
+	return &pb.DeleteTokensResponse{
 		BlacklistedCount: ret.MatchedCount,
 		DeletedCount:     deleteRet.DeletedCount,
 	}, nil

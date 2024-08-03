@@ -56,14 +56,8 @@ func createTokens(ctx context.Context, t *testing.T, createTokens []*pb.CreateTo
 }
 
 func blacklistTokens(ctx context.Context, t *testing.T, tokenIDs []string, token string) {
-	data, err := testHttp.GetContentData(&grpcPb.Content{
-		ContentType: message.AppOcfCbor.String(),
-		Data: test.EncodeToCbor(t, &pb.BlacklistTokensRequest{
-			IdFilter: tokenIDs,
-		}),
-	}, message.AppJSON.String())
-	require.NoError(t, err)
-	rb := testHttp.NewRequest(http.MethodPost, m2mOauthServerTest.HTTPURI(uri.BlacklistTokens), bytes.NewReader(data)).AuthToken(token)
+	rb := testHttp.NewRequest(http.MethodDelete, m2mOauthServerTest.HTTPURI(uri.Tokens), nil).AuthToken(token)
+	rb.AddQuery(uri.IDFilterQuery, tokenIDs...)
 	rb = rb.ContentType(message.AppOcfCbor.String())
 	resp := testHttp.Do(t, rb.Build(ctx, t))
 	defer func() {
@@ -243,8 +237,8 @@ func TestGetTokens(t *testing.T) {
 			if tt.args.req.GetIncludeBlacklisted() {
 				rb = rb.AddQuery("includeBlacklisted", "true")
 			}
-			for _, id := range tt.args.req.GetIdFilter() {
-				rb = rb.AddQuery("idFilter", id)
+			if len(tt.args.req.GetIdFilter()) > 0 {
+				rb = rb.AddQuery(uri.IDFilterQuery, tt.args.req.GetIdFilter()...)
 			}
 			rb = rb.ContentType(message.AppOcfCbor.String())
 			resp := testHttp.Do(t, rb.Build(ctx, t))

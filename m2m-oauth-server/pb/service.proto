@@ -69,11 +69,11 @@ message GetTokensRequest {
   bool include_blacklisted = 2;
 }
 
-message BlacklistTokensRequest {
+message DeleteTokensRequest {
   repeated string id_filter = 1;
 }
 
-message BlacklistTokensResponse {
+message DeleteTokensResponse {
   int64 blacklisted_count = 1;
   int64 deleted_count = 2;
 }
@@ -128,11 +128,10 @@ service M2MOAuthService {
     };
   }
 
-  // Blacklists/revokes tokens
-  rpc BlacklistTokens(BlacklistTokensRequest) returns (BlacklistTokensResponse) {
+  // Deletes/blacklist tokens
+  rpc DeleteTokens(DeleteTokensRequest) returns (DeleteTokensResponse) {
     option (google.api.http) = {
-      post: "/m2m-oauth-server/api/v1/blacklist";
-      body: "*";
+      delete: "/m2m-oauth-server/api/v1/tokens";
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Tokens" ];

@@ -137,7 +137,7 @@ func TestGetTokens(t *testing.T) {
 	}
 }
 
-func TestBlacklistTokens(t *testing.T) {
+func TestDeleteTokens(t *testing.T) {
 	s, cleanUpStore := test.NewMongoStore(t)
 	defer cleanUpStore()
 
@@ -186,11 +186,11 @@ func TestBlacklistTokens(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	req := &pb.BlacklistTokensRequest{
+	req := &pb.DeleteTokensRequest{
 		IdFilter: []string{"token1", "token2", "token4"},
 	}
 
-	resp, err := s.BlacklistTokens(ctx, owner, req)
+	resp, err := s.DeleteTokens(ctx, owner, req)
 	require.NoError(t, err)
 	require.Equal(t, int64(2), resp.GetBlacklistedCount())
 	require.Equal(t, int64(1), resp.GetDeletedCount())
@@ -240,7 +240,7 @@ func TestBlacklistTokens(t *testing.T) {
 	}
 }
 
-func TestDeleteTokens(t *testing.T) {
+func TestDeleteBlacklistedTokens(t *testing.T) {
 	s, cleanUpStore := test.NewMongoStore(t)
 	defer cleanUpStore()
 
@@ -290,7 +290,7 @@ func TestDeleteTokens(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	err := s.DeleteTokens(ctx, time.Now().Add(time.Hour))
+	err := s.DeleteBlacklistedTokens(ctx, time.Now().Add(time.Hour))
 	require.NoError(t, err)
 
 	remainingTokens := []*pb.Token{

@@ -31,39 +31,6 @@
     "application/protojson"
   ],
   "paths": {
-    "/m2m-oauth-server/api/v1/blacklist": {
-      "post": {
-        "summary": "Blacklists/revokes tokens",
-        "operationId": "M2MOAuthService_BlacklistTokens",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/pbBlacklistTokensResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/pbBlacklistTokensRequest"
-            }
-          }
-        ],
-        "tags": [
-          "Tokens"
-        ]
-      }
-    },
     "/m2m-oauth-server/api/v1/tokens": {
       "get": {
         "summary": "Returns all tokens of the owner",
@@ -107,6 +74,39 @@
             "in": "query",
             "required": false,
             "type": "boolean"
+          }
+        ],
+        "tags": [
+          "Tokens"
+        ]
+      },
+      "delete": {
+        "summary": "Deletes/blacklist tokens",
+        "operationId": "M2MOAuthService_DeleteTokens",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbDeleteTokensResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idFilter",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
           }
         ],
         "tags": [
@@ -158,30 +158,6 @@
           "type": "string",
           "format": "int64",
           "title": "Unix timestamp in s when the token has been blacklisted"
-        }
-      }
-    },
-    "pbBlacklistTokensRequest": {
-      "type": "object",
-      "properties": {
-        "idFilter": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "pbBlacklistTokensResponse": {
-      "type": "object",
-      "properties": {
-        "blacklistedCount": {
-          "type": "string",
-          "format": "int64"
-        },
-        "deletedCount": {
-          "type": "string",
-          "format": "int64"
         }
       }
     },
@@ -251,6 +227,19 @@
           "items": {
             "type": "string"
           }
+        }
+      }
+    },
+    "pbDeleteTokensResponse": {
+      "type": "object",
+      "properties": {
+        "blacklistedCount": {
+          "type": "string",
+          "format": "int64"
+        },
+        "deletedCount": {
+          "type": "string",
+          "format": "int64"
         }
       }
     },
