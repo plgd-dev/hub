@@ -26,9 +26,10 @@ import { useValidationsSchema } from '@/containers/SnippetService/Conditions/Det
 import { Props, Inputs } from './Tab3.types'
 import AddNewTokenModal from '@/containers/ApiTokens/AddNewTokenModal'
 import { CreateTokenReturnType } from '@/containers/ApiTokens/ApiTokens.types'
-import { getExpiration, parseClaimData } from '@/containers/ApiTokens/utils'
+import { getCols, getExpiration, parseClaimData } from '@/containers/ApiTokens/utils'
 import { messages as t } from '@/containers/ApiTokens/ApiTokens.i18n'
 import { formatDateVal } from '@/containers/PendingCommands/DateFormat'
+import TableGlobalFilter from '@plgd/shared-ui/src/components/Atomic/TableNew/TableGlobalFilter'
 
 const Tab3: FC<Props> = (props) => {
     const { defaultFormData, resetIndex } = props
@@ -38,6 +39,7 @@ const Tab3: FC<Props> = (props) => {
 
     const [loading, setLoading] = useState(false)
     const [addTokenModal, setAddTokenModal] = useState(false)
+    const [globalFilter, setGlobalFilter] = useState<string>('')
 
     const wellKnownConfig = security.getWellKnownConfig() as WellKnownConfigType & {
         defaultCommandTimeToLive: number
@@ -91,7 +93,7 @@ const Tab3: FC<Props> = (props) => {
         [apiAccessToken, decodedToken, formatDate, formatTime]
     )
 
-    const chunks = useMemo(() => chunk(claimsData, 2), [claimsData])
+    const cols = useMemo(() => getCols(claimsData, globalFilter), [claimsData, globalFilter])
 
     return (
         <>
@@ -137,12 +139,21 @@ const Tab3: FC<Props> = (props) => {
                     <Spacer type='mt-8 mb-4'>
                         <Headline type='h5'>{_(t.tokenClaims)}</Headline>
                     </Spacer>
+                    <TableGlobalFilter
+                        globalFilter={globalFilter}
+                        i18n={{
+                            search: _(g.search),
+                        }}
+                        setGlobalFilter={setGlobalFilter}
+                        showFilterButton={true}
+                    />
                     <Row>
-                        {chunks.map((chunk, key) => (
-                            <Column key={`chunk-col-${key === 0 ? 'left' : 'right'}`} xxl={6}>
-                                <SimpleStripTable leftColSize={6} rightColSize={6} rows={chunk} />
-                            </Column>
-                        ))}
+                        <Column key='chunk-col-left' xxl={6}>
+                            <SimpleStripTable leftColSize={6} rightColSize={6} rows={cols[0]} />
+                        </Column>
+                        <Column key='chunk-col-right' xxl={6}>
+                            <SimpleStripTable leftColSize={6} rightColSize={6} rows={cols[1]} />
+                        </Column>
                     </Row>
                 </Show.When>
                 <Show.Else>

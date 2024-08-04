@@ -1,7 +1,6 @@
-import React, { FC, useMemo } from 'react'
+import React, { FC, useMemo, useState } from 'react'
 import { generatePath, useParams } from 'react-router-dom'
 import { useIntl } from 'react-intl'
-import chunk from 'lodash/chunk'
 
 import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
 import Loadable from '@shared-ui/components/Atomic/Loadable'
@@ -9,6 +8,7 @@ import Headline from '@shared-ui/components/Atomic/Headline'
 import Spacer from '@shared-ui/components/Atomic/Spacer'
 import { Column } from '@shared-ui/components/Atomic/Grid'
 import Row from '@shared-ui/components/Atomic/Grid/Row'
+import TableGlobalFilter from '@shared-ui/components/Atomic/TableNew/TableGlobalFilter'
 
 import { useApiTokenDetail } from '@/containers/ApiTokens/hooks'
 import DetailHeader from './DetailHeader'
@@ -17,7 +17,7 @@ import { messages as t } from '../ApiTokens.i18n'
 import { pages } from '@/routes'
 import { messages as g } from '@/containers/Global.i18n'
 import { formatDateVal } from '@/containers/PendingCommands/DateFormat'
-import { getExpiration, parseClaimData } from '@/containers/ApiTokens/utils'
+import { getCols, getExpiration, parseClaimData } from '@/containers/ApiTokens/utils'
 
 const DetailPage: FC<any> = () => {
     const { apiTokenId } = useParams()
@@ -29,6 +29,8 @@ const DetailPage: FC<any> = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [data]
     )
+
+    const [globalFilter, setGlobalFilter] = useState<string>('')
 
     const claimsData = useMemo(
         () =>
@@ -42,7 +44,7 @@ const DetailPage: FC<any> = () => {
         [data, formatDate, formatTime]
     )
 
-    const chunks = useMemo(() => chunk(claimsData, 2), [claimsData])
+    const cols = useMemo(() => getCols(claimsData, globalFilter), [claimsData, globalFilter])
 
     return (
         <PageLayout
@@ -86,12 +88,21 @@ const DetailPage: FC<any> = () => {
                     <Spacer type='mt-8 mb-4'>
                         <Headline type='h5'>{_(t.tokenClaims)}</Headline>
                     </Spacer>
+                    <TableGlobalFilter
+                        globalFilter={globalFilter}
+                        i18n={{
+                            search: _(g.search),
+                        }}
+                        setGlobalFilter={setGlobalFilter}
+                        showFilterButton={true}
+                    />
                     <Row>
-                        {chunks.map((chunk, key) => (
-                            <Column key={`chunk-col-${key === 0 ? 'left' : 'right'}`} xxl={6}>
-                                <SimpleStripTable leftColSize={6} rightColSize={6} rows={chunk} />
-                            </Column>
-                        ))}
+                        <Column key='chunk-col-left' xxl={6}>
+                            <SimpleStripTable leftColSize={6} rightColSize={6} rows={cols[0]} />
+                        </Column>
+                        <Column key='chunk-col-right' xxl={6}>
+                            <SimpleStripTable leftColSize={6} rightColSize={6} rows={cols[1]} />
+                        </Column>
                     </Row>
                 </>
             </Loadable>

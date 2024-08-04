@@ -6,6 +6,7 @@ import IconWarning from '@shared-ui/components/Atomic/Icon/components/IconWarnin
 import IconInfo from '@shared-ui/components/Atomic/Icon/components/IconInfo'
 
 import { formatDateVal } from '@/containers/PendingCommands/DateFormat'
+import cloneDeep from 'lodash/cloneDeep'
 
 export const getExpiration = (
     value: string | number,
@@ -104,4 +105,17 @@ export const parseClaimData = (options: ParseClaimDataType) => {
     }
 
     return ret
+}
+
+export const getCols = (claimsData: { attribute: string; value: string | number }[], globalFilter: string) => {
+    const getFilterData = () => {
+        if (!globalFilter) return claimsData
+        return claimsData.filter((claim) => claim.attribute.toLowerCase().includes(globalFilter.toLowerCase()))
+    }
+
+    const sortedClaimsData = getFilterData().sort((a, b) => a.attribute.localeCompare(b.attribute))
+
+    const data = cloneDeep(sortedClaimsData)
+    const leftCol = data.splice(0, Math.ceil(data.length / 2))
+    return [leftCol, data]
 }
