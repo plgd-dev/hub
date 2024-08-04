@@ -18,7 +18,7 @@ const (
 	ExpiresInKey           = "expires_in"
 	IDFilterQuery          = "idFilter"
 
-	OriginalTokenClaims = "https://plgd.dev/originalClaims"
+	OriginalTokenClaims = "originalTokenClaims"
 
 	Base                = "/m2m-oauth-server"
 	API                 = Base + "/api/v1"
