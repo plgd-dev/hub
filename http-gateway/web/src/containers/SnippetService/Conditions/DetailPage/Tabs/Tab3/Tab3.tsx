@@ -1,6 +1,5 @@
 import React, { FC, useEffect, useMemo, useState } from 'react'
 import { useIntl } from 'react-intl'
-import chunk from 'lodash/chunk'
 import jwtDecode from 'jwt-decode'
 
 import FormGroup from '@shared-ui/components/Atomic/FormGroup'
@@ -19,6 +18,7 @@ import IconWarning from '@shared-ui/components/Atomic/Icon/components/IconWarnin
 import Show from '@shared-ui/components/Atomic/Show'
 import { Row as RowType } from '@shared-ui/components/Atomic/SimpleStripTable/SimpleStripTable.types'
 import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
+import TableGlobalFilter from '@shared-ui/components/Atomic/TableNew/TableGlobalFilter'
 
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as confT } from '@/containers/SnippetService/SnippetService.i18n'
@@ -29,7 +29,6 @@ import { CreateTokenReturnType } from '@/containers/ApiTokens/ApiTokens.types'
 import { getCols, getExpiration, parseClaimData } from '@/containers/ApiTokens/utils'
 import { messages as t } from '@/containers/ApiTokens/ApiTokens.i18n'
 import { formatDateVal } from '@/containers/PendingCommands/DateFormat'
-import TableGlobalFilter from '@plgd/shared-ui/src/components/Atomic/TableNew/TableGlobalFilter'
 
 const Tab3: FC<Props> = (props) => {
     const { defaultFormData, resetIndex } = props

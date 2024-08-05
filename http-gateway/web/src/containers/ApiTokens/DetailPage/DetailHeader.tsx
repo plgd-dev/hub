@@ -62,6 +62,7 @@ const DetailHeader: FC<Props> = (props) => {
                 deleteButton: testId.apiTokens.detail.deleteButton,
                 deleteButtonCancel: testId.apiTokens.detail.deleteButtonCancel,
                 deleteButtonConfirm: testId.apiTokens.detail.deleteButtonConfirm,
+                deleteModal: testId.apiTokens.detail.deleteModal,
             }}
         />
     )

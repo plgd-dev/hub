@@ -76,7 +76,7 @@ const defaultOptions: Partial<ParseClaimDataType> = {
 export const parseClaimData = (options: ParseClaimDataType) => {
     const { data, hidden, prefix, dateFormat, formatDate, formatTime } = { ...defaultOptions, ...options }
 
-    let ret: { attribute: string; value: string | number }[] = []
+    let ret: { attribute: string; dataTestId?: string; value: string | number }[] = []
 
     const getValue = (key: string, claim: any) => {
         if (typeof claim === 'string' || typeof claim === 'number') {
@@ -98,7 +98,7 @@ export const parseClaimData = (options: ParseClaimDataType) => {
         const claim = data[key]
 
         if (typeof claim !== 'object' || Array.isArray(claim)) {
-            ret = [...ret, { attribute: `${prefix}${key}`, value: getValue(key, claim) || '-' }]
+            ret = [...ret, { attribute: `${prefix}${key}`, dataTestId: `${prefix}${key}`, value: getValue(key, claim) || '-' }]
         } else {
             ret = [...ret, ...parseClaimData({ data: claim, hidden, dateFormat, prefix: `${key}.`, formatTime, formatDate })]
         }

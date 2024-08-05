@@ -18,6 +18,7 @@ import { pages } from '@/routes'
 import { messages as g } from '@/containers/Global.i18n'
 import { formatDateVal } from '@/containers/PendingCommands/DateFormat'
 import { getCols, getExpiration, parseClaimData } from '@/containers/ApiTokens/utils'
+import testId from '@/testId'
 
 const DetailPage: FC<any> = () => {
     const { apiTokenId } = useParams()
@@ -44,7 +45,11 @@ const DetailPage: FC<any> = () => {
         [data, formatDate, formatTime]
     )
 
+    console.log(claimsData)
+
     const cols = useMemo(() => getCols(claimsData, globalFilter), [claimsData, globalFilter])
+
+    console.log(cols)
 
     return (
         <PageLayout
@@ -89,6 +94,7 @@ const DetailPage: FC<any> = () => {
                         <Headline type='h5'>{_(t.tokenClaims)}</Headline>
                     </Spacer>
                     <TableGlobalFilter
+                        dataTestId={testId.apiTokens.detail.tableGlobalFilter}
                         globalFilter={globalFilter}
                         i18n={{
                             search: _(g.search),
@@ -98,10 +104,10 @@ const DetailPage: FC<any> = () => {
                     />
                     <Row>
                         <Column key='chunk-col-left' xxl={6}>
-                            <SimpleStripTable leftColSize={6} rightColSize={6} rows={cols[0]} />
+                            <SimpleStripTable dataTestId={testId.apiTokens.detail.simpleTableLeft} leftColSize={6} rightColSize={6} rows={cols[0]} />
                         </Column>
                         <Column key='chunk-col-right' xxl={6}>
-                            <SimpleStripTable leftColSize={6} rightColSize={6} rows={cols[1]} />
+                            <SimpleStripTable dataTestId={testId.apiTokens.detail.simpleTableRight} leftColSize={6} rightColSize={6} rows={cols[1]} />
                         </Column>
                     </Row>
                 </>

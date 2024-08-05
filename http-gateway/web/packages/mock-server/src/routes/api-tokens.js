@@ -67,6 +67,7 @@ router.get('/api/v1/tokens', (req, res) => {
 router.delete('/api/v1/tokens', (req, res) => {
     try {
         checkError(req, res)
+        tokenDeleted = true
         res.status(200).send('OK')
     } catch (e) {
         res.status(500).send(escapeHtml(e.toString()))

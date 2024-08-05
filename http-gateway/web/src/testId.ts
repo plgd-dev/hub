@@ -207,6 +207,10 @@ const testId = {
             deleteButton: 'hub-snippet-service-api-tokens-detail-delete-button',
             deleteButtonCancel: 'hub-snippet-service-api-tokens-detail-delete-button-cancel',
             deleteButtonConfirm: 'hub-snippet-service-api-tokens-detail-delete-button-confirm',
+            deleteModal: 'hub-snippet-service-api-tokens-detail-delete-modal',
+            simpleTableLeft: 'hub-snippet-service-api-tokens-detail-simple-table-left',
+            simpleTableRight: 'hub-snippet-service-api-tokens-detail-simple-table-right',
+            tableGlobalFilter: 'hub-snippet-service-api-tokens-detail-table-global-filter',
         },
         list: {
             table: 'hub-snippet-service-api-tokens-list-table',
