@@ -68,6 +68,13 @@ const AddNewTokenModal: FC<Props> = (props) => {
     const [pickedExpiration, setPickedExpiration] = useState<null | Date>(null)
     const [tokenData, setTokenData] = useState<undefined | string>(undefined)
 
+    const minDate = useMemo(() => {
+        const min = new Date()
+        min.setDate(min.getDate() + 1)
+
+        return min
+    }, [])
+
     const currentDate = useMemo(() => {
         const cd = new Date()
         cd.setDate(cd.getDate() + expiration)
@@ -103,7 +110,7 @@ const AddNewTokenModal: FC<Props> = (props) => {
                         setExpiration(value.value as number)
 
                         if (value.value === -1) {
-                            setPickedExpiration(new Date())
+                            setPickedExpiration(minDate)
                         }
                     }}
                     options={expirationOptions}
@@ -119,11 +126,12 @@ const AddNewTokenModal: FC<Props> = (props) => {
                         <FormLabel text={_(t.expirationDate)} />
                         <DatePicker
                             bottomButtons
+                            defaultValue={pickedExpiration}
                             i18n={{
                                 clear: _(g.clear),
                                 confirm: _(g.confirm),
                             }}
-                            minDate={new Date()}
+                            minDate={minDate}
                             onChange={(d) => setPickedExpiration(d)}
                         />
                     </FormGroup>
