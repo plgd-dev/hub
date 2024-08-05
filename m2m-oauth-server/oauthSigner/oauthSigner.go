@@ -28,7 +28,7 @@ type OAuthSigner struct {
 	accessTokenJwkKey       jwk.Key
 }
 
-func New(ctx context.Context, config Config, getOpenIDConfiguration validator.GetOpenIDConfigurationFunc, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*OAuthSigner, error) {
+func New(ctx context.Context, config Config, getOpenIDConfiguration validator.GetOpenIDConfigurationFunc, customTokenIssuerClients map[string]pkgJwt.TokenIssuerClient, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*OAuthSigner, error) {
 	accessTokenKey, err := LoadPrivateKey(config.PrivateKeyFile)
 	if err != nil {
 		return nil, fmt.Errorf("cannot load private privateKeyFile(%v): %w", config.PrivateKeyFile, err)
@@ -44,7 +44,7 @@ func New(ctx context.Context, config Config, getOpenIDConfiguration validator.Ge
 		if !c.JWTPrivateKey.Enabled {
 			continue
 		}
-		validator, err := validator.New(ctx, c.JWTPrivateKey.Authorization, fileWatcher, logger, tracerProvider, validator.WithGetOpenIDConfiguration(getOpenIDConfiguration))
+		validator, err := validator.New(ctx, c.JWTPrivateKey.Authorization, fileWatcher, logger, tracerProvider, validator.WithGetOpenIDConfiguration(getOpenIDConfiguration), validator.WithCustomTokenIssuerClients(customTokenIssuerClients))
 		if err != nil {
 			closer.Execute()
 			return nil, fmt.Errorf("cannot create validator: %w", err)

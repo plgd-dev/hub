@@ -17,13 +17,47 @@ import (
 	"go.uber.org/atomic"
 )
 
-type Client struct {
+type HTTPClient struct {
 	*http.Client
 	tokenEndpoint string
 }
 
-func NewClient(client *http.Client, tokenEndpoint string) *Client {
-	return &Client{
+func (c *HTTPClient) VerifyTokenByRequest(ctx context.Context, token, tokenID string) (*pb.Token, error) {
+	uri, err := url.Parse(c.tokenEndpoint)
+	if err != nil {
+		return nil, fmt.Errorf("cannot parse tokenEndpoint %v: %w", c.tokenEndpoint, err)
+	}
+	query := uri.Query()
+	query.Add("idFilter", tokenID)
+	query.Add("includeBlacklisted", "true")
+	uri.RawQuery = query.Encode()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri.String(), nil)
+	if err != nil {
+		return nil, fmt.Errorf("cannot create request for GET %v: %w", uri.String(), err)
+	}
+
+	req.Header.Set("Accept", "application/protojson")
+	req.Header.Set("Authorization", "bearer "+token)
+	resp, err := c.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("cannot send request for GET %v: %w", c.tokenEndpoint, err)
+	}
+
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	var gotToken pb.Token
+	err = pkgHttpPb.Unmarshal(resp.StatusCode, resp.Body, &gotToken)
+	if err != nil {
+		return nil, err
+	}
+	return &gotToken, nil
+}
+
+func NewHTTPClient(client *http.Client, tokenEndpoint string) *HTTPClient {
+	return &HTTPClient{
 		Client:        client,
 		tokenEndpoint: tokenEndpoint,
 	}
@@ -75,17 +109,19 @@ func (tf *tokenOrFuture) Get(ctx context.Context) (*tokenRecord, error) {
 }
 
 type tokenIssuerCache struct {
-	client        *http.Client
-	tokenEndpoint string
-	tokens        map[uuid.UUID]tokenOrFuture
-	mutex         sync.Mutex
+	client TokenIssuerClient
+	tokens map[uuid.UUID]tokenOrFuture
+	mutex  sync.Mutex
 }
 
-func newTokenIssuerCache(client *Client) *tokenIssuerCache {
+type TokenIssuerClient interface {
+	VerifyTokenByRequest(ctx context.Context, token, tokenID string) (*pb.Token, error)
+}
+
+func newTokenIssuerCache(client TokenIssuerClient) *tokenIssuerCache {
 	return &tokenIssuerCache{
-		client:        client.Client,
-		tokenEndpoint: client.tokenEndpoint,
-		tokens:        make(map[uuid.UUID]tokenOrFuture),
+		client: client,
+		tokens: make(map[uuid.UUID]tokenOrFuture),
 	}
 }
 
@@ -154,37 +190,7 @@ func (tc *tokenIssuerCache) checkExpirations(now time.Time) {
 }
 
 func (tc *tokenIssuerCache) verifyTokenByRequest(ctx context.Context, token, tokenID string) (*pb.Token, error) {
-	uri, err := url.Parse(tc.tokenEndpoint)
-	if err != nil {
-		return nil, fmt.Errorf("cannot parse tokenEndpoint %v: %w", tc.tokenEndpoint, err)
-	}
-	query := uri.Query()
-	query.Add("idFilter", tokenID)
-	query.Add("includeBlacklisted", "true")
-	uri.RawQuery = query.Encode()
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri.String(), nil)
-	if err != nil {
-		return nil, fmt.Errorf("cannot create request for GET %v: %w", uri.String(), err)
-	}
-
-	req.Header.Set("Accept", "application/protojson")
-	req.Header.Set("Authorization", "bearer "+token)
-	resp, err := tc.client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("cannot send request for GET %v: %w", tc.tokenEndpoint, err)
-	}
-
-	defer func() {
-		_ = resp.Body.Close()
-	}()
-
-	var gotToken pb.Token
-	err = pkgHttpPb.Unmarshal(resp.StatusCode, resp.Body, &gotToken)
-	if err != nil {
-		return nil, err
-	}
-	return &gotToken, nil
+	return tc.client.VerifyTokenByRequest(ctx, token, tokenID)
 }
 
 type TokenCache struct {
@@ -193,7 +199,7 @@ type TokenCache struct {
 	logger     log.Logger
 }
 
-func NewTokenCache(clients map[string]*Client, expiration time.Duration, logger log.Logger) *TokenCache {
+func NewTokenCache(clients map[string]TokenIssuerClient, expiration time.Duration, logger log.Logger) *TokenCache {
 	tc := &TokenCache{
 		expiration: expiration,
 		logger:     logger,

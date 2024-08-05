@@ -32,7 +32,7 @@ var (
 
 type config struct {
 	verifyTrust     bool
-	clients         map[string]*Client
+	clients         map[string]TokenIssuerClient
 	cacheExpiration time.Duration
 	stop            <-chan struct{}
 }
@@ -47,7 +47,7 @@ func (o optionFunc) apply(c *config) {
 	o(c)
 }
 
-func WithTrustVerification(clients map[string]*Client, cacheExpiration time.Duration, stop <-chan struct{}) Option {
+func WithTrustVerification(clients map[string]TokenIssuerClient, cacheExpiration time.Duration, stop <-chan struct{}) Option {
 	return optionFunc(func(c *config) {
 		c.verifyTrust = true
 		c.clients = clients
