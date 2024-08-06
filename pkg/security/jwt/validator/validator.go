@@ -44,7 +44,8 @@ func (v *Validator) GetParser() *jwtValidator.Validator {
 type GetOpenIDConfigurationFunc func(ctx context.Context, c *http.Client, authority string) (openid.Config, error)
 
 type Options struct {
-	getOpenIDConfiguration GetOpenIDConfigurationFunc
+	getOpenIDConfiguration   GetOpenIDConfigurationFunc
+	customTokenIssuerClients map[string]jwtValidator.TokenIssuerClient
 }
 
 func WithGetOpenIDConfiguration(f GetOpenIDConfigurationFunc) func(o *Options) {
@@ -53,30 +54,40 @@ func WithGetOpenIDConfiguration(f GetOpenIDConfigurationFunc) func(o *Options) {
 	}
 }
 
+func WithCustomTokenIssuerClients(clients map[string]jwtValidator.TokenIssuerClient) func(o *Options) {
+	return func(o *Options) {
+		o.customTokenIssuerClients = clients
+	}
+}
+
 func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, opts ...func(o *Options)) (*Validator, error) {
 	options := Options{
-		getOpenIDConfiguration: openid.GetConfiguration,
+		getOpenIDConfiguration:   openid.GetConfiguration,
+		customTokenIssuerClients: make(map[string]jwtValidator.TokenIssuerClient),
 	}
 	for _, o := range opts {
 		o(&options)
+	}
+	if options.getOpenIDConfiguration == nil {
+		return nil, errors.New("GetOpenIDConfiguration is nil")
+	}
+	if options.customTokenIssuerClients == nil {
+		return nil, errors.New("customTokenIssuerClients is nil")
 	}
 
 	keys := jwtValidator.NewMultiKeyCache()
 	var onClose fn.FuncList
 	openIDConfigurations := make([]openid.Config, 0, len(config.Endpoints))
-	clients := make(map[string]*jwtValidator.Client, len(config.Endpoints))
+	clients := make(map[string]jwtValidator.TokenIssuerClient, len(config.Endpoints))
 	for _, authority := range config.Endpoints {
 		httpClient, err := client.New(authority.HTTP, fileWatcher, logger, tracerProvider)
 		if err != nil {
+			onClose.Execute()
 			return nil, fmt.Errorf("cannot create client cert manager: %w", err)
 		}
 
 		ctx2, cancel := context.WithTimeout(ctx, authority.HTTP.Timeout)
 		defer cancel()
-
-		if options.getOpenIDConfiguration == nil {
-			return nil, errors.New("GetOpenIDConfiguration is nil")
-		}
 
 		openIDCfg, err := options.getOpenIDConfiguration(ctx2, httpClient.HTTP(), authority.Authority)
 		if err != nil {
@@ -88,8 +99,12 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		issuer := pkgHttpUri.CanonicalURI(openIDCfg.Issuer)
 		keys.Add(issuer, openIDCfg.JWKSURL, httpClient.HTTP())
 		openIDConfigurations = append(openIDConfigurations, openIDCfg)
-		if config.TokenVerification.Enabled && openIDCfg.PlgdTokensEndpoint != "" {
-			clients[issuer] = jwtValidator.NewClient(httpClient.HTTP(), openIDCfg.PlgdTokensEndpoint)
+		if openIDCfg.PlgdTokensEndpoint != "" {
+			if opts, ok := options.customTokenIssuerClients[issuer]; ok {
+				clients[issuer] = opts
+				continue
+			}
+			clients[issuer] = jwtValidator.NewHTTPClient(httpClient.HTTP(), openIDCfg.PlgdTokensEndpoint)
 		}
 	}
 
