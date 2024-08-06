@@ -307,7 +307,6 @@ func MakeValidatorConfig() validator.Config {
 			},
 		},
 		TokenVerification: validator.TokenTrustVerificationConfig{
-			Enabled:         true,
 			CacheExpiration: VALIDATOR_CACHE_EXPIRATION,
 		},
 	}

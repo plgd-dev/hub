@@ -46,7 +46,6 @@ apis:
           certFile: "/secrets/public/cert.crt"
           useSystemCAPool: false
       tokenTrustVerification:
-        enabled: true
         cacheExpiration: 30s
 clients:
   identityStore:

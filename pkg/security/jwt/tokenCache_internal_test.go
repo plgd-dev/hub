@@ -34,7 +34,7 @@ func TestTokenRecord_IsExpired(t *testing.T) {
 }
 
 func TestTokenIssuerCacheSetAndGetToken(t *testing.T) {
-	cache := newTokenIssuerCache(&Client{Client: &http.Client{}, tokenEndpoint: "http://example.com"})
+	cache := newTokenIssuerCache(&HTTPClient{Client: &http.Client{}, tokenEndpoint: "http://example.com"})
 
 	ctx, cancel := context.WithTimeout(context.Background(), TEST_TIMEOUT)
 	defer cancel()
@@ -110,7 +110,7 @@ func TestTokenIssuerCacheSetAndGetToken(t *testing.T) {
 func TestTokenIssuerCacheCheckExpirations(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), TEST_TIMEOUT)
 	defer cancel()
-	cache := newTokenIssuerCache(&Client{Client: &http.Client{}, tokenEndpoint: "http://example.com"})
+	cache := newTokenIssuerCache(&HTTPClient{Client: &http.Client{}, tokenEndpoint: "http://example.com"})
 
 	now := time.Now()
 	tokenID1 := uuid.New()

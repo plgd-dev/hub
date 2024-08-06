@@ -54,23 +54,13 @@ var JWTPrivateKeyOAuthClient = oauthsigner.Client{
 	AllowedScopes:       nil,
 	JWTPrivateKey: oauthsigner.PrivateKeyJWTConfig{
 		Enabled:       true,
-		Authorization: MakeValidatorConfig(),
+		Authorization: config.MakeValidatorConfig(),
 	},
 }
 
 var OAuthClients = oauthsigner.OAuthClientsConfig{
 	&ServiceOAuthClient,
 	&JWTPrivateKeyOAuthClient,
-}
-
-func MakeValidatorConfig() validator.Config {
-	c := config.MakeValidatorConfig()
-	// tokens are verified by the m2m-oauth-server, so we want to disable the verification here to avoid infinite loop
-	// of token verification
-	c.TokenVerification = validator.TokenTrustVerificationConfig{
-		Enabled: false,
-	}
-	return c
 }
 
 func MakeConfig(t require.TestingT) service.Config {
@@ -91,7 +81,7 @@ func MakeConfig(t require.TestingT) service.Config {
 			HTTP:      config.MakeHttpClientConfig(),
 		},
 	)
-	cfg.APIs.GRPC.Authorization.Config = MakeValidatorConfig()
+	cfg.APIs.GRPC.Authorization.Config = config.MakeValidatorConfig()
 	cfg.Clients.Storage = MakeStoreConfig()
 
 	cfg.OAuthSigner.PrivateKeyFile = urischeme.URIScheme(os.Getenv("M2M_OAUTH_SERVER_PRIVATE_KEY"))
