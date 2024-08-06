@@ -225,10 +225,13 @@ tls:
     {{- if not $tokenTrustVerification }}
     {{- $tokenTrustVerification = $.Values.global.authorization.tokenTrustVerification }}
     {{- end }}
-    enabled: {{ $tokenTrustVerification.enabled | default false }}
-    {{- if $tokenTrustVerification.enabled }}
-    cacheExpiration: {{ $tokenTrustVerification.cacheExpiration }}
+    {{- $cacheExpiration := "30s" }}
+    {{- if $tokenTrustVerification }}
+    {{- if $tokenTrustVerification.cacheExpiration }}
+    {{- $cacheExpiration = $tokenTrustVerification.cacheExpiration }}
     {{- end }}
+    {{- end }}
+    cacheExpiration: {{ $cacheExpiration }}
 {{- end }}
 
 {{- define "plgd-hub.authorizationConfig" }}

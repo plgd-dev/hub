@@ -23,13 +23,12 @@ func (c *AuthorityConfig) Validate() error {
 }
 
 type TokenTrustVerificationConfig struct {
-	Enabled         bool          `yaml:"enabled,omitempty" json:"enabled,omitempty"`
 	CacheExpiration time.Duration `yaml:"cacheExpiration,omitempty" json:"cacheExpiration,omitempty"`
 }
 
 func (c *TokenTrustVerificationConfig) Validate() error {
-	if c.Enabled && c.CacheExpiration == 0 {
-		return fmt.Errorf("cacheExpiration('%v')", c.CacheExpiration)
+	if c.CacheExpiration == 0 {
+		c.CacheExpiration = time.Second * 30
 	}
 	return nil
 }
