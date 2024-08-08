@@ -93,7 +93,7 @@ const ListPage: FC<any> = () => {
                 accessor: 'conditionName',
                 Cell: ({ value, row }: { value: string; row: any }) => {
                     if (row.original.onDemand) {
-                        return 'on demand'
+                        return <StatusTag variant={statusTagVariants.NORMAL}>{_(confT.onDemand)}</StatusTag>
                     } else {
                         return (
                             <Tag
