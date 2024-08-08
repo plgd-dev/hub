@@ -16,19 +16,16 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
-func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*service.Service, error) {
-
+func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*service.Service, error) {
 	interceptor := pkgGrpc.MakeAuthInterceptors(func(ctx context.Context, _ string) (context.Context, error) {
 		return ctx, nil
 	})
 	opts, err := server.MakeDefaultOptions(interceptor, logger, noop.NewTracerProvider())
 	if err != nil {
-
 		return nil, fmt.Errorf("cannot create grpc server options: %w", err)
 	}
 	server, err := server.New(config.APIs.GRPC.BaseConfig, fileWatcher, logger, opts...)
 	if err != nil {
-
 		return nil, err
 	}
 

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/plgd-dev/hub/v2/pkg/build"
@@ -20,7 +19,7 @@ func run(cfg service.Config, logger log.Logger) error {
 		_ = fileWatcher.Close()
 	}()
 
-	s, err := service.New(context.Background(), cfg, fileWatcher, logger)
+	s, err := service.New(cfg, fileWatcher, logger)
 	if err != nil {
 		return fmt.Errorf("cannot create service: %w", err)
 	}

@@ -2104,8 +2104,6 @@ grpcreflection:
   extraVolumes: {}
   # -- Optional extra volume mounts
   extraVolumeMounts: {}
-  # -- External domain for grpc-reflection. Default: api.{{ global.domain }}
-  domain:
   ingress:
     # -- Enable ingress
     enabled: true
