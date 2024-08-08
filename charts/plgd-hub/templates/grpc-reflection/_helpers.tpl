@@ -20,7 +20,7 @@
 {{- define "plgd-hub.grpcreflection.domainToName" -}}
     {{- $domain := index . 0 }}
     {{- $fullname := index . 1 }}
-    {{- (printf "%s-%s" $domain $fullname) | trunc 63 | trimSuffix "-" }}
+    {{- (printf "%s-%s" $domain $fullname) | replace "+" "-" | replace "." "-" | trunc 63 | trimSuffix "-" }}
 {{- end -}}
 
 {{- define "plgd-hub.grpcreflection.mapServicesToDomains" -}}
