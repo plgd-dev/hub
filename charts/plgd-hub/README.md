@@ -418,7 +418,6 @@ global:
 | grpcreflection.config.volume | string | `"config"` | Service configuration volume name |
 | grpcreflection.deploymentAnnotations | object | `{}` | Additional annotations for grpc-reflection deployment |
 | grpcreflection.deploymentLabels | object | `{}` | Additional labels for grpc-reflection deployment |
-| grpcreflection.domain | string | `nil` | External domain for grpc-reflection. Default: api.{{ global.domain }} |
 | grpcreflection.enabled | bool | `true` | Enable grpc-reflection service |
 | grpcreflection.extraContainers | object | `{}` | Extra POD containers |
 | grpcreflection.extraVolumeMounts | object | `{}` | Optional extra volume mounts |
@@ -441,7 +440,7 @@ global:
 | grpcreflection.log.dumpBody | bool | `false` | Dump grpc messages |
 | grpcreflection.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
 | grpcreflection.log.encoding | string | `"json"` | The supported values are: "json", "console" |
-| grpcreflection.log.level | string | `"info"` | Logging enabled from level  |
+| grpcreflection.log.level | string | `"info"` | Logging enabled from level |
 | grpcreflection.log.stacktrace.enabled | bool | `false` | Log stacktrace |
 | grpcreflection.log.stacktrace.level | string | `"warn"` | Stacktrace from level |
 | grpcreflection.name | string | `"grpc-reflection"` | Name of component. Used in label selectors |
