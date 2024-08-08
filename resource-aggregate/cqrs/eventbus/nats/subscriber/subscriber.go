@@ -13,9 +13,11 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/fn"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
 	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/pb"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -32,12 +34,13 @@ type reconnect struct {
 
 // Subscriber implements a eventbus.Subscriber interface.
 type Subscriber struct {
-	dataUnmarshaler UnmarshalerFunc
-	logger          log.Logger
-	conn            *nats.Conn
-	goroutinePoolGo eventbus.GoroutinePoolGoFunc
-	closeFunc       fn.FuncList
-	pendingLimits   natsClient.PendingLimitsConfig
+	dataUnmarshaler         UnmarshalerFunc
+	logger                  log.Logger
+	conn                    *nats.Conn
+	goroutinePoolGo         eventbus.GoroutinePoolGoFunc
+	closeFunc               fn.FuncList
+	pendingLimits           natsClient.PendingLimitsConfig
+	leadResourceTypeEnabled bool
 
 	lock        sync.Mutex
 	reconnectID uint64
@@ -136,8 +139,8 @@ func WithGoPool(goroutinePoolGo eventbus.GoroutinePoolGoFunc) GoroutinePoolGoOpt
 	}
 }
 
-// Create publisher with existing NATS connection and proto marshaller
-func New(conn *nats.Conn, pendingLimits natsClient.PendingLimitsConfig, logger log.Logger, opts ...Option) (*Subscriber, error) {
+// Create subscriber with existing NATS connection and proto marshaller
+func New(conn *nats.Conn, pendingLimits natsClient.PendingLimitsConfig, leadResourceTypeEnabled bool, logger log.Logger, opts ...Option) (*Subscriber, error) {
 	cfg := options{
 		dataUnmarshaler: json.Unmarshal,
 		goroutinePoolGo: nil,
@@ -151,16 +154,21 @@ func New(conn *nats.Conn, pendingLimits natsClient.PendingLimitsConfig, logger l
 	}
 
 	s := &Subscriber{
-		dataUnmarshaler: cfg.dataUnmarshaler,
-		logger:          logger,
-		conn:            conn,
-		goroutinePoolGo: cfg.goroutinePoolGo,
-		pendingLimits:   pendingLimits,
-		reconnect:       make([]reconnect, 0, 8),
+		dataUnmarshaler:         cfg.dataUnmarshaler,
+		logger:                  logger,
+		conn:                    conn,
+		goroutinePoolGo:         cfg.goroutinePoolGo,
+		pendingLimits:           pendingLimits,
+		leadResourceTypeEnabled: leadResourceTypeEnabled,
+		reconnect:               make([]reconnect, 0, 8),
 	}
 	conn.SetReconnectHandler(s.reconnectedHandler)
 
 	return s, nil
+}
+
+func (s *Subscriber) GetResourceEventSubjects(owner string, resourceID *commands.ResourceId, eventType string) []string {
+	return utils.GetResourceEventSubjects(owner, resourceID, eventType, s.leadResourceTypeEnabled)
 }
 
 // Subscribe creates a observer that listen on events from topics.

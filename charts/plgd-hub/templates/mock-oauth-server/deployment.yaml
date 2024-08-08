@@ -72,7 +72,7 @@ spec:
           {{- range .Values.mockoauthserver.command  }}
             - {{ . | quote }}
           {{- end }}
-          {{- end}}
+          {{- end }}
           args:
             - "--config"
             - {{  printf "%s/%s" .Values.mockoauthserver.config.mountPath .Values.mockoauthserver.config.fileName | quote }}

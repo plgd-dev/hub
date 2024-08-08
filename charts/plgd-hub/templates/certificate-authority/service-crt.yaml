@@ -30,10 +30,10 @@ spec:
     - {{ printf "%s-http" $serviceDns | quote }}
     - {{ printf "%s-grpc" $serviceDns | quote }}
     {{- if .Values.certificateauthority.service.grpc.crt.extraDnsNames }}
-    {{- toYaml .Values.certificateauthority.service.grpc.crt.extraDnsNames | nindent 4}}
+    {{- toYaml .Values.certificateauthority.service.grpc.crt.extraDnsNames | nindent 4 }}
     {{- end }}
     {{- if .Values.certificateauthority.service.http.crt.extraDnsNames }}
-    {{- toYaml .Values.certificateauthority.service.http.crt.extraDnsNames | nindent 4}}
+    {{- toYaml .Values.certificateauthority.service.http.crt.extraDnsNames | nindent 4 }}
     {{- end }}
   duration: {{ .Values.certmanager.internal.cert.duration | default .Values.certmanager.default.cert.duration }}
   renewBefore: {{ .Values.certmanager.internal.cert.renewBefore | default .Values.certmanager.default.cert.renewBefore }}

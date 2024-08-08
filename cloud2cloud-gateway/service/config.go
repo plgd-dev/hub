@@ -100,7 +100,7 @@ func (c *ClientsConfig) Validate() error {
 }
 
 type EventBusConfig struct {
-	NATS natsClient.Config `yaml:"nats" json:"nats"`
+	NATS natsClient.ConfigSubscriber `yaml:"nats" json:"nats"`
 }
 
 func (c *EventBusConfig) Validate() error {

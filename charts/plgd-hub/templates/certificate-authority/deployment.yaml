@@ -58,7 +58,7 @@ spec:
           {{- range .Values.certificateauthority.command  }}
             - {{ . | quote }}
           {{- end }}
-          {{- end}}
+          {{- end }}
           args:
             - "--config"
             - {{  printf "%s/%s" .Values.certificateauthority.config.mountPath .Values.certificateauthority.config.fileName | quote }}

@@ -44,6 +44,8 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+      leadResourceType:
+        enabled: false
   grpcGateway:
     grpc:
       address: ""

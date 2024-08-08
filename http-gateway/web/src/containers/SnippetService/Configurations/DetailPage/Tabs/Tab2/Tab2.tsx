@@ -16,6 +16,7 @@ import { messages as g } from '@/containers/Global.i18n'
 import { Props } from './Tab2.types'
 import DateFormat from '@/containers/PendingCommands/DateFormat'
 import { pages } from '@/routes'
+import testId from '@/testId'
 
 const Tab2: FC<Props> = (props) => {
     const { data, loading, isActiveTab } = props
@@ -62,6 +63,7 @@ const Tab2: FC<Props> = (props) => {
                             {
                                 onClick: () => navigate(generatePath(pages.SNIPPET_SERVICE.CONDITIONS.DETAIL.LINK, { conditionId: row.original.id, tab: '' })),
                                 label: _(g.view),
+                                dataTestId: testId.snippetService.configurations.detail.conditionsTable?.concat('-detail'),
                                 icon: <IconArrowDetail />,
                             },
                         ]}
@@ -87,6 +89,7 @@ const Tab2: FC<Props> = (props) => {
                 <Table
                     columns={columns}
                     data={data || []}
+                    dataTestId={testId.snippetService.configurations.detail.conditionsTable}
                     defaultPageSize={10}
                     defaultSortBy={[
                         {

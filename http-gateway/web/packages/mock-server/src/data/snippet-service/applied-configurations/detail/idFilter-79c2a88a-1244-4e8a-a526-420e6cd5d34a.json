@@ -1,0 +1,76 @@
+[
+  {
+    "result": {
+      "configurationId": {
+        "id": "48998f7d-2a70-46a4-8a68-745b69d55489",
+        "version": "0"
+      },
+      "conditionId": {
+        "id": "00fa41ad-b3bf-4f00-bfe1-c71c439e4cda",
+        "version": "1"
+      },
+      "resources": [
+        {
+          "href": "/not/exists",
+          "correlationId": "79c2a88a-1244-4e8a-a526-420e6cd5d34a.c3217371-1a90-4f99-b9cf-9896ea349f4f",
+          "status": "DONE",
+          "resourceUpdated": {
+            "resourceId": {
+              "deviceId": "3aae0672-47f3-4498-78d4-b061e6105ccd",
+              "href": "/not/exists"
+            },
+            "status": "CANCELED",
+            "auditContext": {
+              "correlationId": "79c2a88a-1244-4e8a-a526-420e6cd5d34a.c3217371-1a90-4f99-b9cf-9896ea349f4f",
+              "owner": "beb32777-9680-4f42-8761-350eebe76a85",
+              "userId": "beb32777-9680-4f42-8761-350eebe76a85"
+            },
+            "eventMetadata": {
+              "hubId": "1c10a3b6-287c-11ec-ac2d-13054959c274",
+              "version": "3",
+              "timestamp": "1720525494700155275",
+              "connectionId": "10.1.65.210:56476",
+              "sequence": "0"
+            }
+          },
+          "validUntil": "0"
+        },
+        {
+          "href": "/oc/con",
+          "correlationId": "79c2a88a-1244-4e8a-a526-420e6cd5d34a.1b36275d-4966-4c89-b544-85a67ce38ad5",
+          "status": "DONE",
+          "resourceUpdated": {
+            "content": {
+              "n": "new jkralik device name"
+            },
+            "auditContext": {
+              "userId": "1e3a67e3-ec52-42e2-8bb0-aae61d4af7c8",
+              "correlationId": "79c2a88a-1244-4e8a-a526-420e6cd5d34a.1b36275d-4966-4c89-b544-85a67ce38ad5",
+              "owner": "beb32777-9680-4f42-8761-350eebe76a85"
+            },
+            "eventMetadata": {
+              "hubId": "1c10a3b6-287c-11ec-ac2d-13054959c274",
+              "version": "29",
+              "timestamp": "1720120774403521580",
+              "connectionId": "10.110.110.10:1544",
+              "sequence": "12850"
+            },
+            "resourceTypes": [
+              "oic.wk.con"
+            ],
+            "resourceId": {
+              "deviceId": "3aae0672-47f3-4498-78d4-b061e6105ccd",
+              "href": "/oc/con"
+            },
+            "status": "OK"
+          },
+          "validUntil": "0"
+        }
+      ],
+      "owner": "beb32777-9680-4f42-8761-350eebe76a85",
+      "timestamp": "1720525494708332684",
+      "id": "79c2a88a-1244-4e8a-a526-420e6cd5d34a",
+      "deviceId": "3aae0672-47f3-4498-78d4-b061e6105ccd"
+    }
+  }
+]

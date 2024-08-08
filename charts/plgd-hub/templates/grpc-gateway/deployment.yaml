@@ -57,7 +57,7 @@ spec:
           {{- range .Values.grpcgateway.command  }}
             - {{ . | quote }}
           {{- end }}
-          {{- end}}
+          {{- end }}
           args:
             - "--config"
             - {{  printf "%s/%s" .Values.grpcgateway.config.mountPath .Values.grpcgateway.config.fileName | quote }}

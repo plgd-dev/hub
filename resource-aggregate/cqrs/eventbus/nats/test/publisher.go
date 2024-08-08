@@ -13,6 +13,9 @@ func NewClientAndPublisher(config client.ConfigPublisher, fileWatcher *fsnotify.
 		return nil, nil, err
 	}
 
+	if config.LeadResourceType != nil && config.LeadResourceType.Enabled {
+		opts = append(opts, publisher.WithLeadResourceType(config.LeadResourceType.GetCompiledRegexFilter(), config.LeadResourceType.Filter, config.LeadResourceType.UseUUID))
+	}
 	p, err := publisher.New(c.GetConn(), config.JetStream, opts...)
 	if err != nil {
 		c.Close()

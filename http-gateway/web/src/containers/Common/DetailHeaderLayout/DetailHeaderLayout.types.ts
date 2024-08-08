@@ -23,5 +23,6 @@ export type Props = {
         deleteButton?: string
         deleteButtonCancel?: string
         deleteButtonConfirm?: string
+        deleteModal?: string
     }
 }

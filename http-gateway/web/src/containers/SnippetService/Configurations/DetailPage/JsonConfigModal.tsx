@@ -1,4 +1,4 @@
-import React, { FC, useCallback, useEffect, useRef, useState } from 'react'
+import React, { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useIntl } from 'react-intl'
 import isFunction from 'lodash/isFunction'
 
@@ -16,6 +16,7 @@ import { messages as g } from '@/containers/Global.i18n'
 import { messages as confT } from '../../SnippetService.i18n'
 import { ResourceTypeEnhanced } from './Tabs/Tab1/Tab1.types'
 import { messages as t } from '@/containers/Devices/Devices.i18n'
+import { hasInvalidConfigurationResource } from '@/containers/SnippetService/utils'
 
 type Props = {
     resource?: ResourceTypeEnhanced
@@ -51,7 +52,7 @@ const JsonConfigModal: FC<Props> = (props) => {
     const editor = useRef()
 
     const handleOnEditorChange = useCallback((json: object) => {
-        json && setJsonData(json)
+        setJsonData(json || '')
     }, [])
 
     const handleModalContentViewChange = useCallback(() => {
@@ -89,7 +90,15 @@ const JsonConfigModal: FC<Props> = (props) => {
         return (
             <div style={{ height: '100%', display: 'flex', flexDirection: 'column', flex: '1 1 auto' }}>
                 <ModalStrippedLine
-                    component={<FormInput compactFormComponentsView={false} onChange={(e) => setHref(e.target.value)} size={inputSizes.SMALL} value={href} />}
+                    component={
+                        <FormInput
+                            compactFormComponentsView={false}
+                            dataTestId={dataTestId?.concat('-input-href')}
+                            onChange={(e) => setHref(e.target.value)}
+                            size={inputSizes.SMALL}
+                            value={href}
+                        />
+                    }
                     label={_(g.href)}
                 />
                 <ModalStrippedLine
@@ -147,6 +156,11 @@ const JsonConfigModal: FC<Props> = (props) => {
             })
     }
 
+    const hasInvalidResource = useMemo(
+        () => jsonData === '' || hasInvalidConfigurationResource([{ href, timeToLive: ttl.toString(), content: jsonData || {} }]),
+        [href, jsonData, ttl]
+    )
+
     const renderFooter = () => (
         <ModalFooter
             right={
@@ -154,7 +168,7 @@ const JsonConfigModal: FC<Props> = (props) => {
                     <Button
                         className='modal-button'
                         dataTestId={dataTestId?.concat('-confirm-button')}
-                        disabled={disabled || interfaceJsonError}
+                        disabled={disabled || interfaceJsonError || hasInvalidResource}
                         loading={loading}
                         onClick={handleSubmit}
                         variant='primary'

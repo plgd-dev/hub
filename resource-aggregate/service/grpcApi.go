@@ -10,7 +10,6 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/publisher"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
-	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
 	raEvents "github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"google.golang.org/grpc/codes"
 )
@@ -43,7 +42,7 @@ func NewRequestHandler(config Config, eventstore eventstore.EventStore, publishe
 func PublishEvents(pub eventbus.Publisher, owner, deviceID, resourceID string, events []eventbus.Event, logger log.Logger) {
 	for _, event := range events {
 		// timeout si driven by flusherTimeout.
-		subjects := utils.GetPublishSubject(owner, event)
+		subjects := pub.GetPublishSubject(owner, event)
 		err := pub.Publish(context.Background(), subjects, deviceID, resourceID, event)
 		publisher.LogPublish(logger, event, subjects, err)
 	}

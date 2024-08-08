@@ -45,7 +45,7 @@ data:
         {{- $createClient = "true" }}
         {{- end }}
         {{- end }}
-        {{- if $createClient}}
+        {{- if $createClient }}
         - id: {{ .id }}
           secretFile: {{ include "plgd-hub.resolveTemplateString" (list $ .secretFile) }}
           accessTokenLifetime: {{ .accessTokenLifetime }}
@@ -77,7 +77,7 @@ data:
               {{- range $authorization.endpoints }}
               {{- if not (eq .authority (include "plgd-hub.m2moauthserver.uri" $)) }}
                 - authority: {{ .authority | quote }}
-                  http: {{- .http | toYaml | nindent 20}}
+                  http: {{- .http | toYaml | nindent 20 }}
               {{- end }}
               {{- end }}
           {{- end }}

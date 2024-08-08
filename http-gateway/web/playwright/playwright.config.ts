@@ -15,11 +15,8 @@ export default defineConfig({
     /* Maximum time one test can run for. */
     timeout: 2 * 60 * 1000,
     expect: {
-        /**
-         * Maximum time expect() should wait for the condition to be met.
-         * For example in `await expect(locator).toHaveText();`
-         */
         timeout: 2 * 60 * 1000,
+        toHaveScreenshot: { maxDiffPixels: 100 },
     },
     /* Run tests in files in parallel */
     fullyParallel: true,
@@ -39,6 +36,10 @@ export default defineConfig({
         storageState: 'storageState.json',
         trace: 'on-first-retry',
         testIdAttribute: 'data-test-id',
+        viewport: {
+            width: 1400,
+            height: 800,
+        },
     },
 
     /* Configure projects for major browsers */

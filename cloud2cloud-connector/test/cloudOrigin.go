@@ -7,6 +7,7 @@ import (
 	grpcService "github.com/plgd-dev/hub/v2/grpc-gateway/test"
 	idService "github.com/plgd-dev/hub/v2/identity-store/test"
 	"github.com/plgd-dev/hub/v2/pkg/config/database"
+	"github.com/plgd-dev/hub/v2/pkg/fn"
 	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	raService "github.com/plgd-dev/hub/v2/resource-aggregate/test"
 	rdService "github.com/plgd-dev/hub/v2/resource-directory/test"
@@ -34,10 +35,19 @@ var (
 )
 
 func SetUpCloudWithConnector(t *testing.T) (tearDown func()) {
+	var cleanUp fn.FuncList
+	deferedCleanUp := true
+	defer func() {
+		if deferedCleanUp {
+			cleanUp.Execute()
+		}
+	}()
+
 	oauthCfg := oauthTest.MakeConfig(t)
 	oauthCfg.APIs.HTTP.Connection.Addr = OAUTH_HOST
 	oauthCfg.OAuthSigner.Domain = OAUTH_HOST
 	oauthShutdown := oauthTest.New(t, oauthCfg)
+	cleanUp.AddFunc(oauthShutdown)
 
 	idCfg := idService.MakeConfig(t)
 	idCfg.APIs.GRPC.Addr = IDENTITY_STORE_HOST
@@ -45,6 +55,7 @@ func SetUpCloudWithConnector(t *testing.T) (tearDown func()) {
 	idCfg.Clients.Storage.MongoDB.Database = C2C_CONNECTOR_DB
 	idCfg.Clients.Eventbus.NATS.URL = C2C_CONNECTOR_NATS_URL
 	idShutdown := idService.New(t, idCfg)
+	cleanUp.AddFunc(idShutdown)
 
 	raCfg := raService.MakeConfig(t)
 	raCfg.APIs.GRPC.Addr = RESOURCE_AGGREGATE_HOST
@@ -54,6 +65,7 @@ func SetUpCloudWithConnector(t *testing.T) (tearDown func()) {
 	raCfg.Clients.IdentityStore.Connection.Addr = IDENTITY_STORE_HOST
 	raCfg.Clients.Eventbus.NATS.URL = C2C_CONNECTOR_NATS_URL
 	raShutdown := raService.New(t, raCfg)
+	cleanUp.AddFunc(raShutdown)
 
 	rdCfg := rdService.MakeConfig(t)
 	rdCfg.APIs.GRPC.Addr = RESOURCE_DIRECTORY_HOST
@@ -63,6 +75,7 @@ func SetUpCloudWithConnector(t *testing.T) (tearDown func()) {
 	rdCfg.Clients.Eventbus.NATS.URL = C2C_CONNECTOR_NATS_URL
 	rdCfg.Clients.IdentityStore.Connection.Addr = IDENTITY_STORE_HOST
 	rdShutdown := rdService.New(t, rdCfg)
+	cleanUp.AddFunc(rdShutdown)
 
 	grpcCfg := grpcService.MakeConfig(t)
 	grpcCfg.APIs.GRPC.Addr = GRPC_GATEWAY_HOST
@@ -72,6 +85,7 @@ func SetUpCloudWithConnector(t *testing.T) (tearDown func()) {
 	grpcCfg.Clients.ResourceAggregate.Connection.Addr = RESOURCE_AGGREGATE_HOST
 	grpcCfg.Clients.ResourceDirectory.Connection.Addr = RESOURCE_DIRECTORY_HOST
 	grpcShutdown := grpcService.New(t, grpcCfg)
+	cleanUp.AddFunc(grpcShutdown)
 
 	c2cConnectorCfg := MakeConfig(t)
 	c2cConnectorCfg.APIs.HTTP.EventsURL = C2C_CONNECTOR_EVENTS_URL
@@ -85,19 +99,13 @@ func SetUpCloudWithConnector(t *testing.T) (tearDown func()) {
 	c2cConnectorCfg.Clients.GrpcGateway.Connection.Addr = GRPC_GATEWAY_HOST
 	c2cConnectorCfg.Clients.ResourceAggregate.Connection.Addr = RESOURCE_AGGREGATE_HOST
 	c2cConnectorCfg.Clients.Eventbus.NATS.URL = C2C_CONNECTOR_NATS_URL
-
 	c2cConnectorCfg.Clients.OpenTelemetryCollector = kitNetHttp.OpenTelemetryCollectorConfig{
 		Config: config.MakeOpenTelemetryCollectorClient(),
 	}
 
 	c2cConnectorShutdown := New(t, c2cConnectorCfg)
+	cleanUp.AddFunc(c2cConnectorShutdown)
 
-	return func() {
-		c2cConnectorShutdown()
-		grpcShutdown()
-		rdShutdown()
-		raShutdown()
-		idShutdown()
-		oauthShutdown()
-	}
+	deferedCleanUp = false
+	return cleanUp.ToFunction()
 }

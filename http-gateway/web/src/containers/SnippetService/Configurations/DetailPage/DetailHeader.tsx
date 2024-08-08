@@ -34,7 +34,12 @@ const DetailHeader: FC<Props> = (props) => {
         <DetailHeaderLayout
             customButton={
                 isFunction(props.setShowInvoke) ? (
-                    <Button icon={<IconIntegrations />} onClick={props.setShowInvoke} variant='tertiary'>
+                    <Button
+                        dataTestId={testId.snippetService.configurations.detail.invokeButton}
+                        icon={<IconIntegrations />}
+                        onClick={props.setShowInvoke}
+                        variant='tertiary'
+                    >
                         {_(g.invoke)}
                     </Button>
                 ) : undefined
@@ -74,6 +79,7 @@ const DetailHeader: FC<Props> = (props) => {
                 deleteButton: testId.snippetService.configurations.detail.deleteButton,
                 deleteButtonCancel: testId.snippetService.configurations.detail.deleteButtonCancel,
                 deleteButtonConfirm: testId.snippetService.configurations.detail.deleteButtonConfirm,
+                deleteModal: testId.snippetService.configurations.detail.deleteModal,
             }}
         />
     )

@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	isEvents "github.com/plgd-dev/hub/v2/identity-store/events"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus"
 	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/subscriber"
@@ -21,21 +21,14 @@ type ResourceSubscriber struct {
 	observer            eventbus.Observer
 }
 
-func WithAllDevicesAndResources() func(values map[string]string) {
-	return func(values map[string]string) {
-		values[utils.DeviceIDKey] = "*"
-		values[utils.HrefIDKey] = "*"
-	}
-}
-
-func NewResourceSubscriber(ctx context.Context, config natsClient.Config, subscriptionID string, fileWatcher *fsnotify.Watcher, logger log.Logger, handler eventbus.Handler) (*ResourceSubscriber, error) {
-	nats, err := natsClient.New(config, fileWatcher, logger)
+func NewResourceSubscriber(ctx context.Context, config natsClient.ConfigSubscriber, subscriptionID string, fileWatcher *fsnotify.Watcher, logger log.Logger, handler eventbus.Handler) (*ResourceSubscriber, error) {
+	nats, err := natsClient.New(config.Config, fileWatcher, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create nats client: %w", err)
 	}
 
 	subscriber, err := subscriber.New(nats.GetConn(),
-		config.PendingLimits,
+		config.PendingLimits, config.LeadResourceType.IsEnabled(),
 		logger,
 		subscriber.WithUnmarshaler(utils.Unmarshal))
 	if err != nil {
@@ -44,15 +37,9 @@ func NewResourceSubscriber(ctx context.Context, config natsClient.Config, subscr
 	}
 
 	const owner = "*"
-	subjectResourceChanged := isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent,
-		isEvents.WithOwner(owner),
-		WithAllDevicesAndResources(),
-		isEvents.WithEventType((&events.ResourceChanged{}).EventType()))
-	subjectResourceUpdated := isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceResourcesResourceEvent,
-		isEvents.WithOwner(owner),
-		WithAllDevicesAndResources(),
-		isEvents.WithEventType((&events.ResourceUpdated{}).EventType()))
-	observer, err := subscriber.Subscribe(ctx, subscriptionID, []string{subjectResourceChanged, subjectResourceUpdated}, handler)
+	subjectsResourceChanged := subscriber.GetResourceEventSubjects(owner, commands.NewResourceID("*", "*"), (&events.ResourceChanged{}).EventType())
+	subjectsResourceUpdated := subscriber.GetResourceEventSubjects(owner, commands.NewResourceID("*", "*"), (&events.ResourceUpdated{}).EventType())
+	observer, err := subscriber.Subscribe(ctx, subscriptionID, append(subjectsResourceChanged, subjectsResourceUpdated...), handler)
 	if err != nil {
 		subscriber.Close()
 		nats.Close()

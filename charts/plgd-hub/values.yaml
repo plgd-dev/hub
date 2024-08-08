@@ -96,6 +96,14 @@ global:
       keyFile:
       certFile:
       useSystemCAPool: false
+  # -- NATS publisher and subscriber configuration
+  nats:
+    # -- Lead resource type configuration
+    leadResourceType:
+      enabled: false
+      filter: ""
+      regexFilter: []
+      useUUID: false
   # -- Set image.tag for all services
   image:
     tag:

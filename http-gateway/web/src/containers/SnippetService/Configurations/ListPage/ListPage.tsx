@@ -122,6 +122,7 @@ const ListPage: FC<any> = () => {
             breadcrumbs={breadcrumbs}
             header={
                 <Button
+                    dataTestId={testId.snippetService.configurations.list.addConfigurationButton}
                     icon={<IconPlus />}
                     onClick={() => navigate(generatePath(pages.SNIPPET_SERVICE.CONFIGURATIONS.ADD.LINK, { tab: '' }))}
                     variant='primary'
@@ -155,7 +156,12 @@ const ListPage: FC<any> = () => {
                 refresh={() => refresh()}
                 tableDataTestId={testId.snippetService.configurations.list.table}
             />
-            <InvokeModal handleClose={() => setShowInvoke(undefined)} handleInvoke={handleInvoke} show={!!showInvoke} />
+            <InvokeModal
+                dataTestId={testId.snippetService.configurations.list.invokeModal}
+                handleClose={() => setShowInvoke(undefined)}
+                handleInvoke={handleInvoke}
+                show={!!showInvoke}
+            />
         </PageLayout>
     )
 }

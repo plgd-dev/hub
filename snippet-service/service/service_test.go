@@ -129,7 +129,7 @@ func TestServiceNew(t *testing.T) {
 			name: "invalid resource subscriber config",
 			cfg: func() service.Config {
 				cfg := test.MakeConfig(t)
-				cfg.Clients.EventBus.NATS = natsClient.Config{}
+				cfg.Clients.EventBus.NATS = natsClient.ConfigSubscriber{}
 				return cfg
 			}(),
 			wantErr: true,
@@ -381,6 +381,15 @@ func TestService(t *testing.T) {
 	_, shutdownDevSim := hubTest.OnboardDevSim(ctx, t, grpcClient.GrpcGatewayClient(), deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, hubTest.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
+	defer func() {
+		// restore state
+		err = grpcClient.UpdateResource(ctx, deviceID, hubTest.TestResourceLightInstanceHref("1"), map[string]interface{}{
+			"state": false,
+			"power": uint64(0),
+		}, nil)
+		require.NoError(t, err)
+	}()
+
 	// -> wait for /conf1 to be applied -> for /not/existing resource this should start-up the timeout timer
 	notExistingConf1ID := conf1.GetId() + "." + notExistingResourceHref
 	var appliedConf1Status pb.AppliedConfiguration_Resource_Status
@@ -470,13 +479,6 @@ func TestService(t *testing.T) {
 	require.Equal(t, configuration.ResourceURI, conConf3.GetHref())
 	require.Equal(t, pb.AppliedConfiguration_Resource_DONE, conConf3.GetStatus())
 	require.Equal(t, commands.Status_ERROR, conConf3.GetResourceUpdated().GetStatus())
-
-	// restore state
-	err = grpcClient.UpdateResource(ctx, deviceID, hubTest.TestResourceLightInstanceHref("1"), map[string]interface{}{
-		"state": false,
-		"power": uint64(0),
-	}, nil)
-	require.NoError(t, err)
 }
 
 func getBridgeDeviceResources(ctx context.Context, t *testing.T, bd *bridge.Device, numResources int) (map[string]map[string]interface{}, func()) {

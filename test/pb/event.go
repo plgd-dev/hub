@@ -8,6 +8,7 @@ import (
 
 	"github.com/plgd-dev/device/v2/schema"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/plgd-dev/hub/v2/grpc-gateway/service"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
@@ -17,14 +18,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func OperationProcessedOK() *pb.Event_OperationProcessed_ {
-	return &pb.Event_OperationProcessed_{
-		OperationProcessed: &pb.Event_OperationProcessed{
-			ErrorStatus: &pb.Event_OperationProcessed_ErrorStatus{
-				Code: pb.Event_OperationProcessed_ErrorStatus_OK,
-			},
-		},
-	}
+func NewOperationProcessedOK(subscriptionId, correlationId string) *pb.Event {
+	return service.NewOperationProcessed(subscriptionId, correlationId, pb.Event_OperationProcessed_ErrorStatus_OK, "")
 }
 
 func ResourceLinkToPublishEvent(deviceID, token string, links []schema.ResourceLink) *pb.Event {

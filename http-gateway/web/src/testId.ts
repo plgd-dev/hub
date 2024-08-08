@@ -94,8 +94,20 @@ const testId = {
     },
     snippetService: {
         configurations: {
+            addPage: {
+                form: {
+                    name: 'hub-snippet-service-configurations-add-page-form-name',
+                    addResourceButton: 'hub-snippet-service-configurations-add-page-form-add-resource-button',
+                    createResourceModal: 'hub-snippet-service-configurations-add-page-form-create-resource-modal',
+                    resourceTable: 'hub-snippet-service-configurations-add-page-form-resource-table',
+                    addButton: 'hub-snippet-service-configurations-add-page-form-add-button',
+                    resetButton: 'hub-snippet-service-configurations-add-page-form-reset-button',
+                },
+            },
             list: {
                 table: 'hub-snippet-service-configurations-list-table',
+                addConfigurationButton: 'hub-snippet-service-configurations-list-add-configuration-button',
+                invokeModal: 'hub-snippet-service-configurations-list-invoke-modal',
             },
             detail: {
                 deleteButton: 'hub-snippet-service-configurations-detail-delete-button',
@@ -105,6 +117,13 @@ const testId = {
                 tabConditions: 'hub-snippet-service-configurations-detail-tab-conditions',
                 tabAppliedConfiguration: 'hub-snippet-service-configurations-detail-tab-applied-configuration',
                 versionSelector: 'hub-snippet-service-configurations-detail-version-selector',
+                invokeButton: 'hub-snippet-service-configurations-detail-invoke-button',
+                invokeModal: 'hub-snippet-service-configurations-detail-invoke-modal',
+                deleteModal: 'hub-snippet-service-configurations-detail-delete-modal',
+                saveButton: 'hub-snippet-service-configurations-detail-save-button',
+                resetButton: 'hub-snippet-service-configurations-detail-reset-button',
+                conditionsTable: 'hub-snippet-service-configurations-detail-conditions-table',
+                appliedConfigurationsTable: 'hub-snippet-service-configurations-detail-applied-configurations-table',
             },
         },
         conditions: {

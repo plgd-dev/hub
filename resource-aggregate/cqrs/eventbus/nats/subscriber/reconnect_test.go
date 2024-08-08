@@ -32,7 +32,7 @@ func TestSubscriberReconnect(t *testing.T) {
 		require.NoError(t, errC)
 	}()
 
-	naPubClient, pub, err := natsTest.NewClientAndPublisher(config.MakePublisherConfig(), fileWatcher, logger, publisher.WithMarshaler(json.Marshal))
+	naPubClient, pub, err := natsTest.NewClientAndPublisher(config.MakePublisherConfig(t), fileWatcher, logger, publisher.WithMarshaler(json.Marshal))
 	require.NoError(t, err)
 	require.NotNil(t, pub)
 	defer func() {
@@ -97,7 +97,7 @@ func TestSubscriberReconnect(t *testing.T) {
 	case <-ctx.Done():
 		require.NoError(t, errors.New("Timeout"))
 	}
-	naClient1, pub1, err := natsTest.NewClientAndPublisher(config.MakePublisherConfig(), fileWatcher, logger, publisher.WithMarshaler(json.Marshal))
+	naClient1, pub1, err := natsTest.NewClientAndPublisher(config.MakePublisherConfig(t), fileWatcher, logger, publisher.WithMarshaler(json.Marshal))
 	require.NoError(t, err)
 	require.NotNil(t, pub1)
 	defer func() {

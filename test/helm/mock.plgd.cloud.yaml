@@ -4,6 +4,13 @@ global:
   ownerClaim: "https://plgd.dev/owner"
   standby: false
   deviceIdClaim: "https://plgd.dev/deviceId"
+  nats:
+    leadResourceType:
+      enabled: true
+      filter: "last"
+      regexFilter:
+        - ".*"
+        - "abc"
   image:
     tag: vnext-pr1088
   m2mOAuthServer:

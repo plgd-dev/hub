@@ -52,6 +52,11 @@ data:
             {{- $natsTls := .clients.eventBus.nats.tls }}
             {{- include "plgd-hub.internalCertificateConfig" (list $ $natsTls $resourceDirectoryCertPath ) | indent 10 }}
             useSystemCAPool: {{ .clients.eventBus.nats.tls.useSystemCAPool }}
+          {{- if or .clients.eventBus.nats.leadResourceType $.Values.global.nats.leadResourceType }}
+          {{- $leadResourceType := .clients.eventBus.nats.leadResourceType | default $.Values.global.nats.leadResourceType }}
+          leadResourceType:
+            enabled: {{ $leadResourceType.enabled }}
+          {{- end }}
       eventStore:
         cacheExpiration: {{ .clients.eventStore.cacheExpiration }}
         use: {{ include "plgd-hub.useDatabase" (list $ . .clients.eventStore.use)  | quote }}

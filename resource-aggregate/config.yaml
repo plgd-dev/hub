@@ -49,13 +49,18 @@ clients:
   eventBus:
     nats:
       url: ""
-      jetstream: false
       flusherTimeout: 30s
       tls:
         caPool: "/secrets/public/rootca.crt"
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+      jetstream: false
+      leadResourceType:
+        enabled: false
+        regexFilter: []
+        filter: ""
+        useUUID: false
   eventStore:
     # replaces time to live in CreateResource, RetrieveResource, UpdateResource, DeleteResource and UpdateDeviceMetadata commands when it is zero value. 0s - means forever.
     defaultCommandTimeToLive: 0s
