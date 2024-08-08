@@ -2120,9 +2120,9 @@ grpcreflection:
       cert-manager.io/private-key-rotation-policy: always
     # -- Custom map of Ingress annotation
     customAnnotations: {}
-
     paths:
       - /grpc.reflection.v1alpha.ServerReflection
+      - /grpc.reflection.v1.ServerReflection
   # -- Service yaml configuration section
   config:
     # -- Service configuration file name
@@ -2173,11 +2173,6 @@ grpcreflection:
         keyFile:
         certFile:
         clientCertificateRequired: false
-      reflectedServices:
-        - grpcgateway.pb.GrpcGateway
-        - certificateauthority.pb.CertificateAuthority
-        - snippetservice.pb.SnippetService
-
 
 certificateauthority:
   # -- Enable certificate-authority service

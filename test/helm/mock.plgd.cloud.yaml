@@ -97,7 +97,7 @@ httpgateway:
     webConfiguration:
       snippetServicea: "https://abrakadabra"
 snippetservice:
-  domain: "bbbbb"
+  domain: "primary.mock.plgd.cloud"
 grpcgateway:
   domain: "primary.mock.plgd.cloud"
 certificateauthority:
