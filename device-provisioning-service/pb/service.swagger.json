@@ -1,0 +1,1443 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "plgd hub - HTTP Provisioned device service API",
+    "version": "1.0",
+    "contact": {
+      "name": "plgd.dev",
+      "url": "https://github.com/plgd-dev/hub/tree/main/device-provisioning-service",
+      "email": "info@plgd.dev"
+    },
+    "license": {
+      "name": "Commercial"
+    }
+  },
+  "tags": [
+    {
+      "name": "DeviceProvisionService"
+    }
+  ],
+  "schemes": [
+    "https"
+  ],
+  "consumes": [
+    "application/json",
+    "application/protojson"
+  ],
+  "produces": [
+    "application/json",
+    "application/protojson"
+  ],
+  "paths": {
+    "/api/v1/enrollment-groups": {
+      "get": {
+        "operationId": "DeviceProvisionService_GetEnrollmentGroups",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/pbEnrollmentGroup"
+                },
+                "error": {
+                  "$ref": "#/definitions/rpcStatus"
+                }
+              },
+              "title": "Stream result of pbEnrollmentGroup"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idFilter",
+            "description": "Filter by id.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "attestationMechanismX509CertificateNames",
+            "description": "Filter by certificates comman names in x509 attestation mechanism",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "hubIdFilter",
+            "description": "Filter by hubId.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "Enrollment Groups"
+        ]
+      },
+      "delete": {
+        "operationId": "DeviceProvisionService_DeleteEnrollmentGroups",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbDeleteEnrollmentGroupsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idFilter",
+            "description": "Enrollment group ID.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "Enrollment Group"
+        ]
+      },
+      "post": {
+        "operationId": "DeviceProvisionService_CreateEnrollmentGroup",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbEnrollmentGroup"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbCreateEnrollmentGroupRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Enrollment Groups"
+        ]
+      }
+    },
+    "/api/v1/enrollment-groups/{id}": {
+      "put": {
+        "operationId": "DeviceProvisionService_UpdateEnrollmentGroup",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbEnrollmentGroup"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "Enrollment group ID.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "enrollmentGroup",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbUpdateEnrollmentGroup"
+            }
+          }
+        ],
+        "tags": [
+          "Enrollment Group"
+        ]
+      }
+    },
+    "/api/v1/hubs": {
+      "get": {
+        "operationId": "DeviceProvisionService_GetHubs",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/pbHub"
+                },
+                "error": {
+                  "$ref": "#/definitions/rpcStatus"
+                }
+              },
+              "title": "Stream result of pbHub"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idFilter",
+            "description": "Filter by id.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "hubIdFilter",
+            "description": "Filter by hub_id.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "Hubs"
+        ]
+      },
+      "delete": {
+        "operationId": "DeviceProvisionService_DeleteHubs",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbDeleteHubsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idFilter",
+            "description": "Record ID.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "Hub"
+        ]
+      },
+      "post": {
+        "operationId": "DeviceProvisionService_CreateHub",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbHub"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbCreateHubRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Hubs"
+        ]
+      }
+    },
+    "/api/v1/hubs/{id}": {
+      "put": {
+        "operationId": "DeviceProvisionService_UpdateHub",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbHub"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "Record ID.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "hub",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbUpdateHub"
+            }
+          }
+        ],
+        "tags": [
+          "Hub"
+        ]
+      }
+    },
+    "/api/v1/provisioning-records": {
+      "get": {
+        "summary": "Get registrations of devices",
+        "operationId": "DeviceProvisionService_GetProvisioningRecords",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/pbProvisioningRecord"
+                },
+                "error": {
+                  "$ref": "#/definitions/rpcStatus"
+                }
+              },
+              "title": "Stream result of pbProvisioningRecord"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idFilter",
+            "description": "Filter by id.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "deviceIdFilter",
+            "description": "Filter by device id.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "enrollmentGroupIdFilter",
+            "description": "Filter by enrollment group id.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "Provisioning records"
+        ]
+      },
+      "delete": {
+        "operationId": "DeviceProvisionService_DeleteProvisioningRecords",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbDeleteProvisioningRecordsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idFilter",
+            "description": "Filter by id.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "deviceIdFilter",
+            "description": "Filter by device id.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "enrollmentGroupIdFilter",
+            "description": "Filter by enrollment group id.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "Provisioning record"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "AccessControlConnectionSubjectConnectionType": {
+      "type": "string",
+      "enum": [
+        "ANON_CLEAR",
+        "AUTH_CRYPT"
+      ],
+      "default": "ANON_CLEAR",
+      "title": "- ANON_CLEAR: anonymous clear-text connection TCP or UDP without encryption\n - AUTH_CRYPT: authenticated encrypted connection using TLS or DTLS"
+    },
+    "AccessControlPermission": {
+      "type": "string",
+      "enum": [
+        "CREATE",
+        "READ",
+        "WRITE",
+        "DELETE",
+        "NOTIFY"
+      ],
+      "default": "CREATE",
+      "title": "- CREATE: create access\n - READ: read-only access\n - WRITE: read-write access\n - DELETE: delete access\n - NOTIFY: notify access"
+    },
+    "AccessControlResourceWildcard": {
+      "type": "string",
+      "enum": [
+        "NONE",
+        "NONCFG_SEC_ENDPOINT",
+        "NONCFG_NONSEC_ENDPOINT",
+        "NONCFG_ALL"
+      ],
+      "default": "NONE",
+      "description": " - NONE: no wildcard\n - NONCFG_SEC_ENDPOINT: Shall match all Discoverable Non-Configuration Resources which expose at least one Secure OCF Endpoint.\n - NONCFG_NONSEC_ENDPOINT: Shall match all Discoverable Non-Configuration Resources which expose at least one Unsecure OCF Endpoint.\n - NONCFG_ALL: Shall match all Non-Configuration Resources."
+    },
+    "CloudStatusGateway": {
+      "type": "object",
+      "properties": {
+        "uri": {
+          "type": "string",
+          "description": "@gotags: bson:\"uri,omitempty\"",
+          "title": "Gateway endpoint in format \u003cscheme\u003e://\u003chost\u003e:\u003cport\u003e"
+        },
+        "id": {
+          "type": "string",
+          "description": "UUID of the gateway.\n\n@gotags: bson:\"id,omitempty\""
+        }
+      }
+    },
+    "CredentialCredentialRefreshMethod": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "PROVISION_SERVICE",
+        "KEY_AGREEMENT_PROTOCOL_AND_RANDOM_PIN",
+        "KEY_AGREEMENT_PROTOCOL",
+        "KEY_DISTRIBUTION_SERVICE",
+        "PKCS10_REQUEST_TO_CA"
+      ],
+      "default": "UNKNOWN"
+    },
+    "CredentialCredentialType": {
+      "type": "string",
+      "enum": [
+        "EMPTY",
+        "SYMMETRIC_PAIR_WISE",
+        "SYMMETRIC_GROUP",
+        "ASYMMETRIC_SIGNING",
+        "ASYMMETRIC_SIGNING_WITH_CERTIFICATE",
+        "PIN_OR_PASSWORD",
+        "ASYMMETRIC_ENCRYPTION_KEY"
+      ],
+      "default": "EMPTY"
+    },
+    "CredentialCredentialUsage": {
+      "type": "string",
+      "enum": [
+        "NONE",
+        "TRUST_CA",
+        "CERT",
+        "ROLE_CERT",
+        "MFG_TRUST_CA",
+        "MFG_CERT"
+      ],
+      "default": "NONE"
+    },
+    "pbACLStatus": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "$ref": "#/definitions/pbProvisionStatus",
+          "title": "@gotags: bson:\"status,omitempty\""
+        },
+        "accessControlList": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/pbAccessControl"
+          },
+          "description": "Last ACL list provisioned to the device.\n\n@gotags: bson:\"accessControlList,omitempty\""
+        }
+      }
+    },
+    "pbAccessControl": {
+      "type": "object",
+      "properties": {
+        "deviceSubject": {
+          "$ref": "#/definitions/pbAccessControlDeviceSubject",
+          "description": "Subject of the ACL defines the entity to which the permissions are granted. Only one subject must be defined per ACL.\n\n@gotags: bson:\"deviceSubject,omitempty\""
+        },
+        "roleSubject": {
+          "$ref": "#/definitions/pbAccessControlRoleSubject",
+          "title": "@gotags: bson:\"roleSubject,omitempty\""
+        },
+        "connectionSubject": {
+          "$ref": "#/definitions/pbAccessControlConnectionSubject",
+          "title": "@gotags: bson:\"connectionSubject,omitempty\""
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AccessControlPermission"
+          },
+          "description": "Permissions granted to the subject."
+        },
+        "resources": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/pbAccessControlResource"
+          },
+          "description": "Resources to which the permissions apply."
+        }
+      }
+    },
+    "pbAccessControlConnectionSubject": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "$ref": "#/definitions/AccessControlConnectionSubjectConnectionType"
+        }
+      }
+    },
+    "pbAccessControlDeviceSubject": {
+      "type": "object",
+      "properties": {
+        "deviceId": {
+          "type": "string"
+        }
+      }
+    },
+    "pbAccessControlResource": {
+      "type": "object",
+      "properties": {
+        "href": {
+          "type": "string",
+          "description": "Resource href."
+        },
+        "resourceTypes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Resource type."
+        },
+        "interfaces": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Resource interface."
+        },
+        "wildcard": {
+          "$ref": "#/definitions/AccessControlResourceWildcard",
+          "description": "Resource wildcard."
+        }
+      }
+    },
+    "pbAccessControlRoleSubject": {
+      "type": "object",
+      "properties": {
+        "authority": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        }
+      }
+    },
+    "pbAttestation": {
+      "type": "object",
+      "properties": {
+        "date": {
+          "type": "string",
+          "format": "int64",
+          "description": "Last time the device successfully established a TLS connection, in unix nanoseconds timestamp format.\n\n@gotags: bson:\"date,omitempty\""
+        },
+        "x509": {
+          "$ref": "#/definitions/pbX509Attestation",
+          "description": "X509 attestation, set if used by the device.\n\n@gotags: bson:\"x509,omitempty\""
+        }
+      }
+    },
+    "pbAttestationMechanism": {
+      "type": "object",
+      "properties": {
+        "x509": {
+          "$ref": "#/definitions/pbX509Configuration",
+          "description": "@gotags: bson:\"x509\"",
+          "title": "X509 attestation"
+        }
+      }
+    },
+    "pbAuthorizationConfig": {
+      "type": "object",
+      "properties": {
+        "ownerClaim": {
+          "type": "string",
+          "description": "owner_claim is key where will be stored owner in JWT.\n\n@gotags: bson:\"ownerClaim\""
+        },
+        "deviceIdClaim": {
+          "type": "string",
+          "description": "@gotags: bson:\"deviceIdClaim\"",
+          "title": "device_id_claim is key where will be stored deviceID in JWT(optional)"
+        },
+        "provider": {
+          "$ref": "#/definitions/pbAuthorizationProviderConfig",
+          "title": "@gotags: bson:\"provider\""
+        }
+      },
+      "description": "AuthorizationConfig is used to generate the authorization code for the device when providing cloud configuration."
+    },
+    "pbAuthorizationProviderConfig": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "@gotags: bson:\"name\"",
+          "title": "the name of the provider, which is set in configuration in coap-gateway"
+        },
+        "authority": {
+          "type": "string",
+          "description": "@gotags: bson:\"authority\"",
+          "title": "the url to get oauth endpoints"
+        },
+        "clientId": {
+          "type": "string",
+          "description": "@gotags: bson:\"clientId\"",
+          "title": "client id which is associated to the name"
+        },
+        "scopes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "@gotags: bson:\"scopes\"",
+          "title": "scopes will be set in token"
+        },
+        "audience": {
+          "type": "string",
+          "description": "@gotags: bson:\"audience\"",
+          "title": "audience will be set in token"
+        },
+        "clientSecret": {
+          "type": "string",
+          "description": "@gotags: bson:\"clientSecret\"",
+          "title": "client secret. Supported formats: \u003c/path/to/clientSecret\u003e,\u003cdata:;base64,{ClientSecret in BASE64}\u003e"
+        },
+        "http": {
+          "$ref": "#/definitions/pbHttpConfig",
+          "description": "@gotags: bson:\"http\"",
+          "title": "http configuration"
+        }
+      }
+    },
+    "pbCloudStatus": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "$ref": "#/definitions/pbProvisionStatus",
+          "title": "@gotags: bson:\"status,omitempty\""
+        },
+        "providerName": {
+          "type": "string",
+          "description": "Last provider name used to authenticate the device to the cloud.\n\n@gotags: bson:\"providerName,omitempty\""
+        },
+        "gateways": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/CloudStatusGateway"
+          },
+          "description": "Last provisioned gateways to the device.\n\n@gotags: bson:\"gateways,omitempty\""
+        },
+        "selectedGateway": {
+          "type": "integer",
+          "format": "int32",
+          "title": "@gotags: bson:\"selectedGateway,omitempty\""
+        }
+      }
+    },
+    "pbCreateEnrollmentGroupRequest": {
+      "type": "object",
+      "properties": {
+        "attestationMechanism": {
+          "$ref": "#/definitions/pbAttestationMechanism",
+          "title": "Attestation mechanism"
+        },
+        "hubIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Hub configuration to configure device."
+        },
+        "preSharedKey": {
+          "type": "string",
+          "title": "Pre shared key for devices in enrollment group. It can be used for maintenance operations by d2d client. Supported formats: \u003c/path/to/psk\u003e,\u003cdata:;base64,{PSK in BASE64}\u003e"
+        },
+        "name": {
+          "type": "string",
+          "title": "name of enrollment group"
+        }
+      }
+    },
+    "pbCreateHubRequest": {
+      "type": "object",
+      "properties": {
+        "hubId": {
+          "type": "string",
+          "description": "Hub identifier - it must match with common name of gateway(coap-gateway) hub certificate."
+        },
+        "gateways": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "Address of gateways in format scheme://host:port"
+        },
+        "certificateAuthority": {
+          "$ref": "#/definitions/pbGrpcClientConfig",
+          "description": "Signs identity ceritificate for the device."
+        },
+        "authorization": {
+          "$ref": "#/definitions/pbAuthorizationConfig",
+          "description": "Acquire HUB authorization code for the device."
+        },
+        "name": {
+          "type": "string",
+          "description": "Hub name."
+        }
+      }
+    },
+    "pbCredential": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "int64",
+          "description": "Credential ID. If not set, the device will generate one.\n\n@gotags: bson:\"id,omitempty\""
+        },
+        "type": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CredentialCredentialType"
+          },
+          "description": "Credential type.\n\n@gotags: bson:\"type,omitempty\""
+        },
+        "subject": {
+          "type": "string",
+          "description": "Credential subject.\n\n@gotags: bson:\"subject,omitempty\""
+        },
+        "usage": {
+          "$ref": "#/definitions/CredentialCredentialUsage",
+          "description": "Credential usage.\n\n@gotags: bson:\"usage,omitempty\""
+        },
+        "supportedRefreshMethods": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CredentialCredentialRefreshMethod"
+          },
+          "description": "Supported credential refresh methods.\n\n@gotags: bson:\"supportedRefreshMethods,omitempty\""
+        },
+        "optionalData": {
+          "$ref": "#/definitions/pbCredentialOptionalData",
+          "description": "Optional data.\n\n@gotags: bson:\"optionalData,omitempty\""
+        },
+        "period": {
+          "type": "string",
+          "description": "Period of validity in seconds.\n\n@gotags: bson:\"period,omitempty\""
+        },
+        "privateData": {
+          "$ref": "#/definitions/pbCredentialPrivateData",
+          "description": "Private data.\n\n@gotags: bson:\"privateData,omitempty\""
+        },
+        "publicData": {
+          "$ref": "#/definitions/pbCredentialPublicData",
+          "description": "Public data.\n\n@gotags: bson:\"publicData,omitempty\""
+        },
+        "roleId": {
+          "$ref": "#/definitions/pbCredentialRoleID",
+          "description": "Role ID.\n\n@gotags: bson:\"roleId,omitempty\""
+        }
+      }
+    },
+    "pbCredentialOptionalData": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "string",
+          "format": "byte",
+          "description": "Data to be provisioned."
+        },
+        "encoding": {
+          "$ref": "#/definitions/pbCredentialOptionalDataEncoding",
+          "description": "Encoding of the data."
+        },
+        "isRevoked": {
+          "type": "boolean",
+          "description": "If set, the credential is revoked."
+        }
+      },
+      "title": "Credential Type dependent - eg revocation status information"
+    },
+    "pbCredentialOptionalDataEncoding": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "RAW",
+        "JWT",
+        "CWT",
+        "BASE64",
+        "PEM",
+        "DER"
+      ],
+      "default": "UNKNOWN"
+    },
+    "pbCredentialPrivateData": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "string",
+          "format": "byte",
+          "description": "Data to be provisioned."
+        },
+        "encoding": {
+          "$ref": "#/definitions/pbCredentialPrivateDataEncoding",
+          "description": "Encoding of the data."
+        },
+        "handle": {
+          "type": "string",
+          "format": "int64",
+          "description": "Handle to a key storage Resource."
+        }
+      },
+      "description": "Private credential information - non-public contents."
+    },
+    "pbCredentialPrivateDataEncoding": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "RAW",
+        "JWT",
+        "CWT",
+        "BASE64",
+        "URI",
+        "HANDLE"
+      ],
+      "default": "UNKNOWN"
+    },
+    "pbCredentialPublicData": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "string",
+          "format": "byte",
+          "description": "Data to be provisioned."
+        },
+        "encoding": {
+          "$ref": "#/definitions/pbCredentialPublicDataEncoding",
+          "description": "Encoding of the data."
+        }
+      },
+      "description": "Credential Type dependent  - public contents."
+    },
+    "pbCredentialPublicDataEncoding": {
+      "type": "string",
+      "enum": [
+        "UNKNOWN",
+        "RAW",
+        "JWT",
+        "CWT",
+        "BASE64",
+        "URI",
+        "PEM",
+        "DER"
+      ],
+      "default": "UNKNOWN"
+    },
+    "pbCredentialRoleID": {
+      "type": "object",
+      "properties": {
+        "authority": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        }
+      }
+    },
+    "pbCredentialStatus": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "$ref": "#/definitions/pbProvisionStatus",
+          "title": "@gotags: bson:\"status,omitempty\""
+        },
+        "identityCertificatePem": {
+          "type": "string",
+          "description": "Last identity certificate issued for the device.\n\n@gotags: bson:\"identityCertificate,omitempty\""
+        },
+        "preSharedKey": {
+          "$ref": "#/definitions/pbPreSharedKey",
+          "description": "Last pre shared key issued for the device.\n\n@gotags: bson:\"preSharedKey,omitempty\""
+        },
+        "credentials": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/pbCredential"
+          },
+          "title": "@gotags: bson:\"credentials,omitempty\""
+        }
+      }
+    },
+    "pbDeleteEnrollmentGroupsResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "string",
+          "format": "int64",
+          "description": "Number of deleted records."
+        }
+      }
+    },
+    "pbDeleteHubsResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "string",
+          "format": "int64",
+          "description": "Number of deleted records."
+        }
+      }
+    },
+    "pbDeleteProvisioningRecordsResponse": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "string",
+          "format": "int64",
+          "description": "Number of deleted records."
+        }
+      }
+    },
+    "pbEnrollmentGroup": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Enrollment group ID.\n\n@gotags: bson:\"_id\""
+        },
+        "owner": {
+          "type": "string",
+          "description": "HUB owner of device - used for hub authorization.\n\n@gotags: bson:\"owner\""
+        },
+        "attestationMechanism": {
+          "$ref": "#/definitions/pbAttestationMechanism",
+          "description": "@gotags: bson:\"attestationMechanism\"",
+          "title": "Attestation mechanism"
+        },
+        "hubIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Hub configuration to configure device.\n\n@gotags: bson:\"hubIds\""
+        },
+        "preSharedKey": {
+          "type": "string",
+          "description": "@gotags: bson:\"preSharedKey\"",
+          "title": "Pre shared key for devices in enrollment group. It can be used for maintenance operations by d2d client. Supported formats: \u003c/path/to/psk\u003e,\u003cdata:;base64,{PSK in BASE64}\u003e"
+        },
+        "name": {
+          "type": "string",
+          "description": "@gotags: bson:\"name\"",
+          "title": "name of enrollment group"
+        }
+      }
+    },
+    "pbGrpcClientConfig": {
+      "type": "object",
+      "properties": {
+        "grpc": {
+          "$ref": "#/definitions/pbGrpcConnectionConfig",
+          "description": "@gotags: bson:\"grpc\"",
+          "title": "GRPC protocol"
+        }
+      }
+    },
+    "pbGrpcConnectionConfig": {
+      "type": "object",
+      "properties": {
+        "address": {
+          "type": "string",
+          "description": "@gotags: bson:\"address\"",
+          "title": "Address in format {host:port}"
+        },
+        "keepAlive": {
+          "$ref": "#/definitions/pbGrpcKeepAliveConfig",
+          "title": "@gotags: bson:\"keepAlive\""
+        },
+        "tls": {
+          "$ref": "#/definitions/pbTlsConfig",
+          "title": "@gotags: bson:\"tls\""
+        }
+      }
+    },
+    "pbGrpcKeepAliveConfig": {
+      "type": "object",
+      "properties": {
+        "time": {
+          "type": "string",
+          "format": "int64",
+          "description": "After a duration in nanoseconds of this time if the client doesn't see any activity it\npings the server to see if the transport is still alive.\nThe zero value is infinity and if it set below 10s, a minimum value of 10s will be used instead.\n\n@gotags: bson:\"time\""
+        },
+        "timeout": {
+          "type": "string",
+          "format": "int64",
+          "description": "After having pinged for keepalive check, the client waits for a duration\nof Timeout and if no activity is seen even after that the connection is\nclosed.\n\n@gotags: bson:\"timeout\""
+        },
+        "permitWithoutStream": {
+          "type": "boolean",
+          "description": "If true, client sends keepalive pings even with no active RPCs. If false,\nwhen there are no active RPCs, Time and Timeout will be ignored and no\nkeepalive pings will be sent.\n\n@gotags: bson:\"permitWithoutStream"
+        }
+      }
+    },
+    "pbHttpConfig": {
+      "type": "object",
+      "properties": {
+        "maxIdleConns": {
+          "type": "integer",
+          "format": "int64",
+          "description": "MaxIdleConns controls the maximum number of idle (keep-alive)\nconnections across all hosts. Zero means no limit.\n\n@gotags: bson:\"maxIdleConns\""
+        },
+        "maxConnsPerHost": {
+          "type": "integer",
+          "format": "int64",
+          "description": "MaxConnsPerHost optionally limits the total number of\nconnections per host, including connections in the dialing,\nactive, and idle states. On limit violation, dials will block.\n\nZero means no limit.\n\n@gotags: bson:\"maxConnsPerHost\""
+        },
+        "maxIdleConnsPerHost": {
+          "type": "integer",
+          "format": "int64",
+          "description": "MaxIdleConnsPerHost, if non-zero, controls the maximum idle\n(keep-alive) connections to keep per-host. If zero,\nDefaultMaxIdleConnsPerHost is used.\n\n@gotags: bson:\"maxIdleConnsPerHost\""
+        },
+        "idleConnTimeout": {
+          "type": "string",
+          "format": "int64",
+          "description": "IdleConnTimeout is the maximum amount of time an idle\n(keep-alive) connection will remain idle before closing\nitself in nanoseconds.\nZero means no limit.\n\n@gotags: bson:\"idleConnTimeout\""
+        },
+        "timeout": {
+          "type": "string",
+          "format": "int64",
+          "description": "Timeout specifies a time limit for requests made by this\nClient in nanoseconds. The timeout includes connection time, any\nredirects, and reading the response body. The timer remains\nrunning after Get, Head, Post, or Do return and will\ninterrupt reading of the Response.Body.\n\nA Timeout of zero means no timeout.\n\nThe Client cancels requests to the underlying Transport\nas if the Request's Context ended.\n\nFor compatibility, the Client will also use the deprecated\nCancelRequest method on Transport if found. New\nRoundTripper implementations should use the Request's Context\nfor cancellation instead of implementing CancelRequest.\n\n@gotags: bson:\"timeout\""
+        },
+        "tls": {
+          "$ref": "#/definitions/pbTlsConfig",
+          "title": "@gotags: bson:\"tls\""
+        }
+      }
+    },
+    "pbHub": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Record ID.\n\n@gotags: bson:\"_id\""
+        },
+        "gateways": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "@gotags: bson:\"gateways\"",
+          "title": "Address of gateway in format scheme://host:port"
+        },
+        "certificateAuthority": {
+          "$ref": "#/definitions/pbGrpcClientConfig",
+          "description": "Signs identity ceritificate for the device.\n\n@gotags: bson:\"certificateAuthority\""
+        },
+        "authorization": {
+          "$ref": "#/definitions/pbAuthorizationConfig",
+          "description": "Acquire HUB authorization code for the device.\n\n@gotags: bson:\"authorization\""
+        },
+        "name": {
+          "type": "string",
+          "description": "Hub name.\n\n@gotags: bson:\"name\""
+        },
+        "hubId": {
+          "type": "string",
+          "description": "Hub identifier - it must match with common name of gateway(coap-gateway) hub certificate.\n\n@gotags: bson:\"hubId\""
+        },
+        "owner": {
+          "type": "string",
+          "description": "@gotags: bson:\"owner\"",
+          "title": "Owner of the hub"
+        }
+      }
+    },
+    "pbOwnershipStatus": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "$ref": "#/definitions/pbProvisionStatus",
+          "title": "@gotags: bson:\"status,omitempty\""
+        },
+        "owner": {
+          "type": "string",
+          "description": "Last provisioned owner to the device.\n\n@gotags: bson:\"owner,omitempty\""
+        }
+      }
+    },
+    "pbPreSharedKey": {
+      "type": "object",
+      "properties": {
+        "subjectId": {
+          "type": "string",
+          "description": "ID used to identify the owner by the device.\n\n@gotags: bson:\"subjectId,omitempty\""
+        },
+        "key": {
+          "type": "string",
+          "description": "Associated secret to the owner ID.\n\n@gotags: bson:\"key,omitempty\""
+        }
+      }
+    },
+    "pbProvisionStatus": {
+      "type": "object",
+      "properties": {
+        "date": {
+          "type": "string",
+          "format": "int64",
+          "description": "Last time the device requested provisioning, in unix nanoseconds timestamp format.\n\n@gotags: bson:\"date,omitempty\""
+        },
+        "coapCode": {
+          "type": "integer",
+          "format": "int32",
+          "description": "The CoAP code returned to the device.\n\n@gotags: bson:\"coapCode,omitempty\""
+        },
+        "errorMessage": {
+          "type": "string",
+          "description": "Error message if any.\n\n@gotags: bson:\"errorMessage,omitempty\""
+        }
+      }
+    },
+    "pbProvisioningRecord": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Registration id, calculated from the manufacturer certificate public key info.\n\n@gotags: bson:\"_id,omitempty\""
+        },
+        "deviceId": {
+          "type": "string",
+          "description": "ID of the device to which this record belongs to.\n\n@gotags: bson:\"deviceId,omitempty\""
+        },
+        "enrollmentGroupId": {
+          "type": "string",
+          "description": "Assigned enrollment group.\n\n@gotags: bson:\"enrollmentGroupId,omitempty\""
+        },
+        "creationDate": {
+          "type": "string",
+          "format": "int64",
+          "description": "Record creation date, in unix nanoseconds timestamp format.\n\n@gotags: bson:\"creationDate,omitempty\""
+        },
+        "attestation": {
+          "$ref": "#/definitions/pbAttestation",
+          "description": "Last device attestation overview.\n\n@gotags: bson:\"attestation,omitempty\""
+        },
+        "credential": {
+          "$ref": "#/definitions/pbCredentialStatus",
+          "description": "Last credential provision overview.\n\n@gotags: bson:\"credential,omitempty\""
+        },
+        "acl": {
+          "$ref": "#/definitions/pbACLStatus",
+          "description": "Last ACL provision overview.\n\n@gotags: bson:\"acl,omitempty\""
+        },
+        "cloud": {
+          "$ref": "#/definitions/pbCloudStatus",
+          "description": "Last cloud provision overview.\n\n@gotags: bson:\"cloud,omitempty\""
+        },
+        "ownership": {
+          "$ref": "#/definitions/pbOwnershipStatus",
+          "description": "Last ownership provision overview.\n\n@gotags: bson:\"ownership,omitempty\""
+        },
+        "plgdTime": {
+          "$ref": "#/definitions/pbProvisionStatus",
+          "description": "Last plgd-time provision overview.\n\n@gotags: bson:\"plgdTime,omitempty\""
+        },
+        "localEndpoints": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "@gotags: bson:\"localEndpoints,omitempty\"",
+          "title": "Last local endpoints"
+        },
+        "owner": {
+          "type": "string",
+          "description": "Owner ID.\n\n@gotags: bson:\"owner,omitempty\""
+        }
+      }
+    },
+    "pbTlsConfig": {
+      "type": "object",
+      "properties": {
+        "caPool": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "@gotags: bson:\"ca_pool\"",
+          "title": "the root certificates. Supported formats: \u003c/path/to/cert.pem\u003e,\u003cdata:;base64,{PEM in BASE64}\u003e"
+        },
+        "key": {
+          "type": "string",
+          "description": "@gotags: bson:\"key\"",
+          "title": "private key. Supported formats: \u003c/path/to/cert.pem\u003e,\u003cdata:;base64,{PEM in BASE64}\u003e"
+        },
+        "cert": {
+          "type": "string",
+          "description": "@gotags: bson:\"cert\"",
+          "title": "certificate. Supported formats: \u003c/path/to/cert.pem\u003e,\u003cdata:;base64,{PEM in BASE64}\u003e"
+        },
+        "useSystemCaPool": {
+          "type": "boolean",
+          "description": "@gotags: bson:\"useSystemCaPool\"",
+          "title": "use system certification pool"
+        }
+      }
+    },
+    "pbUpdateEnrollmentGroup": {
+      "type": "object",
+      "properties": {
+        "attestationMechanism": {
+          "$ref": "#/definitions/pbAttestationMechanism",
+          "title": "Attestation mechanism"
+        },
+        "hubIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Hub configuration to configure device."
+        },
+        "preSharedKey": {
+          "type": "string",
+          "title": "Pre shared key for devices in enrollment group. It can be used for maintenance operations by d2d client. Supported formats: \u003c/path/to/psk\u003e,\u003cdata:;base64,{PSK in BASE64}\u003e"
+        },
+        "name": {
+          "type": "string",
+          "description": "@gotags: bson:\"name\"",
+          "title": "name of enrollment group"
+        }
+      }
+    },
+    "pbUpdateHub": {
+      "type": "object",
+      "properties": {
+        "gateways": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "Address of coap-gateway in format scheme://host:port"
+        },
+        "certificateAuthority": {
+          "$ref": "#/definitions/pbGrpcClientConfig",
+          "description": "Signs identity ceritificate for the device."
+        },
+        "authorization": {
+          "$ref": "#/definitions/pbAuthorizationConfig",
+          "description": "Acquire HUB authorization code for the device."
+        },
+        "name": {
+          "type": "string",
+          "description": "Hub name."
+        },
+        "hubId": {
+          "type": "string",
+          "title": "Hub ID"
+        }
+      }
+    },
+    "pbX509Attestation": {
+      "type": "object",
+      "properties": {
+        "certificatePem": {
+          "type": "string",
+          "description": "Last used x509 manufacturer certificate.\n\n@gotags: bson:\"certificate,omitempty\""
+        },
+        "commonName": {
+          "type": "string",
+          "title": "@gotags: bson:\"commonName,omitempty\""
+        }
+      }
+    },
+    "pbX509Configuration": {
+      "type": "object",
+      "properties": {
+        "certificateChain": {
+          "type": "string",
+          "description": "@gotags: bson:\"certificateChain\"",
+          "title": "chain certficates authorities: ..\u003c-intermediateCA1\u003c-intermediateCA\u003c-RootCA which is used to match enrollment group. Supported formats: \u003c/path/to/cert.pem\u003e,\u003cdata:;base64,{PEM in BASE64}\u003e"
+        },
+        "leadCertificateName": {
+          "type": "string",
+          "description": "@gotags: bson:\"leadCertificateName\"",
+          "title": "the certificate name must be one from certificate_chain, it is used to match enrollment group. If empty, the first certificate from certificate_chain is used"
+        },
+        "expiredCertificateEnabled": {
+          "type": "boolean",
+          "description": "@gotags: bson:\"expiredCertificateEnabled\"",
+          "title": "dont validate time during certificate verification"
+        }
+      }
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  }
+}
