@@ -26,5 +26,8 @@ spec:
       name: {{ $.Values.grpcreflection.service.name }}
   selector:
   {{- include "plgd-hub.grpcreflection.selectorLabels" (list $ $domain) | nindent 4 }}
+{{- if gt (len $domains) 1 }}
+---
+{{- end }}
 {{- end }}
 {{- end }}

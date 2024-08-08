@@ -49,5 +49,8 @@ data:
           {{- include "plgd-hub.internalCertificateConfig" (list $ $tls $grpcReflectionCertPath) | indent 8 }}
           clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
   {{- end }}
+{{- if gt (len $domains) 1 }}
+---
+{{- end }}
 {{- end }}
 {{- end }}
