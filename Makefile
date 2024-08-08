@@ -342,7 +342,11 @@ simulators: simulators/bridge
 simulators/clean: simulators/bridge/clean
 
 # device provisioning service
+ifeq ($(TEST_COAP_GATEWAY_UDP_ENABLED),true)
+DPS_ENDPOINT ?= coaps://127.0.0.1:20030
+else
 DPS_ENDPOINT ?= coaps+tcp://127.0.0.1:20030
+endif
 DPS_DEVICE_LOG_LEVEL ?= debug
 DPS_DEVICE_OC_LOG_LEVEL ?= info
 DPS_DEVICE_SIMULATOR_OBT_NAME := dps-devsim-obt

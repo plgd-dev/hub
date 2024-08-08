@@ -12,7 +12,7 @@ import (
 	"github.com/plgd-dev/hub/v2/device-provisioning-service/pb"
 	"github.com/plgd-dev/hub/v2/device-provisioning-service/service/grpc"
 	"github.com/plgd-dev/hub/v2/device-provisioning-service/test"
-	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	hubTest "github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
@@ -59,7 +59,7 @@ func TestDeviceProvisionServiceServerGetHubs(t *testing.T) {
 	pb.RegisterDeviceProvisionServiceServer(ch, grpc.NewDeviceProvisionServiceServer(store, test.MakeAuthorizationConfig().OwnerClaim))
 	grpcClient := pb.NewDeviceProvisionServiceClient(ch)
 
-	ctx := kitNetGrpc.CtxWithToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+	ctx := pkgGrpc.CtxWithToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
 		"sub": test.DPSOwner,
 	}))
 

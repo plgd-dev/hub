@@ -16,7 +16,7 @@ import (
 	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
 	grpcPb "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	isEvents "github.com/plgd-dev/hub/v2/identity-store/events"
-	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	hubTest "github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
@@ -46,7 +46,7 @@ func TestInvalidOwner(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 	token := oauthTest.GetDefaultAccessToken(t)
-	ctx = kitNetGrpc.CtxWithToken(ctx, token)
+	ctx = pkgGrpc.CtxWithToken(ctx, token)
 
 	corID := "allEvents"
 	subClient, subID := test.SubscribeToAllEvents(ctx, t, c, corID)

@@ -10,7 +10,7 @@ import (
 	"github.com/plgd-dev/hub/v2/device-provisioning-service/pb"
 	"github.com/plgd-dev/hub/v2/device-provisioning-service/service/grpc"
 	"github.com/plgd-dev/hub/v2/device-provisioning-service/test"
-	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
 )
@@ -43,7 +43,7 @@ func TestDeviceProvisionServiceServerDeleteHubs(t *testing.T) {
 		},
 	}
 
-	ctx := kitNetGrpc.CtxWithToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
+	ctx := pkgGrpc.CtxWithToken(context.Background(), config.CreateJwtToken(t, jwt.MapClaims{
 		"sub": test.DPSOwner,
 	}))
 

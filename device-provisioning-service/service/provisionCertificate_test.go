@@ -29,12 +29,11 @@ import (
 	hubCoapGWTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/device-provisioning-service/service"
 	"github.com/plgd-dev/hub/v2/device-provisioning-service/test"
-	"github.com/plgd-dev/hub/v2/device-provisioning-service/uri"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
 	grpcPb "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	isEvents "github.com/plgd-dev/hub/v2/identity-store/events"
 	"github.com/plgd-dev/hub/v2/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	hubTest "github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
@@ -68,7 +67,7 @@ func TestProvisioningWithRenewal(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
+	ctx = pkgGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: hubTest.GetRootCertificatePool(t),
@@ -178,7 +177,7 @@ func TestProvisioningNewCertificateDuringConnectionToHub(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 	token := oauthTest.GetDefaultAccessToken(t)
-	ctx = kitNetGrpc.CtxWithToken(ctx, token)
+	ctx = pkgGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: hubTest.GetRootCertificatePool(t),
@@ -266,7 +265,7 @@ func TestOwnerWithUnknownCertificateAuthority(t *testing.T) {
 	token := oauthTest.GetDefaultAccessToken(t)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, token)
+	ctx = pkgGrpc.CtxWithToken(ctx, token)
 
 	rootCA, err := os.ReadFile(os.Getenv("TEST_DPS_ROOT_CA_CERT_ALT"))
 	require.NoError(t, err)
@@ -298,7 +297,7 @@ func TestOwnerWithUnknownCertificateAuthority(t *testing.T) {
 		},
 	})
 
-	dpsEndpoint := uri.CoAPsTCPSchemePrefix + dpcCfg.APIs.COAP.Addr
+	dpsEndpoint := config.ACTIVE_COAP_SCHEME + "://" + dpcCfg.APIs.COAP.Addr
 	err = devClient.UpdateResource(ctx, deviceID, test.ResourcePlgdDpsHref, test.ResourcePlgdDps{Endpoint: &dpsEndpoint}, nil)
 	require.NoError(t, err)
 
@@ -462,7 +461,7 @@ func TestDisconnectAfterCredentialsUpdate(t *testing.T) {
 	deviceID := hubTest.MustFindDeviceByName(test.TestDeviceObtName)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
+	ctx = pkgGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 	deviceID, shutdownSim := test.OnboardDpsSim(ctx, t, c, deviceID, h.Cfg().APIs.COAP.Addr, test.TestDevsimResources)
 	defer shutdownSim()
 	h.StopDps()

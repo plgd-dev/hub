@@ -8,7 +8,6 @@ import (
 	deviceClient "github.com/plgd-dev/device/v2/client"
 	"github.com/plgd-dev/device/v2/schema"
 	"github.com/plgd-dev/go-coap/v3/message"
-	"github.com/plgd-dev/hub/v2/device-provisioning-service/uri"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	isEvents "github.com/plgd-dev/hub/v2/identity-store/events"
@@ -256,7 +255,7 @@ func OnboardDpsSimDevice(ctx context.Context, t *testing.T, gc pb.GrpcGatewayCli
 
 	onboard := func() {
 		var v interface{}
-		endpoint := uri.CoAPsTCPSchemePrefix + dpsEndpoint
+		endpoint := config.ACTIVE_COAP_SCHEME + "://" + dpsEndpoint
 		err = devClient.UpdateResource(ctx, d.GetID(), ResourcePlgdDpsHref, ResourcePlgdDps{Endpoint: &endpoint}, &v)
 		require.NoError(t, err)
 	}

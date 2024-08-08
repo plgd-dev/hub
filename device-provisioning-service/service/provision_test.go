@@ -21,13 +21,12 @@ import (
 	"github.com/plgd-dev/hub/v2/device-provisioning-service/service"
 	httpService "github.com/plgd-dev/hub/v2/device-provisioning-service/service/http"
 	"github.com/plgd-dev/hub/v2/device-provisioning-service/test"
-	"github.com/plgd-dev/hub/v2/device-provisioning-service/uri"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
 	grpcPb "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
 	"github.com/plgd-dev/hub/v2/identity-store/events"
 	"github.com/plgd-dev/hub/v2/pkg/config/property/urischeme"
-	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	hubTest "github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
@@ -59,7 +58,7 @@ func TestProvisioning(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 	token := oauthTest.GetDefaultAccessToken(t)
-	ctx = kitNetGrpc.CtxWithToken(ctx, token)
+	ctx = pkgGrpc.CtxWithToken(ctx, token)
 
 	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: hubTest.GetRootCertificatePool(t),
@@ -176,7 +175,7 @@ func TestProvisioningFactoryReset(t *testing.T) {
 	token := oauthTest.GetDefaultAccessToken(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, token)
+	ctx = pkgGrpc.CtxWithToken(ctx, token)
 
 	deviceID, _ = test.OnboardDpsSim(ctx, t, c, deviceID, dpcCfg.APIs.COAP.Addr, test.TestDevsimResources)
 
@@ -217,7 +216,7 @@ func TestProvisioningWithCloudChange(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
 	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
+	ctx = pkgGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: hubTest.GetRootCertificatePool(t),
@@ -312,7 +311,7 @@ func TestProvisioningWithPSK(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3600)
 	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
+	ctx = pkgGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: hubTest.GetRootCertificatePool(t),
@@ -393,7 +392,7 @@ func TestProvisioningFromNewDPSAddress(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
+	ctx = pkgGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: hubTest.GetRootCertificatePool(t),
@@ -449,7 +448,7 @@ func TestProvisioningFromNewDPSAddress(t *testing.T) {
 	}()
 
 	// Update DPS address in device
-	endpoint := uri.CoAPsTCPSchemePrefix + dpsCfg.APIs.COAP.Addr
+	endpoint := config.ACTIVE_COAP_SCHEME + "://" + dpsCfg.APIs.COAP.Addr
 	err = pskConn.UpdateResource(ctx, test.ResourcePlgdDpsHref, test.ResourcePlgdDps{Endpoint: &endpoint}, nil)
 	require.NoError(t, err)
 

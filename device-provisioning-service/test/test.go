@@ -197,11 +197,14 @@ func MakeConfig(t require.TestingT) service.Config {
 	cfg.APIs.COAP.Addr = DPSHost
 	cfg.APIs.COAP.MaxMessageSize = 256 * 1024
 	cfg.APIs.COAP.MessagePoolSize = 1000
-	cfg.APIs.COAP.Protocols = []pkgCoapService.Protocol{pkgCoapService.TCP, pkgCoapService.UDP}
+	cfg.APIs.COAP.Protocols = []pkgCoapService.Protocol{pkgCoapService.TCP}
+	if config.COAP_GATEWAY_UDP_ENABLED {
+		cfg.APIs.COAP.Protocols = append(cfg.APIs.COAP.Protocols, pkgCoapService.UDP)
+	}
 	cfg.APIs.COAP.InactivityMonitor = &pkgCoapService.InactivityMonitor{
 		Timeout: time.Second * 20,
 	}
-	cfg.APIs.COAP.BlockwiseTransfer.Enabled = true
+	cfg.APIs.COAP.BlockwiseTransfer.Enabled = config.COAP_GATEWAY_UDP_ENABLED
 	cfg.APIs.COAP.BlockwiseTransfer.SZX = "1024"
 	cfg.APIs.HTTP = MakeHTTPConfig()
 	tlsServerCfg := config.MakeTLSServerConfig()
@@ -224,7 +227,7 @@ func MakeEnrollmentGroup() service.EnrollmentGroupConfig {
 	cfg.ID = DPSEnrollmentGroupID
 	cfg.Owner = DPSOwner
 	cfg.AttestationMechanism.X509.CertificateChain = urischeme.URIScheme(os.Getenv("TEST_DPS_INTERMEDIATE_CA_CERT"))
-	cfg.Hubs = []service.HubConfig{MakeHubConfig(config.HubID(), config.COAP_GW_HOST)}
+	cfg.Hubs = []service.HubConfig{MakeHubConfig(config.HubID(), config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST)}
 	return cfg
 }
 
