@@ -46,6 +46,7 @@ push: build-servicecontainer
 
 proto/generate:
 	protoc -I=. -I=$(REPOSITORY_DIRECTORY) -I=$(GOPATH)/src --go_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pb/getLatestDeviceETags.proto
+	protoc -I=. -I=$(REPOSITORY_DIRECTORY) -I=$(GOPATH)/src --go_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pb/service.proto
 	protoc -I=. -I=$(REPOSITORY_DIRECTORY) -I=$(GOPATH)/src --go-grpc_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pb/service.proto
 	protoc  -I=. -I=$(REPOSITORY_DIRECTORY) -I=$(GOPATH)/src --doc_out=$(WORKING_DIRECTORY)/pb --doc_opt=markdown,README.md $(WORKING_DIRECTORY)/pb/*.proto
 	protoc  -I=. -I=$(REPOSITORY_DIRECTORY) -I=$(GOPATH)/src --doc_out=$(WORKING_DIRECTORY)/pb --doc_opt=html,doc.html $(WORKING_DIRECTORY)/pb/*.proto

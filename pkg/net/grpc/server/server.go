@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, opts ...grpc.ServerOption) (*Server, error) {
+func New(config BaseConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, opts ...grpc.ServerOption) (*Server, error) {
 	err := config.Validate()
 	if err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)

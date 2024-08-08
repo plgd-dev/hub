@@ -1,0 +1,3 @@
+{{- if and .Values.grpcreflection.rbac.enabled .Values.grpcreflection.rbac.roleBindingDefitionTpl }}
+{{- tpl .Values.grpcreflection.rbac.roleBindingDefitionTpl $ }}
+{{- end }}
