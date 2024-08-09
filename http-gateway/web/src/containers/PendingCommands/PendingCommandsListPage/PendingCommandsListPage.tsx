@@ -116,7 +116,7 @@ const PendingCommandsListPage = () => {
             {
                 Header: _(t.initiator),
                 accessor: 'auditContext.userId',
-                Cell: ({ value }: { value: any }) => value,
+                Cell: ({ value }: { value: any }) => <span className='no-wrap-text'>{value}</span>,
             },
 
             {
