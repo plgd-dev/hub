@@ -7,6 +7,7 @@ import { DEVICE_AUTH_CODE_SESSION_KEY } from '@/constants'
 import { devicesApiEndpoints, DEVICE_DELETE_CHUNK_SIZE } from './constants'
 import { interfaceGetParam } from './utils'
 import { SecurityConfig } from '@/containers/App/App.types'
+import { DeviceOAuthConfigType } from '@shared-ui/common/types/WellKnowConfig.types'
 
 /**
  * Get a single thing by its ID Rest Api endpoint
@@ -174,12 +175,6 @@ export const updateDeviceTwinSynchronizationApi = (deviceId: string, twinEnabled
             }),
         'update-device-metadata'
     )
-}
-
-type DeviceOAuthConfigType = {
-    clientId: string
-    audience: string
-    scopes: string[]
 }
 
 const getCodeByIframe = (options: any) => {

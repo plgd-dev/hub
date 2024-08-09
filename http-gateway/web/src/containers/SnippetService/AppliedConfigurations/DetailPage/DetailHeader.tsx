@@ -70,6 +70,7 @@ const DetailHeader: FC<Props> = (props) => {
                 deleteButton: testId.snippetService.appliedConfigurations.detail.deleteButton,
                 deleteButtonCancel: testId.snippetService.appliedConfigurations.detail.deleteButtonCancel,
                 deleteButtonConfirm: testId.snippetService.appliedConfigurations.detail.deleteButtonConfirm,
+                deleteModal: testId.snippetService.appliedConfigurations.detail.deleteModal,
             }}
         />
     )

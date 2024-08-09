@@ -20,6 +20,7 @@ import { messages as confT } from '@/containers/SnippetService/SnippetService.i1
 import { formatText } from '@/containers/PendingCommands/DateFormat'
 import { useValidationsSchema } from '@/containers/SnippetService/Conditions/DetailPage/validationSchema'
 import { Props, Inputs } from './Tab1.types'
+import testId from '@/testId'
 
 const Tab1: FC<Props> = (props) => {
     const { defaultFormData, resetIndex } = props
@@ -56,6 +57,7 @@ const Tab1: FC<Props> = (props) => {
                     value: (
                         <FormGroup error={errors.name ? _(g.requiredField, { field: _(g.name) }) : undefined} id='name'>
                             <FormInput
+                                dataTestId={testId.snippetService.conditions.detail.tab1.form.name}
                                 {...register('name', { required: true, validate: (val) => val !== '' })}
                                 onBlur={(e) => updateField('name', e.target.value)}
                                 placeholder={_(g.name)}

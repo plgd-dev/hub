@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from 'react-redux'
 
 import BottomPanel from '@shared-ui/components/Layout/BottomPanel/BottomPanel'
 import { Row } from '@shared-ui/components/Atomic/SimpleStripTable/SimpleStripTable.types'
-import FormSelect, { selectAligns } from '@shared-ui/components/Atomic/FormSelect'
+import FormSelect, { selectAligns, selectSizes } from '@shared-ui/components/Atomic/FormSelect'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import Button from '@shared-ui/components/Atomic/Button'
 import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
@@ -69,6 +69,7 @@ const Tab1: FC<Props> = (props) => {
                             onChange={onChange}
                             options={options}
                             ref={ref}
+                            size={selectSizes.SMALL}
                             value={value}
                         />
                     )}

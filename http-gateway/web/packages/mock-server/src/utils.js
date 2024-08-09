@@ -16,13 +16,19 @@ const loadResponseFromFile = (file, res) => {
     res.sendFile(file, { root: targetDirectory })
 }
 
-const loadResponseStreamFromFile = (file, res) => {
+const loadResponseStreamFromFile = (file, res, version) => {
     const targetDirectory = `${__dirname}/data`
 
     const dataArray = fs.readJsonSync(`${targetDirectory}/${file}`)
 
     dataArray.forEach((data, key) => {
-        res.write(JSON.stringify(data) + `${key === dataArray.length - 1 ? '' : '\n\n'}`)
+        if (version) {
+            if (data.result.version === version) {
+                res.write(JSON.stringify(data) + `${key === dataArray.length - 1 ? '' : '\n\n'}`)
+            }
+        } else {
+            res.write(JSON.stringify(data) + `${key === dataArray.length - 1 ? '' : '\n\n'}`)
+        }
     })
 
     res.send()

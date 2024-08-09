@@ -16,6 +16,7 @@ import { Props, Inputs } from './Step1.types'
 import { messages as confT } from '@/containers/SnippetService/SnippetService.i18n'
 import { messages as g } from '@/containers/Global.i18n'
 import { useValidationsSchema } from '../../../validationSchema'
+import testId from '@/testId'
 
 const Step1: FC<Props> = (props) => {
     const { defaultFormData } = props
@@ -46,7 +47,11 @@ const Step1: FC<Props> = (props) => {
 
             <FormGroup error={errors.name ? _(g.requiredField, { field: _(g.name) }) : undefined} id='name' marginBottom={false}>
                 <FormLabel required text={_(g.name)} />
-                <FormInput {...register('name')} onBlur={(e) => updateField('name', e.target.value)} />
+                <FormInput
+                    {...register('name')}
+                    dataTestId={testId.snippetService.conditions.addPage.step1.form.name}
+                    onBlur={(e) => updateField('name', e.target.value)}
+                />
             </FormGroup>
 
             <Spacer type='pt-7'>
@@ -56,7 +61,7 @@ const Step1: FC<Props> = (props) => {
                     render={({ field: { onChange, value } }) => (
                         <TileToggle
                             darkBg
-                            checked={(value as boolean) ?? false}
+                            checked={value ?? false}
                             name={_(g.enabled)}
                             onChange={(e) => {
                                 onChange(e.target.checked)
@@ -68,6 +73,7 @@ const Step1: FC<Props> = (props) => {
             </Spacer>
 
             <StepButtons
+                dataTestId={testId.snippetService.conditions.addPage.step1.buttons}
                 disableNext={!name}
                 i18n={{
                     back: _(g.back),

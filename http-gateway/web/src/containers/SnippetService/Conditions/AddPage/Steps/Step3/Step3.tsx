@@ -10,7 +10,6 @@ import StepButtons from '@shared-ui/components/Templates/FullPageWizard/StepButt
 import { FormContext } from '@shared-ui/common/context/FormContext'
 import FullPageWizard from '@shared-ui/components/Templates/FullPageWizard'
 import FormTextarea from '@shared-ui/components/Atomic/FormTextarea'
-import Notification from '@shared-ui/components/Atomic/Notification/Toast'
 import Spacer from '@shared-ui/components/Atomic/Spacer'
 import Button, { buttonVariants } from '@shared-ui/components/Atomic/Button'
 import { security } from '@shared-ui/common/services'
@@ -19,8 +18,9 @@ import { messages as confT } from '@/containers/SnippetService/SnippetService.i1
 import { Props, Inputs } from './Step3.types'
 import { messages as g } from '@/containers/Global.i18n'
 import { useConfigurationList } from '@/containers/SnippetService/hooks'
-import { getOauthToken } from '@/containers/SnippetService/rest'
-import notificationId from '@/notificationId'
+import AddNewTokenModal from '@/containers/ApiTokens/AddNewTokenModal'
+import { CreateTokenReturnType } from '@/containers/ApiTokens/ApiTokens.types'
+import testId from '@/testId'
 
 const Step3: FC<Props> = (props) => {
     const { defaultFormData, onFinish } = props
@@ -30,6 +30,7 @@ const Step3: FC<Props> = (props) => {
     const { data, loading: loadingProp } = useConfigurationList()
 
     const [loading, setLoading] = useState(false)
+    const [addTokenModal, setAddTokenModal] = useState(false)
 
     const wellKnownConfig = security.getWellKnownConfig() as WellKnownConfigType & {
         defaultCommandTimeToLive: number
@@ -60,30 +61,11 @@ const Step3: FC<Props> = (props) => {
     const configurationId = watch('configurationId')
     const apiAccessToken = watch('apiAccessToken')
 
-    const handleLoadToken = async (e: any) => {
-        e.preventDefault()
-        setLoading(true)
+    const handleUpdateToken = (data: CreateTokenReturnType) => {
+        setValue('apiAccessToken', data.accessToken)
+        updateField('apiAccessToken', data.accessToken)
 
-        try {
-            const accessToken = await getOauthToken()
-
-            setValue('apiAccessToken', accessToken)
-            updateField('apiAccessToken', accessToken)
-
-            setLoading(false)
-        } catch (error: any) {
-            let e = error
-            if (!(error instanceof Error)) {
-                e = new Error(error)
-            }
-
-            Notification.error(
-                { title: _(confT.conditionTokenError), message: e.message },
-                { notificationId: notificationId.HUB_SNIPPET_SERVICE_CONDITIONS_ADD_PAGE_GET_TOKEN_ERROR }
-            )
-
-            setLoading(false)
-        }
+        setLoading(false)
     }
 
     return (
@@ -98,6 +80,7 @@ const Step3: FC<Props> = (props) => {
                 <FormLabel required text={_(confT.selectConfiguration)} />
                 <FormSelect
                     isClearable
+                    dataTestId={testId.snippetService.conditions.addPage.step3.selectConfiguration}
                     error={!!errors.configurationId}
                     onChange={(option: OptionType) => {
                         const v = option ? option.value : ''
@@ -112,6 +95,7 @@ const Step3: FC<Props> = (props) => {
             <FormGroup error={errors.apiAccessToken ? _(g.requiredField, { field: _(g.name) }) : undefined} id='apiAccessToken'>
                 <FormLabel required text={_(confT.APIAccessToken)} />
                 <FormTextarea
+                    dataTestId={testId.snippetService.conditions.addPage.step3.apiToken}
                     {...register('apiAccessToken', { required: true, validate: (val) => val !== '' })}
                     onBlur={(e) => updateField('apiAccessToken', e.target.value)}
                     style={{ height: 450 }}
@@ -119,14 +103,34 @@ const Step3: FC<Props> = (props) => {
             </FormGroup>
 
             {wellKnownConfig?.m2mOauthClient?.clientId && (
-                <Spacer type='mt-3'>
-                    <Button loading={loading} loadingText={_(g.loading)} onClick={handleLoadToken} variant={buttonVariants.SECONDARY}>
-                        {_(confT.generateNewToken)}
-                    </Button>
-                </Spacer>
+                <>
+                    <Spacer type='mt-3'>
+                        <Button
+                            dataTestId={testId.snippetService.conditions.addPage.step3.generateApiToken}
+                            loading={loading}
+                            loadingText={_(g.loading)}
+                            onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                setAddTokenModal(true)
+                            }}
+                            variant={buttonVariants.SECONDARY}
+                        >
+                            {_(confT.generateNewToken)}
+                        </Button>
+                    </Spacer>
+                    <AddNewTokenModal
+                        dataTestId={testId.snippetService.conditions.addPage.step3.generateApiTokenModal}
+                        defaultName={`${defaultFormData.name}-condition` || ''}
+                        handleClose={() => setAddTokenModal(false)}
+                        onSubmit={handleUpdateToken}
+                        show={addTokenModal}
+                    />
+                </>
             )}
 
             <StepButtons
+                dataTestId={testId.snippetService.conditions.addPage.step3.buttons}
                 disableNext={!configurationId || !apiAccessToken || Object.keys(errors).length > 0}
                 i18n={{
                     back: _(g.back),

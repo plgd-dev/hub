@@ -19,6 +19,8 @@ import { getConfigurationsPageListI18n } from '@/containers/SnippetService/utils
 import DateFormat from '@/containers/PendingCommands/DateFormat'
 import InvokeModal from '@/containers/SnippetService/Configurations/InvokeModal'
 import testId from '@/testId'
+import StatusTag from '@shared-ui/components/Atomic/StatusTag'
+import { tagVariants as statusTagVariants } from '@shared-ui/components/Atomic/StatusTag/constants'
 
 const ListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
@@ -71,7 +73,7 @@ const ListPage: FC<any> = () => {
             {
                 Header: _(g.version),
                 accessor: 'version',
-                Cell: ({ value }: { value: string | number }) => <span className='no-wrap-text'>{value}</span>,
+                Cell: ({ value }: { value: string | number }) => <StatusTag variant={statusTagVariants.NORMAL}>{value}</StatusTag>,
             },
         ],
         // eslint-disable-next-line react-hooks/exhaustive-deps

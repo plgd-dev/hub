@@ -209,14 +209,12 @@ export const useAppliedConfigurationsList = (filter = '', requestActive = true):
     } = useStreamVersionData<ConditionDataType[]>({
         unauthorizedCallback,
         url: `${url}${SnippetServiceApiEndpoints.CONDITIONS}`,
-        ids: appliedConfigData
-            ? appliedConfigData
-                  .map((config: AppliedConfigurationDataType) => config.conditionId)
-                  .filter((i: { id: string; version: string } | undefined) => !!i)
-            : [],
+        ids: appliedConfigData ? appliedConfigData.map((config: AppliedConfigurationDataType) => config.conditionId) : [],
         requestActive: !!appliedConfigData,
         telemetrySpan: 'snippet-service-get-conditions',
     })
+
+    const allOnDemand = useMemo(() => appliedConfigData?.every((d: AppliedConfigurationDataType) => d.onDemand === true), [appliedConfigData])
 
     const loading = useMemo(
         () => devicesLoading || appliedConfigLoading || configurationsLoading || conditionsLoading,
@@ -224,7 +222,7 @@ export const useAppliedConfigurationsList = (filter = '', requestActive = true):
     )
 
     useEffect(() => {
-        if (devicesData && appliedConfigData && configurationsData && conditionsData) {
+        if (devicesData && appliedConfigData && configurationsData && (conditionsData || allOnDemand)) {
             setData(
                 appliedConfigData.map((appliedConfig: AppliedConfigurationDataType) => ({
                     ...appliedConfig,
@@ -238,7 +236,7 @@ export const useAppliedConfigurationsList = (filter = '', requestActive = true):
                 }))
             )
         }
-    }, [loading, devicesData, appliedConfigData, configurationsData, conditionsData])
+    }, [loading, devicesData, appliedConfigData, configurationsData, conditionsData, allOnDemand])
 
     const refresh = useCallback(() => {
         appliedConfigRefresh()
