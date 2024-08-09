@@ -22,7 +22,7 @@ GO_BUILD_ARG := -race
 else
 GO_BUILD_ARG := $(GO_BUILD_ARG)
 endif
-TEST_TIMEOUT ?= 45m
+TEST_TIMEOUT ?= 1h
 TEST_COAP_GATEWAY_UDP_ENABLED ?= true
 TEST_COAP_GATEWAY_LOG_LEVEL ?= info
 TEST_COAP_GATEWAY_LOG_DUMP_BODY ?= false
@@ -352,7 +352,8 @@ DPS_DEVICE_OC_LOG_LEVEL ?= info
 DPS_DEVICE_SIMULATOR_OBT_NAME := dps-devsim-obt
 DPS_DEVICE_SIMULATOR_NAME := dps-devsim
 # TODO: switch to iotivity-lite repository
-DPS_DEVICE_SIMULATOR_IMG := ghcr.io/plgd-dev/device-provisioning-client/dps-cloud-server-debug:main
+# DPS_DEVICE_SIMULATOR_IMG := ghcr.io/plgd-dev/device-provisioning-client/dps-cloud-server-debug:main
+DPS_DEVICE_SIMULATOR_IMG := ghcr.io/plgd-dev/device-provisioning-client/dps-cloud-server-debug:adam-feature-cloud_server_sha384
 
 # Pull latest DPS device simulator with given name and run it
 #
@@ -439,9 +440,9 @@ define RUN-TESTS-IN-DIRECTORY
 	COVERAGE_FILE=/coverage/$$(echo $(1) | sed -e "s/[\.\/]//g").coverage.txt ; \
 	JSON_REPORT_FILE=$(WORKING_DIRECTORY)/.tmp/report/$$(echo $(1) | sed -e "s/[\.\/]//g").report.json ; \
 	if [ -n "$${JSON_REPORT}" ]; then \
-		$(call RUN-DOCKER, /bin/sh -c "$(2) go test -timeout=45m -race -p 1 -v $(1)... -covermode=atomic -coverprofile=$${COVERAGE_FILE} -json > $${JSON_REPORT_FILE}") \
+		$(call RUN-DOCKER, /bin/sh -c "$(3) go test $(2) $(1)... -covermode=atomic -coverprofile=$${COVERAGE_FILE} -json > $${JSON_REPORT_FILE}") \
 	else \
-		$(call RUN-DOCKER, /bin/sh -c "$(2) go test -timeout=45m -race -p 1 -v $(1)... -covermode=atomic -coverprofile=$${COVERAGE_FILE}") \
+		$(call RUN-DOCKER, /bin/sh -c "$(3) go test $(2) $(1)... -covermode=atomic -coverprofile=$${COVERAGE_FILE}") \
 	fi ; \
 	EXIT_STATUS=$$? ; \
 	if [ $${EXIT_STATUS} -ne 0 ]; then \
@@ -548,7 +549,7 @@ $(test-targets): %: env hub-test
 		echo "No golang files detected, directory $$TARGET_DIRECTORY skipped"; \
 		exit 0; \
 	fi ; \
-	$(call RUN-TESTS-IN-DIRECTORY,$(patsubst test-%,./%/,$@),\
+	$(call RUN-TESTS-IN-DIRECTORY,$(patsubst test-%,./%/,$@),-timeout=$(TEST_TIMEOUT) $(GO_BUILD_ARG) -p 1 -v -tags=test,\
 		TEST_COAP_GATEWAY_UDP_ENABLED=$(TEST_COAP_GATEWAY_UDP_ENABLED) \
 		TEST_COAP_GATEWAY_LOG_LEVEL=$(TEST_COAP_GATEWAY_LOG_LEVEL) TEST_COAP_GATEWAY_LOG_DUMP_BODY=$(TEST_COAP_GATEWAY_LOG_DUMP_BODY) \
 		TEST_RESOURCE_AGGREGATE_LEVEL=$(TEST_RESOURCE_AGGREGATE_LEVEL) TEST_RESOURCE_AGGREGATE_LOG_DUMP_BODY=$(TEST_RESOURCE_AGGREGATE_LOG_DUMP_BODY) \

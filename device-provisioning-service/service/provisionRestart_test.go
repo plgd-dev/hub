@@ -58,10 +58,17 @@ func TestReprovisioningAfterRestart(t *testing.T) {
 	caShutdown := caService.New(t, caCfg)
 	defer caShutdown()
 
-	dpsShutDown := test.New(t, h.Cfg())
 	deviceID := hubTest.MustFindDeviceByName(test.TestDeviceObtName)
+	dpsShutDown := test.New(t, h.Cfg())
+	deferedDpsCleanUp := true
+	defer func() {
+		if deferedDpsCleanUp {
+			dpsShutDown()
+		}
+	}()
 	deviceID, shutdownSim := test.OnboardDpsSim(ctx, t, c, deviceID, h.Cfg().APIs.COAP.Addr, test.TestDevsimResources)
 	defer shutdownSim()
+	deferedDpsCleanUp = false
 	dpsShutDown()
 
 	err = test.ForceReprovision(ctx, c, deviceID)

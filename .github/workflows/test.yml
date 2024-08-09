@@ -29,6 +29,7 @@ jobs:
           # test with check race with coverage and sonarcloud
           - name: test
             cmd: test-device-provisioning-service
+            args: TEST_COAP_GATEWAY_UDP_ENABLED=false
             checkRace: "true"
             coapGateway:
               log:
@@ -37,6 +38,7 @@ jobs:
 
           - name: test/cqldb
             cmd: test-device-provisioning-service
+            args: TEST_COAP_GATEWAY_UDP_ENABLED=false
             checkRace: "true"
             database: "cqldb"
             coapGateway:
@@ -47,6 +49,7 @@ jobs:
           # test without check race
           - name: test/norace
             cmd: test-device-provisioning-service
+            args: TEST_COAP_GATEWAY_UDP_ENABLED=false
             coapGateway:
               log:
                 level: "debug"
@@ -54,6 +57,7 @@ jobs:
 
           - name: test/norace/cqldb
             cmd: test-device-provisioning-service
+            args: TEST_COAP_GATEWAY_UDP_ENABLED=false
             database: "cqldb"
             coapGateway:
               log:
@@ -66,7 +70,7 @@ jobs:
           #   - with TEST_LEAD_RESOURCE_TYPE_FILTER, TEST_LEAD_RESOURCE_TYPE_USE_UUID
           - name: test/norace-384
             cmd: test-device-provisioning-service
-            args: CERT_TOOL_SIGN_ALG=ECDSA-SHA384 CERT_TOOL_ELLIPTIC_CURVE=P384 TEST_LEAD_RESOURCE_TYPE_FILTER=last TEST_LEAD_RESOURCE_TYPE_USE_UUID=true
+            args: TEST_COAP_GATEWAY_UDP_ENABLED=false CERT_TOOL_SIGN_ALG=ECDSA-SHA384 CERT_TOOL_ELLIPTIC_CURVE=P384 TEST_LEAD_RESOURCE_TYPE_FILTER=last TEST_LEAD_RESOURCE_TYPE_USE_UUID=true
 
           # test
           #   - without check race
@@ -74,7 +78,7 @@ jobs:
           #   - with logs from all services
           - name: test/norace/logs
             cmd: test-device-provisioning-service
-            args: TEST_LEAD_RESOURCE_TYPE_REGEX_FILTER='oic\.wk\.d,^/light/\d+$$' TEST_LEAD_RESOURCE_TYPE_FILTER=first
+            args: TEST_COAP_GATEWAY_UDP_ENABLED=false TEST_LEAD_RESOURCE_TYPE_REGEX_FILTER='oic\.wk\.d,^/light/\d+$$' TEST_LEAD_RESOURCE_TYPE_FILTER=first
             coapGateway:
               log:
                 level: "debug"
@@ -104,11 +108,6 @@ jobs:
           echo "Number of cores: $(nproc)"
           echo "Number of threads: $(nproc --all)"
 
-      - name: disable tcp/udp offloading
-        run: |
-          ifconfig
-          netstat -ano
-
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
         with:
@@ -124,7 +123,6 @@ jobs:
 
       - name: Run a test
         run: |
-          env
           make ${{ matrix.cmd }} TEST_CHECK_RACE=${{ matrix.checkRace }} \
           TEST_COAP_GATEWAY_LOG_LEVEL=${{ matrix.coapGateway.log.level }} TEST_COAP_GATEWAY_LOG_DUMP_BODY=${{ matrix.coapGateway.log.dumpBody }} \
           TEST_RESOURCE_AGGREGATE_LOG_LEVEL=${{ matrix.resourceAggregate.log.level }} TEST_RESOURCE_AGGREGATE_LOG_DUMP_BODY=${{ matrix.resourceAggregate.log.dumpBody }} \

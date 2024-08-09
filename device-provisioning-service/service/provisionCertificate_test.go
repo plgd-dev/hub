@@ -117,10 +117,17 @@ func TestProvisioningWithRenewal(t *testing.T) {
 			return done, nil
 		})
 
-	dpsShutDown := test.New(t, rh.Cfg())
 	deviceID := hubTest.MustFindDeviceByName(test.TestDeviceObtName)
+	dpsShutDown := test.New(t, rh.Cfg())
+	deferedDpsCleanUp := true
+	defer func() {
+		if deferedDpsCleanUp {
+			dpsShutDown()
+		}
+	}()
 	deviceID, shutdownSim := test.OnboardDpsSim(ctx, t, c, deviceID, rh.Cfg().APIs.COAP.Addr, test.TestDevsimResources)
 	defer shutdownSim()
+	deferedDpsCleanUp = false
 	dpsShutDown()
 
 	err = test.ForceReprovision(ctx, c, deviceID)

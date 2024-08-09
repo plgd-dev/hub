@@ -26,6 +26,7 @@ import (
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
 	"github.com/plgd-dev/hub/v2/identity-store/events"
 	"github.com/plgd-dev/hub/v2/pkg/config/property/urischeme"
+	"github.com/plgd-dev/hub/v2/pkg/fn"
 	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	hubTest "github.com/plgd-dev/hub/v2/test"
@@ -86,7 +87,7 @@ func TestProvisioning(t *testing.T) {
 	dpcCfg := test.MakeConfig(t)
 	dpcCfg.APIs.COAP.Addr = DPSHost
 	dpcCfg.APIs.HTTP.Connection.TLS.ClientCertificateRequired = false
-	dpcCfg.EnrollmentGroups[0].Hubs[0].Gateways = []string{coapgwCfg.APIs.COAP.Addr}
+	dpcCfg.EnrollmentGroups[0].Hubs[0].Gateways = []string{config.ACTIVE_COAP_SCHEME + "://" + coapgwCfg.APIs.COAP.Addr}
 	dpsShutDown := test.New(t, dpcCfg)
 	defer dpsShutDown()
 
@@ -232,11 +233,20 @@ func TestProvisioningWithCloudChange(t *testing.T) {
 	caShutdown := caService.New(t, caCfg)
 	defer caShutdown()
 
+	var cleanUp fn.FuncList
+	deferedCleanUp := true
+	defer func() {
+		if deferedCleanUp {
+			cleanUp.Execute()
+		}
+	}()
 	coapgwShutdown := coapgwTest.SetUp(t)
+	cleanUp.AddFunc(coapgwShutdown)
 
+	deviceID := hubTest.MustFindDeviceByName(test.TestDeviceObtName)
 	dpsCfg := test.MakeConfig(t)
 	dpsShutDown := test.New(t, dpsCfg)
-	deviceID := hubTest.MustFindDeviceByName(test.TestDeviceObtName)
+	cleanUp.AddFunc(dpsShutDown)
 	deviceID, shutdownSim := test.OnboardDpsSim(ctx, t, c, deviceID, dpsCfg.APIs.COAP.Addr, test.TestDevsimResources)
 	defer shutdownSim()
 
@@ -264,6 +274,7 @@ func TestProvisioningWithCloudChange(t *testing.T) {
 	err = test.WaitForDeviceStatus(t, subClient, deviceID, subID, corID, commands.Connection_ONLINE)
 	require.NoError(t, err)
 
+	deferedCleanUp = false
 	dpsShutDown()
 	coapgwShutdown()
 	// 10secs after connection to coap-gw is lost, DPS client should attempt full reprovision
@@ -282,7 +293,7 @@ func TestProvisioningWithCloudChange(t *testing.T) {
 	count, err = store.DeleteHubs(ctx, test.DPSOwner, &pb.GetHubsRequest{})
 	require.NoError(t, err)
 	require.Equal(t, int64(1), count)
-	dpsCfg.EnrollmentGroups[0].Hubs[0].Gateways = []string{coapgwCfg.APIs.COAP.Addr}
+	dpsCfg.EnrollmentGroups[0].Hubs[0].Gateways = []string{config.ACTIVE_COAP_SCHEME + "://" + coapgwCfg.APIs.COAP.Addr}
 	dpsShutDown = test.New(t, dpsCfg)
 	defer dpsShutDown()
 
@@ -420,12 +431,19 @@ func TestProvisioningFromNewDPSAddress(t *testing.T) {
 	dpsCfg.EnrollmentGroups[0].PreSharedKeyFile = urischeme.URIScheme(pskFile)
 	dpsCfg.APIs.HTTP.Connection.TLS.ClientCertificateRequired = false
 	dpsShutDown := test.New(t, dpsCfg)
+	deferedDpsCleanUp := true
+	defer func() {
+		if deferedDpsCleanUp {
+			dpsShutDown()
+		}
+	}()
 
 	deviceID := hubTest.MustFindDeviceByName(test.TestDeviceObtName)
 	_, shutdownSim := test.OnboardDpsSim(ctx, t, c, deviceID, dpsCfg.APIs.COAP.Addr, test.TestDevsimResources)
 	defer shutdownSim()
 
 	// change DPS to new address from "localhost:40030" to "localhost:50030" and restart DPS
+	deferedDpsCleanUp = false
 	dpsShutDown()
 	dpsCfg.APIs.COAP.Addr = "localhost:50030"
 	h := newTestRequestHandler(t, dpsCfg, defaultTestDpsHandlerConfig())
@@ -478,8 +496,8 @@ func TestProvisiongConnectToSecondaryServerByObserver(t *testing.T) {
 		}}, nil)
 	}
 	dpsCfg := test.MakeConfig(t)
-	dpsCfg.EnrollmentGroups[0].Hubs[0].Gateways = []string{"localhost:20999"} // should be unreachable
-	dpsCfg.EnrollmentGroups[0].Hubs[0].Gateways = append(dpsCfg.EnrollmentGroups[0].Hubs[0].Gateways, config.COAP_GW_HOST)
+	dpsCfg.EnrollmentGroups[0].Hubs[0].Gateways = []string{config.ACTIVE_COAP_SCHEME + "://" + "localhost:20999"} // should be unreachable
+	dpsCfg.EnrollmentGroups[0].Hubs[0].Gateways = append(dpsCfg.EnrollmentGroups[0].Hubs[0].Gateways, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST)
 	rh := newTestRequestHandler(t, dpsCfg, defaultTestDpsHandlerConfig())
 	testProvisioningWithDPSHandler(t, rh, time.Minute, test.WithConfigureDevice(setLowCloudObserverCheckCount))
 }
@@ -499,8 +517,8 @@ func TestProvisiongConnectToSecondaryServerByRetryTimeout(t *testing.T) {
 		}}, nil)
 	}
 	dpsCfg := test.MakeConfig(t)
-	dpsCfg.EnrollmentGroups[0].Hubs[0].Gateways = []string{"localhost:20999"} // should be unreachable
-	dpsCfg.EnrollmentGroups[0].Hubs[0].Gateways = append(dpsCfg.EnrollmentGroups[0].Hubs[0].Gateways, config.COAP_GW_HOST)
+	dpsCfg.EnrollmentGroups[0].Hubs[0].Gateways = []string{config.ACTIVE_COAP_SCHEME + "://" + "localhost:20999"} // should be unreachable
+	dpsCfg.EnrollmentGroups[0].Hubs[0].Gateways = append(dpsCfg.EnrollmentGroups[0].Hubs[0].Gateways, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST)
 	rh := newTestRequestHandler(t, dpsCfg, defaultTestDpsHandlerConfig())
 	testProvisioningWithDPSHandler(t, rh, time.Minute, test.WithConfigureDevice(setShortRetry))
 }

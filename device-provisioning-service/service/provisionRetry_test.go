@@ -114,8 +114,15 @@ func TestForceReprovisioning(t *testing.T) {
 
 	deviceID := hubTest.MustFindDeviceByName(test.TestDeviceObtName)
 	dpsShutDown := test.New(t, rh.Cfg())
+	deferedDpsCleanUp := true
+	defer func() {
+		if deferedDpsCleanUp {
+			dpsShutDown()
+		}
+	}()
 	deviceID, shutdownSim := test.OnboardDpsSim(ctx, t, c, deviceID, rh.Cfg().APIs.COAP.Addr, test.TestDevsimResources)
 	defer shutdownSim()
+	deferedDpsCleanUp = false
 	dpsShutDown()
 
 	subClient, err := client.New(c).GrpcGatewayClient().SubscribeToEvents(ctx)

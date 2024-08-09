@@ -110,9 +110,13 @@ func TestProvisioningWithExpiringCertificate(t *testing.T) {
 	coapGWCfg.APIs.COAP.TLS.Embedded.ClientCertificateRequired = true
 	coapGWCfg.APIs.COAP.TLS.DisconnectOnExpiredCertificate = true
 	coapGWCfg.APIs.COAP.OwnerCacheExpiration = time.Second
-	coapGWCfg.Log.Level = log.DebugLevel
-	coapGWCfg.Log.DumpBody = true
 	coapGWShutdown := hubCoapGWTest.New(t, coapGWCfg)
+	deferedCoapGWCleanUp := true
+	defer func() {
+		if deferedCoapGWCleanUp {
+			coapGWShutdown()
+		}
+	}()
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
@@ -130,10 +134,14 @@ func TestProvisioningWithExpiringCertificate(t *testing.T) {
 
 	caCfg := caService.MakeConfig(t)
 	caShutdown := caService.New(t, caCfg)
+	deferedCaCleanUp := true
+	defer func() {
+		if deferedCaCleanUp {
+			caShutdown()
+		}
+	}()
 
 	dpsCfg := test.MakeConfig(t)
-	dpsCfg.Log.Level = log.DebugLevel
-	dpsCfg.Log.DumpBody = true
 	dpsCfg.APIs.COAP.InactivityMonitor.Timeout = time.Minute
 	rh := newTestRequestHandler(t, dpsCfg, defaultTestDpsHandlerConfig())
 	rh.StartDps(service.WithRequestHandler(rh))
@@ -173,6 +181,7 @@ func TestProvisioningWithExpiringCertificate(t *testing.T) {
 	require.NoError(t, err)
 
 	// shutdown coap-gw to force device to reconnect
+	deferedCoapGWCleanUp = false
 	coapGWShutdown()
 
 	// shutdown coap-gw sets device to offline, wait for it
@@ -180,12 +189,14 @@ func TestProvisioningWithExpiringCertificate(t *testing.T) {
 	require.NoError(t, err)
 
 	// reconfigure CA to use certificate that will expire soon
+	deferedCaCleanUp = false
 	caShutdown()
 	// sign with certificate that will soon expire
 	expiresIn := 13 * time.Second // 10s + 3s, where 10s = expiring limit of the test device, 3s is enough time to finish provisioning steps
 	caCfg.Signer.ValidFrom = caCfgSignerValidFrom
 	caCfg.Signer.ExpiresIn = time.Hour + expiresIn
 	caShutdown = caService.New(t, caCfg)
+	deferedCaCleanUp = true
 
 	h := newTestRequestHandlerWithExpiredCert(expiresIn)
 	dpsShutDown := test.New(t, dpsCfg, service.WithRequestHandler(h))
@@ -221,6 +232,7 @@ func TestProvisioningWithExpiringCertificate(t *testing.T) {
 		},
 	})
 
+	deferedCaCleanUp = false
 	caShutdown()
 	// sign with valid certificate
 	caCfg.Signer.ExpiresIn = time.Hour * 2
@@ -259,6 +271,12 @@ func TestProvisioningWithExpiredCertificate(t *testing.T) {
 
 	caCfg := caService.MakeConfig(t)
 	caShutdown := caService.New(t, caCfg)
+	deferedCaCleanUp := true
+	defer func() {
+		if deferedCaCleanUp {
+			caShutdown()
+		}
+	}()
 
 	dpsCfg := test.MakeConfig(t)
 	rh := newTestRequestHandler(t, dpsCfg, defaultTestDpsHandlerConfig())
@@ -275,6 +293,7 @@ func TestProvisioningWithExpiredCertificate(t *testing.T) {
 	err = test.ForceReprovision(ctx, c, deviceID)
 	require.NoError(t, err)
 
+	deferedCaCleanUp = false
 	caShutdown()
 	// sign with expired certificate
 	caCfg.Signer.ValidFrom = caCfgSignerValidFrom
@@ -396,11 +415,18 @@ func TestProvisioningWithDeletedEnrollmentGroup(t *testing.T) {
 	}()
 	c := grpcPb.NewGrpcGatewayClient(conn)
 
+	deviceID := hubTest.MustFindDeviceByName(test.TestDeviceObtName)
 	dpsCfg := test.MakeConfig(t)
 	dpsShutDown := test.New(t, dpsCfg)
-	deviceID := hubTest.MustFindDeviceByName(test.TestDeviceObtName)
+	deferedDpsCleanUp := true
+	defer func() {
+		if deferedDpsCleanUp {
+			dpsShutDown()
+		}
+	}()
 	deviceID, shutdownSim := test.OnboardDpsSim(ctx, t, c, deviceID, dpsCfg.APIs.COAP.Addr, test.TestDevsimResources)
 	defer shutdownSim()
+	deferedDpsCleanUp = false
 	dpsShutDown()
 
 	subClient, err := client.New(c).GrpcGatewayClient().SubscribeToEvents(ctx)
@@ -441,9 +467,11 @@ func TestProvisioningWithDeletedEnrollmentGroup(t *testing.T) {
 		return verifyConnectionCount == 0
 	})
 	dpsShutDown = test.New(t, dpsCfg, service.WithAuthHandler(ah))
+	deferedDpsCleanUp = true
 	err = ah.verify(ctx)
 	require.NoError(t, err)
 
+	deferedDpsCleanUp = false
 	dpsShutDown()
 
 	dpsCfg = test.MakeConfig(t)

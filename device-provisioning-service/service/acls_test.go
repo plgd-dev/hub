@@ -44,8 +44,6 @@ func TestAclsTCP(t *testing.T) {
 }
 
 func TestAclsUDP(t *testing.T) {
-	t.Skip("TODO fix for Github runners")
-
 	defer test.ClearDB(t)
 	hubShutdown := hubTestService.SetUpServices(context.Background(), t, hubTestService.SetUpServicesCertificateAuthority|hubTestService.SetUpServicesResourceDirectory|hubTestService.SetUpServicesOAuth|hubTestService.SetUpServicesId)
 	defer hubShutdown()
