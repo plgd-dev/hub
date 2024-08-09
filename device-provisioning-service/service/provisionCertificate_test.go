@@ -304,7 +304,7 @@ func TestOwnerWithUnknownCertificateAuthority(t *testing.T) {
 		},
 	})
 
-	dpsEndpoint := config.ACTIVE_COAP_SCHEME + "://" + dpcCfg.APIs.COAP.Addr
+	dpsEndpoint := config.ACTIVE_DPS_SCHEME + "://" + dpcCfg.APIs.COAP.Addr
 	err = devClient.UpdateResource(ctx, deviceID, test.ResourcePlgdDpsHref, test.ResourcePlgdDps{Endpoint: &dpsEndpoint}, nil)
 	require.NoError(t, err)
 

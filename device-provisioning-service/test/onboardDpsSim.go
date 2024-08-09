@@ -255,7 +255,7 @@ func OnboardDpsSimDevice(ctx context.Context, t *testing.T, gc pb.GrpcGatewayCli
 
 	onboard := func() {
 		var v interface{}
-		endpoint := config.ACTIVE_COAP_SCHEME + "://" + dpsEndpoint
+		endpoint := config.ACTIVE_DPS_SCHEME + "://" + dpsEndpoint
 		err = devClient.UpdateResource(ctx, d.GetID(), ResourcePlgdDpsHref, ResourcePlgdDps{Endpoint: &endpoint}, &v)
 		require.NoError(t, err)
 	}

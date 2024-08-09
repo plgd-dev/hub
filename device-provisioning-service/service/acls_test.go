@@ -21,6 +21,7 @@ func TestAclsTCP(t *testing.T) {
 	hubShutdown := hubTestService.SetUpServices(context.Background(), t, hubTestService.SetUpServicesCertificateAuthority|hubTestService.SetUpServicesResourceDirectory|hubTestService.SetUpServicesOAuth|hubTestService.SetUpServicesId)
 	defer hubShutdown()
 	dpsCfg := test.MakeConfig(t)
+	dpsCfg.APIs.COAP.Protocols = []pkgCoapService.Protocol{pkgCoapService.TCP}
 	shutDown := test.New(t, dpsCfg)
 	defer shutDown()
 
@@ -48,6 +49,8 @@ func TestAclsUDP(t *testing.T) {
 	hubShutdown := hubTestService.SetUpServices(context.Background(), t, hubTestService.SetUpServicesCertificateAuthority|hubTestService.SetUpServicesResourceDirectory|hubTestService.SetUpServicesOAuth|hubTestService.SetUpServicesId)
 	defer hubShutdown()
 	dpsCfg := test.MakeConfig(t)
+	dpsCfg.APIs.COAP.Protocols = []pkgCoapService.Protocol{pkgCoapService.UDP}
+	dpsCfg.APIs.COAP.BlockwiseTransfer.Enabled = true
 	shutDown := test.New(t, dpsCfg)
 	defer shutDown()
 

@@ -50,11 +50,13 @@
         // "TEST_DEVICE_TYPE": "bridged",
         // "GODEBUG": "scavtrace=1",
         // "TEST_COAP_GATEWAY_UDP_ENABLED": "true",
+        // "TEST_DPS_UDP_ENABLED": "false",
         // "GOMAXPROCS": 1,
         // "GOFLAGS":"-mod=vendor",
         // "GRPC_VERBOSITY":"DEBUG",
         // "GRPC_GO_LOG_VERBOSITY_LEVEL":99,
         // "GRPC_GO_LOG_SEVERITY_LEVEL":"info",
+        // "PION_LOG_TRACE=all"
     },
     "go.testTimeout": "600s",
     "go.buildFlags": [

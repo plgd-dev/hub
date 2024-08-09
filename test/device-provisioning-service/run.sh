@@ -221,6 +221,7 @@ if [ "${RUN}" = "true" ]; then
 	export TEST_DPS_ROOT_CA_KEY_ALT="${CA_POOL_CERT_KEY_ALT_PATH}"
 	export M2M_OAUTH_SERVER_PRIVATE_KEY="${OAUTH_KEYS_PATH}/m2mAccessTokenKey.pem"
 	export TEST_COAP_GATEWAY_UDP_ENABLED="${COAP_GATEWAY_UDP_ENABLED}"
+	export TEST_DPS_UDP_ENABLED="${DPS_UDP_ENABLED}"
 
 	echo "starting dps-service test"
 	dps-service.test -test.v -test.timeout 1200s

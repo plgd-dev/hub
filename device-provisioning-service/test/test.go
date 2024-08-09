@@ -198,14 +198,13 @@ func MakeConfig(t require.TestingT) service.Config {
 	cfg.APIs.COAP.MaxMessageSize = 256 * 1024
 	cfg.APIs.COAP.MessagePoolSize = 1000
 	cfg.APIs.COAP.Protocols = []pkgCoapService.Protocol{pkgCoapService.TCP}
-	if config.COAP_GATEWAY_UDP_ENABLED {
+	if config.DPS_UDP_ENABLED {
 		cfg.APIs.COAP.Protocols = append(cfg.APIs.COAP.Protocols, pkgCoapService.UDP)
 	}
 	cfg.APIs.COAP.InactivityMonitor = &pkgCoapService.InactivityMonitor{
 		Timeout: time.Second * 20,
 	}
-	cfg.APIs.COAP.BlockwiseTransfer.Enabled = config.COAP_GATEWAY_UDP_ENABLED
-	cfg.APIs.COAP.BlockwiseTransfer.Enabled = true
+	cfg.APIs.COAP.BlockwiseTransfer.Enabled = config.DPS_UDP_ENABLED
 	cfg.APIs.COAP.BlockwiseTransfer.SZX = "1024"
 	cfg.APIs.HTTP = MakeHTTPConfig()
 	tlsServerCfg := config.MakeTLSServerConfig()

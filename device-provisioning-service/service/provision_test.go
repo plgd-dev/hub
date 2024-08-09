@@ -118,7 +118,8 @@ func TestProvisioning(t *testing.T) {
 	require.NotEmpty(t, got[0].GetDeviceId())
 	require.NotEmpty(t, got[0].GetEnrollmentGroupId())
 	require.NotEmpty(t, got[0].GetCreationDate())
-	if !config.COAP_GATEWAY_UDP_ENABLED {
+	if !config.DPS_UDP_ENABLED {
+		// TODO: fix in iotivity-lite? no local endpoints reported for UDP
 		require.NotEmpty(t, got[0].GetLocalEndpoints())
 	}
 	require.NotEmpty(t, got[0].GetAcl().GetAccessControlList())
@@ -468,7 +469,7 @@ func TestProvisioningFromNewDPSAddress(t *testing.T) {
 	}()
 
 	// Update DPS address in device
-	endpoint := config.ACTIVE_COAP_SCHEME + "://" + dpsCfg.APIs.COAP.Addr
+	endpoint := config.ACTIVE_DPS_SCHEME + "://" + dpsCfg.APIs.COAP.Addr
 	err = pskConn.UpdateResource(ctx, test.ResourcePlgdDpsHref, test.ResourcePlgdDps{Endpoint: &endpoint}, nil)
 	require.NoError(t, err)
 
