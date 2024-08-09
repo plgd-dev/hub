@@ -138,8 +138,8 @@ const PendingCommandsList = forwardRef<PendingCommandsListRefType, Props>((props
         try {
             setCanceling(true)
 
-            const results = selected.map((selectedHref: string) => {
-                const item = data.find((item: any) => item.resourceId.href === selectedHref)
+            const results = selected.map((selectedItem: string) => {
+                const item = data.find((item: any) => item.auditContext.correlationId === selectedItem)
                 const {
                     resourceId: { href, deviceId },
                     auditContext: { correlationId },
@@ -211,7 +211,7 @@ const PendingCommandsList = forwardRef<PendingCommandsListRefType, Props>((props
                     setSelected(selection)
                 }}
                 paginationPortalTargetId={isPage ? 'paginationPortalTarget' : undefined}
-                primaryAttribute='resourceId.href'
+                primaryAttribute='auditContext.correlationId'
                 rowHeight={!isPage ? 40 : 54}
                 unselectRowsToken={unselectRowsToken}
             />

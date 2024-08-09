@@ -10,12 +10,12 @@ import * as styles from '@shared-ui/components/Organisms/ConditionFilter/Conditi
 import IconTrash from '@shared-ui/components/Atomic/Icon/components/IconTrash'
 import SimpleStripTable from '@shared-ui/components/Atomic/SimpleStripTable'
 import Switch from '@shared-ui/components/Atomic/Switch'
+import { truncate } from '@shared-ui/common/utils'
 
 import { messages as g } from '@/containers/Global.i18n'
 import { useDevicesList } from '@/containers/Devices/hooks'
 import { messages as confT } from '@/containers/SnippetService/SnippetService.i18n'
 import { Props } from './InvokeModal.types'
-import { truncate } from '@shared-ui/common/utils'
 
 const InvokeModal: FC<Props> = (props) => {
     const { dataTestId, handleClose, handleInvoke, show } = props

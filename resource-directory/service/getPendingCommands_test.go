@@ -11,16 +11,12 @@ import (
 	"github.com/plgd-dev/device/v2/schema/device"
 	"github.com/plgd-dev/device/v2/schema/platform"
 	"github.com/plgd-dev/go-coap/v3/message"
-	caService "github.com/plgd-dev/hub/v2/certificate-authority/test"
 	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
-	grpcgwService "github.com/plgd-dev/hub/v2/grpc-gateway/test"
-	idService "github.com/plgd-dev/hub/v2/identity-store/test"
+	"github.com/plgd-dev/hub/v2/pkg/fn"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
-	raService "github.com/plgd-dev/hub/v2/resource-aggregate/test"
-	rdService "github.com/plgd-dev/hub/v2/resource-directory/test"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/plgd-dev/hub/v2/test/oauth-server/service"
@@ -329,20 +325,19 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 	defer cancel()
 
 	testService.ClearDB(ctx, t)
-	oauthShutdown := oauthTest.SetUp(t)
-	authShutdown := idService.SetUp(t)
-	raShutdown := raService.SetUp(t)
-	rdShutdown := rdService.SetUp(t)
-	grpcShutdown := grpcgwService.SetUp(t)
-	caShutdown := caService.SetUp(t)
-	secureGWShutdown := coapgwTest.SetUp(t)
+	var closeFunc fn.FuncList
+	defer closeFunc.Execute()
+	tearDown := testService.SetUpServices(ctx, t, testService.SetUpServicesOAuth|testService.SetUpServicesMachine2MachineOAuth|testService.SetUpServicesId|testService.SetUpServicesResourceAggregate|
+		testService.SetUpServicesResourceDirectory|testService.SetUpServicesCertificateAuthority|testService.SetUpServicesGrpcGateway)
+	closeFunc.AddFunc(tearDown)
 
-	defer caShutdown()
-	defer grpcShutdown()
-	defer rdShutdown()
-	defer raShutdown()
-	defer authShutdown()
-	defer oauthShutdown()
+	deferedSecureGWShutdown := true
+	secureGWShutdown := coapgwTest.SetUp(t)
+	defer func() {
+		if deferedSecureGWShutdown {
+			secureGWShutdown()
+		}
+	}()
 
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
@@ -358,6 +353,7 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
+	deferedSecureGWShutdown = false
 	secureGWShutdown()
 
 	createFn := func(timeToLive time.Duration) {

@@ -10,18 +10,13 @@ import (
 	"time"
 
 	"github.com/plgd-dev/go-coap/v3/message"
-	caService "github.com/plgd-dev/hub/v2/certificate-authority/test"
 	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
-	grpcgwService "github.com/plgd-dev/hub/v2/grpc-gateway/test"
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
-	idService "github.com/plgd-dev/hub/v2/identity-store/test"
 	"github.com/plgd-dev/hub/v2/pkg/fn"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
-	raService "github.com/plgd-dev/hub/v2/resource-aggregate/test"
-	rdService "github.com/plgd-dev/hub/v2/resource-directory/test"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/service"
@@ -71,21 +66,25 @@ func InitPendingEvents(ctx context.Context, t *testing.T) (pb.GrpcGatewayClient,
 
 	service.ClearDB(ctx, t)
 
-	oauthShutdown := oauthTest.SetUp(t)
-	idShutdown := idService.SetUp(t)
-	raShutdown := raService.SetUp(t)
-	rdShutdown := rdService.SetUp(t)
-	grpcShutdown := grpcgwService.SetUp(t)
-	caShutdown := caService.SetUp(t)
-	secureGWShutdown := coapgwTest.SetUp(t)
-
 	var closeFunc fn.FuncList
-	closeFunc.AddFunc(caShutdown)
-	closeFunc.AddFunc(grpcShutdown)
-	closeFunc.AddFunc(rdShutdown)
-	closeFunc.AddFunc(raShutdown)
-	closeFunc.AddFunc(idShutdown)
-	closeFunc.AddFunc(oauthShutdown)
+	deferedClose := true
+	defer func() {
+		if deferedClose {
+			closeFunc.Execute()
+		}
+	}()
+
+	tearDown := service.SetUpServices(ctx, t, service.SetUpServicesOAuth|service.SetUpServicesMachine2MachineOAuth|service.SetUpServicesId|service.SetUpServicesResourceAggregate|
+		service.SetUpServicesResourceDirectory|service.SetUpServicesCertificateAuthority|service.SetUpServicesGrpcGateway)
+	closeFunc.AddFunc(tearDown)
+
+	deferedsecureGWShutdown := true
+	secureGWShutdown := coapgwTest.SetUp(t)
+	closeFunc.AddFunc(func() {
+		if deferedsecureGWShutdown {
+			secureGWShutdown()
+		}
+	})
 
 	shutdownHttp := httpgwTest.SetUp(t)
 	closeFunc.AddFunc(shutdownHttp)
@@ -105,6 +104,7 @@ func InitPendingEvents(ctx context.Context, t *testing.T) (pb.GrpcGatewayClient,
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	closeFunc.AddFunc(shutdownDevSim)
 
+	deferedsecureGWShutdown = false
 	secureGWShutdown()
 
 	createFn := func() {
@@ -208,6 +208,7 @@ func InitPendingEvents(ctx context.Context, t *testing.T) (pb.GrpcGatewayClient,
 		}
 	}
 
+	deferedClose = false
 	return c, resourcePendings, devicePendings, closeFunc.ToFunction()
 }
 

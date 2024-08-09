@@ -10,6 +10,9 @@ const router = express.Router()
 
 let configurationsAdd = false
 let configurationsDeleted = false
+let conditionDeleted = false
+let conditionUpdated = false
+let appliedConfigurationsDeleted = false
 
 const configurationIdCheck = [check('configurationId').notEmpty().withMessage('Configuration ID must be alphanumeric')]
 
@@ -26,6 +29,30 @@ router.get('/api/v1/configurations/api-reset', (req, res) => {
     }
 })
 
+router.get('/api/v1/applied-configurations/api-reset', (req, res) => {
+    try {
+        checkError(req, res)
+
+        appliedConfigurationsDeleted = false
+
+        res.send('OK')
+    } catch (e) {
+        res.status(500).send(escapeHtml(e.toString()))
+    }
+})
+
+router.get('/api/v1/conditions/api-reset', (req, res) => {
+    try {
+        checkError(req, res)
+        conditionDeleted = false
+        conditionUpdated = false
+
+        res.send('OK')
+    } catch (e) {
+        res.status(500).send(escapeHtml(e.toString()))
+    }
+})
+
 router.get('/api/v1/configurations/applied', (req, res) => {
     try {
         checkError(req, res)
@@ -33,8 +60,10 @@ router.get('/api/v1/configurations/applied', (req, res) => {
         const httpConfigurationIdFilter = extractFilter(req.query, 'httpConfigurationIdFilter')
         const idFilter = extractFilter(req.query, 'idFilter')
 
-        // detail configuration page
-        if (httpConfigurationIdFilter) {
+        if (appliedConfigurationsDeleted) {
+            loadResponseStreamFromFile(path.join('snippet-service', 'applied-configurations', 'list', 'listEmpty.json'), res)
+        } else if (httpConfigurationIdFilter) {
+            // detail configuration page
             loadResponseStreamFromFile(
                 path.join('snippet-service', 'applied-configurations', 'list', `httpConfigurationIdFilter-${httpConfigurationIdFilter}.json`),
                 res
@@ -49,26 +78,40 @@ router.get('/api/v1/configurations/applied', (req, res) => {
     }
 })
 
+const removeVersionFromFilter = (filters) => {
+    if (!filters) {
+        return [filters, null]
+    }
+
+    const filter = filters?.split('/')
+    let version = null
+
+    if (filter && !filter[filter.length - 1].includes('-')) {
+        version = filter.pop()
+    }
+
+    return [filter.join('/'), version]
+}
+
 const parseFilters = (query, key) => {
-    const filters = get(query, key, null)
+    let filters = get(query, key, null)
 
     if (Array.isArray(filters)) {
-        return uniq(filters)
-    } else {
-        return filters?.replace('/all', '')?.replace(/\/[0-9]+/g, '')
+        filters = uniq(filters)[0]
     }
+
+    return removeVersionFromFilter(filters?.replace('/all', ''))
 }
 
 router.get('/api/v1/configurations', (req, res) => {
     try {
         checkError(req, res)
 
-        const parsedFilter = parseFilters(req.query, 'httpIdFilter')
-        const filter = Array.isArray(parsedFilter) ? parsedFilter[0] : parsedFilter
+        const [filter, version] = parseFilters(req.query, 'httpIdFilter')
 
         // detail page
         if (filter) {
-            loadResponseStreamFromFile(path.join('snippet-service', 'configurations', 'detail', `${filter}.json`), res)
+            loadResponseStreamFromFile(path.join('snippet-service', 'configurations', 'detail', `${filter}.json`), res, version)
         } else if (configurationsAdd) {
             // list page after add
             loadResponseStreamFromFile(path.join('snippet-service', 'configurations', 'list', `listAdd.json`), res)
@@ -88,6 +131,16 @@ router.delete('/api/v1/configurations', (req, res) => {
     try {
         checkError(req, res)
         configurationsDeleted = true
+        res.status(200).send('OK')
+    } catch (e) {
+        res.status(500).send(escapeHtml(e.toString()))
+    }
+})
+
+router.delete('/api/v1/configurations/applied', (req, res) => {
+    try {
+        checkError(req, res)
+        appliedConfigurationsDeleted = true
         res.status(200).send('OK')
     } catch (e) {
         res.status(500).send(escapeHtml(e.toString()))
@@ -127,17 +180,50 @@ router.put('/api/v1/configurations/:configurationId', configurationIdCheck, (req
 router.get('/api/v1/conditions', (req, res) => {
     try {
         checkError(req, res)
-        const filter = get(req.query, 'httpIdFilter', null)
-            ?.replace('/all', '')
-            ?.replace(/\/[0-9]+/g, '')
+        const [filter, version] = parseFilters(req.query, 'httpIdFilter')
 
         // detail page
         if (filter) {
-            loadResponseStreamFromFile(path.join('snippet-service', 'conditions', 'detail', `${filter}.json`), res)
+            loadResponseStreamFromFile(path.join('snippet-service', 'conditions', 'detail', `${filter}.json`), res, version)
+        } else if (conditionDeleted) {
+            // list page after delete
+            loadResponseStreamFromFile(path.join('snippet-service', 'conditions', 'list', `listEmpty.json`), res)
+        } else if (conditionUpdated) {
+            // list page after delete
+            loadResponseStreamFromFile(path.join('snippet-service', 'conditions', 'list', `listUpdate.json`), res)
         } else {
             // list page
             loadResponseStreamFromFile(path.join('snippet-service', 'conditions', 'list', `list.json`), res)
         }
+    } catch (e) {
+        res.status(500).send(escapeHtml(e.toString()))
+    }
+})
+
+router.post('/api/v1/conditions', (req, res) => {
+    try {
+        checkError(req, res)
+        res.status(200).send('OK')
+    } catch (e) {
+        res.status(500).send(escapeHtml(e.toString()))
+    }
+})
+
+router.delete('/api/v1/conditions', (req, res) => {
+    try {
+        checkError(req, res)
+        conditionDeleted = true
+        res.status(200).send('OK')
+    } catch (e) {
+        res.status(500).send(escapeHtml(e.toString()))
+    }
+})
+
+router.put('/api/v1/conditions/:conditionId', configurationIdCheck, (req, res) => {
+    try {
+        checkError(req, res)
+        conditionUpdated = true
+        res.status(200).send('OK')
     } catch (e) {
         res.status(500).send(escapeHtml(e.toString()))
     }

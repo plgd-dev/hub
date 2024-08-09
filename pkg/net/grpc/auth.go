@@ -43,7 +43,7 @@ func (f AuthInterceptors) Stream() grpc.StreamServerInterceptor {
 type (
 	ClaimsFunc = func(ctx context.Context, method string) jwt.ClaimsValidator
 	Validator  interface {
-		ParseWithClaims(token string, claims jwt.Claims) error
+		ParseWithClaims(ctx context.Context, token string, claims jwt.Claims) error
 	}
 )
 
@@ -53,7 +53,7 @@ func ValidateJWTWithValidator(validator Validator, claims ClaimsFunc) Intercepto
 		if err != nil {
 			return nil, err
 		}
-		err = validator.ParseWithClaims(token, claims(ctx, method))
+		err = validator.ParseWithClaims(ctx, token, claims(ctx, method))
 		if err != nil {
 			return nil, status.Errorf(codes.Unauthenticated, "invalid token: %v", err)
 		}

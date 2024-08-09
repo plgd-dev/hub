@@ -323,10 +323,10 @@ global:
 | extraCAPool.storage.mountPath | string | `"/certs/extra/storage"` | Mount path for custom storage ca pool |
 | extraCAPool.storage.name | string | `"storage-ca-pool"` | Volume and Mount name |
 | extraDeploy | string | `nil` | Extra deploy. Resolved as template |
-| global | object | `{"audience":"","authority":null,"authorization":{"audience":"{{ include \"plgd-hub.globalAudience\" . }}","endpoints":[{"authority":"{{ include \"plgd-hub.globalAuthority\" . }}","http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}}},{"authority":"{{ include \"plgd-hub.m2mOAuthServerAuthority\" . }}","http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}}}]},"defaultCommandTimeToLive":"10s","deviceIdClaim":null,"domain":null,"enableWildCartCert":true,"extraCAPool":{"authorization":"{{ include \"plgd-hub.oldGlobalAuthorizationCAPool\" . }}","coap":null,"internal":null,"storage":null},"hubId":null,"image":{"tag":null},"m2mOAuthServer":{"clientServiceSecret":"","privateKey":""},"mongoUri":"","nats":{"leadResourceType":{"enabled":false,"filter":"","regexFilter":[],"useUUID":false}},"oauth":{"device":[],"web":{"clientID":null,"scopes":["openid"]}},"openTelemetryExporter":{"address":null,"enabled":false,"keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}},"ownerClaim":"sub","standby":false,"useDatabase":"mongoDB"}` | Global config variables |
+| global | object | `{"audience":"","authority":null,"authorization":{"audience":"{{ include \"plgd-hub.globalAudience\" . }}","endpoints":[{"authority":"{{ include \"plgd-hub.globalAuthority\" . }}","http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}}},{"authority":"{{ include \"plgd-hub.m2mOAuthServerAuthority\" . }}","http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}}}],"tokenTrustVerification":{"cacheExpiration":"30s"}},"defaultCommandTimeToLive":"10s","deviceIdClaim":null,"domain":null,"enableWildCartCert":true,"extraCAPool":{"authorization":"{{ include \"plgd-hub.oldGlobalAuthorizationCAPool\" . }}","coap":null,"internal":null,"storage":null},"hubId":null,"image":{"tag":null},"m2mOAuthServer":{"privateKey":""},"mongoUri":"","nats":{"leadResourceType":{"enabled":false,"filter":"","regexFilter":[],"useUUID":false}},"oauth":{"device":[],"web":{"clientID":null,"scopes":["openid"]}},"openTelemetryExporter":{"address":null,"enabled":false,"keepAlive":{"permitWithoutStream":true,"time":"10s","timeout":"20s"},"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}},"ownerClaim":"sub","standby":false,"useDatabase":"mongoDB"}` | Global config variables |
 | global.audience | string | `""` | OAuth audience |
 | global.authority | string | `nil` | OAuth authority |
-| global.authorization | object | `{"audience":"{{ include \"plgd-hub.globalAudience\" . }}","endpoints":[{"authority":"{{ include \"plgd-hub.globalAuthority\" . }}","http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}}},{"authority":"{{ include \"plgd-hub.m2mOAuthServerAuthority\" . }}","http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}}}]}` | Default OAuth authorization for all services |
+| global.authorization | object | `{"audience":"{{ include \"plgd-hub.globalAudience\" . }}","endpoints":[{"authority":"{{ include \"plgd-hub.globalAuthority\" . }}","http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}}},{"authority":"{{ include \"plgd-hub.m2mOAuthServerAuthority\" . }}","http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}}}],"tokenTrustVerification":{"cacheExpiration":"30s"}}` | Default OAuth authorization for all services |
 | global.authorization.endpoints[0] | object | `{"authority":"{{ include \"plgd-hub.globalAuthority\" . }}","http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}}}` | Authorization endpoint to Customer OAuth server |
 | global.defaultCommandTimeToLive | string | `"10s"` | Global Default command time to live for resource-aggregate and resource-directory |
 | global.deviceIdClaim | string | `nil` | Device ID claim |
@@ -339,8 +339,7 @@ global:
 | global.extraCAPool.storage | string | `nil` | Custom CA certificate for storage(database) endpoints in PEM format |
 | global.hubId | string | `nil` | hubId. Used by coapgateway, resourceaggregate, resourcedirectory, indentitystore, certificateauthority. It must be unique |
 | global.image | object | `{"tag":null}` | Set image.tag for all services |
-| global.m2mOAuthServer | object | `{"clientServiceSecret":"","privateKey":""}` | M2M OAuth server |
-| global.m2mOAuthServer.clientServiceSecret | string | `""` | service secret to sign JWT m2m tokens for the oauth service client |
+| global.m2mOAuthServer | object | `{"privateKey":""}` | M2M OAuth server |
 | global.m2mOAuthServer.privateKey | string | `""` | private key to sign JWT m2m tokens |
 | global.mongoUri | string | `""` | MongoDB URI |
 | global.nats | object | `{"leadResourceType":{"enabled":false,"filter":"","regexFilter":[],"useUUID":false}}` | NATS publisher and subscriber configuration |
@@ -532,12 +531,17 @@ global:
 | identitystore.service.type | string | `"ClusterIP"` | Service type |
 | identitystore.tolerations | object | `{}` | Toleration definition |
 | m2moauthserver.affinity | object | `{}` | Affinity definition |
-| m2moauthserver.apis | object | `{"http":{"address":null,"idleTimeout":"30s","readHeaderTimeout":"4s","readTimeout":"8s","tls":{"caPool":null,"certFile":null,"clientCertificateRequired":false,"keyFile":null},"writeTimeout":"16s"}}` | For complete m2m-oauth-server service configuration see [plgd/oauth-server](https://github.com/plgd-dev/hub/tree/main/test/oauth-server) |
-| m2moauthserver.clientServiceSecret.enabled | bool | `false` | Set deployment to use secret for service secret |
-| m2moauthserver.clientServiceSecret.fileName | string | `"secret.dat"` | Name of private key file |
-| m2moauthserver.clientServiceSecret.mountPath | string | `"/secrets/clients/service"` | Mount path |
-| m2moauthserver.clientServiceSecret.secretName | string | `"m2m-service-secret"` | Name of secret |
-| m2moauthserver.clientServiceSecret.volume | string | `"service-secret"` | Volume name |
+| m2moauthserver.apis | object | `{"grpc":{"address":"","authorization":{"audience":null,"authority":null,"http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false}},"ownerClaim":null},"enforcementPolicy":{"minTime":"5s","permitWithoutStream":true},"keepAlive":{"maxConnectionAge":"0s","maxConnectionAgeGrace":"0s","maxConnectionIdle":"0s","time":"2h","timeout":"20s"},"recvMsgSize":4194304,"sendMsgSize":4194304,"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":false,"keyFile":null}},"http":{"address":null,"idleTimeout":"30s","readHeaderTimeout":"4s","readTimeout":"8s","writeTimeout":"16s"}}` | For complete m2m-oauth-server service configuration see [plgd/oauth-server](https://github.com/plgd-dev/hub/tree/main/test/oauth-server) |
+| m2moauthserver.clients.storage.cleanUpDeletedTokens | string | `"0 * * * *"` |  |
+| m2moauthserver.clients.storage.mongoDB.database | string | `"m2mOAuthServer"` |  |
+| m2moauthserver.clients.storage.mongoDB.maxConnIdleTime | string | `"4m0s"` |  |
+| m2moauthserver.clients.storage.mongoDB.maxPoolSize | int | `16` |  |
+| m2moauthserver.clients.storage.mongoDB.tls.caPool | string | `nil` |  |
+| m2moauthserver.clients.storage.mongoDB.tls.certFile | string | `nil` |  |
+| m2moauthserver.clients.storage.mongoDB.tls.keyFile | string | `nil` |  |
+| m2moauthserver.clients.storage.mongoDB.tls.useSystemCAPool | bool | `false` |  |
+| m2moauthserver.clients.storage.mongoDB.uri | string | `nil` |  |
+| m2moauthserver.clients.storage.use | string | `"mongoDB"` |  |
 | m2moauthserver.config | object | `{"fileName":"service.yaml","mountPath":"/config","volume":"config"}` | m2m-oauth-server service yaml config section |
 | m2moauthserver.config.fileName | string | `"service.yaml"` | Name of configuration file |
 | m2moauthserver.config.mountPath | string | `"/config"` | Mount path |
@@ -549,17 +553,24 @@ global:
 | m2moauthserver.extraVolumeMounts | object | `{}` | Optional extra volume mounts |
 | m2moauthserver.extraVolumes | object | `{}` | Optional extra volumes |
 | m2moauthserver.fullnameOverride | string | `nil` | Full name to override |
+| m2moauthserver.httpPort | int | `9101` |  |
 | m2moauthserver.image.imagePullSecrets | object | `{}` | Image pull secrets |
 | m2moauthserver.image.pullPolicy | string | `"Always"` | Image pull policy |
 | m2moauthserver.image.registry | string | `"ghcr.io/"` | Image registry |
 | m2moauthserver.image.repository | string | `"plgd-dev/hub/m2m-oauth-server"` | Image repository |
 | m2moauthserver.image.tag | string | `nil` | Image tag. |
 | m2moauthserver.imagePullSecrets | object | `{}` | Image pull secrets |
-| m2moauthserver.ingress.allowHeaders | string | `"Authortity,Method,Path,Scheme,Accept,Accept-Encoding,Accept-Language,Content-Type,auth0-client,Origin,Refer,Sec-Fetch-Dest,Sec-Fetch-Mode,Sec-Fetch-Site,Authorization,DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range"` |  |
-| m2moauthserver.ingress.annotations | object | `{"cert-manager.io/private-key-rotation-policy":"always","ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"HTTPS","nginx.ingress.kubernetes.io/enable-cors":"true"}` | Pre defined map of Ingress annotation |
-| m2moauthserver.ingress.customAnnotations | object | `{}` | Custom map of Ingress annotation |
-| m2moauthserver.ingress.enabled | bool | `true` | Enable ingress |
-| m2moauthserver.ingress.paths | list | `["/m2m-oauth-server"]` | Ingress path |
+| m2moauthserver.ingress.grpc.annotations | object | `{"cert-manager.io/private-key-rotation-policy":"always","ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"GRPCS","nginx.ingress.kubernetes.io/enable-cors":"true","nginx.org/grpc-services":"{{ include \"plgd-hub.m2moauthserver.fullname\" . }}-grpc"}` | Pre defined map of Ingress annotation |
+| m2moauthserver.ingress.grpc.customAnnotations | object | `{}` | Custom map of Ingress annotation |
+| m2moauthserver.ingress.grpc.enabled | bool | `true` | Enable ingress |
+| m2moauthserver.ingress.grpc.paths | list | `["/m2moauthserver.pb.M2MOAuthService"]` | Paths |
+| m2moauthserver.ingress.grpc.secretName | string | `nil` | Override name of host/tls secret. If not specified, it will be generated |
+| m2moauthserver.ingress.http.allowHeaders | string | `"Authortity,Method,Path,Scheme,Accept,Accept-Encoding,Accept-Language,Content-Type,auth0-client,Origin,Refer,Sec-Fetch-Dest,Sec-Fetch-Mode,Sec-Fetch-Site,Authorization,DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range"` |  |
+| m2moauthserver.ingress.http.annotations | object | `{"cert-manager.io/private-key-rotation-policy":"always","ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"HTTPS","nginx.ingress.kubernetes.io/enable-cors":"true"}` | Pre defined map of Ingress annotation |
+| m2moauthserver.ingress.http.customAnnotations | object | `{}` | Custom map of Ingress annotation |
+| m2moauthserver.ingress.http.enabled | bool | `true` | Enable ingress |
+| m2moauthserver.ingress.http.paths | list | `["/m2m-oauth-server"]` | Ingress path |
+| m2moauthserver.ingress.http.secretName | string | `nil` | Override name of host/tls secret. If not specified, it will be generated |
 | m2moauthserver.livenessProbe | object | `{}` | Liveness probe. m2m-oauth-server doesn't have any default liveness probe |
 | m2moauthserver.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
 | m2moauthserver.log.encoding | string | `"json"` | The supported values are: "json", "console" |
@@ -576,12 +587,6 @@ global:
 | m2moauthserver.oauthSigner.clients[0].jwtPrivateKey.authorization.audience | string | `nil` |  |
 | m2moauthserver.oauthSigner.clients[0].jwtPrivateKey.authorization.endpoints | string | `nil` |  |
 | m2moauthserver.oauthSigner.clients[0].jwtPrivateKey.enabled | bool | `true` |  |
-| m2moauthserver.oauthSigner.clients[1].accessTokenLifetime | string | `"0s"` |  |
-| m2moauthserver.oauthSigner.clients[1].allowedAudiences | list | `[]` |  |
-| m2moauthserver.oauthSigner.clients[1].allowedGrantTypes[0] | string | `"client_credentials"` |  |
-| m2moauthserver.oauthSigner.clients[1].allowedScopes | list | `[]` |  |
-| m2moauthserver.oauthSigner.clients[1].id | string | `"service"` |  |
-| m2moauthserver.oauthSigner.clients[1].secretFile | string | `"{{ include \"plgd-hub.m2moauthserver.getClientServiceSecretFile\" . }}"` |  |
 | m2moauthserver.oauthSigner.deviceIDClaim | string | `nil` |  |
 | m2moauthserver.oauthSigner.domain | string | `nil` |  |
 | m2moauthserver.oauthSigner.ownerClaim | string | `nil` |  |
@@ -599,14 +604,21 @@ global:
 | m2moauthserver.replicas | int | `1` | Number of replicas |
 | m2moauthserver.resources | object | `{}` | Resources limit |
 | m2moauthserver.restartPolicy | string | `"Always"` | Restart policy for pod |
-| m2moauthserver.securityContext | object | `{}` |  |
-| m2moauthserver.service.annotations | object | `{}` | Annotations for m2m-oauth-server service |
-| m2moauthserver.service.crt.extraDnsNames | list | `[]` | Extra DNS names for service certificate |
-| m2moauthserver.service.labels | object | `{}` | Labels for m2m-oauth-server service |
-| m2moauthserver.service.name | string | `"http"` | Name |
-| m2moauthserver.service.protocol | string | `"TCP"` | Protocol |
-| m2moauthserver.service.targetPort | string | `"http"` | Target port |
-| m2moauthserver.service.type | string | `"ClusterIP"` |  |
+| m2moauthserver.securityContext | object | `{}` | RBAC configuration |
+| m2moauthserver.service.grpc.annotations | object | `{}` | Annotations for m2m-oauth-server |
+| m2moauthserver.service.grpc.crt.extraDnsNames | list | `[]` | Extra DNS names for service certificate |
+| m2moauthserver.service.grpc.labels | object | `{}` | Labels for m2m-oauth-server |
+| m2moauthserver.service.grpc.name | string | `"grpc"` | Name |
+| m2moauthserver.service.grpc.protocol | string | `"TCP"` | Protocol |
+| m2moauthserver.service.grpc.targetPort | string | `"grpc"` | Target port |
+| m2moauthserver.service.grpc.type | string | `"ClusterIP"` | Service type |
+| m2moauthserver.service.http.annotations | object | `{}` | Annotations for m2m-oauth-server |
+| m2moauthserver.service.http.crt.extraDnsNames | list | `[]` | Extra DNS names for service certificate |
+| m2moauthserver.service.http.labels | object | `{}` | Labels for m2m-oauth-server |
+| m2moauthserver.service.http.name | string | `"http"` | Name |
+| m2moauthserver.service.http.protocol | string | `"TCP"` | Protocol |
+| m2moauthserver.service.http.targetPort | string | `"http"` | Target port |
+| m2moauthserver.service.http.type | string | `"ClusterIP"` | Service type |
 | m2moauthserver.tolerations | object | `{}` | Toleration definition |
 | mockoauthserver.affinity | object | `{}` | Affinity definition |
 | mockoauthserver.apis | object | `{"http":{"address":null,"idleTimeout":"30s","readHeaderTimeout":"4s","readTimeout":"8s","tls":{"caPool":null,"certFile":null,"clientCertificateRequired":false,"keyFile":null},"writeTimeout":"16s"}}` | For complete mock-oauth-server service configuration see [plgd/oauth-server](https://github.com/plgd-dev/hub/tree/main/test/oauth-server) |
@@ -919,7 +931,7 @@ global:
 | snippetservice.rbac | object | `{"enabled":false,"roleBindingDefitionTpl":null,"serviceAccountName":"snippet-service"}` | RBAC configuration |
 | snippetservice.rbac.enabled | bool | `false` | Enable RBAC |
 | snippetservice.rbac.roleBindingDefitionTpl | string | `nil` | Template definition for Role/binding etc.. |
-| snippetservice.rbac.serviceAccountName | string | `"snippet-service"` | Name of snippet service SA |
+| snippetservice.rbac.serviceAccountName | string | `"snippet-service"` | Name of snippet-service SA |
 | snippetservice.readinessProbe | string | `nil` | Readiness probe. snippet-service doesn't have aby default readiness probe |
 | snippetservice.replicas | int | `1` | Number of replicas |
 | snippetservice.resources | string | `nil` | Resources limit |
@@ -932,9 +944,9 @@ global:
 | snippetservice.service.grpc.protocol | string | `"TCP"` | Protocol |
 | snippetservice.service.grpc.targetPort | string | `"grpc"` | Target port |
 | snippetservice.service.grpc.type | string | `"ClusterIP"` | Service type |
-| snippetservice.service.http.annotations | object | `{}` | Annotations for snippet service |
+| snippetservice.service.http.annotations | object | `{}` | Annotations for snippet-service |
 | snippetservice.service.http.crt.extraDnsNames | list | `[]` | Extra DNS names for service certificate |
-| snippetservice.service.http.labels | object | `{}` | Labels for snippet service |
+| snippetservice.service.http.labels | object | `{}` | Labels for snippet-service |
 | snippetservice.service.http.name | string | `"http"` | Name |
 | snippetservice.service.http.protocol | string | `"TCP"` | Protocol |
 | snippetservice.service.http.targetPort | string | `"http"` | Target port |

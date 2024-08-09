@@ -21,6 +21,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test/device"
 	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	"github.com/plgd-dev/hub/v2/test/service"
 	testService "github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -30,7 +31,8 @@ import (
 
 func onboardDeviceAndGetDevice(ctx context.Context, t *testing.T, device device.Device, oauthCfg oauthService.Config, coapCfg coapService.Config, wait time.Duration) (*pb.Device, time.Time /*startOnboard*/, time.Duration /*delta*/) {
 	oauthShutdown := oauthTest.New(t, oauthCfg)
-	servicesTeardown := testService.SetUpServices(context.Background(), t, testService.SetUpServicesCertificateAuthority|testService.SetUpServicesId|testService.SetUpServicesResourceAggregate|testService.SetUpServicesResourceDirectory|testService.SetUpServicesCoapGateway|testService.SetUpServicesGrpcGateway, testService.WithCOAPGWConfig(coapCfg))
+	servicesTeardown := testService.SetUpServices(context.Background(), t, service.SetUpServicesMachine2MachineOAuth|testService.SetUpServicesCertificateAuthority|testService.SetUpServicesId|testService.SetUpServicesResourceAggregate|
+		testService.SetUpServicesResourceDirectory|testService.SetUpServicesCoapGateway|testService.SetUpServicesGrpcGateway, testService.WithCOAPGWConfig(coapCfg))
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{

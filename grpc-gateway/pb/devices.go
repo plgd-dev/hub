@@ -2,6 +2,7 @@ package pb
 
 import (
 	"encoding/base64"
+	"slices"
 	"strings"
 
 	commands "github.com/plgd-dev/hub/v2/resource-aggregate/commands"
@@ -93,4 +94,11 @@ func (f *ResourceIdFilter) ToString() string {
 		sb.WriteString(base64.StdEncoding.EncodeToString(etag))
 	}
 	return sb.String()
+}
+
+func (r *Resource) Clone() *Resource {
+	return &Resource{
+		Types: slices.Clone(r.GetTypes()),
+		Data:  r.GetData().Clone(),
+	}
 }

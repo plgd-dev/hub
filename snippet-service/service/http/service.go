@@ -3,7 +3,6 @@ package http
 import (
 	"fmt"
 
-	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
@@ -25,7 +24,7 @@ func New(serviceName string, config Config, snippetServiceServer *grpcService.Sn
 		HTTPConnection: config.Connection,
 		HTTPServer:     config.Server,
 		ServiceName:    serviceName,
-		AuthRules:      pkgHttp.NewDefaultAuthorizationRules(uri.API),
+		AuthRules:      pkgHttp.NewDefaultAuthorizationRules(API),
 		FileWatcher:    fileWatcher,
 		Logger:         logger,
 		TraceProvider:  tracerProvider,

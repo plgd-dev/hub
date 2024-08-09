@@ -1,11 +1,24 @@
-openapi: 3.0.0
+openapi: 3.0.1
 info:
-  title: m2m-oauth-server API
-  description: API documentation for m2m-oauth-server
-  version: 1.0.0
+  title: PLGD M2M API
+  description: API for to manage m2m tokens in PLGD
+  contact:
+    name: plgd.dev
+    url: https://github.com/plgd-dev/hub
+    email: info@plgd.dev
+  license:
+    name: Apache License 2.0
+    url: https://github.com/plgd-dev/hub/blob/v2/LICENSE
+  version: "1.0"
+servers:
+- url: /
+tags:
+- name: M2MOAuthService
 paths:
   /m2m-oauth-server/oauth/token:
     post:
+      tags:
+      - Native OAuth
       summary: Obtain an OAuth token
       description: This endpoint is used to obtain an OAuth token by providing the necessary credentials and parameters.
       requestBody:
@@ -18,6 +31,12 @@ paths:
                 client_id:
                   type: string
                   description: "The client ID."
+                token_name:
+                  type: string
+                  description: "The name of the token which will be used in the name claim."
+                expiration:
+                  type: integer
+                  description: "The requested expiration time in unit timestamp seconds from the client. If not provided, the token will use the maximum allowed by the client, or if it exceeds the maximum allowed, an error will occur."
                 scope:
                   type: string
                   description: "The scopes that are requested, separated by space. Must be a subset of the allowed scopes for the client."
@@ -52,9 +71,10 @@ paths:
                     description: "The scopes granted for the token."
         '401':
           description: Unauthorized. The request requires valid user authentication.
-
   /m2m-oauth-server/.well-known/jwks.json:
     get:
+      tags:
+      - Native OAuth
       summary: Retrieve JSON Web Key Set (JWKS)
       description: This endpoint retrieves the JSON Web Key Set (JWKS), which contains the public keys used to verify the JWT tokens.
       responses:
@@ -62,9 +82,10 @@ paths:
           description: JSON Web Key Set retrieved successfully
         '404':
           description: JWKS not found. The requested JWKS does not exist.
-
   /m2m-oauth-server/.well-known/openid-configuration:
     get:
+      tags:
+      - Native OAuth
       summary: Retrieve OpenID Configuration
       description: This endpoint retrieves the OpenID Configuration, which contains the necessary information for clients to interact with the OAuth server.
       responses:
@@ -72,3 +93,269 @@ paths:
           description: OpenID Configuration retrieved successfully
         '404':
           description: OpenID Configuration not found. The requested OpenID Configuration does not exist.
+  /m2m-oauth-server/api/v1/tokens:
+    get:
+      tags:
+      - Tokens
+      summary: Returns all tokens of the owner
+      operationId: M2MOAuthService_GetTokens
+      parameters:
+      - name: idFilter
+        in: query
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+      - name: includeBlacklisted
+        in: query
+        schema:
+          type: boolean
+      responses:
+        "200":
+          description: A successful response.(streaming responses)
+          content:
+            application/json:
+              schema:
+                title: Stream result of pbToken
+                type: object
+                properties:
+                  result:
+                    $ref: '#/components/schemas/pbToken'
+                  error:
+                    $ref: '#/components/schemas/rpcStatus'
+            application/protojson:
+              schema:
+                title: Stream result of pbToken
+                type: object
+                properties:
+                  result:
+                    $ref: '#/components/schemas/pbToken'
+                  error:
+                    $ref: '#/components/schemas/rpcStatus'
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/rpcStatus'
+            application/protojson:
+              schema:
+                $ref: '#/components/schemas/rpcStatus'
+    post:
+      tags:
+      - Tokens
+      summary: Creates a new token
+      operationId: M2MOAuthService_CreateToken
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/pbCreateTokenRequest'
+          application/protojson:
+            schema:
+              $ref: '#/components/schemas/pbCreateTokenRequest'
+        required: true
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/pbCreateTokenResponse'
+            application/protojson:
+              schema:
+                $ref: '#/components/schemas/pbCreateTokenResponse'
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/rpcStatus'
+            application/protojson:
+              schema:
+                $ref: '#/components/schemas/rpcStatus'
+      x-codegen-request-body-name: body
+    delete:
+      tags:
+      - Tokens
+      summary: Deletes/blacklists tokens
+      operationId: M2MOAuthService_DeleteTokens
+      parameters:
+      - name: idFilter
+        in: query
+        style: form
+        explode: true
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/pbDeleteTokensResponse'
+            application/protojson:
+              schema:
+                $ref: '#/components/schemas/pbDeleteTokensResponse'
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/rpcStatus'
+            application/protojson:
+              schema:
+                $ref: '#/components/schemas/rpcStatus'
+components:
+  schemas:
+    TokenBlackListed:
+      type: object
+      properties:
+        flag:
+          title: "Blacklisted enabled flag, if once token has been blacklisted then\
+            \ it can't be unblacklisted/unrevoked"
+          type: boolean
+        timestamp:
+          title: Unix timestamp in s when the token has been blacklisted
+          type: string
+          format: int64
+    pbDeleteTokensResponse:
+      type: object
+      properties:
+        blacklistedCount:
+          type: string
+          format: int64
+        deletedCount:
+          type: string
+          format: int64
+    pbCreateTokenRequest:
+      type: object
+      properties:
+        clientId:
+          title: Client ID
+          type: string
+        clientSecret:
+          title: Client Secret
+          type: string
+        audience:
+          title: Requested token Audience
+          type: array
+          items:
+            type: string
+        scope:
+          title: Requested token scopes
+          type: array
+          items:
+            type: string
+        expiration:
+          title: The requested expiration time in unit timestamp seconds from the client. If not provided, the token will use the maximum allowed by the client, or if it exceeds the maximum allowed, an error will occur.
+          type: string
+          format: int64
+        clientAssertionType:
+          title: Client assertion type
+          type: string
+        clientAssertion:
+          title: Client assertion
+          type: string
+        tokenName:
+          title: Token name
+          type: string
+        grantType:
+          title: Grant type
+          type: string
+    pbCreateTokenResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        tokenType:
+          type: string
+        expiresIn:
+          type: string
+          format: int64
+        scope:
+          type: array
+          items:
+            type: string
+    pbToken:
+      title: Tokens are deleted from DB after they are expired and blacklisted/revoked
+      type: object
+      properties:
+        id:
+          title: Token ID / jti
+          type: string
+        version:
+          title: Incremental version for update
+          type: string
+          format: uint64
+        name:
+          title: User-friendly token name
+          type: string
+        owner:
+          title: Owner of the token
+          type: string
+        issuedAt:
+          title: Unix timestamp in s when the condition has been created/updated
+          type: string
+          format: int64
+        audience:
+          title: Token Audience
+          type: array
+          items:
+            type: string
+        scope:
+          title: Token scopes
+          type: array
+          items:
+            type: string
+        expiration:
+          title: Token expiration in Unix timestamp seconds
+          type: string
+          format: int64
+        clientId:
+          title: Client ID
+          type: string
+        originalTokenClaims:
+          title: Original token claims
+          type: object
+        blacklisted:
+          $ref: '#/components/schemas/TokenBlackListed'
+        subject:
+          title: Subject of the token
+          type: string
+      description: driven by resource change event
+    protobufAny:
+      type: object
+      properties:
+        '@type':
+          type: string
+      additionalProperties:
+        type: object
+    protobufNullValue:
+      type: string
+      description: |-
+        `NullValue` is a singleton enumeration to represent the null value for the
+        `Value` type union.
+
+        The JSON representation for `NullValue` is JSON `null`.
+
+         - NULL_VALUE: Null value.
+      default: NULL_VALUE
+      enum:
+      - NULL_VALUE
+    rpcStatus:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/protobufAny'

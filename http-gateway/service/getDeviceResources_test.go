@@ -19,11 +19,11 @@ import (
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgHttpPb "github.com/plgd-dev/hub/v2/pkg/net/http/pb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
-	httpTest "github.com/plgd-dev/hub/v2/test/http"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/plgd-dev/hub/v2/test/service"
@@ -182,7 +182,7 @@ func TestRequestHandlerGetDeviceResources(t *testing.T) {
 			values := make([]*pb.Resource, 0, 1)
 			for {
 				var value pb.Resource
-				err = httpTest.Unmarshal(resp.StatusCode, resp.Body, &value)
+				err = pkgHttpPb.Unmarshal(resp.StatusCode, resp.Body, &value)
 				if errors.Is(err, io.EOF) {
 					break
 				}

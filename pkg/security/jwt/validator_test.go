@@ -49,7 +49,7 @@ func TestValidator(t *testing.T) {
 
 	v := test.GetJWTValidator(jwks.URL())
 	var c testClaims
-	err := v.ParseWithClaims(testToken(t), &c)
+	err := v.ParseWithClaims(context.Background(), testToken(t), &c)
 	require.NoError(t, err)
 
 	assert.Equal(t, "test.client.id", c.ClientID)
@@ -63,7 +63,7 @@ func TestClaims(t *testing.T) {
 
 	v := test.GetJWTValidator(jwks.URL())
 	var c pkgJwt.Claims
-	err := v.ParseWithClaims(testToken(t), &c)
+	err := v.ParseWithClaims(context.Background(), testToken(t), &c)
 	require.ErrorIs(t, err, jwt.ErrTokenExpired)
 
 	clientID, err := c.GetClientID()
@@ -133,7 +133,7 @@ func TestEmptyToken(t *testing.T) {
 	require.ErrorIs(t, err, pkgJwt.ErrMissingToken)
 
 	var c pkgJwt.Claims
-	err = v.ParseWithClaims("", &c)
+	err = v.ParseWithClaims(context.Background(), "", &c)
 	require.ErrorIs(t, err, pkgJwt.ErrMissingToken)
 
 	_, err = v.ParseWithContext(context.Background(), "")
@@ -151,6 +151,6 @@ func TestInvalidToken(t *testing.T) {
 	require.ErrorIs(t, err, pkgJwt.ErrCannotParseToken)
 
 	var c pkgJwt.Claims
-	err = v.ParseWithClaims("invalid", &c)
+	err = v.ParseWithClaims(context.Background(), "invalid", &c)
 	require.ErrorIs(t, err, pkgJwt.ErrCannotParseToken)
 }

@@ -16,6 +16,7 @@ import (
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgHttpUri "github.com/plgd-dev/hub/v2/pkg/net/http/uri"
 	"github.com/plgd-dev/hub/v2/pkg/security/openid"
 	pkgStrings "github.com/plgd-dev/hub/v2/pkg/strings"
 )
@@ -33,7 +34,7 @@ func matchPrefixAndSplitURIPath(requestURI, prefix string) []string {
 	if len(requestURI) == 0 {
 		return nil
 	}
-	v := pkgHttp.CanonicalHref(requestURI)
+	v := pkgHttpUri.CanonicalHref(requestURI)
 	p := strings.TrimPrefix(v, prefix) // remove core prefix
 	if p == v {
 		return nil

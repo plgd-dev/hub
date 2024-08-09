@@ -12,7 +12,7 @@ import (
 	"github.com/plgd-dev/go-coap/v3/pkg/cache"
 	"github.com/plgd-dev/go-coap/v3/pkg/runner/periodic"
 	"github.com/plgd-dev/hub/v2/pkg/log"
-	kitHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	pkgJwt "github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/test/oauth-server/uri"
 )
@@ -65,7 +65,7 @@ func NewRequestHandler(ctx context.Context, config *Config, idTokenKey *rsa.Priv
 // NewHTTP returns HTTP handler
 func NewHTTP(requestHandler *RequestHandler, logger log.Logger) http.Handler {
 	r := router.NewRouter()
-	r.Use(kitHttp.CreateLoggingMiddleware(kitHttp.WithLogger(logger)))
+	r.Use(pkgHttp.CreateLoggingMiddleware(pkgHttp.WithLogger(logger)))
 	r.StrictSlash(true)
 
 	// get JWKs

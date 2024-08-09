@@ -246,7 +246,7 @@ func GetJWTValidator(jwkURL string) *jwt.Validator {
 		Transport: t,
 		Timeout:   time.Second * 10,
 	}
-	return jwt.NewValidator(jwt.NewKeyCache(jwkURL, &client))
+	return jwt.NewValidator(jwt.NewKeyCache(jwkURL, &client), log.Get())
 }
 
 func GetAuthorizationCode(t require.TestingT, authServerHost, clientID, deviceID, scopes string) string {

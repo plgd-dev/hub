@@ -1,0 +1,140 @@
+syntax = "proto3";
+
+package m2moauthserver.pb;
+
+import "google/protobuf/struct.proto";
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "PLGD M2M API";
+    version: "1.0";
+    description: "API for to manage m2m tokens in PLGD";
+    contact: {
+      name: "plgd.dev";
+      url: "https://github.com/plgd-dev/hub";
+      email: "info@plgd.dev";
+    };
+    license: {
+      name: "Apache License 2.0";
+      url: "https://github.com/plgd-dev/hub/blob/v2/LICENSE";
+    };
+  };
+  schemes: [HTTPS];
+  consumes: ["application/json", "application/protojson"];
+  produces: ["application/json", "application/protojson"];
+};
+
+option go_package = "github.com/plgd-dev/hub/v2/m2m-oauth-server/pb;pb";
+
+// Tokens are deleted from DB after they are expired and blacklisted/revoked
+message Token { // driven by resource change event
+  // Token ID / jti
+  string id = 1;
+  // Incremental version for update
+  uint64 version = 2;
+  // User-friendly token name
+  string name = 3;
+  // Owner of the token
+  string owner = 4;
+  // Unix timestamp in s when the condition has been created/updated
+  int64 issued_at = 5;
+  // Token Audience
+  repeated string audience = 6;
+  // Token scopes
+  repeated string scope = 7;
+  // Token expiration in Unix timestamp seconds
+  int64 expiration = 8;
+  // Client ID
+  string client_id = 9;
+  // Original token claims
+  google.protobuf.Value original_token_claims = 10;
+  message BlackListed {
+    // Blacklisted enabled flag, if once token has been blacklisted then it can't be unblacklisted/unrevoked
+    bool flag = 1;
+    // Unix timestamp in s when the token has been blacklisted
+    int64 timestamp = 2;
+  }
+  // Token black list section
+  BlackListed blacklisted = 11;
+  // Subject of the token
+  string subject = 12;
+}
+
+
+
+message GetTokensRequest {
+  repeated string id_filter = 1;
+  bool include_blacklisted = 2;
+}
+
+message DeleteTokensRequest {
+  repeated string id_filter = 1;
+}
+
+message DeleteTokensResponse {
+  int64 blacklisted_count = 1;
+  int64 deleted_count = 2;
+}
+
+message CreateTokenRequest {
+  // Client ID
+  string client_id = 1;
+  // Client Secret
+  string client_secret = 2;
+  // Requested token Audience
+  repeated string audience = 3;
+  // Requested token scopes
+  repeated string scope = 4;
+  // The requested expiration time in unit timestamp seconds from the client. If not provided, the token will use the maximum allowed by the client, or if it exceeds the maximum allowed, an error will occur.
+  int64 expiration = 5;
+  // Client assertion type
+  string client_assertion_type = 6;
+  // Client assertion
+  string client_assertion = 7;
+  // Token name
+  string token_name = 8;
+  // Grant type
+  string grant_type = 9;
+}
+
+message CreateTokenResponse {
+  string access_token = 1;
+  string token_type = 2;
+  int64 expires_in = 3;
+  repeated string scope = 4;
+} 
+
+service M2MOAuthService {
+  // Creates a new token
+  rpc CreateToken(CreateTokenRequest) returns (CreateTokenResponse) {
+    option (google.api.http) = {
+      post: "/m2m-oauth-server/api/v1/tokens";
+      body: "*";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Tokens" ];
+    };
+  }
+
+  // Returns all tokens of the owner
+  rpc GetTokens(GetTokensRequest) returns (stream Token) {
+    option (google.api.http) = {
+      get: "/m2m-oauth-server/api/v1/tokens";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Tokens" ];
+    };
+  }
+
+  // Deletes/blacklist tokens
+  rpc DeleteTokens(DeleteTokensRequest) returns (DeleteTokensResponse) {
+    option (google.api.http) = {
+      delete: "/m2m-oauth-server/api/v1/tokens";
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Tokens" ];
+    };
+  }
+}

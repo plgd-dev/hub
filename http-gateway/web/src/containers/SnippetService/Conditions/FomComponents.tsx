@@ -16,6 +16,8 @@ import IconPlus from '@shared-ui/components/Atomic/Icon/components/IconPlus'
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as confT } from '@/containers/SnippetService/SnippetService.i18n'
 import { useDevicesList } from '@/containers/Devices/hooks'
+import testId from '@/testId'
+import { truncate } from '@shared-ui/common/utils'
 
 type Props = {
     isActivePage?: boolean
@@ -51,7 +53,10 @@ export const Step2FormComponent: FC<Props> = (props) => {
     const { data: devicesData, loading } = useDevicesList(isActivePage)
 
     useEffect(() => {
-        const o: OptionType[] = devicesData?.map((device: { id: string; name: string }) => ({ value: device.id, label: `${device.name} - ${device.id}` }))
+        const o: OptionType[] = devicesData?.map((device: { id: string; name: string }) => ({
+            value: device.id,
+            label: `${truncate(device.name, 60)} - ${device.id}`,
+        }))
         setDefaultOptions(o)
         setOptions(o)
     }, [devicesData])
@@ -62,6 +67,7 @@ export const Step2FormComponent: FC<Props> = (props) => {
         <>
             <Loadable condition={!loading}>
                 <ConditionFilter
+                    dataTestId={testId.snippetService.conditions.addPage.step2.filterDeviceId}
                     listName={_(confT.listOfSelectedDevices)}
                     listOfItems={deviceIdFilter.map((id) => options?.find((o) => o.value === id)?.label || id)}
                     onItemDelete={(key) => {
@@ -82,22 +88,25 @@ export const Step2FormComponent: FC<Props> = (props) => {
                             checkboxOptions
                             creatable
                             isMulti
+                            dataTestId={testId.snippetService.conditions.addPage.step2.selectDeviceId}
                             footerLinksLeft={[
                                 {
-                                    title: _(g.reset),
+                                    dataTestId: testId.snippetService.conditions.addPage.step2.selectDeviceIdReset,
                                     onClick: () => {
                                         setOptions(defaultOptions)
                                         setValue('deviceIdFilter', [])
                                     },
+                                    title: _(g.reset),
                                 },
                                 {
-                                    title: _(g.done),
-                                    variant: 'primary',
+                                    dataTestId: testId.snippetService.conditions.addPage.step2.selectDeviceIdDone,
                                     onClick: (values: OptionType[]) => {
                                         const rawValue = values.map((v) => v.value)
                                         setValue('deviceIdFilter', rawValue)
                                         updateField('deviceIdFilter', rawValue)
                                     },
+                                    title: _(g.done),
+                                    variant: 'primary',
                                 },
                             ]}
                             i18n={{
@@ -125,6 +134,7 @@ export const Step2FormComponent: FC<Props> = (props) => {
 
             <Spacer type='pt-2'>
                 <ConditionFilter
+                    dataTestId={testId.snippetService.conditions.addPage.step2.resourceType}
                     listName={_(confT.listOfSelectedResourceType)}
                     listOfItems={resourceTypeFilter}
                     onItemDelete={(key) => {
@@ -144,6 +154,7 @@ export const Step2FormComponent: FC<Props> = (props) => {
                             <FormLabel text={_(confT.addManualData)} />
                             <FormInput
                                 compactFormComponentsView={false}
+                                dataTestId={testId.snippetService.conditions.addPage.step2.resourceType.concat('-input')}
                                 onChange={(e) => setResourceTypeValue(e.target.value)}
                                 onKeyPress={(e) => {
                                     if (e.key === 'Enter' && e.target.value !== '') {
@@ -158,6 +169,7 @@ export const Step2FormComponent: FC<Props> = (props) => {
                             />
                         </FormGroup>
                         <Button
+                            dataTestId={testId.snippetService.conditions.addPage.step2.resourceType.concat('-addButton')}
                             disabled={resourceTypeValue === ''}
                             icon={<IconPlus />}
                             onClick={() => {
@@ -181,6 +193,7 @@ export const Step2FormComponent: FC<Props> = (props) => {
 
             <Spacer type='pt-2'>
                 <ConditionFilter
+                    dataTestId={testId.snippetService.conditions.addPage.step2.hrefFilter}
                     listName={_(confT.listOfSelectedHrefFilter)}
                     listOfItems={resourceHrefFilter}
                     onItemDelete={(key) => {
@@ -200,6 +213,7 @@ export const Step2FormComponent: FC<Props> = (props) => {
                             <FormLabel text={_(confT.addManualData)} />
                             <FormInput
                                 compactFormComponentsView={false}
+                                dataTestId={testId.snippetService.conditions.addPage.step2.hrefFilter.concat('-input')}
                                 onChange={(e) => setResourceHrefValue(e.target.value)}
                                 onKeyPress={(e) => {
                                     if (e.key === 'Enter' && e.target.value !== '') {
@@ -215,6 +229,7 @@ export const Step2FormComponent: FC<Props> = (props) => {
                             />
                         </FormGroup>
                         <Button
+                            dataTestId={testId.snippetService.conditions.addPage.step2.hrefFilter.concat('-addButton')}
                             disabled={resourceHrefValue === ''}
                             icon={<IconPlus />}
                             onClick={() => {
@@ -239,6 +254,7 @@ export const Step2FormComponent: FC<Props> = (props) => {
 
             <Spacer type='pt-2'>
                 <ConditionFilter
+                    dataTestId={testId.snippetService.conditions.addPage.step2.jqExpressionFilter}
                     listName={_(confT.listOfSelectedJqExpression)}
                     status={
                         <StatusTag lowercase={false} variant={jqExpressionFilter !== '' ? 'success' : 'normal'}>
@@ -251,6 +267,7 @@ export const Step2FormComponent: FC<Props> = (props) => {
                         <FormLabel text={_(confT.addManualData)} />
                         <FormInput
                             compactFormComponentsView={false}
+                            dataTestId={testId.snippetService.conditions.addPage.step2.jqExpressionFilter.concat('-input')}
                             onChange={(e) => {
                                 setValue('jqExpressionFilter', e.target.value)
                                 updateField('jqExpressionFilter', e.target.value)

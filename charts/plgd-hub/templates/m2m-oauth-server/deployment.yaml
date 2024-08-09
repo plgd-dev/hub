@@ -56,9 +56,12 @@ spec:
             - "--config"
             - {{  printf "%s/%s" .Values.m2moauthserver.config.mountPath .Values.m2moauthserver.config.fileName | quote }}
           ports:
-            - name: http
+            - name: grpc
               containerPort: {{ .Values.m2moauthserver.port }}
               protocol: TCP
+            - name: http
+              containerPort: {{ .Values.m2moauthserver.httpPort }}
+              protocol: TCP  
           {{- with .Values.m2moauthserver.livenessProbe }}
           livenessProbe:
           {{- toYaml . | nindent 12 }}
@@ -78,6 +81,7 @@ spec:
             - name: service-crt
               mountPath: {{ $rdServiceCert }}
             {{- end }}
+            {{- include "plgd-hub.extraCAPoolMount" (list . .Values.extraCAPool.authorization) | nindent 12 }}
             {{- include "plgd-hub.extraCAPoolMount" (list . .Values.extraCAPool.internal) | nindent 12 }}
             {{- with .Values.m2moauthserver.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
@@ -87,21 +91,11 @@ spec:
               mountPath: {{ .Values.m2moauthserver.privateKey.mountPath }}
               readOnly: true
             {{- end }}
-            {{- if include "plgd-hub.m2moauthserver.clientServiceSecretEnabled" $ }}
-            - name: {{ .Values.m2moauthserver.clientServiceSecret.volume }}
-              mountPath: {{ .Values.m2moauthserver.clientServiceSecret.mountPath }}
-              readOnly: true
-            {{- end }}
       volumes:
         {{- if include "plgd-hub.m2moauthserver.privateKeySecretEnabled" $ }}
         - name: {{ .Values.m2moauthserver.privateKey.volume }}
           secret:
             secretName: {{ .Values.m2moauthserver.privateKey.secretName }}
-        {{- end }}
-        {{- if include "plgd-hub.m2moauthserver.clientServiceSecretEnabled" $ }}
-        - name: {{ .Values.m2moauthserver.clientServiceSecret.volume }}
-          secret:
-            secretName: {{ .Values.m2moauthserver.clientServiceSecret.secretName }}
         {{- end }}
         - name: {{ .Values.m2moauthserver.config.volume }}
           configMap:
@@ -111,6 +105,7 @@ spec:
           secret:
             secretName: {{ include "plgd-hub.m2moauthserver.serviceCertName" . }}
         {{- end }}
+        {{- include "plgd-hub.extraCAPoolVolume" (list . .Values.extraCAPool.authorization) | nindent 8 }}
         {{- include "plgd-hub.extraCAPoolVolume" (list . .Values.extraCAPool.internal) | nindent 8 }}
         {{- with .Values.m2moauthserver.extraVolumes }}
         {{- toYaml . | nindent 8 }}

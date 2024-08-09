@@ -12,22 +12,18 @@ import (
 	"github.com/plgd-dev/device/v2/schema/device"
 	"github.com/plgd-dev/device/v2/schema/platform"
 	"github.com/plgd-dev/go-coap/v3/message"
-	caService "github.com/plgd-dev/hub/v2/certificate-authority/test"
 	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
-	grpcgwService "github.com/plgd-dev/hub/v2/grpc-gateway/test"
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
-	idService "github.com/plgd-dev/hub/v2/identity-store/test"
+	"github.com/plgd-dev/hub/v2/pkg/fn"
 	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgHttpPb "github.com/plgd-dev/hub/v2/pkg/net/http/pb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
-	raService "github.com/plgd-dev/hub/v2/resource-aggregate/test"
-	rdService "github.com/plgd-dev/hub/v2/resource-directory/test"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
-	httpTest "github.com/plgd-dev/hub/v2/test/http"
 	"github.com/plgd-dev/hub/v2/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
@@ -264,20 +260,20 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 	defer cancel()
 
 	testService.ClearDB(ctx, t)
-	oauthShutdown := oauthTest.SetUp(t)
-	idShutdown := idService.SetUp(t)
-	raShutdown := raService.SetUp(t)
-	rdShutdown := rdService.SetUp(t)
-	grpcShutdown := grpcgwService.SetUp(t)
-	caShutdown := caService.SetUp(t)
-	secureGWShutdown := coapgwTest.SetUp(t)
 
-	defer caShutdown()
-	defer grpcShutdown()
-	defer rdShutdown()
-	defer raShutdown()
-	defer idShutdown()
-	defer oauthShutdown()
+	var closeFunc fn.FuncList
+	defer closeFunc.Execute()
+	tearDown := testService.SetUpServices(ctx, t, testService.SetUpServicesOAuth|testService.SetUpServicesMachine2MachineOAuth|testService.SetUpServicesId|testService.SetUpServicesResourceAggregate|
+		testService.SetUpServicesResourceDirectory|testService.SetUpServicesCertificateAuthority|testService.SetUpServicesGrpcGateway)
+	closeFunc.AddFunc(tearDown)
+
+	deferedSecureGWShutdown := true
+	secureGWShutdown := coapgwTest.SetUp(t)
+	defer func() {
+		if deferedSecureGWShutdown {
+			secureGWShutdown()
+		}
+	}()
 
 	shutdownHttp := httpgwTest.SetUp(t)
 	defer shutdownHttp()
@@ -297,6 +293,7 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
+	deferedSecureGWShutdown = false
 	secureGWShutdown()
 
 	createFn := func() {
@@ -368,7 +365,7 @@ func TestRequestHandlerGetPendingCommands(t *testing.T) {
 			var values []*pb.PendingCommand
 			for {
 				var v pb.PendingCommand
-				err = httpTest.Unmarshal(resp.StatusCode, resp.Body, &v)
+				err = pkgHttpPb.Unmarshal(resp.StatusCode, resp.Body, &v)
 				if errors.Is(err, io.EOF) {
 					break
 				}

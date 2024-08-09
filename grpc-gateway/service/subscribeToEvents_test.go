@@ -13,14 +13,12 @@ import (
 	"github.com/plgd-dev/device/v2/schema/device"
 	"github.com/plgd-dev/device/v2/schema/platform"
 	"github.com/plgd-dev/go-coap/v3/message"
-	caService "github.com/plgd-dev/hub/v2/certificate-authority/test"
 	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/client"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/service"
 	grpcgwService "github.com/plgd-dev/hub/v2/grpc-gateway/test"
 	isEvents "github.com/plgd-dev/hub/v2/identity-store/events"
-	idService "github.com/plgd-dev/hub/v2/identity-store/test"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
@@ -656,20 +654,19 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 	defer cancel()
 
 	hubTestService.ClearDB(ctx, t)
-	oauthShutdown := oauthTest.SetUp(t)
-	authShutdown := idService.SetUp(t)
-	raShutdown := raTest.SetUp(t)
-	rdShutdown := rdTest.SetUp(t)
-	grpcShutdown := grpcgwService.SetUp(t)
-	caShutdown := caService.SetUp(t)
-	secureGWShutdown := coapgwTest.SetUp(t)
 
-	defer caShutdown()
-	defer grpcShutdown()
-	defer rdShutdown()
-	defer raShutdown()
-	defer authShutdown()
-	defer oauthShutdown()
+	const services = hubTestService.SetUpServicesMachine2MachineOAuth | hubTestService.SetUpServicesOAuth | hubTestService.SetUpServicesId | hubTestService.SetUpServicesResourceAggregate |
+		hubTestService.SetUpServicesResourceDirectory | hubTestService.SetUpServicesCertificateAuthority | hubTestService.SetUpServicesGrpcGateway
+	tearDown := hubTestService.SetUpServices(ctx, t, services)
+	defer tearDown()
+
+	deferedSecureGWShutdown := true
+	secureGWShutdown := coapgwTest.SetUp(t)
+	defer func() {
+		if deferedSecureGWShutdown {
+			secureGWShutdown()
+		}
+	}()
 
 	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
@@ -688,6 +685,7 @@ func TestRequestHandlerSubscribeForPendingCommands(t *testing.T) {
 	deviceID, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, test.GetAllBackendResourceLinks())
 	defer shutdownDevSim()
 
+	deferedSecureGWShutdown = false
 	secureGWShutdown()
 
 	createFn := func(timeToLive time.Duration) {
@@ -1003,7 +1001,8 @@ func TestCoAPGatewayServiceHeartbeat(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*3)
 	defer cancel()
 
-	tearDown := hubTestService.SetUpServices(ctx, t, hubTestService.SetUpServicesCertificateAuthority|hubTestService.SetUpServicesGrpcGateway|hubTestService.SetUpServicesId|hubTestService.SetUpServicesResourceDirectory|hubTestService.SetUpServicesOAuth)
+	tearDown := hubTestService.SetUpServices(ctx, t, hubTestService.SetUpServicesMachine2MachineOAuth|hubTestService.SetUpServicesCertificateAuthority|hubTestService.SetUpServicesGrpcGateway|
+		hubTestService.SetUpServicesId|hubTestService.SetUpServicesResourceDirectory|hubTestService.SetUpServicesOAuth)
 	defer tearDown()
 
 	racfg := raTest.MakeConfig(t)

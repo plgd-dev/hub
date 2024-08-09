@@ -14,7 +14,7 @@ import (
 	pbIS "github.com/plgd-dev/hub/v2/identity-store/pb"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
-	kitHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgHttpUri "github.com/plgd-dev/hub/v2/pkg/net/http/uri"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
 	raService "github.com/plgd-dev/hub/v2/resource-aggregate/service"
 	"github.com/plgd-dev/kit/v2/codec/json"
@@ -94,7 +94,7 @@ func subscribe(ctx context.Context, tracerProvider trace.TracerProvider, href, c
 
 	r, w := io.Pipe()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, linkedCloud.Endpoint.URL+kitHttp.CanonicalHref(href), r)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, linkedCloud.Endpoint.URL+pkgHttpUri.CanonicalHref(href), r)
 	if err != nil {
 		return resp, fmt.Errorf("cannot create post request: %w", err)
 	}
@@ -138,7 +138,7 @@ func subscribe(ctx context.Context, tracerProvider trace.TracerProvider, href, c
 func cancelSubscription(ctx context.Context, tracerProvider trace.TracerProvider, href string, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) error {
 	client := linkedCloud.GetHTTPClient(tracerProvider)
 	defer client.CloseIdleConnections()
-	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, linkedCloud.Endpoint.URL+kitHttp.CanonicalHref(href), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, linkedCloud.Endpoint.URL+pkgHttpUri.CanonicalHref(href), nil)
 	if err != nil {
 		return fmt.Errorf("cannot create delete request: %w", err)
 	}

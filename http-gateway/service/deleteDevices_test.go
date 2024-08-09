@@ -10,9 +10,9 @@ import (
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgHttpPb "github.com/plgd-dev/hub/v2/pkg/net/http/pb"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
-	httpTest "github.com/plgd-dev/hub/v2/test/http"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/assert"
@@ -92,7 +92,7 @@ func TestRequestHandlerDeleteDevices(t *testing.T) {
 			assert.Equal(t, tt.wantHTTPCode, resp.StatusCode)
 
 			var got pb.DeleteDevicesResponse
-			err = httpTest.Unmarshal(resp.StatusCode, resp.Body, &got)
+			err = pkgHttpPb.Unmarshal(resp.StatusCode, resp.Body, &got)
 			require.NoError(t, err)
 			require.Equal(t, tt.want.GetDeviceIds(), got.GetDeviceIds())
 		})

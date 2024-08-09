@@ -1,0 +1,25 @@
+{{- if include "plgd-hub.m2moauthserver.enabled" . -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "plgd-hub.m2moauthserver.fullname" . }}
+  namespace: {{ .Release.Namespace }}  
+  labels:
+    {{- include "plgd-hub.labels" . | nindent 4 }}
+    {{- with .Values.m2moauthserver.service.http.labels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+  {{- if .Values.m2moauthserver.service.http.annotations }}
+  annotations:
+    {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.m2moauthserver.service.http.annotations "context" $ ) | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.m2moauthserver.service.http.type | default "ClusterIP" }}
+  ports:
+    - port: {{ .Values.m2moauthserver.httpPort }}
+      targetPort: {{ .Values.m2moauthserver.service.http.targetPort }}
+      protocol: {{ .Values.m2moauthserver.service.http.protocol }}
+      name: {{ .Values.m2moauthserver.service.http.name }}
+  selector:
+  {{- include "plgd-hub.m2moauthserver.selectorLabels" . | nindent 4 }}
+{{- end }}

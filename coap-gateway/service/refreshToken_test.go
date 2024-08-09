@@ -16,6 +16,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/net/listener"
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	"github.com/plgd-dev/hub/v2/test/service"
 	testService "github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/require"
 )
@@ -96,7 +97,7 @@ func TestRefreshTokenWithOAuthNotWorking(t *testing.T) {
 	oauthShutdown := oauthTest.New(t, cfg)
 	coapgwCfg := coapgwTest.MakeConfig(t)
 	coapgwCfg.APIs.COAP.Authorization.Providers[0].HTTP.Timeout = time.Second
-	shutdown := testService.SetUpServices(ctx, t, testService.SetUpServicesId|testService.SetUpServicesCoapGateway|testService.SetUpServicesResourceAggregate|testService.SetUpServicesResourceDirectory, testService.WithCOAPGWConfig(coapgwCfg))
+	shutdown := testService.SetUpServices(ctx, t, service.SetUpServicesMachine2MachineOAuth|testService.SetUpServicesId|testService.SetUpServicesCoapGateway|testService.SetUpServicesResourceAggregate|testService.SetUpServicesResourceDirectory, testService.WithCOAPGWConfig(coapgwCfg))
 	defer shutdown()
 
 	co := testCoapDial(t, "", true, true, time.Now().Add(time.Minute))

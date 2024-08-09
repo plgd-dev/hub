@@ -16,6 +16,7 @@ import { Props } from './Tab1.types'
 import { messages as g } from '@/containers/Global.i18n'
 import { messages as confT } from '@/containers/SnippetService/SnippetService.i18n'
 import { pages } from '@/routes'
+import testId from '@/testId'
 
 const Tab1: FC<Props> = (props) => {
     const { data } = props
@@ -40,6 +41,7 @@ const Tab1: FC<Props> = (props) => {
                     attribute: _(confT.configuration),
                     value: (
                         <Tag
+                            dataTestId={testId.snippetService.appliedConfigurations.detail.tab1.configurationLink}
                             onClick={() =>
                                 navigate(
                                     generatePath(pages.SNIPPET_SERVICE.CONFIGURATIONS.DETAIL.LINK, {
@@ -60,6 +62,7 @@ const Tab1: FC<Props> = (props) => {
                     attribute: _(confT.condition),
                     value: data?.conditionId ? (
                         <Tag
+                            dataTestId={testId.snippetService.appliedConfigurations.detail.tab1.conditionLink}
                             onClick={() =>
                                 navigate(
                                     generatePath(pages.SNIPPET_SERVICE.CONDITIONS.DETAIL.LINK, {

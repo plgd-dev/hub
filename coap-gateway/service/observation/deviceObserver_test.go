@@ -376,7 +376,7 @@ type (
 
 func runTestDeviceObserverRegister(ctx context.Context, t *testing.T, deviceID string, expectedObserved, expectedRetrieved strings.Set, verifyHandler verifyHandlerFn, prepareHub, postHub actioneHubFn, requireBatchObserveEnabled bool) {
 	// TODO: add test with expectedRetrieved
-	const services = service.SetUpServicesOAuth | service.SetUpServicesId | service.SetUpServicesResourceDirectory |
+	const services = service.SetUpServicesMachine2MachineOAuth | service.SetUpServicesOAuth | service.SetUpServicesId | service.SetUpServicesResourceDirectory |
 		service.SetUpServicesGrpcGateway | service.SetUpServicesResourceAggregate
 
 	isConfig := isTest.MakeConfig(t)

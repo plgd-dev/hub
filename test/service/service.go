@@ -161,7 +161,7 @@ func WithM2MOAuthConfig(oauth m2mOauthService.Config) SetUpOption {
 
 type SetUpOption = func(cfg *Config)
 
-func SetUp(ctx context.Context, t require.TestingT, opts ...SetUpOption) (tearDown func()) {
+func SetUp(ctx context.Context, t require.TestingT, opts ...SetUpOption) func() {
 	config := Config{
 		COAPGW:   coapgwTest.MakeConfig(t),
 		RD:       rdTest.MakeConfig(t),
@@ -177,30 +177,40 @@ func SetUp(ctx context.Context, t require.TestingT, opts ...SetUpOption) (tearDo
 		o(&config)
 	}
 
+	var tearDown fn.FuncList
+	deferedTearDown := true
+	defer func() {
+		if deferedTearDown {
+			tearDown.Execute()
+		}
+	}()
+
 	ClearDB(ctx, t)
 	oauthShutdown := oauthTest.New(t, config.OAUTH)
+	tearDown.AddFunc(oauthShutdown)
 	m2mTearDown := m2mOauthTest.New(t, config.M2MOAUTH)
+	tearDown.AddFunc(m2mTearDown)
 	isShutdown := isTest.New(t, config.IS)
+	tearDown.AddFunc(isShutdown)
 	raShutdown := raTest.New(t, config.RA)
+	tearDown.AddFunc(raShutdown)
 	rdShutdown := rdTest.New(t, config.RD)
+	tearDown.AddFunc(rdShutdown)
 	grpcShutdown := grpcgwTest.New(t, config.GRPCGW)
+	tearDown.AddFunc(grpcShutdown)
 	c2cgwShutdown := c2cgwService.SetUp(t)
+	tearDown.AddFunc(c2cgwShutdown)
 	caShutdown := caService.New(t, config.CA)
+	tearDown.AddFunc(caShutdown)
 	secureGWShutdown := coapgwTest.New(t, config.COAPGW)
+	tearDown.AddFunc(secureGWShutdown)
 
 	// wait for all services to start
 	time.Sleep(time.Second)
 
+	deferedTearDown = false
 	return func() {
-		caShutdown()
-		c2cgwShutdown()
-		grpcShutdown()
-		secureGWShutdown()
-		rdShutdown()
-		raShutdown()
-		isShutdown()
-		m2mTearDown()
-		oauthShutdown()
+		tearDown.Execute()
 
 		// wait for all services to be closed
 		time.Sleep(time.Second)
@@ -211,6 +221,7 @@ type SetUpServicesConfig uint16
 
 const (
 	SetUpServicesOAuth SetUpServicesConfig = 1 << iota
+	SetUpServicesMachine2MachineOAuth
 	SetUpServicesId
 	SetUpServicesResourceAggregate
 	SetUpServicesResourceDirectory
@@ -224,13 +235,28 @@ const (
 
 var setupServicesMap = map[SetUpServicesConfig]func(t require.TestingT, tearDown *fn.FuncList, opts ...SetUpOption){
 	SetUpServicesOAuth: func(t require.TestingT, tearDown *fn.FuncList, opts ...SetUpOption) {
-		// to fix `opts` is unused
-		config := Config{}
+		config := Config{
+			OAUTH: oauthTest.MakeConfig(t),
+		}
 		for _, o := range opts {
 			o(&config)
 		}
-		oauthShutdown := oauthTest.SetUp(t)
+		err := config.OAUTH.Validate()
+		require.NoError(t, err)
+		oauthShutdown := oauthTest.New(t, config.OAUTH)
 		tearDown.AddFunc(oauthShutdown)
+	},
+	SetUpServicesMachine2MachineOAuth: func(t require.TestingT, tearDown *fn.FuncList, opts ...SetUpOption) {
+		config := Config{
+			M2MOAUTH: m2mOauthTest.MakeConfig(t),
+		}
+		for _, o := range opts {
+			o(&config)
+		}
+		err := config.M2MOAUTH.Validate()
+		require.NoError(t, err)
+		m2mTearDown := m2mOauthTest.New(t, config.M2MOAUTH)
+		tearDown.AddFunc(m2mTearDown)
 	},
 	SetUpServicesId: func(t require.TestingT, tearDown *fn.FuncList, opts ...SetUpOption) {
 		config := Config{
@@ -280,12 +306,7 @@ var setupServicesMap = map[SetUpServicesConfig]func(t require.TestingT, tearDown
 		grpcShutdown := grpcgwTest.New(t, config.GRPCGW)
 		tearDown.AddFunc(grpcShutdown)
 	},
-	SetUpServicesCloud2CloudGateway: func(t require.TestingT, tearDown *fn.FuncList, opts ...SetUpOption) {
-		// to fix `opts` is unused
-		config := Config{}
-		for _, o := range opts {
-			o(&config)
-		}
+	SetUpServicesCloud2CloudGateway: func(t require.TestingT, tearDown *fn.FuncList, _ ...SetUpOption) {
 		c2cgwShutdown := c2cgwService.SetUp(t)
 		tearDown.AddFunc(c2cgwShutdown)
 	},
@@ -317,6 +338,12 @@ var setupServicesMap = map[SetUpServicesConfig]func(t require.TestingT, tearDown
 
 func SetUpServices(ctx context.Context, t require.TestingT, servicesConfig SetUpServicesConfig, opts ...SetUpOption) func() {
 	var tearDown fn.FuncList
+	deferedTearDown := true
+	defer func() {
+		if deferedTearDown {
+			tearDown.Execute()
+		}
+	}()
 	ClearDB(ctx, t)
 
 	for i := SetUpServicesConfig(1); i < SetUpServicesMax; i <<= 1 {
@@ -326,5 +353,6 @@ func SetUpServices(ctx context.Context, t require.TestingT, servicesConfig SetUp
 			}
 		}
 	}
+	deferedTearDown = false
 	return tearDown.ToFunction()
 }

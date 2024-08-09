@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/google/uuid"
@@ -37,6 +38,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test/device/bridge"
 	httpTest "github.com/plgd-dev/hub/v2/test/http"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
+	oauthUri "github.com/plgd-dev/hub/v2/test/oauth-server/uri"
 	"github.com/plgd-dev/hub/v2/test/service"
 	vd "github.com/plgd-dev/hub/v2/test/virtual-device"
 	"github.com/stretchr/testify/require"
@@ -102,7 +104,7 @@ func TestRequestHandlerGetThings(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	const services = service.SetUpServicesOAuth | service.SetUpServicesId | service.SetUpServicesResourceDirectory |
+	const services = service.SetUpServicesOAuth | service.SetUpServicesMachine2MachineOAuth | service.SetUpServicesId | service.SetUpServicesResourceDirectory |
 		service.SetUpServicesGrpcGateway | service.SetUpServicesResourceAggregate
 	isConfig := isTest.MakeConfig(t)
 	isConfig.APIs.GRPC.TLS.ClientCertificateRequired = false
@@ -200,6 +202,28 @@ func TestBridgeDeviceGetThings(t *testing.T) {
 	}
 }
 
+func patchSecurity(td *wotTD.ThingDescription) {
+	vCfg := config.MakeValidatorConfig()
+	openCfgs := make([]openid.Config, 0, len(vCfg.Endpoints))
+	for _, ep := range vCfg.Endpoints {
+		host := ep.Authority
+		if strings.Contains(host, config.OAUTH_SERVER_HOST) {
+			openCfgs = append(openCfgs, openid.Config{
+				TokenURL: ep.Authority + oauthUri.Token,
+				AuthURL:  ep.Authority + oauthUri.Authorize,
+			})
+			continue
+		}
+		if strings.Contains(host, config.M2M_OAUTH_SERVER_HTTP_HOST) {
+			openCfgs = append(openCfgs, openid.Config{
+				TokenURL: ep.Authority + oauthUri.Token,
+			})
+			continue
+		}
+	}
+	httpgwService.ThingSetSecurity(td, openCfgs)
+}
+
 func getPatchedTD(t *testing.T, deviceCfg bridgeDevice.Config, deviceID string, links []wotTD.IconLinkElement, validateDevices map[string]struct{}, title, host string) *wotTD.ThingDescription {
 	td, err := bridgeDevice.GetThingDescription(deviceCfg.ThingDescription.File, deviceCfg.NumResourcesPerDevice)
 	require.NoError(t, err)
@@ -226,10 +250,7 @@ func getPatchedTD(t *testing.T, deviceCfg bridgeDevice.Config, deviceID string, 
 	}
 	td.Properties[schemaDevice.ResourceURI] = dev
 
-	httpgwService.ThingSetSecurity(&td, []openid.Config{{
-		TokenURL: "https://localhost:20009/oauth/token",
-		AuthURL:  "https://localhost:20009/authorize",
-	}})
+	patchSecurity(&td)
 
 	mnt, ok := bridgeResourcesTD.GetOCFResourcePropertyElement(schemaMaintenance.ResourceURI)
 	require.True(t, ok)

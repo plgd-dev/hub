@@ -179,7 +179,7 @@ func testDevices(t *testing.T, numDevices, numResources, expRSSInMB int, resourc
 	require.NoError(t, err)
 	rdConfig := rdTest.MakeConfig(&testingT{})
 	rdConfig.Clients.Eventstore.ProjectionCacheExpiration = time.Second * 2
-	const services = service.SetUpServicesOAuth | service.SetUpServicesId | service.SetUpServicesResourceDirectory |
+	const services = service.SetUpServicesOAuth | service.SetUpServicesMachine2MachineOAuth | service.SetUpServicesId | service.SetUpServicesResourceDirectory |
 		service.SetUpServicesGrpcGateway | service.SetUpServicesResourceAggregate
 	rdCfgFile, err := os.CreateTemp("", "rd")
 	require.NoError(t, err)

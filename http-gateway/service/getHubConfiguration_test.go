@@ -9,9 +9,9 @@ import (
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgHttpPb "github.com/plgd-dev/hub/v2/pkg/net/http/pb"
 	rdTest "github.com/plgd-dev/hub/v2/resource-directory/test"
 	"github.com/plgd-dev/hub/v2/test/config"
-	httpTest "github.com/plgd-dev/hub/v2/test/http"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/require"
@@ -65,7 +65,7 @@ func TestRequestHandlerGetHubConfiguration(t *testing.T) {
 				_ = resp.Body.Close()
 			}()
 			var got pb.HubConfigurationResponse
-			err := httpTest.Unmarshal(resp.StatusCode, resp.Body, &got)
+			err := pkgHttpPb.Unmarshal(resp.StatusCode, resp.Body, &got)
 			require.NoError(t, err)
 			pbTest.CmpHubConfigurationResponse(t, tt.want, &got)
 		})
@@ -121,7 +121,7 @@ func TestRequestHandlerGetHubConfigurationWithoutM2MOAuthClient(t *testing.T) {
 				_ = resp.Body.Close()
 			}()
 			var got pb.HubConfigurationResponse
-			err := httpTest.Unmarshal(resp.StatusCode, resp.Body, &got)
+			err := pkgHttpPb.Unmarshal(resp.StatusCode, resp.Body, &got)
 			require.NoError(t, err)
 			pbTest.CmpHubConfigurationResponse(t, tt.want, &got)
 		})

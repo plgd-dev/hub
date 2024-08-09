@@ -1,10 +1,16 @@
 import { test, expect, Page } from '@playwright/test'
 import testId from '../../../../src/testId'
 
-test('snippet-service-configurations-list-open', async ({ page }) => {
+const openConfigurationsList = async (page: Page) => {
     await page.goto('')
     await page.getByTestId(testId.menu.snippetService.link).click()
     await page.getByTestId(testId.menu.snippetService.configurations).click()
+
+    await page.setViewportSize({ width: 1600, height: 800 })
+}
+
+test('snippet-service-configurations-list-open', async ({ page }) => {
+    await openConfigurationsList(page)
 
     await expect(page).toHaveTitle(/Configuraions | plgd Dashboard/)
     await expect(page).toHaveScreenshot({ fullPage: true, omitBackground: true, animations: 'disabled' })
@@ -24,9 +30,7 @@ const fillAddForm = async (page: Page) => {
 }
 
 test('add-configuration-reset', async ({ page }) => {
-    await page.goto('')
-    await page.getByTestId(testId.menu.snippetService.link).click()
-    await page.getByTestId(testId.menu.snippetService.configurations).click()
+    await openConfigurationsList(page)
 
     await page.getByTestId(testId.snippetService.configurations.list.addConfigurationButton).click()
     await expect(page).toHaveTitle(/Create new Configuration | plgd Dashboard/)
@@ -47,9 +51,7 @@ test('add-configuration-reset', async ({ page }) => {
 })
 
 test('add-configuration-save', async ({ page }) => {
-    await page.goto('')
-    await page.getByTestId(testId.menu.snippetService.link).click()
-    await page.getByTestId(testId.menu.snippetService.configurations).click()
+    await openConfigurationsList(page)
     await page.getByTestId(testId.snippetService.configurations.list.addConfigurationButton).click()
 
     fillAddForm(page)
@@ -61,11 +63,7 @@ test('add-configuration-save', async ({ page }) => {
 })
 
 test('list-invoke-modal', async ({ page }) => {
-    await page.goto('')
-    await page.getByTestId(testId.menu.snippetService.link).click()
-    await page.getByTestId(testId.menu.snippetService.configurations).click()
-
-    page.setViewportSize({ width: 1600, height: 800 })
+    await openConfigurationsList(page)
 
     await expect(page.getByTestId(testId.snippetService.configurations.list.table)).toBeVisible()
     await expect(page.getByTestId(`${testId.snippetService.configurations.list.table}-row-0`)).toBeVisible()

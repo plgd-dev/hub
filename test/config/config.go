@@ -11,6 +11,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/plgd-dev/device/v2/schema"
 	c2curi "github.com/plgd-dev/hub/v2/cloud2cloud-connector/uri"
+	m2mOauthUri "github.com/plgd-dev/hub/v2/m2m-oauth-server/uri"
 	"github.com/plgd-dev/hub/v2/pkg/config/database"
 	"github.com/plgd-dev/hub/v2/pkg/config/property/urischeme"
 	pkgCqldb "github.com/plgd-dev/hub/v2/pkg/cqldb"
@@ -45,6 +46,7 @@ const (
 	CERTIFICATE_AUTHORITY_HOST      = "localhost:20011"
 	CERTIFICATE_AUTHORITY_HTTP_HOST = "localhost:20012"
 	M2M_OAUTH_SERVER_HTTP_HOST      = "localhost:20013"
+	M2M_OAUTH_SERVER_HOST           = "localhost:20016"
 	SNIPPET_SERVICE_HOST            = "localhost:20014"
 	SNIPPET_SERVICE_HTTP_HOST       = "localhost:20015"
 	GRPC_GW_HOST                    = "localhost:20005"
@@ -61,6 +63,7 @@ const (
 	OPENTELEMETRY_COLLECTOR_HOST    = "localhost:55690"
 	TRUE_STRING                     = "true"
 	M2M_OAUTH_PRIVATE_KEY_CLIENT_ID = "JWTPrivateKeyClient"
+	VALIDATOR_CACHE_EXPIRATION      = time.Second * 10
 )
 
 var (
@@ -298,6 +301,13 @@ func MakeValidatorConfig() validator.Config {
 				Authority: http.HTTPS_SCHEME + OAUTH_SERVER_HOST,
 				HTTP:      MakeHttpClientConfig(),
 			},
+			{
+				Authority: http.HTTPS_SCHEME + M2M_OAUTH_SERVER_HTTP_HOST + m2mOauthUri.Base,
+				HTTP:      MakeHttpClientConfig(),
+			},
+		},
+		TokenVerification: validator.TokenTrustVerificationConfig{
+			CacheExpiration: VALIDATOR_CACHE_EXPIRATION,
 		},
 	}
 }

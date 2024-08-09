@@ -1,0 +1,346 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "PLGD M2M API",
+    "description": "API for to manage m2m tokens in PLGD",
+    "version": "1.0",
+    "contact": {
+      "name": "plgd.dev",
+      "url": "https://github.com/plgd-dev/hub",
+      "email": "info@plgd.dev"
+    },
+    "license": {
+      "name": "Apache License 2.0",
+      "url": "https://github.com/plgd-dev/hub/blob/v2/LICENSE"
+    }
+  },
+  "tags": [
+    {
+      "name": "M2MOAuthService"
+    }
+  ],
+  "schemes": [
+    "https"
+  ],
+  "consumes": [
+    "application/json",
+    "application/protojson"
+  ],
+  "produces": [
+    "application/json",
+    "application/protojson"
+  ],
+  "paths": {
+    "/m2m-oauth-server/api/v1/tokens": {
+      "get": {
+        "summary": "Returns all tokens of the owner",
+        "operationId": "M2MOAuthService_GetTokens",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/pbToken"
+                },
+                "error": {
+                  "$ref": "#/definitions/rpcStatus"
+                }
+              },
+              "title": "Stream result of pbToken"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idFilter",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "includeBlacklisted",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "Tokens"
+        ]
+      },
+      "delete": {
+        "summary": "Deletes/blacklist tokens",
+        "operationId": "M2MOAuthService_DeleteTokens",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbDeleteTokensResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idFilter",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "Tokens"
+        ]
+      },
+      "post": {
+        "summary": "Creates a new token",
+        "operationId": "M2MOAuthService_CreateToken",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbCreateTokenResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbCreateTokenRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Tokens"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "TokenBlackListed": {
+      "type": "object",
+      "properties": {
+        "flag": {
+          "type": "boolean",
+          "title": "Blacklisted enabled flag, if once token has been blacklisted then it can't be unblacklisted/unrevoked"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "int64",
+          "title": "Unix timestamp in s when the token has been blacklisted"
+        }
+      }
+    },
+    "pbCreateTokenRequest": {
+      "type": "object",
+      "properties": {
+        "clientId": {
+          "type": "string",
+          "title": "Client ID"
+        },
+        "clientSecret": {
+          "type": "string",
+          "title": "Client Secret"
+        },
+        "audience": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "Requested token Audience"
+        },
+        "scope": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "Requested token scopes"
+        },
+        "expiration": {
+          "type": "string",
+          "format": "int64",
+          "description": "The requested expiration time in unit timestamp seconds from the client. If not provided, the token will use the maximum allowed by the client, or if it exceeds the maximum allowed, an error will occur."
+        },
+        "clientAssertionType": {
+          "type": "string",
+          "title": "Client assertion type"
+        },
+        "clientAssertion": {
+          "type": "string",
+          "title": "Client assertion"
+        },
+        "tokenName": {
+          "type": "string",
+          "title": "Token name"
+        },
+        "grantType": {
+          "type": "string",
+          "title": "Grant type"
+        }
+      }
+    },
+    "pbCreateTokenResponse": {
+      "type": "object",
+      "properties": {
+        "accessToken": {
+          "type": "string"
+        },
+        "tokenType": {
+          "type": "string"
+        },
+        "expiresIn": {
+          "type": "string",
+          "format": "int64"
+        },
+        "scope": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "pbDeleteTokensResponse": {
+      "type": "object",
+      "properties": {
+        "blacklistedCount": {
+          "type": "string",
+          "format": "int64"
+        },
+        "deletedCount": {
+          "type": "string",
+          "format": "int64"
+        }
+      }
+    },
+    "pbToken": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "title": "Token ID / jti"
+        },
+        "version": {
+          "type": "string",
+          "format": "uint64",
+          "title": "Incremental version for update"
+        },
+        "name": {
+          "type": "string",
+          "title": "User-friendly token name"
+        },
+        "owner": {
+          "type": "string",
+          "title": "Owner of the token"
+        },
+        "issuedAt": {
+          "type": "string",
+          "format": "int64",
+          "title": "Unix timestamp in s when the condition has been created/updated"
+        },
+        "audience": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "Token Audience"
+        },
+        "scope": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "Token scopes"
+        },
+        "expiration": {
+          "type": "string",
+          "format": "int64",
+          "title": "Token expiration in Unix timestamp seconds"
+        },
+        "clientId": {
+          "type": "string",
+          "title": "Client ID"
+        },
+        "originalTokenClaims": {
+          "title": "Original token claims"
+        },
+        "blacklisted": {
+          "$ref": "#/definitions/TokenBlackListed",
+          "title": "Token black list section"
+        },
+        "subject": {
+          "type": "string",
+          "title": "Subject of the token"
+        }
+      },
+      "description": "driven by resource change event",
+      "title": "Tokens are deleted from DB after they are expired and blacklisted/revoked"
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "protobufNullValue": {
+      "type": "string",
+      "enum": [
+        "NULL_VALUE"
+      ],
+      "default": "NULL_VALUE",
+      "description": "`NullValue` is a singleton enumeration to represent the null value for the\n`Value` type union.\n\nThe JSON representation for `NullValue` is JSON `null`.\n\n - NULL_VALUE: Null value."
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  }
+}

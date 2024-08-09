@@ -44,6 +44,8 @@ apis:
           keyFile: "/secrets/private/cert.key"
           certFile: "/secrets/public/cert.crt"
           useSystemCAPool: false
+      tokenTrustVerification:
+        cacheExpiration: 30s
 clients:
   eventBus:
     nats:

@@ -4,8 +4,8 @@ import { DeleteInformationType } from '@shared-ui/components/Atomic/Modal/compon
 
 export type Props = {
     customButton?: ReactNode
-    deleteApiMethod: (ids: string[]) => Promise<any[]>
-    deleteInformation: DeleteInformationType[]
+    deleteApiMethod?: (ids: string[]) => Promise<any[]>
+    deleteInformation?: DeleteInformationType[]
     id: string
     loading: boolean
     i18n: {

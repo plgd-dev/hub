@@ -9,7 +9,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
-	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgHttpJwt "github.com/plgd-dev/hub/v2/pkg/net/http/jwt"
 	"github.com/plgd-dev/hub/v2/pkg/net/listener"
 )
 
@@ -30,12 +31,12 @@ func New(config Config) (*Service, error) {
 	}
 
 	router := mux.NewRouter()
-	auth := kitNetHttp.NewInterceptorWithValidator(config.Validator, config.AuthRules, config.WhiteEndpointList...)
-	r0 := serverMux.NewRouter(config.QueryCaseInsensitive, auth, kitNetHttp.WithLogger(config.Logger))
+	auth := pkgHttpJwt.NewInterceptorWithValidator(config.Validator, config.AuthRules, config.WhiteEndpointList...)
+	r0 := serverMux.NewRouter(config.QueryCaseInsensitive, auth, pkgHttp.WithLogger(config.Logger))
 	r0.PathPrefix("/").Handler(router)
 
 	httpServer := http.Server{
-		Handler:           kitNetHttp.OpenTelemetryNewHandler(r0, config.ServiceName, config.TraceProvider),
+		Handler:           pkgHttp.OpenTelemetryNewHandler(r0, config.ServiceName, config.TraceProvider),
 		ReadTimeout:       config.HTTPServer.ReadTimeout,
 		ReadHeaderTimeout: config.HTTPServer.ReadHeaderTimeout,
 		WriteTimeout:      config.HTTPServer.WriteTimeout,

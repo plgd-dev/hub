@@ -42,6 +42,7 @@ const DetailPage: FC<any> = () => {
         i18n: { version: _(g.version), selectVersion: _(confT.selectVersion) },
         versionData: conditionData,
         refresh,
+        dataTestId: testId.snippetService.conditions.detail.versionSelector,
     })
 
     const [pageLoading, setPageLoading] = useState(false)
@@ -196,15 +197,28 @@ const DetailPage: FC<any> = () => {
                 ReactDOM.createPortal(
                     <BottomPanel
                         actionPrimary={
-                            <Button disabled={hasError || filterError} loading={loading} loadingText={_(g.loading)} onClick={onSubmit} variant='primary'>
+                            <Button
+                                dataTestId={testId.snippetService.conditions.detail.bottomPanelSave}
+                                disabled={hasError || filterError}
+                                loading={loading}
+                                loadingText={_(g.loading)}
+                                onClick={onSubmit}
+                                variant='primary'
+                            >
                                 {_(g.saveChanges)}
                             </Button>
                         }
                         actionSecondary={
-                            <Button disabled={loading} onClick={handleReset} variant='secondary'>
+                            <Button
+                                dataTestId={testId.snippetService.conditions.detail.bottomPanelReset}
+                                disabled={loading}
+                                onClick={handleReset}
+                                variant='secondary'
+                            >
                                 {_(g.reset)}
                             </Button>
                         }
+                        dataTestId={testId.snippetService.conditions.detail.bottomPanel}
                         leftPanelCollapsed={collapsed}
                         show={dirty}
                     />,

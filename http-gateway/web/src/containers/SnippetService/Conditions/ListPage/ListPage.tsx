@@ -12,6 +12,8 @@ import { tagVariants } from '@shared-ui/components/Atomic/Tag/constants'
 import StatusPill from '@shared-ui/components/Atomic/StatusPill'
 import { states } from '@shared-ui/components/Atomic/StatusPill/constants'
 import Spacer from '@shared-ui/components/Atomic/Spacer'
+import StatusTag from '@shared-ui/components/Atomic/StatusTag'
+import { tagVariants as statusTagVariants } from '@shared-ui/components/Atomic/StatusTag/constants'
 
 import PageLayout from '@/containers/Common/PageLayout'
 import { messages as confT } from '../../SnippetService.i18n'
@@ -22,6 +24,7 @@ import { pages } from '@/routes'
 import PageListTemplate from '@/containers/Common/PageListTemplate/PageListTemplate'
 import { deleteConditionsApi } from '@/containers/SnippetService/rest'
 import DateFormat from '@/containers/PendingCommands/DateFormat'
+import testId from '@/testId'
 
 const ListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
@@ -49,6 +52,7 @@ const ListPage: FC<any> = () => {
                 accessor: 'name',
                 Cell: ({ value, row }: { value: string | number; row: any }) => (
                     <a
+                        data-test-id={`${testId.snippetService.conditions.list.table}-row-${row.id}-name`}
                         href={generatePath(pages.SNIPPET_SERVICE.CONDITIONS.DETAIL.LINK, { conditionId: row.original.id, tab: '' })}
                         onClick={(e) => {
                             e.preventDefault()
@@ -74,22 +78,33 @@ const ListPage: FC<any> = () => {
             {
                 Header: _(g.version),
                 accessor: 'version',
-                Cell: ({ value }: { value: string | number }) => <span className='no-wrap-text'>{value}</span>,
+                Cell: ({ value }: { value: string | number }) => <StatusTag variant={statusTagVariants.NORMAL}>{value}</StatusTag>,
             },
             {
                 Header: _(g.link),
                 accessor: 'configurationId',
-                Cell: ({ value, row }: { value: string; row: any }) => (
-                    <Tag
-                        onClick={() =>
-                            navigate(generatePath(pages.SNIPPET_SERVICE.CONFIGURATIONS.DETAIL.LINK, { configurationId: row.original.configurationId, tab: '' }))
-                        }
-                        variant={tagVariants.BLUE}
-                    >
-                        <IconLink />
-                        <Spacer type='ml-2'>{row.original.configurationName}</Spacer>
-                    </Tag>
-                ),
+                Cell: ({ value, row }: { value: string; row: any }) => {
+                    if (row.original.configurationId && row.original.configurationName) {
+                        return (
+                            <Tag
+                                onClick={() =>
+                                    navigate(
+                                        generatePath(pages.SNIPPET_SERVICE.CONFIGURATIONS.DETAIL.LINK, {
+                                            configurationId: row.original.configurationId,
+                                            tab: '',
+                                        })
+                                    )
+                                }
+                                variant={tagVariants.BLUE}
+                            >
+                                <IconLink />
+                                <Spacer type='ml-2'>{row.original.configurationName}</Spacer>
+                            </Tag>
+                        )
+                    }
+
+                    return '-'
+                },
                 disableSortBy: true,
             },
         ],
@@ -101,7 +116,12 @@ const ListPage: FC<any> = () => {
         <PageLayout
             breadcrumbs={breadcrumbs}
             header={
-                <Button icon={<IconPlus />} onClick={() => navigate(generatePath(pages.SNIPPET_SERVICE.CONDITIONS.ADD.LINK, { tab: '' }))} variant='primary'>
+                <Button
+                    dataTestId={testId.snippetService.conditions.list.addButton}
+                    icon={<IconPlus />}
+                    onClick={() => navigate(generatePath(pages.SNIPPET_SERVICE.CONDITIONS.ADD.LINK, { tab: '' }))}
+                    variant='primary'
+                >
                     {_(confT.conditions)}
                 </Button>
             }
@@ -111,6 +131,7 @@ const ListPage: FC<any> = () => {
             <PageListTemplate
                 columns={columns}
                 data={data}
+                dataTestId={testId.snippetService.conditions.list.pageTemplate}
                 deleteApiMethod={deleteConditionsApi}
                 i18n={{
                     singleSelected: _(confT.condition),
@@ -143,6 +164,7 @@ const ListPage: FC<any> = () => {
                 }}
                 onDetailClick={(id: string) => navigate(generatePath(pages.SNIPPET_SERVICE.CONDITIONS.DETAIL.LINK, { conditionId: id, tab: '' }))}
                 refresh={() => refresh()}
+                tableDataTestId={testId.snippetService.conditions.list.table}
             />
         </PageLayout>
     )
