@@ -141,17 +141,24 @@ func TestProvisioningWithExpiringCertificate(t *testing.T) {
 		}
 	}()
 
+	deviceID := hubTest.MustFindDeviceByName(test.TestDeviceObtName)
 	dpsCfg := test.MakeConfig(t)
 	dpsCfg.APIs.COAP.InactivityMonitor.Timeout = time.Minute
 	rh := newTestRequestHandler(t, dpsCfg, defaultTestDpsHandlerConfig())
 	rh.StartDps(service.WithRequestHandler(rh))
-	deviceID := hubTest.MustFindDeviceByName(test.TestDeviceObtName)
+	deferedDpsCleanUp := true
+	defer func() {
+		if deferedDpsCleanUp {
+			rh.StopDps()
+		}
+	}()
 	deviceID, shutdownSim := test.OnboardDpsSim(ctx, t, c, deviceID, dpsCfg.APIs.COAP.Addr, test.TestDevsimResources)
 	defer shutdownSim()
 
 	// wait for provisioning success
 	err = rh.Verify(ctx)
 	require.NoError(t, err)
+	deferedDpsCleanUp = false
 	rh.StopDps()
 
 	shortTimeout := time.Second * 30 // enough time for provisioning to succeed and certificate to expire
@@ -278,16 +285,23 @@ func TestProvisioningWithExpiredCertificate(t *testing.T) {
 		}
 	}()
 
+	deviceID := hubTest.MustFindDeviceByName(test.TestDeviceObtName)
 	dpsCfg := test.MakeConfig(t)
 	rh := newTestRequestHandler(t, dpsCfg, defaultTestDpsHandlerConfig())
 	rh.StartDps(service.WithRequestHandler(rh))
-	deviceID := hubTest.MustFindDeviceByName(test.TestDeviceObtName)
+	deferedDpsCleanUp := true
+	defer func() {
+		if deferedDpsCleanUp {
+			rh.StopDps()
+		}
+	}()
 	deviceID, shutdownSim := test.OnboardDpsSim(ctx, t, c, deviceID, dpsCfg.APIs.COAP.Addr, test.TestDevsimResources)
 	defer shutdownSim()
 
 	// wait for provisioning success so we get OFFLINE event first after reprovisioning
 	err = rh.Verify(ctx)
 	require.NoError(t, err)
+	deferedDpsCleanUp = false
 	rh.StopDps()
 
 	err = test.ForceReprovision(ctx, c, deviceID)

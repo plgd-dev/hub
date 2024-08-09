@@ -37,8 +37,8 @@ import (
 )
 
 const (
-	DPSHost              = "localhost:40030"
-	DPSHTTPHost          = "localhost:40031"
+	DPSHost              = "127.0.0.1:40030"
+	DPSHTTPHost          = "127.0.0.1:40031"
 	DPSEnrollmentGroupID = "6aa1aa8e-2b91-48ee-bfbc-a4e22d8e20d8"
 	DPSOwner             = "1"
 )
@@ -205,6 +205,7 @@ func MakeConfig(t require.TestingT) service.Config {
 		Timeout: time.Second * 20,
 	}
 	cfg.APIs.COAP.BlockwiseTransfer.Enabled = config.COAP_GATEWAY_UDP_ENABLED
+	cfg.APIs.COAP.BlockwiseTransfer.Enabled = true
 	cfg.APIs.COAP.BlockwiseTransfer.SZX = "1024"
 	cfg.APIs.HTTP = MakeHTTPConfig()
 	tlsServerCfg := config.MakeTLSServerConfig()

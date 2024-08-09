@@ -352,8 +352,7 @@ DPS_DEVICE_OC_LOG_LEVEL ?= info
 DPS_DEVICE_SIMULATOR_OBT_NAME := dps-devsim-obt
 DPS_DEVICE_SIMULATOR_NAME := dps-devsim
 # TODO: switch to iotivity-lite repository
-# DPS_DEVICE_SIMULATOR_IMG := ghcr.io/plgd-dev/device-provisioning-client/dps-cloud-server-debug:main
-DPS_DEVICE_SIMULATOR_IMG := ghcr.io/plgd-dev/device-provisioning-client/dps-cloud-server-debug:adam-feature-cloud_server_sha384
+DPS_DEVICE_SIMULATOR_IMG := ghcr.io/plgd-dev/device-provisioning-client/dps-cloud-server-debug:main
 
 # Pull latest DPS device simulator with given name and run it
 #
