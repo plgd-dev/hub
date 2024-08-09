@@ -1,0 +1,186 @@
+syntax = "proto3";
+
+package deviceprovisioningservice.pb;
+
+option go_package = "github.com/plgd-dev/hub/v2/device-provisioning-service/pb;pb";
+
+
+message TlsConfig{
+  // the root certificates. Supported formats: </path/to/cert.pem>,<data:;base64,{PEM in BASE64}>
+  repeated string ca_pool = 1; // @gotags: bson:"ca_pool"
+  // private key. Supported formats: </path/to/cert.pem>,<data:;base64,{PEM in BASE64}>
+  string key = 2; // @gotags: bson:"key"
+  // certificate. Supported formats: </path/to/cert.pem>,<data:;base64,{PEM in BASE64}>
+  string cert = 3; // @gotags: bson:"cert"
+  // use system certification pool
+  bool use_system_ca_pool= 4; // @gotags: bson:"useSystemCaPool"
+}
+
+message HttpConfig {
+  // MaxIdleConns controls the maximum number of idle (keep-alive)
+  // connections across all hosts. Zero means no limit.
+  uint32 max_idle_conns = 1; // @gotags: bson:"maxIdleConns"
+
+  // MaxConnsPerHost optionally limits the total number of
+  // connections per host, including connections in the dialing,
+  // active, and idle states. On limit violation, dials will block.
+  //
+  // Zero means no limit.
+  uint32 max_conns_per_host = 2; // @gotags: bson:"maxConnsPerHost"
+
+  // MaxIdleConnsPerHost, if non-zero, controls the maximum idle
+  // (keep-alive) connections to keep per-host. If zero,
+  // DefaultMaxIdleConnsPerHost is used.
+  uint32 max_idle_conns_per_host = 3; // @gotags: bson:"maxIdleConnsPerHost"
+
+  // IdleConnTimeout is the maximum amount of time an idle
+  // (keep-alive) connection will remain idle before closing
+  // itself in nanoseconds.
+  // Zero means no limit.
+  int64 idle_conn_timeout = 4; // @gotags: bson:"idleConnTimeout"
+
+  // Timeout specifies a time limit for requests made by this
+  // Client in nanoseconds. The timeout includes connection time, any
+  // redirects, and reading the response body. The timer remains
+  // running after Get, Head, Post, or Do return and will
+  // interrupt reading of the Response.Body.
+  //
+  // A Timeout of zero means no timeout.
+  //
+  // The Client cancels requests to the underlying Transport
+  // as if the Request's Context ended.
+  //
+  // For compatibility, the Client will also use the deprecated
+  // CancelRequest method on Transport if found. New
+  // RoundTripper implementations should use the Request's Context
+  // for cancellation instead of implementing CancelRequest.
+  int64 timeout  = 5; // @gotags: bson:"timeout"
+
+  TlsConfig tls = 6; // @gotags: bson:"tls"
+}
+
+message AuthorizationProviderConfig {
+  // the name of the provider, which is set in configuration in coap-gateway
+  string name = 1; // @gotags: bson:"name"
+  // the url to get oauth endpoints
+  string authority = 2; // @gotags: bson:"authority"
+  // client id which is associated to the name
+  string client_id = 3; // @gotags: bson:"clientId"
+  // scopes will be set in token
+  repeated string scopes = 4; // @gotags: bson:"scopes"
+  // audience will be set in token
+  string audience = 5; // @gotags: bson:"audience"
+  // client secret. Supported formats: </path/to/clientSecret>,<data:;base64,{ClientSecret in BASE64}>
+  string client_secret = 6; // @gotags: bson:"clientSecret"
+  // http configuration
+  HttpConfig http = 7; // @gotags: bson:"http"
+}
+
+// AuthorizationConfig is used to generate the authorization code for the device when providing cloud configuration.
+message AuthorizationConfig {
+  // owner_claim is key where will be stored owner in JWT.
+  string owner_claim = 1; // @gotags: bson:"ownerClaim"
+   // device_id_claim is key where will be stored deviceID in JWT(optional)
+  string device_id_claim = 2; // @gotags: bson:"deviceIdClaim"
+  AuthorizationProviderConfig provider = 3; // @gotags: bson:"provider"
+}
+
+message GrpcKeepAliveConfig {
+  // After a duration in nanoseconds of this time if the client doesn't see any activity it
+  // pings the server to see if the transport is still alive.
+  // The zero value is infinity and if it set below 10s, a minimum value of 10s will be used instead.
+  int64 time  = 1; // @gotags: bson:"time" 
+  // After having pinged for keepalive check, the client waits for a duration
+  // of Timeout and if no activity is seen even after that the connection is
+  // closed.
+  int64 timeout = 2; // @gotags: bson:"timeout"
+  // If true, client sends keepalive pings even with no active RPCs. If false,
+  // when there are no active RPCs, Time and Timeout will be ignored and no
+  // keepalive pings will be sent.
+  bool permit_without_stream = 3; // @gotags: bson:"permitWithoutStream
+}
+
+message GrpcConnectionConfig {
+  // Address in format {host:port}
+  string address = 1; // @gotags: bson:"address"
+  GrpcKeepAliveConfig keep_alive = 2; // @gotags: bson:"keepAlive"
+  TlsConfig tls = 3; // @gotags: bson:"tls"
+}
+
+message GrpcClientConfig {
+  // GRPC protocol
+  GrpcConnectionConfig grpc = 1; // @gotags: bson:"grpc"
+}
+
+message Hub {
+  reserved 2,3; // string ca_pool = 2; string coap_gateway = 3;
+  reserved "ca_pool","coap_gateway";
+  // Record ID.
+  string id = 1; // @gotags: bson:"_id"
+  // Address of gateway in format scheme://host:port
+  repeated string gateways = 8; // @gotags: bson:"gateways"
+  // Signs identity ceritificate for the device.
+  GrpcClientConfig certificate_authority = 4; // @gotags: bson:"certificateAuthority"
+  // Acquire HUB authorization code for the device.
+  AuthorizationConfig authorization = 5; // @gotags: bson:"authorization"
+  // Hub name.
+  string name = 6; // @gotags: bson:"name"
+  // Hub identifier - it must match with common name of gateway(coap-gateway) hub certificate.
+  string hub_id = 7; // @gotags: bson:"hubId"
+  // Owner of the hub
+  string owner = 9; // @gotags: bson:"owner"
+}
+
+message CreateHubRequest {
+  reserved 2,3; // string ca_pool = 1; string coap_gateway = 3;
+  reserved "ca_pool","coap_gateway"; 
+  // Hub identifier - it must match with common name of gateway(coap-gateway) hub certificate.
+  string hub_id = 1;
+  // Address of gateways in format scheme://host:port
+  repeated string gateways = 7;
+  // Signs identity ceritificate for the device.
+  GrpcClientConfig certificate_authority = 4;
+  // Acquire HUB authorization code for the device.
+  AuthorizationConfig authorization = 5;
+  // Hub name.
+  string name = 6;
+}
+
+message GetHubsRequest {
+  // Filter by id.
+  repeated string id_filter = 1;
+  // Filter by hub_id.
+  repeated string hub_id_filter = 2;
+}
+
+message UpdateHub {
+  reserved 1,2; // string ca_pool = 1; string coap_gateway = 2;
+  reserved "ca_pool","coap_gateway"; 
+
+  // Address of coap-gateway in format scheme://host:port
+  repeated string gateways = 7;
+  // Signs identity ceritificate for the device.
+  GrpcClientConfig certificate_authority = 3; 
+  // Acquire HUB authorization code for the device.
+  AuthorizationConfig authorization = 4;
+  // Hub name.
+  string name = 5;
+  // Hub ID
+  string hub_id = 6;
+}
+
+message UpdateHubRequest {
+  // Record ID.
+  string id = 1;
+  UpdateHub hub = 2;
+}
+
+message DeleteHubsRequest {
+   // Record ID.
+   repeated string id_filter = 1;
+}
+
+message DeleteHubsResponse {
+   // Number of deleted records.
+   int64 count = 1;
+}

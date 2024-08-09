@@ -342,7 +342,12 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		tracerProvider:     tracerProvider,
 	}
 
-	return s.createServices(fileWatcher, logger)
+	ss, err := s.createServices(fileWatcher, logger)
+	if err != nil {
+		nats.Close()
+		return nil, fmt.Errorf("cannot create services: %w", err)
+	}
+	return ss, nil
 }
 
 func getDeviceID(client *session) string {
@@ -410,7 +415,7 @@ func (s *Service) processCommandTask(req *mux.Message, client *session, span tra
 		span.SetStatus(otelCodes.Error, err.Error())
 	}
 	if resp != nil {
-		otelcoap.MessageSentEvent(req.Context(), resp)
+		otelcoap.MessageSentEvent(req.Context(), otelcoap.MakeMessage(resp))
 		span.SetAttributes(otelcoap.StatusCodeAttr(resp.Code()))
 	}
 	client.logRequestResponse(req, resp, err)
@@ -426,7 +431,7 @@ func (s *Service) makeCommandTask(req *mux.Message, client *session, fnc func(re
 	ctx, span := otelcoap.Start(req.Context(), path, req.Code().String(), otelcoap.WithTracerProvider(s.tracerProvider), otelcoap.WithSpanOptions(trace.WithSpanKind(trace.SpanKindServer)))
 	span.SetAttributes(semconv.NetPeerNameKey.String(client.deviceID()))
 	req.SetContext(ctx)
-	otelcoap.MessageReceivedEvent(ctx, req.Message)
+	otelcoap.MessageReceivedEvent(ctx, otelcoap.MakeMessage(req.Message))
 	otelcoap.SetRequest(ctx, req.Message)
 
 	x := struct {

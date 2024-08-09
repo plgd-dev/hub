@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+package deviceprovisioningservice.pb;
+
+option go_package = "github.com/plgd-dev/hub/v2/device-provisioning-service/pb;pb";
+
+message X509Configuration {
+  // chain certficates authorities: ..<-intermediateCA1<-intermediateCA<-RootCA which is used to match enrollment group. Supported formats: </path/to/cert.pem>,<data:;base64,{PEM in BASE64}>
+  string certificate_chain = 1; // @gotags: bson:"certificateChain"
+  // the certificate name must be one from certificate_chain, it is used to match enrollment group. If empty, the first certificate from certificate_chain is used
+  string lead_certificate_name = 2; // @gotags: bson:"leadCertificateName"
+  // dont validate time during certificate verification
+  bool expired_certificate_enabled = 3; // @gotags: bson:"expiredCertificateEnabled"
+}
+
+message AttestationMechanism {
+  // X509 attestation
+  X509Configuration x509 = 1; // @gotags: bson:"x509"
+}
+
+message EnrollmentGroup {
+  reserved 4; // string hub_id = 4;
+  reserved "hub_id";
+  // Enrollment group ID.
+  string id = 1;   // @gotags: bson:"_id"
+  // HUB owner of device - used for hub authorization.
+  string owner = 2; // @gotags: bson:"owner"
+  // Attestation mechanism
+  AttestationMechanism attestation_mechanism = 3; // @gotags: bson:"attestationMechanism"
+  // Hub configuration to configure device.
+  repeated string hub_ids = 7; // @gotags: bson:"hubIds"
+  // Pre shared key for devices in enrollment group. It can be used for maintenance operations by d2d client. Supported formats: </path/to/psk>,<data:;base64,{PSK in BASE64}>
+  string pre_shared_key = 5; // @gotags: bson:"preSharedKey"
+  // name of enrollment group
+  string name = 6; // @gotags: bson:"name"
+}
+
+message CreateEnrollmentGroupRequest {
+  reserved 1,3; // string hub_id = 3;
+  reserved "owner","hub_id";
+  // Attestation mechanism
+  AttestationMechanism attestation_mechanism = 2;
+  // Hub configuration to configure device.
+  repeated string hub_ids = 6;
+  // Pre shared key for devices in enrollment group. It can be used for maintenance operations by d2d client. Supported formats: </path/to/psk>,<data:;base64,{PSK in BASE64}>
+  string pre_shared_key = 4;
+  // name of enrollment group
+  string name = 5;
+}
+
+message GetEnrollmentGroupsRequest {
+  // Filter by id.
+  repeated string id_filter = 1;
+  // Filter by certificates comman names in x509 attestation mechanism
+  repeated string attestation_mechanism_x509_certificate_names = 2;
+  // Filter by hubId.
+  repeated string hub_id_filter = 3;
+}
+
+message UpdateEnrollmentGroup {
+  reserved 1,3; // string hub_id = 4;
+  reserved "hub_id","owner";
+  // Attestation mechanism
+  AttestationMechanism attestation_mechanism = 2;
+  // Hub configuration to configure device.
+  repeated string hub_ids = 6;
+  // Pre shared key for devices in enrollment group. It can be used for maintenance operations by d2d client. Supported formats: </path/to/psk>,<data:;base64,{PSK in BASE64}>
+  string pre_shared_key = 4;
+  // name of enrollment group
+  string name = 5; // @gotags: bson:"name"
+}
+
+message UpdateEnrollmentGroupRequest {
+  // Enrollment group ID.
+  string id = 1;
+  UpdateEnrollmentGroup enrollment_group = 2;
+}
+
+message DeleteEnrollmentGroupsRequest {
+   // Enrollment group ID.
+   repeated string id_filter = 1;
+}
+
+message DeleteEnrollmentGroupsResponse {
+   // Number of deleted records.
+   int64 count = 1;
+}
