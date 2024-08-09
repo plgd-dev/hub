@@ -194,15 +194,16 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		enrollmentGroupsCache: enrollmentGroupsCache,
 	}
 
-	service, err := s.createServices(fileWatcher, logger)
+	ss, err := s.createServices(fileWatcher, logger)
 	if err != nil {
+		closer.Execute()
 		return nil, fmt.Errorf("cannot coap services: %w", err)
 	}
 	if httpService != nil {
-		service.Add(httpService)
+		ss.Add(httpService)
 	}
-	service.AddCloseFunc(closer.Execute)
-	return service, nil
+	ss.AddCloseFunc(closer.Execute)
+	return ss, nil
 }
 
 func (RequestHandle) DefaultHandler(_ context.Context, req *mux.Message, _ *Session, _ []*LinkedHub, _ *EnrollmentGroup) (*pool.Message, error) {
@@ -270,7 +271,7 @@ func (server *Service) toInternalHandler(w mux.ResponseWriter, r *mux.Message, h
 	ctx, span := otelcoap.Start(r.Context(), path, r.Code().String(), otelcoap.WithTracerProvider(server.tracerProvider), otelcoap.WithSpanOptions(trace.WithSpanKind(trace.SpanKindServer)))
 	defer span.End()
 	r.SetContext(ctx)
-	otelcoap.MessageReceivedEvent(ctx, r.Message)
+	otelcoap.MessageReceivedEvent(ctx, otelcoap.MakeMessage(r.Message))
 
 	ctx, cancel := context.WithTimeout(r.Context(), session.server.config.APIs.COAP.InactivityMonitor.Timeout)
 	defer cancel()
@@ -289,10 +290,11 @@ func (server *Service) toInternalHandler(w mux.ResponseWriter, r *mux.Message, h
 		}()
 	}
 	if resp != nil {
+		otelMsg := otelcoap.MakeMessage(resp)
 		if err := session.WriteMessage(resp); err != nil {
 			session.Errorf("cannot send error: %w", err)
 		}
-		otelcoap.MessageSentEvent(r.Context(), resp)
+		otelcoap.MessageSentEvent(r.Context(), otelMsg)
 		span.SetAttributes(otelcoap.StatusCodeAttr(resp.Code()))
 	}
 	session.logRequestResponse(ctx, startTime, r, resp, errResp)

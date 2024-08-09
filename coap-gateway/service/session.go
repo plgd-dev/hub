@@ -219,7 +219,7 @@ func (c *session) do(req *pool.Message) (*pool.Message, error) {
 	defer span.End()
 	span.SetAttributes(semconv.NetPeerNameKey.String(c.deviceID()))
 
-	otelcoap.MessageSentEvent(ctx, req)
+	otelcoap.MessageSentEvent(ctx, otelcoap.MakeMessage(req))
 
 	resp, err := c.coapConn.Do(req)
 	if err != nil {
@@ -227,7 +227,7 @@ func (c *session) do(req *pool.Message) (*pool.Message, error) {
 		span.SetStatus(otelCodes.Error, err.Error())
 		return nil, err
 	}
-	otelcoap.MessageReceivedEvent(ctx, resp)
+	otelcoap.MessageReceivedEvent(ctx, otelcoap.MakeMessage(resp))
 	span.SetAttributes(otelcoap.StatusCodeAttr(resp.Code()))
 
 	return resp, nil
