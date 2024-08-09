@@ -25,6 +25,7 @@ import AppLayout from '@/containers/App/AppLayout/AppLayout'
 import { setTheme, setThemes } from './slice'
 import { CombinedStoreType } from '@/store/store'
 import { defaultMenu } from '@/routes'
+import { updateSidebarVisibility } from '@shared-ui/common/services/sidebar'
 
 const App = (props: { mockApp: boolean }) => {
     const { formatMessage: _ } = useIntl()
@@ -51,6 +52,8 @@ const App = (props: { mockApp: boolean }) => {
                     if (!wellKnown?.ui?.visibility?.mainSidebar) {
                         wellKnown.ui = { visibility: { mainSidebar: defaultMenu } }
                     }
+
+                    wellKnown.ui = updateSidebarVisibility(wellKnown)
 
                     const clientId = webOauthClient?.clientId
                     const httpGatewayAddress = wellKnown.httpGatewayAddress

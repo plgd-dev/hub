@@ -381,9 +381,7 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                 link: pages.API_TOKENS.LINK,
                 paths: [pages.API_TOKENS.LINK, pages.API_TOKENS.DETAIL],
                 exact: true,
-                dataTestId: testId.menu.apiTokens,
-                // visibility: menuConfig.apiTokens === false ? false : 'disabled',
-                visibility: true,
+                visibility: menuConfig.apiTokens === false ? false : 'disabled',
             },
             {
                 icon: <IconNet />,
