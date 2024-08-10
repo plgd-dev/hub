@@ -1784,7 +1784,7 @@ httpgateway:
           integrations: false
           deviceFirmwareUpdate: false
           deviceLogs: false
-          apiTokens: false
+          apiTokens: true
           schemaHub: false
           snippetService: true
 
