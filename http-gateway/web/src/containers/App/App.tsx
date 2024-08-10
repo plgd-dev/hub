@@ -15,6 +15,7 @@ import { useAppTheme } from '@shared-ui/common/hooks/use-app-theme'
 import { getTheme } from '@shared-ui/app/clientApp/App/AppRest'
 import { defaultTheme } from '@shared-ui/components/Atomic/_theme'
 import FullPageLoader from '@shared-ui/components/Atomic/FullPageLoader'
+import { updateSidebarVisibility } from '@shared-ui/common/services/sidebar'
 
 import './App.scss'
 import { messages as t } from './App.i18n'
@@ -25,7 +26,6 @@ import AppLayout from '@/containers/App/AppLayout/AppLayout'
 import { setTheme, setThemes } from './slice'
 import { CombinedStoreType } from '@/store/store'
 import { defaultMenu } from '@/routes'
-import { updateSidebarVisibility } from '@shared-ui/common/services/sidebar'
 
 const App = (props: { mockApp: boolean }) => {
     const { formatMessage: _ } = useIntl()
