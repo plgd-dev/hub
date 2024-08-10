@@ -32,6 +32,7 @@ spec:
       labels:
         {{- include "plgd-hub.grpcreflection.selectorLabels" (list $ $domain) | nindent 8 }}
     spec:
+      automountServiceAccountToken: false
       {{- with $.Values.grpcreflection.securityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}

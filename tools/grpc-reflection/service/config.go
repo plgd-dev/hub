@@ -4,9 +4,12 @@ import (
 	"errors"
 	"fmt"
 
+	certAuthorityPb "github.com/plgd-dev/hub/v2/certificate-authority/pb"
+	grpcGatewayPb "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/pkg/config"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
+	snippetServicePb "github.com/plgd-dev/hub/v2/snippet-service/pb"
 )
 
 type Config struct {
@@ -34,22 +37,29 @@ type GRPCConfig struct {
 	server.BaseConfig `yaml:",inline" json:",inline"`
 }
 
+var allowedReflectedServices = map[string]struct{}{
+	grpcGatewayPb.GrpcGateway_ServiceDesc.ServiceName:            {},
+	certAuthorityPb.CertificateAuthority_ServiceDesc.ServiceName: {},
+	snippetServicePb.SnippetService_ServiceDesc.ServiceName:      {},
+}
+
 func (c *GRPCConfig) Validate() error {
 	// Check if ReflectedServices is not empty
 	if len(c.ReflectedServices) == 0 {
-		return errors.New("reflectedServices cannot be empty")
+		return errors.New("reflectedServices[] - is empty")
 	}
 
 	// Check if each service name is not empty
-	for _, service := range c.ReflectedServices {
-		if service == "" {
-			return errors.New("reflectedServices contains an empty service name")
+	for idx, service := range c.ReflectedServices {
+		_, ok := allowedReflectedServices[service]
+		if !ok {
+			return fmt.Errorf("reflectedServices[%v]('%v') - is invalid", idx, service)
 		}
 	}
 
 	// Validate the embedded server.Config
 	if err := c.BaseConfig.Validate(); err != nil {
-		return fmt.Errorf("server config validation failed: %w", err)
+		return err
 	}
 
 	return nil

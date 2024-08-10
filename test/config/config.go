@@ -145,18 +145,22 @@ func MakeAuthorizationConfig() grpcServer.AuthorizationConfig {
 	}
 }
 
+func MakeGrpcServerBaseConfig(address string) grpcServer.BaseConfig {
+	return grpcServer.BaseConfig{
+		Addr:        address,
+		SendMsgSize: DefaultGrpcMaxMsgSize,
+		RecvMsgSize: DefaultGrpcMaxMsgSize,
+		TLS:         MakeTLSServerConfig(),
+		EnforcementPolicy: grpcServer.EnforcementPolicyConfig{
+			MinTime:             time.Second * 5,
+			PermitWithoutStream: true,
+		},
+	}
+}
+
 func MakeGrpcServerConfig(address string) grpcServer.Config {
 	return grpcServer.Config{
-		BaseConfig: grpcServer.BaseConfig{
-			Addr:        address,
-			SendMsgSize: DefaultGrpcMaxMsgSize,
-			RecvMsgSize: DefaultGrpcMaxMsgSize,
-			TLS:         MakeTLSServerConfig(),
-			EnforcementPolicy: grpcServer.EnforcementPolicyConfig{
-				MinTime:             time.Second * 5,
-				PermitWithoutStream: true,
-			},
-		},
+		BaseConfig:    MakeGrpcServerBaseConfig(address),
 		Authorization: MakeAuthorizationConfig(),
 	}
 }
