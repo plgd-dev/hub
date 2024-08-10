@@ -62,7 +62,7 @@ spec:
           {{- range $.Values.grpcreflection.command  }}
             - {{ . | quote }}
           {{- end }}
-          {{- end}}
+          {{- end }}
           args:
             - "--config"
             - {{  printf "%s/%s" $.Values.grpcreflection.config.mountPath $.Values.grpcreflection.config.fileName | quote }}

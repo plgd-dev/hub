@@ -22,7 +22,7 @@ spec:
     - hosts:
         {{- range $domain, $val := $domains }}
         - {{ $domain | quote }}
-        {{- end}}
+        {{- end }}
       {{- if $.Values.global.enableWildCartCert }}
       secretName: {{ include "plgd-hub.wildCardCertName" . | quote }}
       {{- else }}
