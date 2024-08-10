@@ -19,7 +19,7 @@ import {
     IconChat,
     IconCertificate,
 } from '@shared-ui/components/Atomic/Icon/'
-import { MenuGroup } from '@shared-ui/components/Layout/LeftPanel/LeftPanel.types'
+import { MenuGroup, MenuItemVisibilityType } from '@shared-ui/components/Layout/LeftPanel/LeftPanel.types'
 import FullPageLoader from '@shared-ui/components/Atomic/FullPageLoader'
 
 import { messages as t } from './containers/App/App.i18n'
@@ -381,7 +381,7 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                 link: pages.API_TOKENS.LINK,
                 paths: [pages.API_TOKENS.LINK, pages.API_TOKENS.DETAIL],
                 exact: true,
-                visibility: menuConfig.apiTokens === false ? false : 'disabled',
+                visibility: menuConfig.apiTokens,
             },
             {
                 icon: <IconNet />,
@@ -454,7 +454,13 @@ export const NoLayoutRoutes = () => (
 
 const withSuspense = (Component: any) => <Suspense fallback={<Loader />}>{Component}</Suspense>
 
-export const Routes = () => {
+type MenuConfigType = {
+    [key: string]: MenuItemVisibilityType
+}
+
+export const Routes = (props: { mainSidebar: MenuConfigType }) => {
+    const { mainSidebar } = props
+    console.log(mainSidebar)
     const { formatMessage: _ } = useIntl()
     return (
         <RoutesGroup>
@@ -534,10 +540,12 @@ export const Routes = () => {
             </Route>
 
             {/* ***** API TOKENS ***** */}
-            <Route path='/api-tokens'>
-                <Route element={withSuspense(<ApiTokensListPage />)} path='' />
-                <Route element={withSuspense(<ApiTokensDetailPage />)} path=':apiTokenId' />
-            </Route>
+            {mainSidebar.apiTokens === true && (
+                <Route path='/api-tokens'>
+                    <Route element={withSuspense(<ApiTokensListPage />)} path='' />
+                    <Route element={withSuspense(<ApiTokensDetailPage />)} path=':apiTokenId' />
+                </Route>
+            )}
 
             {/* ***** CONFIGURATION ***** */}
             <Route path='/configuration'>
@@ -549,7 +557,7 @@ export const Routes = () => {
             <Route element={withSuspense(<PendingCommandsListPage />)} path='/pending-commands' />
             <Route element={withSuspense(<MockApp />)} path='/devices-code-redirect/*' />
             <Route element={withSuspense(<TestPage />)} path='/test' />
-            <Route element={<NotFoundPage message={_(t.notFoundPageDefaultMessage)} title={_(t.pageTitle)} />} path='*' />
+            <Route element={<NotFoundPage layout message={_(t.notFoundPageDefaultMessage)} title={_(t.pageTitle)} />} path='*' />
         </RoutesGroup>
     )
 }
