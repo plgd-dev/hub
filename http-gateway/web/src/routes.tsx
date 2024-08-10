@@ -460,7 +460,6 @@ type MenuConfigType = {
 
 export const Routes = (props: { mainSidebar: MenuConfigType }) => {
     const { mainSidebar } = props
-    console.log(mainSidebar)
     const { formatMessage: _ } = useIntl()
     return (
         <RoutesGroup>
