@@ -62,10 +62,10 @@ func errCannotCreateToken(err error) error {
 
 func (s *M2MOAuthServiceServer) CreateToken(ctx context.Context, req *pb.CreateTokenRequest) (*pb.CreateTokenResponse, error) {
 	tokenReq := tokenRequest{
-		host:               s.signer.GetDomain(),
 		tokenType:          oauthsigner.AccessTokenType_JWT,
 		issuedAt:           time.Now(),
 		CreateTokenRequest: req,
+		issuer:             s.signer.GetAuthority(),
 	}
 	clientCfg := s.signer.GetClients().Find(tokenReq.CreateTokenRequest.GetClientId())
 	if clientCfg == nil {

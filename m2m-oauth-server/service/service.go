@@ -152,7 +152,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		return openid.GetConfiguration(ctx, c, authority)
 	}
 	customTokenIssuerClients := map[string]jwt.TokenIssuerClient{
-		config.OAuthSigner.GetDomain(): &tokenIssuerClient{
+		config.OAuthSigner.GetAuthority(): &tokenIssuerClient{
 			store:      db,
 			ownerClaim: config.OAuthSigner.OwnerClaim,
 		},

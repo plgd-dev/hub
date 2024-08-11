@@ -35,6 +35,20 @@ apis:
     authorization:
       ownerClaim: "sub"
       deviceIDClaim: ""
+      audience: ""
+      endpoints:
+        - authority: ""
+          http:
+            maxIdleConns: 16
+            maxConnsPerHost: 32
+            maxIdleConnsPerHost: 16
+            idleConnTimeout: "30s"
+            timeout: "10s"
+            tls:
+              caPool: "/secrets/public/rootca.crt"
+              keyFile: "/secrets/private/cert.key"
+              certFile: "/secrets/public/cert.crt"
+              useSystemCAPool: false
       providers:
         - name: "plgd.web"
           clientID: ""

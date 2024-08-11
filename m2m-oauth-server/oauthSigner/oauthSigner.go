@@ -102,6 +102,10 @@ func (s *OAuthSigner) GetDomain() string {
 	return s.config.GetDomain()
 }
 
+func (s *OAuthSigner) GetAuthority() string {
+	return s.config.GetAuthority()
+}
+
 func (s *OAuthSigner) GetOwnerClaim() string {
 	return s.config.OwnerClaim
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	goJwt "github.com/golang-jwt/jwt/v5"
@@ -28,11 +29,11 @@ func makeAccessToken(clientCfg *oauthsigner.Client, tokenReq tokenRequest) (jwt.
 	claims := map[string]interface{}{
 		jwt.JwtIDKey:    tokenReq.id,
 		jwt.SubjectKey:  tokenReq.subject,
-		jwt.AudienceKey: tokenReq.host,
+		jwt.AudienceKey: strings.Join(tokenReq.Audience, " "),
 		jwt.IssuedAtKey: tokenReq.issuedAt,
 		uri.ScopeKey:    tokenReq.scopes,
 		uri.ClientIDKey: clientCfg.ID,
-		jwt.IssuerKey:   tokenReq.host,
+		jwt.IssuerKey:   tokenReq.issuer,
 	}
 	for key, val := range claims {
 		if err := token.Set(key, val); err != nil {
@@ -150,7 +151,6 @@ type tokenRequest struct {
 	deviceID            string                      `json:"-"`
 	owner               string                      `json:"-"`
 	subject             string                      `json:"-"`
-	host                string                      `json:"-"`
 	scopes              string                      `json:"-"`
 	ownerClaim          string                      `json:"-"`
 	deviceIDClaim       string                      `json:"-"`
@@ -158,6 +158,7 @@ type tokenRequest struct {
 	originalTokenClaims goJwt.MapClaims             `json:"-"`
 	issuedAt            time.Time                   `json:"-"`
 	expiration          time.Time                   `json:"-"`
+	issuer              string                      `json:"-"`
 }
 
 func sliceContains[T comparable](s []T, sub []T) bool {

@@ -10,7 +10,7 @@ import (
 
 func GetOpenIDConfiguration(domain string) openid.Config {
 	return openid.Config{
-		Issuer:             domain,
+		Issuer:             domain + uri.Base,
 		TokenURL:           domain + uri.Token,
 		JWKSURL:            domain + uri.JWKs,
 		PlgdTokensEndpoint: domain + uri.Tokens,

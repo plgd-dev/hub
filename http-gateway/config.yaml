@@ -22,19 +22,20 @@ apis:
       streamBodyLimit: 262144
       pingFrequency: 10s
     authorization:
-      authority: ""
       audience: ""
-      http:
-        maxIdleConns: 16
-        maxConnsPerHost: 32
-        maxIdleConnsPerHost: 16
-        idleConnTimeout: 30s
-        timeout: 10s
-        tls:
-          caPool: "/secrets/public/rootca.crt"
-          keyFile: "/secrets/private/cert.key"
-          certFile: "/secrets/public/cert.crt"
-          useSystemCAPool: false
+      endpoints:
+        - authority: ""
+          http:
+            maxIdleConns: 16
+            maxConnsPerHost: 32
+            maxIdleConnsPerHost: 16
+            idleConnTimeout: "30s"
+            timeout: "10s"
+            tls:
+              caPool: "/secrets/public/rootca.crt"
+              keyFile: "/secrets/private/cert.key"
+              certFile: "/secrets/public/cert.crt"
+              useSystemCAPool: false
       tokenTrustVerification:
         cacheExpiration: 30s
 clients:
@@ -109,6 +110,6 @@ ui:
         integrations: false
         deviceFirmwareUpdate: false
         deviceLogs: false
-        apiTokens: false
+        apiTokens: true
         schemaHub: false
         snippetService: true
