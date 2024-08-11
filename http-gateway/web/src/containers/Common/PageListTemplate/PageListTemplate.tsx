@@ -1,5 +1,4 @@
 import React, { FC, useCallback, useMemo, useState } from 'react'
-import TableList from '@/containers/Common/TableList/TableList'
 import pick from 'lodash/pick'
 import isFunction from 'lodash/isFunction'
 
@@ -10,11 +9,13 @@ import IconTrash from '@shared-ui/components/Atomic/Icon/components/IconTrash'
 import DeleteModal from '@shared-ui/components/Atomic/Modal/components/DeleteModal'
 
 import { Props, defaultProps } from './PageListTemplate.types'
+import TableList from '@/containers/Common/TableList/TableList'
 
 const PageListTemplate: FC<Props> = (props) => {
     const {
         columns: columnsProp,
         data,
+        dataTestId,
         globalSearch,
         loading,
         deleteApiMethod,
@@ -44,7 +45,9 @@ const PageListTemplate: FC<Props> = (props) => {
         try {
             setDeleting(true)
 
-            await deleteApiMethod(selected)
+            if (isFunction(deleteApiMethod)) {
+                await deleteApiMethod(selected)
+            }
 
             handleCloseDeleteModal()
 
@@ -88,12 +91,16 @@ const PageListTemplate: FC<Props> = (props) => {
                                       },
                                   ]
                                 : []),
-                            {
-                                dataTestId: tableDataTestId?.concat(`-row-${row.id}`).concat('-delete'),
-                                icon: <IconTrash />,
-                                label: i18n.delete,
-                                onClick: () => handleOpenDeleteModal(false, [row.original.id]),
-                            },
+                            ...(isFunction(deleteApiMethod)
+                                ? [
+                                      {
+                                          dataTestId: tableDataTestId?.concat(`-row-${row.id}`).concat('-delete'),
+                                          icon: <IconTrash />,
+                                          label: i18n.delete,
+                                          onClick: () => handleOpenDeleteModal(false, [row.original.id]),
+                                      },
+                                  ]
+                                : []),
                             {
                                 dataTestId: tableDataTestId?.concat(`-row-${row.id}`).concat('-detail'),
                                 icon: <IconArrowDetail />,
@@ -123,13 +130,14 @@ const PageListTemplate: FC<Props> = (props) => {
                     },
                 ]}
                 globalSearch={globalSearch}
-                i18n={pick(i18n, ['singleSelected', 'multiSelected', 'tablePlaceholder'])}
+                i18n={pick(i18n, ['singleSelected', 'multiSelected', 'tablePlaceholder', 'delete'])}
                 loading={loading}
                 onDeleteClick={handleOpenDeleteModal}
                 unselectRowsToken={unselectRowsToken}
             />
 
             <DeleteModal
+                dataTestId={dataTestId?.concat('-delete-modal')}
                 deleteInformation={
                     selectedCount === 1
                         ? [
@@ -140,17 +148,19 @@ const PageListTemplate: FC<Props> = (props) => {
                 }
                 footerActions={[
                     {
+                        dataTestId: dataTestId?.concat('-delete-modal-cancel'),
+                        disabled: loading,
                         label: i18n.cancel,
                         onClick: handleCloseDeleteModal,
                         variant: 'tertiary',
-                        disabled: loading,
                     },
                     {
+                        dataTestId: dataTestId?.concat('-delete-modal-delete'),
                         label: i18n.delete,
-                        onClick: deleteMethod,
-                        variant: 'primary',
                         loading: deleting,
                         loadingText: i18n.loading,
+                        onClick: deleteMethod,
+                        variant: 'primary',
                     },
                 ]}
                 fullSizeButtons={selectedCount > 1}

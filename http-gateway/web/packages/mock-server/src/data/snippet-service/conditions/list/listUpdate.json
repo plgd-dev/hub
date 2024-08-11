@@ -1,0 +1,18 @@
+[
+  {
+    "result": {
+      "id": "00fa41ad-b3bf-4f00-bfe1-c71c439e4cda",
+      "enabled": true,
+      "jqExpressionFilter": ".n == \"new name value\"",
+      "version": "6",
+      "name": "jkralik-cond-01",
+      "configurationId": "48998f7d-2a70-46a4-8a68-745b69d55489",
+      "resourceHrefFilter": [
+        "/oic/d"
+      ],
+      "apiAccessToken": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJRQkp3R192eHhVSUNXVjFlZjRlOHlFamgtVHZmYW1FWFBMZGt4WGtENU1jIn0.eyJleHAiOjE3MTk1MDE1MTcsImlhdCI6MTcxOTQ5NDMxNywiYXV0aF90aW1lIjoxNzE5NDc0NzA3LCJqdGkiOiJhM2UyYjU2OC0zYWY4LTQ2ZDMtOGJlOC1jMDMyYWU5NDM0YTgiLCJpc3MiOiJodHRwczovL2F1dGgucGxnZC5jbG91ZC9yZWFsbXMvc2hhcmVkIiwiYXVkIjoiYWNjb3VudCIsInN1YiI6ImJlYjMyNzc3LTk2ODAtNGY0Mi04NzYxLTM1MGVlYmU3NmE4NSIsInR5cCI6IkJlYXJlciIsImF6cCI6IkxYWjlPaEtXV1JZcWYxMlcwQjVPWGR1cXQwMnEwempTIiwic2Vzc2lvbl9zdGF0ZSI6ImRlYzBhNjk5LWE2NWYtNDcxYy05MGMyLWNlZTAwM2VmMDIxMCIsImFjciI6IjAiLCJhbGxvd2VkLW9yaWdpbnMiOlsiaHR0cDovLzEyNy4wLjAuMTozMDAwIiwiaHR0cDovL2xvY2FsaG9zdDozMDAwIiwiaHR0cHM6Ly90cnkucGxnZC5jbG91ZCJdLCJyZWFsbV9hY2Nlc3MiOnsicm9sZXMiOlsiZGVmYXVsdC1yb2xlcy1zaGFyZWQiLCJvZmZsaW5lX2FjY2VzcyIsInVtYV9hdXRob3JpemF0aW9uIl19LCJyZXNvdXJjZV9hY2Nlc3MiOnsiYWNjb3VudCI6eyJyb2xlcyI6WyJtYW5hZ2UtYWNjb3VudCIsIm1hbmFnZS1hY2NvdW50LWxpbmtzIiwidmlldy1wcm9maWxlIl19fSwic2NvcGUiOiJvcGVuaWQgZW1haWwgcHJvZmlsZSIsInNpZCI6ImRlYzBhNjk5LWE2NWYtNDcxYy05MGMyLWNlZTAwM2VmMDIxMCIsImVtYWlsX3ZlcmlmaWVkIjp0cnVlLCJvd25lci1pZCI6ImJlYjMyNzc3LTk2ODAtNGY0Mi04NzYxLTM1MGVlYmU3NmE4NSIsIm5hbWUiOiJUZXN0IFRlc3QiLCJwcmVmZXJyZWRfdXNlcm5hbWUiOiJ0ZXN0LnVzZXIub2NmY2xvdWRAZ21haWwuY29tIiwiZ2l2ZW5fbmFtZSI6IlRlc3QiLCJmYW1pbHlfbmFtZSI6IlRlc3QiLCJlbWFpbCI6InRlc3QudXNlci5vY2ZjbG91ZEBnbWFpbC5jb20ifQ.aL52J-JuGuW_2R2x33pAVUX3fxJzPcz7OUeqvrPaijOqikOiQSwDyVdt0QIJtD2WBq0StTI-YqSHpt01Kpy1CgUricVWXoCI1j9eRBgveQ7zwiWKqNa1-ctXOHmDugVwSuhYoNBUP94qK1yrTFxSU5Lamj8l7H6pN4KVOMhs48Xbn-EJ7DPbJJ7Z26fJaYwj2P-e_ucV5JrIDPzSGRCBsXpqGlm6w2E2Z-SbwRclU4Xvf7V44bIJLFOV8wS0PrIz030n41F52c0dF1CC-ebnRQsFih6unR0l6J1P2sVoM4EKnR-mVIzfxmCxpXgduIaQU-jVo420vMrgCmluc23vnw",
+      "owner": "beb32777-9680-4f42-8761-350eebe76a85",
+      "timestamp": "1719494607886702017"
+    }
+  }
+]

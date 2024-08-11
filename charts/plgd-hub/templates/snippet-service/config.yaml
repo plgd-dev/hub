@@ -30,14 +30,14 @@ data:
           # 0s - means infinity
           maxConnectionIdle: {{ .apis.grpc.keepAlive.maxConnectionIdle }}
           # 0s - means infinity
-          maxConnectionAge: {{ .apis.grpc.keepAlive.maxConnectionIdle }}
+          maxConnectionAge: {{ .apis.grpc.keepAlive.maxConnectionAge }}
           # 0s - means infinity
           maxConnectionAgeGrace: {{ .apis.grpc.keepAlive.maxConnectionAgeGrace }}
-          time: {{ .apis.grpc.keepAlive.maxConnectionIdle }}
-          timeout: {{ .apis.grpc.keepAlive.maxConnectionIdle }}
+          time: {{ .apis.grpc.keepAlive.time }}
+          timeout: {{ .apis.grpc.keepAlive.timeout }}
         tls:
           {{- $tls := .apis.grpc.tls }}
-          {{- include "plgd-hub.certificateConfig" (list $ $tls $cert ) | indent 8 }}
+          {{- include "plgd-hub.internalCertificateConfig" (list $ $tls $cert ) | indent 8 }}
           clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
         authorization:
           {{- $authorization := .apis.grpc.authorization }}
@@ -58,7 +58,7 @@ data:
             bytesLimit: {{ printf "%v" .clients.eventBus.nats.pendingLimits.bytesLimit }}
           tls:
             {{- $natsTls := .clients.eventBus.nats.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $natsTls $cert ) | indent 10 }}
+            {{- include "plgd-hub.internalCertificateConfig" (list $ $natsTls $cert ) | indent 10 }}
             useSystemCAPool: {{ .clients.eventBus.nats.tls.useSystemCAPool }}
           {{- if or .clients.eventBus.nats.leadResourceType $.Values.global.nats.leadResourceType }}
           {{- $leadResourceType := .clients.eventBus.nats.leadResourceType | default $.Values.global.nats.leadResourceType }}
@@ -75,7 +75,7 @@ data:
           maxConnIdleTime: {{ .clients.storage.mongoDB.maxConnIdleTime }}
           tls:
             {{- $mongoDbTls := .clients.storage.mongoDB.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $mongoDbTls $cert ) | indent 10 }}
+            {{- include "plgd-hub.internalCertificateConfig" (list $ $mongoDbTls $cert ) | indent 10 }}
             useSystemCAPool: {{ .clients.storage.mongoDB.tls.useSystemCAPool }}
       resourceAggregate:
         grpc:
@@ -89,7 +89,7 @@ data:
             permitWithoutStream: {{ .clients.resourceAggregate.grpc.keepAlive.permitWithoutStream }}
           tls:
             {{- $raClientTls := .clients.resourceAggregate.grpc.tls }}
-            {{- include "plgd-hub.certificateConfig" (list $ $raClientTls $cert) | indent 10 }}
+            {{- include "plgd-hub.internalCertificateConfig" (list $ $raClientTls $cert ) | indent 10 }}
             useSystemCAPool: {{ .clients.resourceAggregate.grpc.tls.useSystemCAPool }}
       {{- include "plgd-hub.openTelemetryExporterConfig" (list $ $cert ) | nindent 6 }}
   {{- end }}

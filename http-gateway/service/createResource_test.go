@@ -17,6 +17,7 @@ import (
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgHttpPb "github.com/plgd-dev/hub/v2/pkg/net/http/pb"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	httpTest "github.com/plgd-dev/hub/v2/test/http"
@@ -214,7 +215,7 @@ func TestRequestHandler_CreateResource(t *testing.T) {
 			assert.Equal(t, tt.wantHTTPCode, resp.StatusCode)
 
 			var got pb.CreateResourceResponse
-			err = httpTest.Unmarshal(resp.StatusCode, resp.Body, &got)
+			err = pkgHttpPb.Unmarshal(resp.StatusCode, resp.Body, &got)
 			if tt.wantErr {
 				require.Error(t, err)
 				assert.Equal(t, tt.wantErrCode.String(), status.Convert(err).Code().String())

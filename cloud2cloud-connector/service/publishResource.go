@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/plgd-dev/device/v2/schema"
-	kitHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgHttpUri "github.com/plgd-dev/hub/v2/pkg/net/http/uri"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	raService "github.com/plgd-dev/hub/v2/resource-aggregate/service"
 )
@@ -17,7 +17,7 @@ func publishResource(ctx context.Context, raClient raService.ResourceAggregateCl
 			Priority: int64(endpoint.Priority),
 		})
 	}
-	href := kitHttp.CanonicalHref(trimDeviceIDFromHref(link.DeviceID, link.Href))
+	href := pkgHttpUri.CanonicalHref(trimDeviceIDFromHref(link.DeviceID, link.Href))
 	_, err := raClient.PublishResourceLinks(ctx, &commands.PublishResourceLinksRequest{
 		DeviceId: link.DeviceID,
 		Resources: []*commands.Resource{{

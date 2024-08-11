@@ -17,7 +17,9 @@ const DetailHeaderLayout: FC<Props> = (props) => {
         try {
             setDeleting(true)
 
-            await deleteApiMethod([id])
+            if (isFunction(deleteApiMethod)) {
+                await deleteApiMethod([id])
+            }
 
             setDeleting(false)
             setDeleteModal(false)
@@ -34,40 +36,44 @@ const DetailHeaderLayout: FC<Props> = (props) => {
     return (
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {customButton}
-            <Button
-                dataTestId={testIds?.deleteButton}
-                disabled={loading}
-                htmlType='button'
-                icon={<IconTrash />}
-                onClick={() => setDeleteModal(true)}
-                variant='tertiary'
-            >
-                {i18n.delete}
-            </Button>
-            <DeleteModal
-                dataTestId={testIds?.deleteModal}
-                deleteInformation={deleteInformation}
-                footerActions={[
-                    {
-                        dataTestId: testIds?.deleteButtonCancel,
-                        label: i18n.cancel,
-                        onClick: () => setDeleteModal(false),
-                        variant: 'tertiary',
-                    },
-                    {
-                        dataTestId: testIds?.deleteButtonConfirm,
-                        label: i18n.delete,
-                        loading: deleting,
-                        loadingText: i18n.deleting,
-                        onClick: handleDelete,
-                        variant: 'primary',
-                    },
-                ]}
-                onClose={() => setDeleteModal(false)}
-                show={deleteModal}
-                subTitle={i18n.subTitle}
-                title={i18n.title}
-            />
+            {isFunction(deleteApiMethod) && (
+                <Button
+                    dataTestId={testIds?.deleteButton}
+                    disabled={loading}
+                    htmlType='button'
+                    icon={<IconTrash />}
+                    onClick={() => setDeleteModal(true)}
+                    variant='tertiary'
+                >
+                    {i18n.delete}
+                </Button>
+            )}
+            {isFunction(deleteApiMethod) && (
+                <DeleteModal
+                    dataTestId={testIds?.deleteModal}
+                    deleteInformation={deleteInformation}
+                    footerActions={[
+                        {
+                            dataTestId: testIds?.deleteButtonCancel,
+                            label: i18n.cancel,
+                            onClick: () => setDeleteModal(false),
+                            variant: 'tertiary',
+                        },
+                        {
+                            dataTestId: testIds?.deleteButtonConfirm,
+                            label: i18n.delete,
+                            loading: deleting,
+                            loadingText: i18n.deleting,
+                            onClick: handleDelete,
+                            variant: 'primary',
+                        },
+                    ]}
+                    onClose={() => setDeleteModal(false)}
+                    show={deleteModal}
+                    subTitle={i18n.subTitle}
+                    title={i18n.title}
+                />
+            )}
         </div>
     )
 }

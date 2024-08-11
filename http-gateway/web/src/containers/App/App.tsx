@@ -15,6 +15,7 @@ import { useAppTheme } from '@shared-ui/common/hooks/use-app-theme'
 import { getTheme } from '@shared-ui/app/clientApp/App/AppRest'
 import { defaultTheme } from '@shared-ui/components/Atomic/_theme'
 import FullPageLoader from '@shared-ui/components/Atomic/FullPageLoader'
+import { updateSidebarVisibility } from '@shared-ui/common/services/sidebar'
 
 import './App.scss'
 import { messages as t } from './App.i18n'
@@ -51,6 +52,8 @@ const App = (props: { mockApp: boolean }) => {
                     if (!wellKnown?.ui?.visibility?.mainSidebar) {
                         wellKnown.ui = { visibility: { mainSidebar: defaultMenu } }
                     }
+
+                    wellKnown.ui = updateSidebarVisibility(wellKnown)
 
                     const clientId = webOauthClient?.clientId
                     const httpGatewayAddress = wellKnown.httpGatewayAddress

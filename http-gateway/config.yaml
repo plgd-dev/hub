@@ -22,19 +22,22 @@ apis:
       streamBodyLimit: 262144
       pingFrequency: 10s
     authorization:
-      authority: ""
       audience: ""
-      http:
-        maxIdleConns: 16
-        maxConnsPerHost: 32
-        maxIdleConnsPerHost: 16
-        idleConnTimeout: 30s
-        timeout: 10s
-        tls:
-          caPool: "/secrets/public/rootca.crt"
-          keyFile: "/secrets/private/cert.key"
-          certFile: "/secrets/public/cert.crt"
-          useSystemCAPool: false
+      endpoints:
+        - authority: ""
+          http:
+            maxIdleConns: 16
+            maxConnsPerHost: 32
+            maxIdleConnsPerHost: 16
+            idleConnTimeout: "30s"
+            timeout: "10s"
+            tls:
+              caPool: "/secrets/public/rootca.crt"
+              keyFile: "/secrets/private/cert.key"
+              certFile: "/secrets/public/cert.crt"
+              useSystemCAPool: false
+      tokenTrustVerification:
+        cacheExpiration: 30s
 clients:
   grpcGateway:
     grpc:
@@ -77,36 +80,36 @@ ui:
       clientID: ""
       audience: ""
       scopes: []
-      grantTypes: [ "authorization_code" ]
+      grantTypes: ["authorization_code"]
     deviceOAuthClient:
       authority: ""
       clientID: ""
       audience: ""
       scopes: []
       providerName: ""
-      grantTypes: [ "authorization_code" ]
+      grantTypes: ["authorization_code"]
     m2mOAuthClient:
       authority: ""
       clientID: ""
       audience: ""
       scopes: []
       providerName: ""
-      grantTypes: [ "client_credentials" ]
+      grantTypes: ["client_credentials"]
       useJWTPrivateKey: true
     visibility:
       mainSidebar:
-        certificates : true
-        chatRoom : true
-        configuration : true
-        deviceProvisioning : true
-        devices : true
-        docs : true
-        pendingCommands : true
-        remoteClients : true
-        dashboard : false
-        integrations : false
-        deviceFirmwareUpdate : false
-        deviceLogs : false
-        apiTokens : false
-        schemaHub : false
+        certificates: true
+        chatRoom: true
+        configuration: true
+        deviceProvisioning: true
+        devices: true
+        docs: true
+        pendingCommands: true
+        remoteClients: true
+        dashboard: false
+        integrations: false
+        deviceFirmwareUpdate: false
+        deviceLogs: false
+        apiTokens: true
+        schemaHub: false
         snippetService: true

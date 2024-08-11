@@ -12,6 +12,7 @@ import { messages as g } from '@/containers/Global.i18n'
 import { Props, Inputs } from './Step2.types'
 import { Step2FormComponent } from '@/containers/SnippetService/Conditions/FomComponents'
 import { useConditionFilterValidation } from '@/containers/SnippetService/hooks'
+import testId from '@/testId'
 
 const Step2: FC<Props> = (props) => {
     const { defaultFormData, isActivePage } = props
@@ -40,6 +41,7 @@ const Step2: FC<Props> = (props) => {
             </Spacer>
 
             <StepButtons
+                dataTestId={testId.snippetService.conditions.addPage.step2.buttons}
                 disableNext={invalidFilters}
                 i18n={{
                     back: _(g.back),

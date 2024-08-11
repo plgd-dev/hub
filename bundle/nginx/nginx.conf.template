@@ -38,7 +38,7 @@ http {
       proxy_set_header Host $host;
     }
     location ~ ^(/m2m-oauth-server) {
-      set $upstream_oauth_server https://127.0.0.1:REPLACE_M2M_OAUTH_SERVER_PORT;
+      set $upstream_oauth_server https://127.0.0.1:REPLACE_HTTP_M2M_OAUTH_SERVER_PORT;
       proxy_pass                     $upstream_oauth_server;
       proxy_ssl_certificate           /data/certs/internal/endpoint.crt;
       proxy_ssl_certificate_key       /data/certs/internal/endpoint.key;
@@ -50,6 +50,19 @@ http {
       proxy_set_header   X-Forwarded-Proto $scheme;
       proxy_set_header   X-Forwarded-Host $host;
       proxy_set_header Host $host;
+    }
+    location ~ ^(/m2moauthserver.pb.M2MOAuthService) {
+      set $upstream_grpc_oauth_server grpcs://127.0.0.1:REPLACE_M2M_OAUTH_SERVER_PORT;
+      grpc_pass                      $upstream_grpc_oauth_server;
+      grpc_ssl_certificate           /data/certs/internal/endpoint.crt;
+      grpc_ssl_certificate_key       /data/certs/internal/endpoint.key;
+      grpc_ssl_trusted_certificate   /data/certs/root_ca.crt;
+      grpc_read_timeout       31536000s;
+      grpc_send_timeout       31536000s;
+      client_body_timeout     31536000s;
+      grpc_socket_keepalive   on;
+      proxy_ssl_trusted_certificate   /data/certs/root_ca.crt;
+      proxy_ssl_verify                on;
     }
     location ~ ^(/certificateauthority.pb.CertificateAuthority) {
       set $upstream_grpc_gateway grpcs://127.0.0.1:REPLACE_CERTIFICATE_AUTHORITY_PORT;

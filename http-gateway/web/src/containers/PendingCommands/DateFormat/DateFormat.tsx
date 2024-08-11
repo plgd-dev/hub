@@ -8,10 +8,14 @@ import { dateFormat, timeFormatLong } from '../constants'
 
 const time = converter.time
 
+export const formatDateVal = (date: Date, formatDate: any, formatTime: any) => {
+    return `${formatDate(date, dateFormat as Intl.DateTimeFormatOptions)} ${formatTime(date, timeFormatLong as Intl.DateTimeFormatOptions)}`
+}
+
 export const formatText = (value: string | number, formatDate: any, formatTime: any) => {
     const date = new Date(time(value).from('ns').to('ms').value)
 
-    return `${formatDate(date, dateFormat as Intl.DateTimeFormatOptions)} ${formatTime(date, timeFormatLong as Intl.DateTimeFormatOptions)}`
+    return formatDateVal(date, formatDate, formatTime)
 }
 
 const DateFormat: FC<Props> = (props) => {

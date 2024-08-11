@@ -27,8 +27,11 @@ spec:
   dnsNames:
     - {{ printf "%s.%s.svc.%s" $serviceDns .Release.Namespace .Values.cluster.dns | quote }}
     - {{ $serviceDns | quote }}
-    {{- if .Values.m2moauthserver.service.crt.extraDnsNames }}
-    {{- toYaml .Values.m2moauthserver.service.crt.extraDnsNames | nindent 4 }}
+    {{- if .Values.m2moauthserver.service.grpc.crt.extraDnsNames }}
+    {{- toYaml .Values.m2moauthserver.service.grpc.crt.extraDnsNames | nindent 4 }}
+    {{- end }}
+    {{- if .Values.m2moauthserver.service.http.crt.extraDnsNames }}
+    {{- toYaml .Values.m2moauthserver.service.http.crt.extraDnsNames | nindent 4 }}
     {{- end }}
   duration: {{ .Values.certmanager.internal.cert.duration | default .Values.certmanager.default.cert.duration }}
   renewBefore: {{ .Values.certmanager.internal.cert.renewBefore | default .Values.certmanager.default.cert.renewBefore }}

@@ -13,7 +13,8 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
-	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgHttpJwt "github.com/plgd-dev/hub/v2/pkg/net/http/jwt"
 	httpService "github.com/plgd-dev/hub/v2/pkg/net/http/service"
 	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
@@ -38,7 +39,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		return nil, fmt.Errorf("cannot create validator: %w", err)
 	}
 
-	whiteList := []kitNetHttp.RequestMatcher{
+	whiteList := []pkgHttpJwt.RequestMatcher{
 		{
 			Method: http.MethodGet,
 			URI:    regexp.MustCompile(regexp.QuoteMeta(uri.APIWS) + `.*`),
@@ -49,7 +50,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		},
 	}
 	if config.UI.Enabled {
-		whiteList = append(whiteList, kitNetHttp.RequestMatcher{
+		whiteList = append(whiteList, pkgHttpJwt.RequestMatcher{
 			Method: http.MethodGet,
 			URI:    regexp.MustCompile(AuthorizationWhiteListedEndpointsRegexp),
 		})
@@ -58,7 +59,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		HTTPConnection:       config.APIs.HTTP.Connection,
 		HTTPServer:           config.APIs.HTTP.Server,
 		ServiceName:          serviceName,
-		AuthRules:            kitNetHttp.NewDefaultAuthorizationRules(uri.API),
+		AuthRules:            pkgHttp.NewDefaultAuthorizationRules(uri.API),
 		WhiteEndpointList:    whiteList,
 		FileWatcher:          fileWatcher,
 		Logger:               logger,

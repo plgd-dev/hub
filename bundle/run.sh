@@ -27,6 +27,7 @@ export CLOUD2CLOUD_CONNECTOR_ADDRESS="localhost:${CLOUD2CLOUD_CONNECTOR_PORT}"
 export SNIPPET_SERVICE_ADDRESS="localhost:${SNIPPET_SERVICE_PORT}"
 export SNIPPET_SERVICE_HTTP_ADDRESS="localhost:${HTTP_SNIPPET_SERVICE_PORT}"
 export M2M_OAUTH_SERVER_ADDRESS="localhost:${M2M_OAUTH_SERVER_PORT}"
+export M2M_OAUTH_SERVER_HTTP_ADDRESS="localhost:${HTTP_M2M_OAUTH_SERVER_PORT}"
 
 export INTERNAL_CERT_DIR_PATH="$CERTIFICATES_PATH/internal"
 export GRPC_INTERNAL_CERT_NAME="endpoint.crt"
@@ -94,6 +95,8 @@ if [ -z "${OAUTH_ENDPOINT}" ]
 then
   export OAUTH_ENDPOINT=${DOMAIN}
 fi
+
+M2M_OAUTH_SERVER_ENDPOINT=${DOMAIN}/m2m-oauth-server
 
 if [ -z "${OAUTH_CLIENT_ID}" ]
 then
@@ -459,8 +462,6 @@ while read -r line; do
   fi
 done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/cloud2cloud-connector.yaml | sort | uniq)
 
-
-
 mkdir -p ${OAUTH_KEYS_PATH}
 if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${OAUTH_ID_TOKEN_KEY_PATH}" ]; then
   openssl genrsa -out ${OAUTH_ID_TOKEN_KEY_PATH} 4096
@@ -489,6 +490,7 @@ if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${NGINX_PATH}/nginx.conf" ]; then
   sed -i "s/REPLACE_HTTP_CERTIFICATE_AUTHORITY_PORT/$HTTP_CERTIFICATE_AUTHORITY_PORT/g" ${NGINX_PATH}/nginx.conf
   sed -i "s/REPLACE_HTTP_SNIPPET_SERVICE_PORT/$HTTP_SNIPPET_SERVICE_PORT/g" ${NGINX_PATH}/nginx.conf
   sed -i "s/REPLACE_M2M_OAUTH_SERVER_PORT/$M2M_OAUTH_SERVER_PORT/g" ${NGINX_PATH}/nginx.conf
+  sed -i "s/REPLACE_HTTP_M2M_OAUTH_SERVER_PORT/$HTTP_M2M_OAUTH_SERVER_PORT/g" ${NGINX_PATH}/nginx.conf
 fi
 
 # nats
@@ -692,9 +694,17 @@ echo "starting m2m-oauth-server"
 yq --version
 ## setup cfg
 if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "/data/m2m-oauth-server.yaml" ]; then
-cat /configs/m2m-oauth-server.yaml | yq e "\
+cat /configs/m2m-oauth-server.yaml | 
+  yq e '.apis.grpc.authorization.endpoints += [.apis.grpc.authorization.endpoints[0]]' |
+  yq e "\
   .log.level = \"${LOG_LEVEL}\" |
-  .apis.http.address = \"${M2M_OAUTH_SERVER_ADDRESS}\" |
+  .apis.http.address = \"${M2M_OAUTH_SERVER_HTTP_ADDRESS}\" |
+  .apis.grpc.address = \"${M2M_OAUTH_SERVER_ADDRESS}\" |
+  .apis.grpc.authorization.endpoints[0].http.tls.useSystemCAPool = true |
+  .apis.grpc.authorization.ownerClaim = \"${OWNER_CLAIM}\" |
+  .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
+  .apis.grpc.authorization.endpoints[0].authority = \"https://${OAUTH_ENDPOINT}\" |
+  .apis.grpc.authorization.endpoints[1].authority = \"https://${M2M_OAUTH_SERVER_ENDPOINT}\" |
   .oauthSigner.privateKeyFile = \"${M2M_PRIVATE_KEY_PATH}\" |
   .oauthSigner.domain = \"${DOMAIN}\" |
   .oauthSigner.ownerClaim = \"${OWNER_CLAIM}\" |
@@ -714,6 +724,7 @@ cat /configs/m2m-oauth-server.yaml | yq e "\
   .oauthSigner.clients[0].jwtPrivateKey.authorization.http.tls.keyFile = \"${INTERNAL_CERT_DIR_PATH}/${GRPC_INTERNAL_CERT_KEY_NAME}\" |
   .oauthSigner.clients[0].jwtPrivateKey.authorization.http.tls.caPool = \"${CA_POOL}\" |
   .oauthSigner.clients[0].jwtPrivateKey.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
+  .clients.storage.mongoDB.uri = \"${MONGODB_URI}\" |
   .clients.openTelemetryCollector.grpc.enabled = ${OPEN_TELEMETRY_EXPORTER_ENABLED} |
   .clients.openTelemetryCollector.grpc.address = \"${OPEN_TELEMETRY_EXPORTER_ADDRESS}\" |
   .clients.openTelemetryCollector.grpc.tls.caPool = \"${OPEN_TELEMETRY_EXPORTER_CA_POOL}\" |
@@ -748,14 +759,17 @@ done
 # identity-store
 ## configuration
 if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "/data/identity-store.yaml" ]; then
-cat /configs/identity-store.yaml | yq e "\
+cat /configs/identity-store.yaml | 
+  yq e '.apis.grpc.authorization.endpoints += [.apis.grpc.authorization.endpoints[0]]' |
+  yq e "\
   .hubID = \"${HUB_ID}\" |
   .log.level = \"${LOG_LEVEL}\" |
   .apis.grpc.address = \"${IDENTITY_STORE_ADDRESS}\" |
-  .apis.grpc.authorization.http.tls.useSystemCAPool = true |
+  .apis.grpc.authorization.endpoints[0].http.tls.useSystemCAPool = true |
   .apis.grpc.authorization.ownerClaim = \"${OWNER_CLAIM}\" |
   .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
-  .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
+  .apis.grpc.authorization.endpoints[0].authority = \"https://${OAUTH_ENDPOINT}\" |
+  .apis.grpc.authorization.endpoints[1].authority = \"https://${M2M_OAUTH_SERVER_ENDPOINT}\" |
   .clients.openTelemetryCollector.grpc.enabled = ${OPEN_TELEMETRY_EXPORTER_ENABLED} |
   .clients.openTelemetryCollector.grpc.address = \"${OPEN_TELEMETRY_EXPORTER_ADDRESS}\" |
   .clients.openTelemetryCollector.grpc.tls.caPool = \"${OPEN_TELEMETRY_EXPORTER_CA_POOL}\" |
@@ -797,14 +811,17 @@ done
 # resource-aggregate
 ## configuration
 if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "/data/resource-aggregate.yaml" ]; then
-cat /configs/resource-aggregate.yaml | yq e "\
+cat /configs/resource-aggregate.yaml |
+  yq e '.apis.grpc.authorization.endpoints += [.apis.grpc.authorization.endpoints[0]]' |
+  yq e "\
   .hubID = \"${HUB_ID}\" |
   .log.level = \"${LOG_LEVEL}\" |
   .apis.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
-  .apis.grpc.authorization.http.tls.useSystemCAPool = true |
+  .apis.grpc.authorization.endpoints[0].http.tls.useSystemCAPool = true |
   .apis.grpc.authorization.ownerClaim = \"${OWNER_CLAIM}\" |
   .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
-  .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
+  .apis.grpc.authorization.endpoints[0].authority = \"https://${OAUTH_ENDPOINT}\" |
+  .apis.grpc.authorization.endpoints[1].authority = \"https://${M2M_OAUTH_SERVER_ENDPOINT}\" |
   .clients.openTelemetryCollector.grpc.enabled = ${OPEN_TELEMETRY_EXPORTER_ENABLED} |
   .clients.openTelemetryCollector.grpc.address = \"${OPEN_TELEMETRY_EXPORTER_ADDRESS}\" |
   .clients.openTelemetryCollector.grpc.tls.caPool = \"${OPEN_TELEMETRY_EXPORTER_CA_POOL}\" |
@@ -857,14 +874,17 @@ done
 # resource-directory
 ## configuration
 if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "/data/resource-directory.yaml" ]; then
-cat /configs/resource-directory.yaml | yq e "\
+cat /configs/resource-directory.yaml |
+  yq e '.apis.grpc.authorization.endpoints += [.apis.grpc.authorization.endpoints[0]]' |
+  yq e "\
   .hubID = \"${HUB_ID}\" |
   .log.level = \"${LOG_LEVEL}\" |
   .apis.grpc.address = \"${RESOURCE_DIRECTORY_ADDRESS}\" |
   .apis.grpc.authorization.ownerClaim = \"${OWNER_CLAIM}\" |
   .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
-  .apis.grpc.authorization.http.tls.useSystemCAPool = true |
-  .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
+  .apis.grpc.authorization.endpoints[0].http.tls.useSystemCAPool = true |
+  .apis.grpc.authorization.endpoints[0].authority = \"https://${OAUTH_ENDPOINT}\" |
+  .apis.grpc.authorization.endpoints[1].authority = \"https://${M2M_OAUTH_SERVER_ENDPOINT}\" |
   .clients.openTelemetryCollector.grpc.enabled = ${OPEN_TELEMETRY_EXPORTER_ENABLED} |
   .clients.openTelemetryCollector.grpc.address = \"${OPEN_TELEMETRY_EXPORTER_ADDRESS}\" |
   .clients.openTelemetryCollector.grpc.tls.caPool = \"${OPEN_TELEMETRY_EXPORTER_CA_POOL}\" |
@@ -911,7 +931,9 @@ done
 echo "starting coap-gateway-unsecure"
 ## configuration
 if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "/data/coap-gateway-unsecure.yaml" ]; then
-cat /configs/coap-gateway.yaml | yq e "\
+cat /configs/coap-gateway.yaml |
+  yq e '.apis.coap.authorization.endpoints += [.apis.coap.authorization.endpoints[0]]' |
+  yq e "\
   .log.level = \"${LOG_LEVEL}\" |
   .log.dumpBody = ${COAP_GATEWAY_LOG_MESSAGES} |
   .apis.coap.address = \"${COAP_GATEWAY_UNSECURE_ADDRESS}\" |
@@ -920,6 +942,9 @@ cat /configs/coap-gateway.yaml | yq e "\
   .apis.coap.tls.enabled = false |
   .apis.coap.requireBatchObserveEnabled = false |
   .apis.coap.authorization.ownerClaim = \"${OWNER_CLAIM}\" |
+  .apis.coap.authorization.endpoints[0].http.tls.useSystemCAPool = true |
+  .apis.coap.authorization.endpoints[0].authority = \"https://${OAUTH_ENDPOINT}\" |
+  .apis.coap.authorization.endpoints[1].authority = \"https://${M2M_OAUTH_SERVER_ENDPOINT}\" |
   .apis.coap.authorization.providers[0].name = \"${DEVICE_PROVIDER}\" |
   .apis.coap.authorization.providers[0].authority = \"https://${OAUTH_ENDPOINT}\" |
   .apis.coap.authorization.providers[0].clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
@@ -965,7 +990,9 @@ fi
 echo "starting coap-gateway-secure"
 ### setup cfgs from env
 if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "/data/coap-gateway-secure.yaml" ]; then
-cat /configs/coap-gateway.yaml | yq e "\
+cat /configs/coap-gateway.yaml |
+  yq e '.apis.coap.authorization.endpoints += [.apis.coap.authorization.endpoints[0]]' |
+  yq e "\
   .log.level = \"${LOG_LEVEL}\" |
   .log.dumpBody =  ${COAP_GATEWAY_LOG_MESSAGES} |
   .apis.coap.address = \"${COAP_GATEWAY_ADDRESS}\" |
@@ -976,6 +1003,9 @@ cat /configs/coap-gateway.yaml | yq e "\
   .apis.coap.tls.certFile = \"${EXTERNAL_CERT_DIR_PATH}/${COAP_GATEWAY_FILE_CERT_NAME}\" |
   .apis.coap.tls.clientCertificateRequired = false |
   .apis.coap.authorization.ownerClaim = \"${OWNER_CLAIM}\" |
+  .apis.coap.authorization.endpoints[0].http.tls.useSystemCAPool = true |
+  .apis.coap.authorization.endpoints[0].authority = \"https://${OAUTH_ENDPOINT}\" |
+  .apis.coap.authorization.endpoints[1].authority = \"https://${M2M_OAUTH_SERVER_ENDPOINT}\" |
   .apis.coap.authorization.providers[0].name = \"${DEVICE_PROVIDER}\" |
   .apis.coap.authorization.providers[0].authority = \"https://${OAUTH_ENDPOINT}\" |
   .apis.coap.authorization.providers[0].clientID = \"${DEVICE_OAUTH_CLIENT_ID}\" |
@@ -1019,13 +1049,16 @@ fi
 echo "starting certificate-authority"
 ## configuration
 if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "/data/certificate-authority.yaml" ]; then
-cat /configs/certificate-authority.yaml | yq e "\
+cat /configs/certificate-authority.yaml |
+  yq e '.apis.grpc.authorization.endpoints += [.apis.grpc.authorization.endpoints[0]]' |
+  yq e "\
   .hubID = \"${HUB_ID}\" |
   .log.level = \"${LOG_LEVEL}\" |
   .apis.grpc.address = \"${CERTIFICATE_AUTHORITY_ADDRESS}\" |
   .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
-  .apis.grpc.authorization.http.tls.useSystemCAPool = true |
-  .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
+  .apis.grpc.authorization.endpoints[0].http.tls.useSystemCAPool = true |
+  .apis.grpc.authorization.endpoints[0].authority = \"https://${OAUTH_ENDPOINT}\" |
+  .apis.grpc.authorization.endpoints[1].authority = \"https://${M2M_OAUTH_SERVER_ENDPOINT}\" |
   .apis.grpc.authorization.ownerClaim = \"${OWNER_CLAIM}\" |
   .apis.http.address = \"${CERTIFICATE_AUTHORITY_HTTP_ADDRESS}\" |
   .clients.storage.use = \"${DATABASE_USE}\" |
@@ -1067,12 +1100,15 @@ done
 echo "starting grpc-gateway"
 ## configuration
 if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "/data/grpc-gateway.yaml" ]; then
-cat /configs/grpc-gateway.yaml | yq e "\
+cat /configs/grpc-gateway.yaml |
+  yq e '.apis.grpc.authorization.endpoints += [.apis.grpc.authorization.endpoints[0]]' |
+  yq e "\
   .log.level = \"${LOG_LEVEL}\" |
   .apis.grpc.address = \"${GRPC_GATEWAY_ADDRESS}\" |
   .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
-  .apis.grpc.authorization.http.tls.useSystemCAPool = true |
-  .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
+  .apis.grpc.authorization.endpoints[0].http.tls.useSystemCAPool = true |
+  .apis.grpc.authorization.endpoints[0].authority = \"https://${OAUTH_ENDPOINT}\" |
+  .apis.grpc.authorization.endpoints[1].authority = \"https://${M2M_OAUTH_SERVER_ENDPOINT}\" |
   .clients.openTelemetryCollector.grpc.enabled = ${OPEN_TELEMETRY_EXPORTER_ENABLED} |
   .clients.openTelemetryCollector.grpc.address = \"${OPEN_TELEMETRY_EXPORTER_ADDRESS}\" |
   .clients.openTelemetryCollector.grpc.tls.caPool = \"${OPEN_TELEMETRY_EXPORTER_CA_POOL}\" |
@@ -1112,12 +1148,15 @@ done
 # http-gateway
 ## configuration
 if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "/data/http-gateway.yaml" ]; then
-cat /configs/http-gateway.yaml | yq e "\
+cat /configs/http-gateway.yaml |
+  yq e '.apis.http.authorization.endpoints += [.apis.http.authorization.endpoints[0]]' |
+  yq e "\
   .log.level = \"${LOG_LEVEL}\" |
   .apis.http.address = \"${HTTP_GATEWAY_ADDRESS}\" |
   .apis.http.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
-  .apis.http.authorization.http.tls.useSystemCAPool = true |
-  .apis.http.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
+  .apis.http.authorization.endpoints[0].http.tls.useSystemCAPool = true |
+  .apis.http.authorization.endpoints[0].authority = \"https://${OAUTH_ENDPOINT}\" |
+  .apis.http.authorization.endpoints[1].authority = \"https://${M2M_OAUTH_SERVER_ENDPOINT}\" |
   .clients.openTelemetryCollector.grpc.enabled = ${OPEN_TELEMETRY_EXPORTER_ENABLED} |
   .clients.openTelemetryCollector.grpc.address = \"${OPEN_TELEMETRY_EXPORTER_ADDRESS}\" |
   .clients.openTelemetryCollector.grpc.tls.caPool = \"${OPEN_TELEMETRY_EXPORTER_CA_POOL}\" |
@@ -1167,12 +1206,15 @@ done
 # cloud2cloud-gateway
 ## configuration
 if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "/data/cloud2cloud-gateway.yaml" ]; then
-cat /configs/cloud2cloud-gateway.yaml | yq e "\
+cat /configs/cloud2cloud-gateway.yaml |
+  yq e '.apis.http.authorization.endpoints += [.apis.http.authorization.endpoints[0]]' |
+  yq e "\
   .log.level = \"${LOG_LEVEL}\" |
   .apis.http.address = \"${CLOUD2CLOUD_GATEWAY_ADDRESS}\" |
   .apis.http.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
-  .apis.http.authorization.http.tls.useSystemCAPool = true |
-  .apis.http.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
+  .apis.http.authorization.endpoints[0].http.tls.useSystemCAPool = true |
+  .apis.http.authorization.endpoints[0].authority = \"https://${OAUTH_ENDPOINT}\" |
+  .apis.http.authorization.endpoints[1].authority = \"https://${M2M_OAUTH_SERVER_ENDPOINT}\" |
   .clients.openTelemetryCollector.grpc.enabled = ${OPEN_TELEMETRY_EXPORTER_ENABLED} |
   .clients.openTelemetryCollector.grpc.address = \"${OPEN_TELEMETRY_EXPORTER_ADDRESS}\" |
   .clients.openTelemetryCollector.grpc.tls.caPool = \"${OPEN_TELEMETRY_EXPORTER_CA_POOL}\" |
@@ -1225,7 +1267,6 @@ cat /configs/cloud2cloud-connector.yaml | yq e "\
   .apis.http.authorization.scopes = [ \"${DEVICE_OAUTH_SCOPES}\" ] |
   .apis.http.authorization.audience = \"${DEVICE_OAUTH_AUDIENCE}\" |
   .apis.http.authorization.redirectURL = \"https://${DOMAIN}/c2c/connector/api/v1/oauthCallback\" |
-  .apis.http.authorization.http.tls.useSystemCAPool = true |
   .clients.openTelemetryCollector.grpc.enabled = ${OPEN_TELEMETRY_EXPORTER_ENABLED} |
   .clients.openTelemetryCollector.grpc.address = \"${OPEN_TELEMETRY_EXPORTER_ADDRESS}\" |
   .clients.openTelemetryCollector.grpc.tls.caPool = \"${OPEN_TELEMETRY_EXPORTER_CA_POOL}\" |
@@ -1267,19 +1308,25 @@ done
 echo "starting snippet-service"
 ## configuration
 if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "/data/snippet-service.yaml" ]; then
-cat /configs/snippet-service.yaml | yq e "\
+cat /configs/snippet-service.yaml |
+  yq e '.apis.grpc.authorization.endpoints += [.apis.grpc.authorization.endpoints[0]]' |
+  yq e "\
   .hubID = \"${HUB_ID}\" |
   .log.level = \"${LOG_LEVEL}\" |
   .apis.grpc.address = \"${SNIPPET_SERVICE_ADDRESS}\" |
   .apis.grpc.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
-  .apis.grpc.authorization.http.tls.useSystemCAPool = true |
-  .apis.grpc.authorization.authority = \"https://${OAUTH_ENDPOINT}\" |
+  .apis.grpc.authorization.endpoints[0].http.tls.useSystemCAPool = true |
+  .apis.grpc.authorization.endpoints[0].authority = \"https://${OAUTH_ENDPOINT}\" |
+  .apis.grpc.authorization.endpoints[1].authority = \"https://${M2M_OAUTH_SERVER_ENDPOINT}\" |
   .apis.grpc.authorization.ownerClaim = \"${OWNER_CLAIM}\" |
   .apis.http.address = \"${SNIPPET_SERVICE_HTTP_ADDRESS}\" |
   .clients.storage.use = \"${DATABASE_USE}\" |
   .clients.storage.mongoDB.uri = \"${MONGODB_URI}\" |
   .clients.storage.cqlDB.hosts = [ \"${SCYLLA_HOSTNAME}\" ] |
   .clients.storage.cqlDB.port = ${SCYLLA_PORT} |
+  .clients.eventBus.nats.url = \"${NATS_URL}\" |
+  .clients.eventBus.nats.leadResourceType.enabled = ${LEAD_RESOURCE_TYPE_ENABLED} |
+  .clients.resourceAggregate.grpc.address = \"${RESOURCE_AGGREGATE_ADDRESS}\" |
   .clients.openTelemetryCollector.grpc.enabled = ${OPEN_TELEMETRY_EXPORTER_ENABLED} |
   .clients.openTelemetryCollector.grpc.address = \"${OPEN_TELEMETRY_EXPORTER_ADDRESS}\" |
   .clients.openTelemetryCollector.grpc.tls.caPool = \"${OPEN_TELEMETRY_EXPORTER_CA_POOL}\" |

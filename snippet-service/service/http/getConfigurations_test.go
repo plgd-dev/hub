@@ -10,6 +10,7 @@ import (
 
 	"github.com/plgd-dev/go-coap/v3/message"
 	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgHttpPb "github.com/plgd-dev/hub/v2/pkg/net/http/pb"
 	"github.com/plgd-dev/hub/v2/snippet-service/pb"
 	snippetHttp "github.com/plgd-dev/hub/v2/snippet-service/service/http"
 	"github.com/plgd-dev/hub/v2/snippet-service/test"
@@ -28,7 +29,7 @@ func TestRequestHandlerGetConfigurations(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
 	defer cancel()
 
-	shutDown := service.SetUpServices(ctx, t, service.SetUpServicesOAuth)
+	shutDown := service.SetUpServices(ctx, t, service.SetUpServicesOAuth|service.SetUpServicesMachine2MachineOAuth)
 	defer shutDown()
 
 	snippetCfg := test.MakeConfig(t)
@@ -146,7 +147,7 @@ func TestRequestHandlerGetConfigurations(t *testing.T) {
 			values := make([]*pb.Configuration, 0, 1)
 			for {
 				var value pb.Configuration
-				err = httpTest.Unmarshal(resp.StatusCode, resp.Body, &value)
+				err = pkgHttpPb.Unmarshal(resp.StatusCode, resp.Body, &value)
 				if errors.Is(err, io.EOF) {
 					break
 				}

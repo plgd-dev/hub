@@ -192,21 +192,3 @@ m2moauthserver:
           authorization:
             audience:
             endpoints:
-      - id: "service"
-        secretFile: "{{ include \"plgd-hub.m2moauthserver.getClientServiceSecretFile\" . }}"
-        accessTokenLifetime: 0s
-        allowedGrantTypes:
-          - client_credentials
-        allowedAudiences: []
-        allowedScopes: []
-        insertTokenClaims:
-          x-deviceid: "device1"
-          x-deviceowner: "owner1"
-          x-array:
-            - key: "key1"
-              value: "value1"
-            - key: "key2"
-              value: "value2"
-          x-map:
-            key1: "value1"
-            key2: "value2"

@@ -74,6 +74,10 @@ func (rc *ResourceChanged) CopyData(event *ResourceChanged) {
 	rc.ResourceTypes = event.GetResourceTypes()
 }
 
+func (rc *ResourceChanged) Clone() *ResourceChanged {
+	return proto.Clone(rc).(*ResourceChanged)
+}
+
 func (rc *ResourceChanged) CheckInitialized() bool {
 	return rc.GetResourceId() != nil &&
 		rc.GetContent() != nil &&

@@ -13,7 +13,9 @@ import (
 	"github.com/plgd-dev/hub/v2/cloud2cloud-gateway/uri"
 	pbGRPC "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/pkg/log"
-	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgHttpJwt "github.com/plgd-dev/hub/v2/pkg/net/http/jwt"
+	pkgHttpUri "github.com/plgd-dev/hub/v2/pkg/net/http/uri"
 	raClient "github.com/plgd-dev/hub/v2/resource-aggregate/client"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/plgd-dev/kit/v2/codec/json"
@@ -45,7 +47,7 @@ type RequestHandler struct {
 func logAndWriteErrorResponse(err error, statusCode int, w http.ResponseWriter) {
 	log.Errorf("%v", err)
 	w.Header().Set(events.ContentTypeKey, "text/plain")
-	w.WriteHeader(kitNetHttp.ErrToStatusWithDef(err, statusCode))
+	w.WriteHeader(pkgHttp.ErrToStatusWithDef(err, statusCode))
 	if _, err2 := w.Write([]byte(err.Error())); err2 != nil {
 		log.Errorf("failed to write error response body: %w", err2)
 	}
@@ -128,7 +130,7 @@ func makeHref(path []string) string {
 }
 
 func splitDevicePath(requestURI string) []string {
-	p := kitNetHttp.CanonicalHref(requestURI)
+	p := pkgHttpUri.CanonicalHref(requestURI)
 	p = strings.TrimPrefix(p, uri.Devices) // remove core prefix
 	p = strings.TrimLeft(p, "/")
 	return strings.Split(p, "/")
@@ -168,11 +170,11 @@ func resourceMatcher(r *http.Request, rm *router.RouteMatch) bool {
 }
 
 // NewHTTP returns HTTP handler
-func NewHTTP(requestHandler *RequestHandler, authInterceptor kitNetHttp.Interceptor, logger log.Logger) http.Handler {
+func NewHTTP(requestHandler *RequestHandler, authInterceptor pkgHttpJwt.Interceptor, logger log.Logger) http.Handler {
 	r := router.NewRouter()
 	r.StrictSlash(true)
-	r.Use(kitNetHttp.CreateLoggingMiddleware(kitNetHttp.WithLogger(logger)))
-	r.Use(kitNetHttp.CreateAuthMiddleware(authInterceptor, func(_ context.Context, w http.ResponseWriter, r *http.Request, err error) {
+	r.Use(pkgHttp.CreateLoggingMiddleware(pkgHttp.WithLogger(logger)))
+	r.Use(pkgHttp.CreateAuthMiddleware(authInterceptor, func(_ context.Context, w http.ResponseWriter, r *http.Request, err error) {
 		logAndWriteErrorResponse(fmt.Errorf("cannot process request on %v: %w", r.RequestURI, err), http.StatusUnauthorized, w)
 	}))
 

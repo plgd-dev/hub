@@ -30,7 +30,7 @@ func TestRepublishAfterRefresh(t *testing.T) {
 	ctx, cancel := context.WithDeadline(context.Background(), deadline)
 	defer cancel()
 
-	const services = service.SetUpServicesOAuth | service.SetUpServicesGrpcGateway
+	const services = service.SetUpServicesOAuth | service.SetUpServicesMachine2MachineOAuth | service.SetUpServicesGrpcGateway
 	tearDown := service.SetUpServices(ctx, t, services)
 	defer tearDown()
 

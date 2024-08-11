@@ -19,7 +19,7 @@ import {
     IconChat,
     IconCertificate,
 } from '@shared-ui/components/Atomic/Icon/'
-import { MenuGroup } from '@shared-ui/components/Layout/LeftPanel/LeftPanel.types'
+import { MenuGroup, MenuItemVisibilityType } from '@shared-ui/components/Layout/LeftPanel/LeftPanel.types'
 import FullPageLoader from '@shared-ui/components/Atomic/FullPageLoader'
 
 import { messages as t } from './containers/App/App.i18n'
@@ -60,6 +60,10 @@ const ConditionsAddPage = lazy(() => import('./containers/SnippetService/Conditi
 const AppliedConfigurationListPage = lazy(() => import('@/containers/SnippetService/AppliedConfigurations/ListPage'))
 const AppliedConfigurationDetailPage = lazy(() => import('@/containers/SnippetService/AppliedConfigurations/DetailPage'))
 
+// API tokens
+const ApiTokensListPage = lazy(() => import('@/containers/ApiTokens/ListPage'))
+const ApiTokensDetailPage = lazy(() => import('@/containers/ApiTokens/DetailPage'))
+
 // Certificates
 const CertificatesListPage = lazy(() => import('./containers/Certificates'))
 const CertificatesDetailPage = lazy(() => import('@/containers/Certificates/DetailPage'))
@@ -70,6 +74,7 @@ const PendingCommandsListPage = lazy(() => import('./containers/PendingCommands/
 // Internal
 const MockApp = lazy(() => import('@shared-ui/app/clientApp/MockApp'))
 const ConfigurationPage = lazy(() => import('./containers/Configuration'))
+const TestPage = lazy(() => import('./containers/Test'))
 
 const MenuTranslate = (props: { id: string }) => {
     const { id } = props
@@ -172,6 +177,10 @@ export const pages = {
     CERTIFICATES: {
         LINK: '/certificates',
         DETAIL: '/certificates/:certificateId',
+    },
+    API_TOKENS: {
+        LINK: '/api-tokens',
+        DETAIL: '/api-tokens/:apiTokenId',
     },
 }
 
@@ -319,6 +328,7 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                         id: '112',
                         title: <MenuTranslate id='menuConditions' />,
                         link: '/conditions',
+                        dataTestId: testId.menu.snippetService.conditions,
                         paths: [
                             pages.SNIPPET_SERVICE.CONDITIONS.LINK,
                             pages.SNIPPET_SERVICE.CONDITIONS.DETAIL.LINK,
@@ -328,6 +338,7 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                     {
                         id: '113',
                         title: <MenuTranslate id='menuAppliedConfigurations' />,
+                        dataTestId: testId.menu.snippetService.appliedConfigurations,
                         link: '/applied-configurations',
                         paths: [
                             pages.SNIPPET_SERVICE.APPLIED_CONFIGURATIONS.LINK,
@@ -367,10 +378,10 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                 icon: <IconLock />,
                 id: '14',
                 title: <MenuTranslate id='menuApiTokens' />,
-                link: '/api-tokens',
-                paths: ['/api-tokens'],
+                link: pages.API_TOKENS.LINK,
+                paths: [pages.API_TOKENS.LINK, pages.API_TOKENS.DETAIL],
                 exact: true,
-                visibility: menuConfig.apiTokens === false ? false : 'disabled',
+                visibility: menuConfig.apiTokens,
             },
             {
                 icon: <IconNet />,
@@ -443,7 +454,12 @@ export const NoLayoutRoutes = () => (
 
 const withSuspense = (Component: any) => <Suspense fallback={<Loader />}>{Component}</Suspense>
 
-export const Routes = () => {
+type MenuConfigType = {
+    [key: string]: MenuItemVisibilityType
+}
+
+export const Routes = (props: { mainSidebar: MenuConfigType }) => {
+    const { mainSidebar } = props
     const { formatMessage: _ } = useIntl()
     return (
         <RoutesGroup>
@@ -522,6 +538,14 @@ export const Routes = () => {
                 </Route>
             </Route>
 
+            {/* ***** API TOKENS ***** */}
+            {mainSidebar.apiTokens === true && (
+                <Route path='/api-tokens'>
+                    <Route element={withSuspense(<ApiTokensListPage />)} path='' />
+                    <Route element={withSuspense(<ApiTokensDetailPage />)} path=':apiTokenId' />
+                </Route>
+            )}
+
             {/* ***** CONFIGURATION ***** */}
             <Route path='/configuration'>
                 <Route element={withSuspense(<ConfigurationPage defaultActiveTab={1} />)} path='theme-generator' />
@@ -531,7 +555,8 @@ export const Routes = () => {
             {/* ***** OTHERS ***** */}
             <Route element={withSuspense(<PendingCommandsListPage />)} path='/pending-commands' />
             <Route element={withSuspense(<MockApp />)} path='/devices-code-redirect/*' />
-            <Route element={<NotFoundPage message={_(t.notFoundPageDefaultMessage)} title={_(t.pageTitle)} />} path='*' />
+            <Route element={withSuspense(<TestPage />)} path='/test' />
+            <Route element={<NotFoundPage layout message={_(t.notFoundPageDefaultMessage)} title={_(t.pageTitle)} />} path='*' />
         </RoutesGroup>
     )
 }
