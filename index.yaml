@@ -203,6 +203,29 @@ entries:
     version: 0.0.1
   plgd-hub:
   - apiVersion: v2
+    appVersion: 2.23.0
+    created: "2024-08-12T17:23:37.819950772Z"
+    dependencies:
+    - condition: nats.enabled
+      name: nats
+      repository: https://nats-io.github.io/k8s/helm/charts/
+      version: 1.1.9
+    - condition: mongodb.enabled
+      name: mongodb
+      repository: https://charts.bitnami.com/bitnami
+      version: 15.4.4
+    - condition: scylla.enabled
+      name: scylla
+      repository: https://scylla-operator-charts.storage.googleapis.com/stable
+      version: 1.10.0
+    description: A Helm chart for plgd-hub
+    digest: 5650b086e582d7465b18d857191678576c153c11c977ab8f6380bab2a5df2a5c
+    name: plgd-hub
+    type: application
+    urls:
+    - https://charts.plgd.dev/plgd-hub-2.23.0.tgz
+    version: 2.23.0
+  - apiVersion: v2
     appVersion: 2.22.0
     created: "2024-08-02T15:45:55.906853923Z"
     dependencies:
@@ -1851,4 +1874,4 @@ entries:
     urls:
     - https://charts.plgd.dev/plgd-hub-0.1.0.tgz
     version: 0.1.0
-generated: "2024-08-02T15:45:55.888154283Z"
+generated: "2024-08-12T17:23:37.801955998Z"
