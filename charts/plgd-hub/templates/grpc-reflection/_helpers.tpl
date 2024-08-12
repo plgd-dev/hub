@@ -87,7 +87,6 @@
     {{- end }}
 {{- end }}
 
-
 {{- define "plgd-hub.grpcreflection.domain" -}}
   {{- if .Values.grpcreflection.domain }}
     {{- printf "%s" .Values.grpcreflection.domain }}
@@ -96,18 +95,9 @@
   {{- end }}
 {{- end }}
 
-
-{{- define "plgd-hub.grpcreflection.internalDns" -}}
-  {{- $fullName := include "plgd-hub.grpcreflection.fullname" . -}}
-  {{- printf "%s.%s.svc.%s" $fullName .Release.Namespace .cluster.dns }}
-{{- end }}
-
-
 {{- define "plgd-hub.grpcreflection.selectorLabels" -}}
 {{- $ := index . 0 }}
 {{- $domain := index . 1 }}
 app.kubernetes.io/name: {{ include "plgd-hub.grpcreflection.domainToName" (list $domain $.Values.grpcreflection.name) }}
 app.kubernetes.io/instance: {{ $.Release.Name }}
 {{- end }}
-
-

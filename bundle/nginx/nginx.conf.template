@@ -148,6 +148,19 @@ http {
       proxy_set_header Connection $connection_upgrade;
       proxy_set_header Host $host;
     }
+    location ~ ^(/grpc.reflection.v1alpha.ServerReflection|/grpc.reflection.v1.ServerReflection) {
+      set $upstream_grpc_gateway grpcs://127.0.0.1:REPLACE_GRPC_REFLECTION_PORT;
+      grpc_pass                      $upstream_grpc_gateway;
+      grpc_ssl_certificate           /data/certs/internal/endpoint.crt;
+      grpc_ssl_certificate_key       /data/certs/internal/endpoint.key;
+      grpc_ssl_trusted_certificate   /data/certs/root_ca.crt;
+      grpc_read_timeout       31536000s;
+      grpc_send_timeout       31536000s;
+      client_body_timeout     31536000s;
+      grpc_socket_keepalive   on;
+      proxy_ssl_trusted_certificate   /data/certs/root_ca.crt;
+      proxy_ssl_verify                on;
+    }
     location ~ ^/ {
       set $upstream_http_gateway https://127.0.0.1:REPLACE_HTTP_GATEWAY_PORT;
       proxy_pass                     $upstream_http_gateway;
