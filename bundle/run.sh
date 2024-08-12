@@ -28,6 +28,7 @@ export SNIPPET_SERVICE_ADDRESS="localhost:${SNIPPET_SERVICE_PORT}"
 export SNIPPET_SERVICE_HTTP_ADDRESS="localhost:${HTTP_SNIPPET_SERVICE_PORT}"
 export M2M_OAUTH_SERVER_ADDRESS="localhost:${M2M_OAUTH_SERVER_PORT}"
 export M2M_OAUTH_SERVER_HTTP_ADDRESS="localhost:${HTTP_M2M_OAUTH_SERVER_PORT}"
+export GRPC_REFLECTION_ADDRESS="localhost:${GRPC_REFLECTION_PORT}"
 
 export INTERNAL_CERT_DIR_PATH="$CERTIFICATES_PATH/internal"
 export GRPC_INTERNAL_CERT_NAME="endpoint.crt"
@@ -462,6 +463,58 @@ while read -r line; do
   fi
 done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/cloud2cloud-connector.yaml | sort | uniq)
 
+## snippet-service
+### setup root-cas
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+    cp $CA_POOL ${file}
+  fi
+done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/snippet-service.yaml | sort | uniq)
+### setup certificates
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+     cp $CERT_FILE ${file}
+  fi
+done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/snippet-service.yaml | sort | uniq)
+### setup private keys
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+     cp $KEY_FILE ${file}
+  fi
+done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/snippet-service.yaml| sort | uniq)
+
+## grpc-reflection
+### setup root-cas
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+    cp $CA_POOL ${file}
+  fi
+done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/grpc-reflection.yaml | sort | uniq)
+### setup certificates
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+     cp $CERT_FILE ${file}
+  fi
+done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/grpc-reflection.yaml | sort | uniq)
+### setup private keys
+while read -r line; do
+  file=`echo $line | yq e '.[0]' - `
+  mkdir -p `dirname ${file}`
+  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+     cp $KEY_FILE ${file}
+  fi
+done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/grpc-reflection.yaml| sort | uniq)
+
 mkdir -p ${OAUTH_KEYS_PATH}
 if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${OAUTH_ID_TOKEN_KEY_PATH}" ]; then
   openssl genrsa -out ${OAUTH_ID_TOKEN_KEY_PATH} 4096
@@ -491,6 +544,7 @@ if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${NGINX_PATH}/nginx.conf" ]; then
   sed -i "s/REPLACE_HTTP_SNIPPET_SERVICE_PORT/$HTTP_SNIPPET_SERVICE_PORT/g" ${NGINX_PATH}/nginx.conf
   sed -i "s/REPLACE_M2M_OAUTH_SERVER_PORT/$M2M_OAUTH_SERVER_PORT/g" ${NGINX_PATH}/nginx.conf
   sed -i "s/REPLACE_HTTP_M2M_OAUTH_SERVER_PORT/$HTTP_M2M_OAUTH_SERVER_PORT/g" ${NGINX_PATH}/nginx.conf
+  sed -i "s/REPLACE_GRPC_REFLECTION_PORT/$GRPC_REFLECTION_PORT/g" ${NGINX_PATH}/nginx.conf
 fi
 
 # nats
@@ -1356,6 +1410,44 @@ while true; do
   sleep 1
 done
 
+# grpc-reflection
+echo "starting grpc-reflection"
+## configuration
+if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "/data/grpc-reflection.yaml" ]; then
+cat /configs/grpc-reflection.yaml |
+  yq e "\
+  .hubID = \"${HUB_ID}\" |
+  .log.level = \"${LOG_LEVEL}\" |
+  .apis.grpc.address = \"${GRPC_REFLECTION_ADDRESS}\" |
+  .clients.openTelemetryCollector.grpc.enabled = ${OPEN_TELEMETRY_EXPORTER_ENABLED} |
+  .clients.openTelemetryCollector.grpc.address = \"${OPEN_TELEMETRY_EXPORTER_ADDRESS}\" |
+  .clients.openTelemetryCollector.grpc.tls.caPool = \"${OPEN_TELEMETRY_EXPORTER_CA_POOL}\" |
+  .clients.openTelemetryCollector.grpc.tls.keyFile = \"${OPEN_TELEMETRY_EXPORTER_KEY_FILE}\" |
+  .clients.openTelemetryCollector.grpc.tls.certFile = \"${OPEN_TELEMETRY_EXPORTER_CERT_FILE}\" |
+  .clients.openTelemetryCollector.grpc.tls.useSystemCAPool = true
+" - > /data/grpc-reflection.yaml
+fi
+grpc-reflection --config /data/grpc-reflection.yaml >$LOGS_PATH/grpc-reflection.log 2>&1 &
+status=$?
+grpc_reflection_pid=$!
+if [ $status -ne 0 ]; then
+  echo "Failed to start grpc-reflection: $status"
+  sync
+  cat $LOGS_PATH/grpc-reflection.log
+  exit $status
+fi
+
+# waiting for ca. Without wait, sometimes the service didn't connect.
+i=0
+while true; do
+  i=$((i+1))
+  if openssl s_client -connect ${GRPC_REFLECTION_ADDRESS} -cert ${INTERNAL_CERT_DIR_PATH}/${GRPC_INTERNAL_CERT_NAME} -key ${INTERNAL_CERT_DIR_PATH}/${GRPC_INTERNAL_CERT_KEY_NAME} <<< "Q" 2>/dev/null > /dev/null; then
+    break
+  fi
+  echo "Try to reconnect to grpc-reflection(${GRPC_REFLECTION_ADDRESS}) $i"
+  sleep 1
+done
+
 echo "Open browser at https://${DOMAIN}"
 
 # Naive check runs checks once a minute to see if either of the processes exited.
@@ -1485,6 +1577,13 @@ while sleep 10; do
     echo "snippet-service has already exited."
     sync
     cat $LOGS_PATH/snippet-service.log
+   exit 1
+  fi
+  ps aux |grep $grpc_reflection_pid |grep -q -v grep
+  if [ $? -ne 0 ]; then
+    echo "grpc-reflection has already exited."
+    sync
+    cat $LOGS_PATH/grpc-reflection.log
    exit 1
   fi
 done

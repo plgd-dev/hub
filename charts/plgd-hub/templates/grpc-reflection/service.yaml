@@ -1,0 +1,33 @@
+{{- if .Values.grpcreflection.enabled -}}
+{{- $domains := (include "plgd-hub.grpcreflection.mapServicesToDomains" .  | fromYaml) }}
+{{- $fullname := include "plgd-hub.grpcreflection.fullname" . }}
+{{- $ := . }}
+{{- range $domain, $val := $domains }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "plgd-hub.grpcreflection.domainToName" (list $domain $fullname) }}
+  namespace: {{ $.Release.Namespace }}  
+  labels:
+    {{- include "plgd-hub.labels" $ | nindent 4 }}
+    {{- with $.Values.grpcreflection.service.labels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+  {{- if $.Values.grpcreflection.service.annotations }}
+  annotations:
+    {{- include "plgd-hub.tplvalues.render" ( dict "value" $.Values.grpcreflection.service.annotations "context" $ ) | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ $.Values.grpcreflection.service.type | default "ClusterIP" }}
+  ports:
+    - port: {{ $.Values.grpcreflection.port }}
+      targetPort: {{ $.Values.grpcreflection.service.targetPort }}
+      protocol: {{ $.Values.grpcreflection.service.protocol }}
+      name: {{ $.Values.grpcreflection.service.name }}
+  selector:
+  {{- include "plgd-hub.grpcreflection.selectorLabels" (list $ $domain) | nindent 4 }}
+{{- if gt (len $domains) 1 }}
+---
+{{- end }}
+{{- end }}
+{{- end }}

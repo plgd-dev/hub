@@ -409,6 +409,61 @@ global:
 | grpcgateway.service.targetPort | string | `"grpc"` | Target port |
 | grpcgateway.service.type | string | `"ClusterIP"` | Service type |
 | grpcgateway.tolerations | object | `{}` | Toleration definition |
+| grpcreflection.affinity | object | `{}` | Affinity definition |
+| grpcreflection.apis | object | `{"grpc":{"address":null,"enforcementPolicy":{"minTime":"5s","permitWithoutStream":true},"keepAlive":{"maxConnectionAge":"0s","maxConnectionAgeGrace":"0s","maxConnectionIdle":"0s","time":"2h","timeout":"20s"},"ownerCacheExpiration":"1m","recvMsgSize":4194304,"sendMsgSize":4194304,"subscriptionBufferSize":1000,"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":false,"keyFile":null}}}` | For complete grpc-reflection service configuration see [plgd/grpc-reflection](https://github.com/plgd-dev/hub/tree/main/grpc-reflection) |
+| grpcreflection.config | object | `{"fileName":"service.yaml","mountPath":"/config","volume":"config"}` | Service yaml configuration section |
+| grpcreflection.config.fileName | string | `"service.yaml"` | Service configuration file name |
+| grpcreflection.config.mountPath | string | `"/config"` | Service configuration mount path |
+| grpcreflection.config.volume | string | `"config"` | Service configuration volume name |
+| grpcreflection.deploymentAnnotations | object | `{}` | Additional annotations for grpc-reflection deployment |
+| grpcreflection.deploymentLabels | object | `{}` | Additional labels for grpc-reflection deployment |
+| grpcreflection.enabled | bool | `true` | Enable grpc-reflection service |
+| grpcreflection.extraContainers | object | `{}` | Extra POD containers |
+| grpcreflection.extraVolumeMounts | object | `{}` | Optional extra volume mounts |
+| grpcreflection.extraVolumes | object | `{}` | Optional extra volumes |
+| grpcreflection.fullnameOverride | string | `nil` | Full name to override |
+| grpcreflection.image.imagePullSecrets | object | `{}` | Image pull secrets |
+| grpcreflection.image.pullPolicy | string | `"Always"` | Image pull policy |
+| grpcreflection.image.registry | string | `"ghcr.io/"` | Image registry |
+| grpcreflection.image.repository | string | `"plgd-dev/hub/grpc-reflection"` | Image repository |
+| grpcreflection.image.tag | string | `nil` | Image tag. |
+| grpcreflection.imagePullSecrets | object | `{}` | Image pull secrets |
+| grpcreflection.ingress.annotations | object | `{"cert-manager.io/private-key-rotation-policy":"always","ingress.kubernetes.io/force-ssl-redirect":"true","nginx.ingress.kubernetes.io/backend-protocol":"GRPCS","nginx.ingress.kubernetes.io/enable-cors":"true","nginx.org/grpc-services":"{{ include \"plgd-hub.grpcreflection.fullname\" . }}"}` | Ingress annotations |
+| grpcreflection.ingress.customAnnotations | object | `{}` | Custom map of Ingress annotation |
+| grpcreflection.ingress.enabled | bool | `true` | Enable ingress |
+| grpcreflection.ingress.paths[0] | string | `"/grpc.reflection.v1alpha.ServerReflection"` |  |
+| grpcreflection.ingress.paths[1] | string | `"/grpc.reflection.v1.ServerReflection"` |  |
+| grpcreflection.ingress.secretName | string | `nil` | Override name of host/tls secret. If not specified, it will be generated |
+| grpcreflection.initContainersTpl | object | `{}` | Init containers definition |
+| grpcreflection.livenessProbe | object | `{}` | Liveness probe. grpc-reflection doesn't have any default liveness probe |
+| grpcreflection.log.dumpBody | bool | `false` | Dump grpc messages |
+| grpcreflection.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
+| grpcreflection.log.encoding | string | `"json"` | The supported values are: "json", "console" |
+| grpcreflection.log.level | string | `"info"` | Logging enabled from level |
+| grpcreflection.log.stacktrace.enabled | bool | `false` | Log stacktrace |
+| grpcreflection.log.stacktrace.level | string | `"warn"` | Stacktrace from level |
+| grpcreflection.name | string | `"grpc-reflection"` | Name of component. Used in label selectors |
+| grpcreflection.nodeSelector | object | `{}` | Node selector |
+| grpcreflection.podAnnotations | object | `{}` | Annotations for grpc-reflection pod |
+| grpcreflection.podLabels | object | `{}` | Labels for grpc-reflection pod |
+| grpcreflection.podSecurityContext | object | `{}` | Pod security context |
+| grpcreflection.port | int | `9100` | Service and POD port |
+| grpcreflection.rbac | object | `{"enabled":false,"roleBindingDefitionTpl":null,"serviceAccountName":"grpc-reflection"}` | RBAC configuration |
+| grpcreflection.rbac.roleBindingDefitionTpl | string | `nil` | Template definition for Role/binding etc.. |
+| grpcreflection.rbac.serviceAccountName | string | `"grpc-reflection"` | Name of grpc-reflection SA |
+| grpcreflection.readinessProbe | object | `{}` | Readiness probe. grpc-reflection doesn't have aby default readiness probe |
+| grpcreflection.replicas | int | `1` | Number of replicas |
+| grpcreflection.resources | object | `{}` | Resources limit |
+| grpcreflection.restartPolicy | string | `"Always"` | Restart policy for pod |
+| grpcreflection.securityContext | object | `{}` | Security context for pod |
+| grpcreflection.service.annotations | object | `{}` | Annotations for grpc-reflection service |
+| grpcreflection.service.crt.extraDnsNames | list | `[]` | Extra DNS names for service certificate |
+| grpcreflection.service.labels | object | `{}` | Labels for grpc-reflection service |
+| grpcreflection.service.name | string | `"grpc"` | Name |
+| grpcreflection.service.protocol | string | `"TCP"` | Protocol |
+| grpcreflection.service.targetPort | string | `"grpc"` | Target port |
+| grpcreflection.service.type | string | `"ClusterIP"` | Service type |
+| grpcreflection.tolerations | object | `{}` | Toleration definition |
 | httpgateway.affinity | object | `{}` | Affinity definition |
 | httpgateway.apiDomain | string | `nil` | Domain for http-gateway API. Default: api.{{ global.domain }} |
 | httpgateway.apis | object | `{"http":{"address":null,"authorization":{"audience":null,"authority":null,"http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}}},"idleTimeout":"30s","readHeaderTimeout":"4s","readTimeout":"8s","tls":{"caPool":null,"certFile":null,"clientCertificateRequired":false,"keyFile":null},"webSocket":{"pingFrequency":"10s","streamBodyLimit":262144},"writeTimeout":"16s"}}` | For complete http-gateway service configuration see [plgd/http-gateway](https://github.com/plgd-dev/hub/tree/main/http-gateway) |

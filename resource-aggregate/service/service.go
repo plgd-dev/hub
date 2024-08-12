@@ -110,7 +110,7 @@ func newGrpcServer(ctx context.Context, config GRPCConfig, fileWatcher *fsnotify
 		return nil, fmt.Errorf("cannot create grpc server options: %w", err)
 	}
 
-	grpcServer, err := server.New(config.Config, fileWatcher, logger, opts...)
+	grpcServer, err := server.New(config.BaseConfig, fileWatcher, logger, opts...)
 	if err != nil {
 		validator.Close()
 		return nil, fmt.Errorf("cannot create grpc server: %w", err)

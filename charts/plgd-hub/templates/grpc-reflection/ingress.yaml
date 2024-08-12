@@ -1,0 +1,46 @@
+{{- if and .Values.grpcreflection.enabled .Values.grpcreflection.ingress.enabled }}
+{{- $fullname := include "plgd-hub.grpcreflection.fullname" . }}
+{{- $port := $.Values.grpcreflection.port }}
+{{- $domains := (include "plgd-hub.grpcreflection.mapServicesToDomains" .  | fromYaml) }}
+{{- $ := . }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $fullname }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plgd-hub.labels" . | nindent 4 }}
+  annotations:
+    {{- if $.Values.grpcreflection.ingress.annotations }}
+    {{- include "plgd-hub.tplvalues.render" ( dict "value" $.Values.grpcreflection.ingress.annotations "context" $ ) | nindent 4 }}
+    {{- end }}
+    {{- if $.Values.grpcreflection.ingress.customAnnotations }}
+    {{- include "plgd-hub.tplvalues.render" ( dict "value" $.Values.grpcreflection.ingress.customAnnotations "context" $ ) | nindent 4 }}
+    {{- end }}
+spec:
+  tls:
+    - hosts:
+        {{- range $domain, $val := $domains }}
+        - {{ $domain | quote }}
+        {{- end }}
+      {{- if $.Values.global.enableWildCartCert }}
+      secretName: {{ include "plgd-hub.wildCardCertName" . | quote }}
+      {{- else }}
+      secretName: {{ include "plgd-hub.grpcreflection.domainCertName" . | quote }}
+      {{- end }}
+  rules:
+  {{- range $domain, $val := $domains }}
+  - host: {{ $domain }}
+    http:
+      paths:
+      {{- range  $.Values.grpcreflection.ingress.paths }}
+      - path: {{ . }}
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ include "plgd-hub.grpcreflection.domainToName" (list $domain $fullname) }}
+            port:
+              number: {{ $port }}
+      {{- end }}
+  {{- end }}
+{{- end }}

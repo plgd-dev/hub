@@ -2024,6 +2024,154 @@ grpcgateway:
           certFile:
           useSystemCAPool: false
 
+grpcreflection:
+  # -- Enable grpc-reflection service
+  enabled: true
+  # -- Name of component. Used in label selectors
+  name: grpc-reflection
+  # -- Full name to override
+  fullnameOverride:
+  # -- Number of replicas
+  replicas: 1
+  # -- Additional labels for grpc-reflection deployment
+  deploymentLabels: {}
+  # -- Additional annotations for grpc-reflection deployment
+  deploymentAnnotations: {}
+  # -- Pod security context
+  podSecurityContext: {}
+  # -- Labels for grpc-reflection pod
+  podLabels: {}
+  # -- Annotations for grpc-reflection pod
+  podAnnotations: {}
+  service:
+    # -- Service type
+    type: ClusterIP
+    # -- Labels for grpc-reflection service
+    labels: {}
+    # -- Annotations for grpc-reflection service
+    annotations: {}
+    # -- Target port
+    targetPort: grpc
+    # -- Protocol
+    protocol: TCP
+    # -- Name
+    name: grpc
+    crt:
+      # -- Extra DNS names for service certificate
+      extraDnsNames: []
+  # -- RBAC configuration
+  rbac:
+    # Enable RBAC
+    enabled: false
+    # -- Name of grpc-reflection SA
+    serviceAccountName: grpc-reflection
+    # -- Template definition for Role/binding etc..
+    roleBindingDefitionTpl:
+  # -- Security context for pod
+  securityContext: {}
+  # -- Image pull secrets
+  imagePullSecrets: {}
+  # -- Restart policy for pod
+  restartPolicy: Always
+  # -- Init containers definition
+  initContainersTpl: {}
+  # -- Extra POD containers
+  extraContainers: {}
+  image:
+    # -- Image registry
+    registry: ghcr.io/
+    # -- Image repository
+    repository: plgd-dev/hub/grpc-reflection
+    # -- Image tag.
+    tag:
+    # -- Image pull policy
+    pullPolicy: Always
+    # -- Image pull secrets
+    imagePullSecrets: {}
+  # -- Liveness probe. grpc-reflection doesn't have any default liveness probe
+  livenessProbe: {}
+  # -- Readiness probe. grpc-reflection doesn't have aby default readiness probe
+  readinessProbe: {}
+  # -- Resources limit
+  resources: {}
+  # -- Node selector
+  nodeSelector: {}
+  # -- Affinity definition
+  affinity: {}
+  # -- Toleration definition
+  tolerations: {}
+  # -- Optional extra volumes
+  extraVolumes: {}
+  # -- Optional extra volume mounts
+  extraVolumeMounts: {}
+  ingress:
+    # -- Enable ingress
+    enabled: true
+    # -- Override name of host/tls secret. If not specified, it will be generated
+    secretName:
+    # -- Ingress annotations
+    annotations:
+      nginx.org/grpc-services: '{{ include "plgd-hub.grpcreflection.fullname" . }}'
+      nginx.ingress.kubernetes.io/backend-protocol: "GRPCS"
+      ingress.kubernetes.io/force-ssl-redirect: "true"
+      nginx.ingress.kubernetes.io/enable-cors: "true"
+      cert-manager.io/private-key-rotation-policy: always
+    # -- Custom map of Ingress annotation
+    customAnnotations: {}
+    paths:
+      - /grpc.reflection.v1alpha.ServerReflection
+      - /grpc.reflection.v1.ServerReflection
+  # -- Service yaml configuration section
+  config:
+    # -- Service configuration file name
+    fileName: service.yaml
+    # -- Service configuration volume name
+    volume: config
+    # -- Service configuration mount path
+    mountPath: /config
+  # -- Service and POD port
+  port: 9100
+  log:
+    # -- Logging enabled from level
+    level: info
+    # -- Dump grpc messages
+    dumpBody: false
+    # -- The supported values are: "json", "console"
+    encoding: json
+    stacktrace:
+      # -- Log stacktrace
+      enabled: false
+      # -- Stacktrace from level
+      level: warn
+    encoderConfig:
+      # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
+      timeEncoder: rfc3339nano
+  # -- For complete grpc-reflection service configuration see [plgd/grpc-reflection](https://github.com/plgd-dev/hub/tree/main/grpc-reflection)
+  apis:
+    grpc:
+      address:
+      sendMsgSize: 4194304
+      recvMsgSize: 4194304
+      ownerCacheExpiration: 1m
+      subscriptionBufferSize: 1000
+      enforcementPolicy:
+        minTime: 5s
+        permitWithoutStream: true
+      keepAlive:
+        # 0s - means infinity
+        maxConnectionIdle: 0s
+        # 0s - means infinity
+        maxConnectionAge: 0s
+        # 0s - means infinity
+        maxConnectionAgeGrace: 0s
+        time: 2h
+        timeout: 20s
+      tls:
+        caPool:
+        keyFile:
+        certFile:
+        clientCertificateRequired: false
+
 certificateauthority:
   # -- Enable certificate-authority service
   enabled: true

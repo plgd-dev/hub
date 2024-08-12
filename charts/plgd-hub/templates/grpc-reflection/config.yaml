@@ -1,0 +1,56 @@
+{{- if .Values.grpcreflection.enabled }}
+{{- $domains := (include "plgd-hub.grpcreflection.mapServicesToDomains" .  | fromYaml) }}
+{{- $fullname := include "plgd-hub.grpcreflection.fullname" . }}
+{{- $ := . }}
+{{- range $domain, $services := $domains }}
+{{- $grpcReflectionCertPath := "/certs" }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "plgd-hub.grpcreflection.configName" (list $domain $fullname) }}
+  namespace: {{ $.Release.Namespace }}
+data:
+  {{ $.Values.grpcreflection.config.fileName }}: |
+    {{- with $.Values.grpcreflection }}
+    log:
+      level: {{ .log.level }}
+      dumpBody: {{ .log.dumpBody }}
+      encoding: {{ .log.encoding }}
+      stacktrace:
+        enabled: {{ .log.stacktrace.enabled }}
+        level: {{ .log.stacktrace.level }}
+      encoderConfig:
+        timeEncoder: {{ .log.encoderConfig.timeEncoder }}
+    apis:
+      grpc:
+        reflectedServices:
+        {{- range $services }}
+        - {{ . }}
+        {{- end }}
+        address: {{ printf "0.0.0.0:%v" .port | quote }}
+        sendMsgSize: {{ int64 .apis.grpc.sendMsgSize | default 4194304 }}
+        recvMsgSize: {{ int64 .apis.grpc.recvMsgSize | default 4194304 }}
+        ownerCacheExpiration: {{ .apis.grpc.ownerCacheExpiration }}
+        subscriptionBufferSize: {{ .apis.grpc.subscriptionBufferSize }}
+        enforcementPolicy:
+          minTime: {{ .apis.grpc.enforcementPolicy.minTime }}
+          permitWithoutStream: {{ .apis.grpc.enforcementPolicy.permitWithoutStream }}
+        keepAlive:
+          # 0s - means infinity
+          maxConnectionIdle: {{ .apis.grpc.keepAlive.maxConnectionIdle }}
+          # 0s - means infinity
+          maxConnectionAge: {{ .apis.grpc.keepAlive.maxConnectionAge }}
+          # 0s - means infinity
+          maxConnectionAgeGrace: {{ .apis.grpc.keepAlive.maxConnectionAgeGrace }}
+          time: {{ .apis.grpc.keepAlive.time }}
+          timeout: {{ .apis.grpc.keepAlive.timeout }}
+        tls:
+          {{- $tls := .apis.grpc.tls }}
+          {{- include "plgd-hub.internalCertificateConfig" (list $ $tls $grpcReflectionCertPath) | indent 8 }}
+          clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
+  {{- end }}
+{{- if gt (len $domains) 1 }}
+---
+{{- end }}
+{{- end }}
+{{- end }}

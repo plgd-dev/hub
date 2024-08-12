@@ -1,0 +1,132 @@
+{{- if $.Values.grpcreflection.enabled }}
+{{- $domains := (include "plgd-hub.grpcreflection.mapServicesToDomains" .  | fromYaml) }}
+{{- $fullname := include "plgd-hub.grpcreflection.fullname" . }}
+{{- $ := . }}
+{{- $cert := "/certs" }}
+{{- range $domain, $val := $domains }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "plgd-hub.grpcreflection.domainToName" (list $domain $fullname) }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "plgd-hub.labels" $ | nindent 4 }}
+    {{- with $.Values.grpcreflection.deploymentLabels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+  {{- with $.Values.grpcreflection.deploymentAnnotations }}
+  annotations:
+  {{- . | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ $.Values.grpcreflection.replicas }}
+  selector:
+    matchLabels:
+      {{- include "plgd-hub.grpcreflection.selectorLabels" (list $ $domain) | nindent 6 }}
+  template:
+    metadata:
+      {{- with $.Values.grpcreflection.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "plgd-hub.grpcreflection.selectorLabels" (list $ $domain) | nindent 8 }}
+    spec:
+      automountServiceAccountToken: false
+      {{- with $.Values.grpcreflection.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if $.Values.grpcreflection.rbac.enabled }}
+      serviceAccountName: {{ $.Values.grpcreflection.rbac.serviceAccountName }}
+      {{- end }}
+      {{- with $.Values.grpcreflection.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      restartPolicy: {{ $.Values.grpcreflection.restartPolicy }}
+      {{- if $.Values.grpcreflection.initContainersTpl }}
+      initContainers:
+      {{- tpl $.Values.grpcreflection.initContainersTpl $ | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ $.Values.grpcreflection.name }}
+          {{- with $.Values.grpcreflection.podSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: {{ include "plgd-hub.image" (list $ $.Values.grpcreflection) | quote }}
+          imagePullPolicy: {{ $.Values.grpcreflection.image.pullPolicy }}
+          {{- if $.Values.grpcreflection.command }}
+          command:
+          {{- range $.Values.grpcreflection.command  }}
+            - {{ . | quote }}
+          {{- end }}
+          {{- end }}
+          args:
+            - "--config"
+            - {{  printf "%s/%s" $.Values.grpcreflection.config.mountPath $.Values.grpcreflection.config.fileName | quote }}
+          ports:
+            - name: grpc
+              containerPort: {{ $.Values.grpcreflection.port }}
+              protocol: TCP
+          {{- with $.Values.grpcreflection.livenessProbe }}
+          livenessProbe:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $.Values.grpcreflection.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with $.Values.grpcreflection.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: {{ $.Values.grpcreflection.config.volume }}
+              mountPath: {{ $.Values.grpcreflection.config.mountPath }}
+            {{- if ( include "plgd-hub.grpcreflection.createServiceCertByCm" $ ) }}
+            - name: service-crt
+              mountPath: {{ $cert }}
+            {{- end }}
+            {{- if $.Values.global.authorizationCAPool }}
+              {{- include "plgd-hub.extraCAPoolMount" (list $ $.Values.extraCAPool.internal) | nindent 12 }}
+            {{- end }}
+            {{- with $.Values.grpcreflection.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      {{- if $.Values.grpcreflection.extraContainers }}
+      {{- include "plgd-hub.tplvalues.render" ( dict "value" $.Values.grpcreflection.extraContainers "context" $ ) | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: {{ $.Values.grpcreflection.config.volume }}
+          configMap:
+            name: {{ include "plgd-hub.grpcreflection.configName" (list $domain $fullname) }}
+        {{- if ( include "plgd-hub.grpcreflection.createServiceCertByCm" $ ) }}
+        - name: service-crt
+          secret:
+            secretName: {{ include "plgd-hub.grpcreflection.serviceCertName" $ }}
+        {{- end }}
+        {{- if $.Values.global.authorizationCAPool }}
+          {{- include "plgd-hub.extraCAPoolVolume" (list $ $.Values.extraCAPool.internal) | nindent 8 }}
+        {{- end }}
+        {{- with $.Values.grpcreflection.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      {{- with $.Values.grpcreflection.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.grpcreflection.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $.Values.grpcreflection.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- if gt (len $domains) 1 }}
+---
+{{- end }}
+{{- end }}
+{{- end }}

@@ -74,6 +74,9 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	if options.customTokenIssuerClients == nil {
 		return nil, errors.New("customTokenIssuerClients is nil")
 	}
+	if len(config.Endpoints) == 0 {
+		return nil, errors.New("no endpoints")
+	}
 
 	keys := jwtValidator.NewMultiKeyCache()
 	var onClose fn.FuncList

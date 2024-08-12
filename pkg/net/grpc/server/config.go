@@ -66,7 +66,7 @@ func (c KeepAliveConfig) ToGrpc() keepalive.ServerParameters {
 	}
 }
 
-type Config struct {
+type BaseConfig struct {
 	Addr string `yaml:"address" json:"address"`
 	// SendMsgSize is the maximum size of a message the server can send. If <=0, a default of 4MB will be used.
 	SendMsgSize int `yaml:"sendMsgSize" json:"sendMsgSize"`
@@ -75,7 +75,11 @@ type Config struct {
 	EnforcementPolicy EnforcementPolicyConfig `yaml:"enforcementPolicy" json:"enforcementPolicy"`
 	KeepAlive         KeepAliveConfig         `yaml:"keepAlive" json:"keepAlive"`
 	TLS               server.Config           `yaml:"tls" json:"tls"`
-	Authorization     AuthorizationConfig     `yaml:"authorization" json:"authorization"`
+}
+
+type Config struct {
+	BaseConfig    `yaml:",inline" json:",inline"`
+	Authorization AuthorizationConfig `yaml:"authorization" json:"authorization"`
 }
 
 type AuthorizationConfig struct {
@@ -90,15 +94,12 @@ func (c *AuthorizationConfig) Validate() error {
 	return c.Config.Validate()
 }
 
-func (c *Config) Validate() error {
+func (c *BaseConfig) Validate() error {
 	if _, err := net.ResolveTCPAddr("tcp", c.Addr); err != nil {
 		return fmt.Errorf("address('%v') - %w", c.Addr, err)
 	}
 	if err := c.TLS.Validate(); err != nil {
 		return fmt.Errorf("tls.%w", err)
-	}
-	if err := c.Authorization.Validate(); err != nil {
-		return fmt.Errorf("authorization.%w", err)
 	}
 	if c.SendMsgSize <= 0 {
 		c.SendMsgSize = defaultMessageSize4MB
@@ -107,4 +108,11 @@ func (c *Config) Validate() error {
 		c.RecvMsgSize = defaultMessageSize4MB
 	}
 	return nil
+}
+
+func (c *Config) Validate() error {
+	if err := c.Authorization.Validate(); err != nil {
+		return fmt.Errorf("authorization.%w", err)
+	}
+	return c.BaseConfig.Validate()
 }

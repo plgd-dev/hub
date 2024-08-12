@@ -1,0 +1,30 @@
+log:
+  level: debug
+  encoding: json       # Log format
+  stacktrace:
+    enabled: false
+    level: warn        # Stacktrace level
+  encoderConfig:
+    timeEncoder: rfc3339nano
+
+apis:
+  grpc:
+    address: "0.0.0.0:9100"
+    reflectedServices:
+      - grpcgateway.pb.GrpcGateway
+      - certificateauthority.pb.CertificateAuthority
+      - snippetservice.pb.SnippetService
+      - m2moauthserver.pb.M2MOAuthService
+    sendMsgSize: 4194304
+    recvMsgSize: 4194304
+    keepAlive:
+      maxConnectionIdle: 0s         # 0s means infinity
+      maxConnectionAge: 0s
+      maxConnectionAgeGrace: 0s
+      time: 2h                      # Keep-alive time
+      timeout: 20s                  # Keep-alive timeout
+    tls:
+      caPool: "/secrets/public/rootca.crt"
+      keyFile: "/secrets/private/cert.key"
+      certFile: "/secrets/public/cert.crt"
+      clientCertificateRequired: false

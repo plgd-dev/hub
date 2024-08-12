@@ -48,13 +48,6 @@
   {{- end }}
 {{- end }}
 
-
-{{- define "plgd-hub.grpcgateway.internalDns" -}}
-  {{- $fullName := include "plgd-hub.grpcgateway.fullname" . -}}
-  {{- printf "%s.%s.svc.%s" $fullName .Release.Namespace .cluster.dns }}
-{{- end }}
-
-
 {{- define "plgd-hub.grpcgateway.selectorLabels" -}}
 app.kubernetes.io/name: {{ .Values.grpcgateway.name }}
 app.kubernetes.io/instance: {{ .Release.Name }}
