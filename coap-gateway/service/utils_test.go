@@ -479,7 +479,8 @@ func setUp(t *testing.T, coapgwCfgs ...service.Config) func() {
 	if len(coapgwCfgs) > 0 {
 		coapgwCfg = coapgwCfgs[0]
 	}
-	return testService.SetUpServices(context.Background(), t, testService.SetUpServicesCertificateAuthority|testService.SetUpServicesOAuth|testService.SetUpServicesId|testService.SetUpServicesResourceAggregate|testService.SetUpServicesResourceDirectory|testService.SetUpServicesCoapGateway|testService.SetUpServicesGrpcGateway, testService.WithCOAPGWConfig(coapgwCfg))
+	return testService.SetUpServices(context.Background(), t, testService.SetUpServicesMachine2MachineOAuth|testService.SetUpServicesCertificateAuthority|testService.SetUpServicesOAuth|
+		testService.SetUpServicesId|testService.SetUpServicesResourceAggregate|testService.SetUpServicesResourceDirectory|testService.SetUpServicesCoapGateway|testService.SetUpServicesGrpcGateway, testService.WithCOAPGWConfig(coapgwCfg))
 }
 
 var (

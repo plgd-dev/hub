@@ -9,6 +9,7 @@ import { FormContext, getFormContextDefault } from '@shared-ui/common/context/Fo
 import ContentSwitch from '@shared-ui/components/Atomic/ContentSwitch'
 import FullPageWizard from '@shared-ui/components/Templates/FullPageWizard'
 import Notification from '@shared-ui/components/Atomic/Notification/Toast'
+import { OptionType } from '@shared-ui/components/Atomic/FormSelect/FormSelect.types'
 
 import { messages as g } from '@/containers/Global.i18n'
 import { DEFAULT_CONDITIONS_DATA } from '@/containers/SnippetService/constants'
@@ -17,7 +18,7 @@ import { messages as confT } from '@/containers/SnippetService/SnippetService.i1
 import notificationId from '@/notificationId'
 import cloneDeep from 'lodash/cloneDeep'
 import { createConditionApi } from '@/containers/SnippetService/rest'
-import { OptionType } from '@shared-ui/components/Atomic/FormSelect/FormSelect.types'
+import testId from '@/testId'
 
 const Step1 = lazy(() => import('./Steps/Step1'))
 const Step2 = lazy(() => import('./Steps/Step2'))
@@ -117,6 +118,7 @@ const AddPage: FC<any> = () => {
     return (
         <FullPageWizard
             activeStep={activeItem}
+            dataTestId={testId.snippetService.conditions.addPage.wizard}
             i18n={{
                 close: _(g.close),
             }}

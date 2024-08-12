@@ -1,0 +1,55 @@
+{
+  "result": {
+    "originalTokenClaims": {
+      "azp": "LXZ9OhKWWRYqf12W0B5OXduqt02q0zjS",
+      "given_name": "Test",
+      "name": "Test Test",
+      "preferred_username": "test.user.ocfcloud@gmail.com",
+      "realm_access": {
+        "roles": [
+          "default-roles-shared",
+          "offline_access",
+          "uma_authorization"
+        ]
+      },
+      "session_state": "c3c1a8a3-7224-402c-b8ca-b0ef8fd5114d",
+      "allowed-origins": [
+        "http://127.0.0.1:3000",
+        "http://localhost:3000",
+        "https://try.plgd.cloud"
+      ],
+      "aud": "account",
+      "email": "test.user.ocfcloud@gmail.com",
+      "exp": 1721944119,
+      "iat": 1721936919,
+      "owner-id": "beb32777-9680-4f42-8761-350eebe76a85",
+      "acr": "1",
+      "family_name": "Test",
+      "iss": "https://auth.plgd.cloud/realms/shared",
+      "sub": "beb32777-9680-4f42-8761-350eebe76a85",
+      "typ": "Bearer",
+      "auth_time": 1721936918,
+      "email_verified": true,
+      "jti": "37eb920b-12f8-4d7b-ad0f-ed74aa06b360",
+      "resource_access": {
+        "account": {
+          "roles": [
+            "manage-account",
+            "manage-account-links",
+            "view-profile"
+          ]
+        }
+      },
+      "scope": "openid email profile",
+      "sid": "c3c1a8a3-7224-402c-b8ca-b0ef8fd5114d"
+    },
+    "version": "0",
+    "expiration": "1724530077",
+    "issuedAt": "1721938086",
+    "clientId": "jwt-private-key",
+    "subject": "beb32777-9680-4f42-8761-350eebe76a85",
+    "id": "a9c09f44-f367-42f7-8098-528f5e0d524c",
+    "name": "jkralik-cond-0-condition",
+    "owner": "beb32777-9680-4f42-8761-350eebe76a85"
+  }
+}

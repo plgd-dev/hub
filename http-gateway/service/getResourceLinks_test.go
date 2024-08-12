@@ -16,11 +16,11 @@ import (
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgHttpPb "github.com/plgd-dev/hub/v2/pkg/net/http/pb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	test "github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
-	httpTest "github.com/plgd-dev/hub/v2/test/http"
 	oauthService "github.com/plgd-dev/hub/v2/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
@@ -112,7 +112,7 @@ func TestRequestHandlerGetResourceLinks(t *testing.T) {
 			var links []*events.ResourceLinksPublished
 			for {
 				var v events.ResourceLinksPublished
-				err = httpTest.Unmarshal(resp.StatusCode, resp.Body, &v)
+				err = pkgHttpPb.Unmarshal(resp.StatusCode, resp.Body, &v)
 				if errors.Is(err, io.EOF) {
 					break
 				}

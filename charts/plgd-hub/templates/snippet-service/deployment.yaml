@@ -87,10 +87,8 @@ spec:
             - name: service-crt
               mountPath: {{ $cert }}
             {{- end }}
-            {{- if .Values.global.authorizationCAPool }}
-            - name: {{ .Values.extraAuthorizationCAPool.name }}
-              mountPath: {{ .Values.extraAuthorizationCAPool.mountPath }}
-            {{- end }}
+            {{- include "plgd-hub.extraCAPoolMount" (list . .Values.extraCAPool.authorization) | nindent 12 }}
+            {{- include "plgd-hub.extraCAPoolMount" (list . .Values.extraCAPool.internal) | nindent 12 }}
             {{- with .Values.snippetservice.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -106,11 +104,8 @@ spec:
           secret:
             secretName: {{ include "plgd-hub.snippetservice.serviceCertName" . }}
         {{- end }}
-        {{- if .Values.global.authorizationCAPool }}
-        - name: {{ .Values.extraAuthorizationCAPool.name }}
-          secret:
-            secretName: {{ .Values.extraAuthorizationCAPool.name }}
-        {{- end }}
+        {{- include "plgd-hub.extraCAPoolVolume" (list . .Values.extraCAPool.authorization) | nindent 8 }}
+        {{- include "plgd-hub.extraCAPoolVolume" (list . .Values.extraCAPool.internal) | nindent 8 }}
         {{- with .Values.snippetservice.extraVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}

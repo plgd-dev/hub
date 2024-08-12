@@ -71,7 +71,7 @@ func TestRequestHandlerSubscribeToResourceTokenTimeout(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
-	services := service.SetUpServicesOAuth | service.SetUpServicesId | service.SetUpServicesCertificateAuthority |
+	services := service.SetUpServicesOAuth | service.SetUpServicesMachine2MachineOAuth | service.SetUpServicesId | service.SetUpServicesCertificateAuthority |
 		service.SetUpServicesResourceAggregate | service.SetUpServicesResourceDirectory | service.SetUpServicesGrpcGateway |
 		service.SetUpServicesCoapGateway
 	tearDown := service.SetUpServices(ctx, t, services)

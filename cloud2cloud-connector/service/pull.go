@@ -18,7 +18,7 @@ import (
 	pbIS "github.com/plgd-dev/hub/v2/identity-store/pb"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
-	kitHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgHttpUri "github.com/plgd-dev/hub/v2/pkg/net/http/uri"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	raService "github.com/plgd-dev/hub/v2/resource-aggregate/service"
@@ -300,7 +300,7 @@ func (p *pullDevicesHandler) notifyResourceChanged(ctx context.Context, linkedAc
 	}
 
 	_, err = p.raClient.NotifyResourceChanged(ctx, &commands.NotifyResourceChangedRequest{
-		ResourceId: commands.NewResourceID(deviceID, kitHttp.CanonicalHref(link.Href)),
+		ResourceId: commands.NewResourceID(deviceID, pkgHttpUri.CanonicalHref(link.Href)),
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: linkedAccount.ID,
 			Sequence:     uint64(time.Now().UnixNano()),

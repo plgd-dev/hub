@@ -49,8 +49,7 @@ func TestServiceNew(t *testing.T) {
 	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 
-	const services = hubTestService.SetUpServicesOAuth
-	tearDown := hubTestService.SetUpServices(ctx, t, services)
+	tearDown := hubTestService.SetUpServices(ctx, t, hubTestService.SetUpServicesOAuth|hubTestService.SetUpServicesMachine2MachineOAuth)
 	defer tearDown()
 
 	tests := []struct {

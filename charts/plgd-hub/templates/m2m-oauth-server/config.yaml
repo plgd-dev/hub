@@ -1,5 +1,5 @@
 {{- if include "plgd-hub.m2moauthserver.enabled" . }}
-{{- $oauthServerCertPath := "/certs" }}
+{{- $cert := "/certs" }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -17,16 +17,49 @@ data:
       encoderConfig:
         timeEncoder: {{ .log.encoderConfig.timeEncoder }}
     apis:
+      grpc:
+        address: {{  .apis.grpc.address | default (printf "0.0.0.0:%v" .port) | quote }}
+        sendMsgSize: {{ int64 .apis.grpc.sendMsgSize | default 4194304 }}
+        recvMsgSize: {{ int64 .apis.grpc.recvMsgSize | default 4194304 }}
+        enforcementPolicy:
+          minTime: {{ .apis.grpc.enforcementPolicy.minTime }}
+          permitWithoutStream: {{ .apis.grpc.enforcementPolicy.permitWithoutStream }}
+        keepAlive:
+          # 0s - means infinity
+          maxConnectionIdle: {{ .apis.grpc.keepAlive.maxConnectionIdle }}
+          # 0s - means infinity
+          maxConnectionAge: {{ .apis.grpc.keepAlive.maxConnectionAge }}
+          # 0s - means infinity
+          maxConnectionAgeGrace: {{ .apis.grpc.keepAlive.maxConnectionAgeGrace }}
+          time: {{ .apis.grpc.keepAlive.time }}
+          timeout: {{ .apis.grpc.keepAlive.timeout }}
+        tls:
+          {{- $tls := .apis.grpc.tls }}
+          {{- include "plgd-hub.internalCertificateConfig" (list $ $tls $cert ) | indent 8 }}
+          clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
+        authorization:
+          {{- $authorization := .apis.grpc.authorization }}
+          {{- include "plgd-hub.authorizationConfig" (list $ $authorization "m2moauthserver.apis.grpc.authorization" $cert ) | indent 8 }}
       http:
-        address: {{  .apis.http.address | default (printf "0.0.0.0:%v" .port) | quote }}
+        address: {{ .apis.http.address | default (printf "0.0.0.0:%v" .httpPort) | quote }}
         readTimeout: {{ .apis.http.readTimeout }}
         readHeaderTimeout: {{ .apis.http.readHeaderTimeout }}
         writeTimeout: {{ .apis.http.writeTimeout }}
         idleTimeout: {{ .apis.http.idleTimeout }}
-        tls:
-          {{- $tls := .apis.http.tls }}
-          {{- include "plgd-hub.internalCertificateConfig" (list $ $tls $oauthServerCertPath ) | indent 8 }}
-          clientCertificateRequired: {{ .apis.http.tls.clientCertificateRequired }}
+    clients:
+      storage:
+        cleanUpDeletedTokens: {{ .clients.storage.cleanUpDeletedTokens | quote }}
+        use: {{ include "plgd-hub.useDatabase" (list $ . .clients.storage.use)  | quote }}
+        mongoDB:
+          uri: {{ include "plgd-hub.mongoDBUri" (list $ .clients.storage.mongoDB.uri )  | quote }}
+          database: {{ .clients.storage.mongoDB.database }}
+          maxPoolSize: {{ .clients.storage.mongoDB.maxPoolSize }}
+          maxConnIdleTime: {{ .clients.storage.mongoDB.maxConnIdleTime }}
+          tls:
+            {{- $mongoDbTls := .clients.storage.mongoDB.tls }}
+            {{- include "plgd-hub.internalCertificateConfig" (list $ $mongoDbTls $cert ) | indent 10 }}
+            useSystemCAPool: {{ .clients.storage.mongoDB.tls.useSystemCAPool }}
+      {{- include "plgd-hub.openTelemetryExporterConfig" (list $ $cert ) | nindent 6 }}
     oauthSigner:
       privateKeyFile: {{ include "plgd-hub.m2moauthserver.getPrivateKeyFile" $ }}
       domain: {{ include "plgd-hub.m2moauthserver.ingressDomain" $ }}
@@ -69,10 +102,12 @@ data:
           jwtPrivateKey:
             enabled: {{ .jwtPrivateKey.enabled }}
             authorization:
-              {{- $authorization := include "plgd-hub.basicAuthorizationConfig" (list $ .jwtPrivateKey.authorization (printf "m2moauthserver.oauthSigner.clients[%v].jwtPrivateKey.authorization" $idx) $oauthServerCertPath) | fromYaml }}
+              {{- $authorization := include "plgd-hub.basicAuthorizationConfig" (list $ .jwtPrivateKey.authorization (printf "m2moauthserver.oauthSigner.clients[%v].jwtPrivateKey.authorization" $idx) $cert) | fromYaml }}
               {{- if $authorization.audience }}
               audience: {{ $authorization.audience | quote }}
               {{- end }}
+              tokenTrustVerification:
+                cacheExpiration: {{ $authorization.tokenTrustVerification.cacheExpiration }}
               endpoints:
               {{- range $authorization.endpoints }}
               {{- if not (eq .authority (include "plgd-hub.m2moauthserver.uri" $)) }}
@@ -84,7 +119,5 @@ data:
           {{- end }}
         {{- end }}
         {{- end }}
-    clients:
-      {{- include "plgd-hub.openTelemetryExporterConfig" (list $ $oauthServerCertPath) | nindent 6 }}
 {{- end }}
 {{- end }}

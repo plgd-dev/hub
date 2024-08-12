@@ -44,14 +44,23 @@ func (c *AppliedConfiguration) GetAppliedConfiguration() *pb.AppliedConfiguratio
 }
 
 func (c *AppliedConfiguration) UnmarshalBSON(data []byte) error {
-	update := func(json map[string]interface{}) {
-		recordID, ok := json[pb.RecordIDKey]
+	var recordID string
+	update := func(json map[string]interface{}) error {
+		recordIDI, ok := json[pb.RecordIDKey]
 		if ok {
-			c.RecordID = recordID.(primitive.ObjectID).Hex()
+			recordID = recordIDI.(primitive.ObjectID).Hex()
 		}
 		delete(json, pb.RecordIDKey)
+		return nil
 	}
-	return pkgMongo.UnmarshalProtoBSON(data, &c.AppliedConfiguration, update)
+	err := pkgMongo.UnmarshalProtoBSON(data, &c.AppliedConfiguration, update)
+	if err != nil {
+		return err
+	}
+	if c.GetId() == "" && recordID != "" {
+		c.RecordID = recordID
+	}
+	return nil
 }
 
 type UpdateAppliedConfigurationResourceRequest struct {

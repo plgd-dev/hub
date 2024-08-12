@@ -17,7 +17,7 @@
 {{- end -}}
 
 {{- define "plgd-hub.m2moauthserver.createServiceCertByCm" }}
-    {{- $serviceTls := .Values.m2moauthserver.apis.http.tls.certFile }}
+    {{- $serviceTls := .Values.m2moauthserver.apis.grpc.tls.certFile }}
     {{- if $serviceTls }}
     {{- printf "" -}}
     {{- else }}
@@ -78,14 +78,6 @@ true
 {{- end }}
 {{- end }}
 
-{{- define "plgd-hub.m2moauthserver.clientServiceSecretEnabled" -}}
-{{- if or .Values.global.m2mOAuthServer.clientServiceSecret .Values.m2moauthserver.clientServiceSecret.enabled }}
-true
-{{- else }}
-{{- printf "" }}
-{{- end }}
-{{- end }}
-
 {{- define "plgd-hub.m2moauthserver.getPrivateKeyFile" -}}
 {{- $privateKeyFile := .Values.m2moauthserver.oauthSigner.privateKeyFile }}
 {{- if and (not $privateKeyFile) (include "plgd-hub.m2moauthserver.privateKeySecretEnabled" $) }}
@@ -93,15 +85,6 @@ true
 {{- end }}
 {{- printf "%s" $privateKeyFile }}
 {{- end -}}
-
-{{- define "plgd-hub.m2moauthserver.getClientServiceSecretFile" -}}
-{{- $file := "" }}
-{{- if include "plgd-hub.m2moauthserver.clientServiceSecretEnabled" $ }}
-{{- $file = printf "%s/%s" .Values.m2moauthserver.clientServiceSecret.mountPath .Values.m2moauthserver.clientServiceSecret.fileName }}
-{{- end }}
-{{- printf "%s" $file }}
-{{- end -}}
-
 
 {{- define "plgd-hub.m2moauthserver.enabled" -}}
 {{- if and .Values.m2moauthserver.enabled (include "plgd-hub.m2moauthserver.privateKeySecretEnabled" .) }}

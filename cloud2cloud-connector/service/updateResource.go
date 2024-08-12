@@ -12,7 +12,7 @@ import (
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
-	kitHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgHttpUri "github.com/plgd-dev/hub/v2/pkg/net/http/uri"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	raEvents "github.com/plgd-dev/hub/v2/resource-aggregate/events"
 	raService "github.com/plgd-dev/hub/v2/resource-aggregate/service"
@@ -20,7 +20,7 @@ import (
 )
 
 func makeHTTPEndpoint(url, deviceID, href string) string {
-	return url + kitHttp.CanonicalHref("devices/"+deviceID+"/"+href)
+	return url + pkgHttpUri.CanonicalHref("devices/"+deviceID+"/"+href)
 }
 
 func updateDeviceResource(ctx context.Context, tracerProvider trace.TracerProvider, deviceID, href, contentType string, content []byte, linkedAccount store.LinkedAccount, linkedCloud store.LinkedCloud) (string, []byte, commands.Status, error) {

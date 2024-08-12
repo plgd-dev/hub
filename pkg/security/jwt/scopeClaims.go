@@ -52,6 +52,10 @@ func (c *ScopeClaims) GetAudience() (jwt.ClaimStrings, error) {
 	return Claims(*c).GetAudience()
 }
 
+func (c *ScopeClaims) GetID() (string, error) {
+	return Claims(*c).GetID()
+}
+
 func (c *ScopeClaims) Validate() error {
 	v := Claims(*c)
 	rs, ok := v[PlgdRequiredScope]

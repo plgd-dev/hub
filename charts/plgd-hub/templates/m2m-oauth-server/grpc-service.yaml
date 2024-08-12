@@ -1,0 +1,25 @@
+{{- if and (include "plgd-hub.m2moauthserver.enabled" .) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "plgd-hub.m2moauthserver.fullname" . }}-grpc
+  namespace: {{ .Release.Namespace }}  
+  labels:
+    {{- include "plgd-hub.labels" . | nindent 4 }}
+    {{- with .Values.m2moauthserver.service.grpc.labels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+  {{- if .Values.m2moauthserver.service.grpc.annotations }}
+  annotations:
+    {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.m2moauthserver.service.grpc.annotations "context" $ ) | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ .Values.m2moauthserver.service.grpc.type | default "ClusterIP" }}
+  ports:
+    - port: {{ .Values.m2moauthserver.port }}
+      targetPort: {{ .Values.m2moauthserver.service.grpc.targetPort }}
+      protocol: {{ .Values.m2moauthserver.service.grpc.protocol }}
+      name: {{ .Values.m2moauthserver.service.grpc.name }}
+  selector:
+  {{- include "plgd-hub.m2moauthserver.selectorLabels" . | nindent 4 }}
+{{- end }}

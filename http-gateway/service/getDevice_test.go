@@ -13,9 +13,9 @@ import (
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
 	"github.com/plgd-dev/hub/v2/http-gateway/uri"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgHttpPb "github.com/plgd-dev/hub/v2/pkg/net/http/pb"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
-	httpTest "github.com/plgd-dev/hub/v2/test/http"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	pbTest "github.com/plgd-dev/hub/v2/test/pb"
 	"github.com/plgd-dev/hub/v2/test/service"
@@ -93,7 +93,7 @@ func TestRequestHandlerGetDevice(t *testing.T) {
 			devices := make([]*pb.Device, 0, 1)
 			for {
 				var dev pb.Device
-				err = httpTest.Unmarshal(resp.StatusCode, resp.Body, &dev)
+				err = pkgHttpPb.Unmarshal(resp.StatusCode, resp.Body, &dev)
 				if errors.Is(err, io.EOF) {
 					break
 				}

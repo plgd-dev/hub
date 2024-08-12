@@ -14,7 +14,8 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
-	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgHttpJwt "github.com/plgd-dev/hub/v2/pkg/net/http/jwt"
 	"github.com/plgd-dev/hub/v2/pkg/net/listener"
 	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 	cmClient "github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
@@ -38,7 +39,7 @@ type Server struct {
 }
 
 // https://openconnectivity.org/draftspecs/Gaborone/OCF_Cloud_API_for_Cloud_Services.pdf
-var authRules = map[string][]kitNetHttp.AuthArgs{
+var authRules = map[string][]pkgHttpJwt.AuthArgs{
 	http.MethodGet: {
 		{
 			URI: regexp.MustCompile(`[\/]+api[\/]+v1[\/]+devices[\/]*$`),
@@ -249,7 +250,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		return nil, fmt.Errorf("cannot create validator: %w", err)
 	}
 	listener.AddCloseFunc(validator.Close)
-	auth := kitNetHttp.NewInterceptorWithValidator(validator, authRules)
+	auth := pkgHttpJwt.NewInterceptorWithValidator(validator, authRules)
 
 	gwClient, closeGwClient, err := newGrpcGatewayClient(config.Clients.GrpcGateway, fileWatcher, logger, tracerProvider)
 	if err != nil {
@@ -298,7 +299,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	requestHandler := NewRequestHandler(gwClient, raClient, subMgr, emitEvent)
 
 	httpServer := http.Server{
-		Handler:           kitNetHttp.OpenTelemetryNewHandler(NewHTTP(requestHandler, auth, logger), serviceName, tracerProvider),
+		Handler:           pkgHttp.OpenTelemetryNewHandler(NewHTTP(requestHandler, auth, logger), serviceName, tracerProvider),
 		ReadTimeout:       config.APIs.HTTP.Server.ReadTimeout,
 		ReadHeaderTimeout: config.APIs.HTTP.Server.ReadHeaderTimeout,
 		WriteTimeout:      config.APIs.HTTP.Server.WriteTimeout,

@@ -22,8 +22,6 @@ global:
   m2mOAuthServer:
     # -- private key to sign JWT m2m tokens
     privateKey: ""
-    # -- service secret to sign JWT m2m tokens for the oauth service client
-    clientServiceSecret: ""
   # -- Default OAuth authorization for all services
   authorization:
     audience: '{{ include "plgd-hub.globalAudience" . }}'
@@ -53,6 +51,8 @@ global:
             keyFile:
             certFile:
             useSystemCAPool: true
+    tokenTrustVerification:
+      cacheExpiration: 30s
   # -- Enable *.{{ global.domain }} for all external domain
   enableWildCartCert: true
   # -- Sets cloud to standby mode
@@ -1784,7 +1784,7 @@ httpgateway:
           integrations: false
           deviceFirmwareUpdate: false
           deviceLogs: false
-          apiTokens: false
+          apiTokens: true
           schemaHub: false
           snippetService: true
 
@@ -2490,9 +2490,9 @@ snippetservice:
     http:
       # -- Service type
       type: ClusterIP
-      # -- Labels for snippet service
+      # -- Labels for snippet-service
       labels: {}
-      # -- Annotations for snippet service
+      # -- Annotations for snippet-service
       annotations: {}
       # -- Target port
       targetPort: http
@@ -2507,7 +2507,7 @@ snippetservice:
   rbac:
     # -- Enable RBAC
     enabled: false
-    # -- Name of snippet service SA
+    # -- Name of snippet-service SA
     serviceAccountName: snippet-service
     # -- Template definition for Role/binding etc..
     roleBindingDefitionTpl:
@@ -2893,20 +2893,39 @@ m2moauthserver:
   # -- Annotations for m2m-oauth-server pod
   podAnnotations: {}
   service:
-    type: ClusterIP
-    # -- Labels for m2m-oauth-server service
-    labels: {}
-    # -- Annotations for m2m-oauth-server service
-    annotations: {}
-    # -- Target port
-    targetPort: http
-    # -- Protocol
-    protocol: TCP
-    # -- Name
-    name: http
-    crt:
-      # -- Extra DNS names for service certificate
-      extraDnsNames: []
+    grpc:
+      # -- Service type
+      type: ClusterIP
+      # -- Labels for m2m-oauth-server
+      labels: {}
+      # -- Annotations for m2m-oauth-server
+      annotations: {}
+      # -- Target port
+      targetPort: grpc
+      # -- Protocol
+      protocol: TCP
+      # -- Name
+      name: grpc
+      crt:
+        # -- Extra DNS names for service certificate
+        extraDnsNames: []
+    http:
+      # -- Service type
+      type: ClusterIP
+      # -- Labels for m2m-oauth-server
+      labels: {}
+      # -- Annotations for m2m-oauth-server
+      annotations: {}
+      # -- Target port
+      targetPort: http
+      # -- Protocol
+      protocol: TCP
+      # -- Name
+      name: http
+      crt:
+        # -- Extra DNS names for service certificate
+        extraDnsNames: []
+  # -- RBAC configuration
   securityContext: {}
   # -- Image pull secrets
   imagePullSecrets: {}
@@ -2942,20 +2961,40 @@ m2moauthserver:
   # -- Domain for oauth. Default {{ global.domain }}
   domain:
   ingress:
-    # -- Enable ingress
-    enabled: true
-    # -- Pre defined map of Ingress annotation
-    annotations:
-      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
-      ingress.kubernetes.io/force-ssl-redirect: "true"
-      nginx.ingress.kubernetes.io/enable-cors: "true"
-      cert-manager.io/private-key-rotation-policy: always
-    # -- Custom map of Ingress annotation
-    customAnnotations: {}
-    # -- Ingress path
-    paths:
-      - /m2m-oauth-server
-    allowHeaders: "Authortity,Method,Path,Scheme,Accept,Accept-Encoding,Accept-Language,Content-Type,auth0-client,Origin,Refer,Sec-Fetch-Dest,Sec-Fetch-Mode,Sec-Fetch-Site,Authorization,DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range"
+    http:
+      # -- Enable ingress
+      enabled: true
+      # -- Override name of host/tls secret. If not specified, it will be generated
+      secretName:
+      # -- Pre defined map of Ingress annotation
+      annotations:
+        nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+        ingress.kubernetes.io/force-ssl-redirect: "true"
+        nginx.ingress.kubernetes.io/enable-cors: "true"
+        cert-manager.io/private-key-rotation-policy: always
+      # -- Custom map of Ingress annotation
+      customAnnotations: {}
+      # -- Ingress path
+      paths:
+        - /m2m-oauth-server
+      allowHeaders: "Authortity,Method,Path,Scheme,Accept,Accept-Encoding,Accept-Language,Content-Type,auth0-client,Origin,Refer,Sec-Fetch-Dest,Sec-Fetch-Mode,Sec-Fetch-Site,Authorization,DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range"
+    grpc:
+      # -- Enable ingress
+      enabled: true
+      # -- Override name of host/tls secret. If not specified, it will be generated
+      secretName:
+      # -- Pre defined map of Ingress annotation
+      annotations:
+        nginx.org/grpc-services: '{{ include "plgd-hub.m2moauthserver.fullname" . }}-grpc'
+        nginx.ingress.kubernetes.io/backend-protocol: "GRPCS"
+        ingress.kubernetes.io/force-ssl-redirect: "true"
+        nginx.ingress.kubernetes.io/enable-cors: "true"
+        cert-manager.io/private-key-rotation-policy: always
+      # -- Custom map of Ingress annotation
+      customAnnotations: {}
+      # -- Paths
+      paths:
+        - /m2moauthserver.pb.M2MOAuthService
   # -- m2m-oauth-server service yaml config section
   config:
     # -- Name of configuration file
@@ -2966,6 +3005,7 @@ m2moauthserver:
     mountPath: /config
   # -- Port for service and POD
   port: 9100
+  httpPort: 9101
   privateKey:
     # -- Set deployment to use secret for private key
     enabled: false
@@ -2977,17 +3017,6 @@ m2moauthserver:
     volume: private-key
     # -- Mount path
     mountPath: /secrets/keys
-  clientServiceSecret:
-    # -- Set deployment to use secret for service secret
-    enabled: false
-    # -- Name of private key file
-    fileName: secret.dat
-    # -- Name of secret
-    secretName: m2m-service-secret
-    # -- Volume name
-    volume: service-secret
-    # -- Mount path
-    mountPath: /secrets/clients/service
   log:
     # -- Logging enabled from level
     level: info
@@ -3009,11 +3038,56 @@ m2moauthserver:
       readHeaderTimeout: 4s
       writeTimeout: 16s
       idleTimeout: 30s
+    grpc:
+      address: ""
+      sendMsgSize: 4194304
+      recvMsgSize: 4194304
+      enforcementPolicy:
+        minTime: 5s
+        permitWithoutStream: true
+      keepAlive:
+        # 0s - means infinity
+        maxConnectionIdle: 0s
+        # 0s - means infinity
+        maxConnectionAge: 0s
+        # 0s - means infinity
+        maxConnectionAgeGrace: 0s
+        time: 2h
+        timeout: 20s
       tls:
         caPool:
         keyFile:
         certFile:
         clientCertificateRequired: false
+      authorization:
+        ownerClaim:
+        authority:
+        audience:
+        http:
+          maxIdleConns: 16
+          maxConnsPerHost: 32
+          maxIdleConnsPerHost: 16
+          idleConnTimeout: "30s"
+          timeout: "10s"
+          tls:
+            caPool:
+            keyFile:
+            certFile:
+            useSystemCAPool: false
+  clients:
+    storage:
+      cleanUpDeletedTokens: "0 * * * *"
+      use: mongoDB
+      mongoDB:
+        uri:
+        database: m2mOAuthServer
+        maxPoolSize: 16
+        maxConnIdleTime: 4m0s
+        tls:
+          caPool:
+          keyFile:
+          certFile:
+          useSystemCAPool: false
   oauthSigner:
     privateKeyFile:
     domain:
@@ -3031,10 +3105,3 @@ m2moauthserver:
           authorization:
             audience:
             endpoints:
-      - id: "service"
-        secretFile: '{{ include "plgd-hub.m2moauthserver.getClientServiceSecretFile" . }}'
-        accessTokenLifetime: 0s
-        allowedGrantTypes:
-          - client_credentials
-        allowedAudiences: []
-        allowedScopes: []

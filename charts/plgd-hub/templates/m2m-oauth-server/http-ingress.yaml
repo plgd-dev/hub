@@ -1,0 +1,40 @@
+{{- if and (include "plgd-hub.m2moauthserver.enabled" .) .Values.m2moauthserver.ingress.http.enabled }}
+{{- $fullname := include "plgd-hub.m2moauthserver.fullname" . }}
+{{- $port := .Values.m2moauthserver.httpPort }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $fullname }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plgd-hub.labels" . | nindent 4 }}
+  annotations:
+    {{- if .Values.m2moauthserver.ingress.http.annotations }}
+    {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.m2moauthserver.ingress.http.annotations "context" $ ) | nindent 4 }}
+    {{- end }}
+    {{- if .Values.m2moauthserver.ingress.http.customAnnotations }}
+    {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.m2moauthserver.ingress.http.customAnnotations "context" $ ) | nindent 4 }}
+    {{- end }}
+spec:
+  tls:
+    - hosts:
+        - {{ include "plgd-hub.m2moauthserver.ingressDomain" . | quote }}
+      {{- if $.Values.global.enableWildCartCert }}
+      secretName: {{ include "plgd-hub.wildCardCertName" . | quote }}
+      {{- else }}
+      secretName: {{ include "plgd-hub.m2moauthserver.domainCertName" . | quote }}
+      {{- end }}
+  rules:
+  - host: {{ include "plgd-hub.m2moauthserver.ingressDomain" . | quote }}
+    http:
+      paths:
+      {{- range  .Values.m2moauthserver.ingress.http.paths }}
+      - path: {{ . }}
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ $fullname }}
+            port:
+              number: {{ $port }}
+      {{- end }}
+{{- end }}

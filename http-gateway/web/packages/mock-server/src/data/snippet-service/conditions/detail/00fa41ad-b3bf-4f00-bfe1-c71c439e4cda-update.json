@@ -1,0 +1,34 @@
+[
+  {
+    "result": {
+      "enabled": true,
+      "jqExpressionFilter": ".n == \"new name value\"",
+      "timestamp": "1720109672386226348",
+      "version": "0",
+      "name": "jkralik-cond-01",
+      "configurationId": "48998f7d-2a70-46a4-8a68-745b69d55489",
+      "resourceHrefFilter": [
+        "/oic/d"
+      ],
+      "apiAccessToken": "aaa",
+      "owner": "beb32777-9680-4f42-8761-350eebe76a85",
+      "id": "00fa41ad-b3bf-4f00-bfe1-c71c439e4cda"
+    }
+  },
+  {
+  "result": {
+    "enabled": true,
+    "configurationId": "48998f7d-2a70-46a4-8a68-745b69d55489",
+    "resourceHrefFilter": [
+      "/oic/d"
+    ],
+    "apiAccessToken": "eyJhbGciOiJFUzI1NiIsImtpZCI6IjdlODU5NTExLWIyMDYtNTlmYi05MGZmLTE0NTQzZTBjNWRjZCIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsiaHR0cHM6Ly90cnkucGxnZC5jbG91ZCJdCiwiY2xpZW50X2lkIjoiand0LXByaXZhdGUta2V5IiwiaWF0IjoxNzIwMTA5NjgwCiwiaXNzIjoiaHR0cHM6Ly90cnkucGxnZC5jbG91ZCIsIm93bmVyLWlkIjoiYmViMzI3NzctOTY4MC00ZjQyLTg3NjEtMzUwZWViZTc2YTg1Iiwic2NvcGUiOiIiLCJzdWIiOiJiZWIzMjc3Ny05NjgwLTRmNDItODc2MS0zNTBlZWJlNzZhODUifQ.slGHA16fw7xzaNQRaKIp9x0FacxAQOPi8eqfVj5MMsAprvJymPkyJExvN1e6-L6hJeVN1TIR3T4kL7LUhxeARQ",
+    "owner": "beb32777-9680-4f42-8761-350eebe76a85",
+    "id": "00fa41ad-b3bf-4f00-bfe1-c71c439e4cda",
+    "name": "jkralik-cond-0",
+    "jqExpressionFilter": ".n == \"new name value\"",
+    "timestamp": "1720109684300119163",
+    "version": "1"
+  }
+}
+]

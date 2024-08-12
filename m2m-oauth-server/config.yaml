@@ -1,25 +1,65 @@
 log:
-    level: info
-    encoding: json
-    stacktrace:
-        enabled: false
-        level: warn
-    encoderConfig:
-        timeEncoder: rfc3339nano
-    dumpBody: false
+  level: info
+  encoding: json
+  stacktrace:
+    enabled: false
+    level: warn
+  encoderConfig:
+    timeEncoder: rfc3339nano
 apis:
-  http:
+  grpc:
     address: "0.0.0.0:9100"
-    readTimeout: 8s
-    readHeaderTimeout: 4s
-    writeTimeout: 16s
-    idleTimeout: 30s
+    sendMsgSize: 4194304
+    recvMsgSize: 4194304
+    enforcementPolicy:
+      minTime: 5s
+      permitWithoutStream: true
+    keepAlive:
+      # 0s - means infinity
+      maxConnectionIdle: 0s
+      # 0s - means infinity
+      maxConnectionAge: 0s
+      # 0s - means infinity
+      maxConnectionAgeGrace: 0s
+      time: 2h
+      timeout: 20s
     tls:
       caPool: "/secrets/public/rootca.crt"
       keyFile: "/secrets/private/cert.key"
-      certFile: "/secrets/public/cert.crt"
+      certFile: "/secrets/private/cert.crt"
       clientCertificateRequired: true
+    authorization:
+      ownerClaim: "sub"
+      audience: ""
+      endpoints:
+        - authority: ""
+          http:
+            maxIdleConns: 16
+            maxConnsPerHost: 32
+            maxIdleConnsPerHost: 16
+            idleConnTimeout: "30s"
+            timeout: "10s"
+            tls:
+              caPool: "/secrets/public/rootca.crt"
+              keyFile: "/secrets/private/cert.key"
+              certFile: "/secrets/public/cert.crt"
+              useSystemCAPool: false
+      tokenTrustVerification:
+        cacheExpiration: 30s
 clients:
+  storage:
+    cleanUpDeletedTokens: 0 * * * *
+    use: mongoDB
+    mongoDB:
+      uri:
+      database: m2mOAuthServer
+      maxPoolSize: 16
+      maxConnIdleTime: 4m0s
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false
   openTelemetryCollector:
     grpc:
       enabled: false
@@ -36,8 +76,8 @@ clients:
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
 oauthSigner:
-    privateKeyFile: "/secrets/private/private.key"
-    domain:
-    ownerClaim: sub
-    deviceIDClaim:
-    clients:
+  privateKeyFile: "/secrets/private/private.key"
+  domain:
+  ownerClaim: sub
+  deviceIDClaim:
+  clients:

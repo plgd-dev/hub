@@ -24,6 +24,7 @@ import PageListTemplate from '@/containers/Common/PageListTemplate/PageListTempl
 import { deleteAppliedConfigurationApi } from '@/containers/SnippetService/rest'
 import { getAppliedConfigurationStatusStatus, getAppliedConfigurationStatusValue } from '@/containers/SnippetService/utils'
 import { AppliedConfigurationStatusType } from '@/containers/SnippetService/ServiceSnippet.types'
+import testId from '@/testId'
 
 const ListPage: FC<any> = () => {
     const { formatMessage: _ } = useIntl()
@@ -52,6 +53,7 @@ const ListPage: FC<any> = () => {
                 accessor: 'configurationName',
                 Cell: ({ value, row }: { value: string; row: any }) => (
                     <a
+                        data-test-id={`${testId.snippetService.appliedConfigurations.list.table}-row-${row.id}-name`}
                         href={generatePath(pages.SNIPPET_SERVICE.APPLIED_CONFIGURATIONS.DETAIL.LINK, { appliedConfigurationId: row.original.id, tab: '' })}
                         onClick={(e) => {
                             e.preventDefault()
@@ -91,10 +93,11 @@ const ListPage: FC<any> = () => {
                 accessor: 'conditionName',
                 Cell: ({ value, row }: { value: string; row: any }) => {
                     if (row.original.onDemand) {
-                        return 'on demand'
+                        return <StatusTag variant={statusTagVariants.NORMAL}>{_(confT.onDemand)}</StatusTag>
                     } else {
                         return (
                             <Tag
+                                dataTestId={`${testId.snippetService.appliedConfigurations.list.table}-row-${row.id}-condition`}
                                 onClick={() =>
                                     `${navigate(
                                         generatePath(pages.SNIPPET_SERVICE.CONDITIONS.DETAIL.LINK, { conditionId: row.original.conditionId.id, tab: '' })
@@ -117,10 +120,11 @@ const ListPage: FC<any> = () => {
     )
 
     return (
-        <PageLayout breadcrumbs={breadcrumbs} loading={loading} title={_(confT.appliedConfiguration)}>
+        <PageLayout breadcrumbs={breadcrumbs} loading={loading} title={_(confT.appliedConfigurations)}>
             <PageListTemplate
                 columns={columns}
                 data={data}
+                dataTestId={testId.snippetService.appliedConfigurations.list.pageTemplate}
                 deleteApiMethod={deleteAppliedConfigurationApi}
                 i18n={{
                     singleSelected: _(confT.appliedConfiguration),
@@ -154,6 +158,7 @@ const ListPage: FC<any> = () => {
                     navigate(generatePath(pages.SNIPPET_SERVICE.APPLIED_CONFIGURATIONS.DETAIL.LINK, { appliedConfigurationId: id, tab: '' }))
                 }
                 refresh={() => refresh()}
+                tableDataTestId={testId.snippetService.appliedConfigurations.list.table}
             />
         </PageLayout>
     )

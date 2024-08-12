@@ -18,7 +18,8 @@ import (
 	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
-	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgHttpJwt "github.com/plgd-dev/hub/v2/pkg/net/http/jwt"
 	"github.com/plgd-dev/hub/v2/pkg/net/listener"
 	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 	cmClient "github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
@@ -53,10 +54,10 @@ func toValidator(c oauth2.Config) validator.Config {
 
 const serviceName = "cloud2cloud-connector"
 
-func newAuthInterceptor(validator *validator.Validator) kitNetHttp.Interceptor {
-	authRules := kitNetHttp.NewDefaultAuthorizationRules(uri.API)
+func newAuthInterceptor(validator *validator.Validator) pkgHttpJwt.Interceptor {
+	authRules := pkgHttp.NewDefaultAuthorizationRules(uri.API)
 
-	whiteList := []kitNetHttp.RequestMatcher{
+	whiteList := []pkgHttpJwt.RequestMatcher{
 		{
 			Method: http.MethodGet,
 			URI:    regexp.MustCompile(regexp.QuoteMeta(uri.OAuthCallback)),
@@ -70,7 +71,7 @@ func newAuthInterceptor(validator *validator.Validator) kitNetHttp.Interceptor {
 			URI:    regexp.MustCompile(regexp.QuoteMeta(uri.Events)),
 		},
 	}
-	auth := kitNetHttp.NewInterceptorWithValidator(validator, authRules, whiteList...)
+	auth := pkgHttpJwt.NewInterceptorWithValidator(validator, authRules, whiteList...)
 
 	return auth
 }
@@ -267,7 +268,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	}
 
 	httpServer := http.Server{
-		Handler:           kitNetHttp.OpenTelemetryNewHandler(httpHandler, serviceName, tracerProvider),
+		Handler:           pkgHttp.OpenTelemetryNewHandler(httpHandler, serviceName, tracerProvider),
 		ReadTimeout:       config.APIs.HTTP.Server.ReadTimeout,
 		ReadHeaderTimeout: config.APIs.HTTP.Server.ReadHeaderTimeout,
 		WriteTimeout:      config.APIs.HTTP.Server.WriteTimeout,

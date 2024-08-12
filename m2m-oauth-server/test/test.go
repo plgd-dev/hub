@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	oauthsigner "github.com/plgd-dev/hub/v2/m2m-oauth-server/oauthSigner"
 	"github.com/plgd-dev/hub/v2/m2m-oauth-server/service"
 	"github.com/plgd-dev/hub/v2/m2m-oauth-server/uri"
 	"github.com/plgd-dev/hub/v2/pkg/config/property/urischeme"
@@ -20,6 +21,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
+	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
 	"github.com/plgd-dev/hub/v2/test/config"
 	testHttp "github.com/plgd-dev/hub/v2/test/http"
 	testOAuthUri "github.com/plgd-dev/hub/v2/test/oauth-server/uri"
@@ -32,30 +34,31 @@ const (
 	DeviceIDClaim = testOAuthUri.DeviceIDClaimKey
 )
 
-var ServiceOAuthClient = service.Client{
+var ServiceOAuthClient = oauthsigner.Client{
 	ID:                  "serviceClient",
 	SecretFile:          "data:,serviceClientSecret",
+	Owner:               "1",
 	AccessTokenLifetime: 0,
-	AllowedGrantTypes:   []service.GrantType{service.GrantTypeClientCredentials},
+	AllowedGrantTypes:   []oauthsigner.GrantType{oauthsigner.GrantTypeClientCredentials},
 	AllowedAudiences:    nil,
 	AllowedScopes:       nil,
 	InsertTokenClaims:   map[string]interface{}{"hardcodedClaim": true},
 }
 
-var JWTPrivateKeyOAuthClient = service.Client{
+var JWTPrivateKeyOAuthClient = oauthsigner.Client{
 	ID:                  "JWTPrivateKeyClient",
 	SecretFile:          "data:,JWTPrivateKeyClientSecret",
 	AccessTokenLifetime: 0,
-	AllowedGrantTypes:   []service.GrantType{service.GrantTypeClientCredentials},
+	AllowedGrantTypes:   []oauthsigner.GrantType{oauthsigner.GrantTypeClientCredentials},
 	AllowedAudiences:    nil,
 	AllowedScopes:       nil,
-	JWTPrivateKey: service.PrivateKeyJWTConfig{
+	JWTPrivateKey: oauthsigner.PrivateKeyJWTConfig{
 		Enabled:       true,
 		Authorization: config.MakeValidatorConfig(),
 	},
 }
 
-var OAuthClients = service.OAuthClientsConfig{
+var OAuthClients = oauthsigner.OAuthClientsConfig{
 	&ServiceOAuthClient,
 	&JWTPrivateKeyOAuthClient,
 }
@@ -65,12 +68,21 @@ func MakeConfig(t require.TestingT) service.Config {
 
 	cfg.Log = log.MakeDefaultConfig()
 
-	cfg.APIs.HTTP.Connection = config.MakeListenerConfig(config.M2M_OAUTH_SERVER_HTTP_HOST)
-	cfg.APIs.HTTP.Connection.TLS.ClientCertificateRequired = false
+	cfg.APIs.HTTP.Addr = config.M2M_OAUTH_SERVER_HTTP_HOST
 	cfg.APIs.HTTP.Server = config.MakeHttpServerConfig()
 	cfg.Clients.OpenTelemetryCollector = kitNetHttp.OpenTelemetryCollectorConfig{
 		Config: config.MakeOpenTelemetryCollectorClient(),
 	}
+	cfg.APIs.GRPC = config.MakeGrpcServerConfig(config.M2M_OAUTH_SERVER_HOST)
+	cfg.APIs.GRPC.TLS.ClientCertificateRequired = false
+	cfg.APIs.GRPC.Authorization.Endpoints = append(cfg.APIs.GRPC.Authorization.Endpoints,
+		validator.AuthorityConfig{
+			Authority: testHttp.HTTPS_SCHEME + config.M2M_OAUTH_SERVER_HTTP_HOST + uri.Base,
+			HTTP:      config.MakeHttpClientConfig(),
+		},
+	)
+	cfg.APIs.GRPC.Authorization.Config = config.MakeValidatorConfig()
+	cfg.Clients.Storage = MakeStoreConfig()
 
 	cfg.OAuthSigner.PrivateKeyFile = urischeme.URIScheme(os.Getenv("M2M_OAUTH_SERVER_PRIVATE_KEY"))
 	cfg.OAuthSigner.Domain = config.M2M_OAUTH_SERVER_HTTP_HOST
@@ -131,6 +143,7 @@ type AccessTokenOptions struct {
 	Audience     string
 	JWT          string
 	PostForm     bool
+	Expiration   time.Time
 	Ctx          context.Context
 }
 
@@ -182,6 +195,12 @@ func WithPostFrom(enabled bool) func(opts *AccessTokenOptions) {
 	}
 }
 
+func WithExpiration(expiration time.Time) func(opts *AccessTokenOptions) {
+	return func(opts *AccessTokenOptions) {
+		opts.Expiration = expiration
+	}
+}
+
 func WithContext(ctx context.Context) func(opts *AccessTokenOptions) {
 	return func(opts *AccessTokenOptions) {
 		opts.Ctx = ctx
@@ -201,7 +220,7 @@ func GetAccessToken(t *testing.T, expectedCode int, opts ...func(opts *AccessTok
 		Host:         config.M2M_OAUTH_SERVER_HTTP_HOST,
 		ClientID:     ServiceOAuthClient.ID,
 		ClientSecret: GetSecret(t, ServiceOAuthClient.ID),
-		GrantType:    string(service.GrantTypeClientCredentials),
+		GrantType:    string(oauthsigner.GrantTypeClientCredentials),
 		Ctx:          context.Background(),
 	}
 	for _, o := range opts {
@@ -217,6 +236,9 @@ func GetAccessToken(t *testing.T, expectedCode int, opts ...func(opts *AccessTok
 	if options.JWT != "" {
 		reqBody[uri.ClientAssertionKey] = options.JWT
 		reqBody[uri.ClientAssertionTypeKey] = uri.ClientAssertionTypeJWT
+	}
+	if !options.Expiration.IsZero() {
+		reqBody[uri.ExpirationKey] = options.Expiration.Unix()
 	}
 	var data []byte
 	if options.PostForm {
@@ -264,5 +286,5 @@ func GetJWTValidator(jwkURL string) *jwt.Validator {
 		Transport: t,
 		Timeout:   time.Second * 10,
 	}
-	return jwt.NewValidator(jwt.NewKeyCache(jwkURL, &client))
+	return jwt.NewValidator(jwt.NewKeyCache(jwkURL, &client), log.Get())
 }

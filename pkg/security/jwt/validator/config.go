@@ -2,6 +2,7 @@ package validator
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/plgd-dev/hub/v2/pkg/net/http/client"
 )
@@ -21,11 +22,23 @@ func (c *AuthorityConfig) Validate() error {
 	return nil
 }
 
+type TokenTrustVerificationConfig struct {
+	CacheExpiration time.Duration `yaml:"cacheExpiration,omitempty" json:"cacheExpiration,omitempty"`
+}
+
+func (c *TokenTrustVerificationConfig) Validate() error {
+	if c.CacheExpiration == 0 {
+		c.CacheExpiration = time.Second * 30
+	}
+	return nil
+}
+
 type Config struct {
-	Audience  string            `yaml:"audience" json:"audience"`
-	Endpoints []AuthorityConfig `yaml:"endpoints" json:"endpoints"`
-	Authority *string           `yaml:"authority,omitempty" json:"authority,omitempty"` // deprecated
-	HTTP      *client.Config    `yaml:"http,omitempty" json:"http,omitempty"`           // deprecated
+	Audience          string                       `yaml:"audience" json:"audience"`
+	Endpoints         []AuthorityConfig            `yaml:"endpoints" json:"endpoints"`
+	TokenVerification TokenTrustVerificationConfig `yaml:"tokenTrustVerification,omitempty" json:"tokenTrustVerification,omitempty"`
+	Authority         *string                      `yaml:"authority,omitempty" json:"authority,omitempty"` // deprecated
+	HTTP              *client.Config               `yaml:"http,omitempty" json:"http,omitempty"`           // deprecated
 }
 
 func (c *Config) Validate() error {
@@ -45,5 +58,5 @@ func (c *Config) Validate() error {
 			return fmt.Errorf("endpoints[%v].%w", i, err)
 		}
 	}
-	return nil
+	return c.TokenVerification.Validate()
 }

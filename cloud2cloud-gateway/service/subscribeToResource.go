@@ -28,7 +28,7 @@ func (rh *RequestHandler) makeSubscription(r *http.Request, typ store.Type, vali
 		return res, http.StatusBadRequest, fmt.Errorf("invalid eventsurl(%w)", err)
 	}
 
-	token, err := pkgHttp.ParseToken(r.Header.Get("Authorization"))
+	token, err := pkgHttp.GetToken(r.Header.Get("Authorization"))
 	if err != nil {
 		return res, http.StatusUnauthorized, fmt.Errorf("invalid accessToken(%w)", err)
 	}

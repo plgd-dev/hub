@@ -12,7 +12,7 @@ import (
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
 	"github.com/plgd-dev/hub/v2/pkg/log"
-	kitHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
+	pkgHttpUri "github.com/plgd-dev/hub/v2/pkg/net/http/uri"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -111,7 +111,7 @@ func (s *SubscriptionManager) handleResourcesPublished(ctx context.Context, d Su
 				Priority: int64(endpoint.Priority),
 			})
 		}
-		href := kitHttp.CanonicalHref(trimDeviceIDFromHref(link.DeviceID, link.Href))
+		href := pkgHttpUri.CanonicalHref(trimDeviceIDFromHref(link.DeviceID, link.Href))
 		_, err := s.raClient.PublishResourceLinks(ctx, &commands.PublishResourceLinksRequest{
 			DeviceId: link.DeviceID,
 			Resources: []*commands.Resource{{
@@ -153,7 +153,7 @@ func (s *SubscriptionManager) handleResourcesUnpublished(ctx context.Context, d 
 	var errors *multierror.Error
 	for _, link := range links {
 		link.DeviceID = d.subscription.DeviceID
-		href := kitHttp.CanonicalHref(trimDeviceIDFromHref(link.DeviceID, link.Href))
+		href := pkgHttpUri.CanonicalHref(trimDeviceIDFromHref(link.DeviceID, link.Href))
 		_, err := s.raClient.UnpublishResourceLinks(ctx, &commands.UnpublishResourceLinksRequest{
 			DeviceId: link.GetDeviceID(),
 			Hrefs:    []string{href},

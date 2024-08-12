@@ -765,8 +765,8 @@ type AppliedConfiguration struct {
 	unknownFields protoimpl.UnknownFields
 
 	Id              string                         `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	DeviceId        string                         `protobuf:"bytes,2,opt,name=device_id,json=deviceId,proto3" json:"device_id,omitempty" bson:"deviceId"`
-	ConfigurationId *AppliedConfiguration_LinkedTo `protobuf:"bytes,3,opt,name=configuration_id,json=configurationId,proto3" json:"configuration_id,omitempty" bson:"configurationId"`
+	DeviceId        string                         `protobuf:"bytes,2,opt,name=device_id,json=deviceId,proto3" json:"device_id,omitempty" bson:"deviceId"`                       
+	ConfigurationId *AppliedConfiguration_LinkedTo `protobuf:"bytes,3,opt,name=configuration_id,json=configurationId,proto3" json:"configuration_id,omitempty" bson:"configurationId"`  
 	// Types that are assignable to ExecutedBy:
 	//
 	//	*AppliedConfiguration_OnDemand
@@ -882,7 +882,7 @@ type AppliedConfiguration_OnDemand struct {
 }
 
 type AppliedConfiguration_ConditionId struct {
-	ConditionId *AppliedConfiguration_LinkedTo `protobuf:"bytes,5,opt,name=condition_id,json=conditionId,proto3,oneof" bson:"conditionId"`
+	ConditionId *AppliedConfiguration_LinkedTo `protobuf:"bytes,5,opt,name=condition_id,json=conditionId,proto3,oneof" bson:"conditionId"`  
 }
 
 func (*AppliedConfiguration_OnDemand) isAppliedConfiguration_ExecutedBy() {}
@@ -1269,11 +1269,11 @@ type AppliedConfiguration_Resource struct {
 
 	Href string `protobuf:"bytes,1,opt,name=href,proto3" json:"href,omitempty"`
 	// Reused from invoke command or generated. Can be used to retrieve corresponding pending command.
-	CorrelationId   string                               `protobuf:"bytes,2,opt,name=correlation_id,json=correlationId,proto3" json:"correlation_id,omitempty" bson:"correlationId"`
+	CorrelationId   string                               `protobuf:"bytes,2,opt,name=correlation_id,json=correlationId,proto3" json:"correlation_id,omitempty" bson:"correlationId"`  
 	Status          AppliedConfiguration_Resource_Status `protobuf:"varint,3,opt,name=status,proto3,enum=snippetservice.pb.AppliedConfiguration_Resource_Status" json:"status,omitempty"`
-	ResourceUpdated *events.ResourceUpdated              `protobuf:"bytes,4,opt,name=resource_updated,json=resourceUpdated,proto3" json:"resource_updated,omitempty" bson:"resourceUpdated,omitempty"`
+	ResourceUpdated *events.ResourceUpdated              `protobuf:"bytes,4,opt,name=resource_updated,json=resourceUpdated,proto3" json:"resource_updated,omitempty" bson:"resourceUpdated,omitempty"`  
 	// Unix nanoseconds timestamp for resource in PENDING status, until which the pending update is valid
-	ValidUntil int64 `protobuf:"varint,5,opt,name=valid_until,json=validUntil,proto3" json:"valid_until,omitempty" bson:"validUntil,omitempty"`
+	ValidUntil int64 `protobuf:"varint,5,opt,name=valid_until,json=validUntil,proto3" json:"valid_until,omitempty" bson:"validUntil,omitempty"`  
 }
 
 func (x *AppliedConfiguration_Resource) Reset() {

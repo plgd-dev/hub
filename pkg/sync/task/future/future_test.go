@@ -7,10 +7,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+const TEST_TIMEOUT = time.Second * 10
 
 func TestFutureReady(t *testing.T) {
 	fut, set := New()
@@ -50,7 +51,7 @@ func TestFutureGetTimeout(t *testing.T) {
 func TestFutureGetMultithreaded(t *testing.T) {
 	fut, set := New()
 
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), TEST_TIMEOUT)
 	defer cancel()
 	const val = "test"
 
@@ -72,7 +73,7 @@ func TestFutureGetMultithreaded(t *testing.T) {
 func TestFutureGetAfterSet(t *testing.T) {
 	fut, set := New()
 
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), TEST_TIMEOUT)
 	defer cancel()
 
 	const val = "test"
@@ -84,7 +85,7 @@ func TestFutureGetAfterSet(t *testing.T) {
 }
 
 func TestFutureSetFromWorkerRoutine(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), TEST_TIMEOUT)
 	defer cancel()
 
 	fut, set := New()
@@ -100,7 +101,7 @@ func TestFutureSetFromWorkerRoutine(t *testing.T) {
 }
 
 func TestFutureRepeatedSet(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), config.TEST_TIMEOUT)
+	ctx, cancel := context.WithTimeout(context.Background(), TEST_TIMEOUT)
 	defer cancel()
 
 	fut, set := New()

@@ -10,6 +10,7 @@ type Config struct {
 	UserInfoURL        string   `json:"userinfo_endpoint,omitempty"`
 	Algorithms         []string `json:"id_token_signing_alg_values_supported,omitempty"`
 	EndSessionEndpoint string   `json:"end_session_endpoint,omitempty"`
+	PlgdTokensEndpoint string   `json:"plgd_tokens_endpoint,omitempty"`
 }
 
 func (c Config) Validate() error {

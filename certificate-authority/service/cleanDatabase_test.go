@@ -29,7 +29,7 @@ func TestCertificateAuthorityServerCleanUpSigningRecords(t *testing.T) {
 	cfg.Clients.Storage.CleanUpRecords = "*/1 * * * * *"
 	fmt.Printf("%v\n\n", test.MakeConfig(t))
 
-	shutDown := testService.SetUpServices(context.Background(), t, testService.SetUpServicesCertificateAuthority|testService.SetUpServicesOAuth, testService.WithCAConfig(cfg))
+	shutDown := testService.SetUpServices(context.Background(), t, testService.SetUpServicesCertificateAuthority|testService.SetUpServicesOAuth|testService.SetUpServicesMachine2MachineOAuth, testService.WithCAConfig(cfg))
 	defer shutDown()
 
 	storeDB, closeStore := test.NewStore(t)

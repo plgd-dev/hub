@@ -36,12 +36,8 @@ func TestOwnerCacheSubscribe(t *testing.T) {
 	devices := []string{test.GenerateDeviceIDbyIdx(1), test.GenerateDeviceIDbyIdx(2), test.GenerateDeviceIDbyIdx(3)}
 	cfg := idService.MakeConfig(t)
 	cfg.APIs.GRPC.Addr = "localhost:1234"
-
-	oauthShutdown := oauthService.SetUp(t)
-	defer oauthShutdown()
-
-	shutdown := idService.New(t, cfg)
-	defer shutdown()
+	tearDown := service.SetUpServices(ctx, t, service.SetUpServicesOAuth|service.SetUpServicesMachine2MachineOAuth|service.SetUpServicesId, service.WithISConfig(cfg))
+	defer tearDown()
 
 	token := oauthService.GetDefaultAccessToken(t)
 
