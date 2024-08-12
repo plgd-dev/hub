@@ -77,9 +77,6 @@ func newHttpService(ctx context.Context, config HTTPConfig, validatorConfig vali
 }
 
 func newGrpcService(ctx context.Context, config grpcService.Config, ss *grpcService.SnippetServiceServer, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*grpcService.Service, func(), error) {
-	if err := config.Authorization.Validate(); err != nil {
-		return nil, nil, fmt.Errorf("invalid grpc authorization config: %w", err)
-	}
 	grpcValidator, err := validator.New(ctx, config.Authorization.Config, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create grpc validator: %w", err)
