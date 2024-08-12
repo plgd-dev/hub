@@ -6,6 +6,7 @@ import (
 
 	certAuthorityPb "github.com/plgd-dev/hub/v2/certificate-authority/pb"
 	grpcGatewayPb "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	m2mOAuthServerPb "github.com/plgd-dev/hub/v2/m2m-oauth-server/pb"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
@@ -37,6 +38,8 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*serv
 			certAuthorityPb.RegisterCertificateAuthorityServer(server.Server, &certAuthorityPb.UnimplementedCertificateAuthorityServer{})
 		case snippetServicePb.SnippetService_ServiceDesc.ServiceName:
 			snippetServicePb.RegisterSnippetServiceServer(server.Server, &snippetServicePb.UnimplementedSnippetServiceServer{})
+		case m2mOAuthServerPb.M2MOAuthService_ServiceDesc.ServiceName:
+			m2mOAuthServerPb.RegisterM2MOAuthServiceServer(server.Server, &m2mOAuthServerPb.UnimplementedM2MOAuthServiceServer{})
 		}
 	}
 	// Register the reflection service

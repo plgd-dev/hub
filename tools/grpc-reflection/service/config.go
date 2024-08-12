@@ -6,6 +6,7 @@ import (
 
 	certAuthorityPb "github.com/plgd-dev/hub/v2/certificate-authority/pb"
 	grpcGatewayPb "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	m2mOAuthServerPb "github.com/plgd-dev/hub/v2/m2m-oauth-server/pb"
 	"github.com/plgd-dev/hub/v2/pkg/config"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
@@ -41,6 +42,7 @@ var allowedReflectedServices = map[string]struct{}{
 	grpcGatewayPb.GrpcGateway_ServiceDesc.ServiceName:            {},
 	certAuthorityPb.CertificateAuthority_ServiceDesc.ServiceName: {},
 	snippetServicePb.SnippetService_ServiceDesc.ServiceName:      {},
+	m2mOAuthServerPb.M2MOAuthService_ServiceDesc.ServiceName:     {},
 }
 
 func (c *GRPCConfig) Validate() error {

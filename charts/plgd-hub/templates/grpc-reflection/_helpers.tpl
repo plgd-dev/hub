@@ -50,6 +50,17 @@
         {{- $ret = merge $ret (dict $key (list $service)) -}}
       {{- end }}
     {{- end }}
+    {{- if include "plgd-hub.m2moauthserver.enabled" . }}
+      {{- $key := include "plgd-hub.m2moauthserver.ingressDomain" . }}
+      {{- $service := "m2moauthserver.pb.M2MOAuthService" }}
+      {{- if hasKey $ret $key }}
+        {{- $existingList := index $ret $key }}
+        {{- $newList := append $existingList $service }}
+        {{- $ret = merge (dict $key $newList) $ret -}}
+      {{- else }}
+        {{- $ret = merge $ret (dict $key (list $service)) -}}
+      {{- end }}
+    {{- end }}
     {{- toYaml $ret }}
 {{- end -}}
 

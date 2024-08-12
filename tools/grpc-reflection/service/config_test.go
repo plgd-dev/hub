@@ -5,6 +5,7 @@ import (
 
 	certAuthorityPb "github.com/plgd-dev/hub/v2/certificate-authority/pb"
 	grpcGatewayPb "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	m2mOAuthServerPb "github.com/plgd-dev/hub/v2/m2m-oauth-server/pb"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	snippetServicePb "github.com/plgd-dev/hub/v2/snippet-service/pb"
 	"github.com/plgd-dev/hub/v2/test/config"
@@ -30,8 +31,13 @@ func TestConfigValidate(t *testing.T) {
 				},
 				APIs: service.APIsConfig{
 					GRPC: service.GRPCConfig{
-						ReflectedServices: []string{grpcGatewayPb.GrpcGateway_ServiceDesc.ServiceName, certAuthorityPb.CertificateAuthority_ServiceDesc.ServiceName, snippetServicePb.SnippetService_ServiceDesc.ServiceName},
-						BaseConfig:        config.MakeGrpcServerBaseConfig("0.0.0.0:0"),
+						ReflectedServices: []string{
+							grpcGatewayPb.GrpcGateway_ServiceDesc.ServiceName,
+							certAuthorityPb.CertificateAuthority_ServiceDesc.ServiceName,
+							snippetServicePb.SnippetService_ServiceDesc.ServiceName,
+							m2mOAuthServerPb.M2MOAuthService_ServiceDesc.ServiceName,
+						},
+						BaseConfig: config.MakeGrpcServerBaseConfig("0.0.0.0:0"),
 					},
 				},
 			},
