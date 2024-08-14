@@ -39,7 +39,7 @@ jobs:
             npm install
             npm start &> mock-hub-api.log &
             popd
-          wait-for: http://localhost:8181
+          wait-on: http://localhost:8181
       - name: Run UI server
         uses: JarvusInnovations/background-action@v1
         with:
@@ -49,7 +49,9 @@ jobs:
             npm run build
             REACT_APP_MOCK_BASE_URL=http://localhost:8181 REACT_APP_MOCK_API="true" npm run start &> ui.log &
             popd
-          wait-for: http://localhost:3000
+          wait-on: |
+            http://localhost:3000
+            http://localhost:8181
       - name: Run playwright tests
         run: |
           pushd ./http-gateway/web/playwright
