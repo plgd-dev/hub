@@ -38,7 +38,7 @@ jobs:
             npm install
             npm start &> mock-hub-api.log &
           working-directory: ./http-gateway/web/packages/mock-server
-          wait-on: http://127.0.0.1:8181
+          wait-on: tcp:127.0.0.1:8181
           wait-for: 30s
       - name: Run UI server
         uses: JarvusInnovations/background-action@v1
@@ -50,8 +50,8 @@ jobs:
           working-directory: ./http-gateway/web
           wait-for: 5m
           wait-on: |
-            http://127.0.0.1:3000
-            http://127.0.0.1:8181
+            tcp:127.0.0.1:3000
+            tcp:127.0.0.1:8181
       - name: Run playwright tests
         run: |
           pushd ./http-gateway/web/playwright
