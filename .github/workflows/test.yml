@@ -39,6 +39,7 @@ jobs:
             npm start &> mock-hub-api.log &
           working-directory: ./http-gateway/web/packages/mock-server
           wait-on: http://localhost:8181
+          wait-for: 30s
       - name: Run UI server
         uses: JarvusInnovations/background-action@v1
         with:
@@ -47,6 +48,7 @@ jobs:
             npm run build
             REACT_APP_MOCK_BASE_URL=http://localhost:8181 REACT_APP_MOCK_API="true" npm run start &> ui.log &
           working-directory: ./http-gateway/web
+          wait-for: 5m
           wait-on: |
             http://localhost:3000
             http://localhost:8181
