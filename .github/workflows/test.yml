@@ -32,6 +32,7 @@ jobs:
       - name: Run mock hub API
         run: |
           pushd ./http-gateway/web/packages/mock-server
+          npm install -g husky
           npm install
           npm start &> mock-hub-api.log &
           popd
