@@ -38,7 +38,7 @@ jobs:
             npm install
             npm start &> mock-hub-api.log &
           working-directory: ./http-gateway/web/packages/mock-server
-          wait-on: tcp:127.0.0.1:8181
+          wait-on: tcp:localhost:8181
           wait-for: 30s
       - name: Run UI server
         uses: JarvusInnovations/background-action@v1
@@ -46,18 +46,18 @@ jobs:
           run: |
             npm install
             npm run build
-            REACT_APP_MOCK_BASE_URL=http://127.0.0.1:8181 REACT_APP_MOCK_API="true" npm run start &> ui.log &
+            REACT_APP_MOCK_BASE_URL=http://localhost:8181 REACT_APP_MOCK_API="true" npm run start &> ui.log &
           working-directory: ./http-gateway/web
           wait-for: 5m
           wait-on: |
-            tcp:127.0.0.1:3000
-            tcp:127.0.0.1:8181
+            tcp:localhost:3000
+            tcp:localhost:8181
       - name: Run playwright tests
         run: |
           pushd ./http-gateway/web/playwright
           npm install
           npx playwright install --with-deps
-          REACT_APP_HTTP_WELL_KNOW_CONFIGURATION_ADDRESS=http://127.0.0.1:8181 npm run test
+          REACT_APP_HTTP_WELL_KNOW_CONFIGURATION_ADDRESS=http://localhost:8181 npm run test
           popd
       - name: OnFailure
         if: ${{ failure() }}
