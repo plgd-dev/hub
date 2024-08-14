@@ -48,6 +48,7 @@ jobs:
         with:
           run: |
             npm install
+            npm run :generate:theme
             npm run build
             REACT_APP_MOCK_BASE_URL=http://localhost:8181 REACT_APP_MOCK_API="true" npm run start &> ui.log &
           working-directory: ./http-gateway/web
@@ -60,7 +61,7 @@ jobs:
           pushd ./http-gateway/web/playwright
           npm install
           npx playwright install --with-deps
-          REACT_APP_HTTP_WELL_KNOW_CONFIGURATION_ADDRESS=http://localhost:8181 npm run test
+          REACT_APP_HTTP_WELL_KNOW_CONFIGURATION_ADDRESS=http://localhost:8181 REACT_APP_TEST_LOGIN_USERNAME="$PLAYWRIGHT_USERNAME" REACT_APP_TEST_LOGIN_PASSWORD="$PLAYWRIGHT_PASSWORD" npm run test
           popd
       - name: OnFailure
         if: ${{ failure() }}
