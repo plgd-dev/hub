@@ -129,9 +129,6 @@ func (d *DeviceMetadataSnapshotTaken) HandleDeviceMetadataUpdatePending(_ contex
 }
 
 func (d *DeviceMetadataSnapshotTaken) handleByEvent(ctx context.Context, eu eventstore.EventUnmarshaler) error {
-	if eu.EventType() == "" {
-		return status.Errorf(codes.Internal, "cannot determine type of event")
-	}
 	switch eu.EventType() {
 	case (&DeviceMetadataSnapshotTaken{}).EventType():
 		var s DeviceMetadataSnapshotTaken
@@ -160,6 +157,9 @@ func (d *DeviceMetadataSnapshotTaken) Handle(ctx context.Context, iter eventstor
 		eu, ok := iter.Next(ctx)
 		if !ok {
 			break
+		}
+		if eu.EventType() == "" {
+			return status.Errorf(codes.Internal, "cannot determine type of event")
 		}
 		if err := d.handleByEvent(ctx, eu); err != nil {
 			return err

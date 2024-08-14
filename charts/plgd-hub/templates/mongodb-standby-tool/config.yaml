@@ -25,7 +25,7 @@ data:
         # List of the MongoDB members in the replica set which are used as hidden and secondary members
         members:
           {{- range $standbyTool.replicaSet.standby.members }}
-          - {{printf "%s" . }}
+          - {{ printf "%s" . }}
           {{- end }}
         # Set the delay for syncing the standby members with the secondary/primary members
         delays: {{ $standbyTool.replicaSet.standby.delays }}

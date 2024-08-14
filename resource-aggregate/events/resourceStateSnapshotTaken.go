@@ -112,38 +112,35 @@ func (e *ResourceStateSnapshotTaken) processValidUntil(v resourceValidUntilValid
 	return true
 }
 
+type pendingEvent interface {
+	GetAuditContext() *commands.AuditContext
+	IsExpired(now time.Time) bool
+}
+
+func checkForDuplicityCorrelationID[T pendingEvent](pes []T, correlationID string, now time.Time) bool {
+	for _, pe := range pes {
+		if pe.IsExpired(now) {
+			continue
+		}
+		if pe.GetAuditContext().GetCorrelationId() == correlationID {
+			return false
+		}
+	}
+	return true
+}
+
 func (e *ResourceStateSnapshotTaken) checkForDuplicityCorrelationID(correlationID string, now time.Time) error {
-	for _, event := range e.GetResourceCreatePendings() {
-		if event.IsExpired(now) {
-			continue
-		}
-		if event.GetAuditContext().GetCorrelationId() == correlationID {
-			return status.Errorf(codes.InvalidArgument, "duplicit correlationId('%v') at resource create pendings", correlationID)
-		}
+	if ok := checkForDuplicityCorrelationID(e.GetResourceCreatePendings(), correlationID, now); !ok {
+		return status.Errorf(codes.InvalidArgument, "duplicit correlationId('%v') at resource create pendings", correlationID)
 	}
-	for _, event := range e.GetResourceUpdatePendings() {
-		if event.IsExpired(now) {
-			continue
-		}
-		if event.GetAuditContext().GetCorrelationId() == correlationID {
-			return status.Errorf(codes.InvalidArgument, "duplicit correlationId('%v') at resource update pendings", correlationID)
-		}
+	if ok := checkForDuplicityCorrelationID(e.GetResourceUpdatePendings(), correlationID, now); !ok {
+		return status.Errorf(codes.InvalidArgument, "duplicit correlationId('%v') at resource update pendings", correlationID)
 	}
-	for _, event := range e.GetResourceRetrievePendings() {
-		if event.IsExpired(now) {
-			continue
-		}
-		if event.GetAuditContext().GetCorrelationId() == correlationID {
-			return status.Errorf(codes.InvalidArgument, "duplicit correlationId('%v') at resource retrieve pendings", correlationID)
-		}
+	if ok := checkForDuplicityCorrelationID(e.GetResourceRetrievePendings(), correlationID, now); !ok {
+		return status.Errorf(codes.InvalidArgument, "duplicit correlationId('%v') at resource retrieve pendings", correlationID)
 	}
-	for _, event := range e.GetResourceDeletePendings() {
-		if event.IsExpired(now) {
-			continue
-		}
-		if event.GetAuditContext().GetCorrelationId() == correlationID {
-			return status.Errorf(codes.InvalidArgument, "duplicit correlationId('%v') at resource delete pendings", correlationID)
-		}
+	if ok := checkForDuplicityCorrelationID(e.GetResourceDeletePendings(), correlationID, now); !ok {
+		return status.Errorf(codes.InvalidArgument, "duplicit correlationId('%v') at resource delete pendings", correlationID)
 	}
 	return nil
 }
@@ -339,9 +336,6 @@ func (e *ResourceStateSnapshotTaken) handleEventResourceStateSnapshotTaken(snaps
 
 //nolint:gocyclo
 func (e *ResourceStateSnapshotTaken) handleByEvent(eu eventstore.EventUnmarshaler) error {
-	if eu.EventType() == "" {
-		return status.Errorf(codes.Internal, "cannot determine type of event")
-	}
 	switch eu.EventType() {
 	case (&ResourceStateSnapshotTaken{}).EventType():
 		var s ResourceStateSnapshotTaken
@@ -412,6 +406,9 @@ func (e *ResourceStateSnapshotTaken) Handle(ctx context.Context, iter eventstore
 		eu, ok := iter.Next(ctx)
 		if !ok {
 			break
+		}
+		if eu.EventType() == "" {
+			return status.Errorf(codes.Internal, "cannot determine type of event")
 		}
 		if err := e.handleByEvent(eu); err != nil {
 			return err

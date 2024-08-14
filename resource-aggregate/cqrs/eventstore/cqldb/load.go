@@ -136,11 +136,7 @@ func (s *EventStore) LoadFromVersion(ctx context.Context, queries []eventstore.V
 	return s.LoadFromSnapshot(ctx, q, eh)
 }
 
-func snapshotQueriesToFilter(deviceID string, queries []eventstore.SnapshotQuery, timestamp int64) string {
-	var filter strings.Builder
-	if deviceID != "" {
-		filter.WriteString(deviceIDKey + "=" + deviceID)
-	}
+func addAggregateIDsToFilter(filter *strings.Builder, queries []eventstore.SnapshotQuery) {
 	aggrs := make([]string, 0, len(queries))
 	for _, q := range queries {
 		if q.AggregateID != "" && q.AggregateID != uuid.Nil.String() {
@@ -161,8 +157,11 @@ func snapshotQueriesToFilter(deviceID string, queries []eventstore.SnapshotQuery
 		}
 		filter.WriteString(")")
 	}
+}
+
+func addTimestampToFilter(filter *strings.Builder, timestamp int64) {
 	if timestamp > 0 {
-		if filter.Len() != 0 {
+		if filter.Len() > 0 {
 			filter.WriteString(" and ")
 		}
 		filter.WriteString(timestampKey)
@@ -170,6 +169,15 @@ func snapshotQueriesToFilter(deviceID string, queries []eventstore.SnapshotQuery
 		filter.WriteString(strconv.FormatInt(timestamp, 10))
 		filter.WriteString(" ALLOW FILTERING")
 	}
+}
+
+func snapshotQueriesToFilter(deviceID string, queries []eventstore.SnapshotQuery, timestamp int64) string {
+	var filter strings.Builder
+	if deviceID != "" {
+		filter.WriteString(deviceIDKey + "=" + deviceID)
+	}
+	addAggregateIDsToFilter(&filter, queries)
+	addTimestampToFilter(&filter, timestamp)
 	return filter.String()
 }
 

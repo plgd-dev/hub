@@ -1,8 +1,10 @@
 FROM ubuntu:22.04 AS hub-test
 RUN apt-get update \
-    && DEBIAN_FRONTEND="noninteractive" apt-get install -y --no-install-recommends build-essential ca-certificates curl git make patch sudo \
+    && DEBIAN_FRONTEND="noninteractive" apt-get install -y --no-install-recommends \
+    build-essential ca-certificates curl git make patch sudo \
     && apt-get clean \
     && curl -sSL https://get.docker.com/ | sh
+WORKDIR /
 # apt: ca-certificates git make sudo
 RUN git clone https://github.com/udhos/update-golang.git \
     && cd update-golang \
@@ -19,7 +21,6 @@ RUN go build -o /usr/bin/cert-tool
 WORKDIR /usr/local/go
 # apt: patch
 RUN ( patch -p1 < "$GOPATH/src/github.com/plgd-dev/hub/tools/docker/patches/shrink_tls_conn.patch" )
-
 
 WORKDIR $GOPATH/src/github.com/plgd-dev/hub
 

@@ -5,7 +5,7 @@ ARG COMMIT_DATE
 ARG SHORT_COMMIT
 ARG DATE
 ARG RELEASE_URL
-RUN apk add --no-cache curl git build-base
+RUN apk add --no-cache build-base curl git
 WORKDIR $GOPATH/src/github.com/plgd-dev/hub
 COPY go.mod go.sum ./
 RUN go mod download
@@ -18,13 +18,18 @@ RUN ( patch -p1 < "$GOPATH/src/github.com/plgd-dev/hub/tools/docker/patches/gola
 WORKDIR $GOPATH/src/github.com/plgd-dev/hub/http-gateway
 RUN go build \
     -mod=vendor \
-    -ldflags "-linkmode external -extldflags -static -X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" \
+    -ldflags "-linkmode external -extldflags -static \
+    -X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE \
+    -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT \
+    -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE \
+    -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION \
+    -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" \
     -o /go/bin/http-gateway \
     ./cmd/service
 
 FROM alpine:3.20 AS security-provider
-RUN apk add -U --no-cache ca-certificates
-RUN addgroup -S nonroot \
+RUN apk add -U --no-cache ca-certificates \
+    && addgroup -S nonroot \
     && adduser -S nonroot -G nonroot
 
 FROM scratch AS service

@@ -24,10 +24,10 @@ spec:
     - "{{ $.Release.Name }}-scylla-client.{{ $.Release.Namespace }}.svc.{{ $.Values.cluster.dns }}"
     {{- $rack := . }}
     {{- range $i := until (int .members) }}
-    - {{$.Release.Name}}-scylla-{{$.Values.scylla.datacenter}}-{{ $rack.name }}-{{$i}}
-    - {{$.Release.Name}}-scylla-{{$.Values.scylla.datacenter}}-{{ $rack.name }}-{{$i}}.{{$.Release.Namespace}}.svc.{{ $.Values.cluster.dns }}
-    - "*.{{$.Release.Name}}-scylla-{{$.Values.scylla.datacenter}}-{{ $rack.name }}-{{$i}}"
-    - "*.{{$.Release.Name}}-scylla-{{$.Values.scylla.datacenter}}-{{ $rack.name }}-{{$i}}.{{$.Release.Namespace}}.svc.{{ $.Values.cluster.dns }}"
+    - {{ $.Release.Name }}-scylla-{{ $.Values.scylla.datacenter }}-{{ $rack.name }}-{{ $i }}
+    - {{ $.Release.Name }}-scylla-{{ $.Values.scylla.datacenter }}-{{ $rack.name }}-{{ $i }}.{{ $.Release.Namespace }}.svc.{{ $.Values.cluster.dns }}
+    - "*.{{ $.Release.Name }}-scylla-{{ $.Values.scylla.datacenter }}-{{ $rack.name }}-{{ $i }}"
+    - "*.{{ $.Release.Name }}-scylla-{{ $.Values.scylla.datacenter }}-{{ $rack.name }}-{{ $i }}.{{ $.Release.Namespace }}.svc.{{ $.Values.cluster.dns }}"
     {{- end }}
   duration: {{ $.Values.certmanager.storage.cert.duration | default $.Values.certmanager.internal.cert.duration | default $.Values.certmanager.default.cert.duration }}
   renewBefore: {{ $.Values.certmanager.storage.cert.renewBefore | default $.Values.certmanager.internal.cert.renewBefore | default $.Values.certmanager.default.cert.renewBefore }}
