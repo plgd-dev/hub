@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/json"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -71,7 +70,7 @@ func NewTestJwks(t *testing.T) JWKServer {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc(jwksUri, func(w http.ResponseWriter, _ *http.Request) {
-		if _, err := io.WriteString(w, string(jwks)); err != nil {
+		if _, err := w.Write(jwks); err != nil {
 			log.Debugf("failed to write jwks: %v", err)
 		}
 	})

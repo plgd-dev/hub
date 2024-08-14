@@ -83,7 +83,7 @@ func (c *Client) updateMaintenanceResource(
 			}
 		}()
 		str := http.StatusText(resp.LastHTTPError)
-		return status.Errorf(httpCoreToGrpc(resp.LastHTTPError), str)
+		return status.Errorf(httpCoreToGrpc(resp.LastHTTPError), "%s", str)
 	}
 	return it.Err
 }

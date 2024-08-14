@@ -12,28 +12,56 @@ RUN go mod download
 COPY . .
 WORKDIR /usr/local/go
 RUN ( patch -p1 < "$GOPATH/src/github.com/plgd-dev/hub/tools/docker/patches/shrink_tls_conn.patch" )
-ARG root_directory=$GOPATH/src/github.com/plgd-dev/hub
 
+ARG root_directory=$GOPATH/src/github.com/plgd-dev/hub
 #cert-tool
 ARG tool=cert-tool
 WORKDIR $root_directory/tools/$tool
-RUN go build -ldflags "-linkmode external -extldflags -static -X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" -o /go/bin/cert-tool
+RUN go build \
+    -ldflags "-linkmode external -extldflags -static \
+    -X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE \
+    -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT \
+    -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE \
+    -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION \
+    -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" \
+    -o /go/bin/cert-tool
 
 #coap-gateway
 #the "device_integration" tag should ensure that only integration tests with a device simulator are compiled
 ARG service=coap-gateway
 WORKDIR $root_directory/$service/service
-RUN go test -p 1 -c -tags=device_integration -ldflags "-linkmode external -extldflags -static -X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" -o /go/bin/coap-gateway.test
+RUN go test -p 1 -c -tags=device_integration \
+    -ldflags "-linkmode external -extldflags -static \
+    -X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE \
+    -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT \
+    -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE \
+    -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION \
+    -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" \
+    -o /go/bin/coap-gateway.test
 
 #grpc-gateway
 ARG service=grpc-gateway
 WORKDIR $root_directory/$service/service
-RUN go test -p 1 -c -ldflags "-linkmode external -extldflags -static -X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" -o /go/bin/grpc-gateway.test
+RUN go test -p 1 -c \
+    -ldflags "-linkmode external -extldflags -static \
+    -X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE \
+    -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT \
+    -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE \
+    -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION \
+    -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" \
+    -o /go/bin/grpc-gateway.test
 
 #test/iotivity-lite
 ARG service=test-iotivity-lite
 WORKDIR $root_directory/test/iotivity-lite/service
-RUN go test -p 1 -c -ldflags "-linkmode external -extldflags -static -X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" -o /go/bin/test-iotivity-lite.test
+RUN go test -p 1 -c \
+    -ldflags "-linkmode external -extldflags -static \
+    -X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE \
+    -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT \
+    -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE \
+    -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION \
+    -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" \
+    -o /go/bin/test-iotivity-lite.test
 
 #nats
 WORKDIR $root_directory
@@ -61,9 +89,9 @@ FROM ubuntu:22.04 AS service
 # nginx -> nginx server in run.sh
 # openssl -> openssl utility in run.sh
 RUN apt update \
-    && apt-get install -y --no-install-recommends ca-certificates gnupg iproute2 netcat nginx openssl wget \
+    && apt-get install -y --no-install-recommends ca-certificates curl gnupg iproute2 netcat nginx openssl \
     && apt-get clean
-RUN wget -qO - https://pgp.mongodb.com/server-6.0.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/mongodb-6.0.gpg
+RUN curl -L --proto "=https" https://pgp.mongodb.com/server-6.0.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/mongodb-6.0.gpg
 RUN echo "deb [ arch=$(dpkg --print-architecture) ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-6.0.list
 RUN apt update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends mongodb-org mongodb-org-server \

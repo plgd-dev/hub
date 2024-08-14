@@ -170,6 +170,30 @@ func (e *ResourceLinksSnapshotTaken) HandleEventResourceLinksSnapshotTaken(s *Re
 	e.CopyData(s)
 }
 
+func (e *ResourceLinksSnapshotTaken) handleByEvent(eu eventstore.EventUnmarshaler) error {
+	switch eu.EventType() {
+	case (&ResourceLinksSnapshotTaken{}).EventType():
+		var s ResourceLinksSnapshotTaken
+		if err := eu.Unmarshal(&s); err != nil {
+			return status.Errorf(codes.Internal, "%v", err)
+		}
+		e.HandleEventResourceLinksSnapshotTaken(&s)
+	case (&ResourceLinksPublished{}).EventType():
+		var s ResourceLinksPublished
+		if err := eu.Unmarshal(&s); err != nil {
+			return status.Errorf(codes.Internal, "%v", err)
+		}
+		e.HandleEventResourceLinksPublished(&s)
+	case (&ResourceLinksUnpublished{}).EventType():
+		var s ResourceLinksUnpublished
+		if err := eu.Unmarshal(&s); err != nil {
+			return status.Errorf(codes.Internal, "%v", err)
+		}
+		e.HandleEventResourceLinksUnpublished(nil, &s)
+	}
+	return nil
+}
+
 func (e *ResourceLinksSnapshotTaken) Handle(ctx context.Context, iter eventstore.Iter) error {
 	for {
 		eu, ok := iter.Next(ctx)
@@ -179,25 +203,8 @@ func (e *ResourceLinksSnapshotTaken) Handle(ctx context.Context, iter eventstore
 		if eu.EventType() == "" {
 			return status.Errorf(codes.Internal, "cannot determine type of event")
 		}
-		switch eu.EventType() {
-		case (&ResourceLinksSnapshotTaken{}).EventType():
-			var s ResourceLinksSnapshotTaken
-			if err := eu.Unmarshal(&s); err != nil {
-				return status.Errorf(codes.Internal, "%v", err)
-			}
-			e.HandleEventResourceLinksSnapshotTaken(&s)
-		case (&ResourceLinksPublished{}).EventType():
-			var s ResourceLinksPublished
-			if err := eu.Unmarshal(&s); err != nil {
-				return status.Errorf(codes.Internal, "%v", err)
-			}
-			e.HandleEventResourceLinksPublished(&s)
-		case (&ResourceLinksUnpublished{}).EventType():
-			var s ResourceLinksUnpublished
-			if err := eu.Unmarshal(&s); err != nil {
-				return status.Errorf(codes.Internal, "%v", err)
-			}
-			e.HandleEventResourceLinksUnpublished(nil, &s)
+		if err := e.handleByEvent(eu); err != nil {
+			return err
 		}
 	}
 	return iter.Err()

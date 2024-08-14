@@ -14,19 +14,23 @@ const (
 	headerAuthorize = "authorization"
 )
 
+func errUnauthenticated(scheme string) error {
+	return status.Errorf(codes.Unauthenticated, "Request unauthenticated with %s", scheme)
+}
+
 // TokenFromOutgoingMD extracts token stored by CtxWithToken.
 func TokenFromOutgoingMD(ctx context.Context) (string, error) {
 	expectedScheme := "bearer"
 	val := metautils.ExtractOutgoing(ctx).Get(headerAuthorize)
 	if val == "" {
-		return "", status.Errorf(codes.Unauthenticated, "Request unauthenticated with "+expectedScheme)
+		return "", errUnauthenticated(expectedScheme)
 	}
 	splits := strings.SplitN(val, " ", 2)
 	if len(splits) < 2 {
 		return "", status.Errorf(codes.Unauthenticated, "Bad authorization string")
 	}
 	if !strings.EqualFold(splits[0], strings.ToLower(expectedScheme)) {
-		return "", status.Errorf(codes.Unauthenticated, "Request unauthenticated with "+expectedScheme)
+		return "", errUnauthenticated(expectedScheme)
 	}
 	return splits[1], nil
 }

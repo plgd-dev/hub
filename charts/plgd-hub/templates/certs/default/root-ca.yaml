@@ -9,7 +9,7 @@ spec:
   commonName: {{ .Values.certmanager.default.ca.commonName }}
   secretName: {{ .Values.certmanager.default.ca.secret.name }}
   privateKey:
-    algorithm: {{ .Values.certmanager.default.cert.key.algorithm}}
+    algorithm: {{ .Values.certmanager.default.cert.key.algorithm }}
     size: {{ .Values.certmanager.default.cert.key.size }}
   usages:
     - "signing"

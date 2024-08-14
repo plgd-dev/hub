@@ -14,7 +14,7 @@ metadata:
   {{- end }}
 spec:
 {{- if or (and .Values.certmanager.default.ca.issuerRef.name (ne ( .Values.certmanager.default.ca.issuerRef.name | toString) ( .Values.certmanager.default.ca.issuer.name | toString)))
-          (and .Values.certmanager.default.ca.issuerRef.kind (ne ( .Values.certmanager.default.ca.issuerRef.kind | toString) (.Values.certmanager.default.ca.issuer.kind | toString)))}}
+          (and .Values.certmanager.default.ca.issuerRef.kind (ne ( .Values.certmanager.default.ca.issuerRef.kind | toString) (.Values.certmanager.default.ca.issuer.kind | toString))) }}
   ca:
     secretName: {{ .Values.certmanager.default.ca.secret.name }}
 {{- else }}

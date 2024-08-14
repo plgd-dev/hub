@@ -236,7 +236,7 @@ func TestDeleteTokens(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, storedToken)
 		require.True(t, storedToken[token.GetId()].GetBlacklisted().GetFlag())
-		require.Greater(t, storedToken[token.GetId()].GetBlacklisted().GetTimestamp(), int64(0))
+		require.Positive(t, storedToken[token.GetId()].GetBlacklisted().GetTimestamp())
 	}
 }
 
