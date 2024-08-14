@@ -1,0 +1,56 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Test
+
+# Controls when the action will run. Triggers the workflow push is only on main branch and PR on any branch.
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "*"
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref_name != 'main' }}
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  test-web-ui:
+    runs-on: ubuntu-latest
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '20'
+      - name: Run mock hub API
+        run: |
+          pushd ./http-gateway/web/packages/mock-server
+          npm install
+          npm start &> mock-hub-api.log &
+          popd
+      - name: Run UI server
+        run: |
+          pushd ./http-gateway/web
+          npm install
+          npm run build
+          REACT_APP_MOCK_BASE_URL=http://localhost:8181 REACT_APP_MOCK_API="true" npm run start &> ui.log &
+          popd
+      - name: Run playwright tests
+        run: |
+          pushd ./http-gateway/web/playwright
+          npm install
+          npx playwright install
+          REACT_APP_HTTP_WELL_KNOW_CONFIGURATION_ADDRESS=http://localhost:8181 npm run test
+          popd
+      - name: OnFailure
+        if: ${{ failure() }}
+        run: |
+          cat ./http-gateway/web/packages/mock-server/mock-hub-api.log
+          cat ./http-gateway/web/ui.log
