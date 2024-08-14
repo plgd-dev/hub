@@ -19,6 +19,8 @@
     "dotenv": "^16.4.5",
     "escape-html": "^1.0.3",
     "express-validator": "^7.1.0",
+    "fs-extra": "^11.2.0",
+    "husky": "^9.1.4",
     "lodash": "^4.17.21"
   }
 }

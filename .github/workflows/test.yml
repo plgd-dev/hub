@@ -28,11 +28,10 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '20'
+          node-version: '18'
       - name: Run mock hub API
         run: |
           pushd ./http-gateway/web/packages/mock-server
-          npm install -g husky
           npm install
           npm start &> mock-hub-api.log &
           popd
