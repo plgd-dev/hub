@@ -31,24 +31,30 @@ jobs:
         with:
           node-version: '18'
       - name: Run mock hub API
-        run: |
-          pushd ./http-gateway/web/packages/mock-server
-          npm install -g husky
-          npm install
-          npm start &> mock-hub-api.log &
-          popd
+        uses: JarvusInnovations/background-action@v1
+        with:
+          run: |
+            pushd ./http-gateway/web/packages/mock-server
+            npm install -g husky
+            npm install
+            npm start &> mock-hub-api.log &
+            popd
+          wait-for: http://localhost:8181
       - name: Run UI server
-        run: |
-          pushd ./http-gateway/web
-          npm install
-          npm run build
-          REACT_APP_MOCK_BASE_URL=http://localhost:8181 REACT_APP_MOCK_API="true" npm run start &> ui.log &
-          popd
+        uses: JarvusInnovations/background-action@v1
+        with:
+          run: |
+            pushd ./http-gateway/web
+            npm install
+            npm run build
+            REACT_APP_MOCK_BASE_URL=http://localhost:8181 REACT_APP_MOCK_API="true" npm run start &> ui.log &
+            popd
+          wait-for: http://localhost:3000
       - name: Run playwright tests
         run: |
           pushd ./http-gateway/web/playwright
           npm install
-          npx playwright install
+          npx playwright install --with-deps
           REACT_APP_HTTP_WELL_KNOW_CONFIGURATION_ADDRESS=http://localhost:8181 npm run test
           popd
       - name: OnFailure
