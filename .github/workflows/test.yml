@@ -55,3 +55,9 @@ jobs:
         run: |
           cat ./http-gateway/web/packages/mock-server/mock-hub-api.log
           cat ./http-gateway/web/ui.log
+      - uses: actions/upload-artifact@v3
+        if: ${{ failure() }}
+        with:
+          name: playwright-report
+          path: http-gateway/web/playwright/playwright-report
+          retention-days: 5    
