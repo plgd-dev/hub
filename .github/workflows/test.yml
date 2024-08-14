@@ -26,6 +26,9 @@ jobs:
         with:
           fetch-depth: 0
           submodules: true
+      - name: Prefer IPv4
+        run: echo "precedence ::ffff:0:0/96  100" | sudo tee -a /etc/gai.conf
+      
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
@@ -50,7 +53,7 @@ jobs:
           working-directory: ./http-gateway/web
           wait-for: 5m
           wait-on: |
-            tcp:localhost:3000
+            http://localhost:3000
             tcp:localhost:8181
       - name: Run playwright tests
         run: |
