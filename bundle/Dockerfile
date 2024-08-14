@@ -225,9 +225,9 @@ FROM ubuntu:22.04 AS service
 # openssl -> openssl utility in run.sh
 # yq utility in run.sh
 RUN apt update \
-    && apt-get install -y --no-install-recommends ca-certificates coreutils curl gnupg iproute2 netcat nginx openssl sudo wget \
-    && wget https://github.com/mikefarah/yq/releases/download/v4.44.2/yq_linux_$(dpkg --print-architecture) -O /usr/bin/yq && chmod +x /usr/bin/yq \
-    && wget -qO - https://pgp.mongodb.com/server-6.0.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/mongodb-6.0.gpg \
+    && apt-get install -y --no-install-recommends ca-certificates coreutils curl gnupg iproute2 netcat nginx openssl sudo \
+    && curl -L --proto "=https" https://github.com/mikefarah/yq/releases/download/v4.44.2/yq_linux_$(dpkg --print-architecture) -o /usr/bin/yq && chmod +x /usr/bin/yq \
+    && curl -L --proto "=https" https://pgp.mongodb.com/server-6.0.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/mongodb-6.0.gpg \
     && echo "deb [ arch=$(dpkg --print-architecture) ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-6.0.list \
     && apt update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends mongodb-org mongodb-org-server \

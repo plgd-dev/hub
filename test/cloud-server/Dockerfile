@@ -89,9 +89,9 @@ FROM ubuntu:22.04 AS service
 # nginx -> nginx server in run.sh
 # openssl -> openssl utility in run.sh
 RUN apt update \
-    && apt-get install -y --no-install-recommends ca-certificates gnupg iproute2 netcat nginx openssl wget \
+    && apt-get install -y --no-install-recommends ca-certificates curl gnupg iproute2 netcat nginx openssl \
     && apt-get clean
-RUN wget -qO - https://pgp.mongodb.com/server-6.0.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/mongodb-6.0.gpg
+RUN curl -L --proto "=https" https://pgp.mongodb.com/server-6.0.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/mongodb-6.0.gpg
 RUN echo "deb [ arch=$(dpkg --print-architecture) ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-6.0.list
 RUN apt update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends mongodb-org mongodb-org-server \
