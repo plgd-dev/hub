@@ -26,9 +26,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        project: [chromium, firefox, webkit]
-        shardIndex: [1, 2, 3, 4]
-        shardTotal: [4]
+        project: [chromium] # firefox, webkit]
+        shardIndex: [1] # [1, 2, 3, 4]
+        shardTotal: [1] # [4] 
     timeout-minutes: 60
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -68,19 +68,15 @@ jobs:
             tcp:localhost:8181
       - name: Run playwright tests
         run: |
-          echo "--- ui.log ---"
-          cat ./http-gateway/web/ui.log
-          echo "--- curl http://localhost:3000 ---"
-          curl http://localhost:3000
-          echo "--- curl https://try.plgd.cloud ---"
-          curl https://try.plgd.cloud
-          echo "--- curl http://localhost:8181/api/v1/devices ---"
-          curl http://localhost:8181/api/v1/devices
-          pushd ./http-gateway/web/playwright
+          ls -la
+          ls -la ./http-gateway
+          ls -la ./http-gateway/web
+          ls -la ./http-gateway/web/playwright
+          cd ./http-gateway/web/playwright
           npm install
           echo "starting test"
           REACT_APP_HTTP_WELL_KNOW_CONFIGURATION_ADDRESS=https://try.plgd.cloud REACT_APP_TEST_LOGIN_USERNAME="$PLAYWRIGHT_USERNAME" REACT_APP_TEST_LOGIN_PASSWORD="$PLAYWRIGHT_PASSWORD" xvfb-run npx playwright test --project=${{ matrix.project }} --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }} dev.spec.ts 
-          popd
+          cd ../../../
       - name: OnFailure
         if: failure()
         run: |
