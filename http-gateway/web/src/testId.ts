@@ -1,5 +1,6 @@
 const testId = {
     app: {
+        layout: 'hub-app-layout',
         logout: 'hub-app-logout',
     },
     menu: {

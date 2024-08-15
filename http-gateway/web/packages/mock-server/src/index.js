@@ -1,9 +1,8 @@
 const express = require('express')
 const cors = require('cors')
 const axios = require('axios')
-const { checkError, loadResponseStreamFromFile, loadResponseFromFile } = require('./utils')
+const { checkError, loadResponseStreamFromFile } = require('./utils')
 const bodyParser = require('body-parser')
-const path = require('path')
 
 const devices = require('./routes/devices')
 const dps = require('./routes/dps')

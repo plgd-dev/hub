@@ -156,6 +156,7 @@ const AppLayout: FC<Props> = (props) => {
         <App toastContainerPortalTarget={document.getElementById('toast-root')}>
             <Layout
                 content={<Routes mainSidebar={wellKnownConfig.ui.visibility.mainSidebar} />}
+                dataTestId={testId.app.layout}
                 header={
                     <Header
                         breadcrumbs={<div id='breadcrumbsPortalTarget'></div>}
