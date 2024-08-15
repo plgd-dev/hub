@@ -59,7 +59,6 @@ jobs:
           run: |
             npm install
             npm run :generate:theme
-            npm run build
             REACT_APP_MOCK_BASE_URL=http://localhost:8181 REACT_APP_MOCK_API="true" npm run start &> ui.log &
           working-directory: ./http-gateway/web
           wait-for: 5m
@@ -68,10 +67,6 @@ jobs:
             tcp:localhost:8181
       - name: Run playwright tests
         run: |
-          ls -la
-          ls -la ./http-gateway
-          ls -la ./http-gateway/web
-          ls -la ./http-gateway/web/playwright
           cd ./http-gateway/web/playwright
           npm install
           echo "starting test"
