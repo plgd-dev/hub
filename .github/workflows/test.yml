@@ -58,6 +58,7 @@ jobs:
             tcp:localhost:8181
       - name: Run playwright tests
         run: |
+          cat ./http-gateway/web/ui.log
           pushd ./http-gateway/web/playwright
           npm install
           npx playwright install --with-deps
