@@ -37,7 +37,7 @@ jobs:
           fetch-depth: 0
           submodules: true
       - name: Prefer IPv4
-        run: echo "precedence ::ffff:0:0/96  100" | sudo tee -a /etc/gai.conf
+        run: echo "precedence ::ffff:0:0/96  100" | tee -a /etc/gai.conf
       
       - name: Set up Node.js
         uses: actions/setup-node@v2
