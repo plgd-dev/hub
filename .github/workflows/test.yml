@@ -78,7 +78,7 @@ jobs:
           curl http://localhost:8181/api/v1/devices
           pushd ./http-gateway/web/playwright
           npm install
-          npx playwright install --with-deps
+          echo "starting test"
           REACT_APP_HTTP_WELL_KNOW_CONFIGURATION_ADDRESS=https://try.plgd.cloud REACT_APP_TEST_LOGIN_USERNAME="$PLAYWRIGHT_USERNAME" REACT_APP_TEST_LOGIN_PASSWORD="$PLAYWRIGHT_PASSWORD" xvfb-run npx playwright test --project=${{ matrix.project }} --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }} dev.spec.ts 
           popd
       - name: OnFailure
