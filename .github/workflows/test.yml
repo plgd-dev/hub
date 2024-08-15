@@ -64,12 +64,14 @@ jobs:
           REACT_APP_HTTP_WELL_KNOW_CONFIGURATION_ADDRESS=https://try.plgd.cloud REACT_APP_TEST_LOGIN_USERNAME="$PLAYWRIGHT_USERNAME" REACT_APP_TEST_LOGIN_PASSWORD="$PLAYWRIGHT_PASSWORD" xvfb-run npm run test:dev
           popd
       - name: OnFailure
-        if: ${{ failure() }}
+        if: failure()
         run: |
+          echo "--- mock-hub-api.log ---"
           cat ./http-gateway/web/packages/mock-server/mock-hub-api.log
+          echo "--- ui.log ---"
           cat ./http-gateway/web/ui.log
-      - uses: actions/upload-artifact@v3
-        if: ${{ failure() }}
+      - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: playwright-report
           path: http-gateway/web/playwright/playwright-report
