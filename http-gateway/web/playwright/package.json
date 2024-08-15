@@ -10,7 +10,7 @@
     "test:debug": "npx playwright test --debug",
     "test:updateScreenshots": "npx playwright test --update-snapshots",
     "test:login": "npx playwright test login.spec.ts --debug",
-    "test:dev": "npx playwright test api-tokens/detail.spec.ts --update-snapshots --debug"
+    "test:dev": "npx playwright test dev.spec.ts"
   },
   "keywords": [],
   "author": "",
