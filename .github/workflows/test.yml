@@ -69,7 +69,7 @@ jobs:
         run: |
           cd ./http-gateway/web/playwright
           npm install
-          npx playwright install --with-deps ${{ matrix.project }}
+          npx playwright install ${{ matrix.project }} --with-deps ${{ matrix.project }}
           echo "starting test"
           REACT_APP_HTTP_WELL_KNOW_CONFIGURATION_ADDRESS=https://try.plgd.cloud REACT_APP_TEST_LOGIN_USERNAME="$PLAYWRIGHT_USERNAME" REACT_APP_TEST_LOGIN_PASSWORD="$PLAYWRIGHT_PASSWORD" xvfb-run npx playwright test --project=${{ matrix.project }} --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }} dev.spec.ts
           cd ../../../
