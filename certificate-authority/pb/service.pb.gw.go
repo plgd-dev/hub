@@ -151,6 +151,7 @@ func local_request_CertificateAuthority_DeleteSigningRecords_0(ctx context.Conte
 // UnaryRPC     :call CertificateAuthorityServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterCertificateAuthorityHandlerFromEndpoint instead.
+// GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterCertificateAuthorityHandlerServer(ctx context.Context, mux *runtime.ServeMux, server CertificateAuthorityServer) error {
 
 	mux.Handle("POST", pattern_CertificateAuthority_SignIdentityCertificate_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
@@ -273,7 +274,7 @@ func RegisterCertificateAuthorityHandler(ctx context.Context, mux *runtime.Serve
 // to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "CertificateAuthorityClient".
 // Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "CertificateAuthorityClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "CertificateAuthorityClient" to call the correct interceptors.
+// "CertificateAuthorityClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterCertificateAuthorityHandlerClient(ctx context.Context, mux *runtime.ServeMux, client CertificateAuthorityClient) error {
 
 	mux.Handle("POST", pattern_CertificateAuthority_SignIdentityCertificate_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
