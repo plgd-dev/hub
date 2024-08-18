@@ -72,15 +72,17 @@
 {{- end }}
 
 {{- define "plgd-hub.httpgateway.dpsApiDomain" -}}
+  {{ $domain := "" }}
   {{- if .Values.deviceProvisioningService }}
-    {{- if .Values.deviceProvisioningService.apiDomain }}
-      {{- printf "https://%s" .Values.deviceProvisioningService.apiDomain }}
-    {{- else }}
-      {{- printf "https://api.%s" .Values.global.domain }}
+    {{- if .Values.deviceProvisioningService.enabled }}
+      {{- if .Values.deviceProvisioningService.apiDomain }}
+        {{- $domain  = printf "https://%s" .Values.deviceProvisioningService.apiDomain }}
+      {{- else }}
+        {{- $domain = printf "https://api.%s" .Values.global.domain }}
+      {{- end }}
     {{- end }}
-  {{- else }}
-    {{- printf "" }}
   {{- end }}
+  {{- printf $domain }}
 {{- end }}
 
 {{- define "plgd-hub.httpgateway.snippetServiceApiDomain" -}}

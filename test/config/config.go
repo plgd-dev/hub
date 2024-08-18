@@ -80,6 +80,13 @@ var (
 		}
 		return string(schema.TCPSecureScheme)
 	}()
+	DPS_UDP_ENABLED   = os.Getenv("TEST_DPS_UDP_ENABLED") == TRUE_STRING
+	ACTIVE_DPS_SCHEME = func() string {
+		if os.Getenv("TEST_DPS_UDP_ENABLED") == TRUE_STRING {
+			return string(schema.UDPSecureScheme)
+		}
+		return string(schema.TCPSecureScheme)
+	}()
 	SCYLLA_HOSTS    = []string{"127.0.0.1"}
 	SCYLLA_PORT     = pkgCqldb.DefaultPort
 	ACTIVE_DATABASE = func() database.DBUse {

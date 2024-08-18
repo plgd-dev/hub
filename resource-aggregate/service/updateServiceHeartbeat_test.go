@@ -25,6 +25,7 @@ import (
 func TestNewServiceHeartbeat(t *testing.T) {
 	ctx := context.Background()
 	config := raTest.MakeConfig(t)
+	config.Clients.Eventstore.ConcurrencyExceptionMaxRetry = 16
 	logger := log.NewLogger(config.Log)
 	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
@@ -58,7 +59,7 @@ func TestNewServiceHeartbeat(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(num)
 	chans := make([]chan service.UpdateServiceMetadataResponseChanData, num)
-	for i := 0; i < num; i++ {
+	for i := range num {
 		time.Sleep(time.Millisecond)
 		chans[i] = make(chan service.UpdateServiceMetadataResponseChanData, 1)
 		go func(j int) {

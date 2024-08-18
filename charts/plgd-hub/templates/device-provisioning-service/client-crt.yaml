@@ -1,0 +1,33 @@
+{{- if .Values.deviceProvisioningService.enabled }}
+{{- $clientCertName := include "plgd-hub.deviceProvisioningService.clientCertName" . }}
+{{- if and $clientCertName .Values.certmanager.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ $clientCertName }}-client
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plgd-hub.deviceProvisioningService.labels" . | nindent 4 }}
+    {{- with .Values.certmanager.internal.labels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+  {{- with .Values.certmanager.internal.annotations }}
+  annotations:
+  {{- . | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  secretName: {{ $clientCertName }}
+  commonName: {{ $clientCertName | quote }}
+  privateKey:
+    algorithm: {{ .Values.certmanager.internal.cert.key.algorithm | default .Values.certmanager.default.cert.key.algorithm }}
+    size: {{ .Values.certmanager.internal.cert.key.size | default .Values.certmanager.default.cert.key.size }}
+  usages:
+    - client auth
+  duration: {{ .Values.certmanager.internal.cert.duration | default .Values.certmanager.default.cert.duration }}
+  renewBefore: {{ .Values.certmanager.internal.cert.renewBefore | default .Values.certmanager.default.cert.renewBefore }}
+  issuerRef:
+    name: {{ .Values.certmanager.internal.issuer.name | default .Values.certmanager.default.issuer.name }}
+    kind: {{ .Values.certmanager.internal.issuer.kind | default .Values.certmanager.default.issuer.kind }}
+    group: {{ .Values.certmanager.internal.issuer.group | default .Values.certmanager.default.issuer.group }}
+{{- end }}
+{{- end }}

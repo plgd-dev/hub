@@ -1,0 +1,34 @@
+{{- if and .Values.deviceProvisioningService.enabled .Values.deviceProvisioningService.apis.http.enabled .Values.deviceProvisioningService.ingress.enabled }}
+{{- $fullname := include "plgd-hub.deviceProvisioningService.fullname" . }}
+{{- $port := .Values.deviceProvisioningService.apis.http.port }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $fullname }}-api
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plgd-hub.deviceProvisioningService.labels" . | nindent 4 }}
+  annotations:
+    nginx.org/grpc-services: {{ $fullname | quote }}
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+spec:
+  tls:
+    - hosts:
+        - {{ include "plgd-hub.deviceProvisioningService.apiDomain" . | quote }}
+      secretName: {{ include "plgd-hub.deviceProvisioningService.domainCertName" . | quote }}
+  rules:
+  - host: {{ include "plgd-hub.deviceProvisioningService.apiDomain" . | quote }}
+    http:
+      paths:
+      {{- range .Values.deviceProvisioningService.ingress.paths }}
+      - path: {{ . }}
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ $fullname }}-http
+            port:
+              number: {{ $port }}
+      {{- end }}
+{{- end }}
