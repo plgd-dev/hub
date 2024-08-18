@@ -999,11 +999,16 @@ func GenerateDeviceIDbyIdx(deviceIndex int) string {
 	return GenerateIDbyIdx("d", deviceIndex)
 }
 
-func IsListenSocketClosed(t require.TestingT, target string, addStr string) bool {
-	if strings.Contains(target, "udp") {
-		addr, err := net.ResolveUDPAddr(target, addStr)
+type ListenSocket struct {
+	Network string
+	Address string
+}
+
+func (ls *ListenSocket) IsClosed(t require.TestingT) bool {
+	if strings.Contains(ls.Network, "udp") {
+		addr, err := net.ResolveUDPAddr(ls.Network, ls.Address)
 		require.NoError(t, err)
-		c, err := net.ListenUDP(target, addr)
+		c, err := net.ListenUDP(ls.Network, addr)
 		if err != nil {
 			return false
 		}
@@ -1011,13 +1016,40 @@ func IsListenSocketClosed(t require.TestingT, target string, addStr string) bool
 		require.NoError(t, err)
 		return true
 	}
-	addr, err := net.ResolveTCPAddr(target, addStr)
+
+	addr, err := net.ResolveTCPAddr(ls.Network, ls.Address)
 	require.NoError(t, err)
-	c, err := net.ListenTCP(target, addr)
+	c, err := net.ListenTCP(ls.Network, addr)
 	if err != nil {
 		return false
 	}
 	err = c.Close()
 	require.NoError(t, err)
 	return true
+}
+
+type ListenSockets []ListenSocket
+
+func (ls ListenSockets) CheckForClosedSockets(t require.TestingT) {
+	// wait for all sockets to be closed - max 3 minutes = 900*200
+	socketClosed := make([]bool, len(ls))
+	for j := 0; j < 900; j++ {
+		allClosed := true
+		for i, socket := range ls {
+			if socketClosed[i] {
+				continue
+			}
+			closed := socket.IsClosed(t)
+			socketClosed[i] = closed
+			if socketClosed[i] {
+				continue
+			}
+			allClosed = false
+		}
+		if allClosed {
+			return
+		}
+		time.Sleep(time.Millisecond * 200)
+	}
+	require.FailNow(t, "ports not closed")
 }

@@ -28,10 +28,11 @@ var (
 
 type MessageType attribute.KeyValue
 
-// Event adds an event of the messageType to the span associated with the
-// passed context with id and size (if message is a proto message).
-func (m MessageType) Event(ctx context.Context, msg *pool.Message) {
-	span := trace.SpanFromContext(ctx)
+type Message struct {
+	Size int
+}
+
+func MakeMessage(msg *pool.Message) Message {
 	tcpMsg := message.Message{
 		Code:    msg.Code(),
 		Token:   msg.Token(),
@@ -50,12 +51,18 @@ func (m MessageType) Event(ctx context.Context, msg *pool.Message) {
 		size = 0
 	}
 
-	if bodySize, err := msg.BodySize(); err != nil {
-		size += int(bodySize)
+	return Message{
+		Size: size,
 	}
+}
+
+// Event adds an event of the messageType to the span associated with the
+// passed context with id and size (if message is a proto message).
+func (m MessageType) Event(ctx context.Context, msg Message) {
+	span := trace.SpanFromContext(ctx)
 	span.AddEvent("message", trace.WithAttributes(
 		attribute.KeyValue(m),
-		semconv.MessageUncompressedSizeKey.Int(size),
+		semconv.MessageUncompressedSizeKey.Int(msg.Size),
 	))
 }
 
@@ -84,11 +91,11 @@ func StatusCodeAttr(c codes.Code) attribute.KeyValue {
 	return COAPStatusCodeKey.Int64(int64(c))
 }
 
-func MessageReceivedEvent(ctx context.Context, message *pool.Message) {
+func MessageReceivedEvent(ctx context.Context, message Message) {
 	messageReceived.Event(ctx, message)
 }
 
-func MessageSentEvent(ctx context.Context, message *pool.Message) {
+func MessageSentEvent(ctx context.Context, message Message) {
 	messageSent.Event(ctx, message)
 }
 

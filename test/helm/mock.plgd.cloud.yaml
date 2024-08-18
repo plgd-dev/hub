@@ -80,12 +80,12 @@ mockoauthserver:
       clientSecret: "test"
       grantType: "clientCredentials"
       redirectURL: "https://primary.mock.plgd.cloud/things"
-      scopes: ['openid']
+      scopes: ["openid"]
     - name: "plgd.web"
       clientID: "test"
       clientSecret: "test"
       redirectURL: "https://primary.mock.plgd.cloud/things"
-      scopes: ['openid']
+      scopes: ["openid"]
       useInUi: true
 identitystore:
   log:

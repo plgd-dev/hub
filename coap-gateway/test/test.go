@@ -72,26 +72,14 @@ func SetUp(t require.TestingT) (tearDown func()) {
 }
 
 func checkForClosedSockets(t require.TestingT, cfg service.Config) {
-	protocolClosed := make([]bool, len(cfg.APIs.COAP.Protocols))
-	// wait for all sockets to be closed - max 3 minutes = 900*200
-	for j := 0; j < 900; j++ {
-		allClosed := true
-		for i, protocol := range cfg.APIs.COAP.Protocols {
-			if protocolClosed[i] {
-				continue
-			}
-			protocolClosed[i] = test.IsListenSocketClosed(t, string(protocol), cfg.APIs.COAP.Addr)
-			if protocolClosed[i] {
-				continue
-			}
-			allClosed = false
-			break
-		}
-		if allClosed {
-			break
-		}
-		time.Sleep(time.Millisecond * 200)
+	sockets := make(test.ListenSockets, 0, len(cfg.APIs.COAP.Protocols))
+	for _, protocol := range cfg.APIs.COAP.Protocols {
+		sockets = append(sockets, test.ListenSocket{
+			Network: string(protocol),
+			Address: cfg.APIs.COAP.Addr,
+		})
 	}
+	sockets.CheckForClosedSockets(t)
 }
 
 // New creates test coap-gateway.
