@@ -1,0 +1,52 @@
+{{- if .Values.deviceProvisioningService.enabled }}
+{{- $serviceCertName := include "plgd-hub.deviceProvisioningService.serviceCertName" . }}
+{{- $serviceDns := include "plgd-hub.deviceProvisioningService.fullname" . }}
+{{- $serviceCertificate := .Values.deviceProvisioningService.service.certificate -}}
+{{- $serviceIssuer := .Values.deviceProvisioningService.service.certificate.issuer }}
+
+{{- $annotations := dict }}
+{{- if .Values.certmanager.coap.cert.annotations }}
+{{- $annotations = merge .Values.certmanager.coap.cert.annotations $serviceCertificate.annotations -}}
+{{- else }}
+{{- $annotations = $serviceCertificate.annotations -}}
+{{- end }}
+
+{{- $labels := dict }}
+{{- if .Values.certmanager.coap.cert.labels }}
+{{- $labels = merge .Values.certmanager.coap.cert.labels $serviceCertificate.labels -}}
+{{- else }}
+{{- $labels = $serviceCertificate.labels -}}
+{{- end }}
+
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ $serviceCertName }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "plgd-hub.deviceProvisioningService.labels" $ | nindent 4 }}
+    {{- with $labels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+  {{- with $annotations }}
+  annotations:
+  {{- . | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  secretName: {{ $serviceCertName }}
+  commonName: {{ required "The global.domain is required" $.Values.global.domain }}
+  privateKey:
+    algorithm: {{ $serviceCertificate.key.algorithm | default ( $.Values.certmanager.coap.cert.key.algorithm  | default $.Values.certmanager.default.cert.key.algorithm )}}
+    size: {{ $serviceCertificate.key.size | default ( $.Values.certmanager.coap.cert.key.size  | default $.Values.certmanager.default.cert.key.size ) }}
+  usages:
+    - server auth
+    - client auth
+  ipAddresses:
+    - 127.0.0.1
+  duration: {{ $serviceCertificate.duration | default ( $.Values.certmanager.coap.cert.duration  | default $.Values.certmanager.default.cert.duration ) }}
+  renewBefore: {{ $serviceCertificate.renewBefore | default ( $.Values.certmanager.coap.cert.renewBefore  | default $.Values.certmanager.default.cert.renewBefore ) }}
+  issuerRef:
+    name: {{ $serviceIssuer.name | default ( $.Values.certmanager.coap.issuer.name  | default $.Values.certmanager.default.issuer.name ) }}
+    kind: {{ $serviceIssuer.kind | default ( $.Values.certmanager.coap.issuer.kind  | default $.Values.certmanager.default.issuer.kind ) }}
+    group: {{ $serviceIssuer.group | default ( $.Values.certmanager.coap.issuer.group  | default $.Values.certmanager.default.issuer.group ) }}
+{{- end }}

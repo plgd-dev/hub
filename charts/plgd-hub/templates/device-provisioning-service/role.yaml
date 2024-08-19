@@ -1,0 +1,3 @@
+{{- if and .Values.deviceProvisioningService.enabled .Values.deviceProvisioningService.rbac.roleBindingDefinitionTpl }}
+{{- tpl .Values.deviceProvisioningService.rbac.roleBindingDefinitionTpl $ }}
+{{- end }}

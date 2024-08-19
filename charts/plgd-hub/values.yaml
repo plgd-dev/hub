@@ -3105,3 +3105,244 @@ m2moauthserver:
           authorization:
             audience:
             endpoints:
+
+deviceProvisioningService:
+  # -- Enable device-provisioning-service
+  enabled: true
+  # -- Name of component. Used in label selectors
+  name: device-provisioning-service
+  # -- Full name to override
+  fullnameOverride:
+  # -- Number of replicas
+  replicas: 1
+  # -- Additional labels for dps deployment
+  deploymentLabels: {}
+  # -- Additional annotations for dps deployment
+  deploymentAnnotations: {}
+  # -- Pod security context
+  podSecurityContext: {}
+  # -- Labels for dps pod
+  podLabels: {}
+  # -- Annotations for dps pod
+  podAnnotations: {}
+  service:
+    # -- Service type
+    type: LoadBalancer
+    # -- Use nodePort, if specified, for one of the protocols. If both protocols are enabled, nodePort needs to be configured directly in the service to mutually different ports.
+    nodePort: 15684
+    tcp:
+      # -- Service type
+      type:
+      # -- Labels for coap-gateway service
+      labels: {}
+      # -- Annotations for coap-gateway service
+      annotations: {}
+      # -- Use nodePort if specified, must to be different as is in udp
+      nodePort:
+      # -- Target port
+      targetPort: coaps-tcp
+      # -- Protocol
+      protocol: TCP
+      # -- Name
+      name: coaps-tcp
+    udp:
+      # -- Service type
+      type:
+      # -- Labels for coap-gateway service
+      labels: {}
+      # -- Annotations for coap-gateway service
+      annotations: {}
+      # -- Use nodePort if specified. Must to be different as is in tcp
+      nodePort:
+      # -- Target port
+      targetPort: coaps-udp
+      # -- Protocol
+      protocol: UDP
+      # -- Name
+      name: coaps-udp
+    http:
+      # -- Service type
+      type:
+      # -- Labels for coap-gateway service
+      labels: {}
+      # -- Annotations for coap-gateway service
+      annotations: {}
+      # -- Target port
+      targetPort: http
+      # -- Protocol
+      protocol: TCP
+      # -- Name
+      name: http
+    # -- Labels for dps service
+    labels: {}
+    # -- Annotations for dps service
+    annotations: {}
+    # -- Service certificate
+    certificate:
+      # -- Mount path
+      mountPath:
+      # -- Labels
+      labels:
+        {}
+        # -- Annotations for dps service certificate
+      annotations: {}
+      # -- Certificate duration
+      duration:
+      # -- Certificate renew before
+      renewBefore:
+      key:
+        # -- Certificate key algorithm
+        algorithm:
+        # -- Certificate key size
+        size:
+      issuer:
+        # -- Name of issuer
+        name:
+        # -- Kind of issuer
+        kind:
+        # -- Group of issuer
+        group:
+  # -- RBAC configuration
+  rbac:
+    # -- Create RBAC config
+    enabled: false
+    # -- Name of dps SA
+    serviceAccountName: device-provisioning-service
+    # -- Template definition for Role/binding etc..
+    roleBindingDefinitionTpl:
+  # -- Security context for pod
+  securityContext: {}
+  # -- Image pull secrets
+  imagePullSecrets: {}
+  # -- Restart policy for pod
+  restartPolicy: Always
+  # -- Init containers definition
+  initContainersTpl:
+  # -- Extra POD containers
+  extraContainers: {}
+  image:
+    # -- Image registry
+    registry: ghcr.io/
+    # -- Image repository
+    repository: plgd-dev/hub/device-provisioning-service
+    # -- Image tag
+    tag:
+    # -- Image pull policy
+    pullPolicy: Always
+    # -- Image pull secrets
+    imagePullSecrets: {}
+  # -- Liveness probe. dps doesn't have any default liveness probe
+  livenessProbe: {}
+  # -- Readiness probe. dps doesn't have aby default readiness probe
+  readinessProbe: {}
+  # -- Resources limit
+  resources: {}
+  # -- Node selector
+  nodeSelector: {}
+  # -- Affinity definition
+  affinity: {}
+  # -- Toleration definition
+  tolerations: []
+  # -- Optional extra volumes
+  extraVolumes: []
+  # -- Optional extra volume mounts
+  extraVolumeMounts: {}
+  # -- Domain for dps HTTP API endpoint
+  apiDomain:
+  # -- Ingress
+  ingress:
+    # -- Enable ingress
+    enabled: true
+    # -- Ingress annotation
+    annotations: {}
+    # -- Domain certificate name
+    domainCertName:
+    # -- Ingress path
+    paths:
+      - /api/v1/provisioning-records
+      - /api/v1/enrollment-groups
+      - /api/v1/hubs
+  config:
+    # -- Service configuration file name
+    fileName: service.yaml
+    # -- Volume name
+    volume: config
+    # -- Configuration mount path
+    mountPath: /config
+  # -- Service and POD port
+  port: 15684
+  log:
+    # -- Logging enabled from level
+    level: info
+    # -- Dump grpc messages
+    dumpBody: false
+    # -- The supported values are: "json", "console"
+    encoding: json
+    stacktrace:
+      # -- Log stacktrace
+      enabled: false
+      # -- Stacktrace from level
+      level: warn
+    encoderConfig:
+      # -- Time format for logs. The supported values are: "rfc3339nano", "rfc3339"
+      timeEncoder: rfc3339nano
+  # -- For complete device-provisioning-service configuration see [plgd/device-provisioning-service](https://github.com/plgd-dev/hub/tree/main/device-provisioning-service)
+  apis:
+    coap:
+      address: ""
+      maxMessageSize: 262144
+      messagePoolSize: 1000
+      protocols: ["tcp"]
+      inactivityMonitor:
+        timeout: 20s
+      blockwiseTransfer:
+        enabled: true
+        blockSize: "1024"
+      tls:
+        keyFile:
+        certFile:
+    http:
+      enabled: true
+      address:
+      port: 9100
+      tls:
+        caPool:
+        keyFile:
+        certFile:
+        clientCertificateRequired: false
+      authorization:
+        ownerClaim:
+        authority:
+        audience:
+        http:
+          maxIdleConns: 16
+          maxConnsPerHost: 32
+          maxIdleConnsPerHost: 16
+          idleConnTimeout: 30s
+          timeout: 10s
+          tls:
+            caPool:
+            keyFile:
+            certFile:
+            useSystemCAPool: true
+  # -- For complete dps service configuration see [plgd/device-provisioning-service](https://github.com/plgd-dev/hub/device-provisioning-service)
+  clients:
+    storage:
+      cacheExpiration: 10m
+      mongoDB:
+        uri:
+        database: deviceProvisioningService
+        maxPoolSize: 16
+        maxConnIdleTime: 4m0s
+        tls:
+          caPool:
+          keyFile:
+          certFile:
+          useSystemCAPool: false
+        bulkWrite:
+          # -- A time limit for write bulk to mongodb. A Timeout of zero means no timeout.
+          timeout: 1m0s
+          # -- The amount of time to wait until a record is written to mongodb. Any records collected during the throttle time will also be written. A throttle time of zero writes immediately. If recordLimit is reached, all records are written immediately
+          throttleTime: 500ms
+          # -- The maximum number of documents to cache before an immediate write.
+          documentLimit: 1000

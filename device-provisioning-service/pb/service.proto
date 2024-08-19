@@ -1,0 +1,159 @@
+syntax = "proto3";
+
+package deviceprovisioningservice.pb;
+
+import "pb/provisioningRecords.proto";
+import "pb/enrollmentGroup.proto";
+import "pb/hub.proto";
+
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "plgd hub - HTTP Provisioned device service API";
+    version: "1.0";
+    description: "";
+    contact: {
+      name: "plgd.dev";
+      url: "https://github.com/plgd-dev/hub/v2/device-provisioning-service";
+      email: "info@plgd.dev";
+    };
+    license: {
+      name: "Commercial";
+    };
+  };
+  schemes: [ HTTPS ];
+  consumes: [ "application/json", "application/protojson" ];
+  produces: [ "application/json", "application/protojson" ];
+};
+
+option go_package = "github.com/plgd-dev/hub/v2/device-provisioning-service/pb;pb";
+// https://github.com/googleapis/googleapis/blob/master/google/api/http.proto
+
+service DeviceProvisionService {
+  // Get registrations of devices
+  rpc GetProvisioningRecords (GetProvisioningRecordsRequest) returns (stream ProvisioningRecord) {
+    option (google.api.http) = {
+      get: "/api/v1/provisioning-records"
+      additional_bindings: {
+        get: "/device-provisioning-service/api/v1/provisioning-records"
+      }
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Provisioning records" ]
+    };
+  };
+
+  rpc DeleteProvisioningRecords (DeleteProvisioningRecordsRequest) returns (DeleteProvisioningRecordsResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/provisioning-records"
+      additional_bindings: {
+        delete: "/device-provisioning-service/api/v1/provisioning-records"
+      }
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Provisioning record" ]
+    };
+  };
+
+  rpc GetEnrollmentGroups (GetEnrollmentGroupsRequest) returns (stream EnrollmentGroup) {
+    option (google.api.http) = {
+      get: "/api/v1/enrollment-groups"
+      additional_bindings: {
+        get: "/device-provisioning-service/api/v1/enrollment-groups"
+      }
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Enrollment Groups" ]
+    };
+  };
+
+  rpc CreateEnrollmentGroup (CreateEnrollmentGroupRequest) returns (EnrollmentGroup) {
+    option (google.api.http) = {
+      post: "/api/v1/enrollment-groups"
+      additional_bindings: {
+        post: "/device-provisioning-service/api/v1/enrollment-groups"
+      }
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Enrollment Groups" ]
+    };
+  };
+
+  rpc UpdateEnrollmentGroup (UpdateEnrollmentGroupRequest) returns (EnrollmentGroup) {
+    option (google.api.http) = {
+      put: "/api/v1/enrollment-groups/{id}"
+      additional_bindings: {
+        put: "/device-provisioning-service/api/v1/enrollment-groups/{id}"
+      }
+      body: "enrollment_group"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Enrollment Group" ]
+    };
+  };
+
+  rpc DeleteEnrollmentGroups (DeleteEnrollmentGroupsRequest) returns (DeleteEnrollmentGroupsResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/enrollment-groups"
+      additional_bindings: {
+        delete: "/device-provisioning-service/api/v1/enrollment-groups"
+      }
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Enrollment Group" ]
+    };
+  };
+
+  rpc GetHubs (GetHubsRequest) returns (stream Hub) {
+    option (google.api.http) = {
+      get: "/api/v1/hubs"
+      additional_bindings: {
+        get: "/device-provisioning-service/api/v1/hubs"
+      }
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Hubs" ]
+    };
+  };
+
+  rpc CreateHub (CreateHubRequest) returns (Hub) {
+    option (google.api.http) = {
+      post: "/api/v1/hubs"
+      additional_bindings: {
+        post: "/device-provisioning-service/api/v1/hubs"
+      }
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Hubs" ]
+    };
+  };
+
+  rpc UpdateHub (UpdateHubRequest) returns (Hub) {
+    option (google.api.http) = {
+      put: "/api/v1/hubs/{id}"
+      additional_bindings: {
+        put: "/device-provisioning-service/api/v1/hubs/{id}"
+      }
+      body: "hub"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Hub" ]
+    };
+  };
+
+  rpc DeleteHubs (DeleteHubsRequest) returns (DeleteHubsResponse) {
+    option (google.api.http) = {
+      delete: "/api/v1/hubs"
+      additional_bindings: {
+        delete: "/device-provisioning-service/api/v1/hubs"
+      }
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      tags: [ "Hub" ]
+    };
+  };
+}

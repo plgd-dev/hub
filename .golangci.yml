@@ -169,6 +169,9 @@ issues:
     - path: resource-aggregate/events/resourceLinks.*.go|resource-aggregate/client/sync.*.go|resource-aggregate/service/grpcApi.go|resource-aggregate/events/resource.*.go
       linters:
         - dupl
+    - path: device-provisioning-service/test/provisionHandler.go
+      linters:
+        - dupl
   # Fix found issues (if it's supported by the linter).
   # fix: true
 

@@ -126,6 +126,13 @@ jobs:
             directory: m2m-oauth-server
             file: .tmp/docker/m2m-oauth-server/Dockerfile
             template-file: tools/docker/Dockerfile.in
+          - name: device-provisioning-service
+            directory: device-provisioning-service
+            file: .tmp/docker/device-provisioning-service/Dockerfile
+            template-file: tools/docker/Dockerfile.in
+          - name: test-device-provisioning-service
+            directory: test/device-provisioning-service
+            file: test/device-provisioning-service/Dockerfile
     uses: ./.github/workflows/build-publish-cfg.yaml
     with:
       name: ${{ matrix.name }}

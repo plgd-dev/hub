@@ -199,6 +199,13 @@ RUN go build \
     -o "/go/bin/$service" \
     ./cmd/service
 
+#device-provisioning-service
+ARG service=device-provisioning-service
+WORKDIR $root_directory/$service
+RUN go build -ldflags "-linkmode external -extldflags -static -X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" \
+    -o "/go/bin/$service" \
+    ./cmd/service
+
 #nats
 WORKDIR $root_directory
 RUN apkArch="$(apk --print-arch)"; \
@@ -266,6 +273,8 @@ COPY --from=build /go/bin/snippet-service /usr/local/bin/snippet-service
 COPY --from=build /go/src/github.com/plgd-dev/hub/snippet-service/config.yaml /configs/snippet-service.yaml
 COPY --from=build /go/bin/grpc-reflection /usr/local/bin/grpc-reflection
 COPY --from=build /go/src/github.com/plgd-dev/hub/tools/grpc-reflection/config.yaml /configs/grpc-reflection.yaml
+COPY --from=build /go/bin/device-provisioning-service /usr/local/bin/device-provisioning-service
+COPY --from=build /go/src/github.com/plgd-dev/hub/device-provisioning-service/config.yaml /configs/device-provisioning-service.yaml
 
 # install scylla
 RUN curl -sSf get.scylladb.com/server | sudo bash -s -- --scylla-version 5.4
@@ -331,6 +340,8 @@ ENV HTTP_SNIPPET_SERVICE_PORT=9092
 ENV M2M_OAUTH_SERVER_PORT=9079
 ENV HTTP_M2M_OAUTH_SERVER_PORT=9080
 ENV GRPC_REFLECTION_PORT=9078
+ENV COAP_DEVICE_PROVISIONING_SERVICE_PORT=15684
+ENV HTTP_DEVICE_PROVISIONING_SERVICE_PORT=9093
 
 # OAuth
 ENV DEVICE_PROVIDER=plgd
