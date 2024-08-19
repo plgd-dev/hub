@@ -1,6 +1,6 @@
 # Device Provisioning Service
 
-The Device Provisioning Service provides API to provision device to the [plgd/hub](https://github.com/plgd-dev/hub).
+The Device Provisioning Service provides an API to provision a device to the [plgd/hub](https://github.com/plgd-dev/hub).
 
 ## Workflow
 
@@ -15,7 +15,7 @@ plantuml -tsvg workflow.puml
 
 ## Docker Image
 
-Before you use the image you need to setup [K8s access to private registry](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry).
+Before you use the image, you need to set up [K8s access to private registry](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry).
 
 ```bash
 docker pull ghcr.io/plgd-dev/hub/device-provisioning-service:latest
@@ -30,10 +30,10 @@ A configuration template is available on [config.yaml](https://github.com/plgd-d
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
 | `log.dumpBody` | bool | `Set to true if you would like to dump raw messages.` | `false` |
-| `log.level` | string | `Logging enabled from level.` | `"info"` |
+| `log.level` | string |  `Minimum log level for logging. Logs with lower severity than this level will not be output. Supported levels: "debug", "info", "warn", "error".` | `"info"` |
 | `log.encoding` | string | `Logging format. The supported values are: "json", "console"` | `"json"` |
-| `log.stacktrace.enabled` | bool | `Log stacktrace.` | `"false` |
-| `log.stacktrace.level` | string | `Stacktrace from level.` | `"warn` |
+| `log.stacktrace.enabled` | bool | `Log stacktrace.` | `false` |
+| `log.stacktrace.level` | string | `Stacktrace from level.` | `"warn"` |
 | `log.encoderConfig.timeEncoder` | string | `Time format for logs. The supported values are: "rfc3339nano", "rfc3339".` | `"rfc3339nano"` |
 
 ### CoAP API
@@ -42,7 +42,7 @@ CoAP API as specified in the [workflow](./workflow.puml).
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
-| `apis.coap.address` | string | `Listen specification <host>:<port> for coap client connection.` | `"0.0.0.0:5688"` |
+| `apis.coap.address` | string | `Listening specification <host>:<port> for coap client connection.` | `"0.0.0.0:5688"` |
 | `apis.coap.protocols` | []string | `Protocol for coap connection. The supported values are: "tcp", "udp" .` | `["tcp"]` |
 | `apis.coap.maxMessageSize` | int | `Max message size which can be sent/received via coap. i.e. 256*1024 = 262144 bytes.` | `262144` |
 | `apis.coap.messagePoolSize` | int | `Defines the maximum preallocated messages in the pool for parse/create coap messages.` | `1000` |
@@ -59,7 +59,7 @@ The plgd device provisioning service REST API is defined by [swagger](https://ra
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
 | `apis.http.enabled` | bool | `Enable HTTP API.` | `false` |
-| `apis.http.address` | string | `Listen specification <host>:<port> for http client connection.` | `"0.0.0.0:9100"` |
+| `apis.http.address` | string | `Listening specification <host>:<port> for http client connection.` | `"0.0.0.0:9100"` |
 | `apis.http.tls.caPool` | string | `File path to the root certificate in PEM format which might contain multiple certificates in a single file.` |  `""` |
 | `apis.http.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
 | `apis.http.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
@@ -75,7 +75,7 @@ The plgd device provisioning service REST API is defined by [swagger](https://ra
 | `apis.http.authorization.http.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
 | `apis.http.authorization.http.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
 | `apis.http.authorization.http.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
-| `apis.http.readTimeout` | string | `The maximum duration for reading the entire request, including the body by the server. A zero or negative value means there will be no timeout.` | `8s` |
+| `apis.http.readTimeout` | string | `Maximum duration allowed for reading the entire request body, including the body by the server. A zero or negative value means there will be no timeout. Example: "8s" (8 seconds).` | `8s` |
 | `apis.http.readHeaderTimeout` | string | `The amount of time allowed to read request headers by the server. If readHeaderTimeout is zero, the value of readTimeout is used. If both are zero, there is no timeout.` | `4s` |
 | `apis.http.writeTimeout` | string | `The maximum duration before the server times out writing of the response. A zero or negative value means there will be no timeout.` | `16s` |
 | `apis.http.idleTimeout` | string | `The maximum amount of time the server waits for the next request when keep-alives are enabled. If idleTimeout is zero, the value of readTimeout is used. If both are zero, there is no timeout.` | `30s` |
@@ -123,7 +123,7 @@ Enrollment group entry configuration.
 | ---------- | -------- | -------------- | ------- |
 | `enrollmentGroups.[].id` | string | `Unique enrollment group id in GUID format` | `""` |
 | `enrollmentGroups.[].owner` | string | `Owner of a newly provisioned device` | `""` |
-| `enrollmentGroups.[].preSharedKeyFile` | string | `File path to the pre-shared key that will be stored on the device for the owner. It must be empty or have 16 characters in the preSharedKeyFile.` | `""` |
+| `enrollmentGroups.[].preSharedKeyFile` | string | `Path to the pre-shared key that will be stored on the device. It must either be empty or contain exactly 16 characters. If the key does not meet this requirement, the provisioning will fail.` | `""` |
 | `enrollmentGroups.[].attestationMechanism.x509.certificateChain` | string | `File path to certificate chain in PEM format.` | `""` |
 | `enrollmentGroups.[].attestationMechanism.x509.expiredCertificateEnabled` | bool | `Accept device connections with an expired certificate.` | `false` |
 
@@ -147,11 +147,11 @@ Defines configuration of the plgd hub where the device connects after it's succe
 
 #### OAuth2.0 Client
 
-OAuth2.0 Client is used to obtain JWT with ownerClaim an deviceIDClaim via the client credentials flow. The JWT will be is used directly during the [SignUp operation](https://plgd.dev/architecture/component-overview/#hub-registration).
+OAuth2.0 Client is used to obtain JWT with ownerClaim and deviceIDClaim via the client credentials flow. The JWT will be is used directly during the [SignUp operation](https://plgd.dev/architecture/component-overview/#hub-registration).
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
-| `enrollmentGroups.[].hub.authorization.ownerClaim` | string | `Claim used to identify owner of the device. If configured, your OAuth2.0 server has to set the owner id to the token as configured. OwnerClaim with sub is not supported. Custom owner claim needs to be configured also on the plgd hub instance. If used with the plgd mock OAuth Server, value https://plgd.dev/owner has to be set. **Required.**` | `""` |
+| `enrollmentGroups.[].hub.authorization.ownerClaim` | string | `Claim used to identify the owner of the device. If configured, your OAuth2.0 server has to set the owner id to the token as configured. OwnerClaim with sub is not supported. Custom owner claim needs to be configured also on the plgd hub instance. If used with the plgd mock OAuth Server, value https://plgd.dev/owner has to be set. **Required.**` | `""` |
 | `enrollmentGroups.[].hub.authorization.deviceIDClaim` | string | `Claim used to make JWT tokens device specific. If configured, your OAuth2.0 server has to set the device id to the token as configured. If used with the plgd mock OAuth Server, value https://plgd.dev/deviceId has to be set.` | `""` |
 | `enrollmentGroups.[].hub.authorization.provider.name` | string | `Provider name which is registered also on the instance of the plgd hub where the device connects after it's successfully provisioned. The grant type for this provider must be set to ClientCredentials.` | `""` |
 | `enrollmentGroups.[].hub.authorization.provider.authority` | string | `Authority is the address of the token-issuing authentication server. Services will use this URI to find token endpoint.` | `""` |

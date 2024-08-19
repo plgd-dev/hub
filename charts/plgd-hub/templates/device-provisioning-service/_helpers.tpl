@@ -76,11 +76,12 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- define "plgd-hub.deviceProvisioningService.coapGateway" }}
   {{- $ := index . 0 }}
   {{- $hub := index . 1 }}
-  {{- $_ := required "CoAP Gateway address is required. Use global.domain or deviceProvisioningService.enrollmentGroups[].hub.coapGateway. In case of using global domain, default port 5684 or coapgateway.service.nodePort.port if specified is used" ( $hub.coapGateway | default $.Values.global.domain ) }}
   {{- if $hub.coapGateway }}
     {{- $hub.coapGateway }}
-  {{- else }}
+  {{- else if $.Values.global.domain }}
     {{- printf "%s:%v" $.Values.global.domain ( $.Values.coapgateway.service.nodePort | default 5684 ) }}
+  {{- else }}
+    {{- fail "CoAP Gateway address is required. Use global.domain or deviceProvisioningService.enrollmentGroups[].hub.coapGateway. In case of using global domain, default port 5684 or coapgateway.service.nodePort.port if specified is used" }}
   {{- end }}
 {{- end }}
 
