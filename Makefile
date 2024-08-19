@@ -203,7 +203,7 @@ define RUN-DOCKER-MONGO
 		--name=$(1) \
 		-v $(WORKING_DIRECTORY)/.tmp/$(1):/data/db \
 		-v $(CERT_PATH):/certs --user $(USER_ID):$(GROUP_ID) \
-		mongo mongod -vvvvv --tlsMode requireTLS --wiredTigerCacheSizeGB 1 --tlsCAFile /certs/root_ca.crt \
+		mongo --tlsMode requireTLS --wiredTigerCacheSizeGB 1 --tlsCAFile /certs/root_ca.crt \
 			--tlsCertificateKeyFile /certs/mongo.key $(2)
 endef
 
@@ -215,9 +215,9 @@ MONGODB_REPLICA_2 := mongo2
 MONGODB_REPLICA_2_PORT := 27019
 
 mongo: certificates
-	$(call RUN-DOCKER-MONGO,$(MONGODB_REPLICA_0),--replSet myReplicaSet --bind_ip localhost --port $(MONGODB_REPLICA_0_PORT))
-	$(call RUN-DOCKER-MONGO,$(MONGODB_REPLICA_1),--replSet myReplicaSet --bind_ip localhost --port $(MONGODB_REPLICA_1_PORT))
-	$(call RUN-DOCKER-MONGO,$(MONGODB_REPLICA_2),--replSet myReplicaSet --bind_ip localhost --port $(MONGODB_REPLICA_2_PORT))
+	$(call RUN-DOCKER-MONGO,$(MONGODB_REPLICA_0),-vvvvv --replSet myReplicaSet --bind_ip localhost --port $(MONGODB_REPLICA_0_PORT))
+	$(call RUN-DOCKER-MONGO,$(MONGODB_REPLICA_1),-vvvvv --replSet myReplicaSet --bind_ip localhost --port $(MONGODB_REPLICA_1_PORT))
+	$(call RUN-DOCKER-MONGO,$(MONGODB_REPLICA_2),-vvvvv --replSet myReplicaSet --bind_ip localhost --port $(MONGODB_REPLICA_2_PORT))
 	COUNTER=0; \
 	while [[ $${COUNTER} -lt 30 ]]; do \
 		echo "Checking mongodb connection ($${COUNTER}):"; \
@@ -441,14 +441,17 @@ simulators/dps: simulators/dps/clean
 simulators/clean: simulators/dps/clean
 simulators: simulators/dps
 
-env: clean certificates nats privateKeys http-gateway-www simulators
+env: clean certificates nats privateKeys http-gateway-www mongo simulators
 env/test/mem: clean certificates nats privateKeys
 
 ifeq ($(TEST_DATABASE),mongodb)
-env: mongo
-env/test/mem: mongo
+# github runners run out of file space if multiple mongodb replicas are started, so we start only a single instance
+env/test/mem: mongo-no-replicas
 else
+# test uses mongodb for most tests, but scylla can be enabled for some; so we always need mongodb to be running
+# but scylla needs to be started only if TEST_DATABASE=cqldb
 env: scylla
+# test/mem uses either mongodb or scylla, so just one needs to be started
 env/test/mem: scylla
 endif
 
@@ -586,6 +589,7 @@ test/mem: env/test/mem hub-test
 		TEST_SNIPPET_SERVICE_LOG_LEVEL=$(TEST_SNIPPET_SERVICE_LOG_LEVEL) TEST_SNIPPET_SERVICE_LOG_DUMP_BODY=$(TEST_SNIPPET_SERVICE_LOG_DUMP_BODY) \
 		TEST_LEAD_RESOURCE_TYPE_FILTER=$(TEST_LEAD_RESOURCE_TYPE_FILTER) TEST_LEAD_RESOURCE_TYPE_REGEX_FILTER='$(TEST_LEAD_RESOURCE_TYPE_REGEX_FILTER)' TEST_LEAD_RESOURCE_TYPE_USE_UUID=$(TEST_LEAD_RESOURCE_TYPE_USE_UUID) \
 		TEST_DATABASE=$(TEST_DATABASE))
+
 .PHONY: test/mem
 
 DIRECTORIES:=$(shell ls -d ./*/)

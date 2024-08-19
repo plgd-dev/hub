@@ -171,13 +171,3 @@ OAuth2.0 Client is used to obtain JWT with ownerClaim and deviceIDClaim via the 
 ::: tip Audience
 You might have one client, but multiple APIs registered in the OAuth2.0 Server. What you might want to prevent is to be able to contact all the APIs of your system with one token. This audience allows you to request the token for a specific API. If you configure it to myplgdc2c.api in the Auth0, you have to set it here if you want to also validate it.
 :::
-
-### Task Queue
-
-| Property | Type | Description | Default |
-| ---------- | -------- | -------------- | ------- |
-| `taskQueue.goPoolSize` | int | `Maximum number of running goroutine instances.` | `1600` |
-| `taskQueue.size` | int | `Size of queue. If it exhausted, submit returns error.` | `2097152` |
-| `taskQueue.maxIdleTime` | string | `Sets up the interval time of cleaning up goroutines. Zero means never cleanup.` | `10m` |
-
-> Note that the string type related to time (i.e. timeout, idleConnTimeout, expirationTime) is decimal numbers, each with optional fraction and a unit suffix, such as "300ms", "1.5h" or "2h45m". Valid time units are "ns", "us", "ms", "s", "m", "h".

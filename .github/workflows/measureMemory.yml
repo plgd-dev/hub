@@ -280,10 +280,9 @@ jobs:
           cat /proc/cpuinfo
           echo "Number of cores: $(nproc)"
           echo "Number of threads: $(nproc --all)"
+
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
 
       - name: Resolve database
         id: db
@@ -295,7 +294,7 @@ jobs:
           fi
 
       - name: Run a test
-        continue-on-error: true
+        shell: bash -eo pipefail {0}
         run: |
           make test/mem TEST_DATABASE=${{ steps.db.outputs.name }} TEST_MEMORY_COAP_GATEWAY_RESOURCE_DATA_SIZE=${{ matrix.resourceDataSize }} TEST_TIMEOUT=${{ matrix.timeout }} TEST_MEMORY_COAP_GATEWAY_NUM_DEVICES=${{ matrix.numDevices }} TEST_MEMORY_COAP_GATEWAY_NUM_RESOURCES=${{ matrix.numResources }} | tee >(grep "TestMemoryWithDevices.result:" | sed -e "s/.*TestMemoryWithDevices.result://g" | jq -r -c > out.json)
 
