@@ -209,8 +209,8 @@ const Tab1: FC<Props> = (props) => {
                         if (updateResource !== undefined) {
                             const newResources = resources.map((r) => (r.href === updateResource ? data : r))
                             setResources(newResources)
-                            setUpdateResource(undefined)
                             updateField('resources', newResources)
+                            setUpdateResource(undefined)
                         } else if (createResource) {
                             const newResources = [...resources, { ...data }]
                             setResources(newResources)
@@ -218,7 +218,6 @@ const Tab1: FC<Props> = (props) => {
                             setCreateResource(false)
                         }
                     }}
-                    resource={updateResource !== undefined ? resources.find((r) => r.href === updateResource) : undefined}
                     show={updateResource !== undefined || createResource}
                 />
 

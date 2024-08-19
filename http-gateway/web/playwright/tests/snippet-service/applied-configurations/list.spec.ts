@@ -1,23 +1,32 @@
-import { expect, Page, test } from '@playwright/test'
+import { Browser, expect, Page, test } from '@playwright/test'
 import testId from '../../../../src/testId'
 
-const openAppliedConfigurationsList = async (page: Page) => {
-    await page.goto('')
+const openAppliedConfigurationsList = async (page: Page, browser: Browser) => {
+    await page.goto('', { waitUntil: 'networkidle' })
     await page.getByTestId(testId.menu.snippetService.link).click()
+
+    //  wait for submenu to be visible
+    if (browser.browserType().name() === 'webkit') {
+        await page.waitForTimeout(500)
+    }
+
     await page.getByTestId(testId.menu.snippetService.appliedConfigurations).click()
 
+    await page.request.get('http://localhost:8181/snippet-service/api/v1/applied-configurations/api-reset')
+
+    await expect(page).toHaveURL(/snippet-service\/applied-configurations/)
     await page.setViewportSize({ width: 1600, height: 800 })
 }
 
-test('snippet-service-applied-configurations-list-open', async ({ page }) => {
-    await openAppliedConfigurationsList(page)
+test('snippet-service-applied-configurations-list-open', async ({ page, browser }) => {
+    await openAppliedConfigurationsList(page, browser)
 
     await expect(page).toHaveTitle(/Applied Configurations | plgd Dashboard/)
     await expect(page).toHaveScreenshot({ fullPage: true, omitBackground: true, animations: 'disabled' })
 })
 
-test('snippet-service-applied-configurations-list-open-detail-name', async ({ page }) => {
-    await openAppliedConfigurationsList(page)
+test('snippet-service-applied-configurations-list-open-detail-name', async ({ page, browser }) => {
+    await openAppliedConfigurationsList(page, browser)
 
     await expect(page.getByTestId(`${testId.snippetService.appliedConfigurations.list.table}-row-0`)).toBeVisible()
     await expect(page.getByTestId(`${testId.snippetService.appliedConfigurations.list.table}-row-0-name`)).toBeVisible()
@@ -26,8 +35,8 @@ test('snippet-service-applied-configurations-list-open-detail-name', async ({ pa
     await expect(page).toHaveTitle(/dps-endpoint-is-set| plgd Dashboard/)
 })
 
-test('snippet-service-applied-configurations-list-open-detail-link', async ({ page }) => {
-    await openAppliedConfigurationsList(page)
+test('snippet-service-applied-configurations-list-open-detail-link', async ({ page, browser }) => {
+    await openAppliedConfigurationsList(page, browser)
 
     await expect(page.getByTestId(`${testId.snippetService.appliedConfigurations.list.table}-row-0`)).toBeVisible()
     await expect(page.getByTestId(`${testId.snippetService.appliedConfigurations.list.table}-row-0-detail`)).toBeVisible()
@@ -36,8 +45,8 @@ test('snippet-service-applied-configurations-list-open-detail-link', async ({ pa
     await expect(page).toHaveTitle(/dps-endpoint-is-set| plgd Dashboard/)
 })
 
-test('snippet-service-applied-configurations-list-delete', async ({ page }) => {
-    await openAppliedConfigurationsList(page)
+test('snippet-service-applied-configurations-list-delete', async ({ page, browser }) => {
+    await openAppliedConfigurationsList(page, browser)
 
     await expect(page.getByTestId(`${testId.snippetService.appliedConfigurations.list.table}-row-0`)).toBeVisible()
     await expect(page.getByTestId(`${testId.snippetService.appliedConfigurations.list.table}-row-0-delete`)).toBeVisible()
@@ -56,8 +65,8 @@ test('snippet-service-applied-configurations-list-delete', async ({ page }) => {
     await expect(page.getByTestId(`${testId.snippetService.appliedConfigurations.list.table}-row-0`)).not.toBeVisible()
 })
 
-test('snippet-service-applied-configurations-list-link', async ({ page }) => {
-    await openAppliedConfigurationsList(page)
+test('snippet-service-applied-configurations-list-link', async ({ page, browser }) => {
+    await openAppliedConfigurationsList(page, browser)
 
     await expect(page.getByTestId(`${testId.snippetService.appliedConfigurations.list.table}-row-0`)).toBeVisible()
     await expect(page.getByTestId(`${testId.snippetService.appliedConfigurations.list.table}-row-0-condition`)).toBeVisible()

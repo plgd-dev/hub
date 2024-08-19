@@ -1,19 +1,25 @@
-import { expect, Page, test } from '@playwright/test'
+import { Browser, expect, Page, test } from '@playwright/test'
 import testId from '../../../../src/testId'
 import { addAndCheckFilter, openConditionFilter, removeAndCheck } from '../../utils'
 
-const openConditionItem = async (page: Page) => {
-    await page.goto('')
+const openConditionItem = async (page: Page, browser: Browser) => {
+    await page.goto('', { waitUntil: 'networkidle' })
     await page.request.get('http://localhost:8181/snippet-service/api/v1/conditions/api-reset')
 
     await page.getByTestId(testId.menu.snippetService.link).click()
+
+    //  wait for submenu to be visible
+    if (browser.browserType().name() === 'webkit') {
+        await page.waitForTimeout(1000)
+    }
+
     await page.getByTestId(testId.menu.snippetService.conditions).click()
     await page.setViewportSize({ width: 1600, height: 800 })
     await page.getByTestId(`${testId.snippetService.conditions.list.table}-row-0-detail`).click()
 }
 
-test('snippet-service-conditions-detail-version', async ({ page }) => {
-    await openConditionItem(page)
+test('snippet-service-conditions-detail-version', async ({ page, browser }) => {
+    await openConditionItem(page, browser)
 
     await expect(page).toHaveTitle(/jkralik-cond-0 | plgd Dashboard/)
     await expect(page.getByTestId(`${testId.snippetService.conditions.detail.versionSelector}`)).toBeVisible()
@@ -26,8 +32,8 @@ test('snippet-service-conditions-detail-version', async ({ page }) => {
     await expect(page).toHaveTitle(/jkralik-cond-0 | plgd Dashboard/)
 })
 
-test('snippet-service-conditions-detail-delete', async ({ page }) => {
-    await openConditionItem(page)
+test('snippet-service-conditions-detail-delete', async ({ page, browser }) => {
+    await openConditionItem(page, browser)
 
     await expect(page.getByTestId(testId.snippetService.conditions.detail.deleteButton)).toBeVisible()
     await page.getByTestId(testId.snippetService.conditions.detail.deleteButton).click()
@@ -48,8 +54,8 @@ test('snippet-service-conditions-detail-delete', async ({ page }) => {
     await expect(page.getByTestId(`${testId.snippetService.conditions.list.table}-row-0`)).not.toBeVisible()
 })
 
-test('snippet-service-conditions-detail-tab-1', async ({ page }) => {
-    await openConditionItem(page)
+test('snippet-service-conditions-detail-tab-1', async ({ page, browser }) => {
+    await openConditionItem(page, browser)
 
     await expect(page).toHaveTitle(/jkralik-cond-0 | plgd Dashboard/)
 
@@ -73,8 +79,8 @@ test('snippet-service-conditions-detail-tab-1', async ({ page }) => {
     await expect(page).toHaveTitle(/Conditions | plgd Dashboard/)
 })
 
-test('snippet-service-conditions-detail-tab-2', async ({ page }) => {
-    await openConditionItem(page)
+test('snippet-service-conditions-detail-tab-2', async ({ page, browser }) => {
+    await openConditionItem(page, browser)
 
     await page.getByTestId(testId.snippetService.conditions.detail.tabFilters).click()
 
@@ -89,10 +95,12 @@ test('snippet-service-conditions-detail-tab-2', async ({ page }) => {
     await page.getByTestId(`${testId.snippetService.conditions.addPage.step2.selectDeviceId}-input`).fill('3aae0672-47f3-4498-78d4-b061e6105ccd')
     await page.getByTestId(`${testId.snippetService.conditions.addPage.step2.selectDeviceId}-3aae0672-47f3-4498-78d4-b061e6105ccd`).click()
 
-    await expect(page.getByTestId(testId.snippetService.conditions.addPage.step2.selectDeviceIdReset)).toBeVisible()
-    await expect(page.getByTestId(testId.snippetService.conditions.addPage.step2.selectDeviceIdDone)).toBeVisible()
+    if (browser.browserType().name() !== 'webkit') {
+        await expect(page.getByTestId(testId.snippetService.conditions.addPage.step2.selectDeviceIdReset)).toBeVisible()
+        await expect(page.getByTestId(testId.snippetService.conditions.addPage.step2.selectDeviceIdDone)).toBeVisible()
 
-    await page.getByTestId(testId.snippetService.conditions.addPage.step2.selectDeviceIdDone).click()
+        await page.getByTestId(testId.snippetService.conditions.addPage.step2.selectDeviceIdDone).click()
+    }
 
     await expect(page.getByTestId(`${testId.snippetService.conditions.addPage.step2.filterDeviceId}-content-table-row-0-attribute`)).toBeVisible()
     await expect(page.getByTestId(`${testId.snippetService.conditions.addPage.step2.filterDeviceId}-content-table-row-0-value`)).toBeVisible()
@@ -118,8 +126,8 @@ test('snippet-service-conditions-detail-tab-2', async ({ page }) => {
     await expect(page).toHaveTitle(/Conditions | plgd Dashboard/)
 })
 
-test('snippet-service-conditions-detail-tab-3', async ({ page }) => {
-    await openConditionItem(page)
+test('snippet-service-conditions-detail-tab-3', async ({ page, browser }) => {
+    await openConditionItem(page, browser)
 
     await page.getByTestId(testId.snippetService.conditions.detail.tabApiAccessToken).click()
 

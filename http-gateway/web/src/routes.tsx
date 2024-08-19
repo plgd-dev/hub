@@ -382,6 +382,7 @@ export const getMenu = (menuConfig: any): MenuGroup[] => [
                 paths: [pages.API_TOKENS.LINK, pages.API_TOKENS.DETAIL],
                 exact: true,
                 visibility: menuConfig.apiTokens,
+                dataTestId: testId.menu.apiTokens,
             },
             {
                 icon: <IconNet />,

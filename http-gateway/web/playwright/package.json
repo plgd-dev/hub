@@ -9,8 +9,8 @@
     "test:ui": "npx playwright test --ui",
     "test:debug": "npx playwright test --debug",
     "test:updateScreenshots": "npx playwright test --update-snapshots",
-    "test:login": "npx playwright test login.spec.ts --debug",
-    "test:dev": "npx playwright test dev.spec.ts"
+    "test:dev": "npx playwright test snippet-service/applied-configurations/list.spec.ts --update-snapshots",
+    "test:report": "npx playwright show-report"
   },
   "keywords": [],
   "author": "",

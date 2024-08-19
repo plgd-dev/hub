@@ -13,9 +13,9 @@ export default defineConfig({
     globalSetup: require.resolve('./global-setup'),
     testDir: './tests',
     /* Maximum time one test can run for. */
-    timeout: 2 * 60 * 1000,
+    timeout: 60 * 1000,
     expect: {
-        timeout: 2 * 60 * 1000,
+        timeout: 60 * 1000,
         toHaveScreenshot: { maxDiffPixels: 100 },
     },
     /* Run tests in files in parallel */
@@ -25,19 +25,20 @@ export default defineConfig({
     /* Retry on CI only */
     retries: process.env.CI ? 2 : 0,
     /* Opt out of parallel tests on CI. */
-    workers: process.env.CI ? 1 : undefined,
+    workers: 1,
     /* Reporter to use. See https://playwright.dev/docs/test-reporters */
     reporter: 'html',
     /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
     use: {
         /* Maximum time each action such as `click()` can take. Defaults to 0 (no limit). */
-        actionTimeout: 2 * 60 * 1000,
+        actionTimeout: 60 * 1000,
         baseURL: 'http://localhost:3000/',
-        storageState: 'storageState.json',
+        screenshot: 'only-on-failure',
         trace: 'on-first-retry',
         testIdAttribute: 'data-test-id',
+        video: 'retain-on-failure',
         viewport: {
-            width: 1400,
+            width: 1600,
             height: 800,
         },
     },
@@ -48,20 +49,22 @@ export default defineConfig({
             name: 'chromium',
             use: {
                 ...devices['Desktop Chrome'],
+                storageState: 'storageState.chromium.json',
             },
         },
-
-        {
-            name: 'firefox',
-            use: {
-                ...devices['Desktop Firefox'],
-            },
-        },
-        
+        // {
+        //     name: 'firefox',
+        //     use: {
+        //         ...devices['Desktop Firefox'],
+        //         storageState: 'storageState.firefox.json',
+        //     },
+        //     fullyParallel: false,
+        // },
         {
             name: 'webkit',
             use: {
                 ...devices['Desktop Safari'],
+                storageState: 'storageState.webkit.json',
             },
         },
 

@@ -4,7 +4,7 @@ import testId from '../../../src/testId'
 const openDevice = async (page: Page) => {
     await page.goto('')
     await page.request.get('http://localhost:8181/api/v1/devices/api-reset')
-    await page.setViewportSize({ width: 1400, height: 800 })
+    await page.setViewportSize({ width: 1600, height: 800 })
 
     await page.getByTestId(testId.menu.devices).click()
 
@@ -219,7 +219,7 @@ test('device-detail-tab-2-table-open-update-modal-update', async ({ page }) => {
 test('device-detail-tab-2-table-update-modal-open-action-button', async ({ page }) => {
     await openDevice(page)
 
-    await page.setViewportSize({ width: 1400, height: 800 })
+    await page.setViewportSize({ width: 1600, height: 800 })
 
     await page.getByTestId(testId.devices.detail.tabResources).click()
     await expect(page.getByTestId(`${testId.devices.detail.resources.table}-row-4-action-update`)).toBeVisible()
@@ -268,7 +268,7 @@ const openDeviceWotResource = async (page: Page) => {
 test('device-detail-tab-2-wot-resource-form', async ({ page }) => {
     await openDeviceWotResource(page)
 
-    await page.setViewportSize({ width: 1400, height: 1400 })
+    await page.setViewportSize({ width: 1600, height: 1600 })
     await expect(page.getByTestId(testId.devices.detail.tabCertificates)).not.toHaveClass(/disabled/)
     await expect(page.getByTestId(testId.devices.detail.tabProvisioningRecords)).not.toHaveClass(/disabled/)
 
@@ -281,7 +281,7 @@ test('device-detail-tab-2-wot-resource-form', async ({ page }) => {
 test('device-detail-tab-2-wot-resource-simple-form-update', async ({ page }) => {
     await openDeviceWotResource(page)
 
-    await page.setViewportSize({ width: 1400, height: 1400 })
+    await page.setViewportSize({ width: 1600, height: 1600 })
 
     await expect(page.getByTestId(`${testId.devices.detail.resources.table}-row-7-href`)).toBeVisible()
     await page.getByTestId(`${testId.devices.detail.resources.table}-row-7-href`).click()
@@ -387,7 +387,7 @@ test('device-detail-tab-2-tree-open-update-modal-toggle-delete', async ({ page }
 test('device-detail-tab-2-tree-open-update-modal-edit-icon', async ({ page }) => {
     await openDevice(page)
 
-    await page.setViewportSize({ width: 1400, height: 1400 })
+    await page.setViewportSize({ width: 1600, height: 1600 })
 
     await page.getByTestId(testId.devices.detail.tabResources).click()
 
@@ -409,7 +409,7 @@ test('device-detail-tab-2-tree-open-update-modal-edit-icon', async ({ page }) =>
 test('device-detail-tab-2-tree-open-update-modal-delete-icon', async ({ page }) => {
     await openDevice(page)
 
-    await page.setViewportSize({ width: 1400, height: 1400 })
+    await page.setViewportSize({ width: 1600, height: 1600 })
 
     await page.getByTestId(testId.devices.detail.tabResources).click()
 
@@ -431,7 +431,7 @@ test('device-detail-tab-2-tree-open-update-modal-delete-icon', async ({ page }) 
 test('device-detail-tab-3', async ({ page }) => {
     await openDevice(page)
 
-    await page.setViewportSize({ width: 1400, height: 1400 })
+    await page.setViewportSize({ width: 1600, height: 1600 })
 
     await expect(page).toHaveScreenshot({ fullPage: true, omitBackground: true, animations: 'disabled' })
 })

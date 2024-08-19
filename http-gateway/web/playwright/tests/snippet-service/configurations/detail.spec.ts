@@ -1,18 +1,25 @@
-import { test, expect, Page } from '@playwright/test'
+import { test, expect, Page, Browser } from '@playwright/test'
 import testId from '../../../../src/testId'
 
-const openConfigurationItem = async (page: Page) => {
-    await page.goto('')
+const openConfigurationItem = async (page: Page, browser: Browser) => {
+    await page.goto('', { waitUntil: 'networkidle' })
+    page.on('console', (msg) => console.log(msg.text()))
     await page.request.get('http://localhost:8181/snippet-service/api/v1/configurations/api-reset')
 
     await page.getByTestId(testId.menu.snippetService.link).click()
+
+    //  wait for submenu to be visible
+    if (browser.browserType().name() === 'webkit') {
+        await page.waitForTimeout(1000)
+    }
+
     await page.getByTestId(testId.menu.snippetService.configurations).click()
     await page.setViewportSize({ width: 1600, height: 800 })
     await page.getByTestId(`${testId.snippetService.configurations.list.table}-row-0-detail`).click()
 }
 
-test('snippet-service-configurations-detail-version', async ({ page }) => {
-    await openConfigurationItem(page)
+test('snippet-service-configurations-detail-version', async ({ page, browser }) => {
+    await openConfigurationItem(page, browser)
 
     await expect(page).toHaveTitle(/my-cfg-1 | plgd Dashboard/)
     await expect(page.getByTestId(`${testId.snippetService.configurations.detail.versionSelector}`)).toBeVisible()
@@ -25,8 +32,8 @@ test('snippet-service-configurations-detail-version', async ({ page }) => {
     await expect(page).toHaveTitle(/my-cfg-0 | plgd Dashboard/)
 })
 
-test('snippet-service-configurations-detail-invoke', async ({ page }) => {
-    await openConfigurationItem(page)
+test('snippet-service-configurations-detail-invoke', async ({ page, browser }) => {
+    await openConfigurationItem(page, browser)
 
     await expect(page.getByTestId(`${testId.snippetService.configurations.detail.invokeButton}`)).toBeVisible()
     await page.getByTestId(`${testId.snippetService.configurations.detail.invokeButton}`).click()
@@ -52,8 +59,8 @@ test('snippet-service-configurations-detail-invoke', async ({ page }) => {
     await page.getByTestId(`${testId.snippetService.configurations.detail.invokeModal}-invoke`).click()
 })
 
-test('snippet-service-configurations-detail-delete', async ({ page }) => {
-    await openConfigurationItem(page)
+test('snippet-service-configurations-detail-delete', async ({ page, browser }) => {
+    await openConfigurationItem(page, browser)
 
     await expect(page.getByTestId(testId.snippetService.configurations.detail.deleteButton)).toBeVisible()
     await page.getByTestId(testId.snippetService.configurations.detail.deleteButton).click()
@@ -74,8 +81,8 @@ test('snippet-service-configurations-detail-delete', async ({ page }) => {
     await expect(page.getByTestId(`${testId.snippetService.configurations.list.table}-row-0`)).not.toBeVisible()
 })
 
-test('snippet-service-configurations-detail-update-fields', async ({ page }) => {
-    await openConfigurationItem(page)
+test('snippet-service-configurations-detail-update-fields', async ({ page, browser }) => {
+    await openConfigurationItem(page, browser)
 
     await expect(page.getByTestId(testId.snippetService.configurations.addPage.form.name)).toBeVisible()
     await page.getByTestId(testId.snippetService.configurations.addPage.form.name).fill('my-cfg-2')
@@ -109,8 +116,8 @@ test('snippet-service-configurations-detail-update-fields', async ({ page }) => 
     await expect(page).toHaveTitle(/Configurations | plgd Dashboard/)
 })
 
-test('snippet-service-configurations-detail-tab-conditions', async ({ page }) => {
-    await openConfigurationItem(page)
+test('snippet-service-configurations-detail-tab-conditions', async ({ page, browser }) => {
+    await openConfigurationItem(page, browser)
 
     await expect(page.getByTestId(testId.snippetService.configurations.detail.tabConditions)).toBeVisible()
     await page.getByTestId(testId.snippetService.configurations.detail.tabConditions).click()
@@ -126,8 +133,8 @@ test('snippet-service-configurations-detail-tab-conditions', async ({ page }) =>
     await expect(page).toHaveTitle(/jkralik-cond-0 | plgd Dashboard/)
 })
 
-test('snippet-service-configurations-detail-tab-applied-configurations', async ({ page }) => {
-    await openConfigurationItem(page)
+test('snippet-service-configurations-detail-tab-applied-configurations', async ({ page, browser }) => {
+    await openConfigurationItem(page, browser)
 
     await expect(page.getByTestId(testId.snippetService.configurations.detail.tabAppliedConfiguration)).toBeVisible()
     await page.getByTestId(testId.snippetService.configurations.detail.tabAppliedConfiguration).click()
@@ -140,7 +147,7 @@ test('snippet-service-configurations-detail-tab-applied-configurations', async (
     await expect(page).toHaveTitle(/dps-endpoint-is-set | plgd Dashboard/)
     await expect(page).toHaveURL(/localhost:3000\/snippet-service\/applied-configurations\/79c2a88a-1244-4e8a-a526-420e6cd5d34a/)
 
-    await openConfigurationItem(page)
+    await openConfigurationItem(page, browser)
     await expect(page.getByTestId(testId.snippetService.configurations.detail.tabAppliedConfiguration)).toBeVisible()
     await page.getByTestId(testId.snippetService.configurations.detail.tabAppliedConfiguration).click()
 
@@ -150,7 +157,7 @@ test('snippet-service-configurations-detail-tab-applied-configurations', async (
     await expect(page).toHaveTitle(/dps-endpoint-is-set | plgd Dashboard/)
     await expect(page).toHaveURL(/localhost:3000\/snippet-service\/applied-configurations\/79c2a88a-1244-4e8a-a526-420e6cd5d34a/)
 
-    await openConfigurationItem(page)
+    await openConfigurationItem(page, browser)
 
     await expect(page.getByTestId(testId.snippetService.configurations.detail.tabAppliedConfiguration)).toBeVisible()
     await page.getByTestId(testId.snippetService.configurations.detail.tabAppliedConfiguration).click()

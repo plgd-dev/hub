@@ -1,7 +1,7 @@
-import { expect, Page } from '@playwright/test'
+import { Browser, expect, Page } from '@playwright/test'
 
 export const login = async (page: Page) => {
-    await page.goto('http://localhost:3000/')
+    await page.goto('http://localhost:3000/', { waitUntil: 'networkidle' })
 
     // keycloak
     await expect(page).toHaveTitle(/Login|plgd\.dev/, { timeout: 30000 })
@@ -31,4 +31,10 @@ export const removeAndCheck = async (page: Page, locator: string) => {
 
     await expect(page.getByTestId(`${locator}-content-table-row-0-attribute`)).not.toBeVisible()
     await expect(page.getByTestId(`${locator}-content-table-row-0-value`)).not.toBeVisible()
+}
+
+export const takeScreenshot = async (page: Page, browser: Browser) => {
+    if (browser.browserType().name() !== 'firefox') {
+        await expect(page).toHaveScreenshot({ fullPage: true, omitBackground: true, animations: 'disabled' })
+    }
 }

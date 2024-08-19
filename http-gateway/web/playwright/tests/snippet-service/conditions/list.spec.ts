@@ -1,24 +1,31 @@
-import { test, expect, Page } from '@playwright/test'
+import { test, expect, Page, Browser } from '@playwright/test'
 import testId from '../../../../src/testId'
 import { JTW_TOKEN } from '../../constants'
 import { addAndCheckFilter, openConditionFilter, removeAndCheck } from '../../utils'
 
-const openConditionsList = async (page: Page) => {
-    await page.goto('')
+const openConditionsList = async (page: Page, browser: Browser) => {
+    await page.goto('', { waitUntil: 'networkidle' })
     await page.getByTestId(testId.menu.snippetService.link).click()
+
+    //  wait for submenu to be visible
+    if (browser.browserType().name() === 'webkit') {
+        await page.waitForTimeout(1000)
+    }
+
     await page.getByTestId(testId.menu.snippetService.conditions).click()
+    await page.request.get('http://localhost:8181/snippet-service/api/v1/conditions/api-reset')
     await page.setViewportSize({ width: 1600, height: 800 })
 }
 
-test('snippet-service-configurations-list-open', async ({ page }) => {
-    await openConditionsList(page)
+test('snippet-service-configurations-list-open', async ({ page, browser }) => {
+    await openConditionsList(page, browser)
 
     await expect(page).toHaveTitle(/Conditions | plgd Dashboard/)
     await expect(page).toHaveScreenshot({ fullPage: true, omitBackground: true, animations: 'disabled' })
 })
 
-test('snippet-service-configurations-list-link-to-detail-name', async ({ page }) => {
-    await openConditionsList(page)
+test('snippet-service-configurations-list-link-to-detail-name', async ({ page, browser }) => {
+    await openConditionsList(page, browser)
 
     await expect(page.getByTestId(`${testId.snippetService.conditions.list.table}-row-0-name`)).toBeVisible()
     await page.getByTestId(`${testId.snippetService.conditions.list.table}-row-0-name`).click()
@@ -26,8 +33,8 @@ test('snippet-service-configurations-list-link-to-detail-name', async ({ page })
     await expect(page).toHaveTitle(/jkralik-cond-0 | plgd Dashboard/)
 })
 
-test('snippet-service-configurations-list-link-to-detail-icon', async ({ page }) => {
-    await openConditionsList(page)
+test('snippet-service-configurations-list-link-to-detail-icon', async ({ page, browser }) => {
+    await openConditionsList(page, browser)
 
     await expect(page.getByTestId(`${testId.snippetService.conditions.list.table}-row-0-detail`)).toBeVisible()
     await page.getByTestId(`${testId.snippetService.conditions.list.table}-row-0-detail`).click()
@@ -35,8 +42,8 @@ test('snippet-service-configurations-list-link-to-detail-icon', async ({ page })
     await expect(page).toHaveTitle(/jkralik-cond-0 | plgd Dashboard/)
 })
 
-test('snippet-service-configurations-list-add-open-close', async ({ page }) => {
-    await openConditionsList(page)
+test('snippet-service-configurations-list-add-open-close', async ({ page, browser }) => {
+    await openConditionsList(page, browser)
 
     await expect(page.getByTestId(testId.snippetService.conditions.list.addButton)).toBeVisible()
     await page.getByTestId(testId.snippetService.conditions.list.addButton).click()
@@ -52,8 +59,8 @@ test('snippet-service-configurations-list-add-open-close', async ({ page }) => {
     await expect(page).toHaveTitle(/Conditions | plgd Dashboard/)
 })
 
-test('snippet-service-configurations-list-add', async ({ page }) => {
-    await openConditionsList(page)
+test('snippet-service-configurations-list-add', async ({ page, browser }) => {
+    await openConditionsList(page, browser)
 
     await expect(page.getByTestId(testId.snippetService.conditions.list.addButton)).toBeVisible()
     await page.getByTestId(testId.snippetService.conditions.list.addButton).click()
@@ -89,10 +96,13 @@ test('snippet-service-configurations-list-add', async ({ page }) => {
     await page.getByTestId(`${testId.snippetService.conditions.addPage.step2.selectDeviceId}-input`).fill('3aae0672-47f3-4498-78d4-b061e6105ccd')
     await page.getByTestId(`${testId.snippetService.conditions.addPage.step2.selectDeviceId}-3aae0672-47f3-4498-78d4-b061e6105ccd`).click()
 
-    await expect(page.getByTestId(testId.snippetService.conditions.addPage.step2.selectDeviceIdReset)).toBeVisible()
-    await expect(page.getByTestId(testId.snippetService.conditions.addPage.step2.selectDeviceIdDone)).toBeVisible()
+    if (browser.browserType().name() !== 'webkit') {
+        // webkit close select automatically
+        await expect(page.getByTestId(testId.snippetService.conditions.addPage.step2.selectDeviceIdReset)).toBeVisible()
+        await expect(page.getByTestId(testId.snippetService.conditions.addPage.step2.selectDeviceIdDone)).toBeVisible()
 
-    await page.getByTestId(testId.snippetService.conditions.addPage.step2.selectDeviceIdDone).click()
+        await page.getByTestId(testId.snippetService.conditions.addPage.step2.selectDeviceIdDone).click()
+    }
 
     await expect(page.getByTestId(`${testId.snippetService.conditions.addPage.step2.filterDeviceId}-content-table-row-0-attribute`)).toBeVisible()
     await expect(page.getByTestId(`${testId.snippetService.conditions.addPage.step2.filterDeviceId}-content-table-row-0-value`)).toBeVisible()
@@ -108,7 +118,10 @@ test('snippet-service-configurations-list-add', async ({ page }) => {
     await page.getByTestId(`${testId.snippetService.conditions.addPage.step2.selectDeviceId}-input`).fill('3aae0672-47f3-4498-78d4-b061e6105ccd')
     await page.getByTestId(`${testId.snippetService.conditions.addPage.step2.selectDeviceId}-3aae0672-47f3-4498-78d4-b061e6105ccd`).click()
 
-    await page.getByTestId(testId.snippetService.conditions.addPage.step2.selectDeviceIdDone).click()
+    if (browser.browserType().name() !== 'webkit') {
+        // webkit close select automatically
+        await page.getByTestId(testId.snippetService.conditions.addPage.step2.selectDeviceIdDone).click()
+    }
 
     await expect(page.getByTestId(`${testId.snippetService.conditions.addPage.step2.filterDeviceId}-content-table-row-0-attribute`)).toBeVisible()
     await expect(page.getByTestId(`${testId.snippetService.conditions.addPage.step2.filterDeviceId}-content-table-row-0-value`)).toBeVisible()
@@ -161,8 +174,8 @@ test('snippet-service-configurations-list-add', async ({ page }) => {
     await page.getByTestId(testId.snippetService.conditions.addPage.step3.generateApiToken).click()
 
     await expect(page.getByTestId(testId.snippetService.conditions.addPage.step3.generateApiTokenModal)).toBeVisible()
-    await expect(page.getByTestId(`${testId.snippetService.conditions.addPage.step3.generateApiTokenModal}-invoke`)).toBeVisible()
-    await page.getByTestId(`${testId.snippetService.conditions.addPage.step3.generateApiTokenModal}-invoke`).click()
+    await expect(page.getByTestId(`${testId.snippetService.conditions.addPage.step3.generateApiTokenModal}-generate`)).toBeVisible()
+    await page.getByTestId(`${testId.snippetService.conditions.addPage.step3.generateApiTokenModal}-generate`).click()
 
     await expect(page.getByTestId(testId.snippetService.conditions.addPage.step3.generateApiTokenModal)).not.toBeVisible()
 
@@ -180,8 +193,8 @@ test('snippet-service-configurations-list-add', async ({ page }) => {
     await expect(page).toHaveTitle(/Conditions | plgd Dashboard/)
 })
 
-test('snippet-service-configurations-list-delete', async ({ page }) => {
-    await openConditionsList(page)
+test('snippet-service-configurations-list-delete', async ({ page, browser }) => {
+    await openConditionsList(page, browser)
 
     await expect(page.getByTestId(`${testId.snippetService.conditions.list.table}-row-0-delete`)).toBeVisible()
     await page.getByTestId(`${testId.snippetService.conditions.list.table}-row-0-delete`).click()

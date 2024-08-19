@@ -181,10 +181,14 @@ router.get('/api/v1/conditions', (req, res) => {
     try {
         checkError(req, res)
         const [filter, version] = parseFilters(req.query, 'httpIdFilter')
+        const [filterD, versionD] = parseFilters(req.query, 'configurationIdFilter')
 
         // detail page
         if (filter) {
             loadResponseStreamFromFile(path.join('snippet-service', 'conditions', 'detail', `${filter}.json`), res, version)
+        } else if (filterD) {
+            // list page after delete
+            loadResponseStreamFromFile(path.join('snippet-service', 'conditions', 'detail', `${filterD}.json`), res, versionD)
         } else if (conditionDeleted) {
             // list page after delete
             loadResponseStreamFromFile(path.join('snippet-service', 'conditions', 'list', `listEmpty.json`), res)

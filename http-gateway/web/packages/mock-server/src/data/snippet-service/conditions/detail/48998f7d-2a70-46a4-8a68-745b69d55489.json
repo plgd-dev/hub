@@ -1,0 +1,18 @@
+[
+  {
+    "result": {
+      "enabled": true,
+      "jqExpressionFilter": ".n == \"new name value\"",
+      "timestamp": "1720109672386226348",
+      "version": "0",
+      "name": "jkralik-cond-0",
+      "configurationId": "48998f7d-2a70-46a4-8a68-745b69d55489",
+      "resourceHrefFilter": [
+        "/oic/d"
+      ],
+      "apiAccessToken": "aaa",
+      "owner": "beb32777-9680-4f42-8761-350eebe76a85",
+      "id": "00fa41ad-b3bf-4f00-bfe1-c71c439e4cda"
+    }
+  }
+]

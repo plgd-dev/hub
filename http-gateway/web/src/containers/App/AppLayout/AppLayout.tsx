@@ -222,6 +222,7 @@ const AppLayout: FC<Props> = (props) => {
                         //     onClose: () => console.log('close'),
                         // }}
                         versionMark={
+                            process.env.REACT_APP_MOCK_API !== 'true' &&
                             appStore.version.latest && (
                                 <VersionMark
                                     severity={versionMarkData.severity}

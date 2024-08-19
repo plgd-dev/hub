@@ -2,8 +2,8 @@ import { expect, Page, test } from '@playwright/test'
 import testId from '../../../src/testId'
 
 const openApiTokenDetail = async (page: Page) => {
-    await page.goto('')
-    await page.request.get('http://localhost:8181/api-tokens/api/v1/api-reset')
+    await page.goto('', { waitUntil: 'networkidle' })
+    await page.request.get('http://localhost:8181/m2m-oauth-server/api/v1/api-reset')
 
     await page.getByTestId(testId.menu.apiTokens).click()
     await page.setViewportSize({ width: 1600, height: 800 })
