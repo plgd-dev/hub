@@ -54,7 +54,7 @@ CoAP API as specified in the [workflow](./workflow.puml).
 
 ### HTTP API
 
-The plgd device provisioning service REST API is defined by [swagger](https://raw.githubusercontent.com/plgd-dev/device-provisioning-service/main/pb/service.swagger.json).
+The plgd device provisioning service REST API is defined by [swagger](https://raw.githubusercontent.com/plgd-dev/hub/main/device-provisioning-service/pb/service.swagger.json).
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
