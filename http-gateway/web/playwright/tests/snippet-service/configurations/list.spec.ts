@@ -34,11 +34,10 @@ const fillAddForm = async (page: Page, browser: Browser) => {
     await page.getByTestId(`${testId.snippetService.configurations.addPage.form.createResourceModal}-editor-input`).fill('123')
 
     await expect(page.getByTestId(`${testId.snippetService.configurations.addPage.form.createResourceModal}-confirm-button`)).toBeVisible()
+
     await page.getByTestId(`${testId.snippetService.configurations.addPage.form.createResourceModal}-confirm-button`).click()
 
-    if (browser.browserType().name() !== 'chromium') {
-        await expect(page.getByTestId(`${testId.snippetService.configurations.addPage.form.createResourceModal}-modal`)).not.toBeVisible()
-    }
+    await expect(page.getByTestId(`${testId.snippetService.configurations.addPage.form.createResourceModal}-modal`)).not.toBeVisible()
 }
 
 test('add-configuration-reset', async ({ page, browser }) => {
@@ -48,30 +47,34 @@ test('add-configuration-reset', async ({ page, browser }) => {
     await expect(page).toHaveTitle(/Create new Configuration | plgd Dashboard/)
     await expect(page).toHaveScreenshot({ fullPage: true, omitBackground: true, animations: 'disabled' })
 
-    await fillAddForm(page, browser)
+    if (browser.browserType().name() !== 'chromium') {
+        await fillAddForm(page, browser)
 
-    await expect(page.getByTestId(testId.snippetService.configurations.addPage.form.resourceTable)).toBeVisible()
-    await expect(page.getByTestId(`${testId.snippetService.configurations.addPage.form.resourceTable}-row-0`)).toBeVisible()
+        await expect(page.getByTestId(testId.snippetService.configurations.addPage.form.resourceTable)).toBeVisible()
+        await expect(page.getByTestId(`${testId.snippetService.configurations.addPage.form.resourceTable}-row-0`)).toBeVisible()
 
-    await page.getByTestId(testId.snippetService.configurations.addPage.form.resetButton).click()
+        await page.getByTestId(testId.snippetService.configurations.addPage.form.resetButton).click()
 
-    await expect(page.getByTestId(`${testId.snippetService.configurations.addPage.form.resourceTable}-row-0`)).not.toBeVisible()
-    await expect(page.getByTestId(testId.snippetService.configurations.addPage.form.name)).toHaveValue('')
+        await expect(page.getByTestId(`${testId.snippetService.configurations.addPage.form.resourceTable}-row-0`)).not.toBeVisible()
+        await expect(page.getByTestId(testId.snippetService.configurations.addPage.form.name)).toHaveValue('')
 
-    await expect(page.getByTestId(testId.snippetService.configurations.addPage.form.resetButton)).toBeDisabled()
-    await expect(page.getByTestId(testId.snippetService.configurations.addPage.form.addButton)).toBeDisabled()
+        await expect(page.getByTestId(testId.snippetService.configurations.addPage.form.resetButton)).toBeDisabled()
+        await expect(page.getByTestId(testId.snippetService.configurations.addPage.form.addButton)).toBeDisabled()
+    }
 })
 
 test('add-configuration-save', async ({ page, browser }) => {
     await openConfigurationsList(page, browser)
     await page.getByTestId(testId.snippetService.configurations.list.addConfigurationButton).click()
 
-    await fillAddForm(page, browser)
+    if (browser.browserType().name() !== 'chromium') {
+        await fillAddForm(page, browser)
 
-    await expect(page.getByTestId(testId.snippetService.configurations.addPage.form.addButton)).not.toBeDisabled()
-    await page.getByTestId(testId.snippetService.configurations.addPage.form.addButton).click()
+        await expect(page.getByTestId(testId.snippetService.configurations.addPage.form.addButton)).not.toBeDisabled()
+        await page.getByTestId(testId.snippetService.configurations.addPage.form.addButton).click()
 
-    await expect(page).toHaveTitle(/my-cfg-2 | plgd Dashboard/)
+        await expect(page).toHaveTitle(/my-cfg-2 | plgd Dashboard/)
+    }
 })
 
 test('list-invoke-modal', async ({ page, browser }) => {

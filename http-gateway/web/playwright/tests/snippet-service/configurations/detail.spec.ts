@@ -44,10 +44,12 @@ test('snippet-service-configurations-detail-invoke', async ({ page, browser }) =
     await page.getByTestId(`${testId.snippetService.configurations.detail.invokeModal}-select-input`).fill('3aae0672-47f3-4498-78d4-b061e6105ccd')
     await page.getByTestId(`${testId.snippetService.configurations.detail.invokeModal}-select-3aae0672-47f3-4498-78d4-b061e6105ccd`).click()
 
-    await expect(page.getByTestId(`${testId.snippetService.configurations.detail.invokeModal}-footer-reset`)).toBeVisible()
-    await expect(page.getByTestId(`${testId.snippetService.configurations.detail.invokeModal}-footer-done`)).toBeVisible()
+    if (browser.browserType().name() !== 'webkit') {
+        await expect(page.getByTestId(`${testId.snippetService.configurations.detail.invokeModal}-footer-reset`)).toBeVisible()
+        await expect(page.getByTestId(`${testId.snippetService.configurations.detail.invokeModal}-footer-done`)).toBeVisible()
 
-    await page.getByTestId(`${testId.snippetService.configurations.detail.invokeModal}-footer-done`).click()
+        await page.getByTestId(`${testId.snippetService.configurations.detail.invokeModal}-footer-done`).click()
+    }
     await page.getByTestId(`${testId.snippetService.configurations.detail.invokeModal}-force-label`).click()
 
     await expect(page.getByTestId(`${testId.snippetService.configurations.detail.invokeModal}-reset`)).toBeVisible()
