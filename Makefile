@@ -49,9 +49,6 @@ CERT_TOOL_SIGN_ALG ?= ECDSA-SHA256
 CERT_TOOL_ELLIPTIC_CURVE ?= P256
 CERT_TOOL_IMAGE = ghcr.io/plgd-dev/hub/cert-tool:vnext
 
-SUBDIRS := bundle certificate-authority cloud2cloud-connector cloud2cloud-gateway coap-gateway device-provisioning-service grpc-gateway resource-aggregate resource-directory http-gateway identity-store snippet-service m2m-oauth-server test/oauth-server tools/cert-tool
-.PHONY: $(SUBDIRS) push proto/generate clean build test env mongo nats certificates hub-build http-gateway-www simulators
-
 default: build
 
 hub-test:
@@ -94,11 +91,21 @@ certificates:
 		--cert.signatureAlgorithm=$(CERT_TOOL_SIGN_ALG) --cert.ellipticCurve=$(CERT_TOOL_ELLIPTIC_CURVE) \
 		--cert.validFrom=2000-01-01T12:00:00Z --cert.validFor=876000h
 
+certificates/clean:
+	( [ -n "$(CERT_PATH)" ] && sudo rm -rf $(CERT_PATH) ) || :
+
+.PHONY: certificates certificates/clean
+
 privateKeys:
 	mkdir -p $(WORKING_DIRECTORY)/.tmp/privKeys
 	openssl genrsa -out $(WORKING_DIRECTORY)/.tmp/privKeys/idTokenKey.pem 4096
 	openssl ecparam -name prime256v1 -genkey -noout -out $(WORKING_DIRECTORY)/.tmp/privKeys/accessTokenKey.pem
 	openssl ecparam -name prime256v1 -genkey -noout -out $(WORKING_DIRECTORY)/.tmp/privKeys/m2mAccessTokenKey.pem
+
+privateKeys/clean:
+	sudo rm -rf $(WORKING_DIRECTORY)/.tmp/privKeys || :
+
+.PHONY: privateKeys privateKeys/clean
 
 nats: certificates
 	mkdir -p $(WORKING_DIRECTORY)/.tmp/jetstream/cloud
@@ -120,9 +127,16 @@ nats: certificates
 		--user $(USER_ID):$(GROUP_ID) \
 		nats --jetstream --store_dir /data --port 34222 --tls --tlsverify --tlscert=/certs/http.crt --tlskey=/certs/http.key --tlscacert=/certs/root_ca.crt
 
+nats/clean:
+	docker rm -f nats || :
+	docker rm -f nats-cloud-connector || :
+	sudo rm -rf $(WORKING_DIRECTORY)/.tmp/jetstream || :
+
+.PHONY: nats nats/clean
+
 scylla/clean:
-	docker rm -f scylla || true
-	sudo rm -rf $(WORKING_DIRECTORY)/.tmp/scylla || true
+	docker rm -f scylla || :
+	sudo rm -rf $(WORKING_DIRECTORY)/.tmp/scylla || :
 
 scylla: scylla/clean
 	mkdir -p $(WORKING_DIRECTORY)/.tmp/scylla/data $(WORKING_DIRECTORY)/.tmp/scylla/commitlog $(WORKING_DIRECTORY)/.tmp/scylla/hints $(WORKING_DIRECTORY)/.tmp/scylla/view_hints $(WORKING_DIRECTORY)/.tmp/scylla/etc
@@ -172,7 +186,7 @@ scylla: scylla/clean
 		sleep 1; \
 	done
 
-.PHONY: scylla
+.PHONY: scylla scylla/clean
 
 # Pull latest mongo and start its in replica set
 #
@@ -180,7 +194,7 @@ scylla: scylla/clean
 #   $(1): name, used for:
 #          - name of working directory for the device simulator (.tmp/$(1))
 #          - name of the docker container
-#   $(2): listen port
+#   $(2): additional opts
 define RUN-DOCKER-MONGO
 	mkdir -p $(WORKING_DIRECTORY)/.tmp/$(1) ; \
 	docker run \
@@ -189,8 +203,8 @@ define RUN-DOCKER-MONGO
 		--name=$(1) \
 		-v $(WORKING_DIRECTORY)/.tmp/$(1):/data/db \
 		-v $(CERT_PATH):/certs --user $(USER_ID):$(GROUP_ID) \
-		mongo mongod -vvvvv --tlsMode requireTLS --wiredTigerCacheSizeGB 1 --tlsCAFile /certs/root_ca.crt --tlsCertificateKeyFile /certs/mongo.key \
-			--replSet myReplicaSet --bind_ip localhost --port $(2)
+		mongo --tlsMode requireTLS --wiredTigerCacheSizeGB 1 --tlsCAFile /certs/root_ca.crt \
+			--tlsCertificateKeyFile /certs/mongo.key $(2)
 endef
 
 MONGODB_REPLICA_0 := mongo0
@@ -201,9 +215,9 @@ MONGODB_REPLICA_2 := mongo2
 MONGODB_REPLICA_2_PORT := 27019
 
 mongo: certificates
-	$(call RUN-DOCKER-MONGO,$(MONGODB_REPLICA_0),$(MONGODB_REPLICA_0_PORT))
-	$(call RUN-DOCKER-MONGO,$(MONGODB_REPLICA_1),$(MONGODB_REPLICA_1_PORT))
-	$(call RUN-DOCKER-MONGO,$(MONGODB_REPLICA_2),$(MONGODB_REPLICA_2_PORT))
+	$(call RUN-DOCKER-MONGO,$(MONGODB_REPLICA_0),-vvvvv --replSet myReplicaSet --bind_ip localhost --port $(MONGODB_REPLICA_0_PORT))
+	$(call RUN-DOCKER-MONGO,$(MONGODB_REPLICA_1),-vvvvv --replSet myReplicaSet --bind_ip localhost --port $(MONGODB_REPLICA_1_PORT))
+	$(call RUN-DOCKER-MONGO,$(MONGODB_REPLICA_2),-vvvvv --replSet myReplicaSet --bind_ip localhost --port $(MONGODB_REPLICA_2_PORT))
 	COUNTER=0; \
 	while [[ $${COUNTER} -lt 30 ]]; do \
 		echo "Checking mongodb connection ($${COUNTER}):"; \
@@ -224,9 +238,37 @@ mongo: certificates
 		] \
 	})"
 
+mongo/clean:
+	$(call REMOVE-DOCKER-DEVICE,$(MONGODB_REPLICA_0))
+	$(call CLEAN-DOCKER-DEVICE,$(MONGODB_REPLICA_0))
+	sudo rm -rf ./.tmp/$(MONGODB_REPLICA_0) || :
+	$(call REMOVE-DOCKER-DEVICE,$(MONGODB_REPLICA_1))
+	$(call CLEAN-DOCKER-DEVICE,$(MONGODB_REPLICA_1))
+	sudo rm -rf ./.tmp/$(MONGODB_REPLICA_1) || :
+	$(call REMOVE-DOCKER-DEVICE,$(MONGODB_REPLICA_2))
+	$(call CLEAN-DOCKER-DEVICE,$(MONGODB_REPLICA_2))
+	sudo rm -rf ./.tmp/$(MONGODB_REPLICA_2) || :
+
+.PHONY: mongo mongo/clean
+
+mongo-no-replicas: certificates
+	$(call RUN-DOCKER-MONGO,mongo,)
+
+mongo-no-replicas/clean:
+	$(call REMOVE-DOCKER-DEVICE,mongo)
+	$(call CLEAN-DOCKER-DEVICE,mongo)
+	sudo rm -rf ./.tmp/mongo || :
+
+.PHONY: mongo-no-replicas mongo-no-replicas/clean
+
 http-gateway-www:
 	@mkdir -p $(WORKING_DIRECTORY)/.tmp/usr/local/www
 	@cp -r $(WORKING_DIRECTORY)/http-gateway/web/public/* $(WORKING_DIRECTORY)/.tmp/usr/local/www/
+
+http-gateway-www/clean:
+	sudo rm -rf ./.tmp/usr || true
+
+.PHONY: http-gateway-www http-gateway-www/clean
 
 # standard device
 DEVICE_SIMULATOR_NAME := devsim
@@ -282,7 +324,8 @@ simulators/clean: simulators/remove
 simulators: simulators/clean
 	$(call RUN-DOCKER-DEVICE,$(DEVICE_SIMULATOR_NAME),$(DEVICE_SIMULATOR_IMG))
 	$(call RUN-DOCKER-DEVICE,$(DEVICE_SIMULATOR_RES_OBSERVABLE_NAME),$(DEVICE_SIMULATOR_RES_OBSERVABLE_IMG))
-.PHONY: simulators
+
+.PHONY: simulators simulators/remove simulators/clean
 
 BRIDGE_DEVICE_SRC_DIR = $(WORKING_DIRECTORY)/test/bridge-device
 BRIDGE_DEVICE_IMAGE = ghcr.io/plgd-dev/device/bridge-device:vnext
@@ -398,11 +441,21 @@ simulators/dps: simulators/dps/clean
 simulators/clean: simulators/dps/clean
 simulators: simulators/dps
 
-env/test/mem: clean certificates nats mongo privateKeys scylla
-.PHONY: env/test/mem
+env: clean certificates nats privateKeys http-gateway-www mongo simulators
+env/test/mem: clean certificates nats privateKeys
 
-env: env/test/mem http-gateway-www simulators
-.PHONY: env
+ifeq ($(TEST_DATABASE),mongodb)
+# github runners run out of file space if multiple mongodb replicas are started, so we start only a single instance
+env/test/mem: mongo-no-replicas
+else
+# test uses mongodb for most tests, but scylla can be enabled for some; so we always need mongodb to be running
+# but scylla needs to be started only if TEST_DATABASE=cqldb
+env: scylla
+# test/mem uses either mongodb or scylla, so just one needs to be started
+env/test/mem: scylla
+endif
+
+.PHONY: env env/test/mem
 
 define RUN-DOCKER
 	docker run \
@@ -536,6 +589,7 @@ test/mem: env/test/mem hub-test
 		TEST_SNIPPET_SERVICE_LOG_LEVEL=$(TEST_SNIPPET_SERVICE_LOG_LEVEL) TEST_SNIPPET_SERVICE_LOG_DUMP_BODY=$(TEST_SNIPPET_SERVICE_LOG_DUMP_BODY) \
 		TEST_LEAD_RESOURCE_TYPE_FILTER=$(TEST_LEAD_RESOURCE_TYPE_FILTER) TEST_LEAD_RESOURCE_TYPE_REGEX_FILTER='$(TEST_LEAD_RESOURCE_TYPE_REGEX_FILTER)' TEST_LEAD_RESOURCE_TYPE_USE_UUID=$(TEST_LEAD_RESOURCE_TYPE_USE_UUID) \
 		TEST_DATABASE=$(TEST_DATABASE))
+
 .PHONY: test/mem
 
 DIRECTORIES:=$(shell ls -d ./*/)
@@ -564,31 +618,24 @@ $(test-targets): %: env hub-test
 
 .PHONY: $(test-targets)
 
+SUBDIRS := bundle certificate-authority cloud2cloud-connector cloud2cloud-gateway coap-gateway device-provisioning-service grpc-gateway resource-aggregate resource-directory http-gateway identity-store snippet-service m2m-oauth-server test/oauth-server tools/cert-tool
+
 build: $(SUBDIRS)
 
-clean: simulators/clean scylla/clean
-	docker rm -f nats || true
-	docker rm -f nats-cloud-connector || true
-	$(call REMOVE-DOCKER-DEVICE,$(MONGODB_REPLICA_0))
-	$(call CLEAN-DOCKER-DEVICE,$(MONGODB_REPLICA_0))
-	$(call REMOVE-DOCKER-DEVICE,$(MONGODB_REPLICA_1))
-	$(call CLEAN-DOCKER-DEVICE,$(MONGODB_REPLICA_1))
-	$(call REMOVE-DOCKER-DEVICE,$(MONGODB_REPLICA_2))
-	$(call CLEAN-DOCKER-DEVICE,$(MONGODB_REPLICA_2))
-	sudo rm -rf ./.tmp/certs || true
-	sudo rm -rf ./.tmp/mongo || true
+clean: simulators/clean nats/clean scylla/clean mongo/clean mongo-no-replicas/clean privateKeys/clean http-gateway-www/clean
 	sudo rm -rf ./.tmp/home || true
-	sudo rm -rf ./.tmp/privateKeys || true
 	sudo rm -rf ./.tmp/coverage || true
 	sudo rm -rf ./.tmp/report || true
-	sudo rm -rf ./.tmp/usr || true
 
 proto/generate: $(SUBDIRS)
 	protoc -I=. -I=$(GOPATH)/src --go_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pkg/net/grpc/stub.proto
 	protoc -I=. -I=$(GOPATH)/src --go-grpc_out=$(GOPATH)/src $(WORKING_DIRECTORY)/pkg/net/grpc/stub.proto
 	mv $(WORKING_DIRECTORY)/pkg/net/grpc/stub.pb.go $(WORKING_DIRECTORY)/pkg/net/grpc/stub.pb_test.go
 	mv $(WORKING_DIRECTORY)/pkg/net/grpc/stub_grpc.pb.go $(WORKING_DIRECTORY)/pkg/net/grpc/stub_grpc.pb_test.go
-push: hub-build $(SUBDIRS)
+
+push: $(SUBDIRS)
+
+.PHONY: $(SUBDIRS) push proto/generate clean build
 
 $(SUBDIRS):
 	$(MAKE) -C $@ $(MAKECMDGOALS) LATEST_TAG=$(BUILD_TAG)

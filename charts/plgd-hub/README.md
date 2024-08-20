@@ -46,7 +46,7 @@ global:
 | Repository | Name | Version |
 |------------|------|---------|
 | <https://charts.bitnami.com/bitnami> | mongodb | 15.4.4 |
-| <https://nats-io.github.io/k8s/helm/charts/> | nats | 1.1.9 |
+| <https://nats-io.github.io/k8s/helm/charts> | nats | 1.1.9 |
 | <https://scylla-operator-charts.storage.googleapis.com/stable> | scylla | 1.10.0 |
 
 ## Values
@@ -305,6 +305,93 @@ global:
 | coapgateway.serviceHeartbeat.timeToLive | string | `"1m"` | Specifies validity of the presence record created by the gateway. Must be greater than 1s. |
 | coapgateway.taskQueue | object | `{"goPoolSize":1600,"maxIdleTime":"10m","size":"2097152"}` | For complete coap-gateway service configuration see [plgd/coap-gateway](https://github.com/plgd-dev/hub/tree/main/coap-gateway) |
 | coapgateway.tolerations | object | `{}` | Toleration definition |
+| deviceProvisioningService.affinity | object | `{}` | Affinity definition |
+| deviceProvisioningService.apiDomain | string | `nil` | Domain for dps HTTP API endpoint |
+| deviceProvisioningService.apis | object | `{"coap":{"address":"","blockwiseTransfer":{"blockSize":"1024","enabled":true},"inactivityMonitor":{"timeout":"20s"},"maxMessageSize":262144,"messagePoolSize":1000,"protocols":["tcp"],"tls":{"certFile":null,"keyFile":null}},"http":{"address":null,"authorization":{"audience":null,"authority":null,"http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}},"ownerClaim":null},"enabled":true,"port":9100,"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":false,"keyFile":null}}}` | For complete device-provisioning-service configuration see [plgd/device-provisioning-service](https://github.com/plgd-dev/hub/tree/main/device-provisioning-service) |
+| deviceProvisioningService.clients | object | `{"storage":{"cacheExpiration":"10m","mongoDB":{"bulkWrite":{"documentLimit":1000,"throttleTime":"500ms","timeout":"1m0s"},"database":"deviceProvisioningService","maxConnIdleTime":"4m0s","maxPoolSize":16,"tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":false},"uri":null}}}` | For complete dps service configuration see [plgd/device-provisioning-service](https://github.com/plgd-dev/hub/device-provisioning-service) |
+| deviceProvisioningService.clients.storage.mongoDB.bulkWrite.documentLimit | int | `1000` | The maximum number of documents to cache before an immediate write. |
+| deviceProvisioningService.clients.storage.mongoDB.bulkWrite.throttleTime | string | `"500ms"` | The amount of time to wait until a record is written to mongodb. Any records collected during the throttle time will also be written. A throttle time of zero writes immediately. If recordLimit is reached, all records are written immediately |
+| deviceProvisioningService.clients.storage.mongoDB.bulkWrite.timeout | string | `"1m0s"` | A time limit for write bulk to mongodb. A Timeout of zero means no timeout. |
+| deviceProvisioningService.config.fileName | string | `"service.yaml"` | Service configuration file name |
+| deviceProvisioningService.config.mountPath | string | `"/config"` | Configuration mount path |
+| deviceProvisioningService.config.volume | string | `"config"` | Volume name |
+| deviceProvisioningService.deploymentAnnotations | object | `{}` | Additional annotations for dps deployment |
+| deviceProvisioningService.deploymentLabels | object | `{}` | Additional labels for dps deployment |
+| deviceProvisioningService.enabled | bool | `true` | Enable device-provisioning-service |
+| deviceProvisioningService.extraContainers | object | `{}` | Extra POD containers |
+| deviceProvisioningService.extraVolumeMounts | object | `{}` | Optional extra volume mounts |
+| deviceProvisioningService.extraVolumes | list | `[]` | Optional extra volumes |
+| deviceProvisioningService.fullnameOverride | string | `nil` | Full name to override |
+| deviceProvisioningService.image.imagePullSecrets | object | `{}` | Image pull secrets |
+| deviceProvisioningService.image.pullPolicy | string | `"Always"` | Image pull policy |
+| deviceProvisioningService.image.registry | string | `"ghcr.io/"` | Image registry |
+| deviceProvisioningService.image.repository | string | `"plgd-dev/hub/device-provisioning-service"` | Image repository |
+| deviceProvisioningService.image.tag | string | `nil` | Image tag |
+| deviceProvisioningService.imagePullSecrets | object | `{}` | Image pull secrets |
+| deviceProvisioningService.ingress | object | `{"annotations":{},"domainCertName":null,"enabled":true,"paths":["/api/v1/provisioning-records","/api/v1/enrollment-groups","/api/v1/hubs"]}` | Ingress |
+| deviceProvisioningService.ingress.annotations | object | `{}` | Ingress annotation |
+| deviceProvisioningService.ingress.domainCertName | string | `nil` | Domain certificate name |
+| deviceProvisioningService.ingress.enabled | bool | `true` | Enable ingress |
+| deviceProvisioningService.ingress.paths | list | `["/api/v1/provisioning-records","/api/v1/enrollment-groups","/api/v1/hubs"]` | Ingress path |
+| deviceProvisioningService.initContainersTpl | string | `nil` | Init containers definition |
+| deviceProvisioningService.livenessProbe | object | `{}` | Liveness probe. dps doesn't have any default liveness probe |
+| deviceProvisioningService.log.dumpBody | bool | `false` | Dump grpc messages |
+| deviceProvisioningService.log.encoderConfig.timeEncoder | string | `"rfc3339nano"` | Time format for logs. The supported values are: "rfc3339nano", "rfc3339" |
+| deviceProvisioningService.log.encoding | string | `"json"` | The supported values are: "json", "console" |
+| deviceProvisioningService.log.level | string | `"info"` | Logging enabled from level |
+| deviceProvisioningService.log.stacktrace.enabled | bool | `false` | Log stacktrace |
+| deviceProvisioningService.log.stacktrace.level | string | `"warn"` | Stacktrace from level |
+| deviceProvisioningService.name | string | `"device-provisioning-service"` | Name of component. Used in label selectors |
+| deviceProvisioningService.nodeSelector | object | `{}` | Node selector |
+| deviceProvisioningService.podAnnotations | object | `{}` | Annotations for dps pod |
+| deviceProvisioningService.podLabels | object | `{}` | Labels for dps pod |
+| deviceProvisioningService.podSecurityContext | object | `{}` | Pod security context |
+| deviceProvisioningService.port | int | `15684` | Service and POD port |
+| deviceProvisioningService.rbac | object | `{"enabled":false,"roleBindingDefinitionTpl":null,"serviceAccountName":"device-provisioning-service"}` | RBAC configuration |
+| deviceProvisioningService.rbac.enabled | bool | `false` | Create RBAC config |
+| deviceProvisioningService.rbac.roleBindingDefinitionTpl | string | `nil` | Template definition for Role/binding etc.. |
+| deviceProvisioningService.rbac.serviceAccountName | string | `"device-provisioning-service"` | Name of dps SA |
+| deviceProvisioningService.readinessProbe | object | `{}` | Readiness probe. dps doesn't have aby default readiness probe |
+| deviceProvisioningService.replicas | int | `1` | Number of replicas |
+| deviceProvisioningService.resources | object | `{}` | Resources limit |
+| deviceProvisioningService.restartPolicy | string | `"Always"` | Restart policy for pod |
+| deviceProvisioningService.securityContext | object | `{}` | Security context for pod |
+| deviceProvisioningService.service.annotations | object | `{}` | Annotations for dps service |
+| deviceProvisioningService.service.certificate | object | `{"annotations":{},"duration":null,"issuer":{"group":null,"kind":null,"name":null},"key":{"algorithm":null,"size":null},"labels":{},"mountPath":null,"renewBefore":null}` | Service certificate |
+| deviceProvisioningService.service.certificate.annotations | object | `{}` | Annotations for dps service certificate |
+| deviceProvisioningService.service.certificate.duration | string | `nil` | Certificate duration |
+| deviceProvisioningService.service.certificate.issuer.group | string | `nil` | Group of issuer |
+| deviceProvisioningService.service.certificate.issuer.kind | string | `nil` | Kind of issuer |
+| deviceProvisioningService.service.certificate.issuer.name | string | `nil` | Name of issuer |
+| deviceProvisioningService.service.certificate.key.algorithm | string | `nil` | Certificate key algorithm |
+| deviceProvisioningService.service.certificate.key.size | string | `nil` | Certificate key size |
+| deviceProvisioningService.service.certificate.labels | object | `{}` | Labels |
+| deviceProvisioningService.service.certificate.mountPath | string | `nil` | Mount path |
+| deviceProvisioningService.service.certificate.renewBefore | string | `nil` | Certificate renew before |
+| deviceProvisioningService.service.http.annotations | object | `{}` | Annotations for coap-gateway service |
+| deviceProvisioningService.service.http.labels | object | `{}` | Labels for coap-gateway service |
+| deviceProvisioningService.service.http.name | string | `"http"` | Name |
+| deviceProvisioningService.service.http.protocol | string | `"TCP"` | Protocol |
+| deviceProvisioningService.service.http.targetPort | string | `"http"` | Target port |
+| deviceProvisioningService.service.http.type | string | `nil` | Service type |
+| deviceProvisioningService.service.labels | object | `{}` | Labels for dps service |
+| deviceProvisioningService.service.nodePort | int | `15684` | Use nodePort, if specified, for one of the protocols. If both protocols are enabled, nodePort needs to be configured directly in the service to mutually different ports. |
+| deviceProvisioningService.service.tcp.annotations | object | `{}` | Annotations for coap-gateway service |
+| deviceProvisioningService.service.tcp.labels | object | `{}` | Labels for coap-gateway service |
+| deviceProvisioningService.service.tcp.name | string | `"coaps-tcp"` | Name |
+| deviceProvisioningService.service.tcp.nodePort | string | `nil` | Use nodePort if specified, must to be different as is in udp |
+| deviceProvisioningService.service.tcp.protocol | string | `"TCP"` | Protocol |
+| deviceProvisioningService.service.tcp.targetPort | string | `"coaps-tcp"` | Target port |
+| deviceProvisioningService.service.tcp.type | string | `nil` | Service type |
+| deviceProvisioningService.service.type | string | `"LoadBalancer"` | Service type |
+| deviceProvisioningService.service.udp.annotations | object | `{}` | Annotations for coap-gateway service |
+| deviceProvisioningService.service.udp.labels | object | `{}` | Labels for coap-gateway service |
+| deviceProvisioningService.service.udp.name | string | `"coaps-udp"` | Name |
+| deviceProvisioningService.service.udp.nodePort | string | `nil` | Use nodePort if specified. Must to be different as is in tcp |
+| deviceProvisioningService.service.udp.protocol | string | `"UDP"` | Protocol |
+| deviceProvisioningService.service.udp.targetPort | string | `"coaps-udp"` | Target port |
+| deviceProvisioningService.service.udp.type | string | `nil` | Service type |
+| deviceProvisioningService.tolerations | list | `[]` | Toleration definition |
 | extraCAPool | object | `{"authorization":{"configMapName":null,"enabled":"{{ include \"plgd-hub.extraCAPoolAuthorizationEnabled\" . }}","key":"{{ include \"plgd-hub.oldExtraCAPoolAuthorizationFileName\" . }}","mountPath":"/certs/extra/authorization","name":"authorization-ca-pool","secretName":"{{ include \"plgd-hub.oldExtraCAPoolAuthorizationSecretName\" . }}"},"coap":{"configMapName":null,"enabled":"{{ include \"plgd-hub.extraCAPoolCoapEnabled\" . }}","key":"ca.crt","mountPath":"/certs/extra/coap","name":"coap-ca-pool","secretName":"coap-ca-pool"},"internal":{"configMapName":null,"enabled":"{{ include \"plgd-hub.extraCAPoolInternalEnabled\" . }}","key":"ca.crt","mountPath":"/certs/extra/internal","name":"internal-ca-pool","secretName":"internal-ca-pool"},"storage":{"configMapName":null,"enabled":"{{ include \"plgd-hub.extraCAPoolStorageEnabled\" . }}","key":"ca.crt","mountPath":"/certs/extra/storage","name":"storage-ca-pool","secretName":"storage-ca-pool"}}` | Configuration parameters for extraCAPool used by services and clients |
 | extraCAPool.authorization | object | `{"configMapName":null,"enabled":"{{ include \"plgd-hub.extraCAPoolAuthorizationEnabled\" . }}","key":"{{ include \"plgd-hub.oldExtraCAPoolAuthorizationFileName\" . }}","mountPath":"/certs/extra/authorization","name":"authorization-ca-pool","secretName":"{{ include \"plgd-hub.oldExtraCAPoolAuthorizationSecretName\" . }}"}` | Authorization CAPool section to verify the OAuth service certificate. |
 | extraCAPool.authorization.enabled | string | `"{{ include \"plgd-hub.extraCAPoolAuthorizationEnabled\" . }}"` | Enable extra authorization ca pool |
@@ -527,7 +614,7 @@ global:
 | httpgateway.service.targetPort | string | `"http"` | Target port |
 | httpgateway.service.type | string | `"ClusterIP"` |  |
 | httpgateway.tolerations | object | `{}` | Toleration definition |
-| httpgateway.ui | object | `{"directory":"/usr/local/var/www","enabled":true,"theme":"","webConfiguration":{"deviceOAuthClient":{"audience":null,"authority":"","clientID":null,"providerName":null,"scopes":[]},"deviceProvisioningService":"","httpGatewayAddress":"","m2mOAuthClient":{"audience":null,"authority":"","clientAssertionType":null,"clientID":null,"grantType":null,"scopes":[]},"snippetService":"","visibility":{"mainSidebar":{"apiTokens":false,"certificates":true,"chatRoom":true,"configuration":true,"dashboard":false,"deviceFirmwareUpdate":false,"deviceLogs":false,"deviceProvisioning":true,"devices":true,"docs":true,"integrations":false,"pendingCommands":true,"remoteClients":true,"schemaHub":false,"snippetService":true}},"webOAuthClient":{"audience":"","authority":"","clientID":"","scopes":[]}}}` | For complete http-gateway service configuration see [plgd/http-gateway](https://github.com/plgd-dev/hub/tree/main/http-gateway) |
+| httpgateway.ui | object | `{"directory":"/usr/local/var/www","enabled":true,"theme":"","webConfiguration":{"deviceOAuthClient":{"audience":null,"authority":"","clientID":null,"providerName":null,"scopes":[]},"deviceProvisioningService":"","httpGatewayAddress":"","m2mOAuthClient":{"audience":null,"authority":"","clientAssertionType":null,"clientID":null,"grantType":null,"scopes":[]},"snippetService":"","visibility":{"mainSidebar":{"apiTokens":true,"certificates":true,"chatRoom":true,"configuration":true,"dashboard":false,"deviceFirmwareUpdate":false,"deviceLogs":false,"deviceProvisioning":true,"devices":true,"docs":true,"integrations":false,"pendingCommands":true,"remoteClients":true,"schemaHub":false,"snippetService":true}},"webOAuthClient":{"audience":"","authority":"","clientID":"","scopes":[]}}}` | For complete http-gateway service configuration see [plgd/http-gateway](https://github.com/plgd-dev/hub/tree/main/http-gateway) |
 | httpgateway.uiDomain | string | `nil` | Domain for UI Default: {{ global.domain }} |
 | identitystore.affinity | object | `{}` | Affinity definition |
 | identitystore.apis | object | `{"grpc":{"address":null,"authorization":{"audience":null,"authority":null,"http":{"idleConnTimeout":"30s","maxConnsPerHost":32,"maxIdleConns":16,"maxIdleConnsPerHost":16,"timeout":"10s","tls":{"caPool":null,"certFile":null,"keyFile":null,"useSystemCAPool":true}},"ownerClaim":null},"enforcementPolicy":{"minTime":"5s","permitWithoutStream":true},"keepAlive":{"maxConnectionAge":"0s","maxConnectionAgeGrace":"0s","maxConnectionIdle":"0s","time":"2h","timeout":"20s"},"recvMsgSize":4194304,"sendMsgSize":4194304,"tls":{"caPool":null,"certFile":null,"clientCertificateRequired":true,"keyFile":null}}}` | For complete identity service configuration see [plgd/identity](https://github.com/plgd-dev/hub/tree/main/identity) |
