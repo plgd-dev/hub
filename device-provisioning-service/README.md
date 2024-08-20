@@ -76,6 +76,7 @@ The plgd device provisioning service REST API is defined by [swagger](https://ra
 | `apis.http.authorization.endpoints[].http.tls.keyFile` | string | `File path to private key in PEM format.` | `""` |
 | `apis.http.authorization.endpoints[].http.tls.certFile` | string | `File path to certificate in PEM format.` | `""` |
 | `apis.http.authorization.endpoints[].http.tls.useSystemCAPool` | bool | `If true, use system certification pool.` | `false` |
+| `apis.http.authorization.tokenTrustVerification.cacheExpiration` | string | `Duration for which a valid token is kept in a runtime cache before re-verification is required.` | `30s` |
 | `apis.http.readTimeout` | string | `Maximum duration allowed for reading the entire request body, including the body by the server. A zero or negative value means there will be no timeout. Example: "8s" (8 seconds).` | `8s` |
 | `apis.http.readHeaderTimeout` | string | `The amount of time allowed to read request headers by the server. If readHeaderTimeout is zero, the value of readTimeout is used. If both are zero, there is no timeout.` | `4s` |
 | `apis.http.writeTimeout` | string | `The maximum duration before the server times out writing of the response. A zero or negative value means there will be no timeout.` | `16s` |
