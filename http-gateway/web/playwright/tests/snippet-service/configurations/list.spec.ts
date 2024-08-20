@@ -36,7 +36,7 @@ const fillAddForm = async (page: Page, browser: Browser) => {
     await expect(page.getByTestId(`${testId.snippetService.configurations.addPage.form.createResourceModal}-confirm-button`)).toBeVisible()
     await page.getByTestId(`${testId.snippetService.configurations.addPage.form.createResourceModal}-confirm-button`).click()
 
-    if (browser.browserType().name() === 'chromium') {
+    if (browser.browserType().name() !== 'chromium') {
         await expect(page.getByTestId(`${testId.snippetService.configurations.addPage.form.createResourceModal}-modal`)).not.toBeVisible()
     }
 }

@@ -2,7 +2,6 @@ const testId = {
     app: {
         layout: 'hub-app-layout',
         logout: 'hub-app-logout',
-        layout: 'hub-app-layout',
     },
     menu: {
         apiTokens: 'hub-menu-item-api-tokens',
