@@ -492,27 +492,29 @@ export const Routes = (props: { mainSidebar: MenuConfigType }) => {
             </Route>
 
             {/* ***** DPS ***** */}
-            <Route path='/device-provisioning'>
-                {/* ***** LINKED HUBS ***** */}
-                <Route path='linked-hubs'>
-                    <Route element={withSuspense(<LinkedHubsDetailPage />)} path=':hubId/:tab' />
-                    <Route element={withSuspense(<LinkedHubsDetailPage />)} path=':hubId' />
-                    <Route element={withSuspense(<LinkedHubsListPage />)} path='' />
-                </Route>
+            {mainSidebar.deviceProvisioning === true && (
+                <Route path='/device-provisioning'>
+                    {/* ***** LINKED HUBS ***** */}
+                    <Route path='linked-hubs'>
+                        <Route element={withSuspense(<LinkedHubsDetailPage />)} path=':hubId/:tab' />
+                        <Route element={withSuspense(<LinkedHubsDetailPage />)} path=':hubId' />
+                        <Route element={withSuspense(<LinkedHubsListPage />)} path='' />
+                    </Route>
 
-                {/* ***** ENROLLMENT GROUPS ***** */}
-                <Route path='enrollment-groups'>
-                    <Route element={withSuspense(<EnrollmentGroupsDetailPage />)} path=':enrollmentId' />
-                    <Route element={withSuspense(<EnrollmentGroupsListPage />)} path='' />
-                </Route>
+                    {/* ***** ENROLLMENT GROUPS ***** */}
+                    <Route path='enrollment-groups'>
+                        <Route element={withSuspense(<EnrollmentGroupsDetailPage />)} path=':enrollmentId' />
+                        <Route element={withSuspense(<EnrollmentGroupsListPage />)} path='' />
+                    </Route>
 
-                {/* ***** PROVISIONING RECORDS ***** */}
-                <Route path='provisioning-records'>
-                    <Route element={withSuspense(<ProvisioningRecordsDetailPage />)} path=':recordId/:tab' />
-                    <Route element={withSuspense(<ProvisioningRecordsDetailPage />)} path=':recordId' />
-                    <Route element={withSuspense(<ProvisioningRecordsListPage />)} path='' />
+                    {/* ***** PROVISIONING RECORDS ***** */}
+                    <Route path='provisioning-records'>
+                        <Route element={withSuspense(<ProvisioningRecordsDetailPage />)} path=':recordId/:tab' />
+                        <Route element={withSuspense(<ProvisioningRecordsDetailPage />)} path=':recordId' />
+                        <Route element={withSuspense(<ProvisioningRecordsListPage />)} path='' />
+                    </Route>
                 </Route>
-            </Route>
+            )}
 
             {/* ***** SNIPPET SERVICE ***** */}
             <Route path='snippet-service'>
