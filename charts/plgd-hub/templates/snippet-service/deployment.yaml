@@ -28,6 +28,7 @@ spec:
       labels:
         {{- include "plgd-hub.snippetservice.selectorLabels" . | nindent 8 }}
     spec:
+      automountServiceAccountToken: false
       {{- with .Values.snippetservice.securityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
