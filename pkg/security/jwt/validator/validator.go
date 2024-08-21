@@ -103,8 +103,8 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		keys.Add(issuer, openIDCfg.JWKSURL, httpClient.HTTP())
 		openIDConfigurations = append(openIDConfigurations, openIDCfg)
 		if openIDCfg.PlgdTokensEndpoint != "" {
-			if opts, ok := options.customTokenIssuerClients[issuer]; ok {
-				clients[issuer] = opts
+			if tokenIssuer, ok := options.customTokenIssuerClients[issuer]; ok {
+				clients[issuer] = tokenIssuer
 				continue
 			}
 			clients[issuer] = jwtValidator.NewHTTPClient(httpClient.HTTP(), openIDCfg.PlgdTokensEndpoint)

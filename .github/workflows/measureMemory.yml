@@ -70,41 +70,49 @@ jobs:
             numDevices: 1
             numResources: 1
             resourceDataSize: 16384
+            expectedRssInMb: 100
             timeout: 120m
           - name: devices/1/resources/1/size/1KB
             numDevices: 1
             numResources: 1
             resourceDataSize: 1024
+            expectedRssInMb: 100
             timeout: 120m
           - name: devices/1/resources/125/size/16KB
             numDevices: 1
             numResources: 125
             resourceDataSize: 16384
+            expectedRssInMb: 100
             timeout: 120m
           - name: devices/1/resources/125/size/1KB
             numDevices: 1
             numResources: 125
             resourceDataSize: 1024
+            expectedRssInMb: 100
             timeout: 120m
           - name: devices/1/resources/250/size/16KB
             numDevices: 1
             numResources: 250
             resourceDataSize: 16384
+            expectedRssInMb: 100
             timeout: 120m
           - name: devices/1/resources/250/size/1KB
             numDevices: 1
             numResources: 250
             resourceDataSize: 1024
+            expectedRssInMb: 100
             timeout: 120m
           - name: devices/1/resources/500/size/16KB
             numDevices: 1
             numResources: 500
             resourceDataSize: 16384
+            expectedRssInMb: 100
             timeout: 120m
           - name: devices/1/resources/500/size/1KB
             numDevices: 1
             numResources: 500
             resourceDataSize: 1024
+            expectedRssInMb: 100
             logLevel: info
             logDumpBody: true
             timeout: 120m
@@ -113,164 +121,196 @@ jobs:
             numDevices: 1000
             numResources: 1
             resourceDataSize: 16384
+            expectedRssInMb: 250
             timeout: 120m
           - name: devices/1000/resources/1/size/1KB
             numDevices: 1000
             numResources: 1
             resourceDataSize: 1024
+            expectedRssInMb: 250
             timeout: 120m
           - name: devices/1000/resources/125/size/16KB
             numDevices: 1000
             numResources: 125
             resourceDataSize: 16384
+            expectedRssInMb: 250
             timeout: 120m
           - name: devices/1000/resources/125/size/1KB
             numDevices: 1000
             numResources: 125
             resourceDataSize: 1024
+            expectedRssInMb: 250
             timeout: 120m
           - name: devices/1000/resources/250/size/16KB
             numDevices: 1000
             numResources: 250
             resourceDataSize: 16384
+            expectedRssInMb: 250
             timeout: 120m
           - name: devices/1000/resources/250/size/1KB
             numDevices: 1000
             numResources: 250
             resourceDataSize: 1024
+            expectedRssInMb: 250
             timeout: 120m
           - name: devices/1000/resources/500/size/16KB
             numDevices: 1000
             numResources: 500
             resourceDataSize: 16384
+            expectedRssInMb: 250
             timeout: 120m
           - name: devices/1000/resources/500/size/1KB
             numDevices: 1000
             numResources: 500
             resourceDataSize: 1024
+            expectedRssInMb: 250
             timeout: 120m
           #2500
           - name: devices/2500/resources/1/size/16KB
             numDevices: 2500
             numResources: 1
             resourceDataSize: 16384
+            expectedRssInMb: 350
             timeout: 120m
           - name: devices/2500/resources/1/size/1KB
             numDevices: 2500
             numResources: 1
             resourceDataSize: 1024
+            expectedRssInMb: 350
             timeout: 120m
           - name: devices/2500/resources/125/size/16KB
             numDevices: 2500
             numResources: 125
             resourceDataSize: 16384
+            expectedRssInMb: 350
             timeout: 120m
           - name: devices/2500/resources/125/size/1KB
             numDevices: 2500
             numResources: 125
             resourceDataSize: 1024
+            expectedRssInMb: 350
             timeout: 120m
           - name: devices/2500/resources/250/size/16KB
             numDevices: 2500
             numResources: 250
             resourceDataSize: 16384
+            expectedRssInMb: 350
             timeout: 120m
           - name: devices/2500/resources/250/size/1KB
             numDevices: 2500
             numResources: 250
             resourceDataSize: 1024
+            expectedRssInMb: 350
             timeout: 120m
           - name: devices/2500/resources/250/size/16KB
             numDevices: 2500
             numResources: 500
             resourceDataSize: 16384
+            expectedRssInMb: 350
             timeout: 120m
           - name: devices/2500/resources/500/size/1KB
             numDevices: 2500
             numResources: 500
             resourceDataSize: 1024
+            expectedRssInMb: 350
             timeout: 120m
           #5000
           - name: devices/5000/resources/1/size/16KB
             numDevices: 5000
             numResources: 1
             resourceDataSize: 16384
+            expectedRssInMb: 500
             timeout: 120m
           - name: devices/5000/resources/1/size/1KB
             numDevices: 5000
             numResources: 1
             resourceDataSize: 1024
+            expectedRssInMb: 500
             timeout: 120m
           - name: devices/5000/resources/125/size/16KB
             numDevices: 5000
             numResources: 125
             resourceDataSize: 16384
+            expectedRssInMb: 500
             timeout: 120m
           - name: devices/5000/resources/125/size/1KB
             numDevices: 5000
             numResources: 125
             resourceDataSize: 1024
+            expectedRssInMb: 500
             timeout: 120m
           - name: devices/5000/resources/250/size/16KB
             numDevices: 5000
             numResources: 250
             resourceDataSize: 16384
+            expectedRssInMb: 500
             timeout: 120m
           - name: devices/5000/resources/250/size/1KB
             numDevices: 5000
             numResources: 250
             resourceDataSize: 1024
+            expectedRssInMb: 500
             timeout: 120m
           - name: devices/5000/resources/500/size/16KB
             numDevices: 5000
             numResources: 500
             resourceDataSize: 16384
+            expectedRssInMb: 500
             timeout: 120m
           - name: devices/5000/resources/500/size/1KB
             numDevices: 5000
             numResources: 500
             resourceDataSize: 1024
+            expectedRssInMb: 500
             timeout: 120m
           #10000
           - name: devices/10000/resources/1/size/16KB
             numDevices: 10000
             numResources: 1
             resourceDataSize: 16384
+            expectedRssInMb: 800
             timeout: 120m
           - name: devices/10000/resources/1/size/1KB
             numDevices: 10000
             numResources: 1
             resourceDataSize: 1024
+            expectedRssInMb: 800
             timeout: 120m
           - name: devices/10000/resources/125/size/16KB
             numDevices: 10000
             numResources: 125
             resourceDataSize: 16384
+            expectedRssInMb: 800
             timeout: 120m
           - name: devices/10000/resources/125/size/1KB
             numDevices: 10000
             numResources: 125
             resourceDataSize: 1024
+            expectedRssInMb: 800
             timeout: 120m
           - name: devices/10000/resources/250/size/16KB
             numDevices: 10000
             numResources: 250
             resourceDataSize: 16384
+            expectedRssInMb: 800
             timeout: 120m
           - name: devices/10000/resources/250/size/1KB
             numDevices: 10000
             numResources: 250
             resourceDataSize: 1024
+            expectedRssInMb: 800
             timeout: 120m
           - name: devices/10000/resources/500/size/4KB
             numDevices: 10000
             numResources: 500
             resourceDataSize: 4096
+            expectedRssInMb: 800
             timeout: 300m
           - name: devices/10000/resources/500/size/1KB
             numDevices: 10000
             numResources: 500
             resourceDataSize: 1024
+            expectedRssInMb: 800
             timeout: 120m
 
     # Steps represent a sequence of tasks that will be executed as part of the job
@@ -280,10 +320,9 @@ jobs:
           cat /proc/cpuinfo
           echo "Number of cores: $(nproc)"
           echo "Number of threads: $(nproc --all)"
+
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
 
       - name: Resolve database
         id: db
@@ -295,9 +334,14 @@ jobs:
           fi
 
       - name: Run a test
-        continue-on-error: true
+        shell: bash -eo pipefail {0}
         run: |
-          make test/mem TEST_DATABASE=${{ steps.db.outputs.name }} TEST_MEMORY_COAP_GATEWAY_RESOURCE_DATA_SIZE=${{ matrix.resourceDataSize }} TEST_TIMEOUT=${{ matrix.timeout }} TEST_MEMORY_COAP_GATEWAY_NUM_DEVICES=${{ matrix.numDevices }} TEST_MEMORY_COAP_GATEWAY_NUM_RESOURCES=${{ matrix.numResources }} | tee >(grep "TestMemoryWithDevices.result:" | sed -e "s/.*TestMemoryWithDevices.result://g" | jq -r -c > out.json)
+          make test/mem TEST_DATABASE=${{ steps.db.outputs.name }} \
+            TEST_MEMORY_COAP_GATEWAY_EXPECTED_RSS_IN_MB=${{ matrix.expectedRssInMb }}  \
+            TEST_MEMORY_COAP_GATEWAY_RESOURCE_DATA_SIZE=${{ matrix.resourceDataSize }} \
+            TEST_TIMEOUT=${{ matrix.timeout }} \
+            TEST_MEMORY_COAP_GATEWAY_NUM_DEVICES=${{ matrix.numDevices }} \
+            TEST_MEMORY_COAP_GATEWAY_NUM_RESOURCES=${{ matrix.numResources }} | tee >(grep "TestMemoryWithDevices.result:" | sed -e "s/.*TestMemoryWithDevices.result://g" | jq -r -c > out.json)
 
       - name: Dump file
         if: success()

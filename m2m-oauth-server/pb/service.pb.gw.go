@@ -125,6 +125,7 @@ func local_request_M2MOAuthService_DeleteTokens_0(ctx context.Context, marshaler
 // UnaryRPC     :call M2MOAuthServiceServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
 // Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterM2MOAuthServiceHandlerFromEndpoint instead.
+// GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
 func RegisterM2MOAuthServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server M2MOAuthServiceServer) error {
 
 	mux.Handle("POST", pattern_M2MOAuthService_CreateToken_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
@@ -222,7 +223,7 @@ func RegisterM2MOAuthServiceHandler(ctx context.Context, mux *runtime.ServeMux, 
 // to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "M2MOAuthServiceClient".
 // Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "M2MOAuthServiceClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "M2MOAuthServiceClient" to call the correct interceptors.
+// "M2MOAuthServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
 func RegisterM2MOAuthServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client M2MOAuthServiceClient) error {
 
 	mux.Handle("POST", pattern_M2MOAuthService_CreateToken_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {

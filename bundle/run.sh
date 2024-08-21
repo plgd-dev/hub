@@ -29,6 +29,8 @@ export SNIPPET_SERVICE_HTTP_ADDRESS="localhost:${HTTP_SNIPPET_SERVICE_PORT}"
 export M2M_OAUTH_SERVER_ADDRESS="localhost:${M2M_OAUTH_SERVER_PORT}"
 export M2M_OAUTH_SERVER_HTTP_ADDRESS="localhost:${HTTP_M2M_OAUTH_SERVER_PORT}"
 export GRPC_REFLECTION_ADDRESS="localhost:${GRPC_REFLECTION_PORT}"
+export DEVICE_PROVISIONING_SERVICE_COAP_ADDRESS="localhost:${COAP_DEVICE_PROVISIONING_SERVICE_PORT}"
+export DEVICE_PROVISIONING_SERVICE_HTTP_ADDRESS="localhost:${HTTP_DEVICE_PROVISIONING_SERVICE_PORT}"
 
 export INTERNAL_CERT_DIR_PATH="$CERTIFICATES_PATH/internal"
 export GRPC_INTERNAL_CERT_NAME="endpoint.crt"
@@ -180,340 +182,78 @@ if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${CA_POOL}" ]; then
 fi
 
 # copy ceritficates to paths
+function copy_ca_pools() {
+  CONFIG_FILE=$1
+
+  while read -r line; do
+    file=`echo $line | yq e '.[0]' - `
+    mkdir -p `dirname "${file}"`
+    if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+      cp $CA_POOL "${file}"
+    fi
+  done < <(yq e '[.. | select(has("caPool")) | .caPool]' "${CONFIG_FILE}" | sort | uniq)
+}
+
+function copy_certificates() {
+  CONFIG_FILE=$1
+
+  while read -r line; do
+    file=`echo $line | yq e '.[0]' - `
+    mkdir -p `dirname "${file}"`
+    if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+      cp $CERT_FILE "${file}"
+    fi
+  done < <(yq e '[.. | select(has("certFile")) | .certFile]' "${CONFIG_FILE}" | sort | uniq)
+}
+
+function copy_private_keys() {
+  CONFIG_FILE=$1
+
+  while read -r line; do
+    file=`echo $line | yq e '.[0]' - `
+    mkdir -p `dirname "${file}"`
+    if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
+      cp $KEY_FILE "${file}"
+    fi
+  done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' "${CONFIG_FILE}" | sort | uniq)
+}
+
+function copy_keys_and_certificates() {
+  CONFIG_FILE=$1
+
+  copy_ca_pools "${CONFIG_FILE}"
+  copy_certificates "${CONFIG_FILE}"
+  copy_private_keys "${CONFIG_FILE}"
+}
+
 ## oauth-server
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-     cp $CA_POOL ${file}
-  fi
-done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/oauth-server.yaml | sort | uniq)
-### setup certificates
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-     cp $CERT_FILE ${file}
-  fi
-done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/oauth-server.yaml | sort | uniq)
-### setup private keys
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-     cp $KEY_FILE ${file}
-  fi
-done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/oauth-server.yaml | sort | uniq)
-
+copy_keys_and_certificates /configs/oauth-server.yaml
 ## m2m-oauth-server
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-     cp $CA_POOL ${file}
-  fi
-done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/m2m-oauth-server.yaml | sort | uniq)
-### setup certificates
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-     cp $CERT_FILE ${file}
-  fi
-done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/m2m-oauth-server.yaml | sort | uniq)
-### setup private keys
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-     cp $KEY_FILE ${file}
-  fi
-done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/m2m-oauth-server.yaml | sort | uniq)
-
+copy_keys_and_certificates /configs/m2m-oauth-server.yaml
 ## identity-store
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-    cp $CA_POOL ${file}
-  fi
-done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/identity-store.yaml | sort | uniq)
-### setup certificates
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-     cp $CERT_FILE ${file}
-  fi
-done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/identity-store.yaml | sort | uniq)
-### setup private keys
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-     cp $KEY_FILE ${file}
-  fi
-done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/identity-store.yaml | sort | uniq)
-
+copy_keys_and_certificates /configs/identity-store.yaml
 ## resource-aggregate
-### setup root-cas
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-    cp $CA_POOL ${file}
-  fi
-done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/resource-aggregate.yaml | sort | uniq)
-### setup certificates
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-     cp $CERT_FILE ${file}
-  fi
-done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/resource-aggregate.yaml | sort | uniq)
-### setup private keys
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-     cp $KEY_FILE ${file}
-  fi
-done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/resource-aggregate.yaml | sort | uniq)
-
+copy_keys_and_certificates /configs/resource-aggregate.yaml
 ## resource-directory
-### setup root-cas
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-    cp $CA_POOL ${file}
-  fi
-done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/resource-directory.yaml | sort | uniq)
-### setup certificates
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-     cp $CERT_FILE ${file}
-  fi
-done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/resource-directory.yaml | sort | uniq)
-### setup private keys
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-     cp $KEY_FILE ${file}
-  fi
-done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/resource-directory.yaml | sort | uniq)
-
+copy_keys_and_certificates /configs/resource-directory.yaml
 ## coap-gateway
-### setup root-cas
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-    cp $CA_POOL ${file}
-  fi
-done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/coap-gateway.yaml | sort | uniq)
-### setup certificates
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-     cp $CERT_FILE ${file}
-  fi
-done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/coap-gateway.yaml | sort | uniq)
-### setup private keys
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-     cp $KEY_FILE ${file}
-  fi
-done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/coap-gateway.yaml | sort | uniq)
-
+copy_keys_and_certificates /configs/coap-gateway.yaml
 ## grpc-gateway
-### setup root-cas
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-    cp $CA_POOL ${file}
-  fi
-done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/grpc-gateway.yaml | sort | uniq)
-### setup certificates
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-     cp $CERT_FILE ${file}
-  fi
-done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/grpc-gateway.yaml | sort | uniq)
-### setup private keys
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-     cp $KEY_FILE ${file}
-  fi
-done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/grpc-gateway.yaml | sort | uniq)
-
+copy_keys_and_certificates /configs/grpc-gateway.yaml
 ## http-gateway
-### setup root-cas
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-    cp $CA_POOL ${file}
-  fi
-done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/http-gateway.yaml | sort | uniq)
-### setup certificates
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-     cp $CERT_FILE ${file}
-  fi
-done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/http-gateway.yaml | sort | uniq)
-### setup private keys
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-     cp $KEY_FILE ${file}
-  fi
-done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/http-gateway.yaml | sort | uniq)
-
+copy_keys_and_certificates /configs/http-gateway.yaml
 ## certificate-authority
-### setup root-cas
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-    cp $CA_POOL ${file}
-  fi
-done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/certificate-authority.yaml | sort | uniq)
-### setup certificates
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-     cp $CERT_FILE ${file}
-  fi
-done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/certificate-authority.yaml | sort | uniq)
-### setup private keys
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-     cp $KEY_FILE ${file}
-  fi
-done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/certificate-authority.yaml | sort | uniq)
-
+copy_keys_and_certificates /configs/certificate-authority.yaml
 ## cloud2cloud-gateway
-### setup root-cas
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-    cp $CA_POOL ${file}
-  fi
-done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/cloud2cloud-gateway.yaml | sort | uniq)
-### setup certificates
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-     cp $CERT_FILE ${file}
-  fi
-done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/cloud2cloud-gateway.yaml | sort | uniq)
-### setup private keys
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-     cp $KEY_FILE ${file}
-  fi
-done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/cloud2cloud-gateway.yaml | sort | uniq)
-
+copy_keys_and_certificates /configs/cloud2cloud-gateway.yaml
 ## cloud2cloud-connector
-### setup root-cas
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-    cp $CA_POOL ${file}
-  fi
-done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/cloud2cloud-connector.yaml | sort | uniq)
-### setup certificates
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-     cp $CERT_FILE ${file}
-  fi
-done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/cloud2cloud-connector.yaml | sort | uniq)
-### setup private keys
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-     cp $KEY_FILE ${file}
-  fi
-done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/cloud2cloud-connector.yaml | sort | uniq)
-
+copy_keys_and_certificates /configs/cloud2cloud-connector.yaml
 ## snippet-service
-### setup root-cas
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-    cp $CA_POOL ${file}
-  fi
-done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/snippet-service.yaml | sort | uniq)
-### setup certificates
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-     cp $CERT_FILE ${file}
-  fi
-done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/snippet-service.yaml | sort | uniq)
-### setup private keys
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-     cp $KEY_FILE ${file}
-  fi
-done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/snippet-service.yaml| sort | uniq)
-
+copy_keys_and_certificates /configs/snippet-service.yaml
 ## grpc-reflection
-### setup root-cas
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-    cp $CA_POOL ${file}
-  fi
-done < <(yq e '[.. | select(has("caPool")) | .caPool]' /configs/grpc-reflection.yaml | sort | uniq)
-### setup certificates
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-     cp $CERT_FILE ${file}
-  fi
-done < <(yq e '[.. | select(has("certFile")) | .certFile]' /configs/grpc-reflection.yaml | sort | uniq)
-### setup private keys
-while read -r line; do
-  file=`echo $line | yq e '.[0]' - `
-  mkdir -p `dirname ${file}`
-  if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${file}" ]; then
-     cp $KEY_FILE ${file}
-  fi
-done < <(yq e '[.. | select(has("keyFile")) | .keyFile]' /configs/grpc-reflection.yaml| sort | uniq)
+copy_keys_and_certificates /configs/grpc-reflection.yaml
+## device-provisioning-service
+copy_keys_and_certificates /configs/device-provisioning-service.yaml
 
 mkdir -p ${OAUTH_KEYS_PATH}
 if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${OAUTH_ID_TOKEN_KEY_PATH}" ]; then
@@ -545,6 +285,7 @@ if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "${NGINX_PATH}/nginx.conf" ]; then
   sed -i "s/REPLACE_M2M_OAUTH_SERVER_PORT/$M2M_OAUTH_SERVER_PORT/g" ${NGINX_PATH}/nginx.conf
   sed -i "s/REPLACE_HTTP_M2M_OAUTH_SERVER_PORT/$HTTP_M2M_OAUTH_SERVER_PORT/g" ${NGINX_PATH}/nginx.conf
   sed -i "s/REPLACE_GRPC_REFLECTION_PORT/$GRPC_REFLECTION_PORT/g" ${NGINX_PATH}/nginx.conf
+  sed -i "s/REPLACE_HTTP_DEVICE_PROVISIONG_SERVICE_PORT/$HTTP_DEVICE_PROVISIONING_SERVICE_PORT/g" ${NGINX_PATH}/nginx.conf
 fi
 
 # nats
@@ -1448,142 +1189,95 @@ while true; do
   sleep 1
 done
 
+# device-provisioning-service
+echo "starting device-provisioning-service"
+## configuration
+if [ "${OVERRIDE_FILES}" = "true" ] || [ ! -f "/data/device-provisioning-service.yaml" ]; then
+cat /configs/device-provisioning-service.yaml |
+  yq e '.apis.http.authorization.endpoints += [.apis.http.authorization.endpoints[0]]' |
+  yq e "\
+  .log.level = \"${LOG_LEVEL}\" |
+  .apis.coap.address = \"${DEVICE_PROVISIONING_SERVICE_COAP_ADDRESS}\" |
+  .apis.http.enabled = true |
+  .apis.http.address = \"${DEVICE_PROVISIONING_SERVICE_HTTP_ADDRESS}\" |
+  .apis.http.authorization.ownerClaim = \"${OWNER_CLAIM}\" |
+  .apis.http.authorization.endpoints[0].http.tls.useSystemCAPool = true |
+  .apis.http.authorization.endpoints[0].authority = \"https://${OAUTH_ENDPOINT}\" |
+  .apis.http.authorization.endpoints[1].authority = \"https://${M2M_OAUTH_SERVER_ENDPOINT}\" |
+  .apis.http.authorization.audience = \"${SERVICE_OAUTH_AUDIENCE}\" |
+  .clients.storage.mongoDB.uri = \"${MONGODB_URI}\" |
+  .clients.openTelemetryCollector.grpc.enabled = ${OPEN_TELEMETRY_EXPORTER_ENABLED} |
+  .clients.openTelemetryCollector.grpc.address = \"${OPEN_TELEMETRY_EXPORTER_ADDRESS}\" |
+  .clients.openTelemetryCollector.grpc.tls.caPool = \"${OPEN_TELEMETRY_EXPORTER_CA_POOL}\" |
+  .clients.openTelemetryCollector.grpc.tls.keyFile = \"${OPEN_TELEMETRY_EXPORTER_KEY_FILE}\" |
+  .clients.openTelemetryCollector.grpc.tls.certFile = \"${OPEN_TELEMETRY_EXPORTER_CERT_FILE}\" |
+  .clients.openTelemetryCollector.grpc.tls.useSystemCAPool = true
+" - > /data/device-provisioning-service.yaml
+fi
+
+device-provisioning-service --config /data/device-provisioning-service.yaml >$LOGS_PATH/device-provisioning-service.log 2>&1 &
+status=$?
+device_provisioning_service_pid=$!
+if [ $status -ne 0 ]; then
+  echo "Failed to start device-provisioning-service: $status"
+  sync
+  cat $LOGS_PATH/device-provisioning-service.log
+  exit $status
+fi
+
+# waiting for ca. Without wait, sometimes the service didn't connect.
+i=0
+while true; do
+  i=$((i+1))
+  if openssl s_client -connect ${DEVICE_PROVISIONING_SERVICE_HTTP_ADDRESS} -cert ${INTERNAL_CERT_DIR_PATH}/${GRPC_INTERNAL_CERT_NAME} -key ${INTERNAL_CERT_DIR_PATH}/${GRPC_INTERNAL_CERT_KEY_NAME} <<< "Q" 2>/dev/null > /dev/null; then
+    break
+  fi
+  echo "Try to reconnect to device-provisioning-service(${DEVICE_PROVISIONING_SERVICE_HTTP_ADDRESS}) $i"
+  sleep 1
+done
+
 echo "Open browser at https://${DOMAIN}"
+
+function checkService() {
+  PID=$1
+  NAME=$2
+  LOG_FILE=$3
+
+  if [ -z "${PID}" ]; then
+    return
+  fi
+
+  if ! ps -p ${PID} > /dev/null; then
+    echo "$NAME has already exited."
+    sync
+    cat "$LOG_FILE"
+    exit 1
+  fi
+}
 
 # Naive check runs checks once a minute to see if either of the processes exited.
 # This illustrates part of the heavy lifting you need to do if you want to run
 # more than one service in a container. The container exits with an error
 # if it detects that either of the processes has exited.
-# Otherwise it loops forever, waking up every 60 seconds
+# Otherwise it loops forever, waking up every 10 seconds
 while sleep 10; do
-  ps aux |grep $nats_server_pid |grep -q -v grep
-  if [ $? -ne 0 ]; then
-    echo "nats-server has already exited."
-    sync
-    cat $LOGS_PATH/nats-server.log
-    exit 1
-  fi
-  ps aux |grep $mongo_pid |grep -q -v grep
-  if [ $? -ne 0 ]; then
-    echo "mongod has already exited."
-    sync
-    cat $LOGS_PATH/mongod.log
-    exit 1
-  fi
-  ps aux |grep $identity_store_pid |grep -q -v grep
-  if [ $? -ne 0 ]; then
-    echo "identity-store has already exited."
-    sync
-    cat $LOGS_PATH/identity-store.log
-    exit 1
-  fi
-  ps aux |grep $resource_aggregate_pid |grep -q -v grep
-  if [ $? -ne 0 ]; then
-    echo "resource-aggregate has already exited."
-    sync
-    cat $LOGS_PATH/resource-aggregate.log
-    exit 1
-  fi
-  ps aux |grep $resource_directory_pid |grep -q -v grep
-  if [ $? -ne 0 ]; then
-    echo "resource-directory has already exited."
-    sync
-    cat $LOGS_PATH/resource-directory.log
-    exit 1
-  fi
-  if  [ ! -z "${coap_gw_unsecure_pid}" ]; then
-    ps aux |grep $coap_gw_unsecure_pid |grep -q -v grep
-    if [ $? -ne 0 ]; then
-      echo "coap-gateway-unsecure has already exited."
-      sync
-      cat $LOGS_PATH/coap-gateway-unsecure.log
-      exit 1
-    fi
-  fi
-  ps aux |grep $coap_gw_pid |grep -q -v grep
-  if [ $? -ne 0 ]; then
-    echo "coap-gateway has already exited."
-    sync
-    cat $LOGS_PATH/coap-gateway.log
-    exit 1
-  fi
-  ps aux |grep $grpc_gw_pid |grep -q -v grep
-  if [ $? -ne 0 ]; then
-    echo "grpc-gateway has already exited."
-    sync
-    cat $LOGS_PATH/grpc-gateway.log
-   exit 1
-  fi
-  ps aux |grep $http_gw_pid |grep -q -v grep
-  if [ $? -ne 0 ]; then
-    echo "http-gateway has already exited."
-    sync
-    cat $LOGS_PATH/http-gateway.log
-   exit 1
-  fi
-  ps aux |grep $certificate_authority_pid |grep -q -v grep
-  if [ $? -ne 0 ]; then
-    echo "certificate-authority has already exited."
-    sync
-    cat $LOGS_PATH/certificate-authority.log
-   exit 1
-  fi
-  ps aux |grep $oauth_server_pid |grep -q -v grep
-  if [ $? -ne 0 ]; then
-    echo "oauth-server has already exited."
-    sync
-    cat $LOGS_PATH/oauth-server.log
-   exit 1
-  fi
-  ps aux |grep $m2m_oauth_server_pid |grep -q -v grep
-  if [ $? -ne 0 ]; then
-    echo "m2m-oauth-server has already exited."
-    sync
-    cat $LOGS_PATH/m2m-oauth-server.log
-   exit 1
-  fi
-  ps aux |grep $nginx_pid |grep -q -v grep
-  if [ $? -ne 0 ]; then
-    echo "nginx has already exited."
-    sync
-    cat $LOGS_PATH/nginx.log
-    exit 1
-  fi
-  ps aux |grep $cloud2cloud_gw_pid |grep -q -v grep
-  if [ $? -ne 0 ]; then
-    echo "cloud2cloud-gateway has already exited."
-    sync
-    cat $LOGS_PATH/cloud2cloud-gateway.log
-   exit 1
-  fi
-  ps aux |grep $cloud2cloud_connector_pid |grep -q -v grep
-  if [ $? -ne 0 ]; then
-    echo "cloud2cloud_connector has already exited."
-    sync
-    cat $LOGS_PATH/cloud2cloud_connector.log
-   exit 1
-  fi
-  if  [ ! -z "${scylla_pid}" ]; then
-    ps aux |grep $scylla_pid |grep -q -v grep
-    if [ $? -ne 0 ]; then
-      echo "scylla has already exited."
-      sync
-      cat $LOGS_PATH/scylla.log
-      exit 1
-    fi
-  fi
-  ps aux |grep $snippet_service_pid |grep -q -v grep
-  if [ $? -ne 0 ]; then
-    echo "snippet-service has already exited."
-    sync
-    cat $LOGS_PATH/snippet-service.log
-   exit 1
-  fi
-  ps aux |grep $grpc_reflection_pid |grep -q -v grep
-  if [ $? -ne 0 ]; then
-    echo "grpc-reflection has already exited."
-    sync
-    cat $LOGS_PATH/grpc-reflection.log
-   exit 1
-  fi
+  checkService "$nats_server_pid" "nats-server" "$LOGS_PATH/nats-server.log"
+  checkService "$mongo_pid" "mongod" "$LOGS_PATH/mongod.log"
+  checkService "$identity_store_pid" "identity-store" "$LOGS_PATH/identity-store.log"
+  checkService "$resource_aggregate_pid" "resource-aggregate" "$LOGS_PATH/resource-aggregate.log"
+  checkService "$resource_directory_pid" "resource-directory" "$LOGS_PATH/resource-directory.log"
+  checkService "$coap_gw_unsecure_pid" "coap-gateway-unsecure" "$LOGS_PATH/coap-gateway-unsecure.log"
+  checkService "$coap_gw_pid" "coap-gateway" "$LOGS_PATH/coap-gateway.log"
+  checkService "$grpc_gw_pid" "grpc-gateway" "$LOGS_PATH/grpc-gateway.log"
+  checkService "$http_gw_pid" "http-gateway" "$LOGS_PATH/http-gateway.log"
+  checkService "$certificate_authority_pid" "certificate-authority" "$LOGS_PATH/certificate-authority.log"
+  checkService "$oauth_server_pid" "oauth-server" "$LOGS_PATH/oauth-server.log"
+  checkService "$m2m_oauth_server_pid" "m2m-oauth-server" "$LOGS_PATH/m2m-oauth-server.log"
+  checkService "$nginx_pid" "nginx" "$LOGS_PATH/nginx.log"
+  checkService "$cloud2cloud_gw_pid" "cloud2cloud-gateway" "$LOGS_PATH/cloud2cloud-gateway.log"
+  checkService "$cloud2cloud_connector_pid" "cloud2cloud-connector" "$LOGS_PATH/cloud2cloud-connector.log"
+  checkService "$scylla_pid" "scylla" "$LOGS_PATH/scylla.log"
+  checkService "$snippet_service_pid" "snippet-service" "$LOGS_PATH/snippet-service.log"
+  checkService "$grpc_reflection_pid" "grpc-reflection" "$LOGS_PATH/grpc-reflection.log"
+  checkService "$device_provisioning_service_pid" "device-provisioning-service" "$LOGS_PATH/device-provisioning-service.log"
 done

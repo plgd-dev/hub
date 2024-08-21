@@ -1,0 +1,168 @@
+@startuml workflow
+autonumber
+
+actor Operator as op
+participant "Onboarding Tool" as obt
+box "Device" #LightBlue
+participant "Device Application"  as device
+participant "DPS Library" as dpc
+end box
+box "plgd hub" #DeepSkyBlue
+participant "Device Provisioning Service" as dps
+participant "Certificate Authority Service" as ca
+end box
+participant "OAuth2.0 Server" as os
+
+note over of device
+  Unique manufacturer certificate
+  set during the production
+end note
+== Configuration ==
+op -> dps: Configure Enrollment Group
+== DPS Connection ==
+alt DPS Address set by the device - Call Home
+  device -> dpc: Set DPS address
+else DPS address configured by the tool running discovery - Multicast
+obt --> dpc: Discover x.com.plgd.dps.conf
+dpc -> obt: Here I am
+note over dpc
+  Devices with the x.com.plgd.dps.conf resource will reply.
+end note
+obt -> dpc: Own device
+return
+note over dpc
+  The onboarding tool becomes the owner of the device
+  or already owns it.
+end note
+obt -> dpc: Set DPS address
+return
+note over dpc
+  When the device is disowned or factory reset, the DPS address is set to empty.
+end note
+end
+
+note over dpc, dps
+    The device is authenticated by the manufacturer certificate.
+    Expired certificate can be used if enabled.
+end note
+
+dpc -> dps: Connect and authenticate using Manufacturer Certificate
+dps -> dps: Validate certificate
+note right
+  Validation against Mfg CA
+  registered in the Enrollment Group and
+  against the revocation list.
+end note
+alt Valid
+  dps -> dpc: Connection established
+else Invalid
+  dps ->x dpc: Close connection
+end
+
+== Check available content  ==
+note over dpc, dps
+  Content available for the DPS library which is derived from the Enrollment Group configuration is used to drive the workflow of the provisioning.
+end note
+
+dpc -> dps: Get available resources
+dps -> dpc: Available provisioning flow resources
+note left of dps
+{
+    "if": [oic.if.r, oic.if.b]
+    "links": [
+        {
+            "href": "/api/v1/provisioning/acls"
+        },
+        {
+            "href": "/api/v1/provisioning/cloud-configuration"
+        },
+        {
+            "href": "/api/v1/provisioning/credentials"
+        },
+        {
+            "href": "/api/v1/provisioning/customResource1"
+        }
+        {
+            "href": "/api/v1/provisioning/ownership"
+        },
+        {
+            "href": "/api/v1/provisioning/ownership"
+        },
+        {
+            "href": "/x.plgd.dev/time"
+        },
+        ...
+    ]
+}
+end note
+
+== Device time synchronization  ==
+
+dpc -> dps: Get current time\n(GET x.plgd.dev/time)
+dps -> dpc: [[https://github.com/iotivity/iotivity-lite/blob/master/api/plgd/x.plgd.dev.time.yaml#L65 Current time]]
+dpc -> dpc: Apply time if out of sync
+
+== Device Ownership  ==
+
+dpc -> dps: Get device ownerhip\n(GET api/v1/provisioning/ownership)
+dps -> dps: Set owner from the Enrollment Group for the device
+dps -> dpc: [[https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.doxm.swagger.json#L160 Device Owner Transfer Method]]
+dpc -> dpc: Apply Ownership
+
+== Device Identity Credentials ==
+
+dpc -> dps : Sign Identity CSR and retrieve device credentials\n(POST api/v1/provisioning/credentials)
+alt JWT token not cached
+  dps -> os:Get token using client credential flow\nwith the owner from the dps configuration
+  os -> dps: JWT Token
+end
+dps -> ca: Sign device's Identity CSR
+ca -> dps: Identity Certificate and plgd hub CA
+dps -> dpc: [[https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.cred.swagger.json#L439 Identity Certificate and plgd hub CA]]
+dpc -> dpc: Apply Identity Credentials
+
+== Get Device ACLs ==
+
+dpc -> dps: Get device ACLs\n(GET api/v1/provisioning/acls)
+dps -> dps: Retrieve custom entries, generate required \nfor plgd hub instance and owner from the Enrollment Group
+dps -> dpc: [[https://github.com/openconnectivityfoundation/security/blob/master/swagger2.0/oic.sec.acl2.swagger.json#L362 Device ACLs]]
+dpc -> dpc: Apply ACLs
+
+
+== Resource pre-configuration ==
+
+dpc -> dps: Get pre-configuration specified in the Enrollment Group\n(GET api/v1/provisioning/res?if=oic.if.b)
+dps -> dpc: Resource content
+note left of dps
+{
+    "if": [oic.if.r, oic.if.b]
+    "links": [
+        {
+            "href": "/api/v1/provisioning/custom/resource/1"
+            "etag": "0",
+            "rep": {...}
+        },
+        {
+            "href": "/api/v1/provisioning/custom/resource/2"
+            "etag": "1",
+            "rep": {...}
+        },
+        ...
+    ]
+}
+end note
+
+== Get plgd hub configuration ==
+dpc -> dps : Get plgd hub connection data\n(GET api/v1/provisioning/cloud-configuration)
+dps -> os: Get token using client credential flow\nwith owner from the dps configuration
+dps -> dps: Get connection data of plgd hub\nregistered in the Enrollment Group
+dps -> dpc: [[https://github.com/openconnectivityfoundation/cloud-services/blob/master/swagger2.0/oic.r.coapcloudconf.swagger.json#L215 Token & connection data]]
+dpc -> dpc: Provisioning device for plgd hub connection
+dpc ->x dps: Close connection
+dpc -> dpc: Start Cloud Manager
+
+== plgd hub connection ==
+note across: Flow continues in a standard way, as documented [[https://docs.plgd.dev/docs/architecture/component-overview/#hub-registration here]]
+
+
+@enduml

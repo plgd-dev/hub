@@ -103,6 +103,7 @@ jobs:
           cat /proc/cpuinfo
           echo "Number of cores: $(nproc)"
           echo "Number of threads: $(nproc --all)"
+
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
         with:
@@ -130,7 +131,7 @@ jobs:
       - name: Remove simulators container
         if: ${{ always() }}
         run: |
-          make simulators/remove
+          make simulators/remove simulators/bridge/remove simulators/dps/remove
   
       - name: Collect cloud server logs when the test fails
         if: ${{ failure() }}

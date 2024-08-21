@@ -1,0 +1,33 @@
+{{- if and .Values.deviceProvisioningService.enabled .Values.deviceProvisioningService.apis.http.enabled .Values.deviceProvisioningService.ingress.enabled (not .Values.deviceProvisioningService.ingress.domainCertName) }}
+{{- $domainCertName := include "plgd-hub.deviceProvisioningService.domainCertName" . }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ $domainCertName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plgd-hub.deviceProvisioningService.labels" . | nindent 4 }}
+    {{- with .Values.certmanager.external.labels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+  {{- with .Values.certmanager.external.annotations }}
+  annotations:
+  {{- . | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  secretName: {{ $domainCertName }}
+  privateKey:
+    algorithm: {{ .Values.certmanager.external.cert.key.algorithm | default .Values.certmanager.default.cert.key.algorithm }}
+    size: {{ .Values.certmanager.external.cert.key.size | default .Values.certmanager.default.cert.key.size }}
+  usages:
+    - server auth
+    - client auth
+  dnsNames:
+    - {{ include "plgd-hub.deviceProvisioningService.apiDomain" . | quote }}
+  duration: {{ .Values.certmanager.external.cert.duration | default .Values.certmanager.default.cert.duration }}
+  renewBefore: {{ .Values.certmanager.external.cert.renewBefore | default .Values.certmanager.default.cert.renewBefore }}
+  issuerRef:
+    name: {{ .Values.certmanager.external.issuer.name | default .Values.certmanager.default.issuer.name }}
+    kind: {{ .Values.certmanager.external.issuer.kind | default .Values.certmanager.default.issuer.kind }}
+    group: {{ .Values.certmanager.external.issuer.group | default .Values.certmanager.default.issuer.group }}
+{{- end }}

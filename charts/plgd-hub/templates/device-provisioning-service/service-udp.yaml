@@ -1,0 +1,45 @@
+{{- if and .Values.deviceProvisioningService.enabled (has "udp" .Values.deviceProvisioningService.apis.coap.protocols) -}}
+{{- $tcpServiceType := "" }}
+{{- $tcpNodePort := "" }}
+{{- if (has "tcp" .Values.deviceProvisioningService.apis.coap.protocols) -}}
+  {{- $tcpServiceType = .Values.deviceProvisioningService.service.tcp.type | default .Values.deviceProvisioningService.service.type }}
+  {{- $tcpNodePort = .Values.deviceProvisioningService.service.tcp.nodePort | default .Values.deviceProvisioningService.service.nodePort }}
+{{- end -}}
+{{- $udpServiceType := "" }}
+{{- $udpNodePort := "" }}
+{{- if  (has "udp" .Values.deviceProvisioningService.apis.coap.protocols) -}}
+  {{- $udpServiceType = .Values.deviceProvisioningService.service.udp.type | default .Values.deviceProvisioningService.service.type }}
+  {{- $udpNodePort = .Values.deviceProvisioningService.service.udp.nodePort | default .Values.deviceProvisioningService.service.nodePort }}
+{{- end -}}
+{{- if and (eq (lower $tcpServiceType) "nodeport") (eq (lower $udpServiceType) "nodeport") ($tcpNodePort | quote) ($udpNodePort| quote) (eq ($tcpNodePort | quote) ($udpNodePort| quote)) -}}
+  {{- fail "tcp.nodePort and udp.nodePort are same which is not allowed by k8s" }}
+{{- end -}}
+{{- $serviceType := $udpServiceType -}}
+{{- $nodePort := $udpNodePort -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "plgd-hub.deviceProvisioningService.fullname" . }}-udp
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plgd-hub.deviceProvisioningService.labels" . | nindent 4 }}
+    {{- with .Values.deviceProvisioningService.service.udp.labels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+  {{- if .Values.deviceProvisioningService.service.udp.annotations }}
+  annotations:
+    {{- include "plgd-hub.tplvalues.render" ( dict "value" .Values.deviceProvisioningService.service.udp.annotations "context" $ ) | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ $serviceType | default "ClusterIP" }}
+  ports:
+    - port: {{ .Values.deviceProvisioningService.port }}
+      {{- if $nodePort }}
+      nodePort: {{ $nodePort }}
+      {{- end }}
+      targetPort: {{ .Values.deviceProvisioningService.service.udp.targetPort }}
+      protocol: {{ .Values.deviceProvisioningService.service.udp.protocol }}
+      name: {{ .Values.deviceProvisioningService.service.udp.name }}
+  selector:
+  {{- include "plgd-hub.deviceProvisioningService.selectorLabels" . | nindent 4 }}
+{{- end }}
