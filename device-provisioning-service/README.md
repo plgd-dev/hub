@@ -42,7 +42,7 @@ CoAP API as specified in the [workflow](./workflow.puml).
 
 | Property | Type | Description | Default |
 | ---------- | -------- | -------------- | ------- |
-| `apis.coap.address` | string | `Listening specification <host>:<port> for coap client connection.` | `"0.0.0.0:5688"` |
+| `apis.coap.address` | string | `Listening specification <host>:<port> for coap client connection.` | `"0.0.0.0:15684"` |
 | `apis.coap.protocols` | []string | `Protocol for coap connection. The supported values are: "tcp", "udp" .` | `["tcp"]` |
 | `apis.coap.maxMessageSize` | int | `Max message size which can be sent/received via coap. i.e. 256*1024 = 262144 bytes.` | `262144` |
 | `apis.coap.messagePoolSize` | int | `Defines the maximum preallocated messages in the pool for parse/create coap messages.` | `1000` |

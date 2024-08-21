@@ -39,6 +39,11 @@ TEST_MEMORY_COAP_GATEWAY_NUM_RESOURCES ?= 1
 TEST_MEMORY_COAP_GATEWAY_EXPECTED_RSS_IN_MB ?= 50
 TEST_MEMORY_COAP_GATEWAY_RESOURCE_DATA_SIZE ?= 200
 TEST_DATABASE ?= mongodb
+ifeq ($(TEST_MONGODB_VERBOSE),true)
+MONGODB_ARGS := -vvvvv
+else
+MONGODB_ARGS :=
+endif
 TEST_LEAD_RESOURCE_TYPE_FILTER ?=
 TEST_LEAD_RESOURCE_TYPE_REGEX_FILTER ?=
 TEST_LEAD_RESOURCE_TYPE_USE_UUID ?= false
@@ -203,8 +208,8 @@ define RUN-DOCKER-MONGO
 		--name=$(1) \
 		-v $(WORKING_DIRECTORY)/.tmp/$(1):/data/db \
 		-v $(CERT_PATH):/certs --user $(USER_ID):$(GROUP_ID) \
-		mongo --tlsMode requireTLS --wiredTigerCacheSizeGB 1 --tlsCAFile /certs/root_ca.crt \
-			--tlsCertificateKeyFile /certs/mongo.key $(2)
+		mongo $(2) --tlsMode requireTLS --wiredTigerCacheSizeGB 1 --tlsCAFile /certs/root_ca.crt \
+			--tlsCertificateKeyFile /certs/mongo.key
 endef
 
 MONGODB_REPLICA_0 := mongo0
@@ -215,9 +220,9 @@ MONGODB_REPLICA_2 := mongo2
 MONGODB_REPLICA_2_PORT := 27019
 
 mongo: certificates
-	$(call RUN-DOCKER-MONGO,$(MONGODB_REPLICA_0),-vvvvv --replSet myReplicaSet --bind_ip localhost --port $(MONGODB_REPLICA_0_PORT))
-	$(call RUN-DOCKER-MONGO,$(MONGODB_REPLICA_1),-vvvvv --replSet myReplicaSet --bind_ip localhost --port $(MONGODB_REPLICA_1_PORT))
-	$(call RUN-DOCKER-MONGO,$(MONGODB_REPLICA_2),-vvvvv --replSet myReplicaSet --bind_ip localhost --port $(MONGODB_REPLICA_2_PORT))
+	$(call RUN-DOCKER-MONGO,$(MONGODB_REPLICA_0),$(MONGODB_ARGS) --replSet myReplicaSet --bind_ip localhost --port $(MONGODB_REPLICA_0_PORT))
+	$(call RUN-DOCKER-MONGO,$(MONGODB_REPLICA_1),$(MONGODB_ARGS) --replSet myReplicaSet --bind_ip localhost --port $(MONGODB_REPLICA_1_PORT))
+	$(call RUN-DOCKER-MONGO,$(MONGODB_REPLICA_2),$(MONGODB_ARGS) --replSet myReplicaSet --bind_ip localhost --port $(MONGODB_REPLICA_2_PORT))
 	COUNTER=0; \
 	while [[ $${COUNTER} -lt 30 ]]; do \
 		echo "Checking mongodb connection ($${COUNTER}):"; \
@@ -252,7 +257,7 @@ mongo/clean:
 .PHONY: mongo mongo/clean
 
 mongo-no-replicas: certificates
-	$(call RUN-DOCKER-MONGO,mongo,)
+	$(call RUN-DOCKER-MONGO,mongo,$(MONGODB_ARGS))
 
 mongo-no-replicas/clean:
 	$(call REMOVE-DOCKER-DEVICE,mongo)
@@ -445,7 +450,7 @@ env: clean certificates nats privateKeys http-gateway-www mongo simulators
 env/test/mem: clean certificates nats privateKeys
 
 ifeq ($(TEST_DATABASE),mongodb)
-# github runners run out of file space if multiple mongodb replicas are started, so we start only a single instance
+# the measure memory test cases seems to be much slower with replica sets running
 env/test/mem: mongo-no-replicas
 else
 # test uses mongodb for most tests, but scylla can be enabled for some; so we always need mongodb to be running
