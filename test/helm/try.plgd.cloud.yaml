@@ -12,19 +12,19 @@ global:
       -----END EC PRIVATE KEY-----
   oauth:
     device:
-    - name: "plgd.dps"
-      clientID: "..."
-      clientSecret: "..."
-      grantType: clientCredentials
-      redirectURL: "cloud.plgd.mobile://login-callback"
-      scopes: ['openid']
-      useInUi: false
-    - name: "plgd.web"
-      clientID: "..."
-      clientSecret: "..."
-      scopes: ["offline_access"]
-      redirectURL: "https://try.plgd.cloud/devices"
-      useInUi: true
+      - name: "plgd.dps"
+        clientID: "..."
+        clientSecret: "..."
+        grantType: clientCredentials
+        redirectURL: "cloud.plgd.mobile://login-callback"
+        scopes: ["openid"]
+        useInUi: false
+      - name: "plgd.web"
+        clientID: "..."
+        clientSecret: "..."
+        scopes: ["offline_access"]
+        redirectURL: "https://try.plgd.cloud/devices"
+        useInUi: true
     web:
       clientID: "..."
       scopes: ["openid"]
@@ -53,7 +53,7 @@ snippetservice:
 coapgateway:
   log:
     dumpBody: true
-    level: 'DEBUG'
+    level: "DEBUG"
   service:
     type: NodePort
     tcp:
@@ -64,15 +64,15 @@ coapgateway:
     coap:
       requireBatchObserveEnabled: false
       protocols:
-       - "udp"
-       - "tcp"
+        - "udp"
+        - "tcp"
       tls:
         clientCertificateRequired: false
 deviceProvisioningService:
   apiDomain: "dps.try.plgd.cloud"
   log:
     dumpBody: true
-    level: 'DEBUG'
+    level: "DEBUG"
   apis:
     http:
       enabled: true

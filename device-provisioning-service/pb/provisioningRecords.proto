@@ -1,0 +1,300 @@
+syntax = "proto3";
+
+package deviceprovisioningservice.pb;
+
+option go_package = "github.com/plgd-dev/hub/v2/device-provisioning-service/pb;pb";
+
+message GetProvisioningRecordsRequest {
+  // Filter by id.
+  repeated string id_filter = 1;
+  // Filter by device id.
+  repeated string device_id_filter = 2;
+  // Filter by enrollment group id.
+  repeated string enrollment_group_id_filter = 3;
+  
+}
+
+message Attestation {
+  // Last time the device successfully established a TLS connection, in unix nanoseconds timestamp format.
+  int64 date = 1; // @gotags: bson:"date,omitempty"
+  // X509 attestation, set if used by the device.
+  X509Attestation x509 = 2; // @gotags: bson:"x509,omitempty"
+}
+
+message X509Attestation {
+  // Last used x509 manufacturer certificate.
+  string certificate_pem = 1; // @gotags: bson:"certificate,omitempty"
+  string common_name = 2; // @gotags: bson:"commonName,omitempty"
+}
+
+message ProvisionStatus {
+  // Last time the device requested provisioning, in unix nanoseconds timestamp format.
+  int64 date = 1; // @gotags: bson:"date,omitempty"
+  // The CoAP code returned to the device.
+  int32 coap_code = 2; // @gotags: bson:"coapCode,omitempty"
+  // Error message if any.
+  string error_message = 3; // @gotags: bson:"errorMessage,omitempty"
+}
+
+message PreSharedKey {
+  // ID used to identify the owner by the device.
+  string subject_id = 1; // @gotags: bson:"subjectId,omitempty"
+  // Associated secret to the owner ID.
+  string key = 2; // @gotags: bson:"key,omitempty"
+}
+
+// Credential Type dependent - eg revocation status information
+message CredentialOptionalData {
+  enum Encoding {
+    UNKNOWN = 0;
+    RAW = 1;
+    JWT = 2;
+    CWT = 3;
+    BASE64 = 4;
+    PEM = 5;
+    DER = 6;
+  }
+  // Data to be provisioned.
+  bytes data = 1;
+  // Encoding of the data.
+  Encoding encoding = 2;
+  // If set, the credential is revoked.
+  bool is_revoked = 3;
+}
+
+// Private credential information - non-public contents.
+message CredentialPrivateData {
+  enum Encoding {
+    UNKNOWN = 0;
+    RAW = 1;
+    JWT = 2;
+    CWT = 3;
+    BASE64 = 4;
+    URI = 5;
+    HANDLE = 6;
+  }
+  // Data to be provisioned.
+  bytes data = 1;
+  // Encoding of the data.
+  Encoding encoding = 2;
+  // Handle to a key storage Resource.
+  int64 handle = 3;
+}
+
+// Credential Type dependent  - public contents.
+message CredentialPublicData {
+  enum Encoding {
+    UNKNOWN = 0;
+    RAW = 1;
+    JWT = 2;
+    CWT = 3;
+    BASE64 = 4;
+    URI = 5;
+    PEM = 6;
+    DER = 7;
+  }
+  // Data to be provisioned.
+  bytes data = 1;
+  // Encoding of the data.
+  Encoding encoding = 2;
+}
+
+message CredentialRoleID {
+  string authority = 1;
+  string role = 2;
+}
+
+message Credential {
+  enum CredentialType {
+    EMPTY = 0;
+    SYMMETRIC_PAIR_WISE = 1;
+    SYMMETRIC_GROUP = 2;
+    ASYMMETRIC_SIGNING = 4;
+    ASYMMETRIC_SIGNING_WITH_CERTIFICATE = 8;
+    PIN_OR_PASSWORD = 16;
+    ASYMMETRIC_ENCRYPTION_KEY = 32;
+  }
+
+  enum CredentialUsage {
+    NONE = 0;
+    TRUST_CA = 1;
+    CERT = 2;
+    ROLE_CERT = 3;
+    MFG_TRUST_CA = 4;
+    MFG_CERT = 5;
+  }
+  
+  enum CredentialRefreshMethod {
+    UNKNOWN = 0;
+    PROVISION_SERVICE = 1;
+    KEY_AGREEMENT_PROTOCOL_AND_RANDOM_PIN = 2;
+    KEY_AGREEMENT_PROTOCOL = 3;
+    KEY_DISTRIBUTION_SERVICE = 4;
+    PKCS10_REQUEST_TO_CA = 5;
+  }
+  
+  // Credential ID. If not set, the device will generate one.
+  int64 id = 1; // @gotags: bson:"id,omitempty"
+  // Credential type.
+  repeated CredentialType type = 2; // @gotags: bson:"type,omitempty"
+  // Credential subject.
+  string subject = 3; // @gotags: bson:"subject,omitempty"
+  // Credential usage.
+  CredentialUsage usage = 4; // @gotags: bson:"usage,omitempty"
+  // Supported credential refresh methods.
+  repeated CredentialRefreshMethod supported_refresh_methods = 5; // @gotags: bson:"supportedRefreshMethods,omitempty"
+  // Optional data.
+  CredentialOptionalData optional_data = 6; // @gotags: bson:"optionalData,omitempty"
+  // Period of validity in seconds.
+  string period = 7; // @gotags: bson:"period,omitempty"
+  // Private data.
+  CredentialPrivateData private_data = 8; // @gotags: bson:"privateData,omitempty"
+  // Public data.
+  CredentialPublicData public_data = 9; // @gotags: bson:"publicData,omitempty"
+  // Role ID.
+  CredentialRoleID role_id = 10; // @gotags: bson:"roleId,omitempty"
+}
+
+message CredentialStatus {
+  ProvisionStatus status = 1; // @gotags: bson:"status,omitempty"
+  // Last identity certificate issued for the device.
+  string identity_certificate_pem = 2; // @gotags: bson:"identityCertificate,omitempty"
+  // Last pre shared key issued for the device.
+  PreSharedKey pre_shared_key = 3; // @gotags: bson:"preSharedKey,omitempty"
+  repeated Credential credentials = 4; // @gotags: bson:"credentials,omitempty"
+}
+
+message OwnershipStatus {
+  ProvisionStatus status = 1; // @gotags: bson:"status,omitempty"
+  // Last provisioned owner to the device.
+  string owner = 2; // @gotags: bson:"owner,omitempty"
+}
+
+message AccessControlDeviceSubject {
+  string device_id = 1;
+}
+
+message AccessControlRoleSubject {
+  string authority = 1;
+  string role = 2;
+}
+
+message AccessControlConnectionSubject {
+  enum ConnectionType {
+    // anonymous clear-text connection TCP or UDP without encryption
+	  ANON_CLEAR = 0; 
+    // authenticated encrypted connection using TLS or DTLS
+  	AUTH_CRYPT = 1;
+  }
+  ConnectionType type = 1;
+}
+
+message AccessControlResource {
+  enum Wildcard {
+    // no wildcard
+    NONE = 0;
+    // Shall match all Discoverable Non-Configuration Resources which expose at least one Secure OCF Endpoint.
+    NONCFG_SEC_ENDPOINT = 1;
+    // Shall match all Discoverable Non-Configuration Resources which expose at least one Unsecure OCF Endpoint.
+    NONCFG_NONSEC_ENDPOINT = 2;
+    // Shall match all Non-Configuration Resources.
+    NONCFG_ALL = 3;
+  }
+  // Resource href.
+  string href = 1;
+  // Resource type.
+  repeated string resource_types = 2;
+  // Resource interface.
+  repeated string interfaces = 3;
+  // Resource wildcard.
+  Wildcard wildcard = 4;
+}
+
+message AccessControl {
+  enum Permission {
+    // create access
+    CREATE = 0;
+    // read-only access
+    READ = 1;
+    // read-write access
+    WRITE = 2;
+    // delete access
+    DELETE = 3;
+    // notify access
+    NOTIFY = 4;
+  }
+  // Subject of the ACL defines the entity to which the permissions are granted. Only one subject must be defined per ACL.
+  AccessControlDeviceSubject device_subject = 1;  // @gotags: bson:"deviceSubject,omitempty"
+  AccessControlRoleSubject role_subject = 2;  // @gotags: bson:"roleSubject,omitempty"
+  AccessControlConnectionSubject connection_subject = 3;  // @gotags: bson:"connectionSubject,omitempty"
+
+  // Permissions granted to the subject.
+  repeated Permission permissions = 4;
+  // Resources to which the permissions apply.
+  repeated AccessControlResource resources = 5;
+}
+
+message ACLStatus {
+  ProvisionStatus status = 1; // @gotags: bson:"status,omitempty"
+  // Last ACL list provisioned to the device.
+  repeated AccessControl access_control_list = 2; // @gotags: bson:"accessControlList,omitempty"
+}
+
+message CloudStatus {
+  reserved 2,4; // string coap_gateway = 2; string id = 4;
+  reserved "coap_gateway"; 
+  ProvisionStatus status = 1; // @gotags: bson:"status,omitempty"
+  // Last provider name used to authenticate the device to the cloud.
+  string provider_name = 3; // @gotags: bson:"providerName,omitempty"
+
+  message Gateway {
+    // Gateway endpoint in format <scheme>://<host>:<port>
+    string uri = 1; // @gotags: bson:"uri,omitempty"
+    // UUID of the gateway.
+    string id = 2; // @gotags: bson:"id,omitempty"
+  }
+  // Last provisioned gateways to the device.
+  repeated Gateway gateways = 5; // @gotags: bson:"gateways,omitempty"
+  int32 selected_gateway = 6; // @gotags: bson:"selectedGateway,omitempty"
+}
+
+message ProvisioningRecord {
+  // Registration id, calculated from the manufacturer certificate public key info.
+  string id = 1; // @gotags: bson:"_id,omitempty"
+  // ID of the device to which this record belongs to.
+  string device_id = 2; // @gotags: bson:"deviceId,omitempty"
+  // Assigned enrollment group.
+  string enrollment_group_id = 3; // @gotags: bson:"enrollmentGroupId,omitempty"
+  // Record creation date, in unix nanoseconds timestamp format.
+  int64 creation_date = 4; // @gotags: bson:"creationDate,omitempty"
+  // Last device attestation overview.
+  Attestation attestation = 5; // @gotags: bson:"attestation,omitempty"
+  // Last credential provision overview.
+  CredentialStatus credential = 6; // @gotags: bson:"credential,omitempty"
+  // Last ACL provision overview.
+  ACLStatus acl = 7; // @gotags: bson:"acl,omitempty"
+  // Last cloud provision overview.
+  CloudStatus cloud = 8; // @gotags: bson:"cloud,omitempty"
+  // Last ownership provision overview.
+  OwnershipStatus ownership = 9; // @gotags: bson:"ownership,omitempty"
+  // Last plgd-time provision overview.
+  ProvisionStatus plgd_time = 10; // @gotags: bson:"plgdTime,omitempty"
+  // Last local endpoints
+  repeated string local_endpoints = 11; // @gotags: bson:"localEndpoints,omitempty"
+  // Owner ID.
+  string owner = 12; // @gotags: bson:"owner,omitempty"
+}
+
+message DeleteProvisioningRecordsRequest {
+  // Filter by id.
+  repeated string id_filter = 1;
+  // Filter by device id.
+  repeated string device_id_filter = 2;
+  // Filter by enrollment group id.
+  repeated string enrollment_group_id_filter = 3;
+}
+
+message DeleteProvisioningRecordsResponse {
+  // Number of deleted records.
+  int64 count = 1;
+}

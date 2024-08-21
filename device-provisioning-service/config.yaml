@@ -1,0 +1,83 @@
+log:
+  dumpBody: false
+  level: info
+  encoding: json
+  stacktrace:
+    enabled: false
+    level: warn
+  encoderConfig:
+    timeEncoder: rfc3339nano
+apis:
+  coap:
+    address: 0.0.0.0:15684
+    maxMessageSize: 262144
+    messagePoolSize: 1000
+    protocols: [tcp]
+    inactivityMonitor:
+      timeout: 20s
+    blockwiseTransfer:
+      enabled: true
+      blockSize: "1024"
+    tls:
+      keyFile: "/secrets/private/cert.key"
+      certFile: "/secrets/public/cert.crt"
+  http:
+    enabled: false
+    address: 0.0.0.0:9100
+    tls:
+      caPool: "/secrets/public/rootca.crt"
+      keyFile: "/secrets/private/cert.key"
+      certFile: "/secrets/public/cert.crt"
+      clientCertificateRequired: true
+    authorization:
+      ownerClaim: sub
+      audience: ""
+      endpoints:
+        - authority: ""
+          http:
+            maxIdleConns: 16
+            maxConnsPerHost: 32
+            maxIdleConnsPerHost: 16
+            idleConnTimeout: 30s
+            timeout: 10s
+            tls:
+              caPool: "/secrets/public/rootca.crt"
+              keyFile: "/secrets/private/cert.key"
+              certFile: "/secrets/public/cert.crt"
+              useSystemCAPool: false
+      tokenTrustVerification:
+        cacheExpiration: 30s
+    readTimeout: 8s
+    readHeaderTimeout: 4s
+    writeTimeout: 16s
+    idleTimeout: 30s
+clients:
+  storage:
+    cacheExpiration: 10m
+    mongoDB:
+      uri:
+      database: deviceProvisioningService
+      maxPoolSize: 16
+      maxConnIdleTime: 4m0s
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false
+      bulkWrite:
+        timeout: 1m0s
+        throttleTime: 500ms
+        documentLimit: 1000
+  openTelemetryCollector:
+    grpc:
+      enabled: false
+      address: ""
+      keepAlive:
+        time: 10s
+        timeout: 20s
+        permitWithoutStream: true
+      tls:
+        caPool: "/secrets/public/rootca.crt"
+        keyFile: "/secrets/private/cert.key"
+        certFile: "/secrets/public/cert.crt"
+        useSystemCAPool: false

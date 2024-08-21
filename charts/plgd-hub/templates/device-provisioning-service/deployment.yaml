@@ -1,0 +1,215 @@
+{{- if .Values.deviceProvisioningService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "plgd-hub.deviceProvisioningService.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plgd-hub.deviceProvisioningService.labels" . | nindent 4 }}
+    {{- with .Values.deviceProvisioningService.deploymentLabels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+  {{- with .Values.deviceProvisioningService.deploymentAnnotations }}
+  annotations:
+  {{- . | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  replicas: {{ include "plgd-hub.replicas" (list $ .Values.deviceProvisioningService.replicas) }}
+  selector:
+    matchLabels:
+      {{- include "plgd-hub.deviceProvisioningService.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.deviceProvisioningService.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "plgd-hub.deviceProvisioningService.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.deviceProvisioningService.securityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.deviceProvisioningService.rbac.enabled }}
+      serviceAccountName: {{ .Values.deviceProvisioningService.rbac.serviceAccountName }}
+      {{- end }}
+      {{- if .Values.deviceProvisioningService.image.imagePullSecrets | default .Values.deviceProvisioningService.image.dockerConfigSecret }}
+      imagePullSecrets:
+      {{- with .Values.deviceProvisioningService.image.imagePullSecrets }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.deviceProvisioningService.image.dockerConfigSecret }}
+        - name: {{ printf "%s-dockerconfig" .Release.Name }}
+      {{- end }}
+      {{- end }}
+      restartPolicy: {{ .Values.deviceProvisioningService.restartPolicy }}
+      {{- if .Values.deviceProvisioningService.initContainersTpl }}
+      initContainers:
+      {{- tpl .Values.deviceProvisioningService.initContainersTpl . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Values.deviceProvisioningService.name }}
+          {{- with .Values.deviceProvisioningService.podSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: {{ include "plgd-hub.image" (list . .Values.deviceProvisioningService) | quote }}
+          imagePullPolicy: {{ .Values.deviceProvisioningService.image.pullPolicy }}
+          {{- if .Values.deviceProvisioningService.command }}
+          command:
+          {{- range .Values.deviceProvisioningService.image.command  }}
+            - {{ . | quote }}
+          {{- end }}
+          {{- end }}
+          args:
+            - "--config"
+            - {{ printf "%s/%s" .Values.deviceProvisioningService.config.mountPath .Values.deviceProvisioningService.config.fileName | quote }}
+          ports:
+            {{- if has "tcp" .Values.deviceProvisioningService.apis.coap.protocols }}
+            - name: {{ .Values.deviceProvisioningService.service.tcp.targetPort }}
+              containerPort: {{ .Values.deviceProvisioningService.port }}
+              protocol: TCP
+            {{- end }}
+            {{- if has "udp" .Values.deviceProvisioningService.apis.coap.protocols }}
+            - name: {{ .Values.deviceProvisioningService.service.udp.targetPort }}
+              containerPort: {{ .Values.deviceProvisioningService.port }}
+              protocol: UDP
+            {{- end }}
+            {{- if .Values.deviceProvisioningService.apis.http.enabled }}
+            - name: {{ .Values.deviceProvisioningService.service.http.targetPort }}
+              containerPort: {{ .Values.deviceProvisioningService.apis.http.port }}
+              protocol: TCP
+            {{- end }}
+          {{- with .Values.deviceProvisioningService.livenessProbe }}
+          livenessProbe:
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.deviceProvisioningService.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.deviceProvisioningService.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: {{ .Values.deviceProvisioningService.config.volume }}
+              mountPath: {{ .Values.deviceProvisioningService.config.mountPath }}
+            - name: service-crt
+              mountPath: {{ .Values.deviceProvisioningService.service.certificate.mountPath | default "/certs" }}
+            - name: client-crt
+              mountPath: "/certs/client"
+            {{- include "plgd-hub.extraCAPoolMount" (list . .Values.extraCAPool.authorization) | nindent 12 }}
+            {{- include "plgd-hub.extraCAPoolMount" (list . .Values.extraCAPool.coap) | nindent 12 }}
+            {{- include "plgd-hub.extraCAPoolMount" (list . .Values.extraCAPool.internal) | nindent 12 }}
+            {{- with .Values.deviceProvisioningService.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+            {{- range $.Values.deviceProvisioningService.enrollmentGroups }}
+            {{ $eg := . }}
+            {{- if .attestationMechanism }}{{ if .attestationMechanism.x509 }}{{ if .attestationMechanism.x509.certificateChain }}
+            - name: {{ printf "x509-chain-%s-volume" .id }}
+              mountPath: {{ printf "/secrets/enrollmentgroups/x509/%s" .id }}
+            {{- end }}{{ end }}{{ end }}
+
+            {{- if .hub }}
+            {{- if .hub.caPool }}
+            - name: {{ printf "hub-ca-%s-volume" .id }}
+              mountPath: {{ printf "/secrets/enrollmentgroups/hubs/capools/%s" .id }}
+            {{- end }}
+            {{- if .hub.authorization }}{{ if .hub.authorization.provider }}{{ if .hub.authorization.provider.clientSecret }}
+            - name: {{ printf "hub-oauth-%s-volume" .id }}
+              mountPath: {{ printf "/secrets/enrollmentgroups/hubs/oauth/%s" .id }}
+            {{- end }}{{ end }}{{ end }}
+            {{- end }}
+
+            {{- if .hubs }}
+            {{- range .hubs }}
+            {{- if .caPool }}
+            - name: {{ printf "hub-ca-%s-volume" (or .id .hubID $eg.id) }}
+              mountPath: {{ printf "/secrets/enrollmentgroups/hubs/capools/%s" (or .id .hubID $eg.id) }}
+            {{- end }}
+            {{- if .authorization }}{{ if .authorization.provider }}{{ if .authorization.provider.clientSecret }}
+            - name: {{ printf "hub-oauth-%s-volume" (or .id .hubID $eg.id) }}
+              mountPath: {{ printf "/secrets/enrollmentgroups/hubs/oauth/%s" (or .id .hubID $eg.id) }}
+            {{- end }}{{ end }}{{ end }}
+            {{- end }}
+            {{- end }}
+
+            {{- if .preSharedKey }}
+            - name: {{ printf "psk-%s-volume" .id }}
+              mountPath: {{ printf "/secrets/enrollmentgroups/psks/%s" .id }}
+            {{- end }}
+            {{- end }}
+      volumes:
+        - name: {{ .Values.deviceProvisioningService.config.volume }}
+          configMap:
+            name: {{ include "plgd-hub.deviceProvisioningService.configName" . }}
+        - name: service-crt
+          secret:
+            secretName: {{ include "plgd-hub.deviceProvisioningService.serviceCertName" . }}
+        - name: client-crt
+          secret:
+            secretName: {{ include "plgd-hub.deviceProvisioningService.clientCertName" . }}
+        {{- include "plgd-hub.extraCAPoolVolume" (list . .Values.extraCAPool.authorization) | nindent 8 }}
+        {{- include "plgd-hub.extraCAPoolVolume" (list . .Values.extraCAPool.coap) | nindent 8 }}
+        {{- include "plgd-hub.extraCAPoolVolume" (list . .Values.extraCAPool.internal) | nindent 8 }}
+        {{- with .Values.deviceProvisioningService.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- range $.Values.deviceProvisioningService.enrollmentGroups }}
+        {{ $eg := . }}
+        {{- if .attestationMechanism }}{{ if .attestationMechanism.x509 }}{{ if .attestationMechanism.x509.certificateChain }}
+        - name: {{ printf "x509-chain-%s-volume" .id }}
+          secret:
+            secretName: {{ printf "x509-chain-%s" .id }}
+        {{- end }}{{ end }}{{ end }}
+
+        {{- if .hub }}
+        {{- if .hub.caPool }}
+        - name: {{ printf "hub-ca-%s-volume" .id }}
+          secret:
+            secretName: {{ printf "hub-ca-%s" .id }}
+        {{- end }}
+        {{- if .hub.authorization }}{{ if .hub.authorization.provider }}{{ if .hub.authorization.provider.clientSecret }}
+        - name: {{ printf "hub-oauth-%s-volume" .id }}
+          secret:
+            secretName: {{ printf "hub-oauth-%s" .id }}
+        {{- end }}{{ end }}{{ end }}
+        {{- end }}
+
+        {{- if .hubs }}
+        {{- range .hubs }}
+        {{- if .caPool }}
+        - name: {{ printf "hub-ca-%s-volume" (or .id .hubID $eg.id) }}
+          secret:
+            secretName: {{ printf "hub-ca-%s" (or .id .hubID $eg.id) }}
+        {{- end }}
+        {{- if .authorization }}{{ if .authorization.provider }}{{ if .authorization.provider.clientSecret }}
+        - name: {{ printf "hub-oauth-%s-volume" (or .id .hubID $eg.id) }}
+          secret:
+            secretName: {{ printf "hub-oauth-%s" (or .id .hubID $eg.id) }}
+        {{- end }}{{ end }}{{ end }}
+        {{- end }}
+        {{- end }}
+
+        {{- if .preSharedKey }}
+        - name: {{ printf "psk-%s-volume" .id }}
+          secret:
+            secretName: {{ printf "psk-%s" .id }}
+        {{- end }}
+        {{- end }}
+      {{- with .Values.deviceProvisioningService.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.deviceProvisioningService.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.deviceProvisioningService.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

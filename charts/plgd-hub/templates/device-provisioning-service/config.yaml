@@ -1,0 +1,242 @@
+{{- if .Values.deviceProvisioningService.enabled }}
+{{- $cert := include "plgd-hub.deviceProvisioningService.serviceCertificateMountPath" . }}
+{{- $clientCert := "/certs/client" }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "plgd-hub.deviceProvisioningService.configName" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plgd-hub.deviceProvisioningService.labels" . | nindent 4 }}
+data:
+  {{ .Values.deviceProvisioningService.config.fileName }}: |
+    {{- with .Values.deviceProvisioningService }}
+    log:
+      dumpBody: {{ .log.dumpBody }}
+      level: {{ .log.level }}
+      encoding: {{ .log.encoding }}
+      stacktrace:
+        enabled: {{ .log.stacktrace.enabled }}
+        level: {{ .log.stacktrace.level }}
+      encoderConfig:
+        timeEncoder: {{ .log.encoderConfig.timeEncoder }}
+    apis:
+      coap:
+        address: {{ printf "0.0.0.0:%v" .port | quote }}
+        maxMessageSize: {{ .apis.coap.maxMessageSize }}
+        protocols:
+        {{- range .apis.coap.protocols }}
+          - {{ toYaml . | quote }}
+        {{- end }}
+        messagePoolSize: {{ .apis.coap.messagePoolSize }}
+        inactivityMonitor:
+          timeout: {{ .apis.coap.inactivityMonitor.timeout }}
+        blockwiseTransfer:
+          enabled: {{ .apis.coap.blockwiseTransfer.enabled }}
+          blockSize: {{ .apis.coap.blockwiseTransfer.blockSize | quote }}
+        tls:
+          {{- $coapTls := .apis.coap.tls }}
+          {{- include "plgd-hub.coapCertificateConfig" (list $ $coapTls $cert) | indent 8 }}
+      http:
+        enabled: {{ .apis.http.enabled }}
+        address: {{ printf "0.0.0.0:%v" .apis.http.port | quote }}
+        tls:
+          {{- $httpTls := .apis.http.tls }}
+          {{- include "plgd-hub.internalCertificateConfig" (list $ $httpTls $clientCert) | indent 8 }}
+          clientCertificateRequired: {{ .apis.http.tls.clientCertificateRequired }}
+        authorization:
+          {{- include "plgd-hub.authorizationConfig" (list $ .apis.http.authorization "deviceProvisioningService.apis.http.authorization" $clientCert) | indent 8 }}
+    clients:
+      storage:
+        cacheExpiration: {{ .clients.storage.cacheExpiration }}
+        mongoDB:
+          uri: {{ include "plgd-hub.mongoDBUri" (list $ .clients.storage.mongoDB.uri) | quote }}
+          database: {{ .clients.storage.mongoDB.database }}
+          maxPoolSize: {{ .clients.storage.mongoDB.maxPoolSize }}
+          maxConnIdleTime: {{ .clients.storage.mongoDB.maxConnIdleTime }}
+          tls:
+            {{- $mongoTls := .clients.storage.mongoDB.tls }}
+            {{- include "plgd-hub.internalCertificateConfig" (list $ $mongoTls $clientCert) | indent 10 }}
+            useSystemCAPool: {{ .clients.storage.mongoDB.tls.useSystemCAPool }}
+          bulkWrite:
+            timeout: {{ .clients.storage.mongoDB.bulkWrite.timeout  | quote }}
+            throttleTime: {{ .clients.storage.mongoDB.bulkWrite.throttleTime  | quote }}
+            documentLimit: {{ .clients.storage.mongoDB.bulkWrite.documentLimit  }}
+      {{- include "plgd-hub.openTelemetryExporterConfig" (list $ $cert) | nindent 6 }}
+    enrollmentGroups:
+    {{- range .enrollmentGroups }}
+        {{- $groupId := required "Enrollment group id in uuid format is required" .id }}
+      - id: {{ $groupId | quote }}
+        owner: {{ required "Enrollment group owner is required. If you use the DPS with the mock OAuth Server, set value to '1'" .owner | quote }}
+        {{- if .preSharedKey }}
+        {{- if or (eq (len .preSharedKey) 0) (gt (len .preSharedKey) 15) }}
+        preSharedKeyFile: {{ printf "/secrets/enrollmentgroups/psks/%s/psk" $groupId | quote }}
+        {{- else }}
+        {{- fail "Enrollment group pre-shared key must have at least 15 characters or be empty." }}
+        {{- end }}
+        {{- end }}
+        {{- if .name }}
+        name: {{ .name  | quote }}
+        {{- end }}
+        attestationMechanism:
+          {{- $attestationMechanism := .attestationMechanism | default dict }}
+          x509:
+            {{- $attestationMechanismx509 := $attestationMechanism.x509 | default dict }}
+            {{- if $attestationMechanismx509.certificateChainFile }}
+            certificateChain: {{ $attestationMechanismx509.certificateChainFile | quote }}
+            {{- else if $attestationMechanismx509.certificateChain }}
+            certificateChain: {{ printf "/secrets/enrollmentgroups/x509/%s/certificatechain.crt" $groupId | quote }}
+            {{- else  }}
+            {{- fail "The certificateChain for enrollment group attestation mechanism is required. Use deviceProvisioningService.enrollmentGroups[0].attestationMechanism.x509.certificateChain with the certificate chain in pem format (not base64 encoded) or .certificateChainFile" }}
+            {{- end }}
+            expiredCertificateEnabled: {{ $attestationMechanismx509.expiredCertificateEnabled | default false }}
+        {{- if .hub }}
+        hub:
+          {{- $hub := .hub | default dict }}
+          {{- $_ := required "The CA pool for enrollment group hub is required. Use deviceProvisioningService.enrollmentGroups[0].hub.caPool with the CA in pem format (not base64 encoded), .caPoolFile or when deploying together with hub, keep empty and make sure certificate manager is enabled" ( $hub.caPoolFile | default ( $hub.caPool | default $.Values.global.hubId )) }}
+          {{- if $hub.caPoolFile }}
+          caPool: {{ $hub.caPoolFile | quote }}
+          {{- else if $hub.caPool }}
+          caPool: {{ printf "/secrets/enrollmentgroups/hubs/capools/%s/ca.crt" $groupId | quote }}
+          {{- else }}
+          caPool: {{ printf "%s/ca.crt" ($.Values.deviceProvisioningService.service.certificate.mountPath | default "/certs") | quote  }}
+          {{- end }}
+          {{- if $hub.name }}
+          name: {{ $hub.name  | quote }}
+          {{- end }}
+          hubID: {{ required "The hub id is required" ( $hub.hubId | default $.Values.global.hubId ) | quote }}
+          coapGateway: {{ include "plgd-hub.deviceProvisioningService.coapGateway" (list $ $hub) | quote }}
+          {{- if $hub.gateways }}
+          gateways:
+            {{- range $hub.gateways }}
+            - {{ . | quote }}
+            {{- end }}
+          {{- end }}
+          certificateAuthority:
+            {{- $certificateAuthority := $hub.certificateAuthority | default dict }}
+            grpc:
+              {{- $grpc := $certificateAuthority.grpc | default dict }}
+              address: {{ include "plgd-hub.deviceProvisioningService.certificateAuthority"  (list $ $certificateAuthority) }}
+              keepAlive:
+                {{- $keepAlive := $grpc.keepAlive | default dict }}
+                time: {{ $keepAlive.time | default "10s" }}
+                timeout: {{ $keepAlive.timeout | default "20s" }}
+                permitWithoutStream: {{ $keepAlive.permitWithoutStream | default true }}
+              tls:
+                {{- $grpcTls := $grpc.tls }}
+                {{- include "plgd-hub.internalCertificateConfig" (list $ $grpcTls $clientCert) | indent 14 }}
+                useSystemCAPool: {{ $grpcTls.useSystemCAPool | default true }}
+          authorization:
+            {{- $authorization := $hub.authorization | default dict }}
+            ownerClaim: {{ required "Owner claim is required. If you use the DPS with the mock OAuth Server, set global.ownerClaim or ennrolment group's owner claim to 'https://plgd.dev/owner'" ( $authorization.ownerClaim | default $.Values.global.ownerClaim ) | quote }}
+            deviceIDClaim: {{ $authorization.deviceIdClaim | default $.Values.global.deviceIdClaim | quote }}
+            provider:
+              {{- $authProvider := $authorization.provider | default dict }}
+              name: {{ required "Authorization provider name is required. If you use the DPS with the mock OAuth Server, use value 'dps'" $authProvider.name | quote }}
+              authority: {{ include "plgd-hub.deviceProvisioningService.authority" (list $ $authProvider) | quote }}
+              clientID: {{ required "Authorization provider client ID is required. If you use the DPS with the mock OAuth Server, use value 'test'" (or $authProvider.clientID $authProvider.clientId) | quote }}
+              {{- if $authProvider.clientSecretFile }}
+              clientSecretFile: {{ $authProvider.clientSecretFile | quote }}
+              {{- else if $authProvider.clientSecret }}
+              clientSecretFile: {{ printf "/secrets/enrollmentgroups/hubs/oauth/%s/clientsecret" $groupId | quote }}
+              {{- else }}
+              {{- fail "The client secret for enrollment group hub is required. Use deviceProvisioningService.enrollmentGroups[0].hub.authorization.provider.clientSecret or .clientSecretFile. If you use the DPS with the mock OAuth Server, set .clientSecret to 'test'" }}
+              {{- end }}
+              {{- if $authProvider.scopes }}
+              scopes:
+              {{- range  $authProvider.scopes }}
+                - {{ toYaml . | quote }}
+              {{- end }}
+              {{- else }}
+              scopes: []
+              {{- end }}
+              audience: {{ $authProvider.audience | default $.Values.global.audience | quote }}
+              http:
+              {{- $http := $authProvider.http | default dict }}
+                maxIdleConns: {{ $http.maxIdleConns | default 16 }}
+                maxConnsPerHost: {{ $http.maxConnsPerHost | default 32 }}
+                maxIdleConnsPerHost: {{ $http.maxIdleConnsPerHost | default 16 }}
+                idleConnTimeout: {{ $http.idleConnTimeout | default "30s" }}
+                timeout: {{ $http.timeout | default "10s" }}
+                tls:
+                  {{- $providerTls := $http.tls }}
+                  {{- include "plgd-hub.authorizationCaCertificateConfig" (list $ $providerTls $clientCert) | indent 16 }}
+                  useSystemCAPool: {{ $providerTls.useSystemCAPool | default true }}
+        {{- end }}
+        {{- if .hubs }}
+        hubs:
+          {{- range .hubs }}
+            {{- $hub := . | default dict }}
+          - hubID: {{ required "The hub id is required" ( $hub.hubId | default $.Values.global.hubId ) | quote }}
+            {{- $_ := required "The CA pool for enrollment group hub is required. Use deviceProvisioningService.enrollmentGroups[0].hub.caPool with the CA in pem format (not base64 encoded), .caPoolFile or when deploying together with hub, keep empty and make sure certificate manager is enabled" ( $hub.caPoolFile | default ( $hub.caPool | default $.Values.global.hubId )) }}
+            {{- if $hub.caPoolFile }}
+            caPool: {{ $hub.caPoolFile | quote }}
+            {{- else if $hub.caPool }}
+            caPool: {{ printf "/secrets/enrollmentgroups/hubs/capools/%s/ca.crt" $groupId | quote }}
+            {{- else }}
+            caPool: {{ printf "%s/ca.crt" ($.Values.deviceProvisioningService.service.certificate.mountPath | default "/certs") | quote  }}
+            {{- end }}
+            {{- if $hub.name }}
+            name: {{ $hub.name  | quote }}
+            {{- end }}
+            coapGateway: {{ include "plgd-hub.deviceProvisioningService.coapGateway" (list $ $hub) | quote }}
+            {{- if $hub.gateways }}
+            gateways:
+              {{- range $hub.gateways }}
+              - {{ . | quote }}
+              {{- end }}
+            {{- end }}
+            certificateAuthority:
+              {{- $certificateAuthority := $hub.certificateAuthority | default dict }}
+              grpc:
+                {{- $grpc := $certificateAuthority.grpc | default dict }}
+                address: {{ $grpc.address | default (printf "api.%s:443" $.Values.global.domain ) | quote }}
+                keepAlive:
+                  {{- $keepAlive := $grpc.keepAlive | default dict }}
+                  time: {{ $keepAlive.time | default "10s" }}
+                  timeout: {{ $keepAlive.timeout | default "20s" }}
+                  permitWithoutStream: {{ $keepAlive.permitWithoutStream | default true }}
+                tls:
+                  {{- $grpcTls := $grpc.tls }}
+                  {{- include "plgd-hub.internalCertificateConfig" (list $ $grpcTls $clientCert) | indent 16 }}
+                  useSystemCAPool: {{ $grpcTls.useSystemCAPool | default true }}
+            authorization:
+              {{- $authorization := $hub.authorization | default dict }}
+              ownerClaim: {{ required "Owner claim is required. If you use the DPS with the mock OAuth Server, set global.ownerClaim or ennrolment group's owner claim to 'https://plgd.dev/owner'" ( $authorization.ownerClaim | default $.Values.global.ownerClaim ) | quote }}
+              deviceIDClaim: {{ $authorization.deviceIdClaim | default $.Values.global.deviceIdClaim | quote }}
+              provider:
+                {{- $authProvider := $authorization.provider | default dict }}
+                name: {{ required "Authorization provider name is required. If you use the DPS with the mock OAuth Server, use value 'dps'" $authProvider.name | quote }}
+                authority: {{ include "plgd-hub.deviceProvisioningService.authority" (list $ $authProvider) | quote }}
+                clientID: {{ required "Authorization provider client ID is required. If you use the DPS with the mock OAuth Server, use value 'test'" (or $authProvider.clientID $authProvider.clientId) | quote }}
+                {{- $_ := required "The client secret for enrollment group hub is required. Use deviceProvisioningService.enrollmentGroups[0].hub.authorization.provider.clientSecret or .clientSecretFile. If you use the DPS with the mock OAuth Server, set .clientSecret to 'test'" ( $authProvider.clientSecretFile | default $authProvider.clientSecret )  }}
+                {{- if $authProvider.clientSecretFile }}
+                clientSecretFile: {{ $authProvider.clientSecretFile | quote }}
+                {{- else }}
+                clientSecretFile: {{ printf "/secrets/enrollmentgroups/hubs/oauth/%s/clientsecret" $groupId | quote }}
+                {{- end }}
+                {{- if $authProvider.scopes }}
+                scopes:
+                {{- range  $authProvider.scopes }}
+                  - {{ toYaml . | quote }}
+                {{- end }}
+                {{- else }}
+                scopes: []
+                {{- end }}
+                audience: {{ $authProvider.audience | default $.Values.global.audience | quote }}
+                http:
+                {{- $http := $authProvider.http | default dict }}
+                  maxIdleConns: {{ $http.maxIdleConns | default 16 }}
+                  maxConnsPerHost: {{ $http.maxConnsPerHost | default 32 }}
+                  maxIdleConnsPerHost: {{ $http.maxIdleConnsPerHost | default 16 }}
+                  idleConnTimeout: {{ $http.idleConnTimeout | default "30s" }}
+                  timeout: {{ $http.timeout | default "10s" }}
+                  tls:
+                    {{- $providerTls := $http.tls }}
+                    {{- include "plgd-hub.authorizationCaCertificateConfig" (list $ $providerTls $clientCert) | indent 18 }}
+                    useSystemCAPool: {{ $providerTls.useSystemCAPool | default true }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+{{- end }}

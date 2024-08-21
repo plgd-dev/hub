@@ -1,0 +1,26 @@
+{{- if and .Values.deviceProvisioningService.enabled .Values.deviceProvisioningService.apis.http.enabled }}
+{{- $serviceType := .Values.deviceProvisioningService.service.http.type | default "ClusterIP" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "plgd-hub.deviceProvisioningService.fullname" . }}-http
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plgd-hub.deviceProvisioningService.labels" . | nindent 4 }}
+    {{- with .Values.deviceProvisioningService.service.http.labels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
+  {{- with .Values.deviceProvisioningService.service.http.annotations }}
+  annotations:
+  {{- . | toYaml | nindent 4 }}
+  {{- end }}
+spec:
+  type: {{ $serviceType }}
+  ports:
+    - port: {{ .Values.deviceProvisioningService.apis.http.port }}
+      targetPort: {{ .Values.deviceProvisioningService.service.http.targetPort }}
+      protocol: {{ .Values.deviceProvisioningService.service.http.protocol }}
+      name: {{ .Values.deviceProvisioningService.service.http.name }}
+  selector:
+  {{- include "plgd-hub.deviceProvisioningService.selectorLabels" . | nindent 4 }}
+{{- end }}
