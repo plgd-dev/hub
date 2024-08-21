@@ -1637,7 +1637,7 @@
         },
         "priority": {
           "type": "string",
-          "format": "int64"
+          "format": "uint64"
         }
       }
     },

@@ -1,5 +1,7 @@
 package commands
 
+import "github.com/plgd-dev/device/v2/schema"
+
 func (c *Content) Clone() *Content {
 	if c == nil {
 		return nil
@@ -73,4 +75,8 @@ func CloneResourcesMap(resources map[string]*Resource) map[string]*Resource {
 		c[k] = v.Clone()
 	}
 	return c
+}
+
+func ToPolicyBitFlags(bm schema.BitMask) int32 {
+	return int32(bm) //nolint:gosec
 }

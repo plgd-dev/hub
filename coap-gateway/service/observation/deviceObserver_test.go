@@ -321,7 +321,7 @@ func testValidateResourceLinks(ctx context.Context, t *testing.T, deviceID strin
 			ResourceTypes: []string{device.ResourceType},
 			Interfaces:    []string{interfaces.OC_IF_BASELINE},
 			Policy: &commands.Policy{
-				BitFlags: int32(schema.Observable | schema.Discoverable),
+				BitFlags: commands.ToPolicyBitFlags(schema.Observable | schema.Discoverable),
 			},
 		},
 		{
@@ -330,7 +330,7 @@ func testValidateResourceLinks(ctx context.Context, t *testing.T, deviceID strin
 			ResourceTypes: []string{platform.ResourceType},
 			Interfaces:    []string{interfaces.OC_IF_BASELINE},
 			Policy: &commands.Policy{
-				BitFlags: int32(schema.Observable | schema.Discoverable),
+				BitFlags: commands.ToPolicyBitFlags(schema.Observable | schema.Discoverable),
 			},
 		},
 	}

@@ -22,7 +22,7 @@ type Config struct {
 	Addr              string                  `yaml:"address" json:"address"`
 	Protocols         []Protocol              `yaml:"protocols" json:"protocols"`
 	MaxMessageSize    uint32                  `yaml:"maxMessageSize" json:"maxMessageSize"`
-	MessagePoolSize   int                     `yaml:"messagePoolSize" json:"messagePoolSize"`
+	MessagePoolSize   uint32                  `yaml:"messagePoolSize" json:"messagePoolSize"`
 	MessageQueueSize  int                     `yaml:"messageQueueSize" json:"messageQueueSize"`
 	BlockwiseTransfer BlockwiseTransferConfig `yaml:"blockwiseTransfer" json:"blockwiseTransfer"`
 	TLS               TLSConfig               `yaml:"tls" json:"tls"`
@@ -60,9 +60,6 @@ func (c *Config) Validate() error {
 	}
 	if c.MaxMessageSize <= 64 {
 		return fmt.Errorf("maxMessageSize('%v')", c.MaxMessageSize)
-	}
-	if c.MessagePoolSize < 0 {
-		return fmt.Errorf("messagePoolSize('%v')", c.MessagePoolSize)
 	}
 	if len(c.Protocols) == 0 {
 		return fmt.Errorf("protocols('%v')", c.Protocols)

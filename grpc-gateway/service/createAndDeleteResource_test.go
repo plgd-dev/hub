@@ -126,7 +126,7 @@ func createSwitchResourceExpectedEvents(t *testing.T, deviceID, subID, correlati
 						ResourceTypes: []string{types.BINARY_SWITCH},
 						Interfaces:    []string{interfaces.OC_IF_A, interfaces.OC_IF_BASELINE},
 						Policy: &commands.Policy{
-							BitFlags: int32(schema.Discoverable | schema.Observable),
+							BitFlags: commands.ToPolicyBitFlags(schema.Discoverable | schema.Observable),
 						},
 					},
 				},

@@ -194,7 +194,7 @@ func updateResource(co *client.Conn, href string, contentFormat int) {
 	if err != nil {
 		updateError(err)
 	}
-	resp, err := co.Post(context.Background(), href, message.MediaType(contentFormat), bytes.NewReader(b.Bytes()))
+	resp, err := co.Post(context.Background(), href, message.MediaType(contentFormat), bytes.NewReader(b.Bytes())) //nolint:gosec
 	if err != nil {
 		updateError(err)
 	}
@@ -210,7 +210,7 @@ func createResource(co *client.Conn, href string, contentFormat int) {
 	if err != nil {
 		createError(err)
 	}
-	req, err := co.NewPostRequest(context.Background(), href, message.MediaType(contentFormat), os.Stdin)
+	req, err := co.NewPostRequest(context.Background(), href, message.MediaType(contentFormat), os.Stdin) //nolint:gosec
 	if err != nil {
 		createError(err)
 	}

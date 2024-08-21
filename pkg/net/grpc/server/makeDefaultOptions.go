@@ -157,7 +157,7 @@ func defaultMessageProducer(ctx context.Context, ctxLogger context.Context, msg 
 	}
 	tags := grpc_ctxtags.Extract(ctx)
 	newTags := grpc_ctxtags.NewTags()
-	newTags.Set(log.DurationMSKey, math.Float32frombits(uint32(duration.Integer)))
+	newTags.Set(log.DurationMSKey, math.Float32frombits(uint32(duration.Integer))) //nolint:gosec
 	newTags.Set(log.ProtocolKey, "GRPC")
 	for k, v := range tags.Values() {
 		if strings.EqualFold(k, grpcPrefixKey+"."+requestKey+"."+log.StartTimeKey) {

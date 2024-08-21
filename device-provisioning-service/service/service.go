@@ -176,7 +176,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		ctx:    ctx,
 		cancel: cancel,
 
-		messagePool:           pool.New(uint32(config.APIs.COAP.MessagePoolSize), 1024),
+		messagePool:           pool.New(config.APIs.COAP.MessagePoolSize, 1024),
 		store:                 store,
 		logger:                logger,
 		authHandler:           optCfg.authHandler,

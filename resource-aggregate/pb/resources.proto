@@ -41,7 +41,7 @@ message Content {
 
 message EndpointInformation {
     string endpoint = 1;
-    int64 priority = 2;
+    uint64 priority = 2;
 }
 
 enum Status {
