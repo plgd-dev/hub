@@ -502,7 +502,7 @@ func (app *App) updateSecondaryMemberConfig(member string, config primitive.M) (
 		if memberMap["host"] == member {
 			memberMap["hidden"] = false
 			memberMap["priority"] = float64(app.Config.ReplicaSet.Secondary.Priority)
-			memberMap["votes"] = int32(app.Config.ReplicaSet.Secondary.Votes)
+			memberMap["votes"] = int32(app.Config.ReplicaSet.Secondary.Votes) //nolint:gosec
 			memberMap["secondaryDelaySecs"] = int32(0)
 		}
 		newMembers = append(newMembers, memberMap)
@@ -682,7 +682,7 @@ func getValue(v primitive.M, keys ...string) (interface{}, bool) {
 	if !ok {
 		return nil, false
 	}
-	return getValue(sub, keys[1:]...)
+	return getValue(sub, keys[1:]...) //nolint:gosec
 }
 
 func (app *App) getStatus(ctx context.Context, client *mongo.Client) (primitive.M, error) {

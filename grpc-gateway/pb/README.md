@@ -1262,7 +1262,7 @@ If true - show UI element, if false - hide UI element
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | endpoint | [string](#string) |  |  |
-| priority | [int64](#int64) |  |  |
+| priority | [uint64](#uint64) |  |  |
 
 
 

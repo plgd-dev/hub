@@ -39,7 +39,7 @@ func CreateDeviceResourceLinks(deviceID string, numResources int, tdEnabled bool
 			ResourceTypes: []string{fmt.Sprintf("res-type-%v", i)},
 			Interfaces:    []string{interfaces.OC_IF_BASELINE},
 			Policy: &commands.Policy{
-				BitFlags: int32(schema.Observable | schema.Discoverable),
+				BitFlags: commands.ToPolicyBitFlags(schema.Observable | schema.Discoverable),
 			},
 		})
 	}
@@ -49,7 +49,7 @@ func CreateDeviceResourceLinks(deviceID string, numResources int, tdEnabled bool
 		ResourceTypes: []string{device.ResourceType},
 		Interfaces:    []string{interfaces.OC_IF_BASELINE},
 		Policy: &commands.Policy{
-			BitFlags: int32(schema.Observable | schema.Discoverable),
+			BitFlags: commands.ToPolicyBitFlags(schema.Observable | schema.Discoverable),
 		},
 	})
 	resources = append(resources, &commands.Resource{
@@ -58,7 +58,7 @@ func CreateDeviceResourceLinks(deviceID string, numResources int, tdEnabled bool
 		ResourceTypes: []string{platform.ResourceType},
 		Interfaces:    []string{interfaces.OC_IF_BASELINE},
 		Policy: &commands.Policy{
-			BitFlags: int32(schema.Observable | schema.Discoverable),
+			BitFlags: commands.ToPolicyBitFlags(schema.Observable | schema.Discoverable),
 		},
 	})
 
@@ -69,7 +69,7 @@ func CreateDeviceResourceLinks(deviceID string, numResources int, tdEnabled bool
 			ResourceTypes: []string{thingDescription.ResourceType},
 			Interfaces:    []string{interfaces.OC_IF_BASELINE, interfaces.OC_IF_R},
 			Policy: &commands.Policy{
-				BitFlags: int32(schema.Discoverable),
+				BitFlags: commands.ToPolicyBitFlags(schema.Discoverable),
 			},
 		})
 	}

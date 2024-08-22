@@ -25,7 +25,7 @@ func EventContentToContent(ec EventContent) (*Content, error) {
 	if c != nil {
 		contentType := c.GetContentType()
 		if contentType == "" && c.GetCoapContentFormat() >= 0 {
-			contentType = message.MediaType(c.GetCoapContentFormat()).String()
+			contentType = message.MediaType(c.GetCoapContentFormat()).String() //nolint:gosec
 		}
 		content = &Content{
 			Data:        c.GetData(),

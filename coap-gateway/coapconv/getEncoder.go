@@ -16,7 +16,7 @@ func GetAccept(opts message.Options) message.MediaType {
 	if err != nil {
 		return message.AppOcfCbor
 	}
-	return message.MediaType(ct)
+	return message.MediaType(ct) //nolint:gosec
 }
 
 // GetEncoder returns encoder by accept

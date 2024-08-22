@@ -94,7 +94,7 @@ func parsePublishedResources(data io.ReadSeeker, deviceID string) (wkRd, error) 
 	return w, nil
 }
 
-func PublishResourceLinks(ctx context.Context, raClient raService.ResourceAggregateClient, links schema.ResourceLinks, deviceID string, ttl int32, connectionID string, sequence uint64) ([]*commands.Resource, error) {
+func PublishResourceLinks(ctx context.Context, raClient raService.ResourceAggregateClient, links schema.ResourceLinks, deviceID string, ttl int, connectionID string, sequence uint64) ([]*commands.Resource, error) {
 	var validUntil time.Time
 	if ttl > 0 {
 		validUntil = time.Now().Add(time.Second * time.Duration(ttl))
@@ -118,7 +118,7 @@ func PublishResourceLinks(ctx context.Context, raClient raService.ResourceAggreg
 }
 
 func observeResources(ctx context.Context, client *session, w wkRd, sequenceNumber uint64) (coapCodes.Code, error) {
-	publishedResources, err := PublishResourceLinks(ctx, client.server.raClient, w.Links, w.DeviceID, int32(w.TimeToLive), client.RemoteAddr().String(), sequenceNumber)
+	publishedResources, err := PublishResourceLinks(ctx, client.server.raClient, w.Links, w.DeviceID, w.TimeToLive, client.RemoteAddr().String(), sequenceNumber)
 	if err != nil {
 		return coapCodes.BadRequest, fmt.Errorf("unable to publish resources for device %v: %w", w.DeviceID, err)
 	}

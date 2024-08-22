@@ -259,9 +259,9 @@ func HTTPConfigToProto(cfg pkgHttpClient.Config) (*pb.HttpConfig, error) {
 	}
 
 	return &pb.HttpConfig{
-		MaxIdleConns:        uint32(cfg.MaxIdleConns),
-		MaxConnsPerHost:     uint32(cfg.MaxConnsPerHost),
-		MaxIdleConnsPerHost: uint32(cfg.MaxIdleConnsPerHost),
+		MaxIdleConns:        uint32(cfg.MaxIdleConns),        //nolint:gosec
+		MaxConnsPerHost:     uint32(cfg.MaxConnsPerHost),     //nolint:gosec
+		MaxIdleConnsPerHost: uint32(cfg.MaxIdleConnsPerHost), //nolint:gosec
 		IdleConnTimeout:     cfg.IdleConnTimeout.Nanoseconds(),
 		Timeout:             cfg.Timeout.Nanoseconds(),
 		Tls:                 tls,

@@ -96,7 +96,7 @@ func New(ctx context.Context, config Config, router *mux.Router, fileWatcher *fs
 		return nil, err
 	}
 	serviceOpts := Options{
-		MessagePool:            pool.New(uint32(config.MessagePoolSize), 1024),
+		MessagePool:            pool.New(config.MessagePoolSize, 1024),
 		OnInactivityConnection: makeOnInactivityConnection(logger),
 	}
 	for _, o := range opt {

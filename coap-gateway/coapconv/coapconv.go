@@ -89,7 +89,7 @@ func CoapCodeToStatus(code codes.Code, operation Operation) commands.Status {
 
 func MakeMediaType(coapContentFormat int32, contentType string) (message.MediaType, error) {
 	if coapContentFormat >= 0 {
-		return message.MediaType(coapContentFormat), nil
+		return message.MediaType(coapContentFormat), nil //nolint:gosec
 	}
 	switch contentType {
 	case message.TextPlain.String():
@@ -174,7 +174,7 @@ func NewContent(opts message.Options, body io.Reader) *commands.Content {
 	data, coapContentFormat := GetContentData(opts, body)
 
 	return &commands.Content{
-		ContentType:       getContentFormatString(coapContentFormat),
+		ContentType:       GetContentFormatString(coapContentFormat),
 		CoapContentFormat: coapContentFormat,
 		Data:              data,
 	}
@@ -192,10 +192,9 @@ func GetContentData(opts message.Options, body io.Reader) (data []byte, contentF
 	return data, contentFormat
 }
 
-func getContentFormatString(coapContentFormat int32) string {
+func GetContentFormatString(coapContentFormat int32) string {
 	if coapContentFormat != -1 {
-		mt := message.MediaType(coapContentFormat)
-		return mt.String()
+		return message.MediaType(coapContentFormat).String() //nolint:gosec
 	}
 	return ""
 }
@@ -416,7 +415,7 @@ func NewNotifyResourceChangedRequestsFromBatchResourceDiscovery(deviceID, connec
 		resourceChangedReq := &commands.NotifyResourceChangedRequest{
 			ResourceId: commands.NewResourceID(deviceID, r.Href()),
 			Content: &commands.Content{
-				ContentType:       getContentFormatString(ct),
+				ContentType:       GetContentFormatString(ct),
 				CoapContentFormat: ct,
 				Data:              data,
 			},

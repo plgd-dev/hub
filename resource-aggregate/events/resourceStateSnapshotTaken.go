@@ -421,7 +421,7 @@ func convertContent(content *commands.Content, supportedContentType string) (new
 	contentType := content.GetContentType()
 	coapContentFormat := int32(-1)
 	if content.GetCoapContentFormat() >= 0 && contentType == "" {
-		contentType = message.MediaType(content.GetCoapContentFormat()).String()
+		contentType = message.MediaType(content.GetCoapContentFormat()).String() //nolint:gosec
 	}
 	if len(supportedContentType) == 0 {
 		supportedContentType = contentType
@@ -463,11 +463,11 @@ func convertContent(content *commands.Content, supportedContentType string) (new
 
 	data, err := encode(m)
 	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "cannot encode content data to %v: %v", message.MediaType(coapContentFormat).String(), err)
+		return nil, status.Errorf(codes.InvalidArgument, "cannot encode content data to %v: %v", message.MediaType(coapContentFormat).String(), err) //nolint:gosec
 	}
 	return &commands.Content{
 		CoapContentFormat: coapContentFormat,
-		ContentType:       message.MediaType(coapContentFormat).String(),
+		ContentType:       message.MediaType(coapContentFormat).String(), //nolint:gosec
 		Data:              data,
 	}, nil
 }

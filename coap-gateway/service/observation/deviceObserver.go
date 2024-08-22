@@ -363,7 +363,7 @@ func createDiscoveryResourceObserver(ctx context.Context, deviceID string, coapC
 	err := resourcesObserver.addResource(ctx, &commands.Resource{
 		DeviceId: resourcesObserver.deviceID,
 		Href:     resources.ResourceURI,
-		Policy:   &commands.Policy{BitFlags: int32(schema.Observable)},
+		Policy:   &commands.Policy{BitFlags: commands.ToPolicyBitFlags(schema.Observable)},
 	}, interfaces.OC_IF_B, etags)
 	if err != nil {
 		resourcesObserver.CleanObservedResources(ctx)

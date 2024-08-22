@@ -108,7 +108,7 @@ func updateResource(ctx context.Context, client pbGW.GrpcGatewayClient, deviceID
 	resp, err := client.UpdateResource(ctx, &pbGW.UpdateResourceRequest{
 		ResourceId: commands.NewResourceID(deviceID, href),
 		Content: &pbGW.Content{
-			ContentType: message.MediaType(contentFormat).String(),
+			ContentType: message.MediaType(contentFormat).String(), //nolint:gosec
 			Data:        data,
 		},
 	})
@@ -133,7 +133,7 @@ func createResource(ctx context.Context, client pbGW.GrpcGatewayClient, deviceID
 	resp, err := client.CreateResource(ctx, &pbGW.CreateResourceRequest{
 		ResourceId: commands.NewResourceID(deviceID, href),
 		Content: &pbGW.Content{
-			ContentType: message.MediaType(contentFormat).String(),
+			ContentType: message.MediaType(contentFormat).String(), //nolint:gosec
 			Data:        data,
 		},
 	})

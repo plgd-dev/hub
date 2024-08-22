@@ -10,7 +10,7 @@ import (
 func (e *EndpointInformation) ToSchema() schema.Endpoint {
 	return schema.Endpoint{
 		URI:      e.GetEndpoint(),
-		Priority: uint64(e.GetPriority()),
+		Priority: e.GetPriority(),
 	}
 }
 
@@ -67,7 +67,7 @@ func SchemaEndpointsToRAEndpointInformations(ra []schema.Endpoint) []*EndpointIn
 	for _, e := range ra {
 		r = append(r, &EndpointInformation{
 			Endpoint: e.URI,
-			Priority: int64(e.Priority),
+			Priority: e.Priority,
 		})
 	}
 	return r
@@ -78,7 +78,7 @@ func SchemaPolicyToRAPolicy(ra *schema.Policy) *Policy {
 		return nil
 	}
 	return &Policy{
-		BitFlags: int32(ra.BitMask),
+		BitFlags: ToPolicyBitFlags(ra.BitMask),
 	}
 }
 

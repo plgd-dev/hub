@@ -40,7 +40,7 @@ func (RequestHandle) ProcessCloudConfiguration(ctx context.Context, req *mux.Mes
 				},
 				Gateways:        coapGateways,
 				ProviderName:    cloudCfg.AuthorizationProvider,
-				SelectedGateway: int32(selectedGateway),
+				SelectedGateway: int32(selectedGateway), //nolint:gosec
 			},
 		})
 		return msg, err

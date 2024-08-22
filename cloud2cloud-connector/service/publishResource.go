@@ -14,7 +14,7 @@ func publishResource(ctx context.Context, raClient raService.ResourceAggregateCl
 	for _, endpoint := range link.GetEndpoints() {
 		endpoints = append(endpoints, &commands.EndpointInformation{
 			Endpoint: endpoint.URI,
-			Priority: int64(endpoint.Priority),
+			Priority: endpoint.Priority,
 		})
 	}
 	href := pkgHttpUri.CanonicalHref(trimDeviceIDFromHref(link.DeviceID, link.Href))
@@ -26,7 +26,7 @@ func publishResource(ctx context.Context, raClient raService.ResourceAggregateCl
 			Interfaces:            link.Interfaces,
 			DeviceId:              link.DeviceID,
 			Anchor:                link.Anchor,
-			Policy:                &commands.Policy{BitFlags: int32(link.Policy.BitMask)},
+			Policy:                &commands.Policy{BitFlags: commands.ToPolicyBitFlags(link.Policy.BitMask)},
 			Title:                 link.Title,
 			SupportedContentTypes: link.SupportedContentTypes,
 			EndpointInformations:  endpoints,

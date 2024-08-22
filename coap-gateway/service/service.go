@@ -337,7 +337,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 
 		ownerCache:         ownerCache,
 		subscriptionsCache: subscriptionsCache,
-		messagePool:        pool.New(uint32(config.APIs.COAP.MessagePoolSize), 1024),
+		messagePool:        pool.New(config.APIs.COAP.MessagePoolSize, 1024),
 		logger:             logger,
 		tracerProvider:     tracerProvider,
 	}
