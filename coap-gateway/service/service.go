@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/pion/dtls/v2"
+	"github.com/pion/dtls/v3"
 	"github.com/plgd-dev/device/v2/pkg/net/coap"
 	"github.com/plgd-dev/device/v2/schema/plgdtime"
 	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
@@ -506,12 +506,17 @@ func getTLSInfo(conn net.Conn, logger log.Logger) (deviceID string, validUntil t
 		return "", time.Time{}
 	}
 
-	tlsCon, ok := conn.(*dtls.Conn)
+	dtlsCon, ok := conn.(*dtls.Conn)
 	if !ok {
 		logger.Debugf("cannot get deviceID from certificate: unsupported connection type")
 		return "", time.Time{}
 	}
-	peerCertificates := tlsCon.ConnectionState().PeerCertificates
+	cs, ok := dtlsCon.ConnectionState()
+	if !ok {
+		logger.Debugf("cannot get deviceID from certificate: cannot get connection state")
+		return "", time.Time{}
+	}
+	peerCertificates := cs.PeerCertificates
 	if len(peerCertificates) > 0 {
 		cert, err := x509.ParseCertificate(peerCertificates[0])
 		if err != nil {

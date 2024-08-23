@@ -1,11 +1,10 @@
 package service
 
 import (
-	"context"
 	"crypto/tls"
 	"fmt"
 
-	"github.com/pion/dtls/v2"
+	"github.com/pion/dtls/v3"
 	coapDtlsServer "github.com/plgd-dev/go-coap/v3/dtls/server"
 	"github.com/plgd-dev/go-coap/v3/net"
 	"github.com/plgd-dev/go-coap/v3/options"
@@ -115,9 +114,6 @@ func newDTLSListener(config Config, serviceOpts Options, fileWatcher *fsnotify.W
 	}
 	dtlsCfg := TLSConfigToDTLSConfig(tlsCfg)
 	dtlsCfg.LoggerFactory = logger.DTLSLoggerFactory()
-	dtlsCfg.ConnectContextMaker = func() (context.Context, func()) {
-		return context.WithTimeout(context.Background(), config.GetTimeout())
-	}
 	listener, err := net.NewDTLSListener("udp", config.Addr, dtlsCfg)
 	if err != nil {
 		closeListener.Execute()

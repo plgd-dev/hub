@@ -9,7 +9,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/pion/dtls/v2"
+	"github.com/pion/dtls/v3"
 	"github.com/plgd-dev/device/v2/schema/plgdtime"
 	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
 	"github.com/plgd-dev/go-coap/v3/message/pool"
@@ -224,8 +224,13 @@ func (server *Service) getVerifiedChain(conn net.Conn) (verifiedChains [][]*x509
 			certRaw = tlsCon.ConnectionState().PeerCertificates[0].Raw
 		}
 	case *dtls.Conn:
-		if len(tlsCon.ConnectionState().PeerCertificates) > 0 {
-			certRaw = tlsCon.ConnectionState().PeerCertificates[0]
+		cs, ok := tlsCon.ConnectionState()
+		if !ok {
+			server.logger.With(remoterAddr, conn.RemoteAddr().String()).Errorf("cannot get connection state")
+			return nil
+		}
+		if len(cs.PeerCertificates) > 0 {
+			certRaw = cs.PeerCertificates[0]
 		}
 	default:
 		server.logger.With(remoterAddr, conn.RemoteAddr().String()).Errorf("unknown connection type: %T", conn)

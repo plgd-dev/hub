@@ -30,10 +30,10 @@ require (
 	github.com/lestrrat-go/jwx/v2 v2.1.1
 	github.com/nats-io/nats.go v1.37.0
 	github.com/panjf2000/ants/v2 v2.10.0
-	github.com/pion/dtls/v2 v2.2.8-0.20240701035148-45e16a098c47
+	github.com/pion/dtls/v3 v3.0.2
 	github.com/pion/logging v0.2.2
-	github.com/plgd-dev/device/v2 v2.5.3-0.20240904102627-4c2719d9d856
-	github.com/plgd-dev/go-coap/v3 v3.3.5-0.20240904100911-1afdeb72cb92
+	github.com/plgd-dev/device/v2 v2.5.3-0.20240912202330-b113625c4f18
+	github.com/plgd-dev/go-coap/v3 v3.3.5-0.20240912191929-c46fcdd6e94e
 	github.com/plgd-dev/kit/v2 v2.0.0-20211006190727-057b33161b90
 	github.com/pseudomuto/protoc-gen-doc v1.5.1
 	github.com/sirupsen/logrus v1.9.3
@@ -146,10 +146,5 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
 
-replace (
-	// last version for Go 1.22
-	github.com/go-json-experiment/json => github.com/go-json-experiment/json v0.0.0-20240815174924-0599f16bf0e2
-	// note: github.com/pion/dtls/v2/pkg/net package is not yet available in release branches,
-	// so we force to the use of the pinned master branch
-	github.com/pion/dtls/v2 => github.com/pion/dtls/v2 v2.2.8-0.20240701035148-45e16a098c47
-)
+// last version for Go 1.22
+replace github.com/go-json-experiment/json => github.com/go-json-experiment/json v0.0.0-20240815174924-0599f16bf0e2
