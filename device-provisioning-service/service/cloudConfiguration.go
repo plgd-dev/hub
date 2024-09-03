@@ -12,6 +12,7 @@ import (
 	"github.com/plgd-dev/go-coap/v3/mux"
 	"github.com/plgd-dev/hub/v2/device-provisioning-service/pb"
 	"github.com/plgd-dev/hub/v2/device-provisioning-service/store"
+	"github.com/plgd-dev/hub/v2/internal/math"
 	"github.com/plgd-dev/kit/v2/codec/cbor"
 )
 
@@ -40,7 +41,7 @@ func (RequestHandle) ProcessCloudConfiguration(ctx context.Context, req *mux.Mes
 				},
 				Gateways:        coapGateways,
 				ProviderName:    cloudCfg.AuthorizationProvider,
-				SelectedGateway: int32(selectedGateway), //nolint:gosec
+				SelectedGateway: math.CastTo[int32](selectedGateway),
 			},
 		})
 		return msg, err

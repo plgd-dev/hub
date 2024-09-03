@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/plgd-dev/hub/v2/internal/math"
 	"github.com/plgd-dev/hub/v2/pkg/build"
 	"github.com/plgd-dev/hub/v2/pkg/config"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
@@ -502,7 +503,7 @@ func (app *App) updateSecondaryMemberConfig(member string, config primitive.M) (
 		if memberMap["host"] == member {
 			memberMap["hidden"] = false
 			memberMap["priority"] = float64(app.Config.ReplicaSet.Secondary.Priority)
-			memberMap["votes"] = int32(app.Config.ReplicaSet.Secondary.Votes) //nolint:gosec
+			memberMap["votes"] = math.CastTo[int32](app.Config.ReplicaSet.Secondary.Votes)
 			memberMap["secondaryDelaySecs"] = int32(0)
 		}
 		newMembers = append(newMembers, memberMap)
