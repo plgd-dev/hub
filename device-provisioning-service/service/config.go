@@ -9,6 +9,7 @@ import (
 	"github.com/plgd-dev/hub/v2/device-provisioning-service/security/oauth/clientcredentials"
 	"github.com/plgd-dev/hub/v2/device-provisioning-service/service/http"
 	"github.com/plgd-dev/hub/v2/device-provisioning-service/store/mongodb"
+	"github.com/plgd-dev/hub/v2/internal/math"
 	"github.com/plgd-dev/hub/v2/pkg/config"
 	"github.com/plgd-dev/hub/v2/pkg/config/property/urischeme"
 	"github.com/plgd-dev/hub/v2/pkg/log"
@@ -259,9 +260,9 @@ func HTTPConfigToProto(cfg pkgHttpClient.Config) (*pb.HttpConfig, error) {
 	}
 
 	return &pb.HttpConfig{
-		MaxIdleConns:        uint32(cfg.MaxIdleConns),        //nolint:gosec
-		MaxConnsPerHost:     uint32(cfg.MaxConnsPerHost),     //nolint:gosec
-		MaxIdleConnsPerHost: uint32(cfg.MaxIdleConnsPerHost), //nolint:gosec
+		MaxIdleConns:        math.CastTo[uint32](cfg.MaxIdleConns),
+		MaxConnsPerHost:     math.CastTo[uint32](cfg.MaxConnsPerHost),
+		MaxIdleConnsPerHost: math.CastTo[uint32](cfg.MaxIdleConnsPerHost),
 		IdleConnTimeout:     cfg.IdleConnTimeout.Nanoseconds(),
 		Timeout:             cfg.Timeout.Nanoseconds(),
 		Tls:                 tls,

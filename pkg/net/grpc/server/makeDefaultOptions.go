@@ -12,6 +12,7 @@ import (
 	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
+	pkgMath "github.com/plgd-dev/hub/v2/internal/math"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	pkgJwt "github.com/plgd-dev/hub/v2/pkg/security/jwt"
@@ -157,7 +158,7 @@ func defaultMessageProducer(ctx context.Context, ctxLogger context.Context, msg 
 	}
 	tags := grpc_ctxtags.Extract(ctx)
 	newTags := grpc_ctxtags.NewTags()
-	newTags.Set(log.DurationMSKey, math.Float32frombits(uint32(duration.Integer))) //nolint:gosec
+	newTags.Set(log.DurationMSKey, math.Float32frombits(pkgMath.CastTo[uint32](duration.Integer)))
 	newTags.Set(log.ProtocolKey, "GRPC")
 	for k, v := range tags.Values() {
 		if strings.EqualFold(k, grpcPrefixKey+"."+requestKey+"."+log.StartTimeKey) {

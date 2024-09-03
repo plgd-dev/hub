@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/plgd-dev/device/v2/schema"
+	"github.com/plgd-dev/hub/v2/internal/math"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 )
 
@@ -32,7 +33,7 @@ func (p *Policy) ToSchema() *schema.Policy {
 		return nil
 	}
 	return &schema.Policy{
-		BitMask: schema.BitMask(p.GetBitFlags()),
+		BitMask: math.CastTo[schema.BitMask](p.GetBitFlags()),
 	}
 }
 

@@ -78,5 +78,5 @@ func CloneResourcesMap(resources map[string]*Resource) map[string]*Resource {
 }
 
 func ToPolicyBitFlags(bm schema.BitMask) int32 {
-	return int32(bm) //nolint:gosec
+	return int32(bm)
 }
