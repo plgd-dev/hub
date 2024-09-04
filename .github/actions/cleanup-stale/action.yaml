@@ -3,6 +3,9 @@ name: Delete stale images
 description: Delete stale images
 
 inputs:
+  package_name:
+    description: Package name to delete
+    required: true
   delay:
     description: Delay before running the action (in seconds)
     required: false
@@ -23,7 +26,7 @@ runs:
     - name: Delete older than a month vnext and vnext-pr images
       uses: snok/container-retention-policy@v2
       with:
-        image-names: hub/*
+        image-names: ${{ inputs.package_name }}
         cut-off: One month ago UTC
         account-type: org
         org-name: plgd-dev
@@ -52,3 +55,4 @@ runs:
         owner_type: org
         untagged_only: true
         except_untagged_multiplatform: true
+        package_name: ${{ inputs.package_name }}

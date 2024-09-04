@@ -52,6 +52,30 @@ jobs:
     if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
     name: Delete stale or untagged images
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - package_name: http-gateway
+          - package_name: bundle
+          - package_name: resource-aggregate
+          - package_name: resource-directory
+          - package_name: coap-gateway
+          - package_name: cloud2cloud-connector
+          - package_name: cloud2cloud-gateway
+          - package_name: certificate-authority
+          - package_name: grpc-gateway
+          - package_name: identity-store
+          - package_name: mock-oauth-server
+          - package_name: test-cloud-server
+          - package_name: cert-tool
+          - package_name: grpc-reflection
+          - package_name: snippet-service
+          - package_name: mongodb-standby-tool
+          - package_name: mongodb-admin-tool
+          - package_name: m2m-oauth-server
+          - package_name: device-provisioning-service
+          - package_name: test-device-provisioning-service
     steps:
       - name: Checkout local actions
         uses: actions/checkout@v4
@@ -60,11 +84,13 @@ jobs:
         continue-on-error: true
         uses: ./.github/actions/cleanup-stale
         with:
+          package_name: hub/${{ matrix.package_name }}
           token: ${{ secrets.GHCR_CLEANUP_PAT }}
       - name: Delete stale or untagged images (2)
         id: run-2
         if: ${{ steps.run-1.outcome == 'failure' }}
         with:
+          package_name: hub/${{ matrix.package_name }}
           token: ${{ secrets.GHCR_CLEANUP_PAT }}
           delay: 60
         continue-on-error: true
@@ -73,5 +99,6 @@ jobs:
         if: ${{ steps.run-2.outcome == 'failure' }}
         uses: ./.github/actions/cleanup-stale
         with:
+          package_name: hub/${{ matrix.package_name }}
           token: ${{ secrets.GHCR_CLEANUP_PAT }}
           delay: 60
