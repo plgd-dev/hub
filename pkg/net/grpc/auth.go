@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/golang-jwt/jwt/v5"
-	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
-	"github.com/grpc-ecosystem/go-grpc-middleware/util/metautils"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/metadata"
 	pkgJwt "github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -49,7 +49,7 @@ type (
 
 func ValidateJWTWithValidator(validator Validator, claims ClaimsFunc) Interceptor {
 	return func(ctx context.Context, method string) (context.Context, error) {
-		token, err := grpc_auth.AuthFromMD(ctx, "bearer")
+		token, err := auth.AuthFromMD(ctx, "bearer")
 		if err != nil {
 			return nil, err
 		}
@@ -63,14 +63,14 @@ func ValidateJWTWithValidator(validator Validator, claims ClaimsFunc) Intercepto
 
 // CtxWithToken stores token to ctx of request.
 func CtxWithToken(ctx context.Context, token string) context.Context {
-	niceMD := metautils.ExtractOutgoing(ctx)
+	niceMD := metadata.ExtractOutgoing(ctx)
 	niceMD.Set(authorizationKey, fmt.Sprintf("%s %s", "bearer", token))
 	return niceMD.ToOutgoing(ctx)
 }
 
 // CtxWithIncomingToken stores token to ctx of response.
 func CtxWithIncomingToken(ctx context.Context, token string) context.Context {
-	niceMD := metautils.ExtractIncoming(ctx)
+	niceMD := metadata.ExtractIncoming(ctx)
 	niceMD.Set(authorizationKey, fmt.Sprintf("%s %s", "bearer", token))
 	return niceMD.ToIncoming(ctx)
 }

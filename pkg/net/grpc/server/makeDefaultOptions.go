@@ -4,19 +4,14 @@ import (
 	context "context"
 	"math"
 	"strings"
-	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
-	grpc_ctxtags "github.com/grpc-ecosystem/go-grpc-middleware/tags"
-	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
 	pkgMath "github.com/plgd-dev/hub/v2/internal/math"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	pkgJwt "github.com/plgd-dev/hub/v2/pkg/security/jwt"
-	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -30,6 +25,10 @@ const (
 	grpcPrefixKey = "grpc"
 	requestKey    = "request"
 )
+
+type loggerCtxMarker struct{}
+
+var loggerCtxMarkerKey = &loggerCtxMarker{}
 
 var defaultCodeToLevel = map[codes.Code]zapcore.Level{
 	codes.OK:                 log.DebugLevel,
@@ -60,82 +59,59 @@ func DefaultCodeToLevel(code codes.Code) zapcore.Level {
 	return log.ErrorLevel
 }
 
-func setLogBasicLabels(m map[string]interface{}, req interface{}) {
-	if d, ok := req.(interface{ GetDeviceId() string }); ok && d.GetDeviceId() != "" {
-		log.SetLogValue(m, log.DeviceIDKey, d.GetDeviceId())
-	}
-	if r, ok := req.(interface{ GetResourceId() *commands.ResourceId }); ok {
-		log.SetLogValue(m, log.DeviceIDKey, r.GetResourceId().GetDeviceId())
-		log.SetLogValue(m, log.ResourceHrefKey, r.GetResourceId().GetHref())
-	}
-	if r, ok := req.(interface{ GetCorrelationId() string }); ok && r.GetCorrelationId() != "" {
-		log.SetLogValue(m, log.CorrelationIDKey, r.GetCorrelationId())
-	}
-}
-
-func setLogFilterLabels(m map[string]interface{}, req interface{}) {
-	if req == nil {
-		return
-	}
-	if r, ok := req.(interface {
-		GetCommandFilter() []pb.GetPendingCommandsRequest_Command
-	}); ok {
-		commandFiler := make([]string, 0, len(r.GetCommandFilter()))
-		for _, f := range r.GetCommandFilter() {
-			commandFiler = append(commandFiler, f.String())
+func toZapFields(fields logging.Fields) []zap.Field {
+	fs := make([]zap.Field, 0, len(fields)/2)
+	fieldsIterator := fields.Iterator()
+	for fieldsIterator.Next() {
+		key, value := fieldsIterator.At()
+		switch v := value.(type) {
+		case string:
+			fs = append(fs, zap.String(key, v))
+		case int:
+			fs = append(fs, zap.Int(key, v))
+		case bool:
+			fs = append(fs, zap.Bool(key, v))
+		default:
+			fs = append(fs, zap.Any(key, v))
 		}
-		log.SetLogValue(m, log.CommandFilterKey, commandFiler)
 	}
-	if r, ok := req.(interface{ GetResourceIdFilter() []string }); ok {
-		log.SetLogValue(m, log.ResourceIDFilterKey, r.GetResourceIdFilter())
-	}
-	if r, ok := req.(interface{ GetDeviceIdFilter() []string }); ok {
-		log.SetLogValue(m, log.DeviceIDFilterKey, r.GetDeviceIdFilter())
-	}
-	if r, ok := req.(interface{ GetTypeFilter() []string }); ok {
-		log.SetLogValue(m, log.TypeFilterKey, r.GetTypeFilter())
-	}
+	return fs
 }
 
-func setLogSubscriptionLabels(m map[string]interface{}, sub *pb.SubscribeToEvents) {
-	switch sub.GetAction().(type) {
-	case *pb.SubscribeToEvents_CreateSubscription_:
-		m[log.SubActionKey] = "createSubscription"
-	case *pb.SubscribeToEvents_CancelSubscription_:
-		m[log.SubActionKey] = "cancelSubscription"
+func defaultMessageFields(ctx context.Context, req, resp map[string]interface{}, duration zapcore.Field) logging.Fields {
+	fields := logging.ExtractFields(ctx)
+	var newFields logging.Fields
+	newFields = append(newFields, log.DurationMSKey, math.Float32frombits(pkgMath.CastTo[uint32](duration.Integer)))
+	newFields = append(newFields, log.ProtocolKey, "GRPC")
+	fieldsIterator := fields.Iterator()
+	for fieldsIterator.Next() {
+		k, v := fieldsIterator.At()
+		if strings.EqualFold(k, grpcPrefixKey+"."+requestKey+"."+log.StartTimeKey) {
+			newFields = append(newFields, log.StartTimeKey, v)
+			continue
+		}
+		if strings.EqualFold(k, grpcPrefixKey+"."+requestKey+"."+log.DeviceIDKey) {
+			newFields = append(newFields, log.DeviceIDKey, v)
+			continue
+		}
+		if strings.EqualFold(k, grpcPrefixKey+"."+requestKey+"."+log.CorrelationIDKey) {
+			newFields = append(newFields, log.CorrelationIDKey, v)
+			continue
+		}
+		if strings.HasPrefix(k, grpcPrefixKey+"."+requestKey+".") {
+			req[strings.TrimPrefix(k, grpcPrefixKey+"."+requestKey+".")] = v
+		}
 	}
-	setLogFilterLabels(m, sub.GetCreateSubscription())
-	eventFilter := make([]string, 0, len(sub.GetCreateSubscription().GetEventFilter()))
-	for _, e := range sub.GetCreateSubscription().GetEventFilter() {
-		eventFilter = append(eventFilter, e.String())
+	if len(req) > 0 {
+		newFields = append(newFields, log.RequestKey, req)
 	}
-	log.SetLogValue(m, log.EventFilterKey, eventFilter)
-	log.SetLogValue(m, log.CorrelationIDKey, sub.GetCorrelationId())
-}
-
-// CodeGenRequestFieldExtractor is a function that relies on code-generated functions that export log fields from requests.
-// These are usually coming from a protoc-plugin that generates additional information based on custom field options.
-func CodeGenRequestFieldExtractor(fullMethod string, req interface{}) map[string]interface{} {
-	m := grpc_ctxtags.CodeGenRequestFieldExtractor(fullMethod, req)
-	if m == nil {
-		m = make(map[string]interface{})
+	if len(resp) > 0 {
+		newFields = append(newFields, log.ResponseKey, resp)
 	}
-	setLogBasicLabels(m, req)
-	setLogFilterLabels(m, req)
-	if sub, ok := req.(*pb.SubscribeToEvents); ok {
-		setLogSubscriptionLabels(m, sub)
+	if deadline, ok := ctx.Deadline(); ok {
+		newFields = append(newFields, log.DeadlineKey, deadline)
 	}
-	method := strings.SplitAfterN(fullMethod, "/", 3)
-	if len(method) == 3 {
-		m["service"] = strings.ReplaceAll(method[1], "/", "")
-		m[log.MethodKey] = strings.ReplaceAll(method[2], "/", "")
-	}
-	m[log.StartTimeKey] = time.Now()
-
-	if len(m) > 0 {
-		return m
-	}
-	return nil
+	return newFields
 }
 
 func defaultMessageProducer(ctx context.Context, ctxLogger context.Context, msg string, level zapcore.Level, code codes.Code, err error, duration zapcore.Field) {
@@ -156,43 +132,19 @@ func defaultMessageProducer(ctx context.Context, ctxLogger context.Context, msg 
 			log.SubKey: sub,
 		}
 	}
-	tags := grpc_ctxtags.Extract(ctx)
-	newTags := grpc_ctxtags.NewTags()
-	newTags.Set(log.DurationMSKey, math.Float32frombits(pkgMath.CastTo[uint32](duration.Integer)))
-	newTags.Set(log.ProtocolKey, "GRPC")
-	for k, v := range tags.Values() {
-		if strings.EqualFold(k, grpcPrefixKey+"."+requestKey+"."+log.StartTimeKey) {
-			newTags.Set(log.StartTimeKey, v)
-			continue
-		}
-		if strings.EqualFold(k, grpcPrefixKey+"."+requestKey+"."+log.DeviceIDKey) {
-			newTags.Set(log.DeviceIDKey, v)
-			continue
-		}
-		if strings.EqualFold(k, grpcPrefixKey+"."+requestKey+"."+log.CorrelationIDKey) {
-			newTags.Set(log.CorrelationIDKey, v)
-			continue
-		}
-		if strings.HasPrefix(k, grpcPrefixKey+"."+requestKey+".") {
-			req[strings.TrimPrefix(k, grpcPrefixKey+"."+requestKey+".")] = v
-		}
-	}
-	if len(req) > 0 {
-		newTags.Set(log.RequestKey, req)
-	}
-	if len(resp) > 0 {
-		newTags.Set(log.ResponseKey, resp)
-	}
-	if deadline, ok := ctx.Deadline(); ok {
-		newTags.Set(log.DeadlineKey, deadline)
-	}
-	ctx = grpc_ctxtags.SetInContext(ctxLogger, newTags)
 
-	ctxzap.Extract(ctx).Check(level, msg).Write()
+	logging.InjectFields(ctxLogger, defaultMessageFields(ctx, req, resp, duration))
+
+	logger, ok := ctx.Value(loggerCtxMarkerKey).(*zap.Logger)
+	if !ok || logger == nil {
+		return
+	}
+	loggerWithFields := logger.With(toZapFields(logging.ExtractFields(ctx))...)
+	loggerWithFields.Check(level, msg).Write()
 }
 
 func MakeDefaultMessageProducer(logger *zap.Logger) func(ctx context.Context, msg string, level zapcore.Level, code codes.Code, err error, duration zapcore.Field) {
-	ctxLogger := ctxzap.ToContext(context.Background(), logger)
+	ctxLogger := context.WithValue(context.Background(), loggerCtxMarkerKey, logger)
 	return func(ctx context.Context, msg string, level zapcore.Level, code codes.Code, err error, duration zapcore.Field) {
 		defaultMessageProducer(ctx, ctxLogger, msg, level, code, err, duration)
 	}
@@ -270,12 +222,8 @@ func MakeDefaultOptions(auth pkgGrpc.AuthInterceptors, logger log.Logger, tracer
 
 	return []grpc.ServerOption{
 		grpc.StatsHandler(otelgrpc.NewServerHandler(otelgrpc.WithTracerProvider(tracerProvider))),
-		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
-			streamInterceptors...,
-		)),
-		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-			unaryInterceptors...,
-		)),
+		grpc.ChainStreamInterceptor(streamInterceptors...),
+		grpc.ChainUnaryInterceptor(unaryInterceptors...),
 	}, nil
 }
 
