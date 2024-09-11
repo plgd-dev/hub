@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/plgd-dev/hub/v2/internal/math"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 )
 
@@ -201,7 +202,7 @@ func (a *Aggregate) HandleCommandWithAggregateModelWrapper(ctx context.Context, 
 	if len(newEvents) == 0 {
 		return nil, false, nil
 	}
-	snapshot, ok := amodel.TakeSnapshot(newVersion + uint64(len(newEvents)-1))
+	snapshot, ok := amodel.TakeSnapshot(newVersion + math.CastTo[uint64](len(newEvents)-1))
 	if !ok {
 		return nil, false, errors.New("cannot take snapshot")
 	}

@@ -7,6 +7,7 @@ import (
 	"github.com/golang/snappy"
 	"github.com/google/uuid"
 	isEvents "github.com/plgd-dev/hub/v2/identity-store/events"
+	"github.com/plgd-dev/hub/v2/internal/math"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 )
 
@@ -79,9 +80,8 @@ func GetSubjectHrefID(href string) string {
 }
 
 func TimeNowMs() uint64 {
-	now := time.Now()
-	unix := now.UnixNano()
-	return uint64(unix / int64(time.Millisecond))
+	unix := time.Now().UnixNano()
+	return math.CastTo[uint64](unix / int64(time.Millisecond))
 }
 
 type ProtobufMarshaler interface {

@@ -183,7 +183,8 @@ func TestProvisioningFactoryReset(t *testing.T) {
 
 	deviceID, _ = test.OnboardDpsSim(ctx, t, c, deviceID, dpcCfg.APIs.COAP.Addr, test.TestDevsimResources)
 
-	devClient, err := sdk.NewClient(sdk.WithID(events.OwnerToUUID(test.DPSOwner)))
+	// extended validity is needed when running tests with libfaketime
+	devClient, err := sdk.NewClient(sdk.WithID(events.OwnerToUUID(test.DPSOwner)), sdk.WithValidity("2000-01-01T12:00:00Z", "876000h"))
 	require.NoError(t, err)
 	defer func() {
 		_ = devClient.Close(ctx)

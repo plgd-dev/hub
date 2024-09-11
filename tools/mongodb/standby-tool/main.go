@@ -683,7 +683,7 @@ func getValue(v primitive.M, keys ...string) (interface{}, bool) {
 	if !ok {
 		return nil, false
 	}
-	return getValue(sub, keys[1:]...) //nolint:gosec
+	return getValue(sub, keys[1:]...)
 }
 
 func (app *App) getStatus(ctx context.Context, client *mongo.Client) (primitive.M, error) {

@@ -16,6 +16,7 @@ import (
 	"github.com/plgd-dev/go-coap/v3/message"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
 	pbIS "github.com/plgd-dev/hub/v2/identity-store/pb"
+	"github.com/plgd-dev/hub/v2/internal/math"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	pkgHttpUri "github.com/plgd-dev/hub/v2/pkg/net/http/uri"
@@ -119,7 +120,7 @@ func publishDeviceResources(ctx context.Context, raClient raService.ResourceAggr
 		link.Href = href
 		err := publishResource(ctx, raClient, link, &commands.CommandMetadata{
 			ConnectionId: linkedAccount.ID,
-			Sequence:     uint64(time.Now().UnixNano()),
+			Sequence:     math.CastTo[uint64](time.Now().UnixNano()),
 		})
 		if err != nil {
 			errors = multierror.Append(errors, fmt.Errorf("cannot publish resource %+v: %w", link, err))
@@ -234,7 +235,7 @@ func (p *pullDevicesHandler) pullDevices(ctx context.Context, linkedAccount stor
 			},
 			CommandMetadata: &commands.CommandMetadata{
 				ConnectionId: linkedAccount.ID,
-				Sequence:     uint64(time.Now().UnixNano()),
+				Sequence:     math.CastTo[uint64](time.Now().UnixNano()),
 			},
 		})
 		if err != nil {
@@ -303,7 +304,7 @@ func (p *pullDevicesHandler) notifyResourceChanged(ctx context.Context, linkedAc
 		ResourceId: commands.NewResourceID(deviceID, pkgHttpUri.CanonicalHref(link.Href)),
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: linkedAccount.ID,
-			Sequence:     uint64(time.Now().UnixNano()),
+			Sequence:     math.CastTo[uint64](time.Now().UnixNano()),
 		},
 		Content: &commands.Content{
 			Data:              body,

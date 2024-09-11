@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
+	"github.com/plgd-dev/hub/v2/internal/math"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
 	"go.mongodb.org/mongo-driver/bson"
@@ -70,7 +71,7 @@ func (i *iterator) parseDocument() bool {
 	return true
 }
 
-func (i *iterator) getEvent() (bson.M, int64, error) {
+func (i *iterator) getEvent() (bson.M, uint64, error) {
 	ev, ok := i.events[i.idx].(bson.M)
 	if !ok {
 		return nil, 0, fmt.Errorf("invalid data, event %v is not a BSON document", i.idx)
@@ -79,12 +80,12 @@ func (i *iterator) getEvent() (bson.M, int64, error) {
 	if !ok {
 		return nil, 0, fmt.Errorf("invalid data, '%v' of event %v is not an int64", versionKey, i.idx)
 	}
-	return ev, version, nil
+	return ev, math.CastTo[uint64](version), nil
 }
 
-func (i *iterator) nextEvent(ctx context.Context) (bson.M, int64) {
+func (i *iterator) nextEvent(ctx context.Context) (bson.M, uint64) {
 	var ev bson.M
-	var version int64
+	var version uint64
 	var ok bool
 	for {
 		if i.idx >= len(i.events) {
@@ -144,7 +145,7 @@ func (i *iterator) Next(ctx context.Context) (eventstore.EventUnmarshaler, bool)
 	}
 	i.idx++
 	return eventstore.NewLoadedEvent(
-		uint64(version),
+		version,
 		eventType,
 		i.aggregateID,
 		i.groupID,
@@ -185,16 +186,16 @@ func (r *queryResolver) set(query eventstore.VersionQuery) error {
 	return nil
 }
 
-func (r *queryResolver) check(aggregateID string, version int64) bool {
+func (r *queryResolver) check(aggregateID string, version uint64) bool {
 	v, ok := r.aggregateVersions[aggregateID]
 	if !ok {
 		return false
 	}
 	switch r.op {
 	case signOperator_lt:
-		return uint64(version) < v
+		return version < v
 	case signOperator_gte:
-		return uint64(version) >= v
+		return version >= v
 	}
 	return false
 }
