@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/plgd-dev/hub/v2/internal/math"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/maintenance"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -86,7 +87,7 @@ func (i *dbAggregateVersionIterator) Next(ctx context.Context, task *maintenance
 	task.GroupID = dbRecord[groupIDKey].(string)
 	task.AggregateID = dbRecord[aggregateIDKey].(string)
 	version := dbRecord[versionKey].(int64)
-	task.Version = uint64(version)
+	task.Version = math.CastTo[uint64](version)
 	return true
 }
 

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/plgd-dev/hub/v2/internal/math"
 	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -51,5 +52,5 @@ func incrementSubscriptionSequenceNumber(ctx context.Context, col *mongo.Collect
 		return 0, fmt.Errorf("cannot increment sequence number for %v: '%v' not found", subscriptionID, sequenceNumberKey)
 	}
 
-	return uint64(value.(int64)) - 1, nil
+	return math.CastTo[uint64](value.(int64)) - 1, nil
 }

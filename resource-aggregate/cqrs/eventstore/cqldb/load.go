@@ -9,6 +9,7 @@ import (
 	"github.com/gocql/gocql"
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
+	"github.com/plgd-dev/hub/v2/internal/math"
 	"github.com/plgd-dev/hub/v2/pkg/cqldb"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore"
@@ -83,7 +84,7 @@ func (i *iterator) Next(ctx context.Context) (eventstore.EventUnmarshaler, bool)
 		return nil, false
 	}
 	return eventstore.NewLoadedEvent(
-		uint64(version),
+		math.CastTo[uint64](version),
 		eventType,
 		aggregateID.String(),
 		groupID.String(),

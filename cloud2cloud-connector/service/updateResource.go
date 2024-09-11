@@ -10,6 +10,7 @@ import (
 
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/events"
 	"github.com/plgd-dev/hub/v2/cloud2cloud-connector/store"
+	"github.com/plgd-dev/hub/v2/internal/math"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	pkgHttpUri "github.com/plgd-dev/hub/v2/pkg/net/http/uri"
@@ -88,7 +89,7 @@ func updateResource(ctx context.Context, tracerProvider trace.TracerProvider, ra
 		CorrelationId: e.GetAuditContext().GetCorrelationId(),
 		CommandMetadata: &commands.CommandMetadata{
 			ConnectionId: linkedAccount.ID,
-			Sequence:     uint64(time.Now().UnixNano()),
+			Sequence:     math.CastTo[uint64](time.Now().UnixNano()),
 		},
 		Content: &commands.Content{
 			Data:              content,
