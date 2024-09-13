@@ -216,7 +216,7 @@ func (RequestHandle) DefaultHandler(_ context.Context, req *mux.Message, _ *Sess
 
 const clientKey = "client"
 
-func (server *Service) getVerifiedChain(conn net.Conn) (verifiedChains [][]*x509.Certificate) {
+func (server *Service) getVerifiedChain(ctx context.Context, conn net.Conn) (verifiedChains [][]*x509.Certificate) {
 	var certRaw []byte
 	switch tlsCon := conn.(type) {
 	case *tls.Conn:
@@ -224,6 +224,11 @@ func (server *Service) getVerifiedChain(conn net.Conn) (verifiedChains [][]*x509
 			certRaw = tlsCon.ConnectionState().PeerCertificates[0].Raw
 		}
 	case *dtls.Conn:
+		if err := tlsCon.HandshakeContext(ctx); err != nil {
+			server.logger.With(remoterAddr, conn.RemoteAddr().String()).Errorf("cannot get connection state: handshake failed: %w", err)
+			return nil
+		}
+
 		cs, ok := tlsCon.ConnectionState()
 		if !ok {
 			server.logger.With(remoterAddr, conn.RemoteAddr().String()).Errorf("cannot get connection state")
@@ -250,7 +255,7 @@ func (server *Service) getVerifiedChain(conn net.Conn) (verifiedChains [][]*x509
 }
 
 func (server *Service) coapConnOnNew(coapConn mux.Conn) {
-	verifiedChains := server.getVerifiedChain(coapConn.NetConn())
+	verifiedChains := server.getVerifiedChain(server.ctx, coapConn.NetConn())
 	session := newSession(server, coapConn, verifiedChains)
 	coapConn.SetContextValue(clientKey, session)
 	coapConn.AddOnClose(func() {

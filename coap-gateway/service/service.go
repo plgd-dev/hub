@@ -491,7 +491,7 @@ func defaultHandler(req *mux.Message, client *session) (*pool.Message, error) {
 
 const clientKey = "client"
 
-func getTLSInfo(conn net.Conn, logger log.Logger) (deviceID string, validUntil time.Time) {
+func getTLSInfo(ctx context.Context, conn net.Conn, logger log.Logger) (deviceID string, validUntil time.Time) {
 	if tlsCon, ok := conn.(*tls.Conn); ok {
 		peerCertificates := tlsCon.ConnectionState().PeerCertificates
 		if len(peerCertificates) > 0 {
@@ -511,6 +511,11 @@ func getTLSInfo(conn net.Conn, logger log.Logger) (deviceID string, validUntil t
 		logger.Debugf("cannot get deviceID from certificate: unsupported connection type")
 		return "", time.Time{}
 	}
+	if err := dtlsCon.HandshakeContext(ctx); err != nil {
+		logger.Errorf("cannot get deviceID from certificate: handshake failed: %w", err)
+		return "", time.Time{}
+	}
+
 	cs, ok := dtlsCon.ConnectionState()
 	if !ok {
 		logger.Debugf("cannot get deviceID from certificate: cannot get connection state")
@@ -535,7 +540,7 @@ func getTLSInfo(conn net.Conn, logger log.Logger) (deviceID string, validUntil t
 }
 
 func (s *Service) coapConnOnNew(coapConn mux.Conn) {
-	tlsDeviceID, tlsValidUntil := getTLSInfo(coapConn.NetConn(), s.logger)
+	tlsDeviceID, tlsValidUntil := getTLSInfo(s.ctx, coapConn.NetConn(), s.logger)
 	client := newSession(s, coapConn, tlsDeviceID, tlsValidUntil)
 	coapConn.SetContextValue(clientKey, client)
 	coapConn.AddOnClose(func() {
