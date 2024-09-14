@@ -9,7 +9,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/pion/dtls/v2"
+	"github.com/pion/dtls/v3"
 	"github.com/plgd-dev/device/v2/schema/plgdtime"
 	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
 	"github.com/plgd-dev/go-coap/v3/message/pool"
@@ -216,7 +216,7 @@ func (RequestHandle) DefaultHandler(_ context.Context, req *mux.Message, _ *Sess
 
 const clientKey = "client"
 
-func (server *Service) getVerifiedChain(conn net.Conn) (verifiedChains [][]*x509.Certificate) {
+func (server *Service) getVerifiedChain(ctx context.Context, conn net.Conn) (verifiedChains [][]*x509.Certificate) {
 	var certRaw []byte
 	switch tlsCon := conn.(type) {
 	case *tls.Conn:
@@ -224,8 +224,18 @@ func (server *Service) getVerifiedChain(conn net.Conn) (verifiedChains [][]*x509
 			certRaw = tlsCon.ConnectionState().PeerCertificates[0].Raw
 		}
 	case *dtls.Conn:
-		if len(tlsCon.ConnectionState().PeerCertificates) > 0 {
-			certRaw = tlsCon.ConnectionState().PeerCertificates[0]
+		if err := tlsCon.HandshakeContext(ctx); err != nil {
+			server.logger.With(remoterAddr, conn.RemoteAddr().String()).Errorf("cannot get connection state: handshake failed: %w", err)
+			return nil
+		}
+
+		cs, ok := tlsCon.ConnectionState()
+		if !ok {
+			server.logger.With(remoterAddr, conn.RemoteAddr().String()).Errorf("cannot get connection state")
+			return nil
+		}
+		if len(cs.PeerCertificates) > 0 {
+			certRaw = cs.PeerCertificates[0]
 		}
 	default:
 		server.logger.With(remoterAddr, conn.RemoteAddr().String()).Errorf("unknown connection type: %T", conn)
@@ -245,7 +255,7 @@ func (server *Service) getVerifiedChain(conn net.Conn) (verifiedChains [][]*x509
 }
 
 func (server *Service) coapConnOnNew(coapConn mux.Conn) {
-	verifiedChains := server.getVerifiedChain(coapConn.NetConn())
+	verifiedChains := server.getVerifiedChain(server.ctx, coapConn.NetConn())
 	session := newSession(server, coapConn, verifiedChains)
 	coapConn.SetContextValue(clientKey, session)
 	coapConn.AddOnClose(func() {

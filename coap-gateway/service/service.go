@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/pion/dtls/v2"
+	"github.com/pion/dtls/v3"
 	"github.com/plgd-dev/device/v2/pkg/net/coap"
 	"github.com/plgd-dev/device/v2/schema/plgdtime"
 	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
@@ -491,7 +491,7 @@ func defaultHandler(req *mux.Message, client *session) (*pool.Message, error) {
 
 const clientKey = "client"
 
-func getTLSInfo(conn net.Conn, logger log.Logger) (deviceID string, validUntil time.Time) {
+func getTLSInfo(ctx context.Context, conn net.Conn, logger log.Logger) (deviceID string, validUntil time.Time) {
 	if tlsCon, ok := conn.(*tls.Conn); ok {
 		peerCertificates := tlsCon.ConnectionState().PeerCertificates
 		if len(peerCertificates) > 0 {
@@ -506,12 +506,22 @@ func getTLSInfo(conn net.Conn, logger log.Logger) (deviceID string, validUntil t
 		return "", time.Time{}
 	}
 
-	tlsCon, ok := conn.(*dtls.Conn)
+	dtlsCon, ok := conn.(*dtls.Conn)
 	if !ok {
 		logger.Debugf("cannot get deviceID from certificate: unsupported connection type")
 		return "", time.Time{}
 	}
-	peerCertificates := tlsCon.ConnectionState().PeerCertificates
+	if err := dtlsCon.HandshakeContext(ctx); err != nil {
+		logger.Errorf("cannot get deviceID from certificate: handshake failed: %w", err)
+		return "", time.Time{}
+	}
+
+	cs, ok := dtlsCon.ConnectionState()
+	if !ok {
+		logger.Debugf("cannot get deviceID from certificate: cannot get connection state")
+		return "", time.Time{}
+	}
+	peerCertificates := cs.PeerCertificates
 	if len(peerCertificates) > 0 {
 		cert, err := x509.ParseCertificate(peerCertificates[0])
 		if err != nil {
@@ -530,7 +540,7 @@ func getTLSInfo(conn net.Conn, logger log.Logger) (deviceID string, validUntil t
 }
 
 func (s *Service) coapConnOnNew(coapConn mux.Conn) {
-	tlsDeviceID, tlsValidUntil := getTLSInfo(coapConn.NetConn(), s.logger)
+	tlsDeviceID, tlsValidUntil := getTLSInfo(s.ctx, coapConn.NetConn(), s.logger)
 	client := newSession(s, coapConn, tlsDeviceID, tlsValidUntil)
 	coapConn.SetContextValue(clientKey, client)
 	coapConn.AddOnClose(func() {

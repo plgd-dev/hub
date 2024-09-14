@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/pion/dtls/v2"
+	"github.com/pion/dtls/v3"
 	deviceClient "github.com/plgd-dev/device/v2/client"
 	"github.com/plgd-dev/device/v2/pkg/net/coap"
 	"github.com/plgd-dev/device/v2/schema"
