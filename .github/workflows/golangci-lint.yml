@@ -14,7 +14,7 @@ on:
 jobs:
   golangci:
     name: lint
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: CPU Info
         run: |
@@ -32,5 +32,5 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
-          version: latest
+          version: v1.61 # switch to latest if development is unfreezed
           args: --timeout=5m

@@ -10,7 +10,7 @@ jobs:
   pull-request-ghcr-cleanup:
     if: ${{ github.event_name == 'pull_request' }}
     name: Delete images related to closed PR
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Delete images related to closed PR (1)
         id: run-1
@@ -51,7 +51,7 @@ jobs:
   nightly-ghcr-cleanup:
     if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
     name: Delete stale or untagged images
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:

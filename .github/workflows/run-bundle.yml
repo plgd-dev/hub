@@ -33,7 +33,7 @@ env:
 
 jobs:
   run-bundle:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     concurrency:
       group: ${{ github.workflow }}
       cancel-in-progress: ${{ github.ref_name != 'main' }}

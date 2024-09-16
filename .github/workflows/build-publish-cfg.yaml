@@ -39,7 +39,7 @@ env:
 
 jobs:
   build-and-publish-with-cfg:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       packages: write
