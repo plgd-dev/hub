@@ -9,6 +9,10 @@ linters-settings:
         - github.com/pkg/errors:
             recommendations:
               - errors
+  gomoddirectives:
+    replace-allow-list:
+      - github.com/go-json-experiment/json
+      - golang.org/x/exp
   gosec:
     excludes:
       - G402
@@ -48,7 +52,7 @@ linters:
     - gofumpt          # Gofumpt checks whether code was gofumpt-ed.
     - goheader         # Checks is file header matches to pattern
     - goimports        # Goimports does everything that gofmt does. Additionally it checks unused imports
-    # - gomoddirectives  # Manage the use of 'replace', 'retract', and 'excludes' directives in go.mod.
+    - gomoddirectives  # Manage the use of 'replace', 'retract', and 'excludes' directives in go.mod.
     - gomodguard       # Allow and block list linter for direct Go module dependencies. This is different from depguard where there are different block types for example version constraints and module recommendations.
     - goprintffuncname # Checks that printf-like functions are named with `f` at the end
     - gosec            # Inspects source code for security problems
