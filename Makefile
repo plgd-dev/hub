@@ -401,8 +401,7 @@ DPS_DEVICE_LOG_LEVEL ?= debug
 DPS_DEVICE_OC_LOG_LEVEL ?= info
 DPS_DEVICE_SIMULATOR_OBT_NAME := dps-devsim-obt
 DPS_DEVICE_SIMULATOR_NAME := dps-devsim
-# TODO: switch to iotivity-lite repository
-DPS_DEVICE_SIMULATOR_IMG := ghcr.io/plgd-dev/device-provisioning-client/dps-cloud-server-debug:main
+DPS_DEVICE_SIMULATOR_IMG := ghcr.io/iotivity/iotivity-lite/dps-cloud-server-debug:vnext
 
 # Pull latest DPS device simulator with given name and run it
 #
@@ -422,7 +421,7 @@ define RUN-DPS-DOCKER-DEVICE
 		--name=$(1) \
 		--network=host \
 		-v $(WORKING_DIRECTORY)/.tmp/$(1):/tmp \
-		-v $(CERT_PATH)/device:/dps/bin/pki_certs \
+		-v $(CERT_PATH)/device:/dps/pki_certs \
 		$(2) \
 		$(1)-$(SIMULATOR_NAME_SUFFIX) --create-conf-resource --cloud-observer-max-retry 10 --expiration-limit 10 --retry-configuration 5 \
 			--log-level $(DPS_DEVICE_LOG_LEVEL) --oc-log-level $(DPS_DEVICE_OC_LOG_LEVEL) $(3)
