@@ -61,10 +61,6 @@ data:
             {{- $mongoDbTls := .clients.storage.mongoDB.tls }}
             {{- include "plgd-hub.internalCertificateConfig" (list $ $mongoDbTls $cert ) | indent 10 }}
             useSystemCAPool: {{ .clients.storage.mongoDB.tls.useSystemCAPool }}
-          bulkWrite:
-            timeout: {{ .clients.storage.mongoDB.bulkWrite.timeout  | quote }}
-            throttleTime: {{ .clients.storage.mongoDB.bulkWrite.throttleTime  | quote }}
-            documentLimit: {{ .clients.storage.mongoDB.bulkWrite.documentLimit  }}
         cqlDB:
           hosts:
           {{- include "plgd-hub.cqlDBHosts" (list $ .clients.storage.cqlDB.hosts ) | indent 8 }}

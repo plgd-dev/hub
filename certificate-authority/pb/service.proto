@@ -56,7 +56,7 @@ service CertificateAuthority {
     };
   }
 
-  // Get signed certficate records.
+  // Get signed certificate records.
   rpc GetSigningRecords (GetSigningRecordsRequest) returns (stream SigningRecord) {
     option (google.api.http) = {
       get: "/api/v1/signing/records"
@@ -66,7 +66,7 @@ service CertificateAuthority {
     };
   };
 
-  // Delete signed certficate records.
+  // Revoke signed certficate or delete expired signed certificate records.
   rpc DeleteSigningRecords (DeleteSigningRecordsRequest) returns (DeletedSigningRecords) {
     option (google.api.http) = {
       delete: "/api/v1/signing/records"

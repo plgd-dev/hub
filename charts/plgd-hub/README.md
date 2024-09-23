@@ -79,9 +79,6 @@ global:
 | certificateauthority.clients.storage.cqlDB.tls.keyFile | string | `nil` |  |
 | certificateauthority.clients.storage.cqlDB.tls.useSystemCAPool | bool | `false` |  |
 | certificateauthority.clients.storage.cqlDB.useHostnameResolution | bool | `true` | Resolve IP address to hostname before validate certificate. If false, the TLS validator will use ip/hostname advertised by the Cassandra node. |
-| certificateauthority.clients.storage.mongoDB.bulkWrite.documentLimit | int | `1000` | The maximum number of documents to cache before an immediate write. |
-| certificateauthority.clients.storage.mongoDB.bulkWrite.throttleTime | string | `"500ms"` | The amount of time to wait until a record is written to mongodb. Any records collected during the throttle time will also be written. A throttle time of zero writes immediately. If recordLimit is reached, all records are written immediately |
-| certificateauthority.clients.storage.mongoDB.bulkWrite.timeout | string | `"1m0s"` | A time limit for write bulk to mongodb. A Timeout of zero means no timeout. |
 | certificateauthority.clients.storage.mongoDB.database | string | `"certificateAuthorityService"` |  |
 | certificateauthority.clients.storage.mongoDB.maxConnIdleTime | string | `"4m0s"` |  |
 | certificateauthority.clients.storage.mongoDB.maxPoolSize | int | `16` |  |

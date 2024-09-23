@@ -85,7 +85,7 @@ func TestReloadCerts(t *testing.T) {
 	err = s.Validate()
 	require.NoError(t, err)
 
-	ca, err := grpc.NewCertificateAuthorityServer(ownerClaim, config.HubID(), s, store, fileWatcher, logger)
+	ca, err := grpc.NewCertificateAuthorityServer(ownerClaim, config.HubID(), config.CERTIFICATE_AUTHORITY_HTTP_HOST, s, store, fileWatcher, logger)
 	require.NoError(t, err)
 	defer ca.Close()
 

@@ -72,7 +72,6 @@ func TestIdentityCertificateSignerSign(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := s.Sign(context.Background(), tt.args.csr)
-
 			if tt.wantErr {
 				require.Error(t, err)
 				return

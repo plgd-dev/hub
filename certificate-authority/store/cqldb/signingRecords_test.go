@@ -2,6 +2,7 @@ package cqldb_test
 
 import (
 	"context"
+	"math/big"
 	"strconv"
 	"sync"
 	"testing"
@@ -31,6 +32,8 @@ func TestStoreInsertSigningRecord(t *testing.T) {
 			CertificatePem: "certificate",
 			Date:           date.UnixNano() - 1,
 			ValidUntilDate: date.UnixNano() - 1,
+			Serial:         big.NewInt(42).String(),
+			IssuerId:       "42424242-4242-4242-4242-424242424242",
 		},
 	}
 	tests := []struct {
@@ -49,6 +52,8 @@ func TestStoreInsertSigningRecord(t *testing.T) {
 						CertificatePem: "certificate",
 						Date:           date.UnixNano(),
 						ValidUntilDate: date.UnixNano(),
+						Serial:         big.NewInt(42).String(),
+						IssuerId:       "42424242-4242-4242-4242-424242424242",
 					},
 				},
 			},
@@ -102,6 +107,8 @@ func TestStoreUpdateSigningRecord(t *testing.T) {
 			CertificatePem: "certificate",
 			Date:           date.UnixNano() - 1,
 			ValidUntilDate: date.UnixNano() - 1,
+			Serial:         big.NewInt(42).String(),
+			IssuerId:       "42424242-4242-4242-4242-424242424242",
 		},
 	}
 	tests := []struct {
@@ -120,6 +127,8 @@ func TestStoreUpdateSigningRecord(t *testing.T) {
 						CertificatePem: "certificate",
 						Date:           date.UnixNano(),
 						ValidUntilDate: date.UnixNano(),
+						Serial:         big.NewInt(42).String(),
+						IssuerId:       "42424242-4242-4242-4242-424242424242",
 					},
 				},
 			},
@@ -138,6 +147,8 @@ func TestStoreUpdateSigningRecord(t *testing.T) {
 						CertificatePem: "certificate",
 						Date:           date.UnixNano(),
 						ValidUntilDate: date.UnixNano(),
+						Serial:         big.NewInt(42).String(),
+						IssuerId:       "42424242-4242-4242-4242-424242424242",
 					},
 				},
 			},
@@ -155,6 +166,8 @@ func TestStoreUpdateSigningRecord(t *testing.T) {
 						CertificatePem: "certificate1",
 						Date:           date1.UnixNano(),
 						ValidUntilDate: date1.UnixNano(),
+						Serial:         big.NewInt(43).String(),
+						IssuerId:       "42424242-4242-4242-4242-424242424242",
 					},
 				},
 			},
@@ -177,7 +190,7 @@ func TestStoreUpdateSigningRecord(t *testing.T) {
 			var h testSigningRecordHandler
 			err = s.LoadSigningRecords(ctx, tt.args.sub.GetOwner(), &pb.GetSigningRecordsRequest{
 				IdFilter: []string{tt.args.sub.GetId()},
-			}, h.Handle)
+			}, h.process)
 			require.NoError(t, err)
 			require.Len(t, h.lcs, 1)
 			hubTest.CheckProtobufs(t, tt.args.sub, h.lcs[0], hubTest.RequireToCheckFunc(require.Equal))
@@ -278,6 +291,8 @@ func TestStoreDeleteSigningRecord(t *testing.T) {
 			CertificatePem: "certificate",
 			Date:           date.UnixNano(),
 			ValidUntilDate: date.UnixNano(),
+			Serial:         big.NewInt(42).String(),
+			IssuerId:       "42424242-4242-4242-4242-424242424242",
 		},
 	})
 	require.NoError(t, err)
@@ -292,6 +307,8 @@ func TestStoreDeleteSigningRecord(t *testing.T) {
 			CertificatePem: "certificate",
 			Date:           date.UnixNano(),
 			ValidUntilDate: date.UnixNano(),
+			Serial:         big.NewInt(43).String(),
+			IssuerId:       "42424242-4242-4242-4242-424242424242",
 		},
 	})
 	require.NoError(t, err)
@@ -306,6 +323,8 @@ func TestStoreDeleteSigningRecord(t *testing.T) {
 			CertificatePem: "certificate",
 			Date:           date.UnixNano(),
 			ValidUntilDate: date.UnixNano(),
+			Serial:         big.NewInt(44).String(),
+			IssuerId:       "42424242-4242-4242-4242-424242424242",
 		},
 	})
 	require.NoError(t, err)
@@ -341,11 +360,13 @@ func TestStoreDeleteExpiredRecords(t *testing.T) {
 			CertificatePem: "certificate",
 			Date:           date.UnixNano(),
 			ValidUntilDate: date.UnixNano(),
+			Serial:         big.NewInt(42).String(),
+			IssuerId:       "42424242-4242-4242-4242-424242424242",
 		},
 	})
 	require.NoError(t, err)
 	var h testSigningRecordHandler
-	err = s.LoadSigningRecords(ctx, "owner", nil, h.Handle)
+	err = s.LoadSigningRecords(ctx, "owner", nil, h.process)
 	require.NoError(t, err)
 	require.Len(t, h.lcs, 1)
 	time.Sleep(time.Second * 3)
@@ -353,7 +374,7 @@ func TestStoreDeleteExpiredRecords(t *testing.T) {
 	require.Error(t, err)
 	require.Equal(t, store.ErrNotSupported, err)
 	var h1 testSigningRecordHandler
-	err = s.LoadSigningRecords(ctx, "owner", nil, h1.Handle)
+	err = s.LoadSigningRecords(ctx, "owner", nil, h1.process)
 	require.NoError(t, err)
 	require.Empty(t, h1.lcs)
 }
@@ -362,15 +383,9 @@ type testSigningRecordHandler struct {
 	lcs pb.SigningRecords
 }
 
-func (h *testSigningRecordHandler) Handle(ctx context.Context, iter store.SigningRecordIter) (err error) {
-	for {
-		var sub store.SigningRecord
-		if !iter.Next(ctx, &sub) {
-			break
-		}
-		h.lcs = append(h.lcs, &sub)
-	}
-	return iter.Err()
+func (h *testSigningRecordHandler) process(sr *store.SigningRecord) (err error) {
+	h.lcs = append(h.lcs, sr)
+	return nil
 }
 
 func TestStoreLoadSigningRecords(t *testing.T) {
@@ -390,6 +405,8 @@ func TestStoreLoadSigningRecords(t *testing.T) {
 				CertificatePem: "certificate",
 				Date:           date.UnixNano(),
 				ValidUntilDate: date.UnixNano(),
+				Serial:         big.NewInt(42).String(),
+				IssuerId:       "42424242-4242-4242-4242-424242424242",
 			},
 		},
 		{
@@ -403,6 +420,8 @@ func TestStoreLoadSigningRecords(t *testing.T) {
 				CertificatePem: "certificate",
 				Date:           date.UnixNano(),
 				ValidUntilDate: date.UnixNano(),
+				Serial:         big.NewInt(43).String(),
+				IssuerId:       "42424242-4242-4242-4242-424242424242",
 			},
 		},
 		{
@@ -416,6 +435,8 @@ func TestStoreLoadSigningRecords(t *testing.T) {
 				CertificatePem: "certificate",
 				Date:           date.UnixNano(),
 				ValidUntilDate: date.UnixNano(),
+				Serial:         big.NewInt(44).String(),
+				IssuerId:       "42424242-4242-4242-4242-424242424242",
 			},
 		},
 	}
@@ -518,7 +539,7 @@ func TestStoreLoadSigningRecords(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var h testSigningRecordHandler
-			err := s.LoadSigningRecords(ctx, "owner", tt.args.query, h.Handle)
+			err := s.LoadSigningRecords(ctx, "owner", tt.args.query, h.process)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
@@ -550,6 +571,8 @@ func BenchmarkSigningRecords(b *testing.B) {
 				CertificatePem: "certificate",
 				Date:           date.UnixNano(),
 				ValidUntilDate: date.UnixNano(),
+				Serial:         big.NewInt(42).String(),
+				IssuerId:       "42424242-4242-4242-4242-424242424242",
 			},
 		})
 	}
