@@ -3,15 +3,15 @@ package oauth2
 import (
 	"fmt"
 
-	"github.com/plgd-dev/hub/v2/pkg/net/http/client"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2/oauth"
+	pkgTls "github.com/plgd-dev/hub/v2/pkg/security/tls"
 )
 
 // Config general configuration
 type Config struct {
 	Authority    string `yaml:"authority" json:"authority"`
 	oauth.Config `yaml:",inline"`
-	HTTP         client.Config `yaml:"http" json:"http"`
+	HTTP         pkgTls.HTTPConfig `yaml:"http" json:"http"`
 }
 
 func (c *Config) Validate() error {

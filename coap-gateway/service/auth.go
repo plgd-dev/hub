@@ -18,7 +18,10 @@ import (
 	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 )
 
-type Interceptor = func(ctx context.Context, code codes.Code, path string) (context.Context, error)
+type (
+	Interceptor = func(ctx context.Context, code codes.Code, path string) (context.Context, error)
+	VerifyByCRL = func(context.Context, *x509.Certificate, []string) error
+)
 
 func newAuthInterceptor() Interceptor {
 	return func(ctx context.Context, _ codes.Code, path string) (context.Context, error) {
@@ -80,7 +83,7 @@ func (s *Service) VerifyAndResolveDeviceID(tlsDeviceID, paramDeviceID string, cl
 	return deviceID, nil
 }
 
-func verifyChain(chain []*x509.Certificate, capool *x509.CertPool, identityPropertiesRequired bool) error {
+func verifyChain(ctx context.Context, chain []*x509.Certificate, capool *x509.CertPool, identityPropertiesRequired bool, verifyByCRL VerifyByCRL) error {
 	if len(chain) == 0 {
 		return errors.New("certificate chain is empty")
 	}
@@ -115,17 +118,26 @@ func verifyChain(chain []*x509.Certificate, capool *x509.CertPool, identityPrope
 	if !ekuHasServer {
 		return errors.New("the extended key usage field in the device certificate does not contain server authentication")
 	}
-	if !identityPropertiesRequired {
-		return nil
+
+	if identityPropertiesRequired {
+		_, err = coap.GetDeviceIDFromIdentityCertificate(certificate)
+		if err != nil {
+			return fmt.Errorf("the device ID is not part of the certificate's common name: %w", err)
+		}
 	}
-	_, err = coap.GetDeviceIDFromIdentityCertificate(certificate)
-	if err != nil {
-		return fmt.Errorf("the device ID is not part of the certificate's common name: %w", err)
+
+	if len(certificate.CRLDistributionPoints) > 0 {
+		if verifyByCRL == nil {
+			return errors.New("failed to check certificate validity by CRL")
+		}
+		if err = verifyByCRL(ctx, certificate, certificate.CRLDistributionPoints); err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
-func MakeGetConfigForClient(tlsCfg *tls.Config, identityPropertiesRequired bool) tls.Config {
+func MakeGetConfigForClient(ctx context.Context, tlsCfg *tls.Config, identityPropertiesRequired bool, verifyByCRL VerifyByCRL) tls.Config {
 	return tls.Config{
 		GetCertificate: tlsCfg.GetCertificate,
 		MinVersion:     tlsCfg.MinVersion,
@@ -134,7 +146,7 @@ func MakeGetConfigForClient(tlsCfg *tls.Config, identityPropertiesRequired bool)
 		VerifyPeerCertificate: func(_ [][]byte, chains [][]*x509.Certificate) error {
 			var errs *multierror.Error
 			for _, chain := range chains {
-				err := verifyChain(chain, tlsCfg.ClientCAs, identityPropertiesRequired)
+				err := verifyChain(ctx, chain, tlsCfg.ClientCAs, identityPropertiesRequired, verifyByCRL)
 				if err == nil {
 					return nil
 				}

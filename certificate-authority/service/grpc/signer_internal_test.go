@@ -116,7 +116,7 @@ func TestNewSigner(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewSigner("tt.args.ownerClaim", "tt.args.hubID", tt.args.signerConfig)
+			got, err := NewSigner("ownerClaim", "hubID", "", tt.args.signerConfig)
 			if tt.wantErr {
 				require.Error(t, err)
 				return

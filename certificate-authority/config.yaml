@@ -48,6 +48,7 @@ apis:
       tokenTrustVerification:
         cacheExpiration: 30s
   http:
+    externalAddress: "https://0.0.0.0:9101"
     address: "0.0.0.0:9101"
     readTimeout: 8s
     readHeaderTimeout: 4s
@@ -68,10 +69,6 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
-      bulkWrite:
-        timeout: 1m0s
-        throttleTime: 500ms
-        documentLimit: 1000
     cqlDB:
       table: "signedCertificateRecords"
       hosts: []
@@ -115,3 +112,5 @@ signer:
   certFile: "/secrets/public/intermediateca.crt"
   validFrom: "now-1h"
   expiresIn: "87600h"
+  crl:
+    expiresIn: "10m"

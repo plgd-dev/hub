@@ -54,8 +54,9 @@ type sdkConfig struct {
 		key         []byte
 	}
 	// TODO: replace by notBefore and notAfter
-	validFrom string // RFC3339, or relative time such as now-1m
-	validFor  string // string parsable by time.ParseDuration
+	validFrom             string // RFC3339, or relative time such as now-1m
+	validFor              string // string parsable by time.ParseDuration
+	crlDistributionPoints []string
 
 	useDeviceIDInQuery bool
 }
@@ -98,6 +99,12 @@ func WithValidity(validFrom, validFor string) Option {
 func WithUseDeviceIDInQuery(useDeviceIDInQuery bool) Option {
 	return optionFunc(func(cfg *sdkConfig) {
 		cfg.useDeviceIDInQuery = useDeviceIDInQuery
+	})
+}
+
+func WithCRLDistributionPoints(crlDistributionPoints []string) Option {
+	return optionFunc(func(cfg *sdkConfig) {
+		cfg.crlDistributionPoints = crlDistributionPoints
 	})
 }
 
@@ -167,13 +174,15 @@ func NewClient(opts ...Option) (*client.Client, error) {
 	}
 
 	devCfg := &client.DeviceOwnershipSDKConfig{
-		ID:      c.id,
-		Cert:    string(identityIntermediateCA),
-		CertKey: string(identityIntermediateCAKey),
-		CreateSignerFunc: func(caCert []*x509.Certificate, caKey crypto.PrivateKey, validNotBefore time.Time, validNotAfter time.Time) core.CertificateSigner {
-			return certificateSigner.NewIdentityCertificateSigner(caCert, caKey, certificateSigner.WithNotBefore(validNotBefore), certificateSigner.WithNotAfter(validNotAfter))
+		ID:                    c.id,
+		Cert:                  string(identityIntermediateCA),
+		CertKey:               string(identityIntermediateCAKey),
+		ValidFrom:             c.validFrom,
+		CRLDistributionPoints: c.crlDistributionPoints,
+		CreateSignerFunc: func(caCert []*x509.Certificate, caKey crypto.PrivateKey, validNotBefore, validNotAfter time.Time, crlDistributionPoints []string) core.CertificateSigner {
+			return certificateSigner.NewIdentityCertificateSigner(caCert, caKey, certificateSigner.WithNotBefore(validNotBefore), certificateSigner.WithNotAfter(validNotAfter),
+				certificateSigner.WithCRLDistributionPoints(crlDistributionPoints))
 		},
-		ValidFrom: c.validFrom,
 	}
 	if c.validFor != "" {
 		devCfg.CertExpiry = &c.validFor

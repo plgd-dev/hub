@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/big"
 	"testing"
 	"time"
 
@@ -17,7 +18,7 @@ import (
 	"github.com/plgd-dev/hub/v2/identity-store/events"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/test/config"
 	testService "github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/require"
@@ -48,6 +49,8 @@ func TestCertificateAuthorityServerCleanUpSigningRecords(t *testing.T) {
 			CertificatePem: "certificate1",
 			Date:           date.UnixNano(),
 			ValidUntilDate: date.UnixNano(),
+			Serial:         big.NewInt(42).String(),
+			IssuerId:       "42424242-4242-4242-4242-424242424242",
 		},
 	}
 
@@ -64,7 +67,7 @@ func TestCertificateAuthorityServerCleanUpSigningRecords(t *testing.T) {
 	}()
 
 	ch := new(inprocgrpc.Channel)
-	ca, err := grpc.NewCertificateAuthorityServer(ownerClaim, config.HubID(), test.MakeConfig(t).Signer, storeDB, fileWatcher, logger)
+	ca, err := grpc.NewCertificateAuthorityServer(ownerClaim, config.HubID(), "https://"+config.CERTIFICATE_AUTHORITY_HTTP_HOST, test.MakeConfig(t).Signer, storeDB, fileWatcher, logger)
 	require.NoError(t, err)
 	defer ca.Close()
 
@@ -73,7 +76,7 @@ func TestCertificateAuthorityServerCleanUpSigningRecords(t *testing.T) {
 	token := config.CreateJwtToken(t, jwt.MapClaims{
 		ownerClaim: owner,
 	})
-	ctx := kitNetGrpc.CtxWithToken(context.Background(), token)
+	ctx := pkgGrpc.CtxWithToken(context.Background(), token)
 	client, err := grpcClient.GetSigningRecords(ctx, &pb.GetSigningRecordsRequest{})
 	require.NoError(t, err)
 	var got pb.SigningRecords

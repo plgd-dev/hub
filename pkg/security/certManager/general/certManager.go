@@ -2,11 +2,14 @@ package general
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -16,9 +19,12 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/fn"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	pkgHttpClient "github.com/plgd-dev/hub/v2/pkg/net/http/client"
+	pkgTls "github.com/plgd-dev/hub/v2/pkg/security/tls"
 	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	"github.com/plgd-dev/kit/v2/security"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/atomic"
 )
 
@@ -29,6 +35,7 @@ type Config struct {
 	CertFile                  urischeme.URIScheme   `yaml:"certFile" json:"certFile" description:"file name of certificate in PEM format"`
 	ClientCertificateRequired bool                  `yaml:"clientCertificateRequired" json:"clientCertificateRequired" description:"require client certificate"`
 	UseSystemCAPool           bool                  `yaml:"useSystemCAPool" json:"useSystemCaPool" description:"use system certification pool"`
+	CRL                       pkgTls.CRLConfig      `yaml:"crl" json:"crl"`
 }
 
 func (c Config) Validate() error {
@@ -53,6 +60,7 @@ type CertManager struct {
 	logger                  log.Logger
 	onFileChangeFunc        func(event fsnotify.Event)
 	done                    atomic.Bool
+	httpClient              *pkgHttpClient.Client
 
 	private struct {
 		mutex                sync.Mutex
@@ -78,10 +86,19 @@ func tryToWatchFile(file urischeme.URIScheme, fileWatcher *fsnotify.Watcher, rem
 }
 
 // New creates a new certificate manager which watches for certs in a filesystem
-func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*CertManager, error) {
+func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tp trace.TracerProvider) (*CertManager, error) {
 	verifyClientCertificate := tls.RequireAndVerifyClientCert
 	if !config.ClientCertificateRequired {
 		verifyClientCertificate = tls.NoClientCert
+	}
+
+	var httpClient *pkgHttpClient.Client
+	if config.CRL.Enabled {
+		var err error
+		httpClient, err = NewHTTPClient(config.CRL.HTTP, fileWatcher, logger, tp)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	c := &CertManager{
@@ -89,6 +106,7 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Cert
 		config:                  config,
 		verifyClientCertificate: verifyClientCertificate,
 		logger:                  logger,
+		httpClient:              httpClient,
 	}
 	_, err := c.loadCAs()
 	if err != nil {
@@ -363,4 +381,49 @@ func (a *CertManager) onFileChange(event fsnotify.Event) {
 			a.logger.Debugf("Refreshing certificate authorities due to modified file(%v) via event %v", event.Name, event.Op)
 		}
 	}
+}
+
+func (a *CertManager) downloadCRL(ctx context.Context, cdp string) (*x509.RevocationList, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, cdp, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Close = true
+	resp, err := a.httpClient.HTTP().Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if errC := resp.Body.Close(); errC != nil {
+			a.logger.Errorf("failed to close response body stream: %w", errC)
+		}
+	}()
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected statusCode %v: '%v'", resp.StatusCode, string(respBody))
+	}
+	crl, err := x509.ParseRevocationList(respBody)
+	if err != nil {
+		return nil, err
+	}
+	return crl, nil
+}
+
+func (a *CertManager) VerifyByCRL(ctx context.Context, certificate *x509.Certificate, cdps []string) error {
+	if !a.config.CRL.Enabled {
+		return nil
+	}
+	for _, dp := range cdps {
+		crl, err := a.downloadCRL(ctx, dp)
+		if err == nil {
+			if pkgX509.IsRevoked(certificate, crl) {
+				return fmt.Errorf("certificate(%s) was revoked by CRL(%s)", "", crl.Issuer.String())
+			}
+			return nil
+		}
+	}
+	return errors.New("failed to verify certificate by CRL")
 }

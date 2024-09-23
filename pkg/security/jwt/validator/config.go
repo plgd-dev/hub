@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/plgd-dev/hub/v2/pkg/net/http/client"
+	pkgTls "github.com/plgd-dev/hub/v2/pkg/security/tls"
 )
 
 type AuthorityConfig struct {
-	Authority string        `yaml:"authority" json:"authority"`
-	HTTP      client.Config `yaml:"http" json:"http"`
+	Authority string            `yaml:"authority" json:"authority"`
+	HTTP      pkgTls.HTTPConfig `yaml:"http" json:"http"`
 }
 
 func (c *AuthorityConfig) Validate() error {
@@ -38,7 +38,7 @@ type Config struct {
 	Endpoints         []AuthorityConfig            `yaml:"endpoints" json:"endpoints"`
 	TokenVerification TokenTrustVerificationConfig `yaml:"tokenTrustVerification,omitempty" json:"tokenTrustVerification,omitempty"`
 	Authority         *string                      `yaml:"authority,omitempty" json:"authority,omitempty"` // deprecated
-	HTTP              *client.Config               `yaml:"http,omitempty" json:"http,omitempty"`           // deprecated
+	HTTP              *pkgTls.HTTPConfig           `yaml:"http,omitempty" json:"http,omitempty"`           // deprecated
 }
 
 func (c *Config) Validate() error {

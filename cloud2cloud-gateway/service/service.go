@@ -153,9 +153,9 @@ func newGrpcGatewayClient(config GrpcGatewayConfig, fileWatcher *fsnotify.Watche
 	return client, fl.ToFunction(), nil
 }
 
-func newResourceSubscriber(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*subscriber.Subscriber, func(), error) {
+func newResourceSubscriber(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tp trace.TracerProvider) (*subscriber.Subscriber, func(), error) {
 	var fl fn.FuncList
-	nats, err := natsClient.New(config.Clients.Eventbus.NATS.Config, fileWatcher, logger)
+	nats, err := natsClient.New(config.Clients.Eventbus.NATS.Config, fileWatcher, logger, tp)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create nats client: %w", err)
 	}
@@ -199,7 +199,7 @@ func newResourceAggregateClient(config ResourceAggregateConfig, subscriber *subs
 
 func newSubscriptionManager(ctx context.Context, cfg Config, gwClient pbGRPC.GrpcGatewayClient, emitEvent emitEventFunc, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*SubscriptionManager, func(), error) {
 	var fl fn.FuncList
-	certManager, err := cmClient.New(cfg.Clients.Storage.MongoDB.TLS, fileWatcher, logger)
+	certManager, err := cmClient.New(cfg.Clients.Storage.MongoDB.TLS, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create cert manager: %w", err)
 	}
@@ -259,7 +259,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	}
 	listener.AddCloseFunc(closeGwClient)
 
-	subscriber, closeSubscriberFn, err := newResourceSubscriber(config, fileWatcher, logger)
+	subscriber, closeSubscriberFn, err := newResourceSubscriber(config, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		closeListener()
 		return nil, fmt.Errorf("cannot create resource subscriber: %w", err)
@@ -273,7 +273,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	}
 	listener.AddCloseFunc(closeRaClient)
 
-	emitEvent, closeEmitEventFn, err := createEmitEventFunc(config.Clients.Subscription.HTTP.TLS, config.Clients.Subscription.HTTP.EmitEventTimeout, fileWatcher, logger)
+	emitEvent, closeEmitEventFn, err := createEmitEventFunc(config.Clients.Subscription.HTTP.TLS, config.Clients.Subscription.HTTP.EmitEventTimeout, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		closeListener()
 		return nil, fmt.Errorf("cannot create emit event function: %w", err)

@@ -16,6 +16,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.opentelemetry.io/otel/trace/noop"
 )
 
 type StandbyConfig struct {
@@ -144,7 +145,7 @@ func main() {
 	}
 	var certClient *client.CertManager
 	if cfg.Clients.Storage.MongoDB.TLS.Enabled {
-		certClient, err = client.New(cfg.Clients.Storage.MongoDB.TLS.TLS, fileWatcher, logger)
+		certClient, err = client.New(cfg.Clients.Storage.MongoDB.TLS.TLS, fileWatcher, logger, noop.NewTracerProvider())
 		if err != nil {
 			logger.Fatalf("cannot create cert client: %v", err)
 		}

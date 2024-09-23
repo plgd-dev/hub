@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/plgd-dev/hub/v2/certificate-authority/service"
+	"github.com/plgd-dev/hub/v2/certificate-authority/service/grpc"
 	"github.com/plgd-dev/hub/v2/certificate-authority/store"
 	storeConfig "github.com/plgd-dev/hub/v2/certificate-authority/store/config"
 	storeCqlDB "github.com/plgd-dev/hub/v2/certificate-authority/store/cqldb"
@@ -21,6 +22,26 @@ import (
 	"go.opentelemetry.io/otel/trace/noop"
 )
 
+func MakeHTTPConfig() service.HTTPConfig {
+	return service.HTTPConfig{
+		ExternalAddress: "https://" + config.CERTIFICATE_AUTHORITY_HTTP_HOST,
+		Addr:            config.CERTIFICATE_AUTHORITY_HTTP_HOST,
+		Server:          config.MakeHttpServerConfig(),
+	}
+}
+
+func MakeCRLConfig() grpc.CRLConfig {
+	if config.ACTIVE_DATABASE() == database.MongoDB {
+		return grpc.CRLConfig{
+			Enabled:   true,
+			ExpiresIn: time.Hour,
+		}
+	}
+	return grpc.CRLConfig{
+		Enabled: false,
+	}
+}
+
 func MakeConfig(t require.TestingT) service.Config {
 	var cfg service.Config
 
@@ -28,14 +49,14 @@ func MakeConfig(t require.TestingT) service.Config {
 	cfg.Log = log.MakeDefaultConfig()
 
 	cfg.APIs.GRPC = config.MakeGrpcServerConfig(config.CERTIFICATE_AUTHORITY_HOST)
-	cfg.APIs.HTTP.Addr = config.CERTIFICATE_AUTHORITY_HTTP_HOST
-	cfg.APIs.HTTP.Server = config.MakeHttpServerConfig()
 	cfg.APIs.GRPC.TLS.ClientCertificateRequired = false
+	cfg.APIs.HTTP = MakeHTTPConfig()
 	cfg.Signer.CAPool = []urischeme.URIScheme{urischeme.URIScheme(os.Getenv("TEST_ROOT_CA_CERT"))}
 	cfg.Signer.KeyFile = urischeme.URIScheme(os.Getenv("TEST_ROOT_CA_KEY"))
 	cfg.Signer.CertFile = urischeme.URIScheme(os.Getenv("TEST_ROOT_CA_CERT"))
 	cfg.Signer.ValidFrom = "now-1h"
 	cfg.Signer.ExpiresIn = time.Hour * 2
+	cfg.Signer.CRL = MakeCRLConfig()
 
 	cfg.Clients.OpenTelemetryCollector = config.MakeOpenTelemetryCollectorClient()
 	cfg.Clients.Storage = MakeStorageConfig()
@@ -87,11 +108,6 @@ func MakeStorageConfig() service.StorageConfig {
 					URI:             config.MONGODB_URI,
 					Database:        "certificateAuthority",
 					TLS:             config.MakeTLSClientConfig(),
-				},
-				BulkWrite: storeMongo.BulkWriteConfig{
-					Timeout:       time.Minute,
-					ThrottleTime:  time.Millisecond * 500,
-					DocumentLimit: 1000,
 				},
 			},
 			CqlDB: &storeCqlDB.Config{

@@ -35,9 +35,9 @@ type CertificateAuthorityClient interface {
 	// SignCertificate sends a Certificate Signing Request to the certificate authority
 	// and obtains a signed certificate. Both in the PEM format.
 	SignCertificate(ctx context.Context, in *SignCertificateRequest, opts ...grpc.CallOption) (*SignCertificateResponse, error)
-	// Get signed certficate records.
+	// Get signed certificate records.
 	GetSigningRecords(ctx context.Context, in *GetSigningRecordsRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[SigningRecord], error)
-	// Delete signed certficate records.
+	// Revoke signed certficate or delete expired signed certificate records.
 	DeleteSigningRecords(ctx context.Context, in *DeleteSigningRecordsRequest, opts ...grpc.CallOption) (*DeletedSigningRecords, error)
 }
 
@@ -108,9 +108,9 @@ type CertificateAuthorityServer interface {
 	// SignCertificate sends a Certificate Signing Request to the certificate authority
 	// and obtains a signed certificate. Both in the PEM format.
 	SignCertificate(context.Context, *SignCertificateRequest) (*SignCertificateResponse, error)
-	// Get signed certficate records.
+	// Get signed certificate records.
 	GetSigningRecords(*GetSigningRecordsRequest, grpc.ServerStreamingServer[SigningRecord]) error
-	// Delete signed certficate records.
+	// Revoke signed certficate or delete expired signed certificate records.
 	DeleteSigningRecords(context.Context, *DeleteSigningRecordsRequest) (*DeletedSigningRecords, error)
 	mustEmbedUnimplementedCertificateAuthorityServer()
 }

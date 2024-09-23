@@ -23,18 +23,20 @@ type CertificateAuthorityServer struct {
 	hubID            string
 	fileWatcher      *fsnotify.Watcher
 	onFileChangeFunc func(event fsnotify.Event)
+	crlServerAddress string
 
 	signer atomic.Pointer[Signer]
 }
 
-func NewCertificateAuthorityServer(ownerClaim string, hubID string, signerConfig SignerConfig, store store.Store, fileWatcher *fsnotify.Watcher, logger log.Logger) (*CertificateAuthorityServer, error) {
+func NewCertificateAuthorityServer(ownerClaim, hubID, crlServerAddress string, signerConfig SignerConfig, store store.Store, fileWatcher *fsnotify.Watcher, logger log.Logger) (*CertificateAuthorityServer, error) {
 	s := &CertificateAuthorityServer{
-		signerConfig: signerConfig,
-		logger:       logger,
-		ownerClaim:   ownerClaim,
-		store:        store,
-		hubID:        hubID,
-		fileWatcher:  fileWatcher,
+		signerConfig:     signerConfig,
+		logger:           logger,
+		ownerClaim:       ownerClaim,
+		store:            store,
+		hubID:            hubID,
+		fileWatcher:      fileWatcher,
+		crlServerAddress: crlServerAddress,
 	}
 
 	_, err := s.load()
@@ -100,7 +102,7 @@ func (s *CertificateAuthorityServer) Close() {
 }
 
 func (s *CertificateAuthorityServer) load() (bool, error) {
-	signer, err := NewSigner(s.ownerClaim, s.hubID, s.signerConfig)
+	signer, err := NewSigner(s.ownerClaim, s.hubID, s.crlServerAddress, s.signerConfig)
 	if err != nil {
 		return false, fmt.Errorf("cannot create signer: %w", err)
 	}

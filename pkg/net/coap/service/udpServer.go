@@ -17,10 +17,15 @@ import (
 	certManagerServer "github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
 )
 
+type dtlsListerner struct {
+	coapDtlsServer.Listener
+	tlsManager *certManagerServer.CertManager
+	close      func()
+}
+
 type dtlsServer struct {
-	coapServer    *coapDtlsServer.Server
-	listener      coapDtlsServer.Listener
-	closeListener func()
+	coapServer *coapDtlsServer.Server
+	listener   *dtlsListerner
 }
 
 func (s *dtlsServer) Serve() error {
@@ -29,37 +34,44 @@ func (s *dtlsServer) Serve() error {
 
 func (s *dtlsServer) Close() error {
 	s.coapServer.Stop()
-	s.closeListener()
+	s.listener.close()
 	return nil
 }
 
+type udpListerner struct {
+	*net.UDPConn
+	close func()
+}
+
 type udpServer struct {
-	coapServer    *coapUdpServer.Server
-	listener      *net.UDPConn
-	closeListener func()
+	coapServer *coapUdpServer.Server
+	listener   *udpListerner
 }
 
 func (s *udpServer) Serve() error {
-	return s.coapServer.Serve(s.listener)
+	return s.coapServer.Serve(s.listener.UDPConn)
 }
 
 func (s *udpServer) Close() error {
 	s.coapServer.Stop()
-	s.closeListener()
+	s.listener.close()
 	return nil
 }
 
-func newUDPListener(config Config, logger log.Logger) (*net.UDPConn, func(), error) {
+func newUDPListener(config Config, logger log.Logger) (*udpListerner, error) {
 	listener, err := net.NewListenUDP("udp", config.Addr)
 	if err != nil {
-		return nil, nil, fmt.Errorf("cannot create tcp listener: %w", err)
+		return nil, fmt.Errorf("cannot create tcp listener: %w", err)
 	}
 	closeListener := func() {
 		if err := listener.Close(); err != nil {
 			logger.Errorf("failed to close tcp listener: %w", err)
 		}
 	}
-	return listener, closeListener, nil
+	return &udpListerner{
+		UDPConn: listener,
+		close:   closeListener,
+	}, nil
 }
 
 var mapDTLSClientAuth = map[tls.ClientAuthType]dtls.ClientAuthType{
@@ -101,30 +113,35 @@ func TLSConfigToDTLSConfig(tlsConfig *tls.Config) *dtls.Config {
 	}
 }
 
-func newDTLSListener(config Config, serviceOpts Options, fileWatcher *fsnotify.Watcher, logger log.Logger) (coapDtlsServer.Listener, func(), error) {
+func newDTLSListener(config Config, serviceOpts Options, fileWatcher *fsnotify.Watcher, logger log.Logger) (*dtlsListerner, error) {
 	var closeListener fn.FuncList
 	coapsTLS, err := certManagerServer.New(config.TLS.Embedded, fileWatcher, logger)
 	if err != nil {
-		return nil, nil, fmt.Errorf("cannot create tls cert manager: %w", err)
+		return nil, fmt.Errorf("cannot create tls cert manager: %w", err)
 	}
 	closeListener.AddFunc(coapsTLS.Close)
 	tlsCfg := coapsTLS.GetTLSConfig()
 	if serviceOpts.OverrideTLSConfig != nil {
-		tlsCfg = serviceOpts.OverrideTLSConfig(tlsCfg)
+		tlsCfg = serviceOpts.OverrideTLSConfig(tlsCfg, coapsTLS.VerifyByCRL)
 	}
 	dtlsCfg := TLSConfigToDTLSConfig(tlsCfg)
 	dtlsCfg.LoggerFactory = logger.DTLSLoggerFactory()
 	listener, err := net.NewDTLSListener("udp", config.Addr, dtlsCfg)
 	if err != nil {
 		closeListener.Execute()
-		return nil, nil, fmt.Errorf("cannot create dtls listener: %w", err)
+		return nil, fmt.Errorf("cannot create dtls listener: %w", err)
 	}
 	closeListener.AddFunc(func() {
 		if err := listener.Close(); err != nil {
 			logger.Errorf("failed to close dtls listener: %w", err)
 		}
 	})
-	return listener, closeListener.ToFunction(), nil
+
+	return &dtlsListerner{
+		Listener:   listener,
+		close:      closeListener.ToFunction(),
+		tlsManager: coapsTLS,
+	}, nil
 }
 
 func newDTLSServer(config Config, serviceOpts Options, fileWatcher *fsnotify.Watcher, logger log.Logger, opts ...interface {
@@ -133,7 +150,7 @@ func newDTLSServer(config Config, serviceOpts Options, fileWatcher *fsnotify.Wat
 	coapUdpServer.Option
 },
 ) (*dtlsServer, error) {
-	listener, closeListener, err := newDTLSListener(config, serviceOpts, fileWatcher, logger)
+	listener, err := newDTLSListener(config, serviceOpts, fileWatcher, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create listener: %w", err)
 	}
@@ -157,9 +174,8 @@ func newDTLSServer(config Config, serviceOpts Options, fileWatcher *fsnotify.Wat
 		dtlsOpts = append(dtlsOpts, o)
 	}
 	return &dtlsServer{
-		coapServer:    coapDtlsServer.New(dtlsOpts...),
-		listener:      listener,
-		closeListener: closeListener,
+		coapServer: coapDtlsServer.New(dtlsOpts...),
+		listener:   listener,
 	}, nil
 }
 
@@ -169,7 +185,7 @@ func newUDPServer(config Config, serviceOpts Options, logger log.Logger, opts ..
 	coapUdpServer.Option
 },
 ) (*udpServer, error) {
-	listener, closeListener, err := newUDPListener(config, logger)
+	listener, err := newUDPListener(config, logger)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create listener: %w", err)
 	}
@@ -193,8 +209,7 @@ func newUDPServer(config Config, serviceOpts Options, logger log.Logger, opts ..
 		udpOpts = append(udpOpts, o)
 	}
 	return &udpServer{
-		coapServer:    coapUdpServer.New(udpOpts...),
-		listener:      listener,
-		closeListener: closeListener,
+		coapServer: coapUdpServer.New(udpOpts...),
+		listener:   listener,
 	}, nil
 }

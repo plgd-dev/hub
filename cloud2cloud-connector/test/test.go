@@ -159,7 +159,7 @@ func NewMongoStore(t *testing.T) (*mongodb.Store, func()) {
 	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 
-	certManager, err := cmClient.New(cfg.Clients.Storage.MongoDB.TLS, fileWatcher, logger)
+	certManager, err := cmClient.New(cfg.Clients.Storage.MongoDB.TLS, fileWatcher, logger, noop.NewTracerProvider())
 	require.NoError(t, err)
 
 	ctx := context.Background()

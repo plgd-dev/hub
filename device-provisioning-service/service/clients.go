@@ -38,7 +38,7 @@ func newCertificateAuthorityClient(config client.Config, fileWatcher *fsnotify.W
 
 func NewStore(ctx context.Context, config mongodb.Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*mongodb.Store, func(), error) {
 	var fl fn.FuncList
-	certManager, err := cmClient.New(config.Mongo.TLS, fileWatcher, logger)
+	certManager, err := cmClient.New(config.Mongo.TLS, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create cert manager: %w", err)
 	}

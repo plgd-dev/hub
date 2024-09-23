@@ -236,7 +236,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		return nil, fmt.Errorf("cannot create job queue %w", err)
 	}
 
-	nats, err := natsClient.New(config.Clients.Eventbus.NATS.Config, fileWatcher, logger)
+	nats, err := natsClient.New(config.Clients.Eventbus.NATS.Config, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		otelClient.Close()
 		queue.Release()
@@ -621,8 +621,8 @@ func (s *Service) createServices(fileWatcher *fsnotify.Watcher, logger log.Logge
 		coapService.WithOnNewConnection(s.coapConnOnNew),
 		coapService.WithOnInactivityConnection(s.onInactivityConnection),
 		coapService.WithMessagePool(s.messagePool),
-		coapService.WithOverrideTLS(func(cfg *tls.Config) *tls.Config {
-			tlsCfg := MakeGetConfigForClient(cfg, s.config.APIs.COAP.InjectedCOAPConfig.TLSConfig.IdentityPropertiesRequired)
+		coapService.WithOverrideTLS(func(cfg *tls.Config, verifyByCRL VerifyByCRL) *tls.Config {
+			tlsCfg := MakeGetConfigForClient(s.ctx, cfg, s.config.APIs.COAP.InjectedCOAPConfig.TLSConfig.IdentityPropertiesRequired, verifyByCRL)
 			return &tlsCfg
 		}),
 	)

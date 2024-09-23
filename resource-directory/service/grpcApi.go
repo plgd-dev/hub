@@ -123,7 +123,7 @@ func newRequestHandlerFromConfig(ctx context.Context, config Config, publicConfi
 		}
 	})
 
-	natsClient, err := naClient.New(config.Clients.Eventbus.NATS.Config, fileWatcher, logger)
+	natsClient, err := naClient.New(config.Clients.Eventbus.NATS.Config, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		closeFunc.Execute()
 		return nil, fmt.Errorf("cannot create nats client: %w", err)

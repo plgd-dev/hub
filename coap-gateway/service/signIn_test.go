@@ -20,7 +20,7 @@ import (
 	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
-	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	test "github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
@@ -73,7 +73,7 @@ func TestSignInDeviceSubscriptionHandler(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 
-	ctx := kitNetGrpc.CtxWithToken(context.Background(), oauthTest.GetDefaultAccessToken(t))
+	ctx := pkgGrpc.CtxWithToken(context.Background(), oauthTest.GetDefaultAccessToken(t))
 	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
@@ -142,7 +142,7 @@ func TestDontCreateObservationAfterRefreshTokenAndSignIn(t *testing.T) {
 
 	h := makeTestCoapHandler(t)
 	observedPath := make(map[string]struct{})
-	co := testCoapDialWithHandler(t, "", true, true, time.Now().Add(time.Minute), func(w *responsewriter.ResponseWriter[*coapTcpClient.Conn], r *pool.Message) {
+	co := testCoapDialWithHandler(t, func(w *responsewriter.ResponseWriter[*coapTcpClient.Conn], r *pool.Message) {
 		if r.Code() != coapCodes.GET {
 			h(w, r)
 			return
@@ -160,7 +160,7 @@ func TestDontCreateObservationAfterRefreshTokenAndSignIn(t *testing.T) {
 		} else {
 			require.NoError(t, errors.New("cannot observe the same resource twice"))
 		}
-	})
+	}, WithGenerateTLS("", true, time.Now().Add(time.Minute)))
 	if co == nil {
 		return
 	}

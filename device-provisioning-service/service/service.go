@@ -355,7 +355,7 @@ func (server *Service) createServices(fileWatcher *fsnotify.Watcher, logger log.
 		coapService.WithOnNewConnection(server.coapConnOnNew),
 		coapService.WithOnInactivityConnection(server.onInactivityConnection),
 		coapService.WithMessagePool(server.messagePool),
-		coapService.WithOverrideTLS(func(cfg *tls.Config) *tls.Config {
+		coapService.WithOverrideTLS(func(cfg *tls.Config, _ coapService.VerifyByCRL) *tls.Config {
 			cfg.InsecureSkipVerify = true
 			cfg.ClientAuth = tls.RequireAnyClientCert
 			cfg.VerifyPeerCertificate = server.authHandler.VerifyPeerCertificate

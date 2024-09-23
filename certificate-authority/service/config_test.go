@@ -147,6 +147,57 @@ func TestConfigValidate(t *testing.T) {
 	}
 }
 
+func TestHTTPConfigValidate(t *testing.T) {
+	type args struct {
+		cfg service.HTTPConfig
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "valid",
+			args: args{
+				cfg: test.MakeHTTPConfig(),
+			},
+		},
+		{
+			name: "invalid external address",
+			args: args{
+				cfg: func() service.HTTPConfig {
+					cfg := test.MakeHTTPConfig()
+					cfg.ExternalAddress = "invalid"
+					return cfg
+				}(),
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid address",
+			args: args{
+				cfg: func() service.HTTPConfig {
+					cfg := test.MakeHTTPConfig()
+					cfg.Addr = "invalid"
+					return cfg
+				}(),
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.args.cfg.Validate()
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+		})
+	}
+}
+
 func TestStorageConfigValidate(t *testing.T) {
 	type args struct {
 		cfg service.StorageConfig

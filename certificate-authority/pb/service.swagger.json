@@ -98,7 +98,7 @@
     },
     "/api/v1/signing/records": {
       "get": {
-        "summary": "Get signed certficate records.",
+        "summary": "Get signed certificate records.",
         "operationId": "CertificateAuthority_GetSigningRecords",
         "responses": {
           "200": {
@@ -163,7 +163,7 @@
         ]
       },
       "delete": {
-        "summary": "Delete signed certficate records.",
+        "summary": "Revoke signed certficate or delete expired signed certificate records.",
         "operationId": "CertificateAuthority_DeleteSigningRecords",
         "responses": {
           "200": {
@@ -227,6 +227,16 @@
           "format": "int64",
           "description": "@gotags: bson:\"validUntilDate\"",
           "title": "Record valid until date, in unix nanoseconds timestamp format"
+        },
+        "serial": {
+          "type": "string",
+          "description": "@gotags: bson:\"serial\"",
+          "title": "Serial number of the last certificat issued"
+        },
+        "issuerId": {
+          "type": "string",
+          "description": "@gotags: bson:\"issuerId\"",
+          "title": "Issuer id is calculated from the issuer's public certificate, and it is computed as uuid.NewSHA1(uuid.NameSpaceX500, publicKeyRaw)"
         }
       }
     },
@@ -238,7 +248,8 @@
           "format": "int64",
           "description": "Number of deleted records."
         }
-      }
+      },
+      "title": "Revoke or delete certificates"
     },
     "pbSignCertificateRequest": {
       "type": "object",
