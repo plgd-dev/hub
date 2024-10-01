@@ -1,8 +1,8 @@
 module github.com/plgd-dev/hub/v2
 
-go 1.22
+go 1.22.0
 
-toolchain go1.22.0
+toolchain go1.23.1
 
 require (
 	github.com/favadi/protoc-go-inject-tag v1.4.0
@@ -54,7 +54,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.30.0
 	go.uber.org/atomic v1.11.0
 	go.uber.org/zap v1.27.0
-	golang.org/x/exp v0.0.0-20240823005443-9b4947da3948
+	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0
 	golang.org/x/net v0.29.0
 	golang.org/x/oauth2 v0.23.0
 	golang.org/x/sync v0.8.0
@@ -149,5 +149,5 @@ require (
 // last versions for Go 1.22.0
 replace (
 	github.com/go-json-experiment/json => github.com/go-json-experiment/json v0.0.0-20240815174924-0599f16bf0e2
-	golang.org/x/exp => golang.org/x/exp v0.0.0-20240823005443-9b4947da3948
+	golang.org/x/exp => golang.org/x/exp v0.0.0-20240909161429-701f63a606c0
 )
