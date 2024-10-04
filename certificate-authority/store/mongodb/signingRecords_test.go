@@ -2,8 +2,7 @@ package mongodb_test
 
 import (
 	"context"
-	"strconv"
-	"sync"
+	"math/big"
 	"testing"
 	"time"
 
@@ -11,7 +10,6 @@ import (
 	"github.com/plgd-dev/hub/v2/certificate-authority/store"
 	"github.com/plgd-dev/hub/v2/certificate-authority/test"
 	hubTest "github.com/plgd-dev/hub/v2/test"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -43,6 +41,8 @@ func TestStoreUpdateSigningRecord(t *testing.T) {
 						CertificatePem: "certificate",
 						Date:           constDate().UnixNano(),
 						ValidUntilDate: constDate().UnixNano(),
+						Serial:         big.NewInt(42).String(),
+						IssuerId:       "42424242-4242-4242-4242-424242424242",
 					},
 				},
 			},
@@ -61,6 +61,8 @@ func TestStoreUpdateSigningRecord(t *testing.T) {
 						CertificatePem: "certificate",
 						Date:           constDate().UnixNano(),
 						ValidUntilDate: constDate().UnixNano(),
+						Serial:         big.NewInt(42).String(),
+						IssuerId:       "42424242-4242-4242-4242-424242424242",
 					},
 				},
 			},
@@ -78,6 +80,8 @@ func TestStoreUpdateSigningRecord(t *testing.T) {
 						CertificatePem: "certificate1",
 						Date:           constDate1().UnixNano(),
 						ValidUntilDate: constDate1().UnixNano(),
+						Serial:         big.NewInt(42).String(),
+						IssuerId:       "42424242-4242-4242-4242-424242424242",
 					},
 				},
 			},
@@ -94,10 +98,8 @@ func TestStoreUpdateSigningRecord(t *testing.T) {
 			err := s.UpdateSigningRecord(ctx, tt.args.sub)
 			if tt.wantErr {
 				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
+				return
 			}
-			err = s.FlushBulkWriter()
 			require.NoError(t, err)
 		})
 	}
@@ -212,6 +214,8 @@ func TestStoreDeleteSigningRecords(t *testing.T) {
 				CertificatePem: "certificate",
 				Date:           constDate().UnixNano(),
 				ValidUntilDate: constDate().UnixNano(),
+				Serial:         big.NewInt(42).String(),
+				IssuerId:       "42424242-4242-4242-4242-424242424242",
 			},
 		})
 		require.NoError(t, err)
@@ -276,6 +280,8 @@ func TestStoreDeleteExpiredRecords(t *testing.T) {
 			CertificatePem: "certificate",
 			Date:           constDate().UnixNano(),
 			ValidUntilDate: constDate().UnixNano(),
+			Serial:         big.NewInt(42).String(),
+			IssuerId:       "42424242-4242-4242-4242-424242424242",
 		},
 	})
 	require.NoError(t, err)
@@ -293,15 +299,9 @@ type testSigningRecordHandler struct {
 	lcs pb.SigningRecords
 }
 
-func (h *testSigningRecordHandler) Handle(ctx context.Context, iter store.SigningRecordIter) (err error) {
-	for {
-		var sub store.SigningRecord
-		if !iter.Next(ctx, &sub) {
-			break
-		}
-		h.lcs = append(h.lcs, &sub)
-	}
-	return iter.Err()
+func (h *testSigningRecordHandler) process(sr *store.SigningRecord) (err error) {
+	h.lcs = append(h.lcs, sr)
+	return nil
 }
 
 func TestStoreLoadSigningRecords(t *testing.T) {
@@ -323,6 +323,8 @@ func TestStoreLoadSigningRecords(t *testing.T) {
 				CertificatePem: "certificate",
 				Date:           constDate().UnixNano(),
 				ValidUntilDate: constDate().UnixNano(),
+				Serial:         big.NewInt(42).String(),
+				IssuerId:       "42424242-4242-4242-4242-424242424242",
 			},
 		},
 		{
@@ -336,6 +338,8 @@ func TestStoreLoadSigningRecords(t *testing.T) {
 				CertificatePem: "certificate",
 				Date:           constDate().UnixNano(),
 				ValidUntilDate: constDate().UnixNano(),
+				Serial:         big.NewInt(42).String(),
+				IssuerId:       "42424242-4242-4242-4242-424242424242",
 			},
 		},
 		{
@@ -349,6 +353,8 @@ func TestStoreLoadSigningRecords(t *testing.T) {
 				CertificatePem: "certificate",
 				Date:           constDate().UnixNano(),
 				ValidUntilDate: constDate().UnixNano(),
+				Serial:         big.NewInt(42).String(),
+				IssuerId:       "42424242-4242-4242-4242-424242424242",
 			},
 		},
 		{
@@ -362,6 +368,8 @@ func TestStoreLoadSigningRecords(t *testing.T) {
 				CertificatePem: "certificate",
 				Date:           constDate().UnixNano(),
 				ValidUntilDate: constDate().UnixNano(),
+				Serial:         big.NewInt(42).String(),
+				IssuerId:       "42424242-4242-4242-4242-424242424242",
 			},
 		},
 	}
@@ -466,7 +474,7 @@ func TestStoreLoadSigningRecords(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var h testSigningRecordHandler
-			err := s.LoadSigningRecords(ctx, tt.args.owner, tt.args.query, h.Handle)
+			err := s.LoadSigningRecords(ctx, tt.args.owner, tt.args.query, h.process)
 			require.NoError(t, err)
 			require.Len(t, h.lcs, len(tt.want))
 			h.lcs.Sort()
@@ -476,49 +484,5 @@ func TestStoreLoadSigningRecords(t *testing.T) {
 				hubTest.CheckProtobufs(t, tt.want[i], h.lcs[i], hubTest.RequireToCheckFunc(require.Equal))
 			}
 		})
-	}
-}
-
-func BenchmarkSigningRecords(b *testing.B) {
-	data := make([]*store.SigningRecord, 0, 5001)
-	dataCap := cap(data)
-	for i := 0; i < dataCap; i++ {
-		data = append(data, &store.SigningRecord{
-			Id:           hubTest.GenerateDeviceIDbyIdx(i),
-			Owner:        "owner",
-			CommonName:   "commonName" + strconv.Itoa(i),
-			CreationDate: constDate().UnixNano(),
-			PublicKey:    "publicKey",
-			Credential: &pb.CredentialStatus{
-				CertificatePem: "certificate",
-				Date:           constDate().UnixNano(),
-				ValidUntilDate: constDate().UnixNano(),
-			},
-		})
-	}
-
-	ctx := context.Background()
-	b.ResetTimer()
-	s, cleanUpStore := test.NewMongoStore(b)
-	defer cleanUpStore()
-	for i := uint32(0); i < uint32(b.N); i++ {
-		b.StopTimer()
-		err := s.Clear(ctx)
-		require.NoError(b, err)
-		b.StartTimer()
-		func() {
-			var wg sync.WaitGroup
-			wg.Add(len(data))
-			for _, l := range data {
-				go func(l *pb.SigningRecord) {
-					defer wg.Done()
-					err := s.UpdateSigningRecord(ctx, l)
-					assert.NoError(b, err)
-				}(l)
-			}
-			wg.Wait()
-			err := s.FlushBulkWriter()
-			assert.NoError(b, err)
-		}()
 	}
 }

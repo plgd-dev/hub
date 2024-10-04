@@ -193,6 +193,11 @@ func (c *RequestBuilder) AddTimeToLive(ttl time.Duration) *RequestBuilder {
 	return c
 }
 
+func (c *RequestBuilder) AddIssuerID(issuerID string) *RequestBuilder {
+	c.uriParams[uri.IssuerIDKey] = issuerID
+	return c
+}
+
 func (c *RequestBuilder) SetQuery(value string) *RequestBuilder {
 	c.query = value
 	return c

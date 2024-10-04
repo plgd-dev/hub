@@ -9,6 +9,7 @@ import (
 
 	"github.com/plgd-dev/device/v2/pkg/security/generateCertificate"
 	"github.com/plgd-dev/hub/v2/certificate-authority/pb"
+	certAuthURI "github.com/plgd-dev/hub/v2/certificate-authority/service/uri"
 	"github.com/stretchr/testify/require"
 )
 
@@ -21,7 +22,7 @@ func TestCertificateAuthorityServerSignIdentityCSR(t *testing.T) {
 	require.NoError(t, err)
 	testSigningByFunction(t, func(ctx context.Context, req *pb.SignCertificateRequest) (*pb.SignCertificateResponse, error) {
 		var resp pb.SignCertificateResponse
-		return &resp, httpDoSign(ctx, t, URISignIdentityCertificate, req, &resp)
+		return &resp, httpDoSign(ctx, t, certAuthURI.SignIdentityCertificate, req, &resp)
 	}, csr)
 }
 
@@ -32,6 +33,6 @@ func TestCertificateAuthorityServerSignIdentityCSRWithEmptyCN(t *testing.T) {
 	require.NoError(t, err)
 	testSigningByFunction(t, func(ctx context.Context, req *pb.SignCertificateRequest) (*pb.SignCertificateResponse, error) {
 		var resp pb.SignCertificateResponse
-		return &resp, httpDoSign(ctx, t, URISignIdentityCertificate, req, &resp)
+		return &resp, httpDoSign(ctx, t, certAuthURI.SignIdentityCertificate, req, &resp)
 	}, csr)
 }

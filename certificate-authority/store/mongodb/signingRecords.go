@@ -6,9 +6,12 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-multierror"
+	"github.com/plgd-dev/hub/v2/certificate-authority/pb"
 	"github.com/plgd-dev/hub/v2/certificate-authority/store"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
+	"golang.org/x/exp/maps"
 )
 
 const signingRecordsCol = "signedCertificateRecords"
@@ -20,20 +23,20 @@ func (s *Store) CreateSigningRecord(ctx context.Context, signingRecord *store.Si
 		return err
 	}
 	_, err := s.Collection(signingRecordsCol).InsertOne(ctx, signingRecord)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
-func (s *Store) UpdateSigningRecord(_ context.Context, signingRecord *store.SigningRecord) error {
+func (s *Store) UpdateSigningRecord(ctx context.Context, signingRecord *store.SigningRecord) error {
 	if err := signingRecord.Validate(); err != nil {
 		return err
 	}
-
-	s.bulkWriter.Push(signingRecord)
-	return nil
+	filter := bson.M{"_id": signingRecord.GetId()}
+	upsert := true
+	opts := &options.UpdateOptions{
+		Upsert: &upsert,
+	}
+	_, err := s.Collection(signingRecordsCol).UpdateOne(ctx, filter, bson.M{"$set": signingRecord}, opts)
+	return err
 }
 
 func toCommonNameQueryFilter(owner string, commonName string) bson.D {
@@ -112,44 +115,75 @@ func (s *Store) DeleteNonDeviceExpiredRecords(ctx context.Context, now time.Time
 	if err != nil {
 		return -1, multierror.Append(ErrCannotRemoveSigningRecord, err)
 	}
-
 	return res.DeletedCount, nil
 }
 
-func (s *Store) LoadSigningRecords(ctx context.Context, owner string, query *store.SigningRecordsQuery, h store.LoadSigningRecordsFunc) error {
-	col := s.Collection(signingRecordsCol)
-	iter, err := col.Find(ctx, toSigningRecordsQueryFilter(owner, query))
-	if errors.Is(err, mongo.ErrNilDocument) {
-		return nil
+func (s *Store) RevokeSigningRecords(ctx context.Context, ownerID string, query *store.RevokeSigningRecordsQuery) (int64, error) {
+	now := time.Now().UnixNano()
+	// get signing records to be deleted
+	type issuersRecord struct {
+		ids          []string
+		certificates []*store.RevocationListCertificate
 	}
+	idFilter := make(map[string]struct{})
+	irs := make(map[string]issuersRecord)
+	err := s.LoadSigningRecords(ctx, ownerID, &pb.GetSigningRecordsRequest{
+		IdFilter:       query.GetIdFilter(),
+		DeviceIdFilter: query.GetDeviceIdFilter(),
+	}, func(v *pb.SigningRecord) error {
+		credential := v.GetCredential()
+		if credential == nil {
+			return nil
+		}
+		idFilter[v.GetId()] = struct{}{}
+		if credential.GetValidUntilDate() <= now {
+			return nil
+		}
+		record := irs[credential.GetIssuerId()]
+		record.ids = append(record.ids, v.GetId())
+		record.certificates = append(record.certificates, &store.RevocationListCertificate{
+			Serial:     credential.GetSerial(),
+			ValidUntil: credential.GetValidUntilDate(),
+			Revocation: now,
+		})
+		irs[credential.GetIssuerId()] = record
+		return nil
+	})
 	if err != nil {
+		return 0, err
+	}
+
+	// add certificates for the signing records to revocation lists
+	for issuerID, record := range irs {
+		query := store.UpdateRevocationListQuery{
+			IssuerID:            issuerID,
+			RevokedCertificates: record.certificates,
+		}
+		_, err := s.UpdateRevocationList(ctx, &query)
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	if len(idFilter) == 0 {
+		return 0, nil
+	}
+
+	// delete the signing records
+	return s.DeleteSigningRecords(ctx, ownerID, &pb.DeleteSigningRecordsRequest{
+		IdFilter: maps.Keys(idFilter),
+	})
+}
+
+func (s *Store) LoadSigningRecords(ctx context.Context, owner string, query *store.SigningRecordsQuery, p store.Process[store.SigningRecord]) error {
+	col := s.Collection(signingRecordsCol)
+	cur, err := col.Find(ctx, toSigningRecordsQueryFilter(owner, query))
+	if err != nil {
+		if errors.Is(err, mongo.ErrNilDocument) {
+			return nil
+		}
 		return err
 	}
-
-	i := SigningRecordsIterator{
-		iter: iter,
-	}
-	err = h(ctx, &i)
-
-	errClose := iter.Close(ctx)
-	if err == nil {
-		return errClose
-	}
+	_, err = processCursor(ctx, cur, p)
 	return err
-}
-
-type SigningRecordsIterator struct {
-	iter *mongo.Cursor
-}
-
-func (i *SigningRecordsIterator) Next(ctx context.Context, s *store.SigningRecord) bool {
-	if !i.iter.Next(ctx) {
-		return false
-	}
-	err := i.iter.Decode(s)
-	return err == nil
-}
-
-func (i *SigningRecordsIterator) Err() error {
-	return i.iter.Err()
 }

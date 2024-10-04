@@ -10,12 +10,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/plgd-dev/device/v2/pkg/security/generateCertificate"
 	"github.com/plgd-dev/hub/v2/certificate-authority/pb"
 	caTest "github.com/plgd-dev/hub/v2/certificate-authority/test"
 	m2mOauthTest "github.com/plgd-dev/hub/v2/m2m-oauth-server/test"
 	m2mOauthUri "github.com/plgd-dev/hub/v2/m2m-oauth-server/uri"
-	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
@@ -69,7 +70,7 @@ func testSigningByFunction(t *testing.T, signFn ClientSignFunc, csr ...[]byte) {
 
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
+	ctx = pkgGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	conn, err := grpc.NewClient(config.CERTIFICATE_AUTHORITY_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
@@ -90,14 +91,18 @@ func testSigningByFunction(t *testing.T, signFn ClientSignFunc, csr ...[]byte) {
 	}
 }
 
-func createCSR(t *testing.T, commonName string) []byte {
-	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	require.NoError(t, err)
+func createCSRWithKey(t *testing.T, commonName string, priv *ecdsa.PrivateKey) []byte {
 	var cfg generateCertificate.Configuration
 	cfg.Subject.CommonName = commonName
 	csr, err := generateCertificate.GenerateCSR(cfg, priv)
 	require.NoError(t, err)
 	return csr
+}
+
+func createCSR(t *testing.T, commonName string) []byte {
+	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
+	return createCSRWithKey(t, commonName, priv)
 }
 
 func TestCertificateAuthorityServerSignCSR(t *testing.T) {
@@ -130,7 +135,7 @@ func TestCertificateAuthorityServerSignCSRWithDifferentPublicKeys(t *testing.T) 
 	tearDown := service.SetUp(ctx, t, service.WithCAConfig(cfg), service.WithM2MOAuthConfig(m2mCfg))
 	defer tearDown()
 
-	ctx = kitNetGrpc.CtxWithToken(ctx, m2mOauthTest.GetDefaultAccessToken(t))
+	ctx = pkgGrpc.CtxWithToken(ctx, m2mOauthTest.GetDefaultAccessToken(t))
 
 	conn, err := grpc.NewClient(config.CERTIFICATE_AUTHORITY_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
@@ -143,6 +148,53 @@ func TestCertificateAuthorityServerSignCSRWithDifferentPublicKeys(t *testing.T) 
 
 	_, err = c.SignIdentityCertificate(ctx, &pb.SignCertificateRequest{CertificateSigningRequest: csr1})
 	require.NoError(t, err)
+}
+
+func TestCertificateAuthorityServerSignCSRWithSameDevice(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	cfg := caTest.MakeConfig(t)
+	cfg.APIs.GRPC.Authorization.Endpoints = append(cfg.APIs.GRPC.Authorization.Endpoints, validator.AuthorityConfig{
+		Authority: "https://" + config.M2M_OAUTH_SERVER_HTTP_HOST + m2mOauthUri.Base,
+		HTTP:      config.MakeHttpClientConfig(),
+	})
+
+	m2mCfg := m2mOauthTest.MakeConfig(t)
+	serviceOAuthClient := m2mOauthTest.ServiceOAuthClient
+	serviceOAuthClient.InsertTokenClaims = map[string]interface{}{
+		config.OWNER_CLAIM: oauthService.DeviceUserID,
+	}
+	m2mCfg.OAuthSigner.Clients[0] = &serviceOAuthClient
+
+	tearDown := service.SetUp(ctx, t, service.WithCAConfig(cfg), service.WithM2MOAuthConfig(m2mCfg))
+	defer tearDown()
+
+	ctx = pkgGrpc.CtxWithToken(ctx, m2mOauthTest.GetDefaultAccessToken(t))
+
+	conn, err := grpc.NewClient(config.CERTIFICATE_AUTHORITY_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
+		RootCAs: test.GetRootCertificatePool(t),
+	})))
+	require.NoError(t, err)
+	c := pb.NewCertificateAuthorityClient(conn)
+
+	priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
+	deviceID := uuid.NewString()
+
+	csr := createCSRWithKey(t, "uuid:"+deviceID, priv)
+	_, err = c.SignIdentityCertificate(ctx, &pb.SignCertificateRequest{CertificateSigningRequest: csr})
+	require.NoError(t, err)
+
+	csr1 := createCSRWithKey(t, "uuid:"+deviceID, priv)
+	_, err = c.SignIdentityCertificate(ctx, &pb.SignCertificateRequest{CertificateSigningRequest: csr1})
+	require.NoError(t, err)
+
+	priv2, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
+	csr2 := createCSRWithKey(t, "uuid:"+deviceID, priv2)
+	_, err = c.SignIdentityCertificate(ctx, &pb.SignCertificateRequest{CertificateSigningRequest: csr2})
+	require.Error(t, err)
 }
 
 func TestCertificateAuthorityServerSignCSRWithEmptyCommonName(t *testing.T) {

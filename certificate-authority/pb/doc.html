@@ -346,14 +346,14 @@ and obtains a signed certificate. Both in the PEM format.</p></td>
                 <td>GetSigningRecords</td>
                 <td><a href="#certificateauthority.pb.GetSigningRecordsRequest">GetSigningRecordsRequest</a></td>
                 <td><a href="#certificateauthority.pb.SigningRecord">SigningRecord</a> stream</td>
-                <td><p>Get signed certficate records.</p></td>
+                <td><p>Get signed certificate records.</p></td>
               </tr>
             
               <tr>
                 <td>DeleteSigningRecords</td>
                 <td><a href="#certificateauthority.pb.DeleteSigningRecordsRequest">DeleteSigningRecordsRequest</a></td>
                 <td><a href="#certificateauthority.pb.DeletedSigningRecords">DeletedSigningRecords</a></td>
-                <td><p>Delete signed certficate records.</p></td>
+                <td><p>Revoke signed certficate or delete expired signed certificate records.</p></td>
               </tr>
             
           </tbody>
@@ -463,6 +463,24 @@ and obtains a signed certificate. Both in the PEM format.</p></td>
 @gotags: bson:&#34;validUntilDate&#34; </p></td>
                 </tr>
               
+                <tr>
+                  <td>serial</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Serial number of the last certificat issued
+
+@gotags: bson:&#34;serial&#34; </p></td>
+                </tr>
+              
+                <tr>
+                  <td>issuer_id</td>
+                  <td><a href="#string">string</a></td>
+                  <td></td>
+                  <td><p>Issuer id is calculated from the issuer&#39;s public certificate, and it is computed as uuid.NewSHA1(uuid.NameSpaceX500, publicKeyRaw)
+
+@gotags: bson:&#34;issuerId&#34; </p></td>
+                </tr>
+              
             </tbody>
           </table>
 
@@ -502,7 +520,7 @@ and obtains a signed certificate. Both in the PEM format.</p></td>
         
       
         <h3 id="certificateauthority.pb.DeletedSigningRecords">DeletedSigningRecords</h3>
-        <p></p>
+        <p>Revoke or delete certificates</p>
 
         
           <table class="field-table">

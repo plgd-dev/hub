@@ -8,16 +8,20 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+func errDeleteSigningRecords(err error) error {
+	return status.Errorf(codes.InvalidArgument, "cannot delete signing records: %v", err)
+}
+
 func (s *CertificateAuthorityServer) DeleteSigningRecords(ctx context.Context, req *pb.DeleteSigningRecordsRequest) (*pb.DeletedSigningRecords, error) {
 	owner, err := ownerToUUID(ctx, s.ownerClaim)
 	if err != nil {
-		return nil, s.logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot delete signing records: %v", err))
+		return nil, s.logger.LogAndReturnError(errDeleteSigningRecords(err))
 	}
-	n, err := s.store.DeleteSigningRecords(ctx, owner, req)
+	count, err := s.store.RevokeSigningRecords(ctx, owner, req)
 	if err != nil {
-		return nil, s.logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot delete signing records: %v", err))
+		return nil, s.logger.LogAndReturnError(errDeleteSigningRecords(err))
 	}
 	return &pb.DeletedSigningRecords{
-		Count: n,
+		Count: count,
 	}, nil
 }

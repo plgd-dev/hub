@@ -339,20 +339,38 @@ func (s *Store) DeleteNonDeviceExpiredRecords(_ context.Context, _ time.Time) (i
 	return 0, store.ErrNotSupported
 }
 
-func (s *Store) LoadSigningRecords(ctx context.Context, owner string, query *store.SigningRecordsQuery, h store.LoadSigningRecordsFunc) error {
+func (s *Store) LoadSigningRecords(ctx context.Context, owner string, query *store.SigningRecordsQuery, p store.Process[store.SigningRecord]) error {
 	i := SigningRecordsIterator{
 		ctx:      ctx,
 		s:        s,
 		queries:  toSigningRecordsQueryFilter(owner, query, true),
 		provided: make(map[string]struct{}, 32),
 	}
-	err := h(ctx, &i)
-
+	var err error
+	for {
+		var stored store.SigningRecord
+		if !i.Next(ctx, &stored) {
+			err = i.Err()
+			break
+		}
+		err = p(&stored)
+		if err != nil {
+			break
+		}
+	}
 	errClose := i.close()
 	if err == nil {
 		return errClose
 	}
 	return err
+}
+
+func (s *Store) RevokeSigningRecords(ctx context.Context, ownerID string, query *store.RevokeSigningRecordsQuery) (int64, error) {
+	// TODO: revocation list not yet supported by cqldb, so for now we just delete the records
+	return s.DeleteSigningRecords(ctx, ownerID, &store.DeleteSigningRecordsQuery{
+		IdFilter:       query.GetIdFilter(),
+		DeviceIdFilter: query.GetDeviceIdFilter(),
+	})
 }
 
 type SigningRecordsIterator struct {
