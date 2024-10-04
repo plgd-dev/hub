@@ -25,7 +25,7 @@ type Signer struct {
 	hubID       string
 	crl         struct {
 		serverAddress string
-		validFor      time.Duration // TODO: schedule the CRL to be regenerated -> increment the Number, ThisUpdate and NextUpdate fields
+		validFor      time.Duration
 	}
 }
 

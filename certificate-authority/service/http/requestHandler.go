@@ -13,7 +13,6 @@ import (
 	"github.com/plgd-dev/hub/v2/certificate-authority/service/uri"
 	"github.com/plgd-dev/hub/v2/certificate-authority/store"
 	"github.com/plgd-dev/hub/v2/http-gateway/serverMux"
-	"github.com/plgd-dev/hub/v2/pkg/log"
 )
 
 // RequestHandler for handling incoming request
@@ -21,19 +20,17 @@ type RequestHandler struct {
 	config *Config
 	mux    *runtime.ServeMux
 
-	cas    *grpcService.CertificateAuthorityServer
-	store  store.Store
-	logger log.Logger
+	cas   *grpcService.CertificateAuthorityServer
+	store store.Store
 }
 
 // NewHTTP returns HTTP handler
-func NewRequestHandler(config *Config, r *mux.Router, cas *grpcService.CertificateAuthorityServer, s store.Store, logger log.Logger) (*RequestHandler, error) {
+func NewRequestHandler(config *Config, r *mux.Router, cas *grpcService.CertificateAuthorityServer, s store.Store) (*RequestHandler, error) {
 	requestHandler := &RequestHandler{
 		config: config,
 		mux:    serverMux.New(),
 		cas:    cas,
 		store:  s,
-		logger: logger,
 	}
 
 	if config.CRLEnabled {

@@ -3,6 +3,7 @@ package mongodb
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math/big"
 	"time"
 
@@ -121,6 +122,9 @@ func (s *Store) UpdateRevocationList(ctx context.Context, query *store.UpdateRev
 			Certificates: maps.Values(upd.certificatesToInsert),
 		}
 		if err = s.InsertRevocationLists(ctx, newRL); err != nil {
+			if mongo.IsDuplicateKeyError(err) {
+				return nil, fmt.Errorf("%w: %w", store.ErrDuplicateID, err)
+			}
 			return nil, err
 		}
 		return newRL, nil
@@ -157,7 +161,7 @@ func (s *Store) UpdateRevocationList(ctx context.Context, query *store.UpdateRev
 	var updatedRL store.RevocationList
 	if err = s.Collection(revocationListCol).FindOneAndUpdate(ctx, filter, update, opts).Decode(&updatedRL); err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, store.ErrNotFound
+			return nil, fmt.Errorf("%w: %w", store.ErrNotFound, err)
 		}
 		return nil, err
 	}

@@ -49,7 +49,7 @@ func New(serviceName string, config Config, s store.Store, ca *grpcService.Certi
 		return nil, fmt.Errorf("cannot create http service: %w", err)
 	}
 
-	requestHandler, err := NewRequestHandler(&config, service.GetRouter(), ca, s, logger)
+	requestHandler, err := NewRequestHandler(&config, service.GetRouter(), ca, s)
 	if err != nil {
 		_ = service.Close()
 		return nil, err

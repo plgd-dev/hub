@@ -13,6 +13,7 @@ import (
 var (
 	ErrNotSupported = errors.New("not supported")
 	ErrNotFound     = errors.New("no document found")
+	ErrDuplicateID  = errors.New("duplicate ID")
 )
 
 type (

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"sort"
 	"strconv"
 	"testing"
 	"time"
@@ -71,6 +72,12 @@ func CheckRevocationList(t *testing.T, expected, actual *store.RevocationList, i
 	require.Equal(t, expected.IssuedAt, actual.IssuedAt)
 	require.Equal(t, expected.ValidUntil, actual.ValidUntil)
 	require.Len(t, actual.Certificates, len(expected.Certificates))
+	sort.Slice(actual.Certificates, func(i, j int) bool {
+		return actual.Certificates[i].Serial < actual.Certificates[j].Serial
+	})
+	sort.Slice(expected.Certificates, func(i, j int) bool {
+		return expected.Certificates[i].Serial < expected.Certificates[j].Serial
+	})
 	for i := range actual.Certificates {
 		require.Equal(t, expected.Certificates[i].Serial, actual.Certificates[i].Serial)
 		require.Equal(t, expected.Certificates[i].ValidUntil, actual.Certificates[i].ValidUntil)

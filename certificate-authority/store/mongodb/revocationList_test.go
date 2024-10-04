@@ -2,12 +2,17 @@ package mongodb_test
 
 import (
 	"context"
+	"errors"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/plgd-dev/hub/v2/certificate-authority/store"
+	"github.com/plgd-dev/hub/v2/certificate-authority/store/mongodb"
 	"github.com/plgd-dev/hub/v2/certificate-authority/test"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -25,6 +30,13 @@ func TestUpdateRevocationList(t *testing.T) {
 		Serial:     "1",
 		ValidUntil: time.Now().Add(time.Hour).Unix(),
 		Revocation: time.Now().Unix(),
+	}
+	rl1 := store.RevocationList{
+		Id:           id,
+		Number:       "1",
+		IssuedAt:     time.Now().UnixNano(),
+		ValidUntil:   time.Now().Add(time.Minute).UnixNano(),
+		Certificates: []*store.RevocationListCertificate{cert1},
 	}
 	cert2 := &store.RevocationListCertificate{
 		Serial:     "2",
@@ -89,17 +101,13 @@ func TestUpdateRevocationList(t *testing.T) {
 			name: "valid - new document",
 			args: args{
 				query: store.UpdateRevocationListQuery{
-					IssuerID:            id,
-					RevokedCertificates: []*store.RevocationListCertificate{cert1},
+					IssuerID:            rl1.Id,
+					RevokedCertificates: rl1.Certificates,
+					IssuedAt:            rl1.IssuedAt,
+					ValidUntil:          rl1.ValidUntil,
 				},
 			},
-			want: &store.RevocationList{
-				Id:     id,
-				Number: "1",
-				Certificates: []*store.RevocationListCertificate{
-					cert1,
-				},
-			},
+			want: &rl1,
 		},
 		{
 			name: "valid - add to existing document",
@@ -111,7 +119,7 @@ func TestUpdateRevocationList(t *testing.T) {
 			},
 			want: &store.RevocationList{
 				Id:     id,
-				Number: "1",
+				Number: "2",
 				Certificates: []*store.RevocationListCertificate{
 					cert1,
 					cert2,
@@ -132,7 +140,7 @@ func TestUpdateRevocationList(t *testing.T) {
 			},
 			want: &store.RevocationList{
 				Id:     id,
-				Number: "1",
+				Number: "2",
 				Certificates: []*store.RevocationListCertificate{
 					cert1,
 					cert2,
@@ -179,8 +187,85 @@ func TestUpdateRevocationList(t *testing.T) {
 	}
 }
 
-func TestParallelUpdateRevocationList(*testing.T) {
-	// TODO: run 10 parallel updates, they all should eventually succeed
+func TestParallelUpdateRevocationList(t *testing.T) {
+	s, cleanUpStore := test.NewMongoStore(t)
+	defer cleanUpStore()
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	defer cancel()
+
+	issuerID := uuid.NewString()
+	firstCount := 10
+	secondCount := 10
+	certificates := make([]*store.RevocationListCertificate, firstCount+secondCount)
+	for i := range firstCount + secondCount {
+		certificates[i] = test.GetCertificate(i, time.Now(), time.Now().Add(time.Hour))
+	}
+
+	// create or update
+	createOrUpdateRevocationList(ctx, t, 0, firstCount, certificates, issuerID, s)
+
+	rl, err := s.GetLatestIssuedOrIssueRevocationList(ctx, issuerID, time.Hour)
+	require.NoError(t, err)
+	require.NotEmpty(t, rl.IssuedAt)
+	require.NotEmpty(t, rl.ValidUntil)
+	expected := &store.RevocationList{
+		Id:           issuerID,
+		Number:       "1",
+		IssuedAt:     rl.IssuedAt,
+		ValidUntil:   rl.ValidUntil,
+		Certificates: certificates[:10],
+	}
+	test.CheckRevocationList(t, expected, rl, true)
+
+	createOrUpdateRevocationList(ctx, t, firstCount, secondCount, certificates, issuerID, s)
+
+	rl, err = s.GetLatestIssuedOrIssueRevocationList(ctx, issuerID, time.Hour)
+	require.NoError(t, err)
+	require.NotEmpty(t, rl.IssuedAt)
+	require.NotEmpty(t, rl.ValidUntil)
+	expected = &store.RevocationList{
+		Id:           issuerID,
+		Number:       "2",
+		IssuedAt:     rl.IssuedAt,
+		ValidUntil:   rl.ValidUntil,
+		Certificates: certificates,
+	}
+	test.CheckRevocationList(t, expected, rl, true)
+}
+
+func createOrUpdateRevocationList(ctx context.Context, t *testing.T, start, count int, certificates []*store.RevocationListCertificate, issuerID string, s *mongodb.Store) {
+	var failed atomic.Bool
+	failed.Store(false)
+	var wg sync.WaitGroup
+	wg.Add(10)
+	for i := start; i < start+count; i++ {
+		go func(index int) {
+			defer wg.Done()
+			cert := certificates[index]
+			var err error
+			// parallel execution should eventually succeed in cases when we get duplicate _id
+			// or not found errors
+			for range 100 {
+				q := &store.UpdateRevocationListQuery{
+					IssuerID:            issuerID,
+					RevokedCertificates: []*store.RevocationListCertificate{cert},
+				}
+				_, err = s.UpdateRevocationList(ctx, q)
+				if errors.Is(err, store.ErrDuplicateID) || errors.Is(err, store.ErrNotFound) {
+					continue
+				}
+				if err == nil {
+					break
+				}
+				failed.Store(true)
+				assert.NoError(t, err)
+			}
+			assert.NoError(t, err)
+		}(i)
+	}
+	wg.Wait()
+	require.False(t, failed.Load())
 }
 
 func TestGetRevocationList(t *testing.T) {

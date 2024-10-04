@@ -11,6 +11,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"golang.org/x/exp/maps"
 )
 
 const signingRecordsCol = "signedCertificateRecords"
@@ -124,7 +125,7 @@ func (s *Store) RevokeSigningRecords(ctx context.Context, ownerID string, query 
 		ids          []string
 		certificates []*store.RevocationListCertificate
 	}
-	idFilter := []string{}
+	idFilter := make(map[string]struct{})
 	irs := make(map[string]issuersRecord)
 	err := s.LoadSigningRecords(ctx, ownerID, &pb.GetSigningRecordsRequest{
 		IdFilter:       query.GetIdFilter(),
@@ -134,8 +135,8 @@ func (s *Store) RevokeSigningRecords(ctx context.Context, ownerID string, query 
 		if credential == nil {
 			return nil
 		}
+		idFilter[v.GetId()] = struct{}{}
 		if credential.GetValidUntilDate() <= now {
-			idFilter = append(idFilter, v.GetId())
 			return nil
 		}
 		record := irs[credential.GetIssuerId()]
@@ -162,8 +163,6 @@ func (s *Store) RevokeSigningRecords(ctx context.Context, ownerID string, query 
 		if err != nil {
 			return 0, err
 		}
-		// TODO
-		// idFilter = append(idFilter, serials...)
 	}
 
 	if len(idFilter) == 0 {
@@ -172,7 +171,7 @@ func (s *Store) RevokeSigningRecords(ctx context.Context, ownerID string, query 
 
 	// delete the signing records
 	return s.DeleteSigningRecords(ctx, ownerID, &pb.DeleteSigningRecordsRequest{
-		IdFilter: idFilter,
+		IdFilter: maps.Keys(idFilter),
 	})
 }
 
