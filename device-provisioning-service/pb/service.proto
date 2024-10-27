@@ -72,10 +72,11 @@ service DeviceProvisionService {
   rpc CreateEnrollmentGroup (CreateEnrollmentGroupRequest) returns (EnrollmentGroup) {
     option (google.api.http) = {
       post: "/api/v1/enrollment-groups"
+      body: "*"
       additional_bindings: {
         post: "/device-provisioning-service/api/v1/enrollment-groups"
+        body: "*"
       }
-      body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Enrollment Groups" ]
@@ -85,10 +86,11 @@ service DeviceProvisionService {
   rpc UpdateEnrollmentGroup (UpdateEnrollmentGroupRequest) returns (EnrollmentGroup) {
     option (google.api.http) = {
       put: "/api/v1/enrollment-groups/{id}"
+      body: "enrollment_group"
       additional_bindings: {
         put: "/device-provisioning-service/api/v1/enrollment-groups/{id}"
+        body: "enrollment_group"
       }
-      body: "enrollment_group"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Enrollment Group" ]
@@ -122,10 +124,11 @@ service DeviceProvisionService {
   rpc CreateHub (CreateHubRequest) returns (Hub) {
     option (google.api.http) = {
       post: "/api/v1/hubs"
+      body: "*"
       additional_bindings: {
         post: "/device-provisioning-service/api/v1/hubs"
+        body: "*"
       }
-      body: "*"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Hubs" ]
@@ -135,10 +138,11 @@ service DeviceProvisionService {
   rpc UpdateHub (UpdateHubRequest) returns (Hub) {
     option (google.api.http) = {
       put: "/api/v1/hubs/{id}"
+      body: "hub"
       additional_bindings: {
         put: "/device-provisioning-service/api/v1/hubs/{id}"
+        body: "hub"
       }
-      body: "hub"
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "Hub" ]

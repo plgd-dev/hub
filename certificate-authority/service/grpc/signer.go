@@ -2,14 +2,16 @@ package grpc
 
 import (
 	"context"
-	"crypto"
 	"crypto/ecdsa"
 	"crypto/x509"
 	"errors"
+	"path"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/karrick/tparse/v2"
 	"github.com/plgd-dev/hub/v2/certificate-authority/pb"
+	"github.com/plgd-dev/hub/v2/certificate-authority/service/uri"
 	"github.com/plgd-dev/hub/v2/pkg/security/certificateSigner"
 	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 )
@@ -18,9 +20,14 @@ type Signer struct {
 	validFrom   func() time.Time
 	validFor    time.Duration
 	certificate []*x509.Certificate
-	privateKey  crypto.PrivateKey
+	privateKey  *ecdsa.PrivateKey
+	issuerID    string
 	ownerClaim  string
 	hubID       string
+	crl         struct {
+		serverAddress string
+		validFor      time.Duration
+	}
 }
 
 func checkCertificatePrivateKey(cert []*x509.Certificate, priv *ecdsa.PrivateKey) error {
@@ -39,7 +46,42 @@ func checkCertificatePrivateKey(cert []*x509.Certificate, priv *ecdsa.PrivateKey
 	return nil
 }
 
-func NewSigner(ownerClaim string, hubID string, signerConfig SignerConfig) (*Signer, error) {
+func getIssuerID(rootCertificate *x509.Certificate) (string, error) {
+	publicKeyRaw, err := x509.MarshalPKIXPublicKey(rootCertificate.PublicKey)
+	if err != nil {
+		return "", err
+	}
+	return uuid.NewSHA1(uuid.NameSpaceX500, publicKeyRaw).String(), nil
+}
+
+func newSigner(ownerClaim, hubID, crlServerAddress string, signerConfig SignerConfig, privateKey *ecdsa.PrivateKey, certificate []*x509.Certificate) (*Signer, error) {
+	issuerID, err := getIssuerID(certificate[0])
+	if err != nil {
+		return nil, err
+	}
+	signer := &Signer{
+		validFrom: func() time.Time {
+			t, _ := tparse.ParseNow(time.RFC3339, signerConfig.ValidFrom)
+			return t
+		},
+		validFor:    signerConfig.ExpiresIn,
+		certificate: certificate,
+		privateKey:  privateKey,
+		issuerID:    issuerID,
+		ownerClaim:  ownerClaim,
+		hubID:       hubID,
+	}
+	if signerConfig.CRL.Enabled {
+		if err = pkgX509.ValidateCRLDistributionPointAddress(crlServerAddress); err != nil {
+			return nil, err
+		}
+		signer.crl.serverAddress = crlServerAddress
+		signer.crl.validFor = signerConfig.CRL.ExpiresIn
+	}
+	return signer, nil
+}
+
+func NewSigner(ownerClaim, hubID, crlServerAddress string, signerConfig SignerConfig) (*Signer, error) {
 	data, err := signerConfig.CertFile.Read()
 	if err != nil {
 		return nil, err
@@ -60,19 +102,8 @@ func NewSigner(ownerClaim string, hubID string, signerConfig SignerConfig) (*Sig
 		return nil, err
 	}
 	if len(certificate) == 1 && pkgX509.IsRootCA(certificate[0]) {
-		return &Signer{
-			validFrom: func() time.Time {
-				t, _ := tparse.ParseNow(time.RFC3339, signerConfig.ValidFrom)
-				return t
-			},
-			validFor:    signerConfig.ExpiresIn,
-			certificate: certificate,
-			privateKey:  privateKey,
-			ownerClaim:  ownerClaim,
-			hubID:       hubID,
-		}, nil
+		return newSigner(ownerClaim, hubID, crlServerAddress, signerConfig, privateKey, certificate)
 	}
-
 	certificateAuthorities := make([]*x509.Certificate, 0, len(signerConfig.caPoolArray)*4)
 	for _, caFile := range signerConfig.caPoolArray {
 		data, errR := caFile.Read()
@@ -93,18 +124,7 @@ func NewSigner(ownerClaim string, hubID string, signerConfig SignerConfig) (*Sig
 	if err != nil {
 		return nil, err
 	}
-
-	return &Signer{
-		validFrom: func() time.Time {
-			t, _ := tparse.ParseNow(time.RFC3339, signerConfig.ValidFrom)
-			return t
-		},
-		validFor:    signerConfig.ExpiresIn,
-		certificate: chains[0],
-		privateKey:  privateKey,
-		ownerClaim:  ownerClaim,
-		hubID:       hubID,
-	}, nil
+	return newSigner(ownerClaim, hubID, crlServerAddress, signerConfig, privateKey, chains[0])
 }
 
 func (s *Signer) prepareSigningRecord(ctx context.Context, template *x509.Certificate) (*pb.SigningRecord, error) {
@@ -117,31 +137,62 @@ func (s *Signer) prepareSigningRecord(ctx context.Context, template *x509.Certif
 	if err != nil {
 		return nil, err
 	}
-	return toSigningRecord(owner, template)
+	return toSigningRecord(owner, s.issuerID, template)
+}
+
+func (s *Signer) GetCertificate() *x509.Certificate {
+	return s.certificate[0]
+}
+
+func (s *Signer) GetPrivateKey() *ecdsa.PrivateKey {
+	return s.privateKey
+}
+
+func (s *Signer) GetCRLConfiguation() (string, time.Duration) {
+	return s.crl.serverAddress, s.crl.validFor
+}
+
+func (s *Signer) IsCRLEnabled() bool {
+	return s.crl.serverAddress != ""
+}
+
+func (s *Signer) newCertificateSigner(identitySigner bool, opts ...func(cfg *certificateSigner.SignerConfig)) *certificateSigner.CertificateSigner {
+	if identitySigner {
+		return certificateSigner.NewIdentityCertificateSigner(s.certificate, s.privateKey, opts...)
+	}
+	return certificateSigner.New(s.certificate, s.privateKey, opts...)
+}
+
+func (s *Signer) sign(ctx context.Context, isIdentityCertificate bool, csr []byte) ([]byte, *pb.SigningRecord, error) {
+	notBefore := s.validFrom()
+	notAfter := notBefore.Add(s.validFor)
+	var signingRecord *pb.SigningRecord
+	opts := []certificateSigner.Opt{
+		certificateSigner.WithNotBefore(notBefore),
+		certificateSigner.WithNotAfter(notAfter),
+		certificateSigner.WithOverrideCertTemplate(func(template *x509.Certificate) error {
+			var err error
+			signingRecord, err = s.prepareSigningRecord(ctx, template)
+			return err
+		}),
+	}
+	if s.IsCRLEnabled() {
+		opts = append(opts, certificateSigner.WithCRLDistributionPoints(
+			[]string{path.Join(s.crl.serverAddress, uri.SigningRevocationListBase, s.issuerID)},
+		))
+	}
+	signer := s.newCertificateSigner(isIdentityCertificate, opts...)
+	cert, err := signer.Sign(ctx, csr)
+	if err != nil {
+		return nil, nil, err
+	}
+	return cert, signingRecord, nil
 }
 
 func (s *Signer) Sign(ctx context.Context, csr []byte) ([]byte, *pb.SigningRecord, error) {
-	notBefore := s.validFrom()
-	notAfter := notBefore.Add(s.validFor)
-	var signingRecord *pb.SigningRecord
-	signer := certificateSigner.New(s.certificate, s.privateKey, certificateSigner.WithNotBefore(notBefore), certificateSigner.WithNotAfter(notAfter), certificateSigner.WithOverrideCertTemplate(func(template *x509.Certificate) error {
-		var err error
-		signingRecord, err = s.prepareSigningRecord(ctx, template)
-		return err
-	}))
-	crt, err := signer.Sign(ctx, csr)
-	return crt, signingRecord, err
+	return s.sign(ctx, false, csr)
 }
 
 func (s *Signer) SignIdentityCSR(ctx context.Context, csr []byte) ([]byte, *pb.SigningRecord, error) {
-	notBefore := s.validFrom()
-	notAfter := notBefore.Add(s.validFor)
-	var signingRecord *pb.SigningRecord
-	signer := certificateSigner.NewIdentityCertificateSigner(s.certificate, s.privateKey, certificateSigner.WithNotBefore(notBefore), certificateSigner.WithNotAfter(notAfter), certificateSigner.WithOverrideCertTemplate(func(template *x509.Certificate) error {
-		var err error
-		signingRecord, err = s.prepareSigningRecord(ctx, template)
-		return err
-	}))
-	cert, err := signer.Sign(ctx, csr)
-	return cert, signingRecord, err
+	return s.sign(ctx, true, csr)
 }

@@ -5,7 +5,7 @@
     "version": "1.0",
     "contact": {
       "name": "plgd.dev",
-      "url": "https://github.com/plgd-dev/hub/tree/main/device-provisioning-service",
+      "url": "https://github.com/plgd-dev/hub/v2/device-provisioning-service",
       "email": "info@plgd.dev"
     },
     "license": {
@@ -188,7 +188,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/pbUpdateEnrollmentGroup"
+              "$ref": "#/definitions/deviceprovisioningservicepbUpdateEnrollmentGroup"
             }
           }
         ],
@@ -345,7 +345,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/pbUpdateHub"
+              "$ref": "#/definitions/deviceprovisioningservicepbUpdateHub"
             }
           }
         ],
@@ -422,6 +422,453 @@
       },
       "delete": {
         "operationId": "DeviceProvisionService_DeleteProvisioningRecords",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbDeleteProvisioningRecordsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idFilter",
+            "description": "Filter by id.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "deviceIdFilter",
+            "description": "Filter by device id.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "enrollmentGroupIdFilter",
+            "description": "Filter by enrollment group id.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "Provisioning record"
+        ]
+      }
+    },
+    "/device-provisioning-service/api/v1/enrollment-groups": {
+      "get": {
+        "operationId": "DeviceProvisionService_GetEnrollmentGroups2",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/pbEnrollmentGroup"
+                },
+                "error": {
+                  "$ref": "#/definitions/rpcStatus"
+                }
+              },
+              "title": "Stream result of pbEnrollmentGroup"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idFilter",
+            "description": "Filter by id.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "attestationMechanismX509CertificateNames",
+            "description": "Filter by certificates comman names in x509 attestation mechanism",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "hubIdFilter",
+            "description": "Filter by hubId.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "Enrollment Groups"
+        ]
+      },
+      "delete": {
+        "operationId": "DeviceProvisionService_DeleteEnrollmentGroups2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbDeleteEnrollmentGroupsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idFilter",
+            "description": "Enrollment group ID.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "Enrollment Group"
+        ]
+      },
+      "post": {
+        "operationId": "DeviceProvisionService_CreateEnrollmentGroup2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbEnrollmentGroup"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbCreateEnrollmentGroupRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Enrollment Groups"
+        ]
+      }
+    },
+    "/device-provisioning-service/api/v1/enrollment-groups/{id}": {
+      "put": {
+        "operationId": "DeviceProvisionService_UpdateEnrollmentGroup2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbEnrollmentGroup"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "Enrollment group ID.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "enrollmentGroup",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/deviceprovisioningservicepbUpdateEnrollmentGroup"
+            }
+          }
+        ],
+        "tags": [
+          "Enrollment Group"
+        ]
+      }
+    },
+    "/device-provisioning-service/api/v1/hubs": {
+      "get": {
+        "operationId": "DeviceProvisionService_GetHubs2",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/pbHub"
+                },
+                "error": {
+                  "$ref": "#/definitions/rpcStatus"
+                }
+              },
+              "title": "Stream result of pbHub"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idFilter",
+            "description": "Filter by id.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "hubIdFilter",
+            "description": "Filter by hub_id.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "Hubs"
+        ]
+      },
+      "delete": {
+        "operationId": "DeviceProvisionService_DeleteHubs2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbDeleteHubsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idFilter",
+            "description": "Record ID.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "Hub"
+        ]
+      },
+      "post": {
+        "operationId": "DeviceProvisionService_CreateHub2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbHub"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbCreateHubRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Hubs"
+        ]
+      }
+    },
+    "/device-provisioning-service/api/v1/hubs/{id}": {
+      "put": {
+        "operationId": "DeviceProvisionService_UpdateHub2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbHub"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "id",
+            "description": "Record ID.",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "hub",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/deviceprovisioningservicepbUpdateHub"
+            }
+          }
+        ],
+        "tags": [
+          "Hub"
+        ]
+      }
+    },
+    "/device-provisioning-service/api/v1/provisioning-records": {
+      "get": {
+        "summary": "Get registrations of devices",
+        "operationId": "DeviceProvisionService_GetProvisioningRecords2",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/pbProvisioningRecord"
+                },
+                "error": {
+                  "$ref": "#/definitions/rpcStatus"
+                }
+              },
+              "title": "Stream result of pbProvisioningRecord"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idFilter",
+            "description": "Filter by id.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "deviceIdFilter",
+            "description": "Filter by device id.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "enrollmentGroupIdFilter",
+            "description": "Filter by enrollment group id.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "Provisioning records"
+        ]
+      },
+      "delete": {
+        "operationId": "DeviceProvisionService_DeleteProvisioningRecords2",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -560,6 +1007,59 @@
         "MFG_CERT"
       ],
       "default": "NONE"
+    },
+    "deviceprovisioningservicepbUpdateEnrollmentGroup": {
+      "type": "object",
+      "properties": {
+        "attestationMechanism": {
+          "$ref": "#/definitions/pbAttestationMechanism",
+          "title": "Attestation mechanism"
+        },
+        "hubIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Hub configuration to configure device."
+        },
+        "preSharedKey": {
+          "type": "string",
+          "title": "Pre shared key for devices in enrollment group. It can be used for maintenance operations by d2d client. Supported formats: \u003c/path/to/psk\u003e,\u003cdata:;base64,{PSK in BASE64}\u003e"
+        },
+        "name": {
+          "type": "string",
+          "description": "@gotags: bson:\"name\"",
+          "title": "name of enrollment group"
+        }
+      }
+    },
+    "deviceprovisioningservicepbUpdateHub": {
+      "type": "object",
+      "properties": {
+        "gateways": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "Address of coap-gateway in format scheme://host:port"
+        },
+        "certificateAuthority": {
+          "$ref": "#/definitions/pbGrpcClientConfig",
+          "description": "Signs identity ceritificate for the device."
+        },
+        "authorization": {
+          "$ref": "#/definitions/pbAuthorizationConfig",
+          "description": "Acquire HUB authorization code for the device."
+        },
+        "name": {
+          "type": "string",
+          "description": "Hub name."
+        },
+        "hubId": {
+          "type": "string",
+          "title": "Hub ID"
+        }
+      }
     },
     "pbACLStatus": {
       "type": "object",
@@ -1322,59 +1822,6 @@
           "type": "boolean",
           "description": "@gotags: bson:\"useSystemCaPool\"",
           "title": "use system certification pool"
-        }
-      }
-    },
-    "pbUpdateEnrollmentGroup": {
-      "type": "object",
-      "properties": {
-        "attestationMechanism": {
-          "$ref": "#/definitions/pbAttestationMechanism",
-          "title": "Attestation mechanism"
-        },
-        "hubIds": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "Hub configuration to configure device."
-        },
-        "preSharedKey": {
-          "type": "string",
-          "title": "Pre shared key for devices in enrollment group. It can be used for maintenance operations by d2d client. Supported formats: \u003c/path/to/psk\u003e,\u003cdata:;base64,{PSK in BASE64}\u003e"
-        },
-        "name": {
-          "type": "string",
-          "description": "@gotags: bson:\"name\"",
-          "title": "name of enrollment group"
-        }
-      }
-    },
-    "pbUpdateHub": {
-      "type": "object",
-      "properties": {
-        "gateways": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "title": "Address of coap-gateway in format scheme://host:port"
-        },
-        "certificateAuthority": {
-          "$ref": "#/definitions/pbGrpcClientConfig",
-          "description": "Signs identity ceritificate for the device."
-        },
-        "authorization": {
-          "$ref": "#/definitions/pbAuthorizationConfig",
-          "description": "Acquire HUB authorization code for the device."
-        },
-        "name": {
-          "type": "string",
-          "description": "Hub name."
-        },
-        "hubId": {
-          "type": "string",
-          "title": "Hub ID"
         }
       }
     },

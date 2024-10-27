@@ -120,7 +120,7 @@ http {
       proxy_set_header Connection $connection_upgrade;
       proxy_set_header Host $host;
     }
-    location ~ ^(/api/v1/sign) {
+    location ~ ^(/certificate-authority|/api/v1/sign) {
       set $upstream_certificate_authority https://127.0.0.1:REPLACE_HTTP_CERTIFICATE_AUTHORITY_PORT;
       proxy_pass                     $upstream_certificate_authority;
       proxy_ssl_certificate           /data/certs/internal/endpoint.crt;

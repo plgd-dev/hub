@@ -2,6 +2,7 @@ package grpc_test
 
 import (
 	"context"
+	"math/big"
 	"testing"
 
 	"github.com/fullstorydev/grpchan/inprocgrpc"
@@ -13,7 +14,7 @@ import (
 	"github.com/plgd-dev/hub/v2/identity-store/events"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
 )
@@ -21,6 +22,10 @@ import (
 func TestCertificateAuthorityServerDeleteSigningRecords(t *testing.T) {
 	owner := events.OwnerToUUID("owner")
 	const ownerClaim = "sub"
+	token := config.CreateJwtToken(t, jwt.MapClaims{
+		ownerClaim: owner,
+	})
+	ctx := pkgGrpc.CtxWithToken(context.Background(), token)
 	r := &store.SigningRecord{
 		Id:           "9d017fad-2961-4fcc-94a9-1e1291a88ffc",
 		Owner:        owner,
@@ -31,10 +36,13 @@ func TestCertificateAuthorityServerDeleteSigningRecords(t *testing.T) {
 			CertificatePem: "certificate1",
 			Date:           constDate().UnixNano(),
 			ValidUntilDate: constDate().UnixNano(),
+			Serial:         big.NewInt(42).String(),
+			IssuerId:       "42424242-4242-4242-4242-424242424242",
 		},
 	}
 	type args struct {
 		req *pb.DeleteSigningRecordsRequest
+		ctx context.Context
 	}
 	tests := []struct {
 		name    string
@@ -43,13 +51,23 @@ func TestCertificateAuthorityServerDeleteSigningRecords(t *testing.T) {
 		wantErr bool
 	}{
 		{
+			name: "missing token with ownerClaim in ctx",
+			args: args{
+				req: &pb.DeleteSigningRecordsRequest{
+					IdFilter: []string{r.GetId()},
+				},
+				ctx: context.Background(),
+			},
+			wantErr: true,
+		},
+		{
 			name: "invalidID",
 			args: args{
 				req: &pb.DeleteSigningRecordsRequest{
 					IdFilter: []string{"invalidID"},
 				},
+				ctx: ctx,
 			},
-			wantErr: true,
 		},
 		{
 			name: "valid",
@@ -57,6 +75,7 @@ func TestCertificateAuthorityServerDeleteSigningRecords(t *testing.T) {
 				req: &pb.DeleteSigningRecordsRequest{
 					IdFilter: []string{r.GetId()},
 				},
+				ctx: ctx,
 			},
 			want: 1,
 		},
@@ -78,20 +97,20 @@ func TestCertificateAuthorityServerDeleteSigningRecords(t *testing.T) {
 	}()
 
 	ch := new(inprocgrpc.Channel)
-	ca, err := grpc.NewCertificateAuthorityServer(ownerClaim, config.HubID(), test.MakeConfig(t).Signer, store, fileWatcher, logger)
+	ca, err := grpc.NewCertificateAuthorityServer(ownerClaim, config.HubID(), "https://"+config.CERTIFICATE_AUTHORITY_HTTP_HOST, test.MakeConfig(t).Signer, store, fileWatcher, logger)
 	require.NoError(t, err)
 	defer ca.Close()
 
 	pb.RegisterCertificateAuthorityServer(ch, ca)
 	grpcClient := pb.NewCertificateAuthorityClient(ch)
-	token := config.CreateJwtToken(t, jwt.MapClaims{
-		ownerClaim: owner,
-	})
-	ctx := kitNetGrpc.CtxWithToken(context.Background(), token)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := grpcClient.DeleteSigningRecords(ctx, tt.args.req)
+			got, err := grpcClient.DeleteSigningRecords(tt.args.ctx, tt.args.req)
+			if tt.wantErr {
+				require.Error(t, err)
+				return
+			}
 			require.NoError(t, err)
 			require.Equal(t, tt.want, got.GetCount())
 		})

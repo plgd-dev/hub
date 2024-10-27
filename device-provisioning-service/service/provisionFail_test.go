@@ -311,7 +311,7 @@ func TestProvisioningWithExpiredCertificate(t *testing.T) {
 	caShutdown()
 	// sign with expired certificate
 	caCfg.Signer.ValidFrom = caCfgSignerValidFrom
-	caCfg.Signer.ExpiresIn = 0
+	caCfg.Signer.ExpiresIn = time.Second
 	caShutdown = caService.New(t, caCfg)
 	defer caShutdown()
 

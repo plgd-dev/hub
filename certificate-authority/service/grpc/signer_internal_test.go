@@ -4,6 +4,7 @@ import (
 	"os"
 	"path"
 	"testing"
+	"time"
 
 	"github.com/plgd-dev/hub/v2/pkg/config/property/urischeme"
 	"github.com/plgd-dev/hub/v2/test/security/x509"
@@ -48,6 +49,7 @@ func TestNewSigner(t *testing.T) {
 	require.NoError(t, err)
 	type args struct {
 		signerConfig SignerConfig
+		crlServer    string
 	}
 	tests := []struct {
 		name             string
@@ -112,11 +114,45 @@ func TestNewSigner(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "with crl server",
+			args: args{
+				signerConfig: SignerConfig{
+					CertFile:  urischeme.URIScheme(fullChainCrt),
+					KeyFile:   urischeme.URIScheme(intermediate2Key),
+					ValidFrom: "2001-01-01T00:00:00Z",
+					ExpiresIn: time.Hour,
+					CRL: CRLConfig{
+						Enabled:   true,
+						ExpiresIn: time.Hour,
+					},
+				},
+				crlServer: "https://crl.example.com",
+			},
+			wantCertificates: x509.JoinPems(intermediateCert2, intermediateCert1, rootCert),
+		},
+		{
+			name: "with crl server - fail",
+			args: args{
+				signerConfig: SignerConfig{
+					CertFile:  urischeme.URIScheme(fullChainCrt),
+					KeyFile:   urischeme.URIScheme(intermediate2Key),
+					ValidFrom: "2001-01-01T00:00:00Z",
+					ExpiresIn: time.Hour,
+					CRL: CRLConfig{
+						Enabled:   true,
+						ExpiresIn: time.Hour,
+					},
+				},
+				crlServer: "not-an-URL",
+			},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewSigner("tt.args.ownerClaim", "tt.args.hubID", tt.args.signerConfig)
+			got, err := NewSigner("ownerClaim", "hubID", tt.args.crlServer, tt.args.signerConfig)
 			if tt.wantErr {
 				require.Error(t, err)
 				return

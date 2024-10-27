@@ -12,6 +12,8 @@ type Config struct {
 	Connection    listener.Config  `yaml:",inline" json:",inline"`
 	Authorization validator.Config `yaml:"authorization" json:"authorization"`
 	Server        server.Config    `yaml:",inline" json:",inline"`
+
+	CRLEnabled bool `yaml:"-" json:"-"`
 }
 
 func (c *Config) Validate() error {

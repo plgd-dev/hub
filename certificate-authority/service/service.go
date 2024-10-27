@@ -100,7 +100,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	}
 	closerFn.AddFunc(closeStore)
 
-	ca, err := grpcService.NewCertificateAuthorityServer(config.APIs.GRPC.Authorization.OwnerClaim, config.HubID, config.Signer, dbStorage, fileWatcher, logger)
+	ca, err := grpcService.NewCertificateAuthorityServer(config.APIs.GRPC.Authorization.OwnerClaim, config.HubID, config.APIs.HTTP.ExternalAddress, config.Signer, dbStorage, fileWatcher, logger)
 	if err != nil {
 		closerFn.Execute()
 		return nil, fmt.Errorf("cannot create grpc certificate authority server: %w", err)
@@ -119,7 +119,8 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		},
 		Authorization: config.APIs.GRPC.Authorization.Config,
 		Server:        config.APIs.HTTP.Server,
-	}, ca, httpValidator, fileWatcher, logger, tracerProvider)
+		CRLEnabled:    config.Signer.CRL.Enabled,
+	}, dbStorage, ca, httpValidator, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		closerFn.Execute()
 		return nil, fmt.Errorf("cannot create http service: %w", err)

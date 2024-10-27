@@ -98,7 +98,7 @@
     },
     "/api/v1/signing/records": {
       "get": {
-        "summary": "Get signed certficate records.",
+        "summary": "Get signed certificate records.",
         "operationId": "CertificateAuthority_GetSigningRecords",
         "responses": {
           "200": {
@@ -163,8 +163,186 @@
         ]
       },
       "delete": {
-        "summary": "Delete signed certficate records.",
+        "summary": "Revoke signed certificate records or delete expired signed certificate records.",
         "operationId": "CertificateAuthority_DeleteSigningRecords",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbDeletedSigningRecords"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idFilter",
+            "description": "Filter by id.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "deviceIdFilter",
+            "description": "Filter by common_name.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "signing records"
+        ]
+      }
+    },
+    "/certificate-authority/api/v1/sign/csr": {
+      "post": {
+        "summary": "SignCertificate sends a Certificate Signing Request to the certificate authority \nand obtains a signed certificate. Both in the PEM format.",
+        "operationId": "CertificateAuthority_SignCertificate2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbSignCertificateResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbSignCertificateRequest"
+            }
+          }
+        ],
+        "tags": [
+          "sign csr"
+        ]
+      }
+    },
+    "/certificate-authority/api/v1/sign/identity-csr": {
+      "post": {
+        "summary": "SignIdentityCertificate sends a Identity Certificate Signing Request to the certificate authority \nand obtains a signed certificate. Both in the PEM format. It adds EKU: '1.3.6.1.4.1.44924.1.6' .",
+        "operationId": "CertificateAuthority_SignIdentityCertificate2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/pbSignCertificateResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/pbSignCertificateRequest"
+            }
+          }
+        ],
+        "tags": [
+          "sign csr"
+        ]
+      }
+    },
+    "/certificate-authority/api/v1/signing/records": {
+      "get": {
+        "summary": "Get signed certificate records.",
+        "operationId": "CertificateAuthority_GetSigningRecords2",
+        "responses": {
+          "200": {
+            "description": "A successful response.(streaming responses)",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "result": {
+                  "$ref": "#/definitions/pbSigningRecord"
+                },
+                "error": {
+                  "$ref": "#/definitions/rpcStatus"
+                }
+              },
+              "title": "Stream result of pbSigningRecord"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "idFilter",
+            "description": "Filter by id.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "commonNameFilter",
+            "description": "Filter by common_name.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "deviceIdFilter",
+            "description": "Filter by device_id - provides only identity certificates.",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "signing records"
+        ]
+      },
+      "delete": {
+        "summary": "Revoke signed certificate records or delete expired signed certificate records.",
+        "operationId": "CertificateAuthority_DeleteSigningRecords2",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -227,6 +405,16 @@
           "format": "int64",
           "description": "@gotags: bson:\"validUntilDate\"",
           "title": "Record valid until date, in unix nanoseconds timestamp format"
+        },
+        "serial": {
+          "type": "string",
+          "description": "@gotags: bson:\"serial\"",
+          "title": "Serial number of the last certificate issued"
+        },
+        "issuerId": {
+          "type": "string",
+          "description": "@gotags: bson:\"issuerId\"",
+          "title": "Issuer id is calculated from the issuer's public certificate, and it is computed as uuid.NewSHA1(uuid.NameSpaceX500, publicKeyRaw)"
         }
       }
     },
@@ -238,7 +426,8 @@
           "format": "int64",
           "description": "Number of deleted records."
         }
-      }
+      },
+      "title": "Revoke or delete certificates"
     },
     "pbSignCertificateRequest": {
       "type": "object",

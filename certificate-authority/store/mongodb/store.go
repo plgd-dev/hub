@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/hub/v2/certificate-authority/store"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
@@ -16,7 +17,7 @@ import (
 
 type Store struct {
 	*pkgMongo.Store
-	bulkWriter *bulkWriter
+	logger log.Logger
 }
 
 var deviceIDKeyQueryIndex = mongo.IndexModel{
@@ -33,22 +34,62 @@ var commonNameKeyQueryIndex = mongo.IndexModel{
 	},
 }
 
+type MongoIterator[T any] struct {
+	Cursor *mongo.Cursor
+}
+
+func (i *MongoIterator[T]) Next(ctx context.Context, s *T) bool {
+	if !i.Cursor.Next(ctx) {
+		return false
+	}
+	err := i.Cursor.Decode(s)
+	return err == nil
+}
+
+func (i *MongoIterator[T]) Err() error {
+	return i.Cursor.Err()
+}
+
+func processCursor[T any](ctx context.Context, cr *mongo.Cursor, p store.Process[T]) (int, error) {
+	var errors *multierror.Error
+	iter := MongoIterator[T]{
+		Cursor: cr,
+	}
+	count := 0
+	for {
+		var stored T
+		if !iter.Next(ctx, &stored) {
+			break
+		}
+		err := p(&stored)
+		if err != nil {
+			errors = multierror.Append(errors, err)
+			break
+		}
+		count++
+	}
+	errors = multierror.Append(errors, iter.Err())
+	errClose := cr.Close(ctx)
+	errors = multierror.Append(errors, errClose)
+	return count, errors.ErrorOrNil()
+}
+
 func New(ctx context.Context, cfg *Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*Store, error) {
 	certManager, err := client.New(cfg.Mongo.TLS, fileWatcher, logger)
 	if err != nil {
 		return nil, fmt.Errorf("could not create cert manager: %w", err)
 	}
-	m, err := pkgMongo.NewStore(ctx, &cfg.Mongo, certManager.GetTLSConfig(), tracerProvider)
+	m, err := pkgMongo.NewStoreWithCollections(ctx, &cfg.Mongo, certManager.GetTLSConfig(), tracerProvider, map[string][]mongo.IndexModel{
+		signingRecordsCol: {commonNameKeyQueryIndex, deviceIDKeyQueryIndex},
+		revocationListCol: nil,
+	})
 	if err != nil {
 		certManager.Close()
 		return nil, err
 	}
-	bulkWriter := newBulkWriter(m.Collection(signingRecordsCol), cfg.BulkWrite.DocumentLimit, cfg.BulkWrite.ThrottleTime, cfg.BulkWrite.Timeout, logger)
-	s := Store{Store: m, bulkWriter: bulkWriter}
-	err = s.EnsureIndex(ctx, signingRecordsCol, commonNameKeyQueryIndex, deviceIDKeyQueryIndex)
-	if err != nil {
-		certManager.Close()
-		return nil, err
+	s := Store{
+		Store:  m,
+		logger: logger,
 	}
 	s.SetOnClear(s.clearDatabases)
 	s.AddCloseFunc(certManager.Close)
@@ -56,15 +97,12 @@ func New(ctx context.Context, cfg *Config, fileWatcher *fsnotify.Watcher, logger
 }
 
 func (s *Store) clearDatabases(ctx context.Context) error {
-	return s.Collection(signingRecordsCol).Drop(ctx)
+	var errs *multierror.Error
+	errs = multierror.Append(errs, s.Collection(signingRecordsCol).Drop(ctx))
+	errs = multierror.Append(errs, s.Collection(revocationListCol).Drop(ctx))
+	return errs.ErrorOrNil()
 }
 
 func (s *Store) Close(ctx context.Context) error {
-	s.bulkWriter.Close()
 	return s.Store.Close(ctx)
-}
-
-func (s *Store) FlushBulkWriter() error {
-	_, err := s.bulkWriter.bulkWrite()
-	return err
 }

@@ -26,35 +26,7 @@ func (s *CertificateAuthorityServer) validateRequest(csr []byte) error {
 	return nil
 }
 
-func (s *CertificateAuthorityServer) updateSigningIdentityCertificateRecord(ctx context.Context, updateSigningRecord *pb.SigningRecord) error {
-	var found bool
-	now := time.Now().UnixNano()
-	err := s.store.LoadSigningRecords(ctx, updateSigningRecord.GetOwner(), &store.SigningRecordsQuery{
-		CommonNameFilter: []string{updateSigningRecord.GetCommonName()},
-	}, func(ctx context.Context, iter store.SigningRecordIter) (err error) {
-		for {
-			var signingRecord pb.SigningRecord
-			ok := iter.Next(ctx, &signingRecord)
-			if !ok {
-				break
-			}
-			if updateSigningRecord.GetPublicKey() != signingRecord.GetPublicKey() && signingRecord.GetCredential().GetValidUntilDate() > now {
-				return fmt.Errorf("common name %v with different public key fingerprint exist", signingRecord.GetCommonName())
-			}
-			found = true
-		}
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-	if found {
-		return s.store.UpdateSigningRecord(ctx, updateSigningRecord)
-	}
-	return s.store.CreateSigningRecord(ctx, updateSigningRecord)
-}
-
-func toSigningRecord(owner string, template *x509.Certificate) (*pb.SigningRecord, error) {
+func toSigningRecord(owner, issuerID string, template *x509.Certificate) (*pb.SigningRecord, error) {
 	publicKeyRaw, err := x509.MarshalPKIXPublicKey(template.PublicKey)
 	if err != nil {
 		return nil, err
@@ -82,19 +54,99 @@ func toSigningRecord(owner string, template *x509.Certificate) (*pb.SigningRecor
 			CertificatePem: "",
 			Date:           now,
 			ValidUntilDate: template.NotAfter.UnixNano(),
+			Serial:         template.SerialNumber.String(),
+			IssuerId:       issuerID,
 		},
 	}, nil
 }
 
-func (s *CertificateAuthorityServer) updateSigningRecord(ctx context.Context, signingRecord *pb.SigningRecord) error {
-	var checkForIdentity bool
-	if signingRecord.GetDeviceId() != "" && signingRecord.GetDeviceId() != signingRecord.GetOwner() {
-		checkForIdentity = true
-	}
+func (s *CertificateAuthorityServer) getSigningRecord(ctx context.Context, signingRecord *pb.SigningRecord) (*pb.SigningRecord, error) {
+	checkForIdentity := signingRecord.GetDeviceId() != "" && signingRecord.GetDeviceId() != signingRecord.GetOwner()
+	var err error
+	var originalSr *store.SigningRecord
 	if checkForIdentity {
-		return s.updateSigningIdentityCertificateRecord(ctx, signingRecord)
+		now := time.Now().UnixNano()
+		err = s.store.LoadSigningRecords(ctx, signingRecord.GetOwner(), &store.SigningRecordsQuery{
+			CommonNameFilter: []string{signingRecord.GetCommonName()},
+		}, func(sr *store.SigningRecord) (err error) {
+			// _id is calculated as uuid.NewSHA1(uuid.NameSpaceX500, CommonName + PublicKey) -> thus same CommonName and PublicKey == same _id
+			if signingRecord.GetPublicKey() != sr.GetPublicKey() &&
+				sr.GetCredential().GetValidUntilDate() > now {
+				return fmt.Errorf("common name %v with different public key fingerprint exists", sr.GetCommonName())
+			}
+			if signingRecord.GetId() == sr.GetId() {
+				originalSr = sr
+			}
+			return nil
+		})
+	} else {
+		err = s.store.LoadSigningRecords(ctx, signingRecord.GetOwner(), &store.SigningRecordsQuery{
+			IdFilter: []string{signingRecord.GetId()},
+		}, func(sr *store.SigningRecord) (err error) {
+			originalSr = sr
+			return nil
+		})
 	}
-	return s.store.UpdateSigningRecord(ctx, signingRecord)
+	if err != nil {
+		return nil, err
+	}
+	return originalSr, nil
+}
+
+func (s *CertificateAuthorityServer) updateRevocationListForSigningRecord(ctx context.Context, sr, prevSr *pb.SigningRecord) error {
+	if prevSr != nil {
+		// revoke previous signing record
+		prevCred := prevSr.GetCredential()
+		if prevCred != nil {
+			query := store.UpdateRevocationListQuery{
+				IssuerID: prevCred.GetIssuerId(),
+				RevokedCertificates: []*store.RevocationListCertificate{
+					{
+						Serial:     prevCred.GetSerial(),
+						ValidUntil: prevCred.GetValidUntilDate(),
+						Revocation: time.Now().UnixNano(),
+					},
+				},
+			}
+			_, err := s.store.UpdateRevocationList(ctx, &query)
+			if err != nil {
+				return fmt.Errorf("failed to update revocation list: %w", err)
+			}
+		}
+		return nil
+	}
+	cred := sr.GetCredential()
+	if cred != nil {
+		// create new RevocationList if it doesn't exist
+		err := s.store.InsertRevocationLists(ctx, &store.RevocationList{
+			Id:     cred.GetIssuerId(),
+			Number: "1",
+		})
+		if errors.Is(err, store.ErrDuplicateID) {
+			return nil
+		}
+		if err != nil {
+			return fmt.Errorf("failed to create revocation list: %w", err)
+		}
+	}
+	return nil
+}
+
+func (s *CertificateAuthorityServer) updateSigningRecord(ctx context.Context, signingRecord *pb.SigningRecord) error {
+	// try to get previous signing record
+	prevSr, err := s.getSigningRecord(ctx, signingRecord)
+	if err != nil {
+		return err
+	}
+	if s.store.SupportsRevocationList() {
+		err = s.updateRevocationListForSigningRecord(ctx, signingRecord, prevSr)
+		if err != nil {
+			return err
+		}
+	}
+	// upsert new one
+	err = s.store.UpdateSigningRecord(ctx, signingRecord)
+	return err
 }
 
 func (s *CertificateAuthorityServer) SignCertificate(ctx context.Context, req *pb.SignCertificateRequest) (*pb.SignCertificateResponse, error) {
@@ -111,10 +163,11 @@ func (s *CertificateAuthorityServer) SignCertificate(ctx context.Context, req *p
 	if err != nil {
 		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, fmtError, err))
 	}
-	if signingRecord.GetCredential() == nil {
-		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, "cannot sign certificate: cannot create signing record"))
+	credential := signingRecord.GetCredential()
+	if credential == nil {
+		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, fmtError, errors.New("cannot create signing record")))
 	}
-	signingRecord.Credential.CertificatePem = string(cert)
+	credential.CertificatePem = string(cert)
 	if err := s.updateSigningRecord(ctx, signingRecord); err != nil {
 		return nil, logger.LogAndReturnError(status.Errorf(codes.InvalidArgument, fmtError, err))
 	}

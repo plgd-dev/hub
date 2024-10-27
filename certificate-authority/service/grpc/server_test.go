@@ -43,8 +43,6 @@ func TestReloadCerts(t *testing.T) {
 	store, closeStore := test.NewMongoStore(t)
 	defer closeStore()
 
-	logCfg := log.MakeDefaultConfig()
-	logCfg.Level = log.DebugLevel
 	logger := log.NewLogger(log.MakeDefaultConfig())
 
 	fileWatcher, err := fsnotify.NewWatcher(logger)
@@ -85,7 +83,7 @@ func TestReloadCerts(t *testing.T) {
 	err = s.Validate()
 	require.NoError(t, err)
 
-	ca, err := grpc.NewCertificateAuthorityServer(ownerClaim, config.HubID(), s, store, fileWatcher, logger)
+	ca, err := grpc.NewCertificateAuthorityServer(ownerClaim, config.HubID(), "https://"+config.CERTIFICATE_AUTHORITY_HTTP_HOST, s, store, fileWatcher, logger)
 	require.NoError(t, err)
 	defer ca.Close()
 
