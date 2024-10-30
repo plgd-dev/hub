@@ -34,7 +34,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		validator.Close()
 		return nil, fmt.Errorf("cannot create grpc server options: %w", err)
 	}
-	server, err := server.New(config.APIs.GRPC.Config.BaseConfig, fileWatcher, logger, opts...)
+	server, err := server.New(config.APIs.GRPC.Config.BaseConfig, fileWatcher, logger, tracerProvider, opts...)
 	if err != nil {
 		validator.Close()
 		otelClient.Close()

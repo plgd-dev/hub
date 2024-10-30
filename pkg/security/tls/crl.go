@@ -125,6 +125,9 @@ func (c *CRLConfig) Equals(c2 CRLConfig) bool {
 	if c.HTTP == nil {
 		return c2.HTTP == nil
 	}
+	if c2.HTTP == nil {
+		return false
+	}
 	tls := c.HTTP.GetTLS()
 	return c.HTTP.GetMaxIdleConns() == c2.HTTP.GetMaxIdleConns() &&
 		c.HTTP.GetMaxConnsPerHost() == c2.HTTP.GetMaxConnsPerHost() &&

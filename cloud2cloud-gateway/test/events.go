@@ -19,6 +19,7 @@ import (
 	"github.com/plgd-dev/kit/v2/codec/json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace/noop"
 )
 
 type EventsServer struct {
@@ -108,7 +109,7 @@ func NewEventsServer(t *testing.T, uri string) *EventsServer {
 	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 
-	certManager, err := server.New(listenCfg.TLS, fileWatcher, logger)
+	certManager, err := server.New(listenCfg.TLS, fileWatcher, logger, noop.NewTracerProvider())
 	require.NoError(t, err)
 
 	listener, err := tls.Listen("tcp", listenCfg.Addr, certManager.GetTLSConfig())

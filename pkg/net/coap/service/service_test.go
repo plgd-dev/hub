@@ -18,6 +18,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace/noop"
 	"go.uber.org/atomic"
 )
 
@@ -101,7 +102,7 @@ func TestNew(t *testing.T) {
 			logger := log.NewLogger(log.MakeDefaultConfig())
 			fileWatcher, err := fsnotify.NewWatcher(logger)
 			require.NoError(t, err)
-			got, err := New(context.Background(), tt.args.config, router, fileWatcher, logger, tt.args.options...)
+			got, err := New(context.Background(), tt.args.config, router, fileWatcher, logger, noop.NewTracerProvider(), tt.args.options...)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
@@ -146,7 +147,7 @@ func TestOnClientInactivityTCP(t *testing.T) {
 	defer cancel()
 
 	closeChan := make(chan struct{}, 2)
-	got, err := New(ctx, cfg, router, fileWatcher, logger, WithOnNewConnection(func(conn mux.Conn) {
+	got, err := New(ctx, cfg, router, fileWatcher, logger, noop.NewTracerProvider(), WithOnNewConnection(func(conn mux.Conn) {
 		conn.AddOnClose(func() {
 			closeChan <- struct{}{}
 		})
@@ -211,7 +212,7 @@ func TestOnClientInactivityUDP(t *testing.T) {
 	defer cancel()
 
 	closeChan := make(chan struct{}, 2)
-	got, err := New(ctx, cfg, router, fileWatcher, logger, WithOnNewConnection(func(conn mux.Conn) {
+	got, err := New(ctx, cfg, router, fileWatcher, logger, noop.NewTracerProvider(), WithOnNewConnection(func(conn mux.Conn) {
 		conn.AddOnClose(func() {
 			closeChan <- struct{}{}
 		})
@@ -277,7 +278,7 @@ func TestOnClientInactivityCustomTCP(t *testing.T) {
 
 	var numInactiveClients atomic.Int32
 	closeChan := make(chan struct{}, 2)
-	got, err := New(ctx, cfg, router, fileWatcher, logger, WithOnInactivityConnection(func(conn mux.Conn) {
+	got, err := New(ctx, cfg, router, fileWatcher, logger, noop.NewTracerProvider(), WithOnInactivityConnection(func(conn mux.Conn) {
 		numInactiveClients.Inc()
 		errC := conn.Close()
 		require.NoError(t, errC)
@@ -348,7 +349,7 @@ func TestOnClientInactivityCustomUDP(t *testing.T) {
 
 	var numInactiveClients atomic.Int32
 	closeChan := make(chan struct{}, 2)
-	got, err := New(ctx, cfg, router, fileWatcher, logger, WithOnInactivityConnection(func(conn mux.Conn) {
+	got, err := New(ctx, cfg, router, fileWatcher, logger, noop.NewTracerProvider(), WithOnInactivityConnection(func(conn mux.Conn) {
 		numInactiveClients.Inc()
 		errC := conn.Close()
 		require.NoError(t, errC)

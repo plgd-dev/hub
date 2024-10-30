@@ -15,7 +15,7 @@ type ClientConfig struct {
 	KeyFile         urischeme.URIScheme `yaml:"keyFile" json:"keyFile" description:"file name of private key in PEM format"`
 	CertFile        urischeme.URIScheme `yaml:"certFile" json:"certFile" description:"file name of certificate in PEM format"`
 	UseSystemCAPool bool                `yaml:"useSystemCAPool" json:"useSystemCaPool" description:"use system certification pool"`
-	CRL             CRLConfig           `yaml:"crl" json:"json"`
+	CRL             CRLConfig           `yaml:"crl" json:"crl"`
 
 	caPoolArray []urischeme.URIScheme `yaml:"-" json:"-"`
 	validated   bool
@@ -39,6 +39,9 @@ func (c *ClientConfig) Validate() error {
 	if c.KeyFile == "" {
 		return fmt.Errorf("keyFile('%v')", c.KeyFile)
 	}
+	if err := c.CRL.Validate(); err != nil {
+		return fmt.Errorf("CRL configuration is invalid: %w", err)
+	}
 	c.validated = true
 	return nil
 }
@@ -60,8 +63,11 @@ func (c *ClientConfig) CAPoolFilePathArray() ([]string, error) {
 
 func (c *ClientConfig) Equals(c2 ClientConfig) bool {
 	caPool1, ok1 := strings.ToStringArray(c.CAPool)
+	if !ok1 {
+		return false
+	}
 	caPool2, ok2 := strings.ToStringArray(c2.CAPool)
-	if !ok1 || !ok2 {
+	if !ok2 {
 		return false
 	}
 	return slices.Equal(caPool1, caPool2) &&

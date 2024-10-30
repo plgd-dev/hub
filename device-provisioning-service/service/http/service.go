@@ -31,7 +31,7 @@ func New(ctx context.Context, serviceName string, config Config, fileWatcher *fs
 	if err != nil {
 		return nil, fmt.Errorf("cannot create validator: %w", err)
 	}
-	listener, err := listener.New(config.Connection, fileWatcher, logger)
+	listener, err := listener.New(config.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		validator.Close()
 		return nil, fmt.Errorf("cannot create grpc server: %w", err)

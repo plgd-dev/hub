@@ -19,6 +19,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test/config"
 	testHttp "github.com/plgd-dev/hub/v2/test/http"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace/noop"
 )
 
 func MakeStorageConfig() service.StorageConfig {
@@ -116,7 +117,7 @@ func NewTestListener(t *testing.T) (net.Listener, func()) {
 	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 
-	certManager, err := server.New(listenCfg.TLS, fileWatcher, logger)
+	certManager, err := server.New(listenCfg.TLS, fileWatcher, logger, noop.NewTracerProvider())
 	require.NoError(t, err)
 
 	listener, err := tls.Listen("tcp", listenCfg.Addr, certManager.GetTLSConfig())

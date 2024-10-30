@@ -45,6 +45,9 @@ func (c Config) Validate() error {
 	if c.KeyFile == "" {
 		return fmt.Errorf("keyFile('%v')", c.KeyFile)
 	}
+	if err := c.CRL.Validate(); err != nil {
+		return fmt.Errorf("CRL configuration is invalid: %w", err)
+	}
 	return nil
 }
 

@@ -195,10 +195,9 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
 	}
 	otelClient.AddCloseFunc(cancel)
-
 	tracerProvider := otelClient.GetTracerProvider()
 
-	listener, err := listener.New(config.APIs.HTTP.Connection, fileWatcher, logger)
+	listener, err := listener.New(config.APIs.HTTP.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		otelClient.Close()
 		return nil, fmt.Errorf("cannot create http server: %w", err)

@@ -25,7 +25,7 @@ type Service struct {
 
 // New parses configuration and creates new http service
 func New(config Config) (*Service, error) {
-	listener, err := listener.New(config.HTTPConnection, config.FileWatcher, config.Logger)
+	listener, err := listener.New(config.HTTPConnection, config.FileWatcher, config.Logger, config.TraceProvider)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create grpc server: %w", err)
 	}

@@ -11,7 +11,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/general"
 	pkgTls "github.com/plgd-dev/hub/v2/pkg/security/tls"
 	"github.com/plgd-dev/hub/v2/pkg/strings"
-	"go.opentelemetry.io/otel/trace/noop"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Config provides configuration of a file based Server Certificate manager. CAPool can be a string or an array of strings.
@@ -72,7 +72,7 @@ func (c *CertManager) Close() {
 }
 
 // New creates a new certificate manager which watches for certs in a filesystem
-func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*CertManager, error) {
+func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tp trace.TracerProvider) (*CertManager, error) {
 	if !config.validated {
 		if err := config.Validate(); err != nil {
 			return nil, err
@@ -85,8 +85,7 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Cert
 		ClientCertificateRequired: config.ClientCertificateRequired,
 		UseSystemCAPool:           false,
 		CRL:                       config.CRL,
-		// TODO: use real trace provider
-	}, fileWatcher, logger.With(log.CertManagerKey, "server"), noop.NewTracerProvider())
+	}, fileWatcher, logger.With(log.CertManagerKey, "server"), tp)
 	if err != nil {
 		return nil, err
 	}
