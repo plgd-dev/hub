@@ -18,14 +18,14 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-type dtlsListerner struct {
+type dtlsListener struct {
 	coapDtlsServer.Listener
 	close func()
 }
 
 type dtlsServer struct {
 	coapServer *coapDtlsServer.Server
-	listener   *dtlsListerner
+	listener   *dtlsListener
 }
 
 func (s *dtlsServer) Serve() error {
@@ -38,14 +38,14 @@ func (s *dtlsServer) Close() error {
 	return nil
 }
 
-type udpListerner struct {
+type udpListener struct {
 	*net.UDPConn
 	close func()
 }
 
 type udpServer struct {
 	coapServer *coapUdpServer.Server
-	listener   *udpListerner
+	listener   *udpListener
 }
 
 func (s *udpServer) Serve() error {
@@ -58,17 +58,17 @@ func (s *udpServer) Close() error {
 	return nil
 }
 
-func newUDPListener(config Config, logger log.Logger) (*udpListerner, error) {
+func newUDPListener(config Config, logger log.Logger) (*udpListener, error) {
 	listener, err := net.NewListenUDP("udp", config.Addr)
 	if err != nil {
-		return nil, fmt.Errorf("cannot create tcp listener: %w", err)
+		return nil, fmt.Errorf("cannot create udp listener: %w", err)
 	}
 	closeListener := func() {
 		if err := listener.Close(); err != nil {
-			logger.Errorf("failed to close tcp listener: %w", err)
+			logger.Errorf("failed to close udp listener: %v", err)
 		}
 	}
-	return &udpListerner{
+	return &udpListener{
 		UDPConn: listener,
 		close:   closeListener,
 	}, nil
@@ -113,7 +113,7 @@ func TLSConfigToDTLSConfig(tlsConfig *tls.Config) *dtls.Config {
 	}
 }
 
-func newDTLSListener(config Config, serviceOpts Options, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*dtlsListerner, error) {
+func newDTLSListener(config Config, serviceOpts Options, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*dtlsListener, error) {
 	var closeListener fn.FuncList
 	coapsTLS, err := certManagerServer.New(config.TLS.Embedded, fileWatcher, logger, tracerProvider)
 	if err != nil {
@@ -133,11 +133,11 @@ func newDTLSListener(config Config, serviceOpts Options, fileWatcher *fsnotify.W
 	}
 	closeListener.AddFunc(func() {
 		if err := listener.Close(); err != nil {
-			logger.Errorf("failed to close dtls listener: %w", err)
+			logger.Errorf("failed to close dtls listener: %v", err)
 		}
 	})
 
-	return &dtlsListerner{
+	return &dtlsListener{
 		Listener: listener,
 		close:    closeListener.ToFunction(),
 	}, nil

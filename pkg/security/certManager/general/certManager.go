@@ -417,13 +417,9 @@ func (a *CertManager) downloadCRL(ctx context.Context, cdp string) (*x509.Revoca
 		return nil, err
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected statusCode %v: '%v'", resp.StatusCode, string(respBody))
+		return nil, fmt.Errorf("unexpected status code %v while downloading CRL from %s", resp.StatusCode, cdp)
 	}
-	crl, err := x509.ParseRevocationList(respBody)
-	if err != nil {
-		return nil, err
-	}
-	return crl, nil
+	return x509.ParseRevocationList(respBody)
 }
 
 func (a *CertManager) VerifyByCRL(ctx context.Context, certificate *x509.Certificate, cdps []string) error {
@@ -437,10 +433,10 @@ func (a *CertManager) VerifyByCRL(ctx context.Context, certificate *x509.Certifi
 			continue
 		}
 		if pkgX509.IsRevoked(certificate, crl) {
-			return fmt.Errorf("certificate(%s) was revoked by CRL(%s)", "", crl.Issuer.String())
+			return fmt.Errorf("certificate(serialNumber=%s) was revoked by CRL(%s)", certificate.SerialNumber.String(), crl.Issuer.String())
 		}
 		return nil
 
 	}
-	return errors.New("failed to verify certificate by CRL")
+	return fmt.Errorf("failed to verify certificate(serialNumber=%s) by CRL: all distribution points failed", certificate.SerialNumber.String())
 }

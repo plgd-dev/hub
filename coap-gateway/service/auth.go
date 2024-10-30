@@ -128,7 +128,7 @@ func verifyChain(ctx context.Context, chain []*x509.Certificate, capool *x509.Ce
 
 	if len(certificate.CRLDistributionPoints) > 0 {
 		if verifyByCRL == nil {
-			return errors.New("failed to check certificate validity by CRL")
+			return errors.New("cannot verify certificate validity by CRL: verification function not provided")
 		}
 		if err = verifyByCRL(ctx, certificate, certificate.CRLDistributionPoints); err != nil {
 			return err

@@ -35,7 +35,7 @@ func TestCertificateWithCRL(t *testing.T) {
 	shutdown := setUp(t, coapgwCfg)
 	defer shutdown()
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30*20)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 	tokenWithoutDeviceID := oauthTest.GetDefaultAccessToken(t)
 	ctx = pkgGrpc.CtxWithToken(ctx, tokenWithoutDeviceID)

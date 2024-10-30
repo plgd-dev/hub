@@ -29,10 +29,10 @@ func NewLocalCertificateGenerator(sc []*x509.Certificate, sk *ecdsa.PrivateKey) 
 
 func getTLSCertificate(certPEMBlock []byte, pk *ecdsa.PrivateKey) (tls.Certificate, error) {
 	b, err := x509.MarshalECPrivateKey(pk)
-	key := pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: b})
 	if err != nil {
 		return tls.Certificate{}, err
 	}
+	key := pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: b})
 	crt, err := tls.X509KeyPair(certPEMBlock, key)
 	if err != nil {
 		return tls.Certificate{}, err
@@ -51,6 +51,9 @@ func (g *LocalCertificateGenerator) getCertificate(identityCert bool, deviceID s
 			ValidFrom: time.Now().Add(-time.Hour).Format(time.RFC3339),
 			ValidFor:  time.Until(validTo) + time.Hour,
 		}, deviceID, priv, g.signerCACertificate, g.signerCAKey)
+		if err != nil {
+			return tls.Certificate{}, err
+		}
 	} else {
 		c := generateCertificate.Configuration{
 			ValidFrom: time.Now().Add(-time.Hour).Format(time.RFC3339),
@@ -59,9 +62,9 @@ func (g *LocalCertificateGenerator) getCertificate(identityCert bool, deviceID s
 		c.Subject.CommonName = "non-identity-cert"
 		c.ExtensionKeyUsages = []string{"client", "server"}
 		certData, err = generateCertificate.GenerateCert(c, priv, g.signerCACertificate, g.signerCAKey)
-	}
-	if err != nil {
-		return tls.Certificate{}, err
+		if err != nil {
+			return tls.Certificate{}, err
+		}
 	}
 	return getTLSCertificate(certData, priv)
 }
