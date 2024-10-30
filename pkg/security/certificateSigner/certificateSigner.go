@@ -11,6 +11,7 @@ import (
 	"slices"
 	"time"
 
+	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	"github.com/plgd-dev/kit/v2/security"
 )
@@ -20,6 +21,18 @@ type SignerConfig struct {
 	ValidNotAfter         time.Time
 	CRLDistributionPoints []string
 	OverrideCertTemplate  func(template *x509.Certificate) error
+}
+
+func (c *SignerConfig) Validate() error {
+	if !c.ValidNotBefore.IsZero() && !c.ValidNotAfter.IsZero() && c.ValidNotBefore.After(c.ValidNotAfter) {
+		return errors.New("ValidNotBefore must not be after ValidNotAfter")
+	}
+	for _, url := range c.CRLDistributionPoints {
+		if err := pkgX509.ValidateCRLDistributionPointAddress(url); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 type Opt = func(cfg *SignerConfig)
@@ -54,14 +67,17 @@ type CertificateSigner struct {
 	cfg    SignerConfig
 }
 
-func New(caCert []*x509.Certificate, caKey crypto.PrivateKey, opts ...Opt) *CertificateSigner {
+func New(caCert []*x509.Certificate, caKey crypto.PrivateKey, opts ...Opt) (*CertificateSigner, error) {
 	cfg := SignerConfig{
 		ValidNotAfter: pkgTime.MaxTime,
 	}
 	for _, o := range opts {
 		o(&cfg)
 	}
-	return &CertificateSigner{caCert: caCert, caKey: caKey, cfg: cfg}
+	if err := cfg.Validate(); err != nil {
+		return nil, err
+	}
+	return &CertificateSigner{caCert: caCert, caKey: caKey, cfg: cfg}, nil
 }
 
 func parseCertificateRequest(csr []byte) (*x509.CertificateRequest, error) {

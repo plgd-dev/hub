@@ -148,7 +148,11 @@ func (s *Signer) GetPrivateKey() *ecdsa.PrivateKey {
 	return s.privateKey
 }
 
-func (s *Signer) GetCRLConfiguation() (string, time.Duration) {
+func (s *Signer) GetIssuerID() string {
+	return s.issuerID
+}
+
+func (s *Signer) GetCRLConfiguration() (string, time.Duration) {
 	return s.crl.serverAddress, s.crl.validFor
 }
 
@@ -156,7 +160,7 @@ func (s *Signer) IsCRLEnabled() bool {
 	return s.crl.serverAddress != ""
 }
 
-func (s *Signer) newCertificateSigner(identitySigner bool, opts ...func(cfg *certificateSigner.SignerConfig)) *certificateSigner.CertificateSigner {
+func (s *Signer) newCertificateSigner(identitySigner bool, opts ...func(cfg *certificateSigner.SignerConfig)) (*certificateSigner.CertificateSigner, error) {
 	if identitySigner {
 		return certificateSigner.NewIdentityCertificateSigner(s.certificate, s.privateKey, opts...)
 	}
@@ -181,7 +185,10 @@ func (s *Signer) sign(ctx context.Context, isIdentityCertificate bool, csr []byt
 			[]string{path.Join(s.crl.serverAddress, uri.SigningRevocationListBase, s.issuerID)},
 		))
 	}
-	signer := s.newCertificateSigner(isIdentityCertificate, opts...)
+	signer, err := s.newCertificateSigner(isIdentityCertificate, opts...)
+	if err != nil {
+		return nil, nil, err
+	}
 	cert, err := signer.Sign(ctx, csr)
 	if err != nil {
 		return nil, nil, err

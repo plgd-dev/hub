@@ -170,7 +170,7 @@ func NewClient(opts ...Option) (*client.Client, error) {
 		ID:      c.id,
 		Cert:    string(identityIntermediateCA),
 		CertKey: string(identityIntermediateCAKey),
-		CreateSignerFunc: func(caCert []*x509.Certificate, caKey crypto.PrivateKey, validNotBefore time.Time, validNotAfter time.Time) core.CertificateSigner {
+		CreateSignerFunc: func(caCert []*x509.Certificate, caKey crypto.PrivateKey, validNotBefore time.Time, validNotAfter time.Time, _ []string) (core.CertificateSigner, error) {
 			return certificateSigner.NewIdentityCertificateSigner(caCert, caKey, certificateSigner.WithNotBefore(validNotBefore), certificateSigner.WithNotAfter(validNotAfter))
 		},
 		ValidFrom: c.validFrom,

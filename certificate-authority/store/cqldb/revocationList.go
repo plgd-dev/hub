@@ -19,6 +19,10 @@ func (s *Store) UpdateRevocationList(context.Context, *store.UpdateRevocationLis
 	return nil, store.ErrNotSupported
 }
 
+func (s *Store) GetRevocationList(context.Context, string, bool) (*store.RevocationList, error) {
+	return nil, store.ErrNotSupported
+}
+
 func (s *Store) GetLatestIssuedOrIssueRevocationList(context.Context, string, time.Duration) (*store.RevocationList, error) {
 	return nil, store.ErrNotSupported
 }

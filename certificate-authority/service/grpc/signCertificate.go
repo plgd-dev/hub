@@ -93,60 +93,38 @@ func (s *CertificateAuthorityServer) getSigningRecord(ctx context.Context, signi
 	return originalSr, nil
 }
 
-func (s *CertificateAuthorityServer) updateRevocationListForSigningRecord(ctx context.Context, sr, prevSr *pb.SigningRecord) error {
-	if prevSr != nil {
-		// revoke previous signing record
-		prevCred := prevSr.GetCredential()
-		if prevCred != nil {
-			query := store.UpdateRevocationListQuery{
-				IssuerID: prevCred.GetIssuerId(),
-				RevokedCertificates: []*store.RevocationListCertificate{
-					{
-						Serial:     prevCred.GetSerial(),
-						ValidUntil: prevCred.GetValidUntilDate(),
-						Revocation: time.Now().UnixNano(),
-					},
-				},
-			}
-			_, err := s.store.UpdateRevocationList(ctx, &query)
-			if err != nil {
-				return fmt.Errorf("failed to update revocation list: %w", err)
-			}
-		}
+func (s *CertificateAuthorityServer) revokeSigningRecord(ctx context.Context, revokedSr *pb.SigningRecord) error {
+	revokedCred := revokedSr.GetCredential()
+	if revokedCred == nil { // nothing to revoke
 		return nil
 	}
-	cred := sr.GetCredential()
-	if cred != nil {
-		// create new RevocationList if it doesn't exist
-		err := s.store.InsertRevocationLists(ctx, &store.RevocationList{
-			Id:     cred.GetIssuerId(),
-			Number: "1",
-		})
-		if errors.Is(err, store.ErrDuplicateID) {
-			return nil
-		}
-		if err != nil {
-			return fmt.Errorf("failed to create revocation list: %w", err)
-		}
+	query := store.UpdateRevocationListQuery{
+		IssuerID: revokedCred.GetIssuerId(),
+		RevokedCertificates: []*store.RevocationListCertificate{
+			{
+				Serial:     revokedCred.GetSerial(),
+				ValidUntil: revokedCred.GetValidUntilDate(),
+				Revocation: time.Now().UnixNano(),
+			},
+		},
 	}
-	return nil
+	_, err := s.store.UpdateRevocationList(ctx, &query)
+	return err
 }
 
 func (s *CertificateAuthorityServer) updateSigningRecord(ctx context.Context, signingRecord *pb.SigningRecord) error {
-	// try to get previous signing record
 	prevSr, err := s.getSigningRecord(ctx, signingRecord)
 	if err != nil {
 		return err
 	}
-	if s.store.SupportsRevocationList() {
-		err = s.updateRevocationListForSigningRecord(ctx, signingRecord, prevSr)
+	if s.store.SupportsRevocationList() && prevSr != nil {
+		err = s.revokeSigningRecord(ctx, prevSr)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to revoke original signing record: %w", err)
 		}
 	}
 	// upsert new one
-	err = s.store.UpdateSigningRecord(ctx, signingRecord)
-	return err
+	return s.store.UpdateSigningRecord(ctx, signingRecord)
 }
 
 func (s *CertificateAuthorityServer) SignCertificate(ctx context.Context, req *pb.SignCertificateRequest) (*pb.SignCertificateResponse, error) {

@@ -49,18 +49,17 @@ func createCRL(rl *store.RevocationList, issuer *x509.Certificate, priv crypto.S
 	return x509.CreateRevocationList(rand.Reader, template, issuer, priv)
 }
 
-func (requestHandler *requestHandler) tryGetRevocationList(ctx context.Context, issuerID string, validFor time.Duration, tries int) (*store.RevocationList, error) {
-	for i := 0; i < tries; i++ {
-		rl, err := requestHandler.store.GetLatestIssuedOrIssueRevocationList(ctx, issuerID, validFor)
-		if err == nil {
-			return rl, nil
-		}
-		if errors.Is(err, store.ErrNotFound) {
-			continue
-		}
-		return nil, err
+func (requestHandler *requestHandler) tryGetRevocationList(ctx context.Context, issuerID string, validFor time.Duration) (*store.RevocationList, error) {
+	rl, err := requestHandler.store.GetLatestIssuedOrIssueRevocationList(ctx, issuerID, validFor)
+	if err == nil {
+		return rl, nil
 	}
-	return nil, store.ErrNotFound
+	if errors.Is(err, store.ErrNotFound) || errors.Is(err, store.ErrDuplicateID) {
+		// this only occurs if some parallel request updated the revocation list first, in that case we should
+		// just retrieve the updated one
+		return requestHandler.store.GetRevocationList(ctx, issuerID, true)
+	}
+	return nil, err
 }
 
 func (requestHandler *requestHandler) writeRevocationList(w http.ResponseWriter, r *http.Request) error {
@@ -70,10 +69,8 @@ func (requestHandler *requestHandler) writeRevocationList(w http.ResponseWriter,
 		return err
 	}
 	signer := requestHandler.cas.GetSigner()
-	_, validFor := signer.GetCRLConfiguation()
-	// TODO: make configurable
-	const tries = 3
-	rl, err := requestHandler.tryGetRevocationList(r.Context(), issuerID, validFor, tries)
+	_, validFor := signer.GetCRLConfiguration()
+	rl, err := requestHandler.tryGetRevocationList(r.Context(), issuerID, validFor)
 	if err != nil {
 		return err
 	}

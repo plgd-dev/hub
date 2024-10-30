@@ -3,11 +3,14 @@ package http_test
 import (
 	"context"
 	"crypto/x509"
+	"errors"
 	"io"
 	"net/http"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	certAuthURI "github.com/plgd-dev/hub/v2/certificate-authority/service/uri"
 	"github.com/plgd-dev/hub/v2/certificate-authority/store"
 	"github.com/plgd-dev/hub/v2/certificate-authority/test"
@@ -18,6 +21,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	testService "github.com/plgd-dev/hub/v2/test/service"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/maps"
 )
@@ -175,7 +179,7 @@ func TestRevocationList(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request := httpgwTest.NewRequest(http.MethodGet, certAuthURI.SigningRevocationList, nil).Host(config.CERTIFICATE_AUTHORITY_HTTP_HOST).AuthToken(token).AddIssuerID(tt.args.issuer).Build()
+			request := httpgwTest.NewRequest(http.MethodGet, certAuthURI.SigningRevocationList, nil).Host(config.CERTIFICATE_AUTHORITY_HTTP_HOST).AddIssuerID(tt.args.issuer).Build()
 			httpResp := httpgwTest.HTTPDo(t, request)
 			respBody, err := io.ReadAll(httpResp.Body)
 			require.NoError(t, err)
@@ -189,4 +193,96 @@ func TestRevocationList(t *testing.T) {
 			tt.verifyCRL(crl)
 		})
 	}
+}
+
+func TestParallelIssueAndUpdateRevocationList(t *testing.T) {
+	if config.ACTIVE_DATABASE() == database.CqlDB {
+		t.Skip("revocation list not supported for CqlDB")
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	defer cancel()
+
+	shutDown := testService.SetUpServices(context.Background(), t, testService.SetUpServicesOAuth|testService.SetUpServicesMachine2MachineOAuth)
+	defer shutDown()
+	caShutdown := test.New(t, test.MakeConfig(t))
+	defer caShutdown()
+	s, cleanUpStore := test.NewStore(t)
+	defer cleanUpStore()
+
+	token := oauthTest.GetDefaultAccessToken(t)
+	ctx = pkgGrpc.CtxWithToken(ctx, token)
+
+	issuerID := uuid.NewString()
+	const iterations = 100
+	const iterationsPerHttpRequest = 10
+	certificates := make([]*store.RevocationListCertificate, iterations)
+	for i := 0; i < len(certificates); i++ {
+		certificates[i] = test.GetCertificate(i, time.Now(), time.Now().Add(time.Hour))
+	}
+
+	q := &store.UpdateRevocationListQuery{
+		IssuerID: issuerID,
+	}
+	_, err := s.UpdateRevocationList(ctx, q)
+	require.NoError(t, err)
+
+	var wg sync.WaitGroup
+	wg.Add(iterations)
+	doUpdate := func(i int) {
+		go func(index int) {
+			defer wg.Done()
+			for {
+				cert := certificates[index]
+				q := &store.UpdateRevocationListQuery{
+					IssuerID:            issuerID,
+					RevokedCertificates: []*store.RevocationListCertificate{cert},
+				}
+				_, err := s.UpdateRevocationList(ctx, q)
+				if errors.Is(err, store.ErrDuplicateID) || errors.Is(err, store.ErrNotFound) {
+					continue
+				}
+				if err == nil {
+					break
+				}
+				assert.NoError(t, err)
+			}
+		}(i)
+	}
+
+	wg.Add(iterations)
+	doIssue := func() {
+		go func() {
+			defer wg.Done()
+			for {
+				_, err := s.GetLatestIssuedOrIssueRevocationList(ctx, issuerID, time.Second)
+				if errors.Is(err, store.ErrDuplicateID) || errors.Is(err, store.ErrNotFound) {
+					continue
+				}
+				if err == nil {
+					break
+				}
+				assert.NoError(t, err)
+			}
+		}()
+	}
+
+	wg.Add(iterations / iterationsPerHttpRequest)
+	doIssueByHttp := func() {
+		go func() {
+			defer wg.Done()
+			request := httpgwTest.NewRequest(http.MethodGet, certAuthURI.SigningRevocationList, nil).Host(config.CERTIFICATE_AUTHORITY_HTTP_HOST).AddIssuerID(issuerID).Build()
+			httpResp := httpgwTest.HTTPDo(t, request)
+			_ = httpResp.Body.Close()
+			assert.Equal(t, http.StatusOK, httpResp.StatusCode)
+		}()
+	}
+
+	for iter := range iterations {
+		doIssue()
+		doUpdate(iter)
+		if iter%iterationsPerHttpRequest == 0 {
+			doIssueByHttp()
+		}
+	}
+	wg.Wait()
 }

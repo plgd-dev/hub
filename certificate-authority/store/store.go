@@ -48,6 +48,8 @@ type Store interface {
 	SupportsRevocationList() bool
 	// InsertRevocationLists adds revocations lists to the database
 	InsertRevocationLists(ctx context.Context, rls ...*RevocationList) error
+	// Get revocation list for given issuer
+	GetRevocationList(ctx context.Context, issuerID string, includeExpired bool) (*RevocationList, error)
 	// UpdateRevocationList updates revocation list number and validity and adds certificates to revocation list. Returns the updated revocation list.
 	UpdateRevocationList(ctx context.Context, query *UpdateRevocationListQuery) (*RevocationList, error)
 	// Get valid latest issued or issue a new one revocation list

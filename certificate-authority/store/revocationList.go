@@ -59,9 +59,11 @@ func ParseBigInt(s string) (*big.Int, error) {
 	return &number, nil
 }
 
-// TODO: use some delta to check expiration
+// IsExpired checks whether the revocation list is expired
 func (rl *RevocationList) IsExpired() bool {
-	return rl.ValidUntil <= time.Now().UnixNano()
+	// the crl is expiring soon, so we treat it as already expired
+	const delta = time.Minute
+	return rl.ValidUntil <= time.Now().Add(delta).UnixNano()
 }
 
 func (rl *RevocationList) Validate() error {

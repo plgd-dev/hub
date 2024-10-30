@@ -2,7 +2,10 @@ package grpc
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"fmt"
+	"time"
 
 	"github.com/plgd-dev/hub/v2/certificate-authority/pb"
 	"github.com/plgd-dev/hub/v2/certificate-authority/store"
@@ -84,6 +87,24 @@ func NewCertificateAuthorityServer(ownerClaim, hubID, crlServerAddress string, s
 	return s, nil
 }
 
+func (s *CertificateAuthorityServer) initStore(issuerID string) error {
+	if s.store.SupportsRevocationList() {
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		err := s.store.InsertRevocationLists(ctx, &store.RevocationList{
+			Id:     issuerID,
+			Number: "1",
+		})
+		if errors.Is(err, store.ErrDuplicateID) {
+			return nil
+		}
+		if err != nil {
+			return fmt.Errorf("failed to create revocation list: %w", err)
+		}
+	}
+	return nil
+}
+
 func (s *CertificateAuthorityServer) Close() {
 	for _, ca := range s.signerConfig.caPoolArray {
 		if !ca.IsFile() {
@@ -114,6 +135,9 @@ func (s *CertificateAuthorityServer) load() (bool, error) {
 	oldSigner := s.signer.Load()
 	if oldSigner != nil && len(signer.certificate) == len(oldSigner.certificate) && bytes.Equal(signer.certificate[0].Raw, oldSigner.certificate[0].Raw) {
 		return false, nil
+	}
+	if err = s.initStore(signer.GetIssuerID()); err != nil {
+		return false, err
 	}
 	return s.signer.CompareAndSwap(oldSigner, signer), nil
 }
