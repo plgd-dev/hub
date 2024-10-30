@@ -75,7 +75,7 @@ func processCursor[T any](ctx context.Context, cr *mongo.Cursor, p store.Process
 }
 
 func New(ctx context.Context, cfg *Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*Store, error) {
-	certManager, err := client.New(cfg.Mongo.TLS, fileWatcher, logger)
+	certManager, err := client.New(cfg.Mongo.TLS, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, fmt.Errorf("could not create cert manager: %w", err)
 	}

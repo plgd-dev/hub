@@ -10,6 +10,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/net/http/client"
+	cmClient "github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/pkg/security/openid"
 	"github.com/plgd-dev/hub/v2/pkg/sync/task/future"
@@ -32,7 +33,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	if err != nil {
 		return nil, fmt.Errorf("invalid OAuth client credential config: %w", err)
 	}
-	httpClient, err := client.New(config.HTTP, fileWatcher, logger, tracerProvider)
+	httpClient, err := cmClient.NewHTTPClient(&config.HTTP, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, err
 	}

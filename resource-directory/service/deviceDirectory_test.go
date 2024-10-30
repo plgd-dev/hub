@@ -22,6 +22,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test/config"
 	cbor "github.com/plgd-dev/kit/v2/codec/cbor"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace/noop"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -123,7 +124,7 @@ func TestDeviceDirectoryGetDevices(t *testing.T) {
 	pool, err := ants.NewPool(1)
 	require.NoError(t, err)
 	naClient, resourceSubscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(), fileWatcher,
-		logger,
+		logger, noop.NewTracerProvider(),
 		subscriber.WithGoPool(pool.Submit),
 		subscriber.WithUnmarshaler(utils.Unmarshal),
 	)

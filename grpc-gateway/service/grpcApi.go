@@ -117,7 +117,7 @@ func newRequestHandlerFromConfig(config Config, fileWatcher *fsnotify.Watcher, l
 	}
 	closeFunc.AddFunc(closeIdClient)
 
-	natsClient, err := naClient.New(config.Clients.Eventbus.NATS.Config, fileWatcher, logger)
+	natsClient, err := naClient.New(config.Clients.Eventbus.NATS.Config, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create nats client: %w", err)
 	}

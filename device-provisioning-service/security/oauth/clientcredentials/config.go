@@ -5,7 +5,7 @@ import (
 	"net/url"
 
 	"github.com/plgd-dev/hub/v2/pkg/config/property/urischeme"
-	"github.com/plgd-dev/hub/v2/pkg/net/http/client"
+	pkgTls "github.com/plgd-dev/hub/v2/pkg/security/tls"
 	"golang.org/x/oauth2/clientcredentials"
 )
 
@@ -17,7 +17,7 @@ type Config struct {
 	TokenURL         string              `yaml:"-" json:"tokenUrl"`
 	Audience         string              `yaml:"audience" json:"audience"`
 	ClientSecret     string              `yaml:"-" json:"clientSecret"`
-	HTTP             client.Config       `yaml:"http" json:"http"`
+	HTTP             pkgTls.HTTPConfig   `yaml:"http" json:"http"`
 }
 
 func (c *Config) Validate() error {

@@ -10,8 +10,8 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/fn"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
-	"github.com/plgd-dev/hub/v2/pkg/net/http/client"
 	pkgHttpUri "github.com/plgd-dev/hub/v2/pkg/net/http/uri"
+	cmClient "github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
 	jwtValidator "github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/pkg/security/openid"
 	"go.opentelemetry.io/otel/trace"
@@ -83,7 +83,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	openIDConfigurations := make([]openid.Config, 0, len(config.Endpoints))
 	clients := make(map[string]jwtValidator.TokenIssuerClient, len(config.Endpoints))
 	for _, authority := range config.Endpoints {
-		httpClient, err := client.New(authority.HTTP, fileWatcher, logger, tracerProvider)
+		httpClient, err := cmClient.NewHTTPClient(&authority.HTTP, fileWatcher, logger, tracerProvider)
 		if err != nil {
 			onClose.Execute()
 			return nil, fmt.Errorf("cannot create client cert manager: %w", err)

@@ -33,7 +33,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	otelClient.AddCloseFunc(cancel)
 	tracerProvider := otelClient.GetTracerProvider()
 
-	listener, err := listener.New(config.APIs.HTTP.Connection, fileWatcher, logger)
+	listener, err := listener.New(config.APIs.HTTP.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		otelClient.Close()
 		return nil, fmt.Errorf("cannot create http server: %w", err)

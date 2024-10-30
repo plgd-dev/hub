@@ -14,7 +14,7 @@ import (
 	"github.com/plgd-dev/go-coap/v3/message"
 	pbGW "github.com/plgd-dev/hub/v2/grpc-gateway/pb"
 	"github.com/plgd-dev/hub/v2/pkg/log"
-	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
 	"github.com/plgd-dev/hub/v2/test/oauth-server/service"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
@@ -241,7 +241,7 @@ func main() {
 	}
 
 	ocfGW := pbGW.NewGrpcGatewayClient(conn)
-	ctx := kitNetGrpc.CtxWithToken(context.Background(), *accesstoken)
+	ctx := pkgGrpc.CtxWithToken(context.Background(), *accesstoken)
 	switch {
 	case *deleteOpt:
 		deleteResource(ctx, ocfGW, *deviceID, *href)

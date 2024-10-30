@@ -75,7 +75,7 @@ func TestOwnerCacheSubscribe(t *testing.T) {
 	owner, err := kitNetGrpc.ParseOwnerFromJwtToken("sub", token)
 	require.NoError(t, err)
 
-	naClient, subscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(), fileWatcher, log.Get())
+	naClient, subscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(), fileWatcher, log.Get(), noop.NewTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		subscriber.Close()

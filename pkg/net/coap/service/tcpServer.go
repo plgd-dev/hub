@@ -13,6 +13,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	certManagerServer "github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type tcpServer struct {
@@ -30,7 +31,7 @@ func (s *tcpServer) Close() error {
 	return nil
 }
 
-func newTCPListener(config Config, serviceOpts Options, fileWatcher *fsnotify.Watcher, logger log.Logger) (coapTcpServer.Listener, func(), error) {
+func newTCPListener(config Config, serviceOpts Options, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (coapTcpServer.Listener, func(), error) {
 	if !config.TLS.IsEnabled() {
 		listener, err := net.NewTCPListener("tcp", config.Addr)
 		if err != nil {
@@ -45,7 +46,7 @@ func newTCPListener(config Config, serviceOpts Options, fileWatcher *fsnotify.Wa
 	}
 
 	var closeListener fn.FuncList
-	coapsTLS, err := certManagerServer.New(config.TLS.Embedded, fileWatcher, logger)
+	coapsTLS, err := certManagerServer.New(config.TLS.Embedded, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create tls cert manager: %w", err)
 	}
@@ -67,13 +68,13 @@ func newTCPListener(config Config, serviceOpts Options, fileWatcher *fsnotify.Wa
 	return listener, closeListener.ToFunction(), nil
 }
 
-func newTCPServer(config Config, serviceOpts Options, fileWatcher *fsnotify.Watcher, logger log.Logger, opts ...interface {
+func newTCPServer(config Config, serviceOpts Options, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, opts ...interface {
 	coapTcpServer.Option
 	coapDtlsServer.Option
 	coapUdpServer.Option
 },
 ) (*tcpServer, error) {
-	listener, closeListener, err := newTCPListener(config, serviceOpts, fileWatcher, logger)
+	listener, closeListener, err := newTCPListener(config, serviceOpts, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create listener: %w", err)
 	}

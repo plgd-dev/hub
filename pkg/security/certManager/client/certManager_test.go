@@ -11,6 +11,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
 	testX509 "github.com/plgd-dev/hub/v2/test/security/x509"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace/noop"
 	"gopkg.in/yaml.v3"
 )
 
@@ -143,7 +144,7 @@ func TestNew(t *testing.T) {
 		err = fileWatcher.Close()
 		require.NoError(t, err)
 	}()
-	mng, err := client.New(config, fileWatcher, logger)
+	mng, err := client.New(config, fileWatcher, logger, noop.NewTracerProvider())
 	require.NoError(t, err)
 
 	tlsConfig := mng.GetTLSConfig()
