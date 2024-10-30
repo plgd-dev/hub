@@ -178,6 +178,9 @@ func (a *CertManager) Close() {
 	if !a.done.CompareAndSwap(false, true) {
 		return
 	}
+	if a.httpClient != nil {
+		a.httpClient.Close()
+	}
 	for _, ca := range a.config.CAPool {
 		if !ca.IsFile() {
 			continue
