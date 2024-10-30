@@ -92,6 +92,7 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracer
 		verifyClientCertificate = tls.NoClientCert
 	}
 
+	var cleanUpOnError fn.FuncList
 	var httpClient *pkgHttpClient.Client
 	if config.CRL.Enabled {
 		var err error
@@ -99,6 +100,9 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracer
 		if err != nil {
 			return nil, err
 		}
+		cleanUpOnError.AddFunc(func() {
+			httpClient.Close()
+		})
 	}
 
 	c := &CertManager{
@@ -110,26 +114,27 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracer
 	}
 	_, err := c.loadCAs()
 	if err != nil {
+		cleanUpOnError.Execute()
 		return nil, err
 	}
 	_, err = c.loadCerts()
 	if err != nil {
+		cleanUpOnError.Execute()
 		return nil, err
 	}
-	var removeFilesOnError fn.FuncList
 
 	for _, ca := range config.CAPool {
-		if err = tryToWatchFile(ca, fileWatcher, removeFilesOnError); err != nil {
-			removeFilesOnError.Execute()
+		if err = tryToWatchFile(ca, fileWatcher, cleanUpOnError); err != nil {
+			cleanUpOnError.Execute()
 			return nil, fmt.Errorf("cannot watch CAPool: %w", err)
 		}
 	}
-	if err = tryToWatchFile(config.CertFile, fileWatcher, removeFilesOnError); err != nil {
-		removeFilesOnError.Execute()
+	if err = tryToWatchFile(config.CertFile, fileWatcher, cleanUpOnError); err != nil {
+		cleanUpOnError.Execute()
 		return nil, fmt.Errorf("cannot watch CertFile: %w", err)
 	}
-	if err = tryToWatchFile(config.KeyFile, fileWatcher, removeFilesOnError); err != nil {
-		removeFilesOnError.Execute()
+	if err = tryToWatchFile(config.KeyFile, fileWatcher, cleanUpOnError); err != nil {
+		cleanUpOnError.Execute()
 		return nil, fmt.Errorf("cannot watch KeyFile: %w", err)
 	}
 
