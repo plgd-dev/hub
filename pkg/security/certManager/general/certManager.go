@@ -2,11 +2,14 @@ package general
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -392,4 +395,52 @@ func (a *CertManager) onFileChange(event fsnotify.Event) {
 			a.logger.Debugf("Refreshing certificate authorities due to modified file(%v) via event %v", event.Name, event.Op)
 		}
 	}
+}
+
+func (a *CertManager) downloadCRL(ctx context.Context, cdp string) (*x509.RevocationList, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, cdp, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Close = true
+	resp, err := a.httpClient.HTTP().Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if errC := resp.Body.Close(); errC != nil {
+			a.logger.Errorf("failed to close response body stream: %w", errC)
+		}
+	}()
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected statusCode %v: '%v'", resp.StatusCode, string(respBody))
+	}
+	crl, err := x509.ParseRevocationList(respBody)
+	if err != nil {
+		return nil, err
+	}
+	return crl, nil
+}
+
+func (a *CertManager) VerifyByCRL(ctx context.Context, certificate *x509.Certificate, cdps []string) error {
+	if !a.config.CRL.Enabled {
+		return nil
+	}
+	for _, dp := range cdps {
+		crl, err := a.downloadCRL(ctx, dp)
+		if err != nil {
+			a.logger.Errorf("failed to download CRL from distribution point(%v): %v", dp, err)
+			continue
+		}
+		if pkgX509.IsRevoked(certificate, crl) {
+			return fmt.Errorf("certificate(%s) was revoked by CRL(%s)", "", crl.Issuer.String())
+		}
+		return nil
+
+	}
+	return errors.New("failed to verify certificate by CRL")
 }

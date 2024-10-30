@@ -133,10 +133,6 @@ type InjectedCOAPConfig struct {
 	TLSConfig InjectedTLSConfig `yaml:"tls" json:"tls"`
 }
 
-func (c *InjectedCOAPConfig) Validate() error {
-	return nil
-}
-
 type DeviceTwinConfig struct {
 	MaxETagsCountInRequest uint32 `yaml:"maxETagsCountInRequest" json:"maxETagsCountInRequest"`
 	UseETags               bool   `yaml:"useETags" json:"useETags"`
@@ -181,9 +177,6 @@ func (c COAPConfigMarshalerUnmarshaler) MarshalYAML() (interface{}, error) {
 
 func (c *COAPConfigMarshalerUnmarshaler) Validate() error {
 	if err := c.COAPConfig.Validate(); err != nil {
-		return err
-	}
-	if err := c.InjectedCOAPConfig.Validate(); err != nil {
 		return err
 	}
 	if !c.InjectedCOAPConfig.TLSConfig.IdentityPropertiesRequired && c.Authorization.DeviceIDClaim != "" {
