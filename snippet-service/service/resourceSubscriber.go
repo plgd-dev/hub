@@ -12,6 +12,7 @@ import (
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/subscriber"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/utils"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/events"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type ResourceSubscriber struct {
@@ -21,8 +22,8 @@ type ResourceSubscriber struct {
 	observer            eventbus.Observer
 }
 
-func NewResourceSubscriber(ctx context.Context, config natsClient.ConfigSubscriber, subscriptionID string, fileWatcher *fsnotify.Watcher, logger log.Logger, handler eventbus.Handler) (*ResourceSubscriber, error) {
-	nats, err := natsClient.New(config.Config, fileWatcher, logger)
+func NewResourceSubscriber(ctx context.Context, config natsClient.ConfigSubscriber, subscriptionID string, fileWatcher *fsnotify.Watcher, logger log.Logger, tp trace.TracerProvider, handler eventbus.Handler) (*ResourceSubscriber, error) {
+	nats, err := natsClient.New(config.Config, fileWatcher, logger, tp)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create nats client: %w", err)
 	}

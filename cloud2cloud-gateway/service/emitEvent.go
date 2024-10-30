@@ -13,6 +13,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	cmClient "github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type (
@@ -88,8 +89,8 @@ func makeEmitEventRequest(ctx context.Context, eventType events.EventType, s sto
 	return req, nil
 }
 
-func createEmitEventFunc(cfg cmClient.Config, timeout time.Duration, fileWatcher *fsnotify.Watcher, logger log.Logger) (emitEventFunc, func(), error) {
-	certManager, err := cmClient.New(cfg, fileWatcher, logger)
+func createEmitEventFunc(cfg cmClient.Config, timeout time.Duration, fileWatcher *fsnotify.Watcher, logger log.Logger, tp trace.TracerProvider) (emitEventFunc, func(), error) {
+	certManager, err := cmClient.New(cfg, fileWatcher, logger, tp)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create cert manager: %w", err)
 	}

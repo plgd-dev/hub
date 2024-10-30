@@ -9,21 +9,28 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/general"
+	pkgTls "github.com/plgd-dev/hub/v2/pkg/security/tls"
 	"github.com/plgd-dev/hub/v2/pkg/strings"
+	"go.opentelemetry.io/otel/trace/noop"
 )
 
 // Config provides configuration of a file based Server Certificate manager. CAPool can be a string or an array of strings.
 type Config struct {
-	CAPool                    interface{}           `yaml:"caPool" json:"caPool" description:"file path to the root certificates in PEM format"`
-	KeyFile                   urischeme.URIScheme   `yaml:"keyFile" json:"keyFile" description:"file name of private key in PEM format"`
-	CertFile                  urischeme.URIScheme   `yaml:"certFile" json:"certFile" description:"file name of certificate in PEM format"`
-	ClientCertificateRequired bool                  `yaml:"clientCertificateRequired" json:"clientCertificateRequired" description:"require client certificate"`
-	CAPoolIsOptional          bool                  `yaml:"-" json:"-"`
-	caPoolArray               []urischeme.URIScheme `yaml:"-" json:"-"`
-	validated                 bool
+	CAPool                    interface{}         `yaml:"caPool" json:"caPool" description:"file path to the root certificates in PEM format"`
+	KeyFile                   urischeme.URIScheme `yaml:"keyFile" json:"keyFile" description:"file name of private key in PEM format"`
+	CertFile                  urischeme.URIScheme `yaml:"certFile" json:"certFile" description:"file name of certificate in PEM format"`
+	ClientCertificateRequired bool                `yaml:"clientCertificateRequired" json:"clientCertificateRequired" description:"require client certificate"`
+	CRL                       pkgTls.CRLConfig    `yaml:"crl" json:"crl"`
+
+	CAPoolIsOptional bool                  `yaml:"-" json:"-"`
+	caPoolArray      []urischeme.URIScheme `yaml:"-" json:"-"`
+	validated        bool
 }
 
 func (c *Config) Validate() error {
+	if c.validated {
+		return nil
+	}
 	caPoolArray, ok := strings.ToStringArray(c.CAPool)
 	if !ok {
 		return fmt.Errorf("caPool('%v') - unsupported", c.CAPool)
@@ -77,7 +84,9 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Cert
 		CertFile:                  config.CertFile,
 		ClientCertificateRequired: config.ClientCertificateRequired,
 		UseSystemCAPool:           false,
-	}, fileWatcher, logger.With(log.CertManagerKey, "server"))
+		CRL:                       config.CRL,
+		// TODO: use real trace provider
+	}, fileWatcher, logger.With(log.CertManagerKey, "server"), noop.NewTracerProvider())
 	if err != nil {
 		return nil, err
 	}

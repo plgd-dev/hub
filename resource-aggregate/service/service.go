@@ -65,7 +65,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 			logger.Errorf("error occurs during closing of connection to eventstore: %w", errC)
 		}
 	}
-	naClient, err := natsClient.New(config.Clients.Eventbus.NATS.Config, fileWatcher, logger)
+	naClient, err := natsClient.New(config.Clients.Eventbus.NATS.Config, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		closeEventStore()
 		otelClient.Close()
@@ -155,7 +155,7 @@ func NewService(ctx context.Context, config Config, fileWatcher *fsnotify.Watche
 	}
 	grpcServer.AddCloseFunc(closeIsClient)
 
-	nats, err := natsClient.New(config.Clients.Eventbus.NATS.Config, fileWatcher, logger)
+	nats, err := natsClient.New(config.Clients.Eventbus.NATS.Config, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, closeGrpcServerOnError(fmt.Errorf("cannot create nats client: %w", err))
 	}

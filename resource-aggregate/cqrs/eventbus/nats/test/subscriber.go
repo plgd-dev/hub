@@ -5,10 +5,11 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/subscriber"
+	"go.opentelemetry.io/otel/trace"
 )
 
-func NewClientAndSubscriber(config client.ConfigSubscriber, fileWatcher *fsnotify.Watcher, logger log.Logger, opts ...subscriber.Option) (*client.Client, *subscriber.Subscriber, error) {
-	c, err := client.New(config.Config, fileWatcher, logger)
+func NewClientAndSubscriber(config client.ConfigSubscriber, fileWatcher *fsnotify.Watcher, logger log.Logger, tp trace.TracerProvider, opts ...subscriber.Option) (*client.Client, *subscriber.Subscriber, error) {
+	c, err := client.New(config.Config, fileWatcher, logger, tp)
 	if err != nil {
 		return nil, nil, err
 	}

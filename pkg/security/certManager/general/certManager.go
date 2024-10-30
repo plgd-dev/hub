@@ -16,9 +16,12 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/fn"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	pkgHttpClient "github.com/plgd-dev/hub/v2/pkg/net/http/client"
+	pkgTls "github.com/plgd-dev/hub/v2/pkg/security/tls"
 	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	"github.com/plgd-dev/kit/v2/security"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/atomic"
 )
 
@@ -29,6 +32,7 @@ type Config struct {
 	CertFile                  urischeme.URIScheme   `yaml:"certFile" json:"certFile" description:"file name of certificate in PEM format"`
 	ClientCertificateRequired bool                  `yaml:"clientCertificateRequired" json:"clientCertificateRequired" description:"require client certificate"`
 	UseSystemCAPool           bool                  `yaml:"useSystemCAPool" json:"useSystemCaPool" description:"use system certification pool"`
+	CRL                       pkgTls.CRLConfig      `yaml:"crl" json:"crl"`
 }
 
 func (c Config) Validate() error {
@@ -53,6 +57,7 @@ type CertManager struct {
 	logger                  log.Logger
 	onFileChangeFunc        func(event fsnotify.Event)
 	done                    atomic.Bool
+	httpClient              *pkgHttpClient.Client
 
 	private struct {
 		mutex                sync.Mutex
@@ -78,10 +83,19 @@ func tryToWatchFile(file urischeme.URIScheme, fileWatcher *fsnotify.Watcher, rem
 }
 
 // New creates a new certificate manager which watches for certs in a filesystem
-func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*CertManager, error) {
+func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tp trace.TracerProvider) (*CertManager, error) {
 	verifyClientCertificate := tls.RequireAndVerifyClientCert
 	if !config.ClientCertificateRequired {
 		verifyClientCertificate = tls.NoClientCert
+	}
+
+	var httpClient *pkgHttpClient.Client
+	if config.CRL.Enabled {
+		var err error
+		httpClient, err = NewHTTPClient(config.CRL.HTTP, fileWatcher, logger, tp)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	c := &CertManager{
@@ -89,6 +103,7 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Cert
 		config:                  config,
 		verifyClientCertificate: verifyClientCertificate,
 		logger:                  logger,
+		httpClient:              httpClient,
 	}
 	_, err := c.loadCAs()
 	if err != nil {

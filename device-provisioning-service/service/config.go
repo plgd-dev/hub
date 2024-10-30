@@ -16,8 +16,8 @@ import (
 	pkgCoapService "github.com/plgd-dev/hub/v2/pkg/net/coap/service"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
 	pkgHttp "github.com/plgd-dev/hub/v2/pkg/net/http"
-	pkgHttpClient "github.com/plgd-dev/hub/v2/pkg/net/http/client"
 	pkgCertManagerClient "github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
+	pkgTls "github.com/plgd-dev/hub/v2/pkg/security/tls"
 	"github.com/plgd-dev/hub/v2/pkg/strings"
 )
 
@@ -253,24 +253,24 @@ type AuthorizationProviderConfig struct {
 	clientcredentials.Config `yaml:",inline"`
 }
 
-func HTTPConfigToProto(cfg pkgHttpClient.Config) (*pb.HttpConfig, error) {
-	tls, err := TLSConfigToProto(cfg.TLS)
+func HTTPConfigToProto(cfg pkgTls.HTTPConfigurer) (*pb.HttpConfig, error) {
+	tls, err := TLSConfigToProto(cfg.GetTLS())
 	if err != nil {
 		return nil, err
 	}
 
 	return &pb.HttpConfig{
-		MaxIdleConns:        math.CastTo[uint32](cfg.MaxIdleConns),
-		MaxConnsPerHost:     math.CastTo[uint32](cfg.MaxConnsPerHost),
-		MaxIdleConnsPerHost: math.CastTo[uint32](cfg.MaxIdleConnsPerHost),
-		IdleConnTimeout:     cfg.IdleConnTimeout.Nanoseconds(),
-		Timeout:             cfg.Timeout.Nanoseconds(),
+		MaxIdleConns:        math.CastTo[uint32](cfg.GetMaxIdleConns()),
+		MaxConnsPerHost:     math.CastTo[uint32](cfg.GetMaxConnsPerHost()),
+		MaxIdleConnsPerHost: math.CastTo[uint32](cfg.GetMaxIdleConnsPerHost()),
+		IdleConnTimeout:     cfg.GetIdleConnTimeout().Nanoseconds(),
+		Timeout:             cfg.GetTimeout().Nanoseconds(),
 		Tls:                 tls,
 	}, nil
 }
 
 func (c *AuthorizationProviderConfig) ToProto() (*pb.AuthorizationProviderConfig, error) {
-	http, err := HTTPConfigToProto(c.HTTP)
+	http, err := HTTPConfigToProto(&c.HTTP)
 	if err != nil {
 		return nil, err
 	}

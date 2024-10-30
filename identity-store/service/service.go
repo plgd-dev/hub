@@ -105,7 +105,7 @@ func New(ctx context.Context, cfg Config, fileWatcher *fsnotify.Watcher, logger 
 	}
 	tracerProvider := otelClient.GetTracerProvider()
 
-	naClient, err := client.New(cfg.Clients.Eventbus.NATS.Config, fileWatcher, logger)
+	naClient, err := client.New(cfg.Clients.Eventbus.NATS.Config, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		otelClient.Close()
 		return nil, fmt.Errorf("cannot create nats client %w", err)

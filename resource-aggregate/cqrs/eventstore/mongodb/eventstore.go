@@ -137,7 +137,7 @@ func New(ctx context.Context, config *Config, fileWatcher *fsnotify.Watcher, log
 	for _, o := range opts {
 		o.apply(config)
 	}
-	certManager, err := client.New(config.Embedded.TLS, fileWatcher, logger)
+	certManager, err := client.New(config.Embedded.TLS, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, fmt.Errorf("could not create cert manager: %w", err)
 	}

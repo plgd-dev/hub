@@ -236,7 +236,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		return nil, fmt.Errorf("cannot create job queue %w", err)
 	}
 
-	nats, err := natsClient.New(config.Clients.Eventbus.NATS.Config, fileWatcher, logger)
+	nats, err := natsClient.New(config.Clients.Eventbus.NATS.Config, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		otelClient.Close()
 		queue.Release()

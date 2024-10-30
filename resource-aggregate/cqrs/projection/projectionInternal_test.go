@@ -56,7 +56,7 @@ func TestProjection(t *testing.T) {
 		require.NoError(t, errC)
 	}()
 
-	naPubClient, publisher, err := natsTest.NewClientAndPublisher(config.MakePublisherConfig(t), fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
+	naPubClient, publisher, err := natsTest.NewClientAndPublisher(config.MakePublisherConfig(t), fileWatcher, logger, noop.NewTracerProvider(), publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	require.NotNil(t, publisher)
 	defer func() {
@@ -69,7 +69,7 @@ func TestProjection(t *testing.T) {
 	defer pool.Release()
 
 	naSubClient, subscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(), fileWatcher,
-		logger,
+		logger, noop.NewTracerProvider(),
 		subscriber.WithGoPool(pool.Submit),
 		subscriber.WithUnmarshaler(utils.Unmarshal),
 	)

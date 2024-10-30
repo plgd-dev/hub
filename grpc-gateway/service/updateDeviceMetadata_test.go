@@ -26,6 +26,7 @@ import (
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace/noop"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -142,7 +143,7 @@ func TestRequestHandlerUpdateDeviceMetadataTwinEnabled(t *testing.T) {
 		require.NoError(t, errC)
 	}()
 
-	naClient, s, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(), fileWatcher, logger, subscriber.WithUnmarshaler(utils.Unmarshal))
+	naClient, s, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(), fileWatcher, logger, noop.NewTracerProvider(), subscriber.WithUnmarshaler(utils.Unmarshal))
 	require.NoError(t, err)
 	defer func() {
 		s.Close()
@@ -304,7 +305,7 @@ func TestRequestHandlerUpdateDeviceMetadataTwinForceSynchronization(t *testing.T
 		require.NoError(t, errC)
 	}()
 
-	naClient, s, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(), fileWatcher, logger, subscriber.WithUnmarshaler(utils.Unmarshal))
+	naClient, s, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(), fileWatcher, logger, noop.NewTracerProvider(), subscriber.WithUnmarshaler(utils.Unmarshal))
 	require.NoError(t, err)
 	defer func() {
 		s.Close()

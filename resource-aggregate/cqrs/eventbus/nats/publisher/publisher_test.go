@@ -20,6 +20,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace/noop"
 )
 
 func TestPublisher(t *testing.T) {
@@ -42,7 +43,7 @@ func TestPublisher(t *testing.T) {
 			TLS:            config.MakeTLSClientConfig(),
 			FlusherTimeout: time.Second * 30,
 		},
-	}, fileWatcher, logger, publisher.WithMarshaler(json.Marshal))
+	}, fileWatcher, logger, noop.NewTracerProvider(), publisher.WithMarshaler(json.Marshal))
 	require.NoError(t, err)
 	assert.NotNil(t, publisher)
 	defer func() {
@@ -51,7 +52,7 @@ func TestPublisher(t *testing.T) {
 	}()
 
 	naSubClient, subscriber, err := test.NewClientAndSubscriber(config.MakeSubscriberConfig(), fileWatcher,
-		logger,
+		logger, noop.NewTracerProvider(),
 		subscriber.WithGoPool(func(f func()) error { go f(); return nil }),
 		subscriber.WithUnmarshaler(json.Unmarshal))
 	require.NoError(t, err)
@@ -101,7 +102,7 @@ func TestPublisherJetStream(t *testing.T) {
 			FlusherTimeout: time.Second * 30,
 		},
 		JetStream: true,
-	}, fileWatcher, logger, publisher.WithMarshaler(json.Marshal))
+	}, fileWatcher, logger, noop.NewTracerProvider(), publisher.WithMarshaler(json.Marshal))
 	require.NoError(t, err)
 	assert.NotNil(t, publisher)
 	defer func() {
@@ -110,7 +111,7 @@ func TestPublisherJetStream(t *testing.T) {
 	}()
 
 	naSubClient, subscriber, err := test.NewClientAndSubscriber(config.MakeSubscriberConfig(), fileWatcher,
-		logger,
+		logger, noop.NewTracerProvider(),
 		subscriber.WithGoPool(func(f func()) error { go f(); return nil }),
 		subscriber.WithUnmarshaler(json.Unmarshal))
 	require.NoError(t, err)
