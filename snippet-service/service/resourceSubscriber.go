@@ -22,8 +22,8 @@ type ResourceSubscriber struct {
 	observer            eventbus.Observer
 }
 
-func NewResourceSubscriber(ctx context.Context, config natsClient.ConfigSubscriber, subscriptionID string, fileWatcher *fsnotify.Watcher, logger log.Logger, tp trace.TracerProvider, handler eventbus.Handler) (*ResourceSubscriber, error) {
-	nats, err := natsClient.New(config.Config, fileWatcher, logger, tp)
+func NewResourceSubscriber(ctx context.Context, config natsClient.ConfigSubscriber, subscriptionID string, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, handler eventbus.Handler) (*ResourceSubscriber, error) {
+	nats, err := natsClient.New(config.Config, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create nats client: %w", err)
 	}

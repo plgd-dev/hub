@@ -153,9 +153,9 @@ func newGrpcGatewayClient(config GrpcGatewayConfig, fileWatcher *fsnotify.Watche
 	return client, fl.ToFunction(), nil
 }
 
-func newResourceSubscriber(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tp trace.TracerProvider) (*subscriber.Subscriber, func(), error) {
+func newResourceSubscriber(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*subscriber.Subscriber, func(), error) {
 	var fl fn.FuncList
-	nats, err := natsClient.New(config.Clients.Eventbus.NATS.Config, fileWatcher, logger, tp)
+	nats, err := natsClient.New(config.Clients.Eventbus.NATS.Config, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create nats client: %w", err)
 	}
@@ -235,11 +235,11 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 
 	listener, err := listener.New(config.APIs.HTTP.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
-		return nil, fmt.Errorf("cannot create http server: %w", err)
+		return nil, fmt.Errorf("cannot create http listener: %w", err)
 	}
 	closeListener := func() {
 		if errC := listener.Close(); errC != nil {
-			logger.Errorf("cannot create http server: %w", errC)
+			logger.Errorf("cannot close http listener: %w", errC)
 		}
 	}
 

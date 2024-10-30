@@ -86,7 +86,7 @@ func tryToWatchFile(file urischeme.URIScheme, fileWatcher *fsnotify.Watcher, rem
 }
 
 // New creates a new certificate manager which watches for certs in a filesystem
-func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tp trace.TracerProvider) (*CertManager, error) {
+func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*CertManager, error) {
 	verifyClientCertificate := tls.RequireAndVerifyClientCert
 	if !config.ClientCertificateRequired {
 		verifyClientCertificate = tls.NoClientCert
@@ -95,7 +95,7 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tp tra
 	var httpClient *pkgHttpClient.Client
 	if config.CRL.Enabled {
 		var err error
-		httpClient, err = NewHTTPClient(config.CRL.HTTP, fileWatcher, logger, tp)
+		httpClient, err = NewHTTPClient(config.CRL.HTTP, fileWatcher, logger, tracerProvider)
 		if err != nil {
 			return nil, err
 		}

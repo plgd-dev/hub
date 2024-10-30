@@ -89,9 +89,9 @@ func newIdentityStoreClient(config IdentityStoreConfig, fileWatcher *fsnotify.Wa
 	return pbIS.NewIdentityStoreClient(isConn.GRPC()), closeIsConn, nil
 }
 
-func newSubscriber(config natsClient.ConfigSubscriber, fileWatcher *fsnotify.Watcher, logger log.Logger, tp trace.TracerProvider) (*subscriber.Subscriber, func(), error) {
+func newSubscriber(config natsClient.ConfigSubscriber, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*subscriber.Subscriber, func(), error) {
 	var fl fn.FuncList
-	nats, err := natsClient.New(config.Config, fileWatcher, logger, tp)
+	nats, err := natsClient.New(config.Config, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create nats client: %w", err)
 	}

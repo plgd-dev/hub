@@ -8,8 +8,8 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-func NewClientAndSubscriber(config client.ConfigSubscriber, fileWatcher *fsnotify.Watcher, logger log.Logger, tp trace.TracerProvider, opts ...subscriber.Option) (*client.Client, *subscriber.Subscriber, error) {
-	c, err := client.New(config.Config, fileWatcher, logger, tp)
+func NewClientAndSubscriber(config client.ConfigSubscriber, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, opts ...subscriber.Option) (*client.Client, *subscriber.Subscriber, error) {
+	c, err := client.New(config.Config, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, err
 	}

@@ -16,8 +16,8 @@ type Client struct {
 	closeFunc fn.FuncList
 }
 
-func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tp trace.TracerProvider) (*Client, error) {
-	certManager, err := client.New(config.TLS, fileWatcher, logger, tp)
+func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*Client, error) {
+	certManager, err := client.New(config.TLS, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cert manager: %w", err)
 	}

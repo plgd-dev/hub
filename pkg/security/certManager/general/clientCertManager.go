@@ -43,13 +43,13 @@ func (c *ClientCertManager) Close() {
 }
 
 // New creates a new certificate manager which watches for certs in a filesystem
-func NewClientCertManager(config pkgTls.ClientConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tp trace.TracerProvider) (*ClientCertManager, error) {
+func NewClientCertManager(config pkgTls.ClientConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*ClientCertManager, error) {
 	if err := config.Validate(); err != nil {
 		return nil, err
 	}
 	caPoolArray, _ := config.CAPoolArray()
 
-	c, err := New(ClientConfig(caPoolArray, config.KeyFile, config.CertFile, config.UseSystemCAPool, config.CRL), fileWatcher, ClientLogger(logger), tp)
+	c, err := New(ClientConfig(caPoolArray, config.KeyFile, config.CertFile, config.UseSystemCAPool, config.CRL), fileWatcher, ClientLogger(logger), tracerProvider)
 	if err != nil {
 		return nil, err
 	}
@@ -58,10 +58,10 @@ func NewClientCertManager(config pkgTls.ClientConfig, fileWatcher *fsnotify.Watc
 	}, nil
 }
 
-func NewHTTPClient(config pkgTls.HTTPConfigurer, fileWatcher *fsnotify.Watcher, logger log.Logger, tp trace.TracerProvider) (*client.Client, error) {
-	cm, err := NewClientCertManager(config.GetTLS(), fileWatcher, logger, tp)
+func NewHTTPClient(config pkgTls.HTTPConfigurer, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*client.Client, error) {
+	cm, err := NewClientCertManager(config.GetTLS(), fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cert manager %w", err)
 	}
-	return client.New(config, cm, tp)
+	return client.New(config, cm, tracerProvider)
 }

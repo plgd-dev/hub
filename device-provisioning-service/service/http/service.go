@@ -34,7 +34,7 @@ func New(ctx context.Context, serviceName string, config Config, fileWatcher *fs
 	listener, err := listener.New(config.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		validator.Close()
-		return nil, fmt.Errorf("cannot create grpc server: %w", err)
+		return nil, fmt.Errorf("cannot create http listener: %w", err)
 	}
 	listener.AddCloseFunc(validator.Close)
 
@@ -48,6 +48,9 @@ func New(ctx context.Context, serviceName string, config Config, fileWatcher *fs
 
 	// register grpc-proxy handler
 	if err := pb.RegisterDeviceProvisionServiceHandlerClient(context.Background(), mux, grpcClient); err != nil {
+		if errC := listener.Close(); errC != nil {
+			logger.Errorf("cannot close http listener: %w", errC)
+		}
 		return nil, fmt.Errorf("failed to register grpc-gateway handler: %w", err)
 	}
 	r.PathPrefix("/").Handler(mux)

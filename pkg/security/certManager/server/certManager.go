@@ -45,6 +45,9 @@ func (c *Config) Validate() error {
 	if c.KeyFile == "" {
 		return fmt.Errorf("keyFile('%v')", c.KeyFile)
 	}
+	if err := c.CRL.Validate(); err != nil {
+		return fmt.Errorf("CRL configuration is invalid: %w", err)
+	}
 	c.validated = true
 	return nil
 }
@@ -72,7 +75,7 @@ func (c *CertManager) Close() {
 }
 
 // New creates a new certificate manager which watches for certs in a filesystem
-func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tp trace.TracerProvider) (*CertManager, error) {
+func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*CertManager, error) {
 	if !config.validated {
 		if err := config.Validate(); err != nil {
 			return nil, err
@@ -85,7 +88,7 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tp tra
 		ClientCertificateRequired: config.ClientCertificateRequired,
 		UseSystemCAPool:           false,
 		CRL:                       config.CRL,
-	}, fileWatcher, logger.With(log.CertManagerKey, "server"), tp)
+	}, fileWatcher, logger.With(log.CertManagerKey, "server"), tracerProvider)
 	if err != nil {
 		return nil, err
 	}
