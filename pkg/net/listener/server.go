@@ -9,6 +9,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Server handles gRPC requests to the service.
@@ -19,8 +20,8 @@ type Server struct {
 
 // NewServer instantiates a listen server.
 // When passing addr with an unspecified port or ":", use Addr().
-func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Server, error) {
-	certManager, err := server.New(config.TLS, fileWatcher, logger)
+func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*Server, error) {
+	certManager, err := server.New(config.TLS, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cert manager %w", err)
 	}

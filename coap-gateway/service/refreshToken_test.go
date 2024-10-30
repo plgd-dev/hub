@@ -19,6 +19,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test/service"
 	testService "github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace/noop"
 )
 
 type TestCoapRefreshTokenResponse struct {
@@ -115,7 +116,7 @@ func TestRefreshTokenWithOAuthNotWorking(t *testing.T) {
 		err = fileWatcher.Close()
 		require.NoError(t, err)
 	}()
-	s, err := listener.New(config.MakeListenerConfig(cfg.APIs.HTTP.Connection.Addr), fileWatcher, log.Get())
+	s, err := listener.New(config.MakeListenerConfig(cfg.APIs.HTTP.Connection.Addr), fileWatcher, log.Get(), noop.NewTracerProvider())
 	require.NoError(t, err)
 	defer func() {
 		err = s.Close()

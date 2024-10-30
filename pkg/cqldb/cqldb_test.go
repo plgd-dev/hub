@@ -41,7 +41,7 @@ func TestCqlDB(t *testing.T) {
 		err = fileWatcher.Close()
 		require.NoError(t, err)
 	}()
-	certManagerClient, err := client.New(config.TLS, fileWatcher, logger)
+	certManagerClient, err := client.New(config.TLS, fileWatcher, logger, nil)
 	require.NoError(t, err)
 	defer certManagerClient.Close()
 

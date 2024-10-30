@@ -185,7 +185,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		enrollmentGroupsCache: enrollmentGroupsCache,
 	}
 
-	ss, err := s.createServices(fileWatcher, logger)
+	ss, err := s.createServices(fileWatcher, logger, tracerProvider)
 	if err != nil {
 		if httpService != nil {
 			httpService.Close()
@@ -327,7 +327,7 @@ func (server *Service) toHandler(h func(ctx context.Context, req *mux.Message, s
 }
 
 // createServices setups coap server
-func (server *Service) createServices(fileWatcher *fsnotify.Watcher, logger log.Logger) (*service.Service, error) {
+func (server *Service) createServices(fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*service.Service, error) {
 	setHandlerError := func(uri string, err error) error {
 		return fmt.Errorf("failed to set %v handler: %w", uri, err)
 	}
@@ -351,7 +351,7 @@ func (server *Service) createServices(fileWatcher *fsnotify.Watcher, logger log.
 		return nil, setHandlerError(uri.CloudConfiguration, err)
 	}
 
-	return coapService.New(server.ctx, server.config.APIs.COAP.Config, m, fileWatcher, logger,
+	return coapService.New(server.ctx, server.config.APIs.COAP.Config, m, fileWatcher, logger, tracerProvider,
 		coapService.WithOnNewConnection(server.coapConnOnNew),
 		coapService.WithOnInactivityConnection(server.onInactivityConnection),
 		coapService.WithMessagePool(server.messagePool),

@@ -20,6 +20,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace/noop"
 	"google.golang.org/grpc"
 )
 
@@ -223,7 +224,7 @@ func TestResourceTwinGetResources(t *testing.T) {
 	pool, err := ants.NewPool(1)
 	require.NoError(t, err)
 	naClient, resourceSubscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(), fileWatcher,
-		logger,
+		logger, noop.NewTracerProvider(),
 		subscriber.WithGoPool(pool.Submit),
 		subscriber.WithUnmarshaler(utils.Unmarshal),
 	)

@@ -120,7 +120,7 @@ func TestRequestHandlerPublishResource(t *testing.T) {
 		errC := eventstore.Close(ctx)
 		require.NoError(t, errC)
 	}()
-	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, noop.NewTracerProvider(), publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		publisher.Close()
@@ -239,7 +239,7 @@ func TestRequestHandlerUnpublishResource(t *testing.T) {
 		errC := eventstore.Close(ctx)
 		require.NoError(t, errC)
 	}()
-	naClient, publisher, err := natsTest.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, fileWatcher, logger, noop.NewTracerProvider(), publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		publisher.Close()
@@ -328,7 +328,7 @@ func TestRequestHandlerNotifyResourceChanged(t *testing.T) {
 		errC := eventstore.Close(ctx)
 		require.NoError(t, errC)
 	}()
-	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, noop.NewTracerProvider(), publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		publisher.Close()
@@ -429,7 +429,7 @@ func TestRequestHandlerUpdateResourceContent(t *testing.T) {
 		errC := eventstore.Close(ctx)
 		require.NoError(t, errC)
 	}()
-	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, noop.NewTracerProvider(), publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		publisher.Close()
@@ -526,7 +526,7 @@ func TestRequestHandlerConfirmResourceUpdate(t *testing.T) {
 		errC := eventstore.Close(ctx)
 		require.NoError(t, errC)
 	}()
-	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, noop.NewTracerProvider(), publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		publisher.Close()
@@ -621,7 +621,7 @@ func TestRequestHandlerRetrieveResource(t *testing.T) {
 		errC := eventstore.Close(ctx)
 		require.NoError(t, errC)
 	}()
-	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, noop.NewTracerProvider(), publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		publisher.Close()
@@ -718,7 +718,7 @@ func TestRequestHandlerConfirmResourceRetrieve(t *testing.T) {
 		errC := eventstore.Close(ctx)
 		require.NoError(t, errC)
 	}()
-	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, noop.NewTracerProvider(), publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		publisher.Close()
@@ -816,7 +816,7 @@ func TestRequestHandlerDeleteResource(t *testing.T) {
 		errC := eventstore.Close(ctx)
 		require.NoError(t, errC)
 	}()
-	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, noop.NewTracerProvider(), publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		publisher.Close()
@@ -914,7 +914,7 @@ func TestRequestHandlerConfirmResourceDelete(t *testing.T) {
 		errC := eventstore.Close(ctx)
 		require.NoError(t, errC)
 	}()
-	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, noop.NewTracerProvider(), publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		publisher.Close()
@@ -1012,7 +1012,7 @@ func TestRequestHandlerCreateResource(t *testing.T) {
 		errC := eventstore.Close(ctx)
 		require.NoError(t, errC)
 	}()
-	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, noop.NewTracerProvider(), publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		publisher.Close()
@@ -1110,7 +1110,7 @@ func TestRequestHandlerConfirmResourceCreate(t *testing.T) {
 		errC := eventstore.Close(ctx)
 		require.NoError(t, errC)
 	}()
-	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, noop.NewTracerProvider(), publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		publisher.Close()

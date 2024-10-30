@@ -1,16 +1,19 @@
 package client
 
 import (
-	"fmt"
+	"crypto/tls"
 	"net/http"
 
 	"github.com/plgd-dev/hub/v2/pkg/fn"
-	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
-	"github.com/plgd-dev/hub/v2/pkg/log"
-	"github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
+	pkgTls "github.com/plgd-dev/hub/v2/pkg/security/tls"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel/trace"
 )
+
+type CertificateManager interface {
+	GetTLSConfig() *tls.Config
+	Close()
+}
 
 // Server handles gRPC requests to the service.
 type Client struct {
@@ -31,23 +34,19 @@ func (c *Client) Close() {
 	c.closeFunc.Execute()
 }
 
-func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*Client, error) {
-	certManager, err := client.New(config.TLS, fileWatcher, logger)
-	if err != nil {
-		return nil, fmt.Errorf("cannot create cert manager %w", err)
-	}
+func New(config pkgTls.HTTPConfigurer, cm CertificateManager, tracerProvider trace.TracerProvider) (*Client, error) {
 	t := http.DefaultTransport.(*http.Transport).Clone()
-	t.MaxIdleConns = config.MaxIdleConns
-	t.MaxConnsPerHost = config.MaxConnsPerHost
-	t.MaxIdleConnsPerHost = config.MaxIdleConnsPerHost
-	t.IdleConnTimeout = config.IdleConnTimeout
-	t.TLSClientConfig = certManager.GetTLSConfig()
+	t.MaxIdleConns = config.GetMaxIdleConns()
+	t.MaxConnsPerHost = config.GetMaxConnsPerHost()
+	t.MaxIdleConnsPerHost = config.GetMaxIdleConnsPerHost()
+	t.IdleConnTimeout = config.GetIdleConnTimeout()
+	t.TLSClientConfig = cm.GetTLSConfig()
 	c := &Client{
 		client: &http.Client{
 			Transport: otelhttp.NewTransport(t, otelhttp.WithTracerProvider(tracerProvider)),
-			Timeout:   config.Timeout,
+			Timeout:   config.GetTimeout(),
 		},
 	}
-	c.AddCloseFunc(certManager.Close)
+	c.AddCloseFunc(cm.Close)
 	return c, nil
 }

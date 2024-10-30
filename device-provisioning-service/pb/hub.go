@@ -13,8 +13,8 @@ import (
 	"github.com/plgd-dev/hub/v2/device-provisioning-service/uri"
 	"github.com/plgd-dev/hub/v2/pkg/config/property/urischeme"
 	"github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
-	pkgHttpClient "github.com/plgd-dev/hub/v2/pkg/net/http/client"
 	pkgCertManagerClient "github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
+	pkgTls "github.com/plgd-dev/hub/v2/pkg/security/tls"
 	"github.com/plgd-dev/hub/v2/pkg/strings"
 	"github.com/plgd-dev/kit/v2/security"
 )
@@ -55,7 +55,7 @@ func (c *AuthorizationProviderConfig) ToConfig() clientcredentials.Config {
 		ClientSecretFile: urischeme.URIScheme(c.GetClientSecret()),
 		Scopes:           c.GetScopes(),
 		Audience:         c.GetAudience(),
-		HTTP: pkgHttpClient.Config{
+		HTTP: pkgTls.HTTPConfig{
 			MaxIdleConns:        int(c.GetHttp().GetMaxIdleConns()),
 			MaxConnsPerHost:     int(c.GetHttp().GetMaxConnsPerHost()),
 			MaxIdleConnsPerHost: int(c.GetHttp().GetMaxIdleConnsPerHost()),

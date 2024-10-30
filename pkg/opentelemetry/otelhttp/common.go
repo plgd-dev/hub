@@ -41,6 +41,6 @@ const (
 // be traced. A Filter must return true if the request should be traced.
 type Filter func(*http.Request) bool
 
-func newTracer(tp trace.TracerProvider) trace.Tracer {
-	return tp.Tracer(instrumentationName, trace.WithInstrumentationVersion(SemVersion()))
+func newTracer(tracerProvider trace.TracerProvider) trace.Tracer {
+	return tracerProvider.Tracer(instrumentationName, trace.WithInstrumentationVersion(SemVersion()))
 }

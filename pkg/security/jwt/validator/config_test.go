@@ -3,8 +3,8 @@ package validator_test
 import (
 	"testing"
 
-	"github.com/plgd-dev/hub/v2/pkg/net/http/client"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
+	pkgTls "github.com/plgd-dev/hub/v2/pkg/security/tls"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
 )
@@ -54,7 +54,7 @@ func TestConfig_Validate(t *testing.T) {
 					s := "example-authority"
 					return &s
 				}(),
-				HTTP: func() *client.Config {
+				HTTP: func() *pkgTls.HTTPConfig {
 					c := config.MakeHttpClientConfig()
 					return &c
 				}(),

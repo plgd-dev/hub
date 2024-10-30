@@ -227,7 +227,6 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
 	}
 	otelClient.AddCloseFunc(cancel)
-
 	tracerProvider := otelClient.GetTracerProvider()
 
 	queue, err := queue.New(config.TaskQueue)
@@ -236,7 +235,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		return nil, fmt.Errorf("cannot create job queue %w", err)
 	}
 
-	nats, err := natsClient.New(config.Clients.Eventbus.NATS.Config, fileWatcher, logger)
+	nats, err := natsClient.New(config.Clients.Eventbus.NATS.Config, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		otelClient.Close()
 		queue.Release()
@@ -342,7 +341,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		tracerProvider:     tracerProvider,
 	}
 
-	ss, err := s.createServices(fileWatcher, logger)
+	ss, err := s.createServices(fileWatcher, logger, tracerProvider)
 	if err != nil {
 		nats.Close()
 		return nil, fmt.Errorf("cannot create services: %w", err)
@@ -577,7 +576,7 @@ func (s *Service) authMiddleware(next mux.Handler) mux.Handler {
 }
 
 // createServices setup services for coap-gateway.
-func (s *Service) createServices(fileWatcher *fsnotify.Watcher, logger log.Logger) (*service.Service, error) {
+func (s *Service) createServices(fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*service.Service, error) {
 	setHandlerError := func(uri string, err error) error {
 		return fmt.Errorf("failed to set %v handler: %w", uri, err)
 	}
@@ -617,7 +616,7 @@ func (s *Service) createServices(fileWatcher *fsnotify.Watcher, logger log.Logge
 		return nil, setHandlerError(plgdtime.ResourceURI, err)
 	}
 
-	services, err := coapService.New(s.ctx, s.config.APIs.COAP.Config, m, fileWatcher, logger,
+	services, err := coapService.New(s.ctx, s.config.APIs.COAP.Config, m, fileWatcher, logger, tracerProvider,
 		coapService.WithOnNewConnection(s.coapConnOnNew),
 		coapService.WithOnInactivityConnection(s.onInactivityConnection),
 		coapService.WithMessagePool(s.messagePool),

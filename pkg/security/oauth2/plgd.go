@@ -6,7 +6,7 @@ import (
 
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
-	"github.com/plgd-dev/hub/v2/pkg/net/http/client"
+	cmClient "github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2/oauth"
 	"github.com/plgd-dev/hub/v2/pkg/security/openid"
@@ -32,7 +32,7 @@ func NewPlgdProvider(ctx context.Context, config Config, fileWatcher *fsnotify.W
 	}
 	config.ClientSecret = string(clientSecret)
 
-	httpClient, err := client.New(config.HTTP, fileWatcher, logger, tracerProvider)
+	httpClient, err := cmClient.NewHTTPClient(&config.HTTP, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, err
 	}

@@ -8,6 +8,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type Client struct {
@@ -15,8 +16,8 @@ type Client struct {
 	closeFunc fn.FuncList
 }
 
-func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Client, error) {
-	certManager, err := client.New(config.TLS, fileWatcher, logger)
+func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*Client, error) {
+	certManager, err := client.New(config.TLS, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cert manager: %w", err)
 	}

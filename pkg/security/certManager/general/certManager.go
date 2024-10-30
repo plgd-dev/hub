@@ -16,9 +16,12 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/fn"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	pkgHttpClient "github.com/plgd-dev/hub/v2/pkg/net/http/client"
+	pkgTls "github.com/plgd-dev/hub/v2/pkg/security/tls"
 	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	"github.com/plgd-dev/kit/v2/security"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/atomic"
 )
 
@@ -29,10 +32,13 @@ type Config struct {
 	CertFile                  urischeme.URIScheme   `yaml:"certFile" json:"certFile" description:"file name of certificate in PEM format"`
 	ClientCertificateRequired bool                  `yaml:"clientCertificateRequired" json:"clientCertificateRequired" description:"require client certificate"`
 	UseSystemCAPool           bool                  `yaml:"useSystemCAPool" json:"useSystemCaPool" description:"use system certification pool"`
+	CRL                       pkgTls.CRLConfig      `yaml:"crl" json:"crl"`
+
+	CAPoolIsOptional bool `yaml:"-" json:"-"`
 }
 
 func (c Config) Validate() error {
-	if len(c.CAPool) == 0 && !c.UseSystemCAPool {
+	if len(c.CAPool) == 0 && !c.UseSystemCAPool && !c.CAPoolIsOptional {
 		return fmt.Errorf("caPool('%v')", c.CAPool)
 	}
 	if c.CertFile == "" {
@@ -40,6 +46,9 @@ func (c Config) Validate() error {
 	}
 	if c.KeyFile == "" {
 		return fmt.Errorf("keyFile('%v')", c.KeyFile)
+	}
+	if err := c.CRL.Validate(); err != nil {
+		return fmt.Errorf("CRL configuration is invalid: %w", err)
 	}
 	return nil
 }
@@ -53,6 +62,7 @@ type CertManager struct {
 	logger                  log.Logger
 	onFileChangeFunc        func(event fsnotify.Event)
 	done                    atomic.Bool
+	httpClient              *pkgHttpClient.Client
 
 	private struct {
 		mutex                sync.Mutex
@@ -77,18 +87,13 @@ func tryToWatchFile(file urischeme.URIScheme, fileWatcher *fsnotify.Watcher, rem
 	return nil
 }
 
-// New creates a new certificate manager which watches for certs in a filesystem
-func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*CertManager, error) {
-	verifyClientCertificate := tls.RequireAndVerifyClientCert
-	if !config.ClientCertificateRequired {
-		verifyClientCertificate = tls.NoClientCert
-	}
-
+func newCertManager(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, verifyClientCertificate tls.ClientAuthType, httpClient *pkgHttpClient.Client, cleanUpOnError fn.FuncList) (*CertManager, error) {
 	c := &CertManager{
 		fileWatcher:             fileWatcher,
 		config:                  config,
 		verifyClientCertificate: verifyClientCertificate,
 		logger:                  logger,
+		httpClient:              httpClient,
 	}
 	_, err := c.loadCAs()
 	if err != nil {
@@ -98,26 +103,47 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Cert
 	if err != nil {
 		return nil, err
 	}
-	var removeFilesOnError fn.FuncList
 
-	for _, ca := range config.CAPool {
-		if err = tryToWatchFile(ca, fileWatcher, removeFilesOnError); err != nil {
-			removeFilesOnError.Execute()
+	for _, ca := range c.config.CAPool {
+		if err = tryToWatchFile(ca, c.fileWatcher, cleanUpOnError); err != nil {
 			return nil, fmt.Errorf("cannot watch CAPool: %w", err)
 		}
 	}
-	if err = tryToWatchFile(config.CertFile, fileWatcher, removeFilesOnError); err != nil {
-		removeFilesOnError.Execute()
+	if err = tryToWatchFile(c.config.CertFile, c.fileWatcher, cleanUpOnError); err != nil {
 		return nil, fmt.Errorf("cannot watch CertFile: %w", err)
 	}
-	if err = tryToWatchFile(config.KeyFile, fileWatcher, removeFilesOnError); err != nil {
-		removeFilesOnError.Execute()
+	if err = tryToWatchFile(c.config.KeyFile, c.fileWatcher, cleanUpOnError); err != nil {
 		return nil, fmt.Errorf("cannot watch KeyFile: %w", err)
 	}
 
 	c.onFileChangeFunc = c.onFileChange
 	c.fileWatcher.AddOnEventHandler(&c.onFileChangeFunc)
+	return c, nil
+}
 
+// New creates a new certificate manager which watches for certs in a filesystem
+func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*CertManager, error) {
+	verifyClientCertificate := tls.RequireAndVerifyClientCert
+	if !config.ClientCertificateRequired {
+		verifyClientCertificate = tls.NoClientCert
+	}
+
+	var cleanUpOnError fn.FuncList
+	var httpClient *pkgHttpClient.Client
+	if config.CRL.Enabled {
+		var err error
+		httpClient, err = NewHTTPClient(config.CRL.HTTP, fileWatcher, logger, tracerProvider)
+		if err != nil {
+			return nil, err
+		}
+		cleanUpOnError.AddFunc(httpClient.Close)
+	}
+
+	c, err := newCertManager(config, fileWatcher, logger, verifyClientCertificate, httpClient, cleanUpOnError)
+	if err != nil {
+		cleanUpOnError.Execute()
+		return nil, err
+	}
 	return c, nil
 }
 
@@ -159,6 +185,9 @@ func (a *CertManager) GetClientTLSConfig() *tls.Config {
 func (a *CertManager) Close() {
 	if !a.done.CompareAndSwap(false, true) {
 		return
+	}
+	if a.httpClient != nil {
+		a.httpClient.Close()
 	}
 	for _, ca := range a.config.CAPool {
 		if !ca.IsFile() {

@@ -41,7 +41,7 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracer
 	if err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)
 	}
-	certManager, err := client.New(config.TLS, fileWatcher, logger)
+	certManager, err := client.New(config.TLS, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cert manager: %w", err)
 	}
