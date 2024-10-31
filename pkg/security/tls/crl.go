@@ -118,9 +118,7 @@ func (c *CRLConfig) Equals(c2 CRLConfig) bool {
 		return false
 	}
 	if !c.Enabled {
-		r1 := c.HTTP == nil
-		r2 := c2.HTTP == nil
-		return r1 && r2
+		return c.HTTP == nil && c2.HTTP == nil
 	}
 	if c.HTTP == nil {
 		return c2.HTTP == nil

@@ -85,6 +85,40 @@ func tryToWatchFile(file urischeme.URIScheme, fileWatcher *fsnotify.Watcher, rem
 	return nil
 }
 
+func newCertManager(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, verifyClientCertificate tls.ClientAuthType, httpClient *pkgHttpClient.Client, cleanUpOnError fn.FuncList) (*CertManager, error) {
+	c := &CertManager{
+		fileWatcher:             fileWatcher,
+		config:                  config,
+		verifyClientCertificate: verifyClientCertificate,
+		logger:                  logger,
+		httpClient:              httpClient,
+	}
+	_, err := c.loadCAs()
+	if err != nil {
+		return nil, err
+	}
+	_, err = c.loadCerts()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, ca := range c.config.CAPool {
+		if err = tryToWatchFile(ca, c.fileWatcher, cleanUpOnError); err != nil {
+			return nil, fmt.Errorf("cannot watch CAPool: %w", err)
+		}
+	}
+	if err = tryToWatchFile(c.config.CertFile, c.fileWatcher, cleanUpOnError); err != nil {
+		return nil, fmt.Errorf("cannot watch CertFile: %w", err)
+	}
+	if err = tryToWatchFile(c.config.KeyFile, c.fileWatcher, cleanUpOnError); err != nil {
+		return nil, fmt.Errorf("cannot watch KeyFile: %w", err)
+	}
+
+	c.onFileChangeFunc = c.onFileChange
+	c.fileWatcher.AddOnEventHandler(&c.onFileChangeFunc)
+	return c, nil
+}
+
 // New creates a new certificate manager which watches for certs in a filesystem
 func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*CertManager, error) {
 	verifyClientCertificate := tls.RequireAndVerifyClientCert
@@ -100,47 +134,14 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracer
 		if err != nil {
 			return nil, err
 		}
-		cleanUpOnError.AddFunc(func() {
-			httpClient.Close()
-		})
+		cleanUpOnError.AddFunc(httpClient.Close)
 	}
 
-	c := &CertManager{
-		fileWatcher:             fileWatcher,
-		config:                  config,
-		verifyClientCertificate: verifyClientCertificate,
-		logger:                  logger,
-		httpClient:              httpClient,
-	}
-	_, err := c.loadCAs()
+	c, err := newCertManager(config, fileWatcher, logger, verifyClientCertificate, httpClient, cleanUpOnError)
 	if err != nil {
 		cleanUpOnError.Execute()
 		return nil, err
 	}
-	_, err = c.loadCerts()
-	if err != nil {
-		cleanUpOnError.Execute()
-		return nil, err
-	}
-
-	for _, ca := range config.CAPool {
-		if err = tryToWatchFile(ca, fileWatcher, cleanUpOnError); err != nil {
-			cleanUpOnError.Execute()
-			return nil, fmt.Errorf("cannot watch CAPool: %w", err)
-		}
-	}
-	if err = tryToWatchFile(config.CertFile, fileWatcher, cleanUpOnError); err != nil {
-		cleanUpOnError.Execute()
-		return nil, fmt.Errorf("cannot watch CertFile: %w", err)
-	}
-	if err = tryToWatchFile(config.KeyFile, fileWatcher, cleanUpOnError); err != nil {
-		cleanUpOnError.Execute()
-		return nil, fmt.Errorf("cannot watch KeyFile: %w", err)
-	}
-
-	c.onFileChangeFunc = c.onFileChange
-	c.fileWatcher.AddOnEventHandler(&c.onFileChangeFunc)
-
 	return c, nil
 }
 

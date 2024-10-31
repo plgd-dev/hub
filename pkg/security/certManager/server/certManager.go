@@ -81,14 +81,18 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracer
 			return nil, err
 		}
 	}
-	c, err := general.New(general.Config{
+	cfg := general.Config{
 		CAPool:                    config.caPoolArray,
 		KeyFile:                   config.KeyFile,
 		CertFile:                  config.CertFile,
 		ClientCertificateRequired: config.ClientCertificateRequired,
 		UseSystemCAPool:           false,
 		CRL:                       config.CRL,
-	}, fileWatcher, logger.With(log.CertManagerKey, "server"), tracerProvider)
+	}
+	if err := cfg.Validate(); err != nil {
+		return nil, err
+	}
+	c, err := general.New(cfg, fileWatcher, logger.With(log.CertManagerKey, "server"), tracerProvider)
 	if err != nil {
 		return nil, err
 	}
