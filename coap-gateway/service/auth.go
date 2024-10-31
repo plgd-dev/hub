@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/device/v2/pkg/net/coap"
@@ -20,7 +19,6 @@ import (
 
 type (
 	Interceptor = func(ctx context.Context, code codes.Code, path string) (context.Context, error)
-	VerifyByCRL = func(context.Context, *x509.Certificate, []string) error
 )
 
 func newAuthInterceptor() Interceptor {
@@ -83,24 +81,15 @@ func (s *Service) VerifyAndResolveDeviceID(tlsDeviceID, paramDeviceID string, cl
 	return deviceID, nil
 }
 
-func verifyChain(ctx context.Context, chain []*x509.Certificate, capool *x509.CertPool, identityPropertiesRequired bool, verifyByCRL VerifyByCRL) error {
-	if len(chain) == 0 {
-		return errors.New("certificate chain is empty")
-	}
-	certificate := chain[0]
-	intermediateCAPool := x509.NewCertPool()
-	for i := 1; i < len(chain); i++ {
-		intermediateCAPool.AddCert(chain[i])
-	}
-	_, err := certificate.Verify(x509.VerifyOptions{
-		Roots:         capool,
-		Intermediates: intermediateCAPool,
-		CurrentTime:   time.Now(),
-		KeyUsages:     []x509.ExtKeyUsage{x509.ExtKeyUsageAny},
+func verifyChain(ctx context.Context, chain []*x509.Certificate, capool *x509.CertPool, identityPropertiesRequired, crlVerificationEnabled bool, verifyByCRL pkgX509.VerifyByCRL) error {
+	err := pkgX509.VerifyChain(ctx, chain, capool, pkgX509.CRLVerification{
+		Enabled: crlVerificationEnabled,
+		Verify:  verifyByCRL,
 	})
 	if err != nil {
 		return err
 	}
+	certificate := chain[0]
 	// verify EKU manually
 	ekuHasClient := false
 	ekuHasServer := false
@@ -125,19 +114,10 @@ func verifyChain(ctx context.Context, chain []*x509.Certificate, capool *x509.Ce
 			return fmt.Errorf("the device ID is not part of the certificate's common name: %w", err)
 		}
 	}
-
-	if len(certificate.CRLDistributionPoints) > 0 {
-		if verifyByCRL == nil {
-			return errors.New("cannot verify certificate validity by CRL: verification function not provided")
-		}
-		if err = verifyByCRL(ctx, certificate, certificate.CRLDistributionPoints); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
-func MakeGetConfigForClient(ctx context.Context, tlsCfg *tls.Config, identityPropertiesRequired bool, verifyByCRL VerifyByCRL) tls.Config {
+func MakeGetConfigForClient(ctx context.Context, tlsCfg *tls.Config, identityPropertiesRequired, crlVerificationEnabled bool, verifyByCRL pkgX509.VerifyByCRL) tls.Config {
 	return tls.Config{
 		GetCertificate: tlsCfg.GetCertificate,
 		MinVersion:     tlsCfg.MinVersion,
@@ -146,7 +126,7 @@ func MakeGetConfigForClient(ctx context.Context, tlsCfg *tls.Config, identityPro
 		VerifyPeerCertificate: func(_ [][]byte, chains [][]*x509.Certificate) error {
 			var errs *multierror.Error
 			for _, chain := range chains {
-				err := verifyChain(ctx, chain, tlsCfg.ClientCAs, identityPropertiesRequired, verifyByCRL)
+				err := verifyChain(ctx, chain, tlsCfg.ClientCAs, identityPropertiesRequired, crlVerificationEnabled, verifyByCRL)
 				if err == nil {
 					return nil
 				}

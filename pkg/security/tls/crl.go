@@ -163,3 +163,10 @@ func (c *CRLConfig) UnmarshalYAML(value *yaml.Node) error {
 	c.HTTP = &cc.HTTP
 	return nil
 }
+
+// IsExpired checks whether the revocation list is expired
+func IsExpired(validUntil int64) bool {
+	// the crl is expiring soon, so we treat it as already expired
+	const delta = time.Minute
+	return validUntil <= time.Now().Add(delta).UnixNano()
+}

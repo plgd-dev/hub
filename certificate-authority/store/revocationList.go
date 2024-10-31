@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -57,13 +56,6 @@ func ParseBigInt(s string) (*big.Int, error) {
 		return nil, fmt.Errorf("invalid numeric string(%v)", s)
 	}
 	return &number, nil
-}
-
-// IsExpired checks whether the revocation list is expired
-func (rl *RevocationList) IsExpired() bool {
-	// the crl is expiring soon, so we treat it as already expired
-	const delta = time.Minute
-	return rl.ValidUntil <= time.Now().Add(delta).UnixNano()
 }
 
 func (rl *RevocationList) Validate() error {

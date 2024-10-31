@@ -8,8 +8,6 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"io"
-	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -19,7 +17,6 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/fn"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
-	pkgHttpClient "github.com/plgd-dev/hub/v2/pkg/net/http/client"
 	pkgTls "github.com/plgd-dev/hub/v2/pkg/security/tls"
 	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
@@ -65,7 +62,7 @@ type CertManager struct {
 	logger                  log.Logger
 	onFileChangeFunc        func(event fsnotify.Event)
 	done                    atomic.Bool
-	httpClient              *pkgHttpClient.Client
+	crlCache                *CRLCache
 
 	private struct {
 		mutex                sync.Mutex
@@ -90,13 +87,13 @@ func tryToWatchFile(file urischeme.URIScheme, fileWatcher *fsnotify.Watcher, rem
 	return nil
 }
 
-func newCertManager(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, verifyClientCertificate tls.ClientAuthType, httpClient *pkgHttpClient.Client, cleanUpOnError fn.FuncList) (*CertManager, error) {
+func newCertManager(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, verifyClientCertificate tls.ClientAuthType, crlCache *CRLCache, cleanUpOnError fn.FuncList) (*CertManager, error) {
 	c := &CertManager{
 		fileWatcher:             fileWatcher,
 		config:                  config,
 		verifyClientCertificate: verifyClientCertificate,
 		logger:                  logger,
-		httpClient:              httpClient,
+		crlCache:                crlCache,
 	}
 	_, err := c.loadCAs()
 	if err != nil {
@@ -132,17 +129,17 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracer
 	}
 
 	var cleanUpOnError fn.FuncList
-	var httpClient *pkgHttpClient.Client
+	var crlCache *CRLCache
 	if config.CRL.Enabled {
 		var err error
-		httpClient, err = NewHTTPClient(config.CRL.HTTP, fileWatcher, logger, tracerProvider)
+		crlCache, err = NewCRLCache(config.CRL.HTTP, fileWatcher, logger, tracerProvider)
 		if err != nil {
 			return nil, err
 		}
-		cleanUpOnError.AddFunc(httpClient.Close)
+		cleanUpOnError.AddFunc(crlCache.Close)
 	}
 
-	c, err := newCertManager(config, fileWatcher, logger, verifyClientCertificate, httpClient, cleanUpOnError)
+	c, err := newCertManager(config, fileWatcher, logger, verifyClientCertificate, crlCache, cleanUpOnError)
 	if err != nil {
 		cleanUpOnError.Execute()
 		return nil, err
@@ -166,22 +163,40 @@ func (a *CertManager) GetCertificateAuthorities() *x509.CertPool {
 
 // GetServerTLSConfig returns tls configuration for servers
 func (a *CertManager) GetServerTLSConfig() *tls.Config {
-	return &tls.Config{
+	cfg := &tls.Config{
 		ClientCAs:      a.GetCertificateAuthorities(),
 		GetCertificate: a.getServerCertificate,
 		MinVersion:     tls.VersionTLS12,
 		ClientAuth:     a.verifyClientCertificate,
 	}
+	if a.config.CRL.Enabled {
+		// TODO: propagate context
+		ctx := context.Background()
+		cfg.VerifyPeerCertificate = pkgX509.VerifyChains(ctx, a.GetCertificateAuthorities(), pkgX509.CRLVerification{
+			Enabled: true,
+			Verify:  a.VerifyByCRL,
+		})
+	}
+	return cfg
 }
 
 // GetClientTLSConfig returns tls configuration for clients
 func (a *CertManager) GetClientTLSConfig() *tls.Config {
-	return &tls.Config{
+	cfg := &tls.Config{
 		RootCAs:                  a.GetCertificateAuthorities(),
 		GetClientCertificate:     a.getClientCertificate,
 		PreferServerCipherSuites: true,
 		MinVersion:               tls.VersionTLS12,
 	}
+	if a.config.CRL.Enabled {
+		// TODO: propagate context
+		ctx := context.Background()
+		cfg.VerifyPeerCertificate = pkgX509.VerifyChains(ctx, a.GetCertificateAuthorities(), pkgX509.CRLVerification{
+			Enabled: true,
+			Verify:  a.VerifyByCRL,
+		})
+	}
+	return cfg
 }
 
 // Close ends watching certificates
@@ -189,8 +204,8 @@ func (a *CertManager) Close() {
 	if !a.done.CompareAndSwap(false, true) {
 		return
 	}
-	if a.httpClient != nil {
-		a.httpClient.Close()
+	if a.crlCache != nil {
+		a.crlCache.Close()
 	}
 	for _, ca := range a.config.CAPool {
 		if !ca.IsFile() {
@@ -397,37 +412,13 @@ func (a *CertManager) onFileChange(event fsnotify.Event) {
 	}
 }
 
-func (a *CertManager) downloadCRL(ctx context.Context, cdp string) (*x509.RevocationList, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, cdp, nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Close = true
-	resp, err := a.httpClient.HTTP().Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		if errC := resp.Body.Close(); errC != nil {
-			a.logger.Errorf("failed to close response body stream: %w", errC)
-		}
-	}()
-	respBody, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code %v while downloading CRL from %s", resp.StatusCode, cdp)
-	}
-	return x509.ParseRevocationList(respBody)
-}
-
 func (a *CertManager) VerifyByCRL(ctx context.Context, certificate *x509.Certificate, cdps []string) error {
 	if !a.config.CRL.Enabled {
 		return nil
 	}
+
 	for _, dp := range cdps {
-		crl, err := a.downloadCRL(ctx, dp)
+		crl, err := a.crlCache.GetRevocationList(ctx, dp)
 		if err != nil {
 			a.logger.Errorf("failed to download CRL from distribution point(%v): %v", dp, err)
 			continue

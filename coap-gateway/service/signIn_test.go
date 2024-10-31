@@ -25,6 +25,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	oauthUri "github.com/plgd-dev/hub/v2/test/oauth-server/uri"
+	testService "github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -121,7 +122,7 @@ func TestSignInDeviceSubscriptionHandler(t *testing.T) {
 func TestSignInWithRequireBatchObserveEnabled(t *testing.T) {
 	coapgwCfg := coapgwTest.MakeConfig(t)
 	coapgwCfg.APIs.COAP.RequireBatchObserveEnabled = true
-	shutdown := setUp(t, coapgwCfg)
+	shutdown := setUp(t, testService.WithCOAPGWConfig(coapgwCfg))
 	defer shutdown()
 
 	co := testCoapDial(t, "", true, true, time.Now().Add(time.Minute))
@@ -137,7 +138,7 @@ func TestSignInWithRequireBatchObserveEnabled(t *testing.T) {
 
 func TestDontCreateObservationAfterRefreshTokenAndSignIn(t *testing.T) {
 	coapgwCfg := coapgwTest.MakeConfig(t)
-	shutdown := setUp(t, coapgwCfg)
+	shutdown := setUp(t, testService.WithCOAPGWConfig(coapgwCfg))
 	defer shutdown()
 
 	h := makeTestCoapHandler(t)
@@ -248,7 +249,7 @@ func TestSignInWithMTLSAndDeviceIdClaim(t *testing.T) {
 	coapgwCfg.APIs.COAP.TLS.Embedded.ClientCertificateRequired = true
 	coapgwCfg.APIs.COAP.Authorization.DeviceIDClaim = oauthUri.DeviceIDClaimKey
 	coapgwCfg.APIs.COAP.InjectedCOAPConfig.TLSConfig.IdentityPropertiesRequired = true
-	shutdown := setUp(t, coapgwCfg)
+	shutdown := setUp(t, testService.WithCOAPGWConfig(coapgwCfg))
 	defer shutdown()
 
 	signUp := func(deviceID string) service.CoapSignUpResponse {
@@ -291,7 +292,7 @@ func TestCertificateExpiration(t *testing.T) {
 	coapgwCfg.APIs.COAP.Authorization.DeviceIDClaim = oauthUri.DeviceIDClaimKey
 	coapgwCfg.APIs.COAP.InjectedCOAPConfig.TLSConfig.IdentityPropertiesRequired = true
 
-	shutdown := setUp(t, coapgwCfg)
+	shutdown := setUp(t, testService.WithCOAPGWConfig(coapgwCfg))
 	defer shutdown()
 
 	signUp := func(deviceID string) service.CoapSignUpResponse {

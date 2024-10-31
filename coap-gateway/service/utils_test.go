@@ -27,7 +27,6 @@ import (
 	coapTcpClient "github.com/plgd-dev/go-coap/v3/tcp/client"
 	"github.com/plgd-dev/hub/v2/coap-gateway/service"
 	"github.com/plgd-dev/hub/v2/coap-gateway/test"
-	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
@@ -493,16 +492,12 @@ func testCoapDial(t *testing.T, deviceID string, withTLS, identityCert bool, val
 	return testCoapDialWithHandler(t, makeTestCoapHandler(t), opts...)
 }
 
-func setUp(t *testing.T, coapgwCfgs ...service.Config) func() {
+func setUp(t *testing.T, opts ...testService.SetUpOption) func() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	testService.ClearDB(ctx, t)
-	coapgwCfg := coapgwTest.MakeConfig(t)
-	if len(coapgwCfgs) > 0 {
-		coapgwCfg = coapgwCfgs[0]
-	}
 	return testService.SetUpServices(context.Background(), t, testService.SetUpServicesMachine2MachineOAuth|testService.SetUpServicesCertificateAuthority|testService.SetUpServicesOAuth|
-		testService.SetUpServicesId|testService.SetUpServicesResourceAggregate|testService.SetUpServicesResourceDirectory|testService.SetUpServicesCoapGateway|testService.SetUpServicesGrpcGateway, testService.WithCOAPGWConfig(coapgwCfg))
+		testService.SetUpServicesId|testService.SetUpServicesResourceAggregate|testService.SetUpServicesResourceDirectory|testService.SetUpServicesCoapGateway|testService.SetUpServicesGrpcGateway, opts...)
 }
 
 var (
