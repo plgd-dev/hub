@@ -33,10 +33,12 @@ type Config struct {
 	ClientCertificateRequired bool                  `yaml:"clientCertificateRequired" json:"clientCertificateRequired" description:"require client certificate"`
 	UseSystemCAPool           bool                  `yaml:"useSystemCAPool" json:"useSystemCaPool" description:"use system certification pool"`
 	CRL                       pkgTls.CRLConfig      `yaml:"crl" json:"crl"`
+
+	CAPoolIsOptional bool `yaml:"-" json:"-"`
 }
 
 func (c Config) Validate() error {
-	if len(c.CAPool) == 0 && !c.UseSystemCAPool {
+	if len(c.CAPool) == 0 && !c.UseSystemCAPool && !c.CAPoolIsOptional {
 		return fmt.Errorf("caPool('%v')", c.CAPool)
 	}
 	if c.CertFile == "" {

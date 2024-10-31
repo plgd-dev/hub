@@ -29,6 +29,7 @@ apis:
       keyFile: "/secrets/private/cert.key"
       certFile: "/secrets/private/cert.crt"
       clientCertificateRequired: true
+
     authorization:
       ownerClaim: "sub"
       audience: ""

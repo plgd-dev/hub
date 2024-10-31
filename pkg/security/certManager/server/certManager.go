@@ -83,6 +83,7 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracer
 	}
 	cfg := general.Config{
 		CAPool:                    config.caPoolArray,
+		CAPoolIsOptional:          config.CAPoolIsOptional,
 		KeyFile:                   config.KeyFile,
 		CertFile:                  config.CertFile,
 		ClientCertificateRequired: config.ClientCertificateRequired,
