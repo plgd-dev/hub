@@ -22,7 +22,6 @@ import (
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	testService "github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -36,7 +35,6 @@ func TestCertificateWithCRL(t *testing.T) {
 	caCfg.Signer.CRL.Enabled = true
 	caCfg.Signer.CRL.ExpiresIn = time.Second * 10
 	coapgwCfg := coapgwTest.MakeConfig(t)
-	coapgwCfg.Log.Level = zap.DebugLevel
 	coapgwCfg.APIs.COAP.TLS.Enabled = new(bool)
 	*coapgwCfg.APIs.COAP.TLS.Enabled = true
 	coapgwCfg.APIs.COAP.TLS.Embedded.ClientCertificateRequired = true

@@ -20,7 +20,7 @@ func New(config Config, m2mOAuthServiceServer *M2MOAuthServiceServer, validator 
 	if err != nil {
 		return nil, fmt.Errorf("cannot create grpc server options: %w", err)
 	}
-	server, err := server.New(config.BaseConfig, fileWatcher, logger, tracerProvider, opts...)
+	server, err := server.New(config.BaseConfig, fileWatcher, logger, tracerProvider, nil, opts...)
 	if err != nil {
 		return nil, err
 	}

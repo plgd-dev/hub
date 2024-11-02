@@ -71,7 +71,7 @@ func (c *CertManager) GetTLSConfig() *tls.Config {
 	return c.c.GetServerTLSConfig()
 }
 
-func (c *CertManager) VerifyByCRL(ctx context.Context, certificate *x509.Certificate, cdp []string) error {
+func (c *CertManager) VerifyByCRL(ctx context.Context, certificate *x509.Certificate, cdp []string) (bool, error) {
 	return c.c.VerifyByCRL(ctx, certificate, cdp)
 }
 
@@ -81,7 +81,7 @@ func (c *CertManager) Close() {
 }
 
 // New creates a new certificate manager which watches for certs in a filesystem
-func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*CertManager, error) {
+func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, opts ...general.SetOption) (*CertManager, error) {
 	if !config.validated {
 		if err := config.Validate(); err != nil {
 			return nil, err
@@ -99,7 +99,7 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracer
 	if err := cfg.Validate(); err != nil {
 		return nil, err
 	}
-	c, err := general.New(cfg, fileWatcher, logger.With(log.CertManagerKey, "server"), tracerProvider)
+	c, err := general.New(cfg, fileWatcher, logger.With(log.CertManagerKey, "server"), tracerProvider, opts...)
 	if err != nil {
 		return nil, err
 	}

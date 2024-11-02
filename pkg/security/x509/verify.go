@@ -5,12 +5,28 @@ import (
 	"context"
 	"crypto/x509"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
 )
 
-type VerifyByCRL = func(context.Context, *x509.Certificate, []string) error
+type (
+	VerifyByCRL                         = func(context.Context, *x509.Certificate, []string) (bool, error)
+	VerifyForDistributionPoint          = func(context.Context, *x509.Certificate, string) (bool, error)
+	CustomDistributionPointVerification = map[string]VerifyForDistributionPoint
+	Options                             struct {
+		CustomDistributionPointVerification CustomDistributionPointVerification
+	}
+
+	SetOption = func(cfg *Options)
+)
+
+func WithCustomDistributionPointVerification(customDistributionPointVerification CustomDistributionPointVerification) SetOption {
+	return func(o *Options) {
+		o.CustomDistributionPointVerification = customDistributionPointVerification
+	}
+}
 
 func IsRootCA(cert *x509.Certificate) bool {
 	return cert.IsCA && bytes.Equal(cert.RawIssuer, cert.RawSubject) && cert.CheckSignature(cert.SignatureAlgorithm, cert.RawTBSCertificate, cert.Signature) == nil
@@ -67,10 +83,11 @@ func Verify(certificates []*x509.Certificate, certificateAuthorities []*x509.Cer
 
 type CRLVerification struct {
 	Enabled bool
+	Ctx     context.Context
 	Verify  VerifyByCRL
 }
 
-func VerifyChain(ctx context.Context, chain []*x509.Certificate, capool *x509.CertPool, crlVerify CRLVerification) error {
+func VerifyChain(chain []*x509.Certificate, capool *x509.CertPool, crlVerify CRLVerification) error {
 	if len(chain) == 0 {
 		return errors.New("certificate chain is empty")
 	}
@@ -92,18 +109,28 @@ func VerifyChain(ctx context.Context, chain []*x509.Certificate, capool *x509.Ce
 		if crlVerify.Verify == nil {
 			return errors.New("cannot verify certificate validity by CRL: verification function not provided")
 		}
-		if err = crlVerify.Verify(ctx, certificate, certificate.CRLDistributionPoints); err != nil {
-			return err
+		ctx := crlVerify.Ctx
+		if ctx == nil {
+			var cancel context.CancelFunc
+			ctx, cancel = context.WithTimeout(context.Background(), time.Second*5)
+			defer cancel()
+		}
+		revoked, err := crlVerify.Verify(ctx, certificate, certificate.CRLDistributionPoints)
+		if err != nil {
+			return fmt.Errorf("cannot verify certificate validity by CRL: %w", err)
+		}
+		if revoked {
+			return errors.New("certificate revoked by CRL")
 		}
 	}
 	return nil
 }
 
-func VerifyChains(ctx context.Context, capool *x509.CertPool, crlVerify CRLVerification) func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
+func VerifyChains(capool *x509.CertPool, crlVerify CRLVerification) func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
 	return func(_ [][]byte, chains [][]*x509.Certificate) error {
 		var errs *multierror.Error
 		for _, chain := range chains {
-			err := VerifyChain(ctx, chain, capool, crlVerify)
+			err := VerifyChain(chain, capool, crlVerify)
 			if err == nil {
 				return nil
 			}

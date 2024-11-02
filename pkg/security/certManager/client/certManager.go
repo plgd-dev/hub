@@ -14,10 +14,10 @@ type Config = pkgTls.ClientConfig
 // CertManager holds certificates from filesystem watched for changes
 type CertManager = general.ClientCertManager
 
-func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*CertManager, error) {
-	return general.NewClientCertManager(config, fileWatcher, logger, tracerProvider)
+func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, opts ...general.SetOption) (*CertManager, error) {
+	return general.NewClientCertManager(config, fileWatcher, logger, tracerProvider, opts...)
 }
 
-func NewHTTPClient(config pkgTls.HTTPConfigurer, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*client.Client, error) {
-	return general.NewHTTPClient(config, fileWatcher, logger, tracerProvider)
+func NewHTTPClient(config pkgTls.HTTPConfigurer, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, opts ...general.SetOption) (*client.Client, error) {
+	return general.NewHTTPClient(config, fileWatcher, logger, tracerProvider, opts...)
 }

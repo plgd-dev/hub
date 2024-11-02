@@ -5,7 +5,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/x509"
 	"errors"
-	"strings"
+	"path"
 	"time"
 
 	"github.com/google/uuid"
@@ -181,8 +181,8 @@ func (s *Signer) sign(ctx context.Context, isIdentityCertificate bool, csr []byt
 		}),
 	}
 	if s.IsCRLEnabled() {
-		dp := []string{s.crl.serverAddress, uri.SigningRevocationListBase, s.issuerID}
-		opts = append(opts, certificateSigner.WithCRLDistributionPoints([]string{strings.Join(dp, "/")}))
+		dp := s.crl.serverAddress + path.Join(uri.SigningRevocationListBase, s.issuerID)
+		opts = append(opts, certificateSigner.WithCRLDistributionPoints([]string{dp}))
 	}
 	signer, err := s.newCertificateSigner(isIdentityCertificate, opts...)
 	if err != nil {

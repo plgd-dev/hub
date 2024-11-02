@@ -81,8 +81,8 @@ func (s *Service) VerifyAndResolveDeviceID(tlsDeviceID, paramDeviceID string, cl
 	return deviceID, nil
 }
 
-func verifyChain(ctx context.Context, chain []*x509.Certificate, capool *x509.CertPool, identityPropertiesRequired, crlVerificationEnabled bool, verifyByCRL pkgX509.VerifyByCRL) error {
-	err := pkgX509.VerifyChain(ctx, chain, capool, pkgX509.CRLVerification{
+func verifyChain(chain []*x509.Certificate, capool *x509.CertPool, identityPropertiesRequired, crlVerificationEnabled bool, verifyByCRL pkgX509.VerifyByCRL) error {
+	err := pkgX509.VerifyChain(chain, capool, pkgX509.CRLVerification{
 		Enabled: crlVerificationEnabled,
 		Verify:  verifyByCRL,
 	})
@@ -117,7 +117,7 @@ func verifyChain(ctx context.Context, chain []*x509.Certificate, capool *x509.Ce
 	return nil
 }
 
-func MakeGetConfigForClient(ctx context.Context, tlsCfg *tls.Config, identityPropertiesRequired, crlVerificationEnabled bool, verifyByCRL pkgX509.VerifyByCRL) tls.Config {
+func MakeGetConfigForClient(tlsCfg *tls.Config, identityPropertiesRequired, crlVerificationEnabled bool, verifyByCRL pkgX509.VerifyByCRL) tls.Config {
 	return tls.Config{
 		GetCertificate: tlsCfg.GetCertificate,
 		MinVersion:     tlsCfg.MinVersion,
@@ -126,7 +126,7 @@ func MakeGetConfigForClient(ctx context.Context, tlsCfg *tls.Config, identityPro
 		VerifyPeerCertificate: func(_ [][]byte, chains [][]*x509.Certificate) error {
 			var errs *multierror.Error
 			for _, chain := range chains {
-				err := verifyChain(ctx, chain, tlsCfg.ClientCAs, identityPropertiesRequired, crlVerificationEnabled, verifyByCRL)
+				err := verifyChain(chain, tlsCfg.ClientCAs, identityPropertiesRequired, crlVerificationEnabled, verifyByCRL)
 				if err == nil {
 					return nil
 				}

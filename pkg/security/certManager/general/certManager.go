@@ -8,6 +8,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -57,12 +58,13 @@ func (c Config) Validate() error {
 type CertManager struct {
 	config Config
 
-	fileWatcher             *fsnotify.Watcher
-	verifyClientCertificate tls.ClientAuthType
-	logger                  log.Logger
-	onFileChangeFunc        func(event fsnotify.Event)
-	done                    atomic.Bool
-	crlCache                *CRLCache
+	fileWatcher                         *fsnotify.Watcher
+	verifyClientCertificate             tls.ClientAuthType
+	logger                              log.Logger
+	onFileChangeFunc                    func(event fsnotify.Event)
+	done                                atomic.Bool
+	crlCache                            *CRLCache
+	customDistributionPointVerification pkgX509.CustomDistributionPointVerification // override CRL verification for given host
 
 	private struct {
 		mutex                sync.Mutex
@@ -87,13 +89,14 @@ func tryToWatchFile(file urischeme.URIScheme, fileWatcher *fsnotify.Watcher, rem
 	return nil
 }
 
-func newCertManager(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, verifyClientCertificate tls.ClientAuthType, crlCache *CRLCache, cleanUpOnError fn.FuncList) (*CertManager, error) {
+func newCertManager(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, verifyClientCertificate tls.ClientAuthType, crlCache *CRLCache, dpVerify pkgX509.CustomDistributionPointVerification, cleanUpOnError fn.FuncList) (*CertManager, error) {
 	c := &CertManager{
-		fileWatcher:             fileWatcher,
-		config:                  config,
-		verifyClientCertificate: verifyClientCertificate,
-		logger:                  logger,
-		crlCache:                crlCache,
+		fileWatcher:                         fileWatcher,
+		config:                              config,
+		verifyClientCertificate:             verifyClientCertificate,
+		logger:                              logger,
+		crlCache:                            crlCache,
+		customDistributionPointVerification: dpVerify,
 	}
 	_, err := c.loadCAs()
 	if err != nil {
@@ -122,7 +125,12 @@ func newCertManager(config Config, fileWatcher *fsnotify.Watcher, logger log.Log
 }
 
 // New creates a new certificate manager which watches for certs in a filesystem
-func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*CertManager, error) {
+func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, opts ...SetOption) (*CertManager, error) {
+	options := Options{}
+	for _, opt := range opts {
+		opt(&options)
+	}
+
 	verifyClientCertificate := tls.RequireAndVerifyClientCert
 	if !config.ClientCertificateRequired {
 		verifyClientCertificate = tls.NoClientCert
@@ -139,7 +147,7 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracer
 		cleanUpOnError.AddFunc(crlCache.Close)
 	}
 
-	c, err := newCertManager(config, fileWatcher, logger, verifyClientCertificate, crlCache, cleanUpOnError)
+	c, err := newCertManager(config, fileWatcher, logger, verifyClientCertificate, crlCache, options.CustomDistributionPointVerification, cleanUpOnError)
 	if err != nil {
 		cleanUpOnError.Execute()
 		return nil, err
@@ -170,9 +178,7 @@ func (a *CertManager) GetServerTLSConfig() *tls.Config {
 		ClientAuth:     a.verifyClientCertificate,
 	}
 	if a.config.CRL.Enabled {
-		// TODO: propagate context
-		ctx := context.Background()
-		cfg.VerifyPeerCertificate = pkgX509.VerifyChains(ctx, a.GetCertificateAuthorities(), pkgX509.CRLVerification{
+		cfg.VerifyPeerCertificate = pkgX509.VerifyChains(a.GetCertificateAuthorities(), pkgX509.CRLVerification{
 			Enabled: true,
 			Verify:  a.VerifyByCRL,
 		})
@@ -189,9 +195,7 @@ func (a *CertManager) GetClientTLSConfig() *tls.Config {
 		MinVersion:               tls.VersionTLS12,
 	}
 	if a.config.CRL.Enabled {
-		// TODO: propagate context
-		ctx := context.Background()
-		cfg.VerifyPeerCertificate = pkgX509.VerifyChains(ctx, a.GetCertificateAuthorities(), pkgX509.CRLVerification{
+		cfg.VerifyPeerCertificate = pkgX509.VerifyChains(a.GetCertificateAuthorities(), pkgX509.CRLVerification{
 			Enabled: true,
 			Verify:  a.VerifyByCRL,
 		})
@@ -412,22 +416,40 @@ func (a *CertManager) onFileChange(event fsnotify.Event) {
 	}
 }
 
-func (a *CertManager) VerifyByCRL(ctx context.Context, certificate *x509.Certificate, cdps []string) error {
+func (a *CertManager) getHostAndEndpoint(distributionPoint string) (string, string, bool) {
+	u, err := url.ParseRequestURI(distributionPoint)
+	if err != nil {
+		a.logger.Errorf("invalid distribution point(%v): %v", distributionPoint, err)
+		return "", "", false
+	}
+	return u.Scheme + "://" + u.Host, u.Path, true
+}
+
+func (a *CertManager) VerifyByCRL(ctx context.Context, certificate *x509.Certificate, cdps []string) (bool, error) {
 	if !a.config.CRL.Enabled {
-		return nil
+		return false, nil
 	}
 
 	for _, dp := range cdps {
+		if a.customDistributionPointVerification != nil {
+			host, ep, ok := a.getHostAndEndpoint(dp)
+			if ok {
+				verify, ok := a.customDistributionPointVerification[host]
+				if ok {
+					a.logger.Debugf("custom distribution point(%s) CRL verification for certificate(serialNumber=%s)", dp, certificate.SerialNumber.String())
+					return verify(ctx, certificate, ep)
+				}
+			}
+		}
 		crl, err := a.crlCache.GetRevocationList(ctx, dp)
 		if err != nil {
 			a.logger.Errorf("failed to download CRL from distribution point(%v): %v", dp, err)
 			continue
 		}
 		if pkgX509.IsRevoked(certificate, crl) {
-			return fmt.Errorf("certificate(serialNumber=%s) was revoked by CRL(%s)", certificate.SerialNumber.String(), crl.Issuer.String())
+			return true, nil
 		}
-		return nil
-
+		return false, nil
 	}
-	return fmt.Errorf("failed to verify certificate(serialNumber=%s) by CRL: all distribution points failed", certificate.SerialNumber.String())
+	return false, fmt.Errorf("failed to verify certificate(serialNumber=%s) by CRL: all distribution points failed", certificate.SerialNumber.String())
 }
