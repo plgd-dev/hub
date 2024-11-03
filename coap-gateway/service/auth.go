@@ -17,9 +17,7 @@ import (
 	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 )
 
-type (
-	Interceptor = func(ctx context.Context, code codes.Code, path string) (context.Context, error)
-)
+type Interceptor = func(ctx context.Context, code codes.Code, path string) (context.Context, error)
 
 func newAuthInterceptor() Interceptor {
 	return func(ctx context.Context, _ codes.Code, path string) (context.Context, error) {

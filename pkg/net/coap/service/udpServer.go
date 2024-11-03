@@ -196,7 +196,7 @@ func newUDPServer(config Config, serviceOpts Options, logger log.Logger, opts ..
 	}
 	if config.InactivityMonitor != nil {
 		udpOpts = append(udpOpts, options.WithInactivityMonitor(config.InactivityMonitor.Timeout, func(cc *coapUdpClient.Conn) {
-			serviceOpts.OnNewConnection(cc)
+			serviceOpts.OnInactivityConnection(cc)
 		}), options.WithTransmission(1, config.InactivityMonitor.Timeout, 2))
 	}
 	if config.KeepAlive != nil {

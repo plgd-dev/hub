@@ -44,7 +44,7 @@ func newTCPListener(config Config, serviceOpts Options, fileWatcher *fsnotify.Wa
 		}
 		closeListener := func() {
 			if err := listener.Close(); err != nil {
-				logger.Errorf("failed to close tcp listener: %w", err)
+				logger.Errorf("failed to close tcp listener: %v", err)
 			}
 		}
 		return &tcpListener{

@@ -5,22 +5,23 @@ import (
 	"context"
 	"crypto/x509"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
 )
 
 type (
-	VerifyByCRL                         = func(context.Context, *x509.Certificate, []string) (bool, error)
-	VerifyForDistributionPoint          = func(context.Context, *x509.Certificate, string) (bool, error)
-	CustomDistributionPointVerification = map[string]VerifyForDistributionPoint
+	VerifyByCRL                         = func(context.Context, *x509.Certificate, []string) error
+	VerifyDistributionPoint             = func(context.Context, *x509.Certificate, string) error
+	CustomDistributionPointVerification = map[string]VerifyDistributionPoint
 	Options                             struct {
 		CustomDistributionPointVerification CustomDistributionPointVerification
 	}
 
 	SetOption = func(cfg *Options)
 )
+
+var ErrRevoked = errors.New("certificate revoked")
 
 func WithCustomDistributionPointVerification(customDistributionPointVerification CustomDistributionPointVerification) SetOption {
 	return func(o *Options) {
@@ -115,12 +116,9 @@ func VerifyChain(chain []*x509.Certificate, capool *x509.CertPool, crlVerify CRL
 			ctx, cancel = context.WithTimeout(context.Background(), time.Second*5)
 			defer cancel()
 		}
-		revoked, err := crlVerify.Verify(ctx, certificate, certificate.CRLDistributionPoints)
+		err := crlVerify.Verify(ctx, certificate, certificate.CRLDistributionPoints)
 		if err != nil {
-			return fmt.Errorf("cannot verify certificate validity by CRL: %w", err)
-		}
-		if revoked {
-			return errors.New("certificate revoked by CRL")
+			return err
 		}
 	}
 	return nil

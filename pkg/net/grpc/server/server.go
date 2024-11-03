@@ -13,12 +13,12 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func New(config BaseConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, customDPVerify pkgX509.CustomDistributionPointVerification, opts ...grpc.ServerOption) (*Server, error) {
+func New(config BaseConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, customVerify pkgX509.CustomDistributionPointVerification, opts ...grpc.ServerOption) (*Server, error) {
 	err := config.Validate()
 	if err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)
 	}
-	tls, err := server.New(config.TLS, fileWatcher, logger, tracerProvider, general.WithCustomDistributionPointVerification(customDPVerify))
+	tls, err := server.New(config.TLS, fileWatcher, logger, tracerProvider, general.WithCustomDistributionPointVerification(customVerify))
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cert manager %w", err)
 	}

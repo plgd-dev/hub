@@ -8,6 +8,7 @@ type Options struct {
 
 type SetOption = func(cfg *Options)
 
+// WithCustomDistributionPointVerification returns a SetOption that configures custom distribution point verification behavior
 func WithCustomDistributionPointVerification(customDistributionPointVerification pkgX509.CustomDistributionPointVerification) SetOption {
 	return func(o *Options) {
 		o.CustomDistributionPointVerification = customDistributionPointVerification

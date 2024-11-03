@@ -90,42 +90,55 @@ func newStore(ctx context.Context, config StorageConfig, fileWatcher *fsnotify.W
 	return db, fl.ToFunction(), nil
 }
 
-func getVerifyCertificateByCRLFromStorage(s store.Store) func(ctx context.Context, certificate *x509.Certificate, endpoint string) (bool, error) {
-	return func(ctx context.Context, certificate *x509.Certificate, endpoint string) (bool, error) {
+func errVerifyDistributionPoint(err error) error {
+	return fmt.Errorf("failed to verify distribution point: %w", err)
+}
+
+func getIssuerFromEndpoint(addr string) (string, error) {
+	prefix := uri.SigningRevocationListBase + "/"
+	var issuerID string
+	if strings.HasPrefix(addr, prefix) {
+		issuerID = strings.TrimPrefix(addr, prefix)
+		// ignore everything after next "/"
+		if len(issuerID) > 36 && issuerID[36] == '/' {
+			issuerID = issuerID[:36]
+		}
+	}
+	// uuid string is 36 chars long
+	if len(issuerID) != 36 {
+		return "", errVerifyDistributionPoint(fmt.Errorf("invalid issuerID(%s)", issuerID))
+	}
+	return issuerID, nil
+}
+
+func getVerifyCertificateByCRLFromStorage(s store.Store, logger log.Logger) func(ctx context.Context, certificate *x509.Certificate, endpoint string) error {
+	return func(ctx context.Context, certificate *x509.Certificate, endpoint string) error {
 		// get issuer from endpoint /certificate-authority/api/v1/signing/crl/{$issuerID}
-		prefix := uri.SigningRevocationListBase + "/"
-		var issuerID string
-		if strings.HasPrefix(endpoint, prefix) {
-			issuerID = strings.TrimPrefix(endpoint, prefix)
-			// ignore everything after next "/"
-			if len(issuerID) > 36 && issuerID[36] == '/' {
-				issuerID = issuerID[:36]
-			}
+		issuerID, err := getIssuerFromEndpoint(endpoint)
+		if err != nil {
+			return err
 		}
-		// uuid string is 36 chars long
-		if len(issuerID) != 36 {
-			return false, fmt.Errorf("invalid issuerID(%s)", issuerID)
-		}
+
 		rl, err := s.GetRevocationList(ctx, issuerID, false)
 		if err != nil {
 			if errors.Is(err, store.ErrNotFound) {
-				return false, nil
+				return nil
 			}
-			return false, err
+			return errVerifyDistributionPoint(err)
 		}
 
 		for _, revoked := range rl.Certificates {
 			serial := &big.Int{}
-			serial, ok := serial.SetString(revoked.Serial, 10)
+			_, ok := serial.SetString(revoked.Serial, 10)
 			if !ok {
+				logger.Debugf("invalid serial number: %s", revoked.Serial)
 				continue
 			}
-
 			if certificate.SerialNumber.Cmp(serial) == 0 {
-				return true, nil
+				return pkgX509.ErrRevoked
 			}
 		}
-		return false, nil
+		return nil
 	}
 }
 
@@ -157,7 +170,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	crlEnabled := externalAddress != "" && dbStorage.SupportsRevocationList()
 	if crlEnabled {
 		customDistributionPointCRLVerification = pkgX509.CustomDistributionPointVerification{
-			externalAddress: getVerifyCertificateByCRLFromStorage(dbStorage),
+			externalAddress: getVerifyCertificateByCRLFromStorage(dbStorage, logger),
 		}
 	}
 	httpValidator, err := validator.New(ctx, config.APIs.GRPC.Authorization.Config, fileWatcher, logger, tracerProvider, validator.WithCustomDistributionPointVerification(customDistributionPointCRLVerification))

@@ -71,7 +71,7 @@ func (c *CertManager) GetTLSConfig() *tls.Config {
 	return c.c.GetServerTLSConfig()
 }
 
-func (c *CertManager) VerifyByCRL(ctx context.Context, certificate *x509.Certificate, cdp []string) (bool, error) {
+func (c *CertManager) VerifyByCRL(ctx context.Context, certificate *x509.Certificate, cdp []string) error {
 	return c.c.VerifyByCRL(ctx, certificate, cdp)
 }
 

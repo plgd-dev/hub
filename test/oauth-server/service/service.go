@@ -41,7 +41,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	listener.AddCloseFunc(otelClient.Close)
 	closeListener := func() {
 		if errC := listener.Close(); errC != nil {
-			logger.Errorf("cannot close listener: %w", errC)
+			logger.Errorf("cannot close listener: %v", errC)
 		}
 	}
 

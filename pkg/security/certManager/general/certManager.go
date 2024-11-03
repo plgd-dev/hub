@@ -422,23 +422,36 @@ func (a *CertManager) getHostAndEndpoint(distributionPoint string) (string, stri
 		a.logger.Errorf("invalid distribution point(%v): %v", distributionPoint, err)
 		return "", "", false
 	}
+	if u.Scheme == "" || u.Host == "" {
+		a.logger.Errorf("invalid distribution point(%v): missing scheme or host", distributionPoint)
+		return "", "", false
+	}
 	return u.Scheme + "://" + u.Host, u.Path, true
 }
 
-func (a *CertManager) VerifyByCRL(ctx context.Context, certificate *x509.Certificate, cdps []string) (bool, error) {
-	if !a.config.CRL.Enabled {
+func (a *CertManager) checkCertificateByDistributionPoint(ctx context.Context, certificate *x509.Certificate, dp string) (bool, error) {
+	host, ep, ok := a.getHostAndEndpoint(dp)
+	if !ok {
 		return false, nil
+	}
+	verify, ok := a.customDistributionPointVerification[host]
+	if !ok {
+		return false, nil
+	}
+	a.logger.Debugf("custom distribution point(%s) CRL verification for certificate(serialNumber=%s)", dp, certificate.SerialNumber.String())
+	return true, verify(ctx, certificate, ep)
+}
+
+func (a *CertManager) VerifyByCRL(ctx context.Context, certificate *x509.Certificate, cdps []string) error {
+	if !a.config.CRL.Enabled {
+		return nil
 	}
 
 	for _, dp := range cdps {
 		if a.customDistributionPointVerification != nil {
-			host, ep, ok := a.getHostAndEndpoint(dp)
+			ok, err := a.checkCertificateByDistributionPoint(ctx, certificate, dp)
 			if ok {
-				verify, ok := a.customDistributionPointVerification[host]
-				if ok {
-					a.logger.Debugf("custom distribution point(%s) CRL verification for certificate(serialNumber=%s)", dp, certificate.SerialNumber.String())
-					return verify(ctx, certificate, ep)
-				}
+				return err
 			}
 		}
 		crl, err := a.crlCache.GetRevocationList(ctx, dp)
@@ -447,9 +460,9 @@ func (a *CertManager) VerifyByCRL(ctx context.Context, certificate *x509.Certifi
 			continue
 		}
 		if pkgX509.IsRevoked(certificate, crl) {
-			return true, nil
+			return pkgX509.ErrRevoked
 		}
-		return false, nil
+		return nil
 	}
-	return false, fmt.Errorf("failed to verify certificate(serialNumber=%s) by CRL: all distribution points failed", certificate.SerialNumber.String())
+	return fmt.Errorf("failed to verify certificate(serialNumber=%s) by CRL: all distribution points failed", certificate.SerialNumber.String())
 }

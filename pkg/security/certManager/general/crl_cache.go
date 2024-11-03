@@ -61,7 +61,7 @@ func (c *CRLCache) GetRevocationListByHTTP(ctx context.Context, distributionPoin
 	}
 	defer func() {
 		if errC := resp.Body.Close(); errC != nil {
-			c.logger.Errorf("failed to close response body stream: %w", errC)
+			c.logger.Errorf("failed to close response body stream: %v", errC)
 		}
 	}()
 	respBody, err := io.ReadAll(resp.Body)

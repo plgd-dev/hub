@@ -239,7 +239,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	}
 	closeListener := func() {
 		if errC := listener.Close(); errC != nil {
-			logger.Errorf("cannot close http listener: %w", errC)
+			logger.Errorf("cannot close http listener: %v", errC)
 		}
 	}
 
