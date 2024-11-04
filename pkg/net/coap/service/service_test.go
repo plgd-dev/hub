@@ -14,6 +14,7 @@ import (
 	"github.com/plgd-dev/go-coap/v3/tcp"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 	"github.com/plgd-dev/hub/v2/pkg/service"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/assert"
@@ -64,7 +65,7 @@ func TestNew(t *testing.T) {
 					WithMessagePool(pool.New(uint32(1024), 1024)),
 					WithOnNewConnection(func(mux.Conn) {}),
 					WithOnInactivityConnection(func(mux.Conn) {}),
-					WithOverrideTLS(func(cfg *tls.Config) *tls.Config { return cfg }),
+					WithOverrideTLS(func(cfg *tls.Config, _ pkgX509.VerifyByCRL) *tls.Config { return cfg }),
 				},
 			},
 		},
@@ -91,7 +92,7 @@ func TestNew(t *testing.T) {
 					WithMessagePool(pool.New(uint32(1024), 1024)),
 					WithOnNewConnection(func(mux.Conn) {}),
 					WithOnInactivityConnection(func(mux.Conn) {}),
-					WithOverrideTLS(func(cfg *tls.Config) *tls.Config { return cfg }),
+					WithOverrideTLS(func(cfg *tls.Config, _ pkgX509.VerifyByCRL) *tls.Config { return cfg }),
 				},
 			},
 		},

@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/plgd-dev/hub/v2/certificate-authority/store"
 	"github.com/plgd-dev/hub/v2/pkg/mongodb"
+	pkgTls "github.com/plgd-dev/hub/v2/pkg/security/tls"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -98,7 +99,7 @@ func (s *Store) getRevocationListUpdate(ctx context.Context, query *store.Update
 		s.logger.Debugf("skipping duplicate serial number(%v)", c.Serial)
 		delete(cmap, c.Serial)
 	}
-	if len(cmap) == 0 && (!query.UpdateIfExpired || !rl.IsExpired()) {
+	if len(cmap) == 0 && (!query.UpdateIfExpired || !pkgTls.IsExpired(rl.ValidUntil)) {
 		return revocationListUpdate{
 			originalRevocationList: rl.RevocationList,
 		}, false, nil
@@ -229,7 +230,7 @@ func (s *Store) GetLatestIssuedOrIssueRevocationList(ctx context.Context, issuer
 	if err != nil {
 		return nil, err
 	}
-	if rl.IssuedAt > 0 && !rl.IsExpired() {
+	if rl.IssuedAt > 0 && !pkgTls.IsExpired(rl.ValidUntil) {
 		return rl, nil
 	}
 	issuedAt := time.Now()

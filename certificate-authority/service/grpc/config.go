@@ -25,8 +25,8 @@ func (c *CRLConfig) Validate() error {
 	if !c.Enabled {
 		return nil
 	}
-	if c.ExpiresIn <= time.Minute {
-		return fmt.Errorf("expiresIn('%v') - less than %v", c.ExpiresIn, time.Minute)
+	if c.ExpiresIn < time.Second*10 { // TODO: make configurable for tests
+		return fmt.Errorf("expiresIn('%v') - less than %v", c.ExpiresIn, time.Second*10)
 	}
 	return nil
 }

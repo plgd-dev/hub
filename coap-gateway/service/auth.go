@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/hashicorp/go-multierror"
 	"github.com/plgd-dev/device/v2/pkg/net/coap"
@@ -80,24 +79,15 @@ func (s *Service) VerifyAndResolveDeviceID(tlsDeviceID, paramDeviceID string, cl
 	return deviceID, nil
 }
 
-func verifyChain(chain []*x509.Certificate, capool *x509.CertPool, identityPropertiesRequired bool) error {
-	if len(chain) == 0 {
-		return errors.New("certificate chain is empty")
-	}
-	certificate := chain[0]
-	intermediateCAPool := x509.NewCertPool()
-	for i := 1; i < len(chain); i++ {
-		intermediateCAPool.AddCert(chain[i])
-	}
-	_, err := certificate.Verify(x509.VerifyOptions{
-		Roots:         capool,
-		Intermediates: intermediateCAPool,
-		CurrentTime:   time.Now(),
-		KeyUsages:     []x509.ExtKeyUsage{x509.ExtKeyUsageAny},
+func verifyChain(chain []*x509.Certificate, capool *x509.CertPool, identityPropertiesRequired, crlVerificationEnabled bool, verifyByCRL pkgX509.VerifyByCRL) error {
+	err := pkgX509.VerifyChain(chain, capool, pkgX509.CRLVerification{
+		Enabled: crlVerificationEnabled,
+		Verify:  verifyByCRL,
 	})
 	if err != nil {
 		return err
 	}
+	certificate := chain[0]
 	// verify EKU manually
 	ekuHasClient := false
 	ekuHasServer := false
@@ -115,17 +105,17 @@ func verifyChain(chain []*x509.Certificate, capool *x509.CertPool, identityPrope
 	if !ekuHasServer {
 		return errors.New("the extended key usage field in the device certificate does not contain server authentication")
 	}
-	if !identityPropertiesRequired {
-		return nil
-	}
-	_, err = coap.GetDeviceIDFromIdentityCertificate(certificate)
-	if err != nil {
-		return fmt.Errorf("the device ID is not part of the certificate's common name: %w", err)
+
+	if identityPropertiesRequired {
+		_, err = coap.GetDeviceIDFromIdentityCertificate(certificate)
+		if err != nil {
+			return fmt.Errorf("the device ID is not part of the certificate's common name: %w", err)
+		}
 	}
 	return nil
 }
 
-func MakeGetConfigForClient(tlsCfg *tls.Config, identityPropertiesRequired bool) tls.Config {
+func MakeGetConfigForClient(tlsCfg *tls.Config, identityPropertiesRequired, crlVerificationEnabled bool, verifyByCRL pkgX509.VerifyByCRL) tls.Config {
 	return tls.Config{
 		GetCertificate: tlsCfg.GetCertificate,
 		MinVersion:     tlsCfg.MinVersion,
@@ -134,7 +124,7 @@ func MakeGetConfigForClient(tlsCfg *tls.Config, identityPropertiesRequired bool)
 		VerifyPeerCertificate: func(_ [][]byte, chains [][]*x509.Certificate) error {
 			var errs *multierror.Error
 			for _, chain := range chains {
-				err := verifyChain(chain, tlsCfg.ClientCAs, identityPropertiesRequired)
+				err := verifyChain(chain, tlsCfg.ClientCAs, identityPropertiesRequired, crlVerificationEnabled, verifyByCRL)
 				if err == nil {
 					return nil
 				}

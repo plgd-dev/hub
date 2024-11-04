@@ -29,10 +29,10 @@ func TestCRLConfigValidate(t *testing.T) {
 			},
 		},
 		{
-			name: "Enabled CRLConfig with ExpiresIn less than 1 minute",
+			name: "Enabled CRLConfig with ExpiresIn less than 10 seconds",
 			input: grpc.CRLConfig{
 				Enabled:   true,
-				ExpiresIn: 30 * time.Second,
+				ExpiresIn: 9 * time.Second,
 			},
 			wantErr: true,
 		},

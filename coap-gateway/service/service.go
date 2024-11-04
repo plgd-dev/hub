@@ -38,6 +38,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
+	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 	"github.com/plgd-dev/hub/v2/pkg/service"
 	"github.com/plgd-dev/hub/v2/pkg/sync/task/queue"
 	raClient "github.com/plgd-dev/hub/v2/resource-aggregate/client"
@@ -620,8 +621,8 @@ func (s *Service) createServices(fileWatcher *fsnotify.Watcher, logger log.Logge
 		coapService.WithOnNewConnection(s.coapConnOnNew),
 		coapService.WithOnInactivityConnection(s.onInactivityConnection),
 		coapService.WithMessagePool(s.messagePool),
-		coapService.WithOverrideTLS(func(cfg *tls.Config) *tls.Config {
-			tlsCfg := MakeGetConfigForClient(cfg, s.config.APIs.COAP.InjectedCOAPConfig.TLSConfig.IdentityPropertiesRequired)
+		coapService.WithOverrideTLS(func(cfg *tls.Config, verifyByCRL pkgX509.VerifyByCRL) *tls.Config {
+			tlsCfg := MakeGetConfigForClient(cfg, s.config.APIs.COAP.InjectedCOAPConfig.TLSConfig.IdentityPropertiesRequired, s.config.APIs.COAP.Config.TLS.Embedded.CRL.Enabled, verifyByCRL)
 			return &tlsCfg
 		}),
 	)
