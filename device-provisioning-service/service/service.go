@@ -26,6 +26,7 @@ import (
 	coapService "github.com/plgd-dev/hub/v2/pkg/net/coap/service"
 	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 	"github.com/plgd-dev/hub/v2/pkg/opentelemetry/otelcoap"
+	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 	"github.com/plgd-dev/hub/v2/pkg/service"
 	otelCodes "go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
@@ -355,7 +356,7 @@ func (server *Service) createServices(fileWatcher *fsnotify.Watcher, logger log.
 		coapService.WithOnNewConnection(server.coapConnOnNew),
 		coapService.WithOnInactivityConnection(server.onInactivityConnection),
 		coapService.WithMessagePool(server.messagePool),
-		coapService.WithOverrideTLS(func(cfg *tls.Config) *tls.Config {
+		coapService.WithOverrideTLS(func(cfg *tls.Config, _ pkgX509.VerifyByCRL) *tls.Config {
 			cfg.InsecureSkipVerify = true
 			cfg.ClientAuth = tls.RequireAnyClientCert
 			cfg.VerifyPeerCertificate = server.authHandler.VerifyPeerCertificate

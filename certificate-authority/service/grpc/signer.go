@@ -181,9 +181,8 @@ func (s *Signer) sign(ctx context.Context, isIdentityCertificate bool, csr []byt
 		}),
 	}
 	if s.IsCRLEnabled() {
-		opts = append(opts, certificateSigner.WithCRLDistributionPoints(
-			[]string{path.Join(s.crl.serverAddress, uri.SigningRevocationListBase, s.issuerID)},
-		))
+		dp := s.crl.serverAddress + path.Join(uri.SigningRevocationListBase, s.issuerID)
+		opts = append(opts, certificateSigner.WithCRLDistributionPoints([]string{dp}))
 	}
 	signer, err := s.newCertificateSigner(isIdentityCertificate, opts...)
 	if err != nil {

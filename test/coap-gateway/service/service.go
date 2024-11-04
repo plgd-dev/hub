@@ -49,7 +49,7 @@ func newTCPListener(config COAPConfig, fileWatcher *fsnotify.Watcher, logger log
 		}
 		closeListener := func() {
 			if errC := listener.Close(); errC != nil {
-				log.Errorf("failed to close tcp listener: %w", errC)
+				log.Errorf("failed to close tcp listener: %v", errC)
 			}
 		}
 		return listener, closeListener, nil

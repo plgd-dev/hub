@@ -14,6 +14,7 @@ import (
 	coapCodes "github.com/plgd-dev/go-coap/v3/message/codes"
 	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
+	testService "github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -21,7 +22,7 @@ import (
 func TestClientUpdateHandler(t *testing.T) {
 	coapgwCfg := coapgwTest.MakeConfig(t)
 	coapgwCfg.APIs.COAP.TLS.Enabled = new(bool)
-	shutdown := setUp(t, coapgwCfg)
+	shutdown := setUp(t, testService.WithCOAPGWConfig(coapgwCfg))
 	defer shutdown()
 
 	co := testCoapDial(t, "", false, true, time.Now().Add(time.Minute))

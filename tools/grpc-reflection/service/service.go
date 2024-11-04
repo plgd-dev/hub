@@ -25,7 +25,7 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*serv
 	if err != nil {
 		return nil, fmt.Errorf("cannot create grpc server options: %w", err)
 	}
-	server, err := server.New(config.APIs.GRPC.BaseConfig, fileWatcher, logger, noop.NewTracerProvider(), opts...)
+	server, err := server.New(config.APIs.GRPC.BaseConfig, fileWatcher, logger, noop.NewTracerProvider(), nil, opts...)
 	if err != nil {
 		return nil, err
 	}

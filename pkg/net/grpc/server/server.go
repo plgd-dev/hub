@@ -5,18 +5,20 @@ import (
 
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	"github.com/plgd-dev/hub/v2/pkg/security/certManager/general"
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
+	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
 
-func New(config BaseConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, opts ...grpc.ServerOption) (*Server, error) {
+func New(config BaseConfig, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, customVerify pkgX509.CustomDistributionPointVerification, opts ...grpc.ServerOption) (*Server, error) {
 	err := config.Validate()
 	if err != nil {
 		return nil, fmt.Errorf("invalid config: %w", err)
 	}
-	tls, err := server.New(config.TLS, fileWatcher, logger, tracerProvider)
+	tls, err := server.New(config.TLS, fileWatcher, logger, tracerProvider, general.WithCustomDistributionPointVerification(customVerify))
 	if err != nil {
 		return nil, fmt.Errorf("cannot create cert manager %w", err)
 	}

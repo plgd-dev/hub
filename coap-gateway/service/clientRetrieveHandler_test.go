@@ -13,6 +13,7 @@ import (
 	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	testService "github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -21,7 +22,7 @@ func TestClientRetrieveHandler(t *testing.T) {
 	coapgwCfg := coapgwTest.MakeConfig(t)
 	coapgwCfg.Log.DumpBody = true
 	coapgwCfg.Log.Level = log.DebugLevel
-	shutdown := setUp(t, coapgwCfg)
+	shutdown := setUp(t, testService.WithCOAPGWConfig(coapgwCfg))
 	defer shutdown()
 
 	co := testCoapDial(t, "", true, true, time.Now().Add(time.Minute))

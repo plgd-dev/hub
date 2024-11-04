@@ -14,6 +14,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	oauthUri "github.com/plgd-dev/hub/v2/test/oauth-server/uri"
+	testService "github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/require"
 )
 
@@ -64,7 +65,7 @@ type TestCoapSignUpResponseRetry struct {
 func TestSignUpPostHandlerWithRetry(t *testing.T) {
 	coapgwCfg := coapgwTest.MakeConfig(t)
 	coapgwCfg.APIs.COAP.Authorization.Providers[0].Config.ClientID = oauthTest.ClientTestRestrictedAuth
-	shutdown := setUp(t, coapgwCfg)
+	shutdown := setUp(t, testService.WithCOAPGWConfig(coapgwCfg))
 	defer shutdown()
 	codeEl := oauthTest.GetDefaultDeviceAuthorizationCode(t, "")
 
@@ -97,7 +98,7 @@ func TestSignUpClientCredentialPostHandler(t *testing.T) {
 	coapgwCfg.APIs.COAP.Authorization.OwnerClaim = oauthUri.OwnerClaimKey
 	err = coapgwCfg.Validate()
 	require.NoError(t, err)
-	shutdown := setUp(t, coapgwCfg)
+	shutdown := setUp(t, testService.WithCOAPGWConfig(coapgwCfg))
 	defer shutdown()
 	codeEl := oauthTest.GetDefaultAccessToken(t)
 
