@@ -140,6 +140,8 @@ github.com/grpc-ecosystem/grpc-gateway/v2 v2.22.0 h1:asbCHRVmodnJTuQ3qamDwqVOIjw
 github.com/grpc-ecosystem/grpc-gateway/v2 v2.22.0/go.mod h1:ggCgvZ2r7uOoQjOyu2Y1NhHmEPPzzuhWgcza5M1Ji1I=
 github.com/hailocab/go-hostpool v0.0.0-20160125115350-e80d13ce29ed h1:5upAirOpQc1Q53c0bnx2ufif5kANL7bfZWcc6VJWJd8=
 github.com/hailocab/go-hostpool v0.0.0-20160125115350-e80d13ce29ed/go.mod h1:tMWxXQ9wFIaZeTI9F+hmhFiGpFmhOHzyShyFUhRm0H4=
+github.com/hasheddan/go-coap/v3 v3.0.0-20241105135340-b80b7a8e9cd9 h1:28/haSx8NgBIaguAVvXseNI/WMZ+iluz11BqEr3vQuM=
+github.com/hasheddan/go-coap/v3 v3.0.0-20241105135340-b80b7a8e9cd9/go.mod h1:Cs6sfxmF/b8ktTVfPMf6FzihFx+0mEZ/ClbFNUnnsZw=
 github.com/hashicorp/errwrap v1.0.0/go.mod h1:YH+1FKiLXxHSkmPseP+kNlulaMuP3n2brvKWEqk/Jc4=
 github.com/hashicorp/errwrap v1.1.0 h1:OxrOeh75EUXMY8TBjag2fzXGZ40LB6IKw45YeGUDY2I=
 github.com/hashicorp/errwrap v1.1.0/go.mod h1:YH+1FKiLXxHSkmPseP+kNlulaMuP3n2brvKWEqk/Jc4=
@@ -270,8 +272,8 @@ github.com/plgd-dev/device/v2 v2.5.3-0.20240916150018-cc07b737d112 h1:nSgyZUOfQr
 github.com/plgd-dev/device/v2 v2.5.3-0.20240916150018-cc07b737d112/go.mod h1:TXeTvVt0hi22FwhxaGxM1NiRwDDi1RmSgIrX9foWlic=
 github.com/plgd-dev/go-coap/v2 v2.0.4-0.20200819112225-8eb712b901bc/go.mod h1:+tCi9Q78H/orWRtpVWyBgrr4vKFo2zYtbbxUllerBp4=
 github.com/plgd-dev/go-coap/v2 v2.4.1-0.20210517130748-95c37ac8e1fa/go.mod h1:rA7fc7ar+B/qa+Q0hRqv7yj/EMtIlmo1l7vkQGSrHPU=
-github.com/plgd-dev/go-coap/v3 v3.3.5 h1:GBdBwM/9JtJhbHxBhbzXAc40yaWvdYX16+vN0ShoX7w=
-github.com/plgd-dev/go-coap/v3 v3.3.5/go.mod h1:Cs6sfxmF/b8ktTVfPMf6FzihFx+0mEZ/ClbFNUnnsZw=
+github.com/plgd-dev/go-coap/v3 v3.3.7-0.20241107212533-30c5694c0745 h1:Hy58LnvBYemiwYs/k79SATqdBdnbW+7hAiMm96f+ftY=
+github.com/plgd-dev/go-coap/v3 v3.3.7-0.20241107212533-30c5694c0745/go.mod h1:Cs6sfxmF/b8ktTVfPMf6FzihFx+0mEZ/ClbFNUnnsZw=
 github.com/plgd-dev/kit v0.0.0-20200819113605-d5fcf3e94f63/go.mod h1:Yl9zisyXfPdtP9hTWlJqjJYXmgU/jtSDKttz9/CeD90=
 github.com/plgd-dev/kit/v2 v2.0.0-20211006190727-057b33161b90 h1:TC1HJ/UbyflJFPvaOdGmNZ5TeFGex1/dyr9urNGLy7M=
 github.com/plgd-dev/kit/v2 v2.0.0-20211006190727-057b33161b90/go.mod h1:Z7oKFLSGQjdi8eInxwFCs0tSApuEM1o0qNck+sJYp4M=
