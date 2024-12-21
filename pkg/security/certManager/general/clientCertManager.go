@@ -50,7 +50,7 @@ func NewClientCertManager(config pkgTls.ClientConfig, fileWatcher *fsnotify.Watc
 	caPoolArray, _ := config.CAPoolArray()
 
 	cfg := ClientConfig(caPoolArray, config.KeyFile, config.CertFile, config.UseSystemCAPool, config.CRL)
-	if err := cfg.Validate(); err != nil {
+	if err := cfg.Validate(true); err != nil {
 		return nil, err
 	}
 	c, err := New(cfg, fileWatcher, ClientLogger(logger), tracerProvider, opts...)

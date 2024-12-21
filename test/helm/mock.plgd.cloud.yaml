@@ -13,6 +13,67 @@ global:
         - "abc"
   image:
     tag: vnext-pr1088
+  crl:
+    # -- CRL settings for authorization endpoint
+    authorization:
+      # -- Custom CA certificate for authorization endpoints in PEM format
+      caPool: |-
+        -----BEGIN CERTIFICATE-----
+        ...
+        -----END CERTIFICATE-----
+      crt: |-
+        -----BEGIN CERTIFICATE-----
+        ...
+        -----END CERTIFICATE-----
+      key: |-
+        -----BEGIN EC PRIVATE-----
+        ...
+        -----END EC PRIVATE-----
+    # -- CRL settings for authorization endpoint
+    internal:
+      # -- Custom CA certificate for authorization endpoints in PEM format
+      caPool: |-
+        -----BEGIN CERTIFICATE-----
+        ...
+        -----END CERTIFICATE-----
+      crt: |-
+        -----BEGIN CERTIFICATE-----
+        ...
+        -----END CERTIFICATE-----
+      key: |-
+        -----BEGIN EC PRIVATE-----
+        ...
+        -----END EC PRIVATE-----
+    # -- CRL settings for authorization endpoint
+    storage:
+      # -- Custom CA certificate for authorization endpoints in PEM format
+      caPool: |-
+        -----BEGIN CERTIFICATE-----
+        ...
+        -----END CERTIFICATE-----
+      crt: |-
+        -----BEGIN CERTIFICATE-----
+        ...
+        -----END CERTIFICATE-----
+      key: |-
+        -----BEGIN EC PRIVATE-----
+        ...
+        -----END EC PRIVATE-----
+    # -- CRL settings for authorization endpoint
+    coap:
+      # -- Custom CA certificate for authorization endpoints in PEM format
+      caPool: |-
+        -----BEGIN CERTIFICATE-----
+        ...
+        -----END CERTIFICATE-----
+      crt: |-
+        -----BEGIN CERTIFICATE-----
+        ...
+        -----END CERTIFICATE-----
+      key: |-
+        -----BEGIN EC PRIVATE-----
+        ...
+        -----END EC PRIVATE-----
   m2mOAuthServer:
     privateKey: |
       -----BEGIN EC PRIVATE KEY-----

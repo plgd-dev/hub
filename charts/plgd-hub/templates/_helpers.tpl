@@ -113,6 +113,13 @@ If release name contains chart name it will be used as a full name.
 {{- include "plgd-hub.certificateConfigWithExtraCAPool" (list $ $certDefinition $certPath $.Values.extraCAPool.internal) }}
 {{- end }}
 
+{{- define "plgd-hub.internalCRLConfig" }}
+{{- $ := index . 0 }}
+{{- $certDefinition := index . 1 }}
+{{- $certPath := index . 2 }}
+{{- include "plgd-hub.certificateConfigWithExtraCAPool" (list $ $certDefinition $certPath $.Values.extraCAPool.internal) }}
+{{- end }}
+
 {{- define "plgd-hub.coapCertificateConfig" }}
 {{- $ := index . 0 }}
 {{- $certDefinition := index . 1 }}
@@ -168,6 +175,110 @@ tls:
   {{- $httpTls := $http.tls }}
   {{- include "plgd-hub.authorizationCaCertificateConfig" (list $ $httpTls $certPath ) }}
   useSystemCAPool: {{ $http.tls.useSystemCAPool }}
+  {{- if $httpTls.crl }}
+  {{- include "plgd-hub.crlAuthorizationConfig" (list $ $httpTls.crl ) | indent 2 }}
+  {{- end }}
+{{- end }}
+
+{{- define "plgd-hub.CRLConfig" }}
+{{- $ := index . 0 }}
+{{- $crl := index . 1 }}
+{{- if include "plgd-hub.resolveTemplateString" (list $ $crl.enabled) -}}
+enabled: true
+http:
+  maxIdleConns: {{ $crl.http.maxIdleConns }}
+  maxConnsPerHost:  {{ $crl.http.maxConnsPerHost }}
+  maxIdleConnsPerHost:  {{ $crl.http.maxIdleConnsPerHost }}
+  idleConnTimeout:  {{ $crl.http.idleConnTimeout }}
+  timeout: {{ $crl.http.timeout }}
+  tls:
+    {{- $caPoolKey := include "plgd-hub.resolveTemplateString" (list $ $crl.http.tls.caPoolKey) }}
+    {{- if $caPoolKey }}
+    caPool: {{ printf "%s/%s" $crl.mountPath $caPoolKey | quote }}
+    {{- end }}
+    {{- $keyKey := include "plgd-hub.resolveTemplateString" (list $ $crl.http.tls.keyKey) }}
+    {{- if $keyKey }}
+    keyFile: {{ printf "%s/%s" $crl.mountPath $keyKey| quote }}
+    {{- end }}
+    {{- $crtKey := include "plgd-hub.resolveTemplateString" (list $ $crl.http.tls.crtKey) }}
+    {{- if $crtKey }}
+    certFile: {{ printf "%s/%s" $crl.mountPath $crtKey | quote }}
+    {{- end }}
+    useSystemCAPool: {{ $crl.http.tls.useSystemCAPool }}
+{{- else }}
+enabled: false
+{{- end }}
+{{- end }}
+
+{{- define "plgd-hub.crlAuthorizationConfig" }}
+{{- $ := index . 0 }}
+{{- $crl := index . 1 }}
+{{- $crlCfg := dict }}
+{{- if $crl.enabled }}
+{{- $crlCfg = $crl }}
+{{- else if include "plgd-hub.crlAuthorizationEnabled" $ }}
+{{- $crlCfg = include "plgd-hub.CRLConfig" (list $ $.Values.crl.authorization) | fromYaml }}
+{{- end }}
+crl:
+{{- if $crlCfg.enabled }}
+{{ $crlCfg | toYaml | indent 2 }}
+{{- else  }}
+  enabled: false
+{{- end }}
+{{- end }}
+
+{{- define "plgd-hub.CRLConfigFromCertificateAuthority" }}
+{{- $ := . }}
+enabled: {{ $.Values.certificateauthority.enabled }}
+http:
+  maxIdleConns: {{ default 16 $.Values.crl.coap.http.maxIdleConns }}
+  maxConnsPerHost: {{ default 32 $.Values.crl.coap.http.maxConnsPerHost }}
+  maxIdleConnsPerHost: {{ default 16 $.Values.crl.coap.http.maxIdleConnsPerHost }}
+  idleConnTimeout: {{ default "30s" $.Values.crl.coap.http.idleConnTimeout }}
+  timeout: {{ default "10s" $.Values.crl.coap.http.timeout }}
+  tls:
+    {{- $coap := $.Values.coapgateway }}
+    {{- $coapGatewayClientCertPath := "/certs/client" }}
+    {{- $caClientTls := $coap.clients.certificateAuthority.grpc.tls }}
+    {{- include "plgd-hub.internalCertificateConfig" (list $ $caClientTls $coapGatewayClientCertPath ) | indent 2 }}
+    useSystemCAPool: {{ $caClientTls.useSystemCAPool }}
+{{- end }}
+
+{{- define "plgd-hub.crlCoapConfig" }}
+{{- $ := index . 0 }}
+{{- $crl := index . 1 }}
+{{- $crlCfg := dict }}
+{{- if $crl.enabled }}
+{{- $crlCfg = $crl }}
+{{- else if include "plgd-hub.crlCoapEnabled" $ }}
+{{- $crlCfg = include "plgd-hub.CRLConfig" (list $ $.Values.crl.coap) | fromYaml }}
+{{- end }}
+{{- if and (not $crlCfg.enabled) $.Values.certificateauthority.enabled }}
+{{- $crlCfg = include "plgd-hub.CRLConfigFromCertificateAuthority" $ | fromYaml }}
+{{- end }}
+crl:
+{{- if $crlCfg.enabled }}
+{{ $crlCfg | toYaml | indent 2 }}
+{{- else  }}
+  enabled: false
+{{- end }}
+{{- end }}
+
+{{- define "plgd-hub.crlInternalConfig" }}
+{{- $ := index . 0 }}
+{{- $crl := index . 1 }}
+{{- $crlCfg := dict }}
+{{- if $crl.enabled }}
+{{- $crlCfg = $crl }}
+{{- else if include "plgd-hub.crlInternalEnabled" $ }}
+{{- $crlCfg = include "plgd-hub.CRLConfig" (list $ $.Values.crl.internal) | fromYaml }}
+{{- end }}
+crl:
+{{- if $crlCfg.enabled }}
+{{ $crlCfg | toYaml | indent 2 }}
+{{- else  }}
+  enabled: false
+{{- end }}
 {{- end }}
 
 {{- define "plgd-hub.authorizationFilterEndpoints" }}
@@ -551,6 +662,57 @@ true
 {{- end -}}
 {{- end -}}
 
+{{- define "plgd-hub.crlAuthorizationEnabled" -}}
+{{- $ := . }}
+{{- if include "plgd-hub.resolveTemplateString" (list . $.Values.global.crl.authorization.caPool) -}}
+true
+{{- else -}}
+{{- printf "" }}
+{{- end -}}
+{{- end -}}
+
+{{- define "plgd-hub.crlHttpTlsCaPoolKey" -}}
+{{- $ := index . 0 -}}
+{{- $crt := index . 1 }}
+{{- if include "plgd-hub.resolveTemplateString" (list $ $crt) -}}
+ca.crt
+{{- end }}
+{{- end -}}
+
+{{- define "plgd-hub.crlHttpTlsCrtKey" -}}
+{{- $ := index . 0 -}}
+{{- $crt := index . 1 }}
+{{- if include "plgd-hub.resolveTemplateString" (list $ $crt) -}}
+tls.crt
+{{- end }}
+{{- end -}}
+
+{{- define "plgd-hub.crlHttpTlsKeyKey" -}}
+{{- $ := index . 0 -}}
+{{- $crt := index . 1 }}
+{{- if include "plgd-hub.resolveTemplateString" (list $ $crt) -}}
+tls.key
+{{- end }}
+{{- end -}}
+
+{{- define "plgd-hub.crlInternalEnabled" -}}
+{{- $ := . }}
+{{- if include "plgd-hub.resolveTemplateString" (list . $.Values.global.crl.internal.caPool) -}}
+true
+{{- else -}}
+{{- printf "" }}
+{{- end -}}
+{{- end -}}
+
+{{- define "plgd-hub.crlCoapEnabled" -}}
+{{- $ := . }}
+{{- if include "plgd-hub.resolveTemplateString" (list . $.Values.global.crl.coap.caPool) -}}
+true
+{{- else -}}
+{{- printf "" }}
+{{- end -}}
+{{- end -}}
+
 {{- define "plgd-hub.extraCAPoolVolume" -}}
 {{- $ := index . 0 -}}
 {{- $useCAPool := index . 1 }}
@@ -587,9 +749,27 @@ true
 {{- with $useCAPool -}}
 {{- $enabled := include "plgd-hub.resolveTemplateString" (list $ .enabled) -}}
 {{- if and $enabled (or .configMapName .secretName) -}}
+{{- if .key -}}
 - {{ printf "%s/%s" .mountPath (include "plgd-hub.resolveTemplateString" (list $ .key) ) | quote }}
 {{- end -}}
+{{- if .http }}
+{{- if .http.tls }}
+{{- if .http.tls.caPoolKey -}}
+- {{ printf "%s/%s" .mountPath (include "plgd-hub.resolveTemplateString" (list $ .http.tls.caPoolKey) ) | quote }}
 {{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+
+{{- define "plgd-hub.crlVolume" -}}
+{{- include "plgd-hub.extraCAPoolVolume" . }}
+{{- end -}}
+
+{{- define "plgd-hub.crlMount" -}}
+{{- include "plgd-hub.extraCAPoolMount" . }}
 {{- end -}}
 
 {{- define "plgd-hub.isTemplateString" }}

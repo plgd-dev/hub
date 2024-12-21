@@ -110,7 +110,7 @@ func (c *HTTPConfig) GetTLS() ClientConfig {
 
 type CRLConfig struct {
 	Enabled bool           `yaml:"enabled" json:"enabled"`
-	HTTP    HTTPConfigurer `yaml:"http" json:"http"`
+	HTTP    HTTPConfigurer `yaml:"http,omitempty" json:"http,omitempty"`
 }
 
 func (c *CRLConfig) Equals(c2 CRLConfig) bool {

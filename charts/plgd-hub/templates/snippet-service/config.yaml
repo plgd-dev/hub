@@ -39,6 +39,7 @@ data:
           {{- $tls := .apis.grpc.tls }}
           {{- include "plgd-hub.internalCertificateConfig" (list $ $tls $cert ) | indent 8 }}
           clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
+          {{- include "plgd-hub.crlInternalConfig" (list $ $tls.crl) | indent 10 }}
         authorization:
           {{- $authorization := .apis.grpc.authorization }}
           {{- include "plgd-hub.authorizationConfig" (list $ $authorization "snippetservice.apis.grpc.authorization" $cert ) | indent 8 }}
@@ -60,6 +61,7 @@ data:
             {{- $natsTls := .clients.eventBus.nats.tls }}
             {{- include "plgd-hub.internalCertificateConfig" (list $ $natsTls $cert ) | indent 10 }}
             useSystemCAPool: {{ .clients.eventBus.nats.tls.useSystemCAPool }}
+            {{- include "plgd-hub.crlInternalConfig" (list $ $natsTls.crl) | indent 12 }}
           {{- if or .clients.eventBus.nats.leadResourceType $.Values.global.nats.leadResourceType }}
           {{- $leadResourceType := .clients.eventBus.nats.leadResourceType | default $.Values.global.nats.leadResourceType }}
           leadResourceType:
@@ -77,6 +79,7 @@ data:
             {{- $mongoDbTls := .clients.storage.mongoDB.tls }}
             {{- include "plgd-hub.internalCertificateConfig" (list $ $mongoDbTls $cert ) | indent 10 }}
             useSystemCAPool: {{ .clients.storage.mongoDB.tls.useSystemCAPool }}
+            {{- include "plgd-hub.crlInternalConfig" (list $ $mongoDbTls.crl) | indent 12 }}
       resourceAggregate:
         grpc:
           {{- $resourceAggregate := .clients.resourceAggregate.grpc.address }}
@@ -91,6 +94,7 @@ data:
             {{- $raClientTls := .clients.resourceAggregate.grpc.tls }}
             {{- include "plgd-hub.internalCertificateConfig" (list $ $raClientTls $cert ) | indent 10 }}
             useSystemCAPool: {{ .clients.resourceAggregate.grpc.tls.useSystemCAPool }}
+            {{- include "plgd-hub.crlInternalConfig" (list $ $raClientTls.crl) | indent 12 }}
       {{- include "plgd-hub.openTelemetryExporterConfig" (list $ $cert ) | nindent 6 }}
   {{- end }}
 {{- end }}

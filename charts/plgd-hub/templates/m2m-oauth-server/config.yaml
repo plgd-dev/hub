@@ -37,6 +37,7 @@ data:
           {{- $tls := .apis.grpc.tls }}
           {{- include "plgd-hub.internalCertificateConfig" (list $ $tls $cert ) | indent 8 }}
           clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
+          {{- include "plgd-hub.crlInternalConfig" (list $ $tls.crl) | indent 10 }}
         authorization:
           {{- $authorization := .apis.grpc.authorization }}
           {{- include "plgd-hub.authorizationConfig" (list $ $authorization "m2moauthserver.apis.grpc.authorization" $cert ) | indent 8 }}
@@ -59,6 +60,7 @@ data:
             {{- $mongoDbTls := .clients.storage.mongoDB.tls }}
             {{- include "plgd-hub.internalCertificateConfig" (list $ $mongoDbTls $cert ) | indent 10 }}
             useSystemCAPool: {{ .clients.storage.mongoDB.tls.useSystemCAPool }}
+            {{- include "plgd-hub.crlInternalConfig" (list $ $mongoDbTls.crl) | indent 12 }}
       {{- include "plgd-hub.openTelemetryExporterConfig" (list $ $cert ) | nindent 6 }}
     oauthSigner:
       privateKeyFile: {{ include "plgd-hub.m2moauthserver.getPrivateKeyFile" $ }}

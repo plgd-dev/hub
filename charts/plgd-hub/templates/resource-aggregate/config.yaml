@@ -37,6 +37,7 @@ data:
           {{- $tls := .apis.grpc.tls }}
           {{- include "plgd-hub.internalCertificateConfig" (list $ $tls $resourceAggregateCertPath) | indent 8 }}
           clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
+          {{- include "plgd-hub.crlInternalConfig" (list $ $tls.crl) | indent 10 }}
         authorization:
           {{- $authorization := .apis.grpc.authorization }}
           {{- include "plgd-hub.authorizationConfig" (list $ $authorization "resourceaggregate.apis.grpc.authorization" $resourceAggregateCertPath ) | indent 8 }}
@@ -49,6 +50,7 @@ data:
             {{- $natsTls := .clients.eventBus.nats.tls }}
             {{- include "plgd-hub.internalCertificateConfig" (list $ $natsTls $resourceAggregateCertPath) | indent 10 }}
             useSystemCAPool: {{ .clients.eventBus.nats.tls.useSystemCAPool }}
+            {{- include "plgd-hub.crlInternalConfig" (list $ $natsTls.crl) | indent 10 }}
           jetstream: {{ .clients.eventBus.nats.jetstream }}
           {{- $leadResourceType := .clients.eventBus.nats.leadResourceType | default $.Values.global.nats.leadResourceType }}
           {{- if $leadResourceType }}
@@ -78,6 +80,7 @@ data:
             {{- $mongoTls := .clients.eventStore.mongoDB.tls }}
             {{- include "plgd-hub.internalCertificateConfig" (list $ $mongoTls $resourceAggregateCertPath) | indent 10 }}
             useSystemCAPool: {{ .clients.eventStore.mongoDB.tls.useSystemCAPool }}
+            {{- include "plgd-hub.crlInternalConfig" (list $ $mongoTls.crl) | indent 12 }}
         cqlDB:
           hosts:
           {{- include "plgd-hub.cqlDBHosts" (list $ .clients.eventStore.cqlDB.hosts ) | indent 8 }}
@@ -99,6 +102,7 @@ data:
             {{- $cqlDbTls := .clients.eventStore.cqlDB.tls }}
             {{- include "plgd-hub.internalCertificateConfig" (list $ $cqlDbTls $resourceAggregateCertPath ) | indent 10 }}
             useSystemCAPool: {{ .clients.eventStore.cqlDB.tls.useSystemCAPool }}
+            {{- include "plgd-hub.crlInternalConfig" (list $ $cqlDbTls.crl) | indent 12 }}
       identityStore:
         grpc:
           {{- $authorizationServer := .clients.identityStore.grpc.address }}

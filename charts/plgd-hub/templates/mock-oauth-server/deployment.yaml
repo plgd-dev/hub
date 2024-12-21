@@ -100,6 +100,7 @@ spec:
               mountPath: {{ $rdServiceCert }}
             {{- end }}
             {{- include "plgd-hub.extraCAPoolMount" (list . .Values.extraCAPool.internal) | nindent 12 }}
+            {{- include "plgd-hub.crlMount" (list . .Values.crl.internal) | nindent 12 }}
             {{- with .Values.mockoauthserver.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -117,6 +118,7 @@ spec:
             secretName: {{ include "plgd-hub.mockoauthserver.serviceCertName" . }}
         {{- end }}
         {{- include "plgd-hub.extraCAPoolVolume" (list . .Values.extraCAPool.internal) | nindent 8 }}
+        {{- include "plgd-hub.crlVolume" (list . .Values.crl.internal) | nindent 8 }}
         {{- with .Values.mockoauthserver.extraVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}

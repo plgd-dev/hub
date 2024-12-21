@@ -18,6 +18,8 @@ apis:
       keyFile: "/secrets/private/cert.key"
       certFile: "/secrets/public/cert.crt"
       clientCertificateRequired: true
+      crl:
+        enabled: false
     eventsURL: ""
     pullDevices:
       disabled: true
@@ -41,6 +43,8 @@ apis:
           keyFile: "/secrets/private/cert.key"
           certFile: "/secrets/public/cert.crt"
           useSystemCAPool: false
+          crl:
+            enabled: false
 clients:
   identityStore:
     grpc:
@@ -56,6 +60,8 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+        crl:
+          enabled: false
   eventBus:
     nats:
       url: ""
@@ -67,6 +73,8 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+        crl:
+          enabled: false
       leadResourceType:
         enabled: false
   grpcGateway:
@@ -83,6 +91,8 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+        crl:
+          enabled: false
   resourceAggregate:
     grpc:
       address: ""
@@ -97,6 +107,8 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+        crl:
+          enabled: false
   storage:
     mongoDB:
       uri: "mongodb://localhost:27017"
@@ -110,6 +122,8 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+        crl:
+          enabled: false
   subscription:
     http:
       reconnectInterval: "10s"
@@ -129,6 +143,8 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+        crl:
+          enabled: false
 taskProcessor:
   cacheSize: 2048
   timeout: "5s"

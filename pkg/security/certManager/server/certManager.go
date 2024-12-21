@@ -96,7 +96,7 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracer
 		UseSystemCAPool:           false,
 		CRL:                       config.CRL,
 	}
-	if err := cfg.Validate(); err != nil {
+	if err := cfg.Validate(false); err != nil {
 		return nil, err
 	}
 	c, err := general.New(cfg, fileWatcher, logger.With(log.CertManagerKey, "server"), tracerProvider, opts...)

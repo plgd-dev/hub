@@ -86,6 +86,8 @@ spec:
             {{- end }}
             {{- include "plgd-hub.extraCAPoolMount" (list . .Values.extraCAPool.authorization) | nindent 12 }}
             {{- include "plgd-hub.extraCAPoolMount" (list . .Values.extraCAPool.internal) | nindent 12 }}
+            {{- include "plgd-hub.crlMount" (list . .Values.crl.authorization) | nindent 12 }}
+            {{- include "plgd-hub.crlMount" (list . .Values.crl.internal) | nindent 12 }}
             {{- with .Values.identitystore.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -104,6 +106,9 @@ spec:
         {{- include "plgd-hub.extraCAPoolVolume" (list . .Values.extraCAPool.authorization) | nindent 8 }}
         {{- include "plgd-hub.extraCAPoolVolume" (list . .Values.extraCAPool.internal) | nindent 8 }}
         {{- include "plgd-hub.extraCAPoolVolume" (list . .Values.extraCAPool.storage) | nindent 8 }}
+        {{- include "plgd-hub.crlVolume" (list . .Values.crl.authorization) | nindent 8 }}
+        {{- include "plgd-hub.crlVolume" (list . .Values.crl.internal) | nindent 8 }}
+        {{- include "plgd-hub.crlVolume" (list . .Values.crl.storage) | nindent 8 }}
         {{- with .Values.identitystore.extraVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
