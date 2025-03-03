@@ -44,6 +44,7 @@ data:
           {{- $authorization := .apis.grpc.authorization }}
           {{- include "plgd-hub.authorizationConfig" (list $ $authorization "certificateauthority.apis.grpc.authorization" $cert ) | indent 8 }}
       http:
+        externalAddress: {{ .apis.http.externalAddress  | default (printf "https://%s" (include "plgd-hub.certificateauthority.domain" $ )) | quote }}
         address: {{  .apis.http.address | default (printf "0.0.0.0:%v" .httpPort) | quote }}
         readTimeout: {{ .apis.http.readTimeout }}
         readHeaderTimeout: {{ .apis.http.readHeaderTimeout }}
