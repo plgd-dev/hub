@@ -10,7 +10,7 @@ metadata:
   labels:
     {{- include "plgd-hub.labels" $ | nindent 4 }}
 data:
-{{if $caSecretData }}
+{{ if $caSecretData }}
   {{ include "plgd-hub.resolveTemplateString" (list . .Values.crl.authorization.http.tls.caPoolKey) }}: {{ $caSecretData | b64enc }}
 {{- end }}
 {{- if $crtSecretData }}

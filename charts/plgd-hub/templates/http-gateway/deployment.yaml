@@ -28,6 +28,7 @@ spec:
       labels:
         {{- include "plgd-hub.httpgateway.selectorLabels" . | nindent 8 }}
     spec:
+      automountServiceAccountToken: false
       {{- with .Values.httpgateway.securityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}

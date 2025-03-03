@@ -28,6 +28,7 @@ spec:
       labels:
         {{- include "plgd-hub.mockoauthserver.selectorLabels" . | nindent 8 }}
     spec:
+      automountServiceAccountToken: false
       {{- with .Values.mockoauthserver.securityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}

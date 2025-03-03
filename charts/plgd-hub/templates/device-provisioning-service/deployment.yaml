@@ -27,6 +27,7 @@ spec:
       labels:
         {{- include "plgd-hub.deviceProvisioningService.selectorLabels" . | nindent 8 }}
     spec:
+      automountServiceAccountToken: false
       {{- with .Values.deviceProvisioningService.securityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}

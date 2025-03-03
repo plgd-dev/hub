@@ -29,6 +29,7 @@ spec:
       labels:
         {{- include "plgd-hub.coapgateway.selectorLabels" . | nindent 8 }}
     spec:
+      automountServiceAccountToken: false
       {{- with .Values.coapgateway.securityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}

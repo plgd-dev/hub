@@ -28,6 +28,7 @@ spec:
       labels:
         {{- include "plgd-hub.identitystore.selectorLabels" . | nindent 8 }}
     spec:
+      automountServiceAccountToken: false
       {{- with .Values.identitystore.securityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
