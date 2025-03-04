@@ -113,6 +113,13 @@ If release name contains chart name it will be used as a full name.
 {{- include "plgd-hub.certificateConfigWithExtraCAPool" (list $ $certDefinition $certPath $.Values.extraCAPool.internal) }}
 {{- end }}
 
+{{- define "plgd-hub.externalCertificateConfig" }}
+{{- $ := index . 0 }}
+{{- $certDefinition := index . 1 }}
+{{- $certPath := index . 2 }}
+{{- include "plgd-hub.certificateConfigWithExtraCAPool" (list $ $certDefinition $certPath $.Values.extraCAPool.external) }}
+{{- end }}
+
 {{- define "plgd-hub.internalCRLConfig" }}
 {{- $ := index . 0 }}
 {{- $certDefinition := index . 1 }}
@@ -238,10 +245,10 @@ http:
   timeout: {{ default "10s" $.Values.crl.coap.http.timeout }}
   tls:
     {{- $coap := $.Values.coapgateway }}
-    {{- $coapGatewayClientCertPath := "/certs/client" }}
+    {{- $certPath := "/certs/client" }}
     {{- $caClientTls := $coap.clients.certificateAuthority.grpc.tls }}
-    {{- include "plgd-hub.internalCertificateConfig" (list $ $caClientTls $coapGatewayClientCertPath ) | indent 2 }}
-    useSystemCAPool: {{ $caClientTls.useSystemCAPool }}
+    {{- include "plgd-hub.externalCertificateConfig" (list $ $caClientTls $certPath) | indent 2 }}
+    useSystemCAPool: true
 {{- end }}
 
 {{- define "plgd-hub.crlCoapConfig" }}
