@@ -18,6 +18,8 @@ apis:
       keyFile: "/secrets/private/cert.key"
       certFile: "/secrets/public/cert.crt"
       clientCertificateRequired: true
+      crl:
+        enabled: false
     webSocket:
       streamBodyLimit: 262144
       pingFrequency: 10s
@@ -36,6 +38,8 @@ apis:
               keyFile: "/secrets/private/cert.key"
               certFile: "/secrets/public/cert.crt"
               useSystemCAPool: false
+              crl:
+                enabled: false
       tokenTrustVerification:
         cacheExpiration: 30s
 clients:
@@ -53,6 +57,8 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+        crl:
+          enabled: false
   openTelemetryCollector:
     grpc:
       enabled: false
@@ -68,6 +74,8 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+        crl:
+          enabled: false
 ui:
   enabled: false
   directory: "/usr/local/var/www"

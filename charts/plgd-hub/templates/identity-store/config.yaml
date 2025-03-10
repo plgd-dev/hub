@@ -36,6 +36,7 @@ data:
           {{- $tls := .apis.grpc.tls }}
           {{- include "plgd-hub.internalCertificateConfig" (list $ $tls $identityStoreCertPath ) | indent 8 }}
           clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
+          {{- include "plgd-hub.crlInternalConfig" (list $ $tls.crl) | indent 10 }}
         authorization:
           {{- $authorization := .apis.grpc.authorization }}
           {{- include "plgd-hub.authorizationConfig" (list $ $authorization "identitystore.apis.grpc.authorization" $identityStoreCertPath) | indent 8 }}
@@ -49,6 +50,7 @@ data:
             {{- $natsTls := .clients.eventBus.nats.tls }}
             {{- include "plgd-hub.internalCertificateConfig" (list $ $natsTls $identityStoreCertPath ) | indent 10 }}
             useSystemCAPool: false
+            {{- include "plgd-hub.crlInternalConfig" (list $ $natsTls.crl) | indent 12 }}
       storage:
         use: {{ include "plgd-hub.useDatabase" (list $ . .clients.storage.use)  | quote }}
         mongoDB:
@@ -60,6 +62,7 @@ data:
             {{- $mongoDbTls := .clients.storage.mongoDB.tls }}
             {{- include "plgd-hub.internalCertificateConfig" (list $ $mongoDbTls $identityStoreCertPath ) | indent 10 }}
             useSystemCAPool: {{ .clients.storage.mongoDB.tls.useSystemCAPool }}
+            {{- include "plgd-hub.crlInternalConfig" (list $ $mongoDbTls.crl) | indent 12 }}
         cqlDB:
           hosts:
           {{- include "plgd-hub.cqlDBHosts" (list $ .clients.storage.cqlDB.hosts ) | indent 8 }}
@@ -81,6 +84,7 @@ data:
             {{- $cqlDbTls := .clients.storage.cqlDB.tls }}
             {{- include "plgd-hub.internalCertificateConfig" (list $ $cqlDbTls $identityStoreCertPath ) | indent 10 }}
             useSystemCAPool: {{ .clients.storage.cqlDB.tls.useSystemCAPool }}
+            {{- include "plgd-hub.crlInternalConfig" (list $ $cqlDbTls.crl) | indent 12 }}
       {{- include "plgd-hub.openTelemetryExporterConfig" (list $ $identityStoreCertPath) | nindent 6 }}
   {{- end }}
 {{- end }}

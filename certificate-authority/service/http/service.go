@@ -37,7 +37,7 @@ func New(serviceName string, config Config, s store.Store, ca *grpcService.Certi
 		HTTPConnection:       config.Connection,
 		HTTPServer:           config.Server,
 		ServiceName:          serviceName,
-		AuthRules:            pkgHttp.NewDefaultAuthorizationRules(uri.API),
+		AuthRules:            pkgHttp.NewDefaultAuthorizationRules(uri.API, uri.DeprecatedAPI),
 		WhiteEndpointList:    whiteList,
 		FileWatcher:          fileWatcher,
 		Logger:               logger,

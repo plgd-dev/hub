@@ -18,6 +18,8 @@ apis:
       keyFile: "/secrets/private/cert.key"
       certFile: "/secrets/public/cert.crt"
       clientCertificateRequired: true
+      crl:
+        enabled: false
     authorization:
       audience: ""
       endpoints:
@@ -33,6 +35,8 @@ apis:
               keyFile: "/secrets/private/cert.key"
               certFile: "/secrets/public/cert.crt"
               useSystemCAPool: false
+              crl:
+                enabled: false
       tokenTrustVerification:
         cacheExpiration: 30s
 clients:
@@ -47,6 +51,8 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+        crl:
+          enabled: false
       leadResourceType:
         enabled: false
   grpcGateway:
@@ -63,6 +69,8 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+        crl:
+          enabled: false
   resourceAggregate:
     grpc:
       address: ""
@@ -77,6 +85,8 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+        crl:
+          enabled: false
   storage:
     mongoDB:
       uri: "mongodb://localhost:27017"
@@ -90,6 +100,8 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+        crl:
+          enabled: false
   subscription:
     http:
       reconnectInterval: "10s"
@@ -99,6 +111,8 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+        crl:
+          enabled: false
   openTelemetryCollector:
     grpc:
       enabled: false
@@ -114,6 +128,8 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+        crl:
+          enabled: false
 taskQueue:
   goPoolSize: 16
   size: 2097152

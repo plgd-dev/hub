@@ -1,5 +1,5 @@
 export const certificatesEndpoints = {
-    CERTIFICATES: '/api/v1/signing/records',
+    CERTIFICATES: '/certificate-authority/api/v1/signing/records',
 }
 
 export const CERTIFICATES_DEFAULT_PAGE_SIZE = 10

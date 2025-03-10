@@ -159,6 +159,8 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	closerFn.AddFunc(closeStore)
 
 	externalAddress := pkgHttpUri.CanonicalURI(config.APIs.HTTP.ExternalAddress)
+	crlEnabled := externalAddress != "" && dbStorage.SupportsRevocationList() && config.Signer.CRL.Enabled
+	config.Signer.CRL.Enabled = crlEnabled
 	ca, err := grpcService.NewCertificateAuthorityServer(config.APIs.GRPC.Authorization.OwnerClaim, config.HubID, externalAddress, config.Signer, dbStorage, fileWatcher, logger)
 	if err != nil {
 		closerFn.Execute()
@@ -167,7 +169,6 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	closerFn.AddFunc(ca.Close)
 
 	var customDistributionPointCRLVerification pkgX509.CustomDistributionPointVerification
-	crlEnabled := externalAddress != "" && dbStorage.SupportsRevocationList()
 	if crlEnabled {
 		customDistributionPointCRLVerification = pkgX509.CustomDistributionPointVerification{
 			externalAddress: getVerifyCertificateByCRLFromStorage(dbStorage, logger),

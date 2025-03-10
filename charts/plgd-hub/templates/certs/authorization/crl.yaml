@@ -1,0 +1,22 @@
+{{- $caSecretData := include "plgd-hub.resolveTemplateString" (list . .Values.global.crl.authorization.caPool) }}
+{{- $crtSecretData := include "plgd-hub.resolveTemplateString" (list . .Values.global.crl.authorization.crt) }}
+{{- $keySecretData := include "plgd-hub.resolveTemplateString" (list . .Values.global.crl.authorization.key) }}
+{{- if (or $caSecretData (and $crtSecretData $keySecretData)) }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "plgd-hub.resolveTemplateString" (list . .Values.crl.authorization.secretName) }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    {{- include "plgd-hub.labels" $ | nindent 4 }}
+data:
+{{ if $caSecretData }}
+  {{ include "plgd-hub.resolveTemplateString" (list . .Values.crl.authorization.http.tls.caPoolKey) }}: {{ $caSecretData | b64enc }}
+{{- end }}
+{{- if $crtSecretData }}
+  {{ include "plgd-hub.resolveTemplateString" (list . .Values.crl.authorization.http.tls.crtKey) }}: {{ $crtSecretData | b64enc }}
+{{- end }}
+{{- if $keySecretData }}
+  {{ include "plgd-hub.resolveTemplateString" (list . .Values.crl.authorization.http.tls.keyKey) }}: {{ $keySecretData | b64enc }}
+{{- end }}
+{{- end }}

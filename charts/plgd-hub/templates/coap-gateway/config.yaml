@@ -55,6 +55,7 @@ data:
           clientCertificateRequired: {{ .apis.coap.tls.clientCertificateRequired }}
           identityPropertiesRequired: {{ .apis.coap.tls.identityPropertiesRequired }}
           {{- end }}
+          {{- include "plgd-hub.crlCoapConfig" (list $ .apis.coap.tls.crl) | indent 10 }}
         authorization:
           {{- if .apis.coap.authorization.deviceIdClaim | default $.Values.global.deviceIdClaim | quote }}
           deviceIDClaim: {{ .apis.coap.authorization.deviceIdClaim | default $.Values.global.deviceIdClaim | quote }}
@@ -98,6 +99,7 @@ data:
                   {{- $providerTls := $http.tls }}
                   {{- include "plgd-hub.authorizationCaCertificateConfig" (list $ $providerTls $coapGatewayClientCertPath) | indent 16 }}
                   useSystemCAPool: {{ $providerTls.useSystemCAPool | default true }}
+                  {{- include "plgd-hub.crlAuthorizationConfig" (list $ $providerTls.crl) | indent 18 }}
           {{- end }}
     clients:
       eventBus:
@@ -110,6 +112,7 @@ data:
             {{- $natsTls := .clients.eventBus.nats.tls }}
             {{- include "plgd-hub.internalCertificateConfig" (list $ $natsTls $coapGatewayClientCertPath) | indent 10 }}
             useSystemCAPool: {{ .clients.eventBus.nats.tls.useSystemCAPool }}
+            {{- include "plgd-hub.crlInternalConfig" (list $ $natsTls.crl) | indent 12 }}
           {{- if or .clients.eventBus.nats.leadResourceType $.Values.global.nats.leadResourceType }}
           {{- $leadResourceType := .clients.eventBus.nats.leadResourceType | default $.Values.global.nats.leadResourceType }}
           leadResourceType:
@@ -130,6 +133,7 @@ data:
             {{- $authClientTls := .clients.identityStore.grpc.tls }}
             {{- include "plgd-hub.internalCertificateConfig" (list $ $authClientTls $coapGatewayClientCertPath ) | indent 10 }}
             useSystemCAPool: {{ .clients.identityStore.grpc.tls.useSystemCAPool }}
+            {{- include "plgd-hub.crlInternalConfig" (list $ $authClientTls.crl) | indent 12 }}
       resourceAggregate:
         grpc:
           {{- $resourceAggregate := .clients.resourceAggregate.grpc.address }}
@@ -144,6 +148,7 @@ data:
             {{- $raClientTls := .clients.resourceAggregate.grpc.tls }}
             {{- include "plgd-hub.internalCertificateConfig" (list $ $raClientTls $coapGatewayClientCertPath) | indent 10 }}
             useSystemCAPool: {{ .clients.resourceAggregate.grpc.tls.useSystemCAPool }}
+            {{- include "plgd-hub.crlInternalConfig" (list $ $raClientTls.crl) | indent 12 }}
       resourceDirectory:
         grpc:
           {{- $resourceDirectory := .clients.resourceDirectory.grpc.address }}
@@ -158,6 +163,7 @@ data:
             {{- $rdClientTls := .clients.resourceDirectory.grpc.tls }}
             {{- include "plgd-hub.internalCertificateConfig" (list $ $rdClientTls $coapGatewayClientCertPath) | indent 10 }}
             useSystemCAPool: {{ .clients.resourceDirectory.grpc.tls.useSystemCAPool }}
+            {{- include "plgd-hub.crlInternalConfig" (list $ $rdClientTls.crl) | indent 12 }}
       certificateAuthority:
         grpc:
           {{- $certificateAuthority := .clients.certificateAuthority.grpc.address }}
@@ -172,6 +178,7 @@ data:
             {{- $caClientTls := .clients.certificateAuthority.grpc.tls }}
             {{- include "plgd-hub.internalCertificateConfig" (list $ $caClientTls $coapGatewayClientCertPath ) | indent 10 }}
             useSystemCAPool: {{ .clients.certificateAuthority.grpc.tls.useSystemCAPool }}
+            {{- include "plgd-hub.crlInternalConfig" (list $ $caClientTls.crl) | indent 12 }}
       {{- include "plgd-hub.openTelemetryExporterConfig" (list $ $coapGatewayClientCertPath) | nindent 6 }}
     taskQueue:
       goPoolSize: {{ .taskQueue.goPoolSize }}

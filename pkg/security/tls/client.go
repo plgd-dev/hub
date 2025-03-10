@@ -33,11 +33,8 @@ func (c *ClientConfig) Validate() error {
 	if !c.UseSystemCAPool && len(c.caPoolArray) == 0 {
 		return fmt.Errorf("caPool('%v') - is empty", c.CAPool)
 	}
-	if c.CertFile == "" {
-		return fmt.Errorf("certFile('%v')", c.CertFile)
-	}
-	if c.KeyFile == "" {
-		return fmt.Errorf("keyFile('%v')", c.KeyFile)
+	if (c.KeyFile == "" && c.CertFile != "") || (c.KeyFile != "" && c.CertFile == "") {
+		return errors.New("both keyFile and certFile must be set or both must be empty")
 	}
 	if err := c.CRL.Validate(); err != nil {
 		return fmt.Errorf("CRL configuration is invalid: %w", err)

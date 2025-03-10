@@ -44,6 +44,7 @@ data:
           {{- $httpTls := .apis.http.tls }}
           {{- include "plgd-hub.internalCertificateConfig" (list $ $httpTls $clientCert) | indent 8 }}
           clientCertificateRequired: {{ .apis.http.tls.clientCertificateRequired }}
+          {{- include "plgd-hub.crlInternalConfig" (list $ $httpTls.crl) | indent 10 }}
         authorization:
           {{- include "plgd-hub.authorizationConfig" (list $ .apis.http.authorization "deviceProvisioningService.apis.http.authorization" $clientCert) | indent 8 }}
     clients:
@@ -58,6 +59,7 @@ data:
             {{- $mongoTls := .clients.storage.mongoDB.tls }}
             {{- include "plgd-hub.internalCertificateConfig" (list $ $mongoTls $clientCert) | indent 10 }}
             useSystemCAPool: {{ .clients.storage.mongoDB.tls.useSystemCAPool }}
+            {{- include "plgd-hub.crlInternalConfig" (list $ $mongoTls.crl) | indent 12 }}
           bulkWrite:
             timeout: {{ .clients.storage.mongoDB.bulkWrite.timeout  | quote }}
             throttleTime: {{ .clients.storage.mongoDB.bulkWrite.throttleTime  | quote }}

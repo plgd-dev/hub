@@ -30,6 +30,8 @@ apis:
       keyFile: "/secrets/private/cert.key"
       certFile: "/secrets/public/cert.crt"
       clientCertificateRequired: true
+      crl:
+        enabled: false
     authorization:
       ownerClaim: sub
       audience: ""
@@ -46,6 +48,8 @@ apis:
               keyFile: "/secrets/private/cert.key"
               certFile: "/secrets/public/cert.crt"
               useSystemCAPool: false
+              crl:
+                enabled: false
       tokenTrustVerification:
         cacheExpiration: 30s
 clients:
@@ -62,6 +66,8 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+        crl:
+          enabled: false
       leadResourceType:
         enabled: false
   eventStore:
@@ -80,6 +86,8 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+        crl:
+          enabled: false
     cqlDB:
       table: events
       hosts: []
@@ -102,20 +110,24 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+        crl:
+          enabled: false
   identityStore:
     grpc:
       address: ""
       sendMsgSize: 4194304
       recvMsgSize: 4194304
+      keepAlive:
+        time: 10s
+        timeout: 20s
+        permitWithoutStream: true
       tls:
         caPool: "/secrets/public/rootca.crt"
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
-      keepAlive:
-        time: 10s
-        timeout: 20s
-        permitWithoutStream: true
+        crl:
+          enabled: false
   openTelemetryCollector:
     grpc:
       enabled: false
@@ -131,6 +143,8 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+        crl:
+          enabled: false
 publicConfiguration:
   caPool: "/secrets/public/rootca.crt"
   authority: ""

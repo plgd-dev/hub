@@ -29,6 +29,8 @@ apis:
       keyFile: "/secrets/private/cert.key"
       certFile: "/secrets/private/cert.crt"
       clientCertificateRequired: true
+      crl:
+        enabled: false
     authorization:
       ownerClaim: "sub"
       audience: ""
@@ -45,6 +47,8 @@ apis:
               keyFile: "/secrets/private/cert.key"
               certFile: "/secrets/public/cert.crt"
               useSystemCAPool: false
+              crl:
+                enabled: false
       tokenTrustVerification:
         cacheExpiration: 30s
   http:
@@ -69,6 +73,8 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+        crl:
+          enabled: false
     cqlDB:
       table: "signedCertificateRecords"
       hosts: []
@@ -91,6 +97,8 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+        crl:
+          enabled: false
   openTelemetryCollector:
     grpc:
       enabled: false
@@ -106,6 +114,8 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+        crl:
+          enabled: false
 signer:
   caPool: "/secrets/public/rootca.crt"
   keyFile: "/secrets/private/intermediateca.key"
@@ -113,4 +123,5 @@ signer:
   validFrom: "now-1h"
   expiresIn: "87600h"
   crl:
+    enabled: true
     expiresIn: "10m"

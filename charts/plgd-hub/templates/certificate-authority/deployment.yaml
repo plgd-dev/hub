@@ -29,6 +29,7 @@ spec:
       labels:
         {{- include "plgd-hub.certificateauthority.selectorLabels" . | nindent 8 }}
     spec:
+      automountServiceAccountToken: false
       {{- with .Values.certificateauthority.securityContext }}
       securityContext:
         {{- toYaml . | nindent 8 }}
@@ -94,6 +95,8 @@ spec:
             {{- end }}
             {{- include "plgd-hub.extraCAPoolMount" (list . .Values.extraCAPool.authorization) | nindent 12 }}
             {{- include "plgd-hub.extraCAPoolMount" (list . .Values.extraCAPool.internal) | nindent 12 }}
+            {{- include "plgd-hub.crlMount" (list . .Values.crl.authorization) | nindent 12 }}
+            {{- include "plgd-hub.crlMount" (list . .Values.crl.internal) | nindent 12 }}
             {{- with .Values.certificateauthority.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -116,6 +119,8 @@ spec:
         {{- end }}
         {{- include "plgd-hub.extraCAPoolVolume" (list . .Values.extraCAPool.authorization) | nindent 8 }}
         {{- include "plgd-hub.extraCAPoolVolume" (list . .Values.extraCAPool.internal) | nindent 8 }}
+        {{- include "plgd-hub.crlVolume" (list . .Values.crl.authorization) | nindent 8 }}
+        {{- include "plgd-hub.crlVolume" (list . .Values.crl.internal) | nindent 8 }}
         {{- with .Values.certificateauthority.extraVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}

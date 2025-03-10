@@ -48,6 +48,7 @@ data:
           {{- $tls := .apis.grpc.tls }}
           {{- include "plgd-hub.internalCertificateConfig" (list $ $tls $grpcReflectionCertPath) | indent 8 }}
           clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
+          {{- include "plgd-hub.crlInternalConfig" (list $ $tls.crl) | indent 10 }}
   {{- end }}
 {{- if gt (len $domains) 1 }}
 ---

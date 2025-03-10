@@ -155,6 +155,10 @@ func (s *Store) RevokeSigningRecords(ctx context.Context, ownerID string, query 
 
 	// add certificates for the signing records to revocation lists
 	for issuerID, record := range irs {
+		if issuerID == "" {
+			// no issuer id - for old records
+			continue
+		}
 		query := store.UpdateRevocationListQuery{
 			IssuerID:            issuerID,
 			RevokedCertificates: record.certificates,

@@ -25,6 +25,8 @@ global:
   # -- Default OAuth authorization for all services
   authorization:
     audience: '{{ include "plgd-hub.globalAudience" . }}'
+    tokenTrustVerification:
+      cacheExpiration: 30s
     endpoints:
       # -- Authorization endpoint to Customer OAuth server
       - authority: '{{ include "plgd-hub.globalAuthority" . }}'
@@ -39,6 +41,19 @@ global:
             keyFile:
             certFile:
             useSystemCAPool: true
+            crl:
+              # enabled: false
+              http:
+                maxIdleConns: 16
+                maxConnsPerHost: 32
+                maxIdleConnsPerHost: 16
+                idleConnTimeout: 30s
+                timeout: 10s
+                tls:
+                  caPool:
+                  keyFile:
+                  certFile:
+                  useSystemCAPool: true
       - authority: '{{ include "plgd-hub.m2mOAuthServerAuthority" . }}'
         http:
           maxIdleConns: 16
@@ -51,8 +66,19 @@ global:
             keyFile:
             certFile:
             useSystemCAPool: true
-    tokenTrustVerification:
-      cacheExpiration: 30s
+            crl:
+              # enabled: false
+              http:
+                maxIdleConns: 16
+                maxConnsPerHost: 32
+                maxIdleConnsPerHost: 16
+                idleConnTimeout: 30s
+                timeout: 10s
+                tls:
+                  caPool:
+                  keyFile:
+                  certFile:
+                  useSystemCAPool: true
   # -- Enable *.{{ global.domain }} for all external domain
   enableWildCartCert: true
   # -- Sets cloud to standby mode
@@ -79,6 +105,32 @@ global:
     storage:
     # -- Custom CA certificate for coap endpoints in PEM format
     coap:
+  # -- Custom CRL certificates
+  crl:
+    # -- CRL settings for authorization endpoint
+    authorization:
+      # -- Custom CA certificate for authorization endpoints in PEM format
+      caPool:
+      # -- Custom CRL key in PEM format
+      key:
+      # -- Custom CRL certificate in PEM format
+      cert:
+    # -- CRL settings for internal endpoint
+    internal:
+      # -- Custom CA certificate for authorization endpoints in PEM format
+      caPool:
+      # -- Custom CRL key in PEM format
+      key:
+      # -- Custom CRL certificate in PEM format
+      cert:
+    # -- CRL settings for coap endpoint
+    coap:
+      # -- Custom CA certificate for authorization endpoints in PEM format
+      caPool:
+      # -- Custom CRL key in PEM format
+      key:
+      # -- Custom CRL certificate in PEM format
+      cert:
   # -- Global Open Telemetry exporter configuration
   openTelemetryExporter:
     # -- Enable OTLP gRPC exporter
@@ -96,6 +148,19 @@ global:
       keyFile:
       certFile:
       useSystemCAPool: false
+      crl:
+        # enabled: false
+        http:
+          maxIdleConns: 16
+          maxConnsPerHost: 32
+          maxIdleConnsPerHost: 16
+          idleConnTimeout: 30s
+          timeout: 10s
+          tls:
+            caPool:
+            keyFile:
+            certFile:
+            useSystemCAPool: false
   # -- NATS publisher and subscriber configuration
   nats:
     # -- Lead resource type configuration
@@ -642,6 +707,84 @@ extraCAPool:
     # key in the configMap or secret that contains the CA Certificate or Bundle
     key: ca.crt
 
+# -- Configuration parameters for CRL used by services and clients
+crl:
+  authorization:
+    # -- Enable extra authorization crl
+    enabled: '{{ include "plgd-hub.crlAuthorizationEnabled" . }}'
+    # -- Volume and Mount name
+    name: authorization-crl
+    # -- Mount path for ca pool, cert and key
+    mountPath: /certs/crl/authorization
+    # set configMapName in order to mount an existing configMap to dir
+    configMapName:
+    # set secretName in order to mount an existing secretName to dir
+    secretName: authorization-crl
+    http:
+      maxIdleConns: 16
+      maxConnsPerHost: 32
+      maxIdleConnsPerHost: 16
+      idleConnTimeout: 30s
+      timeout: 10s
+      tls:
+        # key in the configMap or secret that contains the CA Certificate or Bundle
+        caPoolKey: '{{ include "plgd-hub.crlHttpTlsCaPoolKey" (list . .Values.global.crl.authorization.caPool) }}'
+        # key in the configMap or secret that contains the CRL Certificate
+        crtKey: '{{ include "plgd-hub.crlHttpTlsCrtKey" (list . .Values.global.crl.authorization.crt) }}'
+        # key in the configMap or secret that contains the CRL Private Key
+        keyKey: '{{ include "plgd-hub.crlHttpTlsKeyKey" (list . .Values.global.crl.authorization.key) }}'
+        useSystemCAPool: false
+  internal:
+    # -- Enable extra internal crl
+    enabled: '{{ include "plgd-hub.crlInternalEnabled" . }}'
+    # -- Volume and Mount name
+    name: internal-crl
+    # -- Mount path for ca pool, cert and key
+    mountPath: /certs/crl/internal
+    # set configMapName in order to mount an existing configMap to dir
+    configMapName:
+    # set secretName in order to mount an existing secretName to dir
+    secretName: internal-crl
+    http:
+      maxIdleConns: 16
+      maxConnsPerHost: 32
+      maxIdleConnsPerHost: 16
+      idleConnTimeout: 30s
+      timeout: 10s
+      tls:
+        # key in the configMap or secret that contains the CA Certificate or Bundle
+        caPoolKey: '{{ include "plgd-hub.crlHttpTlsCaPoolKey" (list . .Values.global.crl.internal.caPool) }}'
+        # key in the configMap or secret that contains the CRL Certificate
+        crtKey: '{{ include "plgd-hub.crlHttpTlsCrtKey" (list . .Values.global.crl.internal.crt) }}'
+        # key in the configMap or secret that contains the CRL Private Key
+        keyKey: '{{ include "plgd-hub.crlHttpTlsKeyKey" (list . .Values.global.crl.internal.key) }}'
+        useSystemCAPool: false
+  coap:
+    # -- Enable extra coap crl
+    enabled: '{{ include "plgd-hub.crlCoapEnabled" . }}'
+    # -- Volume and Mount name
+    name: coap-crl
+    # -- Mount path for ca pool, cert and key
+    mountPath: /certs/crl/coap
+    # set configMapName in order to mount an existing configMap to dir
+    configMapName:
+    # set secretName in order to mount an existing secretName to dir
+    secretName: coap-crl
+    http:
+      maxIdleConns: 16
+      maxConnsPerHost: 32
+      maxIdleConnsPerHost: 16
+      idleConnTimeout: 30s
+      timeout: 10s
+      tls:
+        # key in the configMap or secret that contains the CA Certificate or Bundle
+        caPoolKey: '{{ include "plgd-hub.crlHttpTlsCaPoolKey" (list . .Values.global.crl.coap.caPool) }}'
+        # key in the configMap or secret that contains the CRL Certificate
+        crtKey: '{{ include "plgd-hub.crlHttpTlsCrtKey" (list . .Values.global.crl.coap.crt) }}'
+        # key in the configMap or secret that contains the CRL Private Key
+        keyKey: '{{ include "plgd-hub.crlHttpTlsKeyKey" (list . .Values.global.crl.coap.key) }}'
+        useSystemCAPool: false
+
 resourcedirectory:
   # -- Enable resource-directory service
   enabled: true
@@ -774,6 +917,19 @@ resourcedirectory:
         keyFile:
         certFile:
         clientCertificateRequired: true
+        crl:
+          enabled: false
+          http:
+            maxIdleConns: 16
+            maxConnsPerHost: 32
+            maxIdleConnsPerHost: 16
+            idleConnTimeout: 30s
+            timeout: 10s
+            tls:
+              caPool:
+              keyFile:
+              certFile:
+              useSystemCAPool: false
       authorization:
         ownerClaim:
         authority:
@@ -789,6 +945,19 @@ resourcedirectory:
             keyFile:
             certFile:
             useSystemCAPool: true
+            crl:
+              enabled: false
+              http:
+                maxIdleConns: 16
+                maxConnsPerHost: 32
+                maxIdleConnsPerHost: 16
+                idleConnTimeout: 30s
+                timeout: 10s
+                tls:
+                  caPool:
+                  keyFile:
+                  certFile:
+                  useSystemCAPool: false
   # -- For complete resource-directory service configuration see [plgd/resource-directory](https://github.com/plgd-dev/hub/tree/main/resource-directory)
   clients:
     eventBus:
@@ -804,6 +973,19 @@ resourcedirectory:
           keyFile:
           certFile:
           useSystemCAPool: false
+          crl:
+            enabled: false
+            http:
+              maxIdleConns: 16
+              maxConnsPerHost: 32
+              maxIdleConnsPerHost: 16
+              idleConnTimeout: 30s
+              timeout: 10s
+              tls:
+                caPool:
+                keyFile:
+                certFile:
+                useSystemCAPool: false
     eventStore:
       # expiration time of cached resource in projection
       cacheExpiration: 20m
@@ -822,6 +1004,19 @@ resourcedirectory:
           keyFile:
           certFile:
           useSystemCAPool: false
+          crl:
+            enabled: false
+            http:
+              maxIdleConns: 16
+              maxConnsPerHost: 32
+              maxIdleConnsPerHost: 16
+              idleConnTimeout: 30s
+              timeout: 10s
+              tls:
+                caPool:
+                keyFile:
+                certFile:
+                useSystemCAPool: false
       cqlDB:
         table: events
         hosts: []
@@ -846,6 +1041,19 @@ resourcedirectory:
           keyFile:
           certFile:
           useSystemCAPool: false
+          crl:
+            enabled: false
+            http:
+              maxIdleConns: 16
+              maxConnsPerHost: 32
+              maxIdleConnsPerHost: 16
+              idleConnTimeout: 30s
+              timeout: 10s
+              tls:
+                caPool:
+                keyFile:
+                certFile:
+                useSystemCAPool: false
     identityStore:
       pullFrequency: 15s
       cacheExpiration: 1m
@@ -854,15 +1062,28 @@ resourcedirectory:
         address: ""
         sendMsgSize: 4194304
         recvMsgSize: 4194304
+        keepAlive:
+          time: 10s
+          timeout: 20s
+          permitWithoutStream: true
         tls:
           caPool:
           keyFile:
           certFile:
           useSystemCAPool: false
-        keepAlive:
-          time: 10s
-          timeout: 20s
-          permitWithoutStream: true
+          crl:
+            enabled: false
+            http:
+              maxIdleConns: 16
+              maxConnsPerHost: 32
+              maxIdleConnsPerHost: 16
+              idleConnTimeout: 30s
+              timeout: 10s
+              tls:
+                caPool:
+                keyFile:
+                certFile:
+                useSystemCAPool: false
       oauth:
         clientID:
         clientSecret:
@@ -881,6 +1102,19 @@ resourcedirectory:
             keyFile:
             certFile:
             useSystemCAPool: false
+            crl:
+              enabled: false
+              http:
+                maxIdleConns: 16
+                maxConnsPerHost: 32
+                maxIdleConnsPerHost: 16
+                idleConnTimeout: 30s
+                timeout: 10s
+                tls:
+                  caPool:
+                  keyFile:
+                  certFile:
+                  useSystemCAPool: false
   # -- For complete resource-directory service configuration see [plgd/resource-directory](https://github.com/plgd-dev/hub/tree/main/resource-directory)
   publicConfiguration:
     caPool:
@@ -1023,6 +1257,19 @@ resourceaggregate:
         keyFile:
         certFile:
         clientCertificateRequired: true
+        crl:
+          enabled: false
+          http:
+            maxIdleConns: 16
+            maxConnsPerHost: 32
+            maxIdleConnsPerHost: 16
+            idleConnTimeout: 30s
+            timeout: 10s
+            tls:
+              caPool:
+              keyFile:
+              certFile:
+              useSystemCAPool: false
       authorization:
         ownerClaim:
         authority:
@@ -1038,6 +1285,19 @@ resourceaggregate:
             keyFile:
             certFile:
             useSystemCAPool: true
+            crl:
+              enabled: false
+              http:
+                maxIdleConns: 16
+                maxConnsPerHost: 32
+                maxIdleConnsPerHost: 16
+                idleConnTimeout: 30s
+                timeout: 10s
+                tls:
+                  caPool:
+                  keyFile:
+                  certFile:
+                  useSystemCAPool: false
   # -- For complete resource-aggregate service configuration see [plgd/resource-aggregate](https://github.com/plgd-dev/hub/tree/main/resource-aggregate)
   clients:
     eventBus:
@@ -1053,6 +1313,19 @@ resourceaggregate:
           keyFile:
           certFile:
           useSystemCAPool: false
+          crl:
+            enabled: false
+            http:
+              maxIdleConns: 16
+              maxConnsPerHost: 32
+              maxIdleConnsPerHost: 16
+              idleConnTimeout: 30s
+              timeout: 10s
+              tls:
+                caPool:
+                keyFile:
+                certFile:
+                useSystemCAPool: false
     eventStore:
       # replaces time to live in CreateResource, RetrieveResource, UpdateResource, DeleteResource and UpdateDeviceMetadata commands when it is zero value. 0s - means forever.
       defaultCommandTimeToLive:
@@ -1073,6 +1346,19 @@ resourceaggregate:
           keyFile:
           certFile:
           useSystemCAPool: false
+        crl:
+          enabled: false
+          http:
+            maxIdleConns: 16
+            maxConnsPerHost: 32
+            maxIdleConnsPerHost: 16
+            idleConnTimeout: 30s
+            timeout: 10s
+            tls:
+              caPool:
+              keyFile:
+              certFile:
+              useSystemCAPool: false
       cqlDB:
         table: events
         hosts: []
@@ -1097,6 +1383,19 @@ resourceaggregate:
           keyFile:
           certFile:
           useSystemCAPool: false
+          crl:
+            enabled: false
+            http:
+              maxIdleConns: 16
+              maxConnsPerHost: 32
+              maxIdleConnsPerHost: 16
+              idleConnTimeout: 30s
+              timeout: 10s
+              tls:
+                caPool:
+                keyFile:
+                certFile:
+                useSystemCAPool: false
     identityStore:
       grpc:
         address:
@@ -1107,6 +1406,19 @@ resourceaggregate:
           keyFile:
           certFile:
           useSystemCAPool: false
+          crl:
+            enabled: false
+            http:
+              maxIdleConns: 16
+              maxConnsPerHost: 32
+              maxIdleConnsPerHost: 16
+              idleConnTimeout: 30s
+              timeout: 10s
+              tls:
+                caPool:
+                keyFile:
+                certFile:
+                useSystemCAPool: false
         keepAlive:
           time: 10s
           timeout: 20s
@@ -1274,6 +1586,19 @@ coapgateway:
         certFile:
         clientCertificateRequired: true
         identityPropertiesRequired: true
+        crl:
+          enabled: false
+          http:
+            maxIdleConns: 16
+            maxConnsPerHost: 32
+            maxIdleConnsPerHost: 16
+            idleConnTimeout: 30s
+            timeout: 10s
+            tls:
+              caPool:
+              keyFile:
+              certFile:
+              useSystemCAPool: false
       authorization:
         ownerClaim:
         deviceIdClaim:
@@ -1291,6 +1616,19 @@ coapgateway:
           keyFile:
           certFile:
           useSystemCAPool: false
+          crl:
+            enabled: false
+            http:
+              maxIdleConns: 16
+              maxConnsPerHost: 32
+              maxIdleConnsPerHost: 16
+              idleConnTimeout: 30s
+              timeout: 10s
+              tls:
+                caPool:
+                keyFile:
+                certFile:
+                useSystemCAPool: false
     identityStore:
       ownerClaim:
       grpc:
@@ -1306,6 +1644,19 @@ coapgateway:
           keyFile:
           certFile:
           useSystemCAPool: false
+          crl:
+            enabled: false
+            http:
+              maxIdleConns: 16
+              maxConnsPerHost: 32
+              maxIdleConnsPerHost: 16
+              idleConnTimeout: 30s
+              timeout: 10s
+              tls:
+                caPool:
+                keyFile:
+                certFile:
+                useSystemCAPool: false
     resourceAggregate:
       grpc:
         address: ""
@@ -1320,6 +1671,19 @@ coapgateway:
           keyFile:
           certFile:
           useSystemCAPool: false
+          crl:
+            enabled: false
+            http:
+              maxIdleConns: 16
+              maxConnsPerHost: 32
+              maxIdleConnsPerHost: 16
+              idleConnTimeout: 30s
+              timeout: 10s
+              tls:
+                caPool:
+                keyFile:
+                certFile:
+                useSystemCAPool: false
     resourceDirectory:
       grpc:
         address: ""
@@ -1334,6 +1698,19 @@ coapgateway:
           keyFile:
           certFile:
           useSystemCAPool: false
+          crl:
+            enabled: false
+            http:
+              maxIdleConns: 16
+              maxConnsPerHost: 32
+              maxIdleConnsPerHost: 16
+              idleConnTimeout: 30s
+              timeout: 10s
+              tls:
+                caPool:
+                keyFile:
+                certFile:
+                useSystemCAPool: false
     certificateAuthority:
       grpc:
         address: ""
@@ -1348,6 +1725,19 @@ coapgateway:
           keyFile:
           certFile:
           useSystemCAPool: false
+          crl:
+            enabled: false
+            http:
+              maxIdleConns: 16
+              maxConnsPerHost: 32
+              maxIdleConnsPerHost: 16
+              idleConnTimeout: 30s
+              timeout: 10s
+              tls:
+                caPool:
+                keyFile:
+                certFile:
+                useSystemCAPool: false
   # -- For complete coap-gateway service configuration see [plgd/coap-gateway](https://github.com/plgd-dev/hub/tree/main/coap-gateway)
   taskQueue:
     goPoolSize: 1600
@@ -1490,6 +1880,19 @@ identitystore:
         keyFile:
         certFile:
         clientCertificateRequired: true
+        crl:
+          enabled: false
+          http:
+            maxIdleConns: 16
+            maxConnsPerHost: 32
+            maxIdleConnsPerHost: 16
+            idleConnTimeout: 30s
+            timeout: 10s
+            tls:
+              caPool:
+              keyFile:
+              certFile:
+              useSystemCAPool: false
       authorization:
         authority:
         audience:
@@ -1505,6 +1908,19 @@ identitystore:
             keyFile:
             certFile:
             useSystemCAPool: true
+            crl:
+              enabled: false
+              http:
+                maxIdleConns: 16
+                maxConnsPerHost: 32
+                maxIdleConnsPerHost: 16
+                idleConnTimeout: 30s
+                timeout: 10s
+                tls:
+                  caPool:
+                  keyFile:
+                  certFile:
+                  useSystemCAPool: false
   # -- For complete identity service configuration see [plgd/authorization](https://github.com/plgd-dev/hub/tree/main/identity)
   clients:
     eventBus:
@@ -1528,6 +1944,19 @@ identitystore:
           keyFile:
           certFile:
           useSystemCAPool: false
+          crl:
+            enabled: false
+            http:
+              maxIdleConns: 16
+              maxConnsPerHost: 32
+              maxIdleConnsPerHost: 16
+              idleConnTimeout: 30s
+              timeout: 10s
+              tls:
+                caPool:
+                keyFile:
+                certFile:
+                useSystemCAPool: false
       cqlDB:
         table: deviceOwners
         hosts: []
@@ -1552,6 +1981,19 @@ identitystore:
           keyFile:
           certFile:
           useSystemCAPool: false
+          crl:
+            enabled: false
+            http:
+              maxIdleConns: 16
+              maxConnsPerHost: 32
+              maxIdleConnsPerHost: 16
+              idleConnTimeout: 30s
+              timeout: 10s
+              tls:
+                caPool:
+                keyFile:
+                certFile:
+                useSystemCAPool: false
 
 httpgateway:
   # -- Enable http-gateway service
@@ -1710,6 +2152,19 @@ httpgateway:
         keyFile:
         certFile:
         clientCertificateRequired: false
+        crl:
+          enabled: false
+          http:
+            maxIdleConns: 16
+            maxConnsPerHost: 32
+            maxIdleConnsPerHost: 16
+            idleConnTimeout: 30s
+            timeout: 10s
+            tls:
+              caPool:
+              keyFile:
+              certFile:
+              useSystemCAPool: false
       webSocket:
         streamBodyLimit: 262144
         pingFrequency: 10s
@@ -1727,6 +2182,19 @@ httpgateway:
             keyFile:
             certFile:
             useSystemCAPool: true
+            crl:
+              enabled: false
+              http:
+                maxIdleConns: 16
+                maxConnsPerHost: 32
+                maxIdleConnsPerHost: 16
+                idleConnTimeout: 30s
+                timeout: 10s
+                tls:
+                  caPool:
+                  keyFile:
+                  certFile:
+                  useSystemCAPool: false
   # -- For complete http-gateway service configuration see [plgd/http-gateway](https://github.com/plgd-dev/hub/tree/main/http-gateway)
   clients:
     grpcGateway:
@@ -1743,6 +2211,19 @@ httpgateway:
           keyFile:
           certFile:
           useSystemCAPool: false
+          crl:
+            enabled: false
+            http:
+              maxIdleConns: 16
+              maxConnsPerHost: 32
+              maxIdleConnsPerHost: 16
+              idleConnTimeout: 30s
+              timeout: 10s
+              tls:
+                caPool:
+                keyFile:
+                certFile:
+                useSystemCAPool: false
   # -- For complete http-gateway service configuration see [plgd/http-gateway](https://github.com/plgd-dev/hub/tree/main/http-gateway)
   ui:
     enabled: true
@@ -1937,6 +2418,19 @@ grpcgateway:
         keyFile:
         certFile:
         clientCertificateRequired: false
+        crl:
+          enabled: false
+          http:
+            maxIdleConns: 16
+            maxConnsPerHost: 32
+            maxIdleConnsPerHost: 16
+            idleConnTimeout: 30s
+            timeout: 10s
+            tls:
+              caPool:
+              keyFile:
+              certFile:
+              useSystemCAPool: false
       authorization:
         authority: ""
         audience: ""
@@ -1951,6 +2445,19 @@ grpcgateway:
             keyFile:
             certFile:
             useSystemCAPool: true
+            crl:
+              enabled: false
+              http:
+                maxIdleConns: 16
+                maxConnsPerHost: 32
+                maxIdleConnsPerHost: 16
+                idleConnTimeout: 30s
+                timeout: 10s
+                tls:
+                  caPool:
+                  keyFile:
+                  certFile:
+                  useSystemCAPool: false
   # -- For complete grpc-gateway service configuration see [plgd/grpc-gateway](https://github.com/plgd-dev/hub/tree/main/grpc-gateway)
   clients:
     identityStore:
@@ -1963,6 +2470,19 @@ grpcgateway:
           keyFile:
           certFile:
           useSystemCAPool: false
+          crl:
+            enabled: false
+            http:
+              maxIdleConns: 16
+              maxConnsPerHost: 32
+              maxIdleConnsPerHost: 16
+              idleConnTimeout: 30s
+              timeout: 10s
+              tls:
+                caPool:
+                keyFile:
+                certFile:
+                useSystemCAPool: false
         keepAlive:
           time: 10s
           timeout: 20s
@@ -1981,6 +2501,19 @@ grpcgateway:
           keyFile:
           certFile:
           useSystemCAPool: false
+          crl:
+            enabled: false
+            http:
+              maxIdleConns: 16
+              maxConnsPerHost: 32
+              maxIdleConnsPerHost: 16
+              idleConnTimeout: 30s
+              timeout: 10s
+              tls:
+                caPool:
+                keyFile:
+                certFile:
+                useSystemCAPool: false
     resourceAggregate:
       grpc:
         address: ""
@@ -1995,6 +2528,19 @@ grpcgateway:
           keyFile:
           certFile:
           useSystemCAPool: false
+          crl:
+            enabled: false
+            http:
+              maxIdleConns: 16
+              maxConnsPerHost: 32
+              maxIdleConnsPerHost: 16
+              idleConnTimeout: 30s
+              timeout: 10s
+              tls:
+                caPool:
+                keyFile:
+                certFile:
+                useSystemCAPool: false
     resourceDirectory:
       grpc:
         address: ""
@@ -2009,6 +2555,19 @@ grpcgateway:
           keyFile:
           certFile:
           useSystemCAPool: false
+          crl:
+            enabled: false
+            http:
+              maxIdleConns: 16
+              maxConnsPerHost: 32
+              maxIdleConnsPerHost: 16
+              idleConnTimeout: 30s
+              timeout: 10s
+              tls:
+                caPool:
+                keyFile:
+                certFile:
+                useSystemCAPool: false
     certificateAuthority:
       grpc:
         address: ""
@@ -2023,6 +2582,19 @@ grpcgateway:
           keyFile:
           certFile:
           useSystemCAPool: false
+          crl:
+            enabled: false
+            http:
+              maxIdleConns: 16
+              maxConnsPerHost: 32
+              maxIdleConnsPerHost: 16
+              idleConnTimeout: 30s
+              timeout: 10s
+              tls:
+                caPool:
+                keyFile:
+                certFile:
+                useSystemCAPool: false
 
 grpcreflection:
   # -- Enable grpc-reflection service
@@ -2171,6 +2743,19 @@ grpcreflection:
         keyFile:
         certFile:
         clientCertificateRequired: false
+        crl:
+          enabled: false
+          http:
+            maxIdleConns: 16
+            maxConnsPerHost: 32
+            maxIdleConnsPerHost: 16
+            idleConnTimeout: 30s
+            timeout: 10s
+            tls:
+              caPool:
+              keyFile:
+              certFile:
+              useSystemCAPool: false
 
 certificateauthority:
   # -- Enable certificate-authority service
@@ -2290,6 +2875,7 @@ certificateauthority:
       paths:
         - /api/v1/sign
         - /api/v1/signing
+        - /certificate-authority
     grpc:
       # -- Enable ingress
       enabled: true
@@ -2376,6 +2962,19 @@ certificateauthority:
         keyFile:
         certFile:
         clientCertificateRequired: false
+        crl:
+          enabled: false
+          http:
+            maxIdleConns: 16
+            maxConnsPerHost: 32
+            maxIdleConnsPerHost: 16
+            idleConnTimeout: 30s
+            timeout: 10s
+            tls:
+              caPool:
+              keyFile:
+              certFile:
+              useSystemCAPool: false
       authorization:
         ownerClaim:
         authority:
@@ -2391,7 +2990,21 @@ certificateauthority:
             keyFile:
             certFile:
             useSystemCAPool: true
+            crl:
+              enabled: false
+              http:
+                maxIdleConns: 16
+                maxConnsPerHost: 32
+                maxIdleConnsPerHost: 16
+                idleConnTimeout: 30s
+                timeout: 10s
+                tls:
+                  caPool:
+                  keyFile:
+                  certFile:
+                  useSystemCAPool: false
     http:
+      externalAddress: ""
       address:
       readTimeout: 8s
       readHeaderTimeout: 4s
@@ -2436,6 +3049,19 @@ certificateauthority:
           keyFile:
           certFile:
           useSystemCAPool: false
+          crl:
+            enabled: false
+            http:
+              maxIdleConns: 16
+              maxConnsPerHost: 32
+              maxIdleConnsPerHost: 16
+              idleConnTimeout: 30s
+              timeout: 10s
+              tls:
+                caPool:
+                keyFile:
+                certFile:
+                useSystemCAPool: false
   # -- For complete certificate-authority service configuration see [plgd/certificate-authority](https://github.com/plgd-dev/hub/tree/main/certificate-authority)
   signer:
     caPool:
@@ -2443,6 +3069,9 @@ certificateauthority:
     certFile:
     validFrom: "now-1h"
     expiresIn: "87600h"
+    crl:
+      enabled: true
+      expiresIn: "10m"
 
 snippetservice:
   # -- Enable snippet-service
@@ -2630,6 +3259,19 @@ snippetservice:
         keyFile:
         certFile:
         clientCertificateRequired: false
+        crl:
+          enabled: false
+          http:
+            maxIdleConns: 16
+            maxConnsPerHost: 32
+            maxIdleConnsPerHost: 16
+            idleConnTimeout: 30s
+            timeout: 10s
+            tls:
+              caPool:
+              keyFile:
+              certFile:
+              useSystemCAPool: false
       authorization:
         ownerClaim:
         authority:
@@ -2645,6 +3287,19 @@ snippetservice:
             keyFile:
             certFile:
             useSystemCAPool: true
+            crl:
+              enabled: false
+              http:
+                maxIdleConns: 16
+                maxConnsPerHost: 32
+                maxIdleConnsPerHost: 16
+                idleConnTimeout: 30s
+                timeout: 10s
+                tls:
+                  caPool:
+                  keyFile:
+                  certFile:
+                  useSystemCAPool: false
     http:
       address:
       readTimeout: 8s
@@ -2664,6 +3319,19 @@ snippetservice:
           keyFile:
           certFile:
           useSystemCAPool: false
+          crl:
+            enabled: false
+            http:
+              maxIdleConns: 16
+              maxConnsPerHost: 32
+              maxIdleConnsPerHost: 16
+              idleConnTimeout: 30s
+              timeout: 10s
+              tls:
+                caPool:
+                keyFile:
+                certFile:
+                useSystemCAPool: false
     storage:
       cleanUpExpiredUpdates: "0 * * * *"
       use: mongoDB
@@ -2677,6 +3345,19 @@ snippetservice:
           keyFile:
           certFile:
           useSystemCAPool: false
+          crl:
+            enabled: false
+            http:
+              maxIdleConns: 16
+              maxConnsPerHost: 32
+              maxIdleConnsPerHost: 16
+              idleConnTimeout: 30s
+              timeout: 10s
+              tls:
+                caPool:
+                keyFile:
+                certFile:
+                useSystemCAPool: false
     resourceAggregate:
       grpc:
         address: ""
@@ -2691,6 +3372,19 @@ snippetservice:
           keyFile:
           certFile:
           useSystemCAPool: false
+          crl:
+            enabled: false
+            http:
+              maxIdleConns: 16
+              maxConnsPerHost: 32
+              maxIdleConnsPerHost: 16
+              idleConnTimeout: 30s
+              timeout: 10s
+              tls:
+                caPool:
+                keyFile:
+                certFile:
+                useSystemCAPool: false
 
 mockoauthserver:
   oauth:
@@ -2855,6 +3549,19 @@ mockoauthserver:
         keyFile:
         certFile:
         clientCertificateRequired: false
+        crl:
+          enabled: false
+          http:
+            maxIdleConns: 16
+            maxConnsPerHost: 32
+            maxIdleConnsPerHost: 16
+            idleConnTimeout: 30s
+            timeout: 10s
+            tls:
+              caPool:
+              keyFile:
+              certFile:
+              useSystemCAPool: false
   oauthSigner:
     idTokenKeyFile: "/keys/idToken.key"
     accessTokenKeyFile: "/keys/accessToken.key"
@@ -3052,6 +3759,19 @@ m2moauthserver:
         keyFile:
         certFile:
         clientCertificateRequired: false
+        crl:
+          enabled: false
+          http:
+            maxIdleConns: 16
+            maxConnsPerHost: 32
+            maxIdleConnsPerHost: 16
+            idleConnTimeout: 30s
+            timeout: 10s
+            tls:
+              caPool:
+              keyFile:
+              certFile:
+              useSystemCAPool: false
       authorization:
         ownerClaim:
         authority:
@@ -3067,6 +3787,19 @@ m2moauthserver:
             keyFile:
             certFile:
             useSystemCAPool: false
+            crl:
+              enabled: false
+              http:
+                maxIdleConns: 16
+                maxConnsPerHost: 32
+                maxIdleConnsPerHost: 16
+                idleConnTimeout: 30s
+                timeout: 10s
+                tls:
+                  caPool:
+                  keyFile:
+                  certFile:
+                  useSystemCAPool: false
   clients:
     storage:
       cleanUpDeletedTokens: "0 * * * *"
@@ -3081,6 +3814,19 @@ m2moauthserver:
           keyFile:
           certFile:
           useSystemCAPool: false
+          crl:
+            enabled: false
+            http:
+              maxIdleConns: 16
+              maxConnsPerHost: 32
+              maxIdleConnsPerHost: 16
+              idleConnTimeout: 30s
+              timeout: 10s
+              tls:
+                caPool:
+                keyFile:
+                certFile:
+                useSystemCAPool: false
   oauthSigner:
     privateKeyFile:
     domain:
@@ -3303,6 +4049,19 @@ deviceProvisioningService:
         keyFile:
         certFile:
         clientCertificateRequired: false
+        crl:
+          enabled: false
+          http:
+            maxIdleConns: 16
+            maxConnsPerHost: 32
+            maxIdleConnsPerHost: 16
+            idleConnTimeout: 30s
+            timeout: 10s
+            tls:
+              caPool:
+              keyFile:
+              certFile:
+              useSystemCAPool: false
       authorization:
         ownerClaim:
         authority:
@@ -3318,6 +4077,19 @@ deviceProvisioningService:
             keyFile:
             certFile:
             useSystemCAPool: true
+            crl:
+              enabled: false
+              http:
+                maxIdleConns: 16
+                maxConnsPerHost: 32
+                maxIdleConnsPerHost: 16
+                idleConnTimeout: 30s
+                timeout: 10s
+                tls:
+                  caPool:
+                  keyFile:
+                  certFile:
+                  useSystemCAPool: false
   # -- For complete dps service configuration see [plgd/device-provisioning-service](https://github.com/plgd-dev/hub/device-provisioning-service)
   clients:
     storage:
@@ -3332,6 +4104,19 @@ deviceProvisioningService:
           keyFile:
           certFile:
           useSystemCAPool: false
+          crl:
+            enabled: false
+            http:
+              maxIdleConns: 16
+              maxConnsPerHost: 32
+              maxIdleConnsPerHost: 16
+              idleConnTimeout: 30s
+              timeout: 10s
+              tls:
+                caPool:
+                keyFile:
+                certFile:
+                useSystemCAPool: false
         bulkWrite:
           # -- A time limit for write bulk to mongodb. A Timeout of zero means no timeout.
           timeout: 1m0s

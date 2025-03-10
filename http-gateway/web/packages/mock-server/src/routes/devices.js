@@ -163,7 +163,7 @@ router.get('/api/v1/resource-links', (req, res) => {
     }
 })
 
-router.get('/api/v1/signing/records', (req, res) => {
+router.get('/certificate-authority/api/v1/signing/records', (req, res) => {
     try {
         checkError(req, res)
         let filter = get(req.query, 'deviceIdFilter', null)

@@ -18,28 +18,21 @@ type OnUnauthorizedAccessFunc = func(ctx context.Context, w http.ResponseWriter,
 // The AuthArgs contain a URI field that is a regular expression matching the given apiPath
 // with any path suffix. This function is used to create default authorization rules for
 // HTTP methods GET, POST, DELETE, and PUT.
-func NewDefaultAuthorizationRules(apiPath string) map[string][]pkgHttpJwt.AuthArgs {
+func NewDefaultAuthorizationRules(apiPaths ...string) map[string][]pkgHttpJwt.AuthArgs {
+	authArgs := make([]pkgHttpJwt.AuthArgs, 0, len(apiPaths))
+	for _, apiPath := range apiPaths {
+		authArgs = append(authArgs, pkgHttpJwt.AuthArgs{
+			URI: regexp.MustCompile(regexp.QuoteMeta(apiPath) + AnyPathSuffixRegex),
+		})
+	}
+	if len(authArgs) == 0 {
+		return make(map[string][]pkgHttpJwt.AuthArgs)
+	}
 	return map[string][]pkgHttpJwt.AuthArgs{
-		http.MethodGet: {
-			{
-				URI: regexp.MustCompile(regexp.QuoteMeta(apiPath) + AnyPathSuffixRegex),
-			},
-		},
-		http.MethodPost: {
-			{
-				URI: regexp.MustCompile(regexp.QuoteMeta(apiPath) + AnyPathSuffixRegex),
-			},
-		},
-		http.MethodDelete: {
-			{
-				URI: regexp.MustCompile(regexp.QuoteMeta(apiPath) + AnyPathSuffixRegex),
-			},
-		},
-		http.MethodPut: {
-			{
-				URI: regexp.MustCompile(regexp.QuoteMeta(apiPath) + AnyPathSuffixRegex),
-			},
-		},
+		http.MethodGet:    authArgs,
+		http.MethodPost:   authArgs,
+		http.MethodDelete: authArgs,
+		http.MethodPut:    authArgs,
 	}
 }
 

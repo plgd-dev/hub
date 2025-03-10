@@ -6,7 +6,6 @@ log:
     level: warn        # Stacktrace level
   encoderConfig:
     timeEncoder: rfc3339nano
-
 apis:
   grpc:
     address: "0.0.0.0:9100"
@@ -28,3 +27,5 @@ apis:
       keyFile: "/secrets/private/cert.key"
       certFile: "/secrets/public/cert.crt"
       clientCertificateRequired: false
+      crl:
+        enabled: false

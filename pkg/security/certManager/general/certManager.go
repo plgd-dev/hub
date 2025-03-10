@@ -38,14 +38,14 @@ type Config struct {
 	CAPoolIsOptional bool `yaml:"-" json:"-"`
 }
 
-func (c Config) Validate() error {
+func (c Config) Validate(client bool) error {
 	if len(c.CAPool) == 0 && !c.UseSystemCAPool && !c.CAPoolIsOptional {
 		return fmt.Errorf("caPool('%v')", c.CAPool)
 	}
-	if c.CertFile == "" {
+	if c.CertFile == "" && !client {
 		return fmt.Errorf("certFile('%v')", c.CertFile)
 	}
-	if c.KeyFile == "" {
+	if c.KeyFile == "" && !client {
 		return fmt.Errorf("keyFile('%v')", c.KeyFile)
 	}
 	if err := c.CRL.Validate(); err != nil {
@@ -188,9 +188,14 @@ func (a *CertManager) GetServerTLSConfig() *tls.Config {
 
 // GetClientTLSConfig returns tls configuration for clients
 func (a *CertManager) GetClientTLSConfig() *tls.Config {
+	var getClientCertificate func(*tls.CertificateRequestInfo) (*tls.Certificate, error)
+	if a.isSetClientCertificate() {
+		getClientCertificate = a.getClientCertificate
+	}
+
 	cfg := &tls.Config{
 		RootCAs:                  a.GetCertificateAuthorities(),
-		GetClientCertificate:     a.getClientCertificate,
+		GetClientCertificate:     getClientCertificate,
 		PreferServerCipherSuites: true,
 		MinVersion:               tls.VersionTLS12,
 	}
@@ -232,6 +237,12 @@ func (a *CertManager) Close() {
 	a.fileWatcher.RemoveOnEventHandler(&a.onFileChangeFunc)
 }
 
+func (a *CertManager) isSetClientCertificate() bool {
+	a.private.mutex.Lock()
+	defer a.private.mutex.Unlock()
+	return a.config.CertFile != "" && a.config.KeyFile != ""
+}
+
 func (a *CertManager) getTLSKeyPair() (*tls.Certificate, error) {
 	a.private.mutex.Lock()
 	defer a.private.mutex.Unlock()
@@ -258,7 +269,7 @@ func (a *CertManager) getClientCertificate(*tls.CertificateRequestInfo) (*tls.Ce
 }
 
 func (a *CertManager) loadCertsLocked() (bool, error) {
-	if a.config.KeyFile == "" || a.config.CertFile == "" {
+	if a.config.KeyFile == "" && a.config.CertFile == "" {
 		return false, nil
 	}
 	keyPath := a.config.KeyFile
