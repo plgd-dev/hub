@@ -98,6 +98,7 @@ data:
       validFrom: {{ .signer.validFrom | quote }}
       expiresIn: {{ .signer.expiresIn | quote }}
       crl:
+        enabled: {{ .signer.crl.enabled }}
         expiresIn: {{ .signer.crl.expiresIn | quote }}
   {{- end }}
 {{- end }}

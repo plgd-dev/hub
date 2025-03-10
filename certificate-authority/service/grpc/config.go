@@ -13,12 +13,11 @@ import (
 
 type Config = server.Config
 
+// CRLConfig represent CRL configuration.
+// For cqldb CRL is not supported.
 type CRLConfig struct {
 	ExpiresIn time.Duration `yaml:"expiresIn" json:"expiresIn"`
-
-	// needed by tests with cqldb - remove once support for CRL
-	// is implemented in cqldb or cqldb is removed
-	Enabled bool `yaml:"-" json:"-"`
+	Enabled   bool          `yaml:"enabled" json:"enabled"`
 }
 
 func (c *CRLConfig) Validate() error {

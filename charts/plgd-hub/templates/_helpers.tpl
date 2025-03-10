@@ -236,7 +236,7 @@ crl:
 
 {{- define "plgd-hub.CRLConfigFromCertificateAuthority" }}
 {{- $ := . }}
-enabled: {{ $.Values.certificateauthority.enabled }}
+enabled: {{and $.Values.certificateauthority.enabled $.Values.certificateauthority.signer.crl.enabled }}
 http:
   maxIdleConns: {{ default 16 $.Values.crl.coap.http.maxIdleConns }}
   maxConnsPerHost: {{ default 32 $.Values.crl.coap.http.maxConnsPerHost }}
@@ -260,7 +260,7 @@ http:
 {{- else if include "plgd-hub.crlCoapEnabled" $ }}
 {{- $crlCfg = include "plgd-hub.CRLConfig" (list $ $.Values.crl.coap) | fromYaml }}
 {{- end }}
-{{- if and (not $crlCfg.enabled) $.Values.certificateauthority.enabled }}
+{{- if and (not $crlCfg.enabled) $.Values.certificateauthority.enabled $.Values.certificateauthority.signer.crl.enabled }}
 {{- $crlCfg = include "plgd-hub.CRLConfigFromCertificateAuthority" $ | fromYaml }}
 {{- end }}
 crl:

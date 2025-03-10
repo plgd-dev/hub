@@ -60,7 +60,7 @@ global:
         ...
         -----END EC PRIVATE-----
     # -- CRL settings for authorization endpoint
-    coap:
+    coapNotSet:
       # -- Custom CA certificate for authorization endpoints in PEM format
       caPool: |-
         -----BEGIN CERTIFICATE-----

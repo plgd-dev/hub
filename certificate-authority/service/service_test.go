@@ -2,6 +2,7 @@ package service_test
 
 import (
 	"context"
+	"crypto"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -33,12 +34,23 @@ func getSigningRecords(ctx context.Context, t *testing.T, addr string, certifica
 		})),
 	)
 	require.NoError(t, err)
+	defer conn.Close()
 	caClient := pbCA.NewCertificateAuthorityClient(conn)
-	_, err = caClient.GetSigningRecords(ctx, &pbCA.GetSigningRecordsRequest{})
+	cl, err := caClient.GetSigningRecords(ctx, &pbCA.GetSigningRecordsRequest{})
+	if err == nil {
+		_ = cl.CloseSend()
+		for {
+			_, err2 := cl.Recv()
+			if err2 != nil {
+				break
+			}
+		}
+	}
 	return err
 }
 
-func getNewCertificate(ctx context.Context, t *testing.T, addr string, pk *ecdsa.PrivateKey, certificates []tls.Certificate) ([]byte, error) {
+func getNewCertificate(ctx context.Context, t *testing.T, addr string, pkI crypto.PrivateKey, certificates []tls.Certificate) ([]byte, error) {
+	pk := pkI.(*ecdsa.PrivateKey)
 	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(
 		credentials.NewTLS(&tls.Config{
 			RootCAs:      test.GetRootCertificatePool(t),
@@ -60,6 +72,23 @@ func getNewCertificate(ctx context.Context, t *testing.T, addr string, pk *ecdsa
 	return resp.GetCertificate(), nil
 }
 
+func marshalPrivateKey(t *testing.T, pk crypto.PrivateKey) []byte {
+	b, err := x509.MarshalECPrivateKey(pk.(*ecdsa.PrivateKey))
+	require.NoError(t, err)
+	return pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: b})
+}
+
+func getNewTLSCertificate(ctx context.Context, t *testing.T, addr string, certificates []tls.Certificate) tls.Certificate {
+	pk, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
+	// get certificate - insecure
+	certData1, err := getNewCertificate(ctx, t, config.CERTIFICATE_AUTHORITY_HOST, pk, nil)
+	require.NoError(t, err)
+	crt, err := tls.X509KeyPair(certData1, marshalPrivateKey(t, pk))
+	require.NoError(t, err)
+	return crt
+}
+
 func TestGetSigningRecords(t *testing.T) {
 	if config.ACTIVE_DATABASE() == database.CqlDB {
 		t.Skip("revocation list not supported for CqlDB")
@@ -70,28 +99,22 @@ func TestGetSigningRecords(t *testing.T) {
 	shutdown := testService.SetUpServices(ctx, t, testService.SetUpServicesOAuth|testService.SetUpServicesMachine2MachineOAuth)
 	defer shutdown()
 
+	ctx = pkgGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
+
 	// start insecure ca
 	caCfg := caTest.MakeConfig(t)
 	// CRL list should be valid for 10 sec after it is issued
-	caCfg.Signer.CRL.Enabled = true
+	caCfg.Signer.CRL.Enabled = false
 	caCfg.Signer.CRL.ExpiresIn = time.Hour
 	err := caCfg.Validate()
 	require.NoError(t, err)
 	caShutdown := caTest.New(t, caCfg)
-	defer caShutdown()
-
-	pk, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	require.NoError(t, err)
-	// get certificate - insecure
-	ctx = pkgGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
-	certData1, err := getNewCertificate(ctx, t, config.CERTIFICATE_AUTHORITY_HOST, pk, nil)
-	require.NoError(t, err)
+	crtWithoutCrlDistributionPoint := getNewTLSCertificate(ctx, t, config.CERTIFICATE_AUTHORITY_HOST, nil)
 	caShutdown()
-	b, err := x509.MarshalECPrivateKey(pk)
-	require.NoError(t, err)
-	key := pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: b})
-	crt1, err := tls.X509KeyPair(certData1, key)
-	require.NoError(t, err)
+	caCfg.Signer.CRL.Enabled = true
+	caShutdown = caTest.New(t, caCfg)
+	crtWithCrlDistributionPoint := getNewTLSCertificate(ctx, t, config.CERTIFICATE_AUTHORITY_HOST, nil)
+	caShutdown()
 
 	// start secure ca
 	caCfg.APIs.GRPC.TLS.ClientCertificateRequired = true
@@ -118,19 +141,34 @@ func TestGetSigningRecords(t *testing.T) {
 	caShutdown2 := caTest.New(t, caCfg2)
 	defer caShutdown2()
 
-	err = getSigningRecords(ctx, t, ca_addr, []tls.Certificate{crt1})
+	err = getSigningRecords(ctx, t, ca_addr, []tls.Certificate{crtWithCrlDistributionPoint})
+	require.Error(t, err)
+
+	certData, err := getNewCertificate(ctx, t, config.CERTIFICATE_AUTHORITY_HOST, crtWithoutCrlDistributionPoint.PrivateKey, []tls.Certificate{crtWithoutCrlDistributionPoint})
 	require.NoError(t, err)
 
-	certData2, err := getNewCertificate(ctx, t, config.CERTIFICATE_AUTHORITY_HOST, pk, []tls.Certificate{crt1})
-	require.NoError(t, err)
-	crt2, err := tls.X509KeyPair(certData2, key)
+	crtWithoutCrlDistributionPoint, err = tls.X509KeyPair(certData, marshalPrivateKey(t, crtWithoutCrlDistributionPoint.PrivateKey))
 	require.NoError(t, err)
 
+	certData, err = getNewCertificate(ctx, t, ca_addr, crtWithCrlDistributionPoint.PrivateKey, []tls.Certificate{crtWithoutCrlDistributionPoint})
+	require.NoError(t, err)
+
+	crtWithCrlDistributionPoint, err = tls.X509KeyPair(certData, marshalPrivateKey(t, crtWithCrlDistributionPoint.PrivateKey))
+	require.NoError(t, err)
+
+	// use new crtWithCrlDistributionPoint
+	err = getSigningRecords(ctx, t, ca_addr, []tls.Certificate{crtWithCrlDistributionPoint})
+	require.NoError(t, err)
+
+	err = getSigningRecords(ctx, t, config.CERTIFICATE_AUTHORITY_HOST, []tls.Certificate{crtWithCrlDistributionPoint})
+	require.NoError(t, err)
+
+	revokedCertificate := crtWithCrlDistributionPoint
 	// use crt2 without distribution point
-	_, err = getNewCertificate(ctx, t, config.CERTIFICATE_AUTHORITY_HOST, pk, []tls.Certificate{crt2})
+	_, err = getNewCertificate(ctx, t, config.CERTIFICATE_AUTHORITY_HOST, crtWithCrlDistributionPoint.PrivateKey, []tls.Certificate{crtWithoutCrlDistributionPoint})
 	require.NoError(t, err)
 
-	// try use revoked crt1
-	err = getSigningRecords(ctx, t, config.CERTIFICATE_AUTHORITY_HOST, []tls.Certificate{crt1})
+	// try use revoked crtWithCrlDistributionPoint
+	err = getSigningRecords(ctx, t, ca_addr, []tls.Certificate{revokedCertificate})
 	require.Error(t, err)
 }

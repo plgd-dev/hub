@@ -159,7 +159,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	closerFn.AddFunc(closeStore)
 
 	externalAddress := pkgHttpUri.CanonicalURI(config.APIs.HTTP.ExternalAddress)
-	crlEnabled := externalAddress != "" && dbStorage.SupportsRevocationList()
+	crlEnabled := externalAddress != "" && dbStorage.SupportsRevocationList() && config.Signer.CRL.Enabled
 	config.Signer.CRL.Enabled = crlEnabled
 	ca, err := grpcService.NewCertificateAuthorityServer(config.APIs.GRPC.Authorization.OwnerClaim, config.HubID, externalAddress, config.Signer, dbStorage, fileWatcher, logger)
 	if err != nil {
