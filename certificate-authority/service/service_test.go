@@ -58,6 +58,7 @@ func getNewCertificate(ctx context.Context, t *testing.T, addr string, pkI crypt
 		})),
 	)
 	require.NoError(t, err)
+	defer conn.Close()
 	caClient := pbCA.NewCertificateAuthorityClient(conn)
 
 	var cfg generateCertificate.Configuration
@@ -82,7 +83,7 @@ func getNewTLSCertificate(ctx context.Context, t *testing.T, addr string, certif
 	pk, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	require.NoError(t, err)
 	// get certificate - insecure
-	certData1, err := getNewCertificate(ctx, t, config.CERTIFICATE_AUTHORITY_HOST, pk, nil)
+	certData1, err := getNewCertificate(ctx, t, addr, pk, certificates)
 	require.NoError(t, err)
 	crt, err := tls.X509KeyPair(certData1, marshalPrivateKey(t, pk))
 	require.NoError(t, err)
