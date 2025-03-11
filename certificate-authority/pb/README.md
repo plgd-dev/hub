@@ -89,8 +89,8 @@
 | ----------- | ------------ | ------------- | ------------|
 | SignIdentityCertificate | [SignCertificateRequest](#certificateauthority-pb-SignCertificateRequest) | [SignCertificateResponse](#certificateauthority-pb-SignCertificateResponse) | SignIdentityCertificate sends a Identity Certificate Signing Request to the certificate authority and obtains a signed certificate. Both in the PEM format. It adds EKU: &#39;1.3.6.1.4.1.44924.1.6&#39; . |
 | SignCertificate | [SignCertificateRequest](#certificateauthority-pb-SignCertificateRequest) | [SignCertificateResponse](#certificateauthority-pb-SignCertificateResponse) | SignCertificate sends a Certificate Signing Request to the certificate authority and obtains a signed certificate. Both in the PEM format. |
-| GetSigningRecords | [GetSigningRecordsRequest](#certificateauthority-pb-GetSigningRecordsRequest) | [SigningRecord](#certificateauthority-pb-SigningRecord) stream | Get signed certficate records. |
-| DeleteSigningRecords | [DeleteSigningRecordsRequest](#certificateauthority-pb-DeleteSigningRecordsRequest) | [DeletedSigningRecords](#certificateauthority-pb-DeletedSigningRecords) | Delete signed certficate records. |
+| GetSigningRecords | [GetSigningRecordsRequest](#certificateauthority-pb-GetSigningRecordsRequest) | [SigningRecord](#certificateauthority-pb-SigningRecord) stream | Get signed certificate records. |
+| DeleteSigningRecords | [DeleteSigningRecordsRequest](#certificateauthority-pb-DeleteSigningRecordsRequest) | [DeletedSigningRecords](#certificateauthority-pb-DeletedSigningRecords) | Revoke signed certificate records or delete expired signed certificate records. |
 
  
 
@@ -120,6 +120,12 @@
 | valid_until_date | [int64](#int64) |  | Record valid until date, in unix nanoseconds timestamp format
 
 @gotags: bson:&#34;validUntilDate&#34; |
+| serial | [string](#string) |  | Serial number of the last certificate issued
+
+@gotags: bson:&#34;serial&#34; |
+| issuer_id | [string](#string) |  | Issuer id is calculated from the issuer&#39;s public certificate, and it is computed as uuid.NewSHA1(uuid.NameSpaceX500, publicKeyRaw)
+
+@gotags: bson:&#34;issuerId&#34; |
 
 
 
@@ -145,7 +151,7 @@
 <a name="certificateauthority-pb-DeletedSigningRecords"></a>
 
 ### DeletedSigningRecords
-
+Revoke or delete certificates
 
 
 | Field | Type | Label | Description |

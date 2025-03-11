@@ -89,9 +89,8 @@ spec:
             - name: service-crt
               mountPath: {{ $cert }}
             {{- end }}
-            {{- if $.Values.global.authorizationCAPool }}
-              {{- include "plgd-hub.extraCAPoolMount" (list $ $.Values.extraCAPool.internal) | nindent 12 }}
-            {{- end }}
+            {{- include "plgd-hub.extraCAPoolMount" (list $ $.Values.extraCAPool.internal) | nindent 12 }}
+            {{- include "plgd-hub.crlMount" (list $ $.Values.crl.internal) | nindent 12 }}
             {{- with $.Values.grpcreflection.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -107,9 +106,8 @@ spec:
           secret:
             secretName: {{ include "plgd-hub.grpcreflection.serviceCertName" $ }}
         {{- end }}
-        {{- if $.Values.global.authorizationCAPool }}
-          {{- include "plgd-hub.extraCAPoolVolume" (list $ $.Values.extraCAPool.internal) | nindent 8 }}
-        {{- end }}
+        {{- include "plgd-hub.extraCAPoolVolume" (list $ $.Values.extraCAPool.internal) | nindent 8 }}
+        {{- include "plgd-hub.crlVolume" (list $ $.Values.crl.internal) | nindent 8 }}
         {{- with $.Values.grpcreflection.extraVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}

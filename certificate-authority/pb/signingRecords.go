@@ -3,6 +3,7 @@ package pb
 import (
 	"errors"
 	"fmt"
+	"math/big"
 	"sort"
 
 	"github.com/google/uuid"
@@ -15,6 +16,26 @@ func (p SigningRecords) Sort() {
 	sort.Slice(p, func(i, j int) bool {
 		return p[i].GetId() < p[j].GetId()
 	})
+}
+
+func (credential *CredentialStatus) Validate() error {
+	if credential.GetDate() == 0 {
+		return errors.New("empty signing credential date")
+	}
+	if credential.GetValidUntilDate() == 0 {
+		return errors.New("empty signing record credential expiration date")
+	}
+	if credential.GetCertificatePem() == "" {
+		return errors.New("empty signing record credential certificate")
+	}
+	serial := big.Int{}
+	if _, ok := serial.SetString(credential.GetSerial(), 10); !ok {
+		return errors.New("invalid signing record credential certificate serial number")
+	}
+	if _, err := uuid.Parse(credential.GetIssuerId()); err != nil {
+		return fmt.Errorf("invalid signing record issuer's ID(%v): %w", credential.GetIssuerId(), err)
+	}
+	return nil
 }
 
 func (signingRecord *SigningRecord) Marshal() ([]byte, error) {
@@ -43,14 +64,8 @@ func (signingRecord *SigningRecord) Validate() error {
 	if signingRecord.GetOwner() == "" {
 		return errors.New("empty signing record owner")
 	}
-	if signingRecord.GetCredential() != nil && signingRecord.GetCredential().GetDate() == 0 {
-		return errors.New("empty signing credential date")
-	}
-	if signingRecord.GetCredential() != nil && signingRecord.GetCredential().GetValidUntilDate() == 0 {
-		return errors.New("empty signing record credential expiration date")
-	}
-	if signingRecord.GetCredential() != nil && signingRecord.GetCredential().GetCertificatePem() == "" {
-		return errors.New("empty signing record credential certificate")
+	if credential := signingRecord.GetCredential(); credential != nil {
+		return credential.Validate()
 	}
 	return nil
 }

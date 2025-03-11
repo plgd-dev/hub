@@ -24,6 +24,7 @@ const (
 	OnlyContentQueryKey            = "onlyContent"
 	IncludeHiddenResourcesQueryKey = "includeHiddenResources"
 	ForceQueryKey                  = "force"
+	IssuerIDKey                    = "issuerId"
 
 	AliasInterfaceQueryKey        = "interface"
 	AliasCommandFilterQueryKey    = "command"

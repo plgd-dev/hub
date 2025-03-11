@@ -16,6 +16,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	"github.com/plgd-dev/hub/v2/pkg/service"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func BlockWiseTransferSZXFromString(s string) (blockwise.SZX, error) {
@@ -49,7 +50,7 @@ func closeOnError(services []service.APIService, logger log.Logger) {
 	}
 }
 
-func newService(protocol Protocol, config Config, serviceOpts Options, fileWatcher *fsnotify.Watcher, logger log.Logger, opts ...interface {
+func newService(protocol Protocol, config Config, serviceOpts Options, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, opts ...interface {
 	coapTcpServer.Option
 	coapDtlsServer.Option
 	coapUdpServer.Option
@@ -57,14 +58,14 @@ func newService(protocol Protocol, config Config, serviceOpts Options, fileWatch
 ) (service.APIService, error) {
 	switch protocol {
 	case TCP:
-		coapServer, err := newTCPServer(config, serviceOpts, fileWatcher, logger, opts...)
+		coapServer, err := newTCPServer(config, serviceOpts, fileWatcher, logger, tracerProvider, opts...)
 		if err != nil {
 			return nil, fmt.Errorf("cannot create tcp server: %w", err)
 		}
 		return coapServer, nil
 	case UDP:
 		if config.TLS.IsEnabled() {
-			coapServer, err := newDTLSServer(config, serviceOpts, fileWatcher, logger, opts...)
+			coapServer, err := newDTLSServer(config, serviceOpts, fileWatcher, logger, tracerProvider, opts...)
 			if err != nil {
 				return nil, fmt.Errorf("cannot create dtls server: %w", err)
 			}
@@ -90,7 +91,7 @@ func makeOnInactivityConnection(logger log.Logger) func(conn mux.Conn) {
 }
 
 // New creates server.
-func New(ctx context.Context, config Config, router *mux.Router, fileWatcher *fsnotify.Watcher, logger log.Logger, opt ...func(*Options)) (*service.Service, error) {
+func New(ctx context.Context, config Config, router *mux.Router, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, opt ...func(*Options)) (*service.Service, error) {
 	err := config.Validate()
 	if err != nil {
 		return nil, err
@@ -131,7 +132,7 @@ func New(ctx context.Context, config Config, router *mux.Router, fileWatcher *fs
 		if protocol == UDP && !config.BlockwiseTransfer.Enabled {
 			logger.Warnf("It's possible that UDP messages bigger than MTU (1500) will be dropped, since apis.coap.blockwiseTransfer.enabled is set to false.")
 		}
-		service, err := newService(protocol, config, serviceOpts, fileWatcher, logger, opts...)
+		service, err := newService(protocol, config, serviceOpts, fileWatcher, logger, tracerProvider, opts...)
 		if err != nil {
 			closeOnError(services, logger)
 			return nil, err

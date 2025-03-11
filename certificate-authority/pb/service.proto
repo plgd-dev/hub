@@ -38,6 +38,10 @@ service CertificateAuthority {
     option (google.api.http) = {
       post: "/api/v1/sign/identity-csr"
       body: "*"
+      additional_bindings: {
+        post: "/certificate-authority/api/v1/sign/identity-csr"
+        body: "*"
+      }
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "sign csr" ]
@@ -50,26 +54,36 @@ service CertificateAuthority {
     option (google.api.http) = {
       post: "/api/v1/sign/csr"
       body: "*"
+      additional_bindings: {
+        post: "/certificate-authority/api/v1/sign/csr"
+        body: "*"
+      }
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "sign csr" ]
     };
   }
 
-  // Get signed certficate records.
+  // Get signed certificate records.
   rpc GetSigningRecords (GetSigningRecordsRequest) returns (stream SigningRecord) {
     option (google.api.http) = {
       get: "/api/v1/signing/records"
+      additional_bindings: {
+        get: "/certificate-authority/api/v1/signing/records"
+      }
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "signing records" ]
     };
   };
 
-  // Delete signed certficate records.
+  // Revoke signed certificate records or delete expired signed certificate records.
   rpc DeleteSigningRecords (DeleteSigningRecordsRequest) returns (DeletedSigningRecords) {
     option (google.api.http) = {
       delete: "/api/v1/signing/records"
+      additional_bindings: {
+        delete: "/certificate-authority/api/v1/signing/records"
+      }
     };
     option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
       tags: [ "signing records" ]

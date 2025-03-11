@@ -13,8 +13,9 @@ import (
 
 	"github.com/plgd-dev/device/v2/pkg/security/generateCertificate"
 	"github.com/plgd-dev/hub/v2/certificate-authority/pb"
+	certAuthURI "github.com/plgd-dev/hub/v2/certificate-authority/service/uri"
 	httpgwTest "github.com/plgd-dev/hub/v2/http-gateway/test"
-	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	"github.com/plgd-dev/hub/v2/test/service"
@@ -26,11 +27,6 @@ import (
 
 type ClientSignFunc = func(context.Context, *pb.SignCertificateRequest) (*pb.SignCertificateResponse, error)
 
-const (
-	URISignIdentityCertificate = "/api/v1/sign/identity-csr"
-	URISignCertificate         = "/api/v1/sign/csr"
-)
-
 func testSigningByFunction(t *testing.T, signFn ClientSignFunc, csr []byte) {
 	type args struct {
 		req *pb.SignCertificateRequest
@@ -38,7 +34,6 @@ func testSigningByFunction(t *testing.T, signFn ClientSignFunc, csr []byte) {
 	tests := []struct {
 		name    string
 		args    args
-		want    *pb.SignCertificateResponse
 		wantErr bool
 	}{
 		{
@@ -55,7 +50,14 @@ func testSigningByFunction(t *testing.T, signFn ClientSignFunc, csr []byte) {
 					CertificateSigningRequest: csr,
 				},
 			},
-			wantErr: false,
+		},
+		{
+			name: "valid - new with the same csr",
+			args: args{
+				req: &pb.SignCertificateRequest{
+					CertificateSigningRequest: csr,
+				},
+			},
 		},
 	}
 
@@ -64,7 +66,7 @@ func testSigningByFunction(t *testing.T, signFn ClientSignFunc, csr []byte) {
 
 	tearDown := service.SetUp(ctx, t)
 	defer tearDown()
-	ctx = kitNetGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
+	ctx = pkgGrpc.CtxWithToken(ctx, oauthTest.GetDefaultAccessToken(t))
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -80,7 +82,7 @@ func testSigningByFunction(t *testing.T, signFn ClientSignFunc, csr []byte) {
 }
 
 func httpDoSign(ctx context.Context, t *testing.T, uri string, req *pb.SignCertificateRequest, resp *pb.SignCertificateResponse) error {
-	token, err := kitNetGrpc.TokenFromOutgoingMD(ctx)
+	token, err := pkgGrpc.TokenFromOutgoingMD(ctx)
 	require.NoError(t, err)
 	reqBody, err := protojson.Marshal(req)
 	require.NoError(t, err)
@@ -110,7 +112,7 @@ func TestCertificateAuthorityServerSignCSR(t *testing.T) {
 	require.NoError(t, err)
 	testSigningByFunction(t, func(ctx context.Context, req *pb.SignCertificateRequest) (*pb.SignCertificateResponse, error) {
 		var resp pb.SignCertificateResponse
-		return &resp, httpDoSign(ctx, t, URISignCertificate, req, &resp)
+		return &resp, httpDoSign(ctx, t, certAuthURI.SignCertificate, req, &resp)
 	}, csr)
 }
 
@@ -122,6 +124,6 @@ func TestCertificateAuthorityServerSignCSRWithEmptyCommonName(t *testing.T) {
 	require.NoError(t, err)
 	testSigningByFunction(t, func(ctx context.Context, req *pb.SignCertificateRequest) (*pb.SignCertificateResponse, error) {
 		var resp pb.SignCertificateResponse
-		return &resp, httpDoSign(ctx, t, URISignCertificate, req, &resp)
+		return &resp, httpDoSign(ctx, t, certAuthURI.SignCertificate, req, &resp)
 	}, csr)
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	httpServer "github.com/plgd-dev/hub/v2/pkg/net/http/server"
 	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
+	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 )
 
 type Config struct {
@@ -40,7 +41,7 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("hubID('%v') - %w", c.HubID, err)
 	}
 
-	_, err := grpcService.NewSigner(c.APIs.GRPC.Authorization.OwnerClaim, c.HubID, c.Signer)
+	_, err := grpcService.NewSigner(c.APIs.GRPC.Authorization.OwnerClaim, c.HubID, c.APIs.HTTP.ExternalAddress, c.Signer)
 	if err != nil {
 		return fmt.Errorf("signer('%v') - %w", c.Signer, err)
 	}
@@ -65,11 +66,16 @@ func (c *APIsConfig) Validate() error {
 }
 
 type HTTPConfig struct {
-	Addr   string            `yaml:"address" json:"address"`
-	Server httpServer.Config `yaml:",inline" json:",inline"`
+	ExternalAddress string            `yaml:"externalAddress" json:"externalAddress"`
+	Addr            string            `yaml:"address" json:"address"`
+	Server          httpServer.Config `yaml:",inline" json:",inline"`
 }
 
 func (c *HTTPConfig) Validate() error {
+	err := pkgX509.ValidateCRLDistributionPointAddress(c.ExternalAddress)
+	if err != nil {
+		return fmt.Errorf("externalAddress('%v') - %w", c.ExternalAddress, err)
+	}
 	if _, err := net.ResolveTCPAddr("tcp", c.Addr); err != nil {
 		return fmt.Errorf("address('%v') - %w", c.Addr, err)
 	}

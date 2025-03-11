@@ -91,7 +91,7 @@ func TestAggregateHandleConfirmDeviceMetadataUpdate(t *testing.T) {
 		errC := eventstore.Close(ctx)
 		require.NoError(t, errC)
 	}()
-	naClient, publisher, err := natsTest.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, fileWatcher, logger, noop.NewTracerProvider(), publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		publisher.Close()
@@ -194,7 +194,7 @@ func TestRequestHandlerConfirmDeviceMetadataUpdate(t *testing.T) {
 		errC := eventstore.Close(ctx)
 		require.NoError(t, errC)
 	}()
-	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, publisher.WithMarshaler(utils.Marshal))
+	naClient, publisher, err := natsTest.NewClientAndPublisher(config.Clients.Eventbus.NATS, fileWatcher, logger, noop.NewTracerProvider(), publisher.WithMarshaler(utils.Marshal))
 	require.NoError(t, err)
 	defer func() {
 		publisher.Close()

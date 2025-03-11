@@ -24,6 +24,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/log"
 	certManagerServer "github.com/plgd-dev/hub/v2/pkg/security/certManager/server"
 	"github.com/plgd-dev/hub/v2/pkg/sync/task/queue"
+	"go.opentelemetry.io/otel/trace/noop"
 )
 
 // Service is a configuration of coap-gateway
@@ -48,14 +49,14 @@ func newTCPListener(config COAPConfig, fileWatcher *fsnotify.Watcher, logger log
 		}
 		closeListener := func() {
 			if errC := listener.Close(); errC != nil {
-				log.Errorf("failed to close tcp listener: %w", errC)
+				log.Errorf("failed to close tcp listener: %v", errC)
 			}
 		}
 		return listener, closeListener, nil
 	}
 
 	var closeListener fn.FuncList
-	coapsTLS, err := certManagerServer.New(config.TLS.Config, fileWatcher, logger)
+	coapsTLS, err := certManagerServer.New(config.TLS.Config, fileWatcher, logger, noop.NewTracerProvider())
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create tls cert manager: %w", err)
 	}

@@ -26,6 +26,7 @@ data:
           {{- $tls := .apis.http.tls }}
           {{- include "plgd-hub.internalCertificateConfig" (list $ $tls $httpGatewayCertPath ) | indent 8 }}
           clientCertificateRequired: {{ .apis.http.tls.clientCertificateRequired }}
+          {{- include "plgd-hub.crlInternalConfig" (list $ $tls.crl) | indent 10 }}
         webSocket:
           streamBodyLimit: {{ .apis.http.webSocket.streamBodyLimit }}
           pingFrequency: {{ .apis.http.webSocket.pingFrequency }}
@@ -45,6 +46,7 @@ data:
             {{- $grpcTls := .clients.grpcGateway.grpc.tls }}
             {{- include "plgd-hub.internalCertificateConfig" (list $ $grpcTls $httpGatewayCertPath ) | indent 10 }}
             useSystemCAPool: {{ .clients.grpcGateway.grpc.tls.useSystemCAPool }}
+            {{- include "plgd-hub.crlInternalConfig" (list $ $grpcTls.crl) | indent 12 }}
       {{- include "plgd-hub.openTelemetryExporterConfig" (list $ $httpGatewayCertPath) | nindent 6 }}
     ui:
       enabled: {{ .ui.enabled }}

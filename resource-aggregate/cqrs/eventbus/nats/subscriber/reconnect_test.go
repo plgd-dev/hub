@@ -16,6 +16,7 @@ import (
 	"github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace/noop"
 )
 
 func TestSubscriberReconnect(t *testing.T) {
@@ -32,7 +33,7 @@ func TestSubscriberReconnect(t *testing.T) {
 		require.NoError(t, errC)
 	}()
 
-	naPubClient, pub, err := natsTest.NewClientAndPublisher(config.MakePublisherConfig(t), fileWatcher, logger, publisher.WithMarshaler(json.Marshal))
+	naPubClient, pub, err := natsTest.NewClientAndPublisher(config.MakePublisherConfig(t), fileWatcher, logger, noop.NewTracerProvider(), publisher.WithMarshaler(json.Marshal))
 	require.NoError(t, err)
 	require.NotNil(t, pub)
 	defer func() {
@@ -41,7 +42,7 @@ func TestSubscriberReconnect(t *testing.T) {
 	}()
 
 	naSubClient, subscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(), fileWatcher,
-		logger,
+		logger, noop.NewTracerProvider(),
 		subscriber.WithGoPool(func(f func()) error { go f(); return nil }),
 		subscriber.WithUnmarshaler(json.Unmarshal))
 	require.NoError(t, err)
@@ -97,7 +98,7 @@ func TestSubscriberReconnect(t *testing.T) {
 	case <-ctx.Done():
 		require.NoError(t, errors.New("Timeout"))
 	}
-	naClient1, pub1, err := natsTest.NewClientAndPublisher(config.MakePublisherConfig(t), fileWatcher, logger, publisher.WithMarshaler(json.Marshal))
+	naClient1, pub1, err := natsTest.NewClientAndPublisher(config.MakePublisherConfig(t), fileWatcher, logger, noop.NewTracerProvider(), publisher.WithMarshaler(json.Marshal))
 	require.NoError(t, err)
 	require.NotNil(t, pub1)
 	defer func() {

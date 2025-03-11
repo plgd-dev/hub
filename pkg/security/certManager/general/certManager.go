@@ -2,11 +2,13 @@ package general
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -16,9 +18,11 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/fn"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	pkgTls "github.com/plgd-dev/hub/v2/pkg/security/tls"
 	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 	pkgTime "github.com/plgd-dev/hub/v2/pkg/time"
 	"github.com/plgd-dev/kit/v2/security"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/atomic"
 )
 
@@ -29,17 +33,23 @@ type Config struct {
 	CertFile                  urischeme.URIScheme   `yaml:"certFile" json:"certFile" description:"file name of certificate in PEM format"`
 	ClientCertificateRequired bool                  `yaml:"clientCertificateRequired" json:"clientCertificateRequired" description:"require client certificate"`
 	UseSystemCAPool           bool                  `yaml:"useSystemCAPool" json:"useSystemCaPool" description:"use system certification pool"`
+	CRL                       pkgTls.CRLConfig      `yaml:"crl" json:"crl"`
+
+	CAPoolIsOptional bool `yaml:"-" json:"-"`
 }
 
-func (c Config) Validate() error {
-	if len(c.CAPool) == 0 && !c.UseSystemCAPool {
+func (c Config) Validate(client bool) error {
+	if len(c.CAPool) == 0 && !c.UseSystemCAPool && !c.CAPoolIsOptional {
 		return fmt.Errorf("caPool('%v')", c.CAPool)
 	}
-	if c.CertFile == "" {
+	if c.CertFile == "" && !client {
 		return fmt.Errorf("certFile('%v')", c.CertFile)
 	}
-	if c.KeyFile == "" {
+	if c.KeyFile == "" && !client {
 		return fmt.Errorf("keyFile('%v')", c.KeyFile)
+	}
+	if err := c.CRL.Validate(); err != nil {
+		return fmt.Errorf("CRL configuration is invalid: %w", err)
 	}
 	return nil
 }
@@ -48,11 +58,13 @@ func (c Config) Validate() error {
 type CertManager struct {
 	config Config
 
-	fileWatcher             *fsnotify.Watcher
-	verifyClientCertificate tls.ClientAuthType
-	logger                  log.Logger
-	onFileChangeFunc        func(event fsnotify.Event)
-	done                    atomic.Bool
+	fileWatcher                         *fsnotify.Watcher
+	verifyClientCertificate             tls.ClientAuthType
+	logger                              log.Logger
+	onFileChangeFunc                    func(event fsnotify.Event)
+	done                                atomic.Bool
+	crlCache                            *CRLCache
+	customDistributionPointVerification pkgX509.CustomDistributionPointVerification // override CRL verification for given host
 
 	private struct {
 		mutex                sync.Mutex
@@ -77,18 +89,14 @@ func tryToWatchFile(file urischeme.URIScheme, fileWatcher *fsnotify.Watcher, rem
 	return nil
 }
 
-// New creates a new certificate manager which watches for certs in a filesystem
-func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*CertManager, error) {
-	verifyClientCertificate := tls.RequireAndVerifyClientCert
-	if !config.ClientCertificateRequired {
-		verifyClientCertificate = tls.NoClientCert
-	}
-
+func newCertManager(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, verifyClientCertificate tls.ClientAuthType, crlCache *CRLCache, dpVerify pkgX509.CustomDistributionPointVerification, cleanUpOnError fn.FuncList) (*CertManager, error) {
 	c := &CertManager{
-		fileWatcher:             fileWatcher,
-		config:                  config,
-		verifyClientCertificate: verifyClientCertificate,
-		logger:                  logger,
+		fileWatcher:                         fileWatcher,
+		config:                              config,
+		verifyClientCertificate:             verifyClientCertificate,
+		logger:                              logger,
+		crlCache:                            crlCache,
+		customDistributionPointVerification: dpVerify,
 	}
 	_, err := c.loadCAs()
 	if err != nil {
@@ -98,26 +106,52 @@ func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*Cert
 	if err != nil {
 		return nil, err
 	}
-	var removeFilesOnError fn.FuncList
 
-	for _, ca := range config.CAPool {
-		if err = tryToWatchFile(ca, fileWatcher, removeFilesOnError); err != nil {
-			removeFilesOnError.Execute()
+	for _, ca := range c.config.CAPool {
+		if err = tryToWatchFile(ca, c.fileWatcher, cleanUpOnError); err != nil {
 			return nil, fmt.Errorf("cannot watch CAPool: %w", err)
 		}
 	}
-	if err = tryToWatchFile(config.CertFile, fileWatcher, removeFilesOnError); err != nil {
-		removeFilesOnError.Execute()
+	if err = tryToWatchFile(c.config.CertFile, c.fileWatcher, cleanUpOnError); err != nil {
 		return nil, fmt.Errorf("cannot watch CertFile: %w", err)
 	}
-	if err = tryToWatchFile(config.KeyFile, fileWatcher, removeFilesOnError); err != nil {
-		removeFilesOnError.Execute()
+	if err = tryToWatchFile(c.config.KeyFile, c.fileWatcher, cleanUpOnError); err != nil {
 		return nil, fmt.Errorf("cannot watch KeyFile: %w", err)
 	}
 
 	c.onFileChangeFunc = c.onFileChange
 	c.fileWatcher.AddOnEventHandler(&c.onFileChangeFunc)
+	return c, nil
+}
 
+// New creates a new certificate manager which watches for certs in a filesystem
+func New(config Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider, opts ...SetOption) (*CertManager, error) {
+	options := Options{}
+	for _, opt := range opts {
+		opt(&options)
+	}
+
+	verifyClientCertificate := tls.RequireAndVerifyClientCert
+	if !config.ClientCertificateRequired {
+		verifyClientCertificate = tls.NoClientCert
+	}
+
+	var cleanUpOnError fn.FuncList
+	var crlCache *CRLCache
+	if config.CRL.Enabled {
+		var err error
+		crlCache, err = NewCRLCache(config.CRL.HTTP, fileWatcher, logger, tracerProvider)
+		if err != nil {
+			return nil, err
+		}
+		cleanUpOnError.AddFunc(crlCache.Close)
+	}
+
+	c, err := newCertManager(config, fileWatcher, logger, verifyClientCertificate, crlCache, options.CustomDistributionPointVerification, cleanUpOnError)
+	if err != nil {
+		cleanUpOnError.Execute()
+		return nil, err
+	}
 	return c, nil
 }
 
@@ -137,28 +171,50 @@ func (a *CertManager) GetCertificateAuthorities() *x509.CertPool {
 
 // GetServerTLSConfig returns tls configuration for servers
 func (a *CertManager) GetServerTLSConfig() *tls.Config {
-	return &tls.Config{
+	cfg := &tls.Config{
 		ClientCAs:      a.GetCertificateAuthorities(),
 		GetCertificate: a.getServerCertificate,
 		MinVersion:     tls.VersionTLS12,
 		ClientAuth:     a.verifyClientCertificate,
 	}
+	if a.config.CRL.Enabled {
+		cfg.VerifyPeerCertificate = pkgX509.VerifyChains(a.GetCertificateAuthorities(), pkgX509.CRLVerification{
+			Enabled: true,
+			Verify:  a.VerifyByCRL,
+		})
+	}
+	return cfg
 }
 
 // GetClientTLSConfig returns tls configuration for clients
 func (a *CertManager) GetClientTLSConfig() *tls.Config {
-	return &tls.Config{
+	var getClientCertificate func(*tls.CertificateRequestInfo) (*tls.Certificate, error)
+	if a.isSetClientCertificate() {
+		getClientCertificate = a.getClientCertificate
+	}
+
+	cfg := &tls.Config{
 		RootCAs:                  a.GetCertificateAuthorities(),
-		GetClientCertificate:     a.getClientCertificate,
+		GetClientCertificate:     getClientCertificate,
 		PreferServerCipherSuites: true,
 		MinVersion:               tls.VersionTLS12,
 	}
+	if a.config.CRL.Enabled {
+		cfg.VerifyPeerCertificate = pkgX509.VerifyChains(a.GetCertificateAuthorities(), pkgX509.CRLVerification{
+			Enabled: true,
+			Verify:  a.VerifyByCRL,
+		})
+	}
+	return cfg
 }
 
 // Close ends watching certificates
 func (a *CertManager) Close() {
 	if !a.done.CompareAndSwap(false, true) {
 		return
+	}
+	if a.crlCache != nil {
+		a.crlCache.Close()
 	}
 	for _, ca := range a.config.CAPool {
 		if !ca.IsFile() {
@@ -179,6 +235,12 @@ func (a *CertManager) Close() {
 		}
 	}
 	a.fileWatcher.RemoveOnEventHandler(&a.onFileChangeFunc)
+}
+
+func (a *CertManager) isSetClientCertificate() bool {
+	a.private.mutex.Lock()
+	defer a.private.mutex.Unlock()
+	return a.config.CertFile != "" && a.config.KeyFile != ""
 }
 
 func (a *CertManager) getTLSKeyPair() (*tls.Certificate, error) {
@@ -207,7 +269,7 @@ func (a *CertManager) getClientCertificate(*tls.CertificateRequestInfo) (*tls.Ce
 }
 
 func (a *CertManager) loadCertsLocked() (bool, error) {
-	if a.config.KeyFile == "" || a.config.CertFile == "" {
+	if a.config.KeyFile == "" && a.config.CertFile == "" {
 		return false, nil
 	}
 	keyPath := a.config.KeyFile
@@ -363,4 +425,55 @@ func (a *CertManager) onFileChange(event fsnotify.Event) {
 			a.logger.Debugf("Refreshing certificate authorities due to modified file(%v) via event %v", event.Name, event.Op)
 		}
 	}
+}
+
+func (a *CertManager) getHostAndEndpoint(distributionPoint string) (string, string, bool) {
+	u, err := url.ParseRequestURI(distributionPoint)
+	if err != nil {
+		a.logger.Errorf("invalid distribution point(%v): %v", distributionPoint, err)
+		return "", "", false
+	}
+	if u.Scheme == "" || u.Host == "" {
+		a.logger.Errorf("invalid distribution point(%v): missing scheme or host", distributionPoint)
+		return "", "", false
+	}
+	return u.Scheme + "://" + u.Host, u.Path, true
+}
+
+func (a *CertManager) checkCertificateByDistributionPoint(ctx context.Context, certificate *x509.Certificate, dp string) (bool, error) {
+	host, ep, ok := a.getHostAndEndpoint(dp)
+	if !ok {
+		return false, nil
+	}
+	verify, ok := a.customDistributionPointVerification[host]
+	if !ok {
+		return false, nil
+	}
+	a.logger.Debugf("custom distribution point(%s) CRL verification for certificate(serialNumber=%s)", dp, certificate.SerialNumber.String())
+	return true, verify(ctx, certificate, ep)
+}
+
+func (a *CertManager) VerifyByCRL(ctx context.Context, certificate *x509.Certificate, cdps []string) error {
+	if !a.config.CRL.Enabled {
+		return nil
+	}
+
+	for _, dp := range cdps {
+		if a.customDistributionPointVerification != nil {
+			ok, err := a.checkCertificateByDistributionPoint(ctx, certificate, dp)
+			if ok {
+				return err
+			}
+		}
+		crl, err := a.crlCache.GetRevocationList(ctx, dp)
+		if err != nil {
+			a.logger.Errorf("failed to download CRL from distribution point(%v): %v", dp, err)
+			continue
+		}
+		if pkgX509.IsRevoked(certificate, crl) {
+			return pkgX509.ErrRevoked
+		}
+		return nil
+	}
+	return fmt.Errorf("failed to verify certificate(serialNumber=%s) by CRL: all distribution points failed", certificate.SerialNumber.String())
 }

@@ -32,6 +32,21 @@ apis:
       certFile: "/secrets/public/cert.crt"
       clientCertificateRequired: true
       identityPropertiesRequired: true
+      crl:
+        enabled: true
+        http:
+          maxIdleConns: 16
+          maxConnsPerHost: 32
+          maxIdleConnsPerHost: 16
+          idleConnTimeout: "30s"
+          timeout: "10s"
+          tls:
+            caPool: "/secrets/public/rootca.crt"
+            keyFile: "/secrets/private/cert.key"
+            certFile: "/secrets/public/cert.crt"
+            useSystemCAPool: false
+            crl:
+              enabled: false
     authorization:
       ownerClaim: "sub"
       deviceIDClaim: ""
@@ -49,6 +64,8 @@ apis:
               keyFile: "/secrets/private/cert.key"
               certFile: "/secrets/public/cert.crt"
               useSystemCAPool: false
+              crl:
+                enabled: false
       providers:
         - name: "plgd.web"
           clientID: ""
@@ -69,6 +86,8 @@ apis:
               keyFile: "/secrets/private/cert.key"
               certFile: "/secrets/public/cert.crt"
               useSystemCAPool: false
+              crl:
+                enabled: false
         - name: "plgd.mobile"
           clientID: ""
           clientSecretFile: ""
@@ -88,6 +107,8 @@ apis:
               keyFile: "/secrets/private/cert.key"
               certFile: "/secrets/public/cert.crt"
               useSystemCAPool: false
+              crl:
+                enabled: false
       tokenTrustVerification:
         cacheExpiration: 30s
 clients:
@@ -102,6 +123,8 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+        crl:
+          enabled: false
       leadResourceType:
         enabled: false
   identityStore:
@@ -118,6 +141,8 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+        crl:
+          enabled: false
   resourceAggregate:
     grpc:
       address: ""
@@ -132,6 +157,8 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+        crl:
+          enabled: false
   resourceDirectory:
     grpc:
       address: ""
@@ -146,6 +173,8 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+        crl:
+          enabled: false
   certificateAuthority:
     grpc:
       address: ""
@@ -160,6 +189,8 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+        crl:
+          enabled: false
   openTelemetryCollector:
     grpc:
       enabled: false
@@ -175,6 +206,8 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+        crl:
+          enabled: false
 deviceTwin:
   maxETagsCountInRequest: 8
   useETags: false

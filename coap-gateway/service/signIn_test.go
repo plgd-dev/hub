@@ -20,11 +20,12 @@ import (
 	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	"github.com/plgd-dev/hub/v2/grpc-gateway/pb"
-	kitNetGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
+	pkgGrpc "github.com/plgd-dev/hub/v2/pkg/net/grpc"
 	test "github.com/plgd-dev/hub/v2/test"
 	"github.com/plgd-dev/hub/v2/test/config"
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	oauthUri "github.com/plgd-dev/hub/v2/test/oauth-server/uri"
+	testService "github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -73,7 +74,7 @@ func TestSignInDeviceSubscriptionHandler(t *testing.T) {
 	shutdown := setUp(t)
 	defer shutdown()
 
-	ctx := kitNetGrpc.CtxWithToken(context.Background(), oauthTest.GetDefaultAccessToken(t))
+	ctx := pkgGrpc.CtxWithToken(context.Background(), oauthTest.GetDefaultAccessToken(t))
 	conn, err := grpc.NewClient(config.GRPC_GW_HOST, grpc.WithTransportCredentials(credentials.NewTLS(&tls.Config{
 		RootCAs: test.GetRootCertificatePool(t),
 	})))
@@ -121,7 +122,7 @@ func TestSignInDeviceSubscriptionHandler(t *testing.T) {
 func TestSignInWithRequireBatchObserveEnabled(t *testing.T) {
 	coapgwCfg := coapgwTest.MakeConfig(t)
 	coapgwCfg.APIs.COAP.RequireBatchObserveEnabled = true
-	shutdown := setUp(t, coapgwCfg)
+	shutdown := setUp(t, testService.WithCOAPGWConfig(coapgwCfg))
 	defer shutdown()
 
 	co := testCoapDial(t, "", true, true, time.Now().Add(time.Minute))
@@ -137,12 +138,12 @@ func TestSignInWithRequireBatchObserveEnabled(t *testing.T) {
 
 func TestDontCreateObservationAfterRefreshTokenAndSignIn(t *testing.T) {
 	coapgwCfg := coapgwTest.MakeConfig(t)
-	shutdown := setUp(t, coapgwCfg)
+	shutdown := setUp(t, testService.WithCOAPGWConfig(coapgwCfg))
 	defer shutdown()
 
 	h := makeTestCoapHandler(t)
 	observedPath := make(map[string]struct{})
-	co := testCoapDialWithHandler(t, "", true, true, time.Now().Add(time.Minute), func(w *responsewriter.ResponseWriter[*coapTcpClient.Conn], r *pool.Message) {
+	co := testCoapDialWithHandler(t, func(w *responsewriter.ResponseWriter[*coapTcpClient.Conn], r *pool.Message) {
 		if r.Code() != coapCodes.GET {
 			h(w, r)
 			return
@@ -160,7 +161,7 @@ func TestDontCreateObservationAfterRefreshTokenAndSignIn(t *testing.T) {
 		} else {
 			require.NoError(t, errors.New("cannot observe the same resource twice"))
 		}
-	})
+	}, WithGenerateTLS("", true, time.Now().Add(time.Minute)))
 	if co == nil {
 		return
 	}
@@ -248,7 +249,7 @@ func TestSignInWithMTLSAndDeviceIdClaim(t *testing.T) {
 	coapgwCfg.APIs.COAP.TLS.Embedded.ClientCertificateRequired = true
 	coapgwCfg.APIs.COAP.Authorization.DeviceIDClaim = oauthUri.DeviceIDClaimKey
 	coapgwCfg.APIs.COAP.InjectedCOAPConfig.TLSConfig.IdentityPropertiesRequired = true
-	shutdown := setUp(t, coapgwCfg)
+	shutdown := setUp(t, testService.WithCOAPGWConfig(coapgwCfg))
 	defer shutdown()
 
 	signUp := func(deviceID string) service.CoapSignUpResponse {
@@ -291,7 +292,7 @@ func TestCertificateExpiration(t *testing.T) {
 	coapgwCfg.APIs.COAP.Authorization.DeviceIDClaim = oauthUri.DeviceIDClaimKey
 	coapgwCfg.APIs.COAP.InjectedCOAPConfig.TLSConfig.IdentityPropertiesRequired = true
 
-	shutdown := setUp(t, coapgwCfg)
+	shutdown := setUp(t, testService.WithCOAPGWConfig(coapgwCfg))
 	defer shutdown()
 
 	signUp := func(deviceID string) service.CoapSignUpResponse {

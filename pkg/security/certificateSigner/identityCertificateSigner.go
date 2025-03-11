@@ -8,7 +8,7 @@ import (
 
 var ExtendedKeyUsage_IDENTITY_CERTIFICATE = asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 44924, 1, 6}
 
-func NewIdentityCertificateSigner(caCert []*x509.Certificate, caKey crypto.PrivateKey, opts ...Opt) *CertificateSigner {
+func NewIdentityCertificateSigner(caCert []*x509.Certificate, caKey crypto.PrivateKey, opts ...Opt) (*CertificateSigner, error) {
 	var cfg SignerConfig
 	for _, o := range opts {
 		o(&cfg)

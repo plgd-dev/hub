@@ -38,6 +38,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
+	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 	"github.com/plgd-dev/hub/v2/pkg/service"
 	"github.com/plgd-dev/hub/v2/pkg/sync/task/queue"
 	raClient "github.com/plgd-dev/hub/v2/resource-aggregate/client"
@@ -227,7 +228,6 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
 	}
 	otelClient.AddCloseFunc(cancel)
-
 	tracerProvider := otelClient.GetTracerProvider()
 
 	queue, err := queue.New(config.TaskQueue)
@@ -236,7 +236,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		return nil, fmt.Errorf("cannot create job queue %w", err)
 	}
 
-	nats, err := natsClient.New(config.Clients.Eventbus.NATS.Config, fileWatcher, logger)
+	nats, err := natsClient.New(config.Clients.Eventbus.NATS.Config, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		otelClient.Close()
 		queue.Release()
@@ -342,7 +342,7 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		tracerProvider:     tracerProvider,
 	}
 
-	ss, err := s.createServices(fileWatcher, logger)
+	ss, err := s.createServices(fileWatcher, logger, tracerProvider)
 	if err != nil {
 		nats.Close()
 		return nil, fmt.Errorf("cannot create services: %w", err)
@@ -577,7 +577,7 @@ func (s *Service) authMiddleware(next mux.Handler) mux.Handler {
 }
 
 // createServices setup services for coap-gateway.
-func (s *Service) createServices(fileWatcher *fsnotify.Watcher, logger log.Logger) (*service.Service, error) {
+func (s *Service) createServices(fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*service.Service, error) {
 	setHandlerError := func(uri string, err error) error {
 		return fmt.Errorf("failed to set %v handler: %w", uri, err)
 	}
@@ -617,12 +617,12 @@ func (s *Service) createServices(fileWatcher *fsnotify.Watcher, logger log.Logge
 		return nil, setHandlerError(plgdtime.ResourceURI, err)
 	}
 
-	services, err := coapService.New(s.ctx, s.config.APIs.COAP.Config, m, fileWatcher, logger,
+	services, err := coapService.New(s.ctx, s.config.APIs.COAP.Config, m, fileWatcher, logger, tracerProvider,
 		coapService.WithOnNewConnection(s.coapConnOnNew),
 		coapService.WithOnInactivityConnection(s.onInactivityConnection),
 		coapService.WithMessagePool(s.messagePool),
-		coapService.WithOverrideTLS(func(cfg *tls.Config) *tls.Config {
-			tlsCfg := MakeGetConfigForClient(cfg, s.config.APIs.COAP.InjectedCOAPConfig.TLSConfig.IdentityPropertiesRequired)
+		coapService.WithOverrideTLS(func(cfg *tls.Config, verifyByCRL pkgX509.VerifyByCRL) *tls.Config {
+			tlsCfg := MakeGetConfigForClient(cfg, s.config.APIs.COAP.InjectedCOAPConfig.TLSConfig.IdentityPropertiesRequired, s.config.APIs.COAP.Config.TLS.Embedded.CRL.Enabled, verifyByCRL)
 			return &tlsCfg
 		}),
 	)

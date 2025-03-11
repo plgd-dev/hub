@@ -20,6 +20,10 @@ message CredentialStatus {
   string certificate_pem = 2; // @gotags: bson:"identityCertificate"
   // Record valid until date, in unix nanoseconds timestamp format
   int64 valid_until_date = 3; // @gotags: bson:"validUntilDate"
+  // Serial number of the last certificate issued
+  string serial = 4;  // @gotags: bson:"serial"
+  // Issuer id is calculated from the issuer's public certificate, and it is computed as uuid.NewSHA1(uuid.NameSpaceX500, publicKeyRaw)
+  string issuer_id = 5; // @gotags: bson:"issuerId"
 }
 
 message SigningRecord  {
@@ -46,6 +50,7 @@ message DeleteSigningRecordsRequest {
   repeated string device_id_filter = 2;
 }
 
+// Revoke or delete certificates
 message DeletedSigningRecords {
   // Number of deleted records.
   int64 count = 1;

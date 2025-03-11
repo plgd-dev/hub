@@ -2,13 +2,17 @@ package service
 
 import (
 	"context"
+	"crypto/x509"
 	"errors"
 	"fmt"
+	"math/big"
+	"strings"
 	"time"
 
 	"github.com/go-co-op/gocron/v2"
 	grpcService "github.com/plgd-dev/hub/v2/certificate-authority/service/grpc"
 	httpService "github.com/plgd-dev/hub/v2/certificate-authority/service/http"
+	"github.com/plgd-dev/hub/v2/certificate-authority/service/uri"
 	"github.com/plgd-dev/hub/v2/certificate-authority/store"
 	storeConfig "github.com/plgd-dev/hub/v2/certificate-authority/store/config"
 	"github.com/plgd-dev/hub/v2/certificate-authority/store/cqldb"
@@ -17,9 +21,11 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/fn"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	pkgHttpUri "github.com/plgd-dev/hub/v2/pkg/net/http/uri"
 	"github.com/plgd-dev/hub/v2/pkg/net/listener"
 	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
+	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 	"github.com/plgd-dev/hub/v2/pkg/service"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -84,6 +90,58 @@ func newStore(ctx context.Context, config StorageConfig, fileWatcher *fsnotify.W
 	return db, fl.ToFunction(), nil
 }
 
+func errVerifyDistributionPoint(err error) error {
+	return fmt.Errorf("failed to verify distribution point: %w", err)
+}
+
+func getIssuerFromEndpoint(addr string) (string, error) {
+	prefix := uri.SigningRevocationListBase + "/"
+	var issuerID string
+	if strings.HasPrefix(addr, prefix) {
+		issuerID = strings.TrimPrefix(addr, prefix)
+		// ignore everything after next "/"
+		if len(issuerID) > 36 && issuerID[36] == '/' {
+			issuerID = issuerID[:36]
+		}
+	}
+	// uuid string is 36 chars long
+	if len(issuerID) != 36 {
+		return "", errVerifyDistributionPoint(fmt.Errorf("invalid issuerID(%s)", issuerID))
+	}
+	return issuerID, nil
+}
+
+func getVerifyCertificateByCRLFromStorage(s store.Store, logger log.Logger) func(ctx context.Context, certificate *x509.Certificate, endpoint string) error {
+	return func(ctx context.Context, certificate *x509.Certificate, endpoint string) error {
+		// get issuer from endpoint /certificate-authority/api/v1/signing/crl/{$issuerID}
+		issuerID, err := getIssuerFromEndpoint(endpoint)
+		if err != nil {
+			return err
+		}
+
+		rl, err := s.GetRevocationList(ctx, issuerID, false)
+		if err != nil {
+			if errors.Is(err, store.ErrNotFound) {
+				return nil
+			}
+			return errVerifyDistributionPoint(err)
+		}
+
+		for _, revoked := range rl.Certificates {
+			serial := &big.Int{}
+			_, ok := serial.SetString(revoked.Serial, 10)
+			if !ok {
+				logger.Debugf("invalid serial number: %s", revoked.Serial)
+				continue
+			}
+			if certificate.SerialNumber.Cmp(serial) == 0 {
+				return pkgX509.ErrRevoked
+			}
+		}
+		return nil
+	}
+}
+
 func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logger log.Logger) (*service.Service, error) {
 	otelClient, err := otelClient.New(ctx, config.Clients.OpenTelemetryCollector, "certificate-authority", fileWatcher, logger)
 	if err != nil {
@@ -100,13 +158,23 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 	}
 	closerFn.AddFunc(closeStore)
 
-	ca, err := grpcService.NewCertificateAuthorityServer(config.APIs.GRPC.Authorization.OwnerClaim, config.HubID, config.Signer, dbStorage, fileWatcher, logger)
+	externalAddress := pkgHttpUri.CanonicalURI(config.APIs.HTTP.ExternalAddress)
+	crlEnabled := externalAddress != "" && dbStorage.SupportsRevocationList() && config.Signer.CRL.Enabled
+	config.Signer.CRL.Enabled = crlEnabled
+	ca, err := grpcService.NewCertificateAuthorityServer(config.APIs.GRPC.Authorization.OwnerClaim, config.HubID, externalAddress, config.Signer, dbStorage, fileWatcher, logger)
 	if err != nil {
 		closerFn.Execute()
 		return nil, fmt.Errorf("cannot create grpc certificate authority server: %w", err)
 	}
 	closerFn.AddFunc(ca.Close)
-	httpValidator, err := validator.New(ctx, config.APIs.GRPC.Authorization.Config, fileWatcher, logger, tracerProvider)
+
+	var customDistributionPointCRLVerification pkgX509.CustomDistributionPointVerification
+	if crlEnabled {
+		customDistributionPointCRLVerification = pkgX509.CustomDistributionPointVerification{
+			externalAddress: getVerifyCertificateByCRLFromStorage(dbStorage, logger),
+		}
+	}
+	httpValidator, err := validator.New(ctx, config.APIs.GRPC.Authorization.Config, fileWatcher, logger, tracerProvider, validator.WithCustomDistributionPointVerification(customDistributionPointCRLVerification))
 	if err != nil {
 		closerFn.Execute()
 		return nil, fmt.Errorf("cannot create http validator: %w", err)
@@ -119,18 +187,19 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		},
 		Authorization: config.APIs.GRPC.Authorization.Config,
 		Server:        config.APIs.HTTP.Server,
-	}, ca, httpValidator, fileWatcher, logger, tracerProvider)
+		CRLEnabled:    crlEnabled,
+	}, dbStorage, ca, httpValidator, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		closerFn.Execute()
 		return nil, fmt.Errorf("cannot create http service: %w", err)
 	}
-	grpcValidator, err := validator.New(ctx, config.APIs.GRPC.Authorization.Config, fileWatcher, logger, tracerProvider)
+	grpcValidator, err := validator.New(ctx, config.APIs.GRPC.Authorization.Config, fileWatcher, logger, tracerProvider, validator.WithCustomDistributionPointVerification(customDistributionPointCRLVerification))
 	if err != nil {
 		closerFn.Execute()
 		_ = httpService.Close()
 		return nil, fmt.Errorf("cannot create grpc validator: %w", err)
 	}
-	grpcService, err := grpcService.New(config.APIs.GRPC, ca, grpcValidator, fileWatcher, logger, tracerProvider)
+	grpcService, err := grpcService.New(config.APIs.GRPC, ca, grpcValidator, fileWatcher, logger, tracerProvider, customDistributionPointCRLVerification)
 	if err != nil {
 		closerFn.Execute()
 		_ = httpService.Close()

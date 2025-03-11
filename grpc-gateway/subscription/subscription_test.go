@@ -200,7 +200,7 @@ func prepareServicesAndSubscription(t *testing.T, owner, correlationID string, l
 
 	pool, err := ants.NewPool(1)
 	require.NoError(t, err)
-	natsConn, resourceSubscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(), fileWatcher, log.Get(), subscriber.WithGoPool(pool.Submit), subscriber.WithUnmarshaler(utils.Unmarshal))
+	natsConn, resourceSubscriber, err := natsTest.NewClientAndSubscriber(config.MakeSubscriberConfig(), fileWatcher, log.Get(), noop.NewTracerProvider(), subscriber.WithGoPool(pool.Submit), subscriber.WithUnmarshaler(utils.Unmarshal))
 	require.NoError(t, err)
 	cleanUp.AddFunc(func() {
 		resourceSubscriber.Close()

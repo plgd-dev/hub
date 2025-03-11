@@ -64,6 +64,7 @@ spec:
               mountPath: {{ $rdServiceCert }}
             {{- end }}
             {{- include "plgd-hub.extraCAPoolMount" (list . .Values.extraCAPool.storage) | nindent 12 }}
+            {{- include "plgd-hub.crlMount" (list . .Values.crl.storage) | nindent 12 }}
             {{- with .Values.mongodb.standbyTool.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
@@ -80,6 +81,7 @@ spec:
             secretName: {{ include "plgd-hub.mongodb-standby-tool.jobCertName" . }}
         {{- end }}
         {{- include "plgd-hub.extraCAPoolVolume" (list . .Values.extraCAPool.storage) | nindent 8 }}
+        {{- include "plgd-hub.crlVolume" (list . .Values.crl.storage) | nindent 8 }}
         {{- with .Values.mongodb.standbyTool.extraVolumes }}
         {{- toYaml . | nindent 8 }}
         {{- end }}

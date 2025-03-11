@@ -39,10 +39,12 @@ data:
           {{- $tls := .apis.grpc.tls }}
           {{- include "plgd-hub.internalCertificateConfig" (list $ $tls $cert ) | indent 8 }}
           clientCertificateRequired: {{ .apis.grpc.tls.clientCertificateRequired }}
+          {{- include "plgd-hub.crlInternalConfig" (list $ $tls.crl) | indent 10 }}
         authorization:
           {{- $authorization := .apis.grpc.authorization }}
           {{- include "plgd-hub.authorizationConfig" (list $ $authorization "certificateauthority.apis.grpc.authorization" $cert ) | indent 8 }}
       http:
+        externalAddress: {{ .apis.http.externalAddress  | default (printf "https://%s" (include "plgd-hub.certificateauthority.domain" $ )) | quote }}
         address: {{  .apis.http.address | default (printf "0.0.0.0:%v" .httpPort) | quote }}
         readTimeout: {{ .apis.http.readTimeout }}
         readHeaderTimeout: {{ .apis.http.readHeaderTimeout }}
@@ -61,10 +63,7 @@ data:
             {{- $mongoDbTls := .clients.storage.mongoDB.tls }}
             {{- include "plgd-hub.internalCertificateConfig" (list $ $mongoDbTls $cert ) | indent 10 }}
             useSystemCAPool: {{ .clients.storage.mongoDB.tls.useSystemCAPool }}
-          bulkWrite:
-            timeout: {{ .clients.storage.mongoDB.bulkWrite.timeout  | quote }}
-            throttleTime: {{ .clients.storage.mongoDB.bulkWrite.throttleTime  | quote }}
-            documentLimit: {{ .clients.storage.mongoDB.bulkWrite.documentLimit  }}
+            {{- include "plgd-hub.crlInternalConfig" (list $ $mongoDbTls.crl) | indent 12 }}
         cqlDB:
           hosts:
           {{- include "plgd-hub.cqlDBHosts" (list $ .clients.storage.cqlDB.hosts ) | indent 8 }}
@@ -86,6 +85,7 @@ data:
             {{- $cqlDbTls := .clients.storage.cqlDB.tls }}
             {{- include "plgd-hub.internalCertificateConfig" (list $ $cqlDbTls $cert ) | indent 10 }}
             useSystemCAPool: {{ .clients.storage.cqlDB.tls.useSystemCAPool }}
+            {{- include "plgd-hub.crlInternalConfig" (list $ $cqlDbTls.crl) | indent 12 }}
       {{- include "plgd-hub.openTelemetryExporterConfig" (list $ $cert ) | nindent 6 }}
     signer:
     {{- if .signer.caPool }}
@@ -97,5 +97,8 @@ data:
       keyFile: {{ .signer.keyFile | default ( printf "%s/%s" $.Values.certificateauthority.ca.volume.mountPath $.Values.certificateauthority.ca.key ) | quote }}
       validFrom: {{ .signer.validFrom | quote }}
       expiresIn: {{ .signer.expiresIn | quote }}
+      crl:
+        enabled: {{ .signer.crl.enabled }}
+        expiresIn: {{ .signer.crl.expiresIn | quote }}
   {{- end }}
 {{- end }}

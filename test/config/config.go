@@ -19,7 +19,6 @@ import (
 	pkgMongo "github.com/plgd-dev/hub/v2/pkg/mongodb"
 	grpcClient "github.com/plgd-dev/hub/v2/pkg/net/grpc/client"
 	grpcServer "github.com/plgd-dev/hub/v2/pkg/net/grpc/server"
-	httpClient "github.com/plgd-dev/hub/v2/pkg/net/http/client"
 	httpServer "github.com/plgd-dev/hub/v2/pkg/net/http/server"
 	"github.com/plgd-dev/hub/v2/pkg/net/listener"
 	otelClient "github.com/plgd-dev/hub/v2/pkg/opentelemetry/collector/client"
@@ -28,6 +27,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/security/jwt/validator"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2"
 	"github.com/plgd-dev/hub/v2/pkg/security/oauth2/oauth"
+	pkgTls "github.com/plgd-dev/hub/v2/pkg/security/tls"
 	natsClient "github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventbus/nats/client"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/cqldb"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/cqrs/eventstore/mongodb"
@@ -182,8 +182,8 @@ func MakeListenerConfig(address string) listener.Config {
 	}
 }
 
-func MakeHttpClientConfig() httpClient.Config {
-	return httpClient.Config{
+func MakeHttpClientConfig() pkgTls.HTTPConfig {
+	return pkgTls.HTTPConfig{
 		MaxIdleConns:        16,
 		MaxConnsPerHost:     32,
 		MaxIdleConnsPerHost: 16,

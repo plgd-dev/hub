@@ -64,7 +64,7 @@ func newTestService(t *testing.T) (*Server, func()) {
 	fileWatcher, err := fsnotify.NewWatcher(logger)
 	require.NoError(t, err)
 
-	naClient, publisher, err := natsTest.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, fileWatcher, logger)
+	naClient, publisher, err := natsTest.NewClientAndPublisher(cfg.Clients.Eventbus.NATS, fileWatcher, logger, noop.NewTracerProvider())
 	require.NoError(t, err)
 
 	s, err := NewServer(context.Background(), cfg, fileWatcher, logger, noop.NewTracerProvider(), publisher)

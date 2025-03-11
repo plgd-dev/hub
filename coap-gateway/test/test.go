@@ -1,4 +1,4 @@
-package service
+package test
 
 import (
 	"context"
@@ -44,6 +44,9 @@ func MakeConfig(t require.TestingT) service.Config {
 	cfg.APIs.COAP.TLS.Embedded.ClientCertificateRequired = false
 	cfg.APIs.COAP.TLS.Embedded.CertFile = urischeme.URIScheme(os.Getenv("TEST_COAP_GW_CERT_FILE"))
 	cfg.APIs.COAP.TLS.Embedded.KeyFile = urischeme.URIScheme(os.Getenv("TEST_COAP_GW_KEY_FILE"))
+	cfg.APIs.COAP.TLS.Embedded.CRL.Enabled = true
+	httpClientConfig := config.MakeHttpClientConfig()
+	cfg.APIs.COAP.TLS.Embedded.CRL.HTTP = &httpClientConfig
 	cfg.APIs.COAP.Authorization = service.AuthorizationConfig{
 		OwnerClaim: config.OWNER_CLAIM,
 		Providers: []service.ProvidersConfig{

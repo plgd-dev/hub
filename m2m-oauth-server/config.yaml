@@ -28,6 +28,8 @@ apis:
       keyFile: "/secrets/private/cert.key"
       certFile: "/secrets/private/cert.crt"
       clientCertificateRequired: true
+      crl:
+        enabled: false
     authorization:
       ownerClaim: "sub"
       audience: ""
@@ -44,6 +46,8 @@ apis:
               keyFile: "/secrets/private/cert.key"
               certFile: "/secrets/public/cert.crt"
               useSystemCAPool: false
+              crl:
+                enabled: false
       tokenTrustVerification:
         cacheExpiration: 30s
 clients:
@@ -60,6 +64,8 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+        crl:
+          enabled: false
   openTelemetryCollector:
     grpc:
       enabled: false
@@ -75,6 +81,8 @@ clients:
         keyFile: "/secrets/private/cert.key"
         certFile: "/secrets/public/cert.crt"
         useSystemCAPool: false
+        crl:
+          enabled: false
 oauthSigner:
   privateKeyFile: "/secrets/private/private.key"
   domain:

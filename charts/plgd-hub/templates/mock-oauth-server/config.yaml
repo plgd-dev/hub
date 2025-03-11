@@ -27,6 +27,7 @@ data:
           {{- $tls := .apis.http.tls }}
           {{- include "plgd-hub.internalCertificateConfig" (list $ $tls $oauthServerCertPath ) | indent 8 }}
           clientCertificateRequired: {{ .apis.http.tls.clientCertificateRequired }}
+          {{- include "plgd-hub.crlInternalConfig" (list $ $tls.crl) | indent 10 }}
     oauthSigner:
       idTokenKeyFile: {{ .oauthSigner.idTokenKeyFile | quote }}
       accessTokenKeyFile: {{ .oauthSigner.accessTokenKeyFile | quote }}

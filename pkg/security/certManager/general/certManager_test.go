@@ -18,6 +18,7 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/security/certManager/general"
 	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace/noop"
 )
 
 func getCA(t *testing.T, validFrom time.Time, validFor time.Duration) ([]byte, *ecdsa.PrivateKey) {
@@ -79,7 +80,7 @@ func TestNew(t *testing.T) {
 	defer func() {
 		_ = fileWatcher.Close()
 	}()
-	mng, err := general.New(config, fileWatcher, logger)
+	mng, err := general.New(config, fileWatcher, logger, noop.NewTracerProvider())
 	require.NoError(t, err)
 	defer mng.Close()
 
@@ -173,7 +174,7 @@ func TestCertManagerWithExpiredCA(t *testing.T) {
 	defer func() {
 		_ = fileWatcher.Close()
 	}()
-	mng, err := general.New(config, fileWatcher, logger)
+	mng, err := general.New(config, fileWatcher, logger, noop.NewTracerProvider())
 	require.NoError(t, err)
 	defer mng.Close()
 	pool := mng.GetCertificateAuthorities()
@@ -227,7 +228,7 @@ func TestCertManagerWithExpiredCertificate(t *testing.T) {
 	defer func() {
 		_ = fileWatcher.Close()
 	}()
-	mng, err := general.New(config, fileWatcher, logger)
+	mng, err := general.New(config, fileWatcher, logger, noop.NewTracerProvider())
 	require.NoError(t, err)
 	defer mng.Close()
 

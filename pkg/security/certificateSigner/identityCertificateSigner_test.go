@@ -21,7 +21,9 @@ func newIdentitySigner(t *testing.T) *CertificateSigner {
 	require.NotEmpty(t, identityIntermediateCAKeyBlock)
 	identityIntermediateCAKey, err := x509.ParseECPrivateKey(identityIntermediateCAKeyBlock.Bytes)
 	require.NoError(t, err)
-	return NewIdentityCertificateSigner(identityIntermediateCA, identityIntermediateCAKey, WithNotBefore(time.Now()), WithNotAfter(time.Now().Add(time.Hour*86400)))
+	signer, err := NewIdentityCertificateSigner(identityIntermediateCA, identityIntermediateCAKey, WithNotBefore(time.Now()), WithNotAfter(time.Now().Add(time.Hour*86400)))
+	require.NoError(t, err)
+	return signer
 }
 
 func TestIdentityCertificateSignerSign(t *testing.T) {
@@ -72,7 +74,6 @@ func TestIdentityCertificateSignerSign(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := s.Sign(context.Background(), tt.args.csr)
-
 			if tt.wantErr {
 				require.Error(t, err)
 				return

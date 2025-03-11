@@ -10,10 +10,12 @@ import (
 	"github.com/plgd-dev/hub/v2/pkg/fn"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
-	"github.com/plgd-dev/hub/v2/pkg/net/http/client"
 	pkgHttpUri "github.com/plgd-dev/hub/v2/pkg/net/http/uri"
+	cmClient "github.com/plgd-dev/hub/v2/pkg/security/certManager/client"
+	"github.com/plgd-dev/hub/v2/pkg/security/certManager/general"
 	jwtValidator "github.com/plgd-dev/hub/v2/pkg/security/jwt"
 	"github.com/plgd-dev/hub/v2/pkg/security/openid"
+	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -44,8 +46,9 @@ func (v *Validator) GetParser() *jwtValidator.Validator {
 type GetOpenIDConfigurationFunc func(ctx context.Context, c *http.Client, authority string) (openid.Config, error)
 
 type Options struct {
-	getOpenIDConfiguration   GetOpenIDConfigurationFunc
-	customTokenIssuerClients map[string]jwtValidator.TokenIssuerClient
+	getOpenIDConfiguration              GetOpenIDConfigurationFunc
+	customTokenIssuerClients            map[string]jwtValidator.TokenIssuerClient
+	customDistributionPointVerification pkgX509.CustomDistributionPointVerification
 }
 
 func WithGetOpenIDConfiguration(f GetOpenIDConfigurationFunc) func(o *Options) {
@@ -57,6 +60,12 @@ func WithGetOpenIDConfiguration(f GetOpenIDConfigurationFunc) func(o *Options) {
 func WithCustomTokenIssuerClients(clients map[string]jwtValidator.TokenIssuerClient) func(o *Options) {
 	return func(o *Options) {
 		o.customTokenIssuerClients = clients
+	}
+}
+
+func WithCustomDistributionPointVerification(dpVerification pkgX509.CustomDistributionPointVerification) func(o *Options) {
+	return func(o *Options) {
+		o.customDistributionPointVerification = dpVerification
 	}
 }
 
@@ -78,12 +87,16 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		return nil, errors.New("no endpoints")
 	}
 
+	cmOptions := []general.SetOption{}
+	if options.customDistributionPointVerification != nil {
+		cmOptions = append(cmOptions, general.WithCustomDistributionPointVerification(options.customDistributionPointVerification))
+	}
 	keys := jwtValidator.NewMultiKeyCache()
 	var onClose fn.FuncList
 	openIDConfigurations := make([]openid.Config, 0, len(config.Endpoints))
 	clients := make(map[string]jwtValidator.TokenIssuerClient, len(config.Endpoints))
 	for _, authority := range config.Endpoints {
-		httpClient, err := client.New(authority.HTTP, fileWatcher, logger, tracerProvider)
+		httpClient, err := cmClient.NewHTTPClient(&authority.HTTP, fileWatcher, logger, tracerProvider, cmOptions...)
 		if err != nil {
 			onClose.Execute()
 			return nil, fmt.Errorf("cannot create client cert manager: %w", err)

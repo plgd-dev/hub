@@ -92,7 +92,7 @@ func ClearDB(ctx context.Context, t require.TestingT) {
 		err = fileWatcher.Close()
 		require.NoError(t, err)
 	}()
-	certManager, err := cmClient.New(tlsConfig, fileWatcher, logger)
+	certManager, err := cmClient.New(tlsConfig, fileWatcher, logger, noop.NewTracerProvider())
 	require.NoError(t, err)
 	defer certManager.Close()
 

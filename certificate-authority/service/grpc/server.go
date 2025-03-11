@@ -2,7 +2,10 @@ package grpc
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"fmt"
+	"time"
 
 	"github.com/plgd-dev/hub/v2/certificate-authority/pb"
 	"github.com/plgd-dev/hub/v2/certificate-authority/store"
@@ -23,18 +26,24 @@ type CertificateAuthorityServer struct {
 	hubID            string
 	fileWatcher      *fsnotify.Watcher
 	onFileChangeFunc func(event fsnotify.Event)
+	crlServerAddress string
 
 	signer atomic.Pointer[Signer]
 }
 
-func NewCertificateAuthorityServer(ownerClaim string, hubID string, signerConfig SignerConfig, store store.Store, fileWatcher *fsnotify.Watcher, logger log.Logger) (*CertificateAuthorityServer, error) {
+func NewCertificateAuthorityServer(ownerClaim, hubID, crlServerAddress string, signerConfig SignerConfig, store store.Store, fileWatcher *fsnotify.Watcher, logger log.Logger) (*CertificateAuthorityServer, error) {
+	if err := signerConfig.Validate(); err != nil {
+		return nil, err
+	}
+
 	s := &CertificateAuthorityServer{
-		signerConfig: signerConfig,
-		logger:       logger,
-		ownerClaim:   ownerClaim,
-		store:        store,
-		hubID:        hubID,
-		fileWatcher:  fileWatcher,
+		signerConfig:     signerConfig,
+		logger:           logger,
+		ownerClaim:       ownerClaim,
+		store:            store,
+		hubID:            hubID,
+		fileWatcher:      fileWatcher,
+		crlServerAddress: crlServerAddress,
 	}
 
 	_, err := s.load()
@@ -78,6 +87,24 @@ func NewCertificateAuthorityServer(ownerClaim string, hubID string, signerConfig
 	return s, nil
 }
 
+func (s *CertificateAuthorityServer) initStore(issuerID string) error {
+	if s.store.SupportsRevocationList() {
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+		err := s.store.InsertRevocationLists(ctx, &store.RevocationList{
+			Id:     issuerID,
+			Number: "1",
+		})
+		if errors.Is(err, store.ErrDuplicateID) {
+			return nil
+		}
+		if err != nil {
+			return fmt.Errorf("failed to create revocation list: %w", err)
+		}
+	}
+	return nil
+}
+
 func (s *CertificateAuthorityServer) Close() {
 	for _, ca := range s.signerConfig.caPoolArray {
 		if !ca.IsFile() {
@@ -100,7 +127,7 @@ func (s *CertificateAuthorityServer) Close() {
 }
 
 func (s *CertificateAuthorityServer) load() (bool, error) {
-	signer, err := NewSigner(s.ownerClaim, s.hubID, s.signerConfig)
+	signer, err := NewSigner(s.ownerClaim, s.hubID, s.crlServerAddress, s.signerConfig)
 	if err != nil {
 		return false, fmt.Errorf("cannot create signer: %w", err)
 	}
@@ -108,6 +135,9 @@ func (s *CertificateAuthorityServer) load() (bool, error) {
 	oldSigner := s.signer.Load()
 	if oldSigner != nil && len(signer.certificate) == len(oldSigner.certificate) && bytes.Equal(signer.certificate[0].Raw, oldSigner.certificate[0].Raw) {
 		return false, nil
+	}
+	if err = s.initStore(signer.GetIssuerID()); err != nil {
+		return false, err
 	}
 	return s.signer.CompareAndSwap(oldSigner, signer), nil
 }

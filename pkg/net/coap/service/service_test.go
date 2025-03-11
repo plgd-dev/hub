@@ -14,10 +14,12 @@ import (
 	"github.com/plgd-dev/go-coap/v3/tcp"
 	"github.com/plgd-dev/hub/v2/pkg/fsnotify"
 	"github.com/plgd-dev/hub/v2/pkg/log"
+	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 	"github.com/plgd-dev/hub/v2/pkg/service"
 	"github.com/plgd-dev/hub/v2/test/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace/noop"
 	"go.uber.org/atomic"
 )
 
@@ -63,7 +65,7 @@ func TestNew(t *testing.T) {
 					WithMessagePool(pool.New(uint32(1024), 1024)),
 					WithOnNewConnection(func(mux.Conn) {}),
 					WithOnInactivityConnection(func(mux.Conn) {}),
-					WithOverrideTLS(func(cfg *tls.Config) *tls.Config { return cfg }),
+					WithOverrideTLS(func(cfg *tls.Config, _ pkgX509.VerifyByCRL) *tls.Config { return cfg }),
 				},
 			},
 		},
@@ -90,7 +92,7 @@ func TestNew(t *testing.T) {
 					WithMessagePool(pool.New(uint32(1024), 1024)),
 					WithOnNewConnection(func(mux.Conn) {}),
 					WithOnInactivityConnection(func(mux.Conn) {}),
-					WithOverrideTLS(func(cfg *tls.Config) *tls.Config { return cfg }),
+					WithOverrideTLS(func(cfg *tls.Config, _ pkgX509.VerifyByCRL) *tls.Config { return cfg }),
 				},
 			},
 		},
@@ -101,7 +103,7 @@ func TestNew(t *testing.T) {
 			logger := log.NewLogger(log.MakeDefaultConfig())
 			fileWatcher, err := fsnotify.NewWatcher(logger)
 			require.NoError(t, err)
-			got, err := New(context.Background(), tt.args.config, router, fileWatcher, logger, tt.args.options...)
+			got, err := New(context.Background(), tt.args.config, router, fileWatcher, logger, noop.NewTracerProvider(), tt.args.options...)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
@@ -146,7 +148,7 @@ func TestOnClientInactivityTCP(t *testing.T) {
 	defer cancel()
 
 	closeChan := make(chan struct{}, 2)
-	got, err := New(ctx, cfg, router, fileWatcher, logger, WithOnNewConnection(func(conn mux.Conn) {
+	got, err := New(ctx, cfg, router, fileWatcher, logger, noop.NewTracerProvider(), WithOnNewConnection(func(conn mux.Conn) {
 		conn.AddOnClose(func() {
 			closeChan <- struct{}{}
 		})
@@ -211,7 +213,7 @@ func TestOnClientInactivityUDP(t *testing.T) {
 	defer cancel()
 
 	closeChan := make(chan struct{}, 2)
-	got, err := New(ctx, cfg, router, fileWatcher, logger, WithOnNewConnection(func(conn mux.Conn) {
+	got, err := New(ctx, cfg, router, fileWatcher, logger, noop.NewTracerProvider(), WithOnNewConnection(func(conn mux.Conn) {
 		conn.AddOnClose(func() {
 			closeChan <- struct{}{}
 		})
@@ -277,7 +279,7 @@ func TestOnClientInactivityCustomTCP(t *testing.T) {
 
 	var numInactiveClients atomic.Int32
 	closeChan := make(chan struct{}, 2)
-	got, err := New(ctx, cfg, router, fileWatcher, logger, WithOnInactivityConnection(func(conn mux.Conn) {
+	got, err := New(ctx, cfg, router, fileWatcher, logger, noop.NewTracerProvider(), WithOnInactivityConnection(func(conn mux.Conn) {
 		numInactiveClients.Inc()
 		errC := conn.Close()
 		require.NoError(t, errC)
@@ -348,7 +350,7 @@ func TestOnClientInactivityCustomUDP(t *testing.T) {
 
 	var numInactiveClients atomic.Int32
 	closeChan := make(chan struct{}, 2)
-	got, err := New(ctx, cfg, router, fileWatcher, logger, WithOnInactivityConnection(func(conn mux.Conn) {
+	got, err := New(ctx, cfg, router, fileWatcher, logger, noop.NewTracerProvider(), WithOnInactivityConnection(func(conn mux.Conn) {
 		numInactiveClients.Inc()
 		errC := conn.Close()
 		require.NoError(t, errC)

@@ -89,9 +89,9 @@ func newIdentityStoreClient(config IdentityStoreConfig, fileWatcher *fsnotify.Wa
 	return pbIS.NewIdentityStoreClient(isConn.GRPC()), closeIsConn, nil
 }
 
-func newSubscriber(config natsClient.ConfigSubscriber, fileWatcher *fsnotify.Watcher, logger log.Logger) (*subscriber.Subscriber, func(), error) {
+func newSubscriber(config natsClient.ConfigSubscriber, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*subscriber.Subscriber, func(), error) {
 	var fl fn.FuncList
-	nats, err := natsClient.New(config.Config, fileWatcher, logger)
+	nats, err := natsClient.New(config.Config, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create nats client: %w", err)
 	}
@@ -110,7 +110,7 @@ func newSubscriber(config natsClient.ConfigSubscriber, fileWatcher *fsnotify.Wat
 
 func newStore(ctx context.Context, config pkgMongo.Config, fileWatcher *fsnotify.Watcher, logger log.Logger, tracerProvider trace.TracerProvider) (*Store, func(), error) {
 	var fl fn.FuncList
-	certManager, err := cmClient.New(config.TLS, fileWatcher, logger)
+	certManager, err := cmClient.New(config.TLS, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("cannot create cert manager: %w", err)
 	}
@@ -175,7 +175,7 @@ func newDevicesSubscription(ctx context.Context, config Config, raClient raServi
 	}
 	fl.AddFunc(closeGrpcClient)
 
-	sub, closeSub, err := newSubscriber(config.Clients.Eventbus.NATS, fileWatcher, logger)
+	sub, closeSub, err := newSubscriber(config.Clients.Eventbus.NATS, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		fl.Execute()
 		return nil, nil, fmt.Errorf("cannot create subscriber: %w", err)
@@ -195,10 +195,9 @@ func New(ctx context.Context, config Config, fileWatcher *fsnotify.Watcher, logg
 		return nil, fmt.Errorf("cannot create open telemetry collector client: %w", err)
 	}
 	otelClient.AddCloseFunc(cancel)
-
 	tracerProvider := otelClient.GetTracerProvider()
 
-	listener, err := listener.New(config.APIs.HTTP.Connection, fileWatcher, logger)
+	listener, err := listener.New(config.APIs.HTTP.Connection, fileWatcher, logger, tracerProvider)
 	if err != nil {
 		otelClient.Close()
 		return nil, fmt.Errorf("cannot create http server: %w", err)

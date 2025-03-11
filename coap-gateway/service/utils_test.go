@@ -6,12 +6,8 @@ package service_test
 import (
 	"bytes"
 	"context"
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/pem"
 	"errors"
 	"io"
 	"os"
@@ -19,7 +15,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/plgd-dev/device/v2/pkg/security/generateCertificate"
 	"github.com/plgd-dev/device/v2/schema"
 	"github.com/plgd-dev/device/v2/schema/interfaces"
 	"github.com/plgd-dev/device/v2/schema/resources"
@@ -31,7 +26,7 @@ import (
 	"github.com/plgd-dev/go-coap/v3/tcp"
 	coapTcpClient "github.com/plgd-dev/go-coap/v3/tcp/client"
 	"github.com/plgd-dev/hub/v2/coap-gateway/service"
-	coapgwTest "github.com/plgd-dev/hub/v2/coap-gateway/test"
+	"github.com/plgd-dev/hub/v2/coap-gateway/test"
 	"github.com/plgd-dev/hub/v2/coap-gateway/uri"
 	pkgX509 "github.com/plgd-dev/hub/v2/pkg/security/x509"
 	"github.com/plgd-dev/hub/v2/resource-aggregate/commands"
@@ -100,7 +95,7 @@ func testValidateResp(t *testing.T, test testEl, resp *pool.Message) {
 	}
 }
 
-func testSignUp(t *testing.T, deviceID string, co *coapTcpClient.Conn) service.CoapSignUpResponse {
+func doSignUp(t *testing.T, deviceID string, co *coapTcpClient.Conn) (*pool.Message, error) {
 	code := oauthTest.GetDefaultDeviceAuthorizationCode(t, deviceID)
 	signUpReq := service.CoapSignUpRequest{
 		DeviceID:              deviceID,
@@ -123,7 +118,11 @@ func testSignUp(t *testing.T, deviceID string, co *coapTcpClient.Conn) service.C
 	req.SetContentFormat(message.AppOcfCbor)
 	req.SetBody(bytes.NewReader(inputCbor))
 
-	resp, err := co.Do(req)
+	return co.Do(req)
+}
+
+func testSignUp(t *testing.T, deviceID string, co *coapTcpClient.Conn) service.CoapSignUpResponse {
+	resp, err := doSignUp(t, deviceID, co)
 	require.NoError(t, err)
 	defer co.ReleaseMessage(resp)
 
@@ -386,43 +385,65 @@ func makeTestCoapHandler(t *testing.T) func(w *responsewriter.ResponseWriter[*co
 	}
 }
 
-func testCoapDial(t *testing.T, deviceID string, withTLS, identityCert bool, validTo time.Time) *coapTcpClient.Conn {
-	return testCoapDialWithHandler(t, deviceID, withTLS, identityCert, validTo, makeTestCoapHandler(t))
+type testCoapDialConfig struct {
+	generateTLS *struct {
+		deviceID     string
+		identityCert bool
+		validTo      time.Time
+	}
+	tlsConfig *tls.Config
 }
 
-func testCoapDialWithHandler(t *testing.T, deviceID string, withTLS, identityCert bool, validTo time.Time, h func(w *responsewriter.ResponseWriter[*coapTcpClient.Conn], r *pool.Message)) *coapTcpClient.Conn {
-	var tlsConfig *tls.Config
+type option interface {
+	apply(*testCoapDialConfig)
+}
 
-	if withTLS {
-		priv, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-		require.NoError(t, err)
+type optionFunc func(*testCoapDialConfig)
+
+func (o optionFunc) apply(c *testCoapDialConfig) {
+	o(c)
+}
+
+func WithGenerateTLS(deviceID string, identityCert bool, validTo time.Time) option {
+	return optionFunc(func(cfg *testCoapDialConfig) {
+		var generateTLS struct {
+			deviceID     string
+			identityCert bool
+			validTo      time.Time
+		}
+		generateTLS.deviceID = deviceID
+		generateTLS.identityCert = identityCert
+		generateTLS.validTo = validTo
+		cfg.generateTLS = &generateTLS
+	})
+}
+
+func WithTLSConfig(tlsConfig *tls.Config) option {
+	return optionFunc(func(cfg *testCoapDialConfig) {
+		cfg.tlsConfig = tlsConfig
+	})
+}
+
+func testCoapDialWithHandler(t *testing.T, h func(w *responsewriter.ResponseWriter[*coapTcpClient.Conn], r *pool.Message), opts ...option) *coapTcpClient.Conn {
+	c := &testCoapDialConfig{}
+	for _, opt := range opts {
+		opt.apply(c)
+	}
+	tlsConfig := c.tlsConfig
+	if c.generateTLS != nil {
 		signerCert, err := pkgX509.ReadX509(os.Getenv("TEST_ROOT_CA_CERT"))
 		require.NoError(t, err)
 		signerKey, err := pkgX509.ReadPrivateKey(os.Getenv("TEST_ROOT_CA_KEY"))
 		require.NoError(t, err)
-
-		var certData []byte
-
-		if identityCert {
-			certData, err = generateCertificate.GenerateIdentityCert(generateCertificate.Configuration{
-				ValidFrom: time.Now().Add(-time.Hour).Format(time.RFC3339),
-				ValidFor:  time.Until(validTo) + time.Hour,
-			}, deviceID, priv, signerCert, signerKey)
+		cg := test.NewLocalCertificateGenerator(signerCert, signerKey)
+		var crt tls.Certificate
+		if c.generateTLS.identityCert {
+			crt, err = cg.GetIdentityCertificate(c.generateTLS.deviceID, c.generateTLS.validTo)
 		} else {
-			c := generateCertificate.Configuration{
-				ValidFrom: time.Now().Add(-time.Hour).Format(time.RFC3339),
-				ValidFor:  time.Until(validTo) + time.Hour,
-			}
-			c.Subject.CommonName = "non-identity-cert"
-			c.ExtensionKeyUsages = []string{"client", "server"}
-			certData, err = generateCertificate.GenerateCert(c, priv, signerCert, signerKey)
+			crt, err = cg.GetCertificate(c.generateTLS.validTo)
 		}
 		require.NoError(t, err)
-		b, err := x509.MarshalECPrivateKey(priv)
-		require.NoError(t, err)
-		key := pem.EncodeToMemory(&pem.Block{Type: "EC PRIVATE KEY", Bytes: b})
-		crt, err := tls.X509KeyPair(certData, key)
-		require.NoError(t, err)
+
 		caPool := x509.NewCertPool()
 		for _, c := range signerCert {
 			caPool.AddCert(c)
@@ -448,21 +469,13 @@ func testCoapDialWithHandler(t *testing.T, deviceID string, withTLS, identityCer
 				for _, cert := range certs[1:] {
 					intermediateCAPool.AddCert(cert)
 				}
-				caPool := x509.NewCertPool()
-				for _, c := range signerCert {
-					caPool.AddCert(c)
-				}
 				_, err := certs[0].Verify(x509.VerifyOptions{
 					Roots:         caPool,
 					Intermediates: intermediateCAPool,
 					CurrentTime:   time.Now(),
 					KeyUsages:     []x509.ExtKeyUsage{x509.ExtKeyUsageAny},
 				})
-				if err != nil {
-					return err
-				}
-
-				return nil
+				return err
 			},
 		}
 	}
@@ -471,16 +484,20 @@ func testCoapDialWithHandler(t *testing.T, deviceID string, withTLS, identityCer
 	return conn
 }
 
-func setUp(t *testing.T, coapgwCfgs ...service.Config) func() {
+func testCoapDial(t *testing.T, deviceID string, withTLS, identityCert bool, validTo time.Time) *coapTcpClient.Conn {
+	var opts []option
+	if withTLS {
+		opts = append(opts, WithGenerateTLS(deviceID, identityCert, validTo))
+	}
+	return testCoapDialWithHandler(t, makeTestCoapHandler(t), opts...)
+}
+
+func setUp(t *testing.T, opts ...testService.SetUpOption) func() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	testService.ClearDB(ctx, t)
-	coapgwCfg := coapgwTest.MakeConfig(t)
-	if len(coapgwCfgs) > 0 {
-		coapgwCfg = coapgwCfgs[0]
-	}
 	return testService.SetUpServices(context.Background(), t, testService.SetUpServicesMachine2MachineOAuth|testService.SetUpServicesCertificateAuthority|testService.SetUpServicesOAuth|
-		testService.SetUpServicesId|testService.SetUpServicesResourceAggregate|testService.SetUpServicesResourceDirectory|testService.SetUpServicesCoapGateway|testService.SetUpServicesGrpcGateway, testService.WithCOAPGWConfig(coapgwCfg))
+		testService.SetUpServicesId|testService.SetUpServicesResourceAggregate|testService.SetUpServicesResourceDirectory|testService.SetUpServicesCoapGateway|testService.SetUpServicesGrpcGateway, opts...)
 }
 
 var (

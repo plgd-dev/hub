@@ -19,6 +19,7 @@ import (
 	oauthTest "github.com/plgd-dev/hub/v2/test/oauth-server/test"
 	hubTestService "github.com/plgd-dev/hub/v2/test/service"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace/noop"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 )
@@ -63,7 +64,7 @@ func TestResourceSubscriber(t *testing.T) {
 		ch: make(chan *events.ResourceChanged, 8),
 	}
 	cfg := test.MakeConfig(t)
-	rs, err := service.NewResourceSubscriber(ctx, cfg.Clients.EventBus.NATS, cfg.Clients.EventBus.SubscriptionID, fileWatcher, logger, &h)
+	rs, err := service.NewResourceSubscriber(ctx, cfg.Clients.EventBus.NATS, cfg.Clients.EventBus.SubscriptionID, fileWatcher, logger, noop.NewTracerProvider(), &h)
 	require.NoError(t, err)
 	defer rs.Close()
 
