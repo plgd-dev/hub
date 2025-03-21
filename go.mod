@@ -12,7 +12,7 @@ require (
 	github.com/fxamacker/cbor/v2 v2.7.0
 	github.com/go-co-op/gocron/v2 v2.11.0
 	github.com/gocql/gocql v1.6.0
-	github.com/golang-jwt/jwt/v5 v5.2.1
+	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/golang/snappy v0.0.4
 	github.com/google/go-querystring v1.1.0
 	github.com/google/uuid v1.6.0
