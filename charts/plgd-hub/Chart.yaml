@@ -15,7 +15,7 @@ dependencies:
     repository: "https://nats-io.github.io/k8s/helm/charts/"
     condition: nats.enabled
   - name: "mongodb"
-    version: "15.4.4"
+    version: "15.6.26"
     repository: "https://charts.bitnami.com/bitnami"
     condition: mongodb.enabled
   - name: "scylla"
