@@ -240,11 +240,11 @@ func MakeAuthorizationConfig() service.AuthorizationConfig {
 
 	cfg.OwnerClaim = "sub"
 	cfg.Provider.Name = config.DEVICE_PROVIDER
-	cfg.Provider.Config.Authority = authCfg.Endpoints[0].Authority
-	cfg.Provider.Config.Audience = authCfg.Audience
-	cfg.Provider.Config.HTTP = authCfg.Endpoints[0].HTTP
-	cfg.Provider.Config.ClientID = config.OAUTH_MANAGER_CLIENT_ID
-	cfg.Provider.Config.ClientSecretFile = config.CA_POOL
+	cfg.Provider.Authority = authCfg.Endpoints[0].Authority
+	cfg.Provider.Audience = authCfg.Audience
+	cfg.Provider.HTTP = authCfg.Endpoints[0].HTTP
+	cfg.Provider.ClientID = config.OAUTH_MANAGER_CLIENT_ID
+	cfg.Provider.ClientSecretFile = config.CA_POOL
 	return cfg
 }
 

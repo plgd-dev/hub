@@ -180,7 +180,7 @@ func (h *observerHandler) OnGetResourceContent(ctx context.Context, deviceID, re
 }
 
 func (h *observerHandler) UpdateTwinSynchronizationStatus(ctx context.Context, deviceID string, state commands.TwinSynchronization_State, t time.Time) error {
-	err := h.DefaultObserverHandler.UpdateTwinSynchronization(ctx, deviceID, state, t)
+	err := h.UpdateTwinSynchronization(ctx, deviceID, state, t)
 	require.NoError(h.t, err)
 	return nil
 }

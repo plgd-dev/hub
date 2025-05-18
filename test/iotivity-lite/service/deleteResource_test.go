@@ -187,7 +187,7 @@ func TestBatchDeleteResources(t *testing.T) {
 	}()
 
 	// use SDK to create multiple switch resources
-	for i := 0; i < numSwitches; i++ {
+	for range numSwitches {
 		err = devClient.CreateResource(ctx, deviceID, test.TestResourceSwitchesHref, test.MakeSwitchResourceDefaultData(), nil)
 		require.NoError(t, err)
 	}

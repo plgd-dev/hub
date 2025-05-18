@@ -550,7 +550,7 @@ func TestServiceWithBridgedDevice(t *testing.T) {
 		Owner: oauthService.DeviceUserID,
 		Resources: func() []*pb.Configuration_Resource {
 			var resources []*pb.Configuration_Resource
-			for i := 0; i < bdConfig.NumResourcesPerDevice; i++ {
+			for i := range bdConfig.NumResourcesPerDevice {
 				resources = append(resources, &pb.Configuration_Resource{
 					Href: bridgeDevice.GetTestResourceHref(i),
 					Content: &commands.Content{

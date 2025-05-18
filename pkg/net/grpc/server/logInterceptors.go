@@ -76,7 +76,7 @@ func DecodeToJsonObject(m interface{}) map[string]interface{} {
 		return nil
 	}
 	marshaler := serverMux.NewJsonMarshaler()
-	marshaler.JSONPb.MarshalOptions.EmitUnpopulated = false
+	marshaler.EmitUnpopulated = false
 	data, err := marshaler.Marshal(m)
 	if err == nil && len(data) > 2 {
 		var v map[string]interface{}

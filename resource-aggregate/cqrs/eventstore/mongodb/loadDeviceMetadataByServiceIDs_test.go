@@ -37,7 +37,7 @@ func TestLoadDeviceMetadataByServiceIDs(t *testing.T) {
 
 	start := time.Now()
 	limit := int64(1)
-	for i := 0; i < getEventsServiceIDsCount; i++ {
+	for i := range getEventsServiceIDsCount {
 		docs, err := store.LoadDeviceMetadataByServiceIDs(ctx, []string{getServiceID(i)}, limit)
 		require.NoError(t, err)
 		require.Equal(t, limit, int64(len(docs)))
@@ -48,7 +48,7 @@ func TestLoadDeviceMetadataByServiceIDs(t *testing.T) {
 	fmt.Printf("event store - TestLoadDeviceMetadataByServiceIDs(limit=%v) %v\n", limit, time.Since(start))
 	start = time.Now()
 	limit = 1024 * 1024 * 1024
-	for i := 0; i < getEventsServiceIDsCount; i++ {
+	for i := range getEventsServiceIDsCount {
 		docs, err := store.LoadDeviceMetadataByServiceIDs(ctx, []string{getServiceID(i)}, limit)
 		require.NoError(t, err)
 		require.Equal(t, int64(getEventsResourceCount/getEventsDeviceCount), int64(len(docs)))

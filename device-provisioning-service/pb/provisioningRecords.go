@@ -20,7 +20,7 @@ func AccessControlSubjectToDevicePb(subject acl.Subject) *AccessControlDeviceSub
 		return nil
 	}
 	return &AccessControlDeviceSubject{
-		DeviceId: subject.Subject_Device.DeviceID,
+		DeviceId: subject.DeviceID,
 	}
 }
 
@@ -29,8 +29,8 @@ func AccessControlSubjectToRolePb(subject acl.Subject) *AccessControlRoleSubject
 		return nil
 	}
 	return &AccessControlRoleSubject{
-		Role:      subject.Subject_Role.Role,
-		Authority: subject.Subject_Role.Authority,
+		Role:      subject.Role,
+		Authority: subject.Authority,
 	}
 }
 
@@ -39,7 +39,7 @@ func AccessControlSubjectToConnectionPb(subject acl.Subject) *AccessControlConne
 		return nil
 	}
 	var v AccessControlConnectionSubject_ConnectionType
-	switch subject.Subject_Connection.Type {
+	switch subject.Type {
 	case acl.ConnectionType_ANON_CLEAR:
 		v = AccessControlConnectionSubject_ANON_CLEAR
 	case acl.ConnectionType_AUTH_CRYPT:

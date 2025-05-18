@@ -67,9 +67,9 @@ func (s *M2MOAuthServiceServer) CreateToken(ctx context.Context, req *pb.CreateT
 		CreateTokenRequest: req,
 		issuer:             s.signer.GetAuthority(),
 	}
-	clientCfg := s.signer.GetClients().Find(tokenReq.CreateTokenRequest.GetClientId())
+	clientCfg := s.signer.GetClients().Find(tokenReq.GetClientId())
 	if clientCfg == nil {
-		return nil, status.Errorf(codes.Unauthenticated, "%v", errCannotCreateToken(fmt.Errorf("client(%v) not found", tokenReq.CreateTokenRequest.GetClientId())))
+		return nil, status.Errorf(codes.Unauthenticated, "%v", errCannotCreateToken(fmt.Errorf("client(%v) not found", tokenReq.GetClientId())))
 	}
 	tokenReq.owner = clientCfg.Owner
 	if err := s.validateTokenRequest(ctx, clientCfg, &tokenReq); err != nil {
@@ -98,13 +98,13 @@ func (s *M2MOAuthServiceServer) CreateToken(ctx context.Context, req *pb.CreateT
 
 	token, err := s.store.CreateToken(ctx, tokenReq.owner, &pb.Token{
 		Id:                  tokenReq.id,
-		Name:                tokenReq.CreateTokenRequest.GetTokenName(),
+		Name:                tokenReq.GetTokenName(),
 		Owner:               tokenReq.owner,
 		IssuedAt:            tokenReq.issuedAt.Unix(),
-		Audience:            tokenReq.CreateTokenRequest.GetAudience(),
-		Scope:               tokenReq.CreateTokenRequest.GetScope(),
+		Audience:            tokenReq.GetAudience(),
+		Scope:               tokenReq.GetScope(),
 		Expiration:          pkgTime.UnixSec(tokenReq.expiration),
-		ClientId:            tokenReq.CreateTokenRequest.GetClientId(),
+		ClientId:            tokenReq.GetClientId(),
 		OriginalTokenClaims: originalTokenClaims,
 		Subject:             tokenReq.subject,
 	})

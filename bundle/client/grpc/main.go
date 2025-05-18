@@ -24,7 +24,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func getServiceToken(authAddr string, tls *tls.Config) (string, error) {
+func getServiceToken(ctx context.Context, authAddr string, tls *tls.Config) (string, error) {
 	reqBody := map[string]string{
 		"grant_type":    string(service.AllowedGrantType_CLIENT_CREDENTIALS),
 		uri.ClientIDKey: oauthTest.ClientTest,
@@ -35,7 +35,7 @@ func getServiceToken(authAddr string, tls *tls.Config) (string, error) {
 		return "", err
 	}
 
-	request, err := http.NewRequest(http.MethodPost, "https://"+authAddr+"/oauth/token", bytes.NewReader(d))
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://"+authAddr+"/oauth/token", bytes.NewReader(d))
 	if err != nil {
 		return "", err
 	}
@@ -68,8 +68,8 @@ func getServiceToken(authAddr string, tls *tls.Config) (string, error) {
 	return token, nil
 }
 
-func getAccessToken(authAddr string, tls *tls.Config) string {
-	accesstoken, err := getServiceToken(authAddr, tls)
+func getAccessToken(ctx context.Context, authAddr string, tls *tls.Config) string {
+	accesstoken, err := getServiceToken(ctx, authAddr, tls)
 	if err != nil {
 		log.Fatalf("cannot get access token: %v", err)
 	}
@@ -228,11 +228,12 @@ func main() {
 
 	flag.Parse()
 
+	ctx := context.Background()
 	tlsCfg := tls.Config{
 		InsecureSkipVerify: true,
 	}
 	if *accesstoken == "" {
-		*accesstoken = getAccessToken(*authAddr, &tlsCfg)
+		*accesstoken = getAccessToken(ctx, *authAddr, &tlsCfg)
 	}
 
 	conn, err := grpc.NewClient(*addr, grpc.WithTransportCredentials(credentials.NewTLS(&tlsCfg)))
@@ -241,7 +242,7 @@ func main() {
 	}
 
 	ocfGW := pbGW.NewGrpcGatewayClient(conn)
-	ctx := pkgGrpc.CtxWithToken(context.Background(), *accesstoken)
+	ctx = pkgGrpc.CtxWithToken(ctx, *accesstoken)
 	switch {
 	case *deleteOpt:
 		deleteResource(ctx, ocfGW, *deviceID, *href)

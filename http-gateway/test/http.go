@@ -1,6 +1,7 @@
 package test
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/base64"
 	"fmt"
@@ -222,7 +223,7 @@ func (c *RequestBuilder) Build() *http.Request {
 		url.RawQuery = query.Encode()
 	}
 	fmt.Printf("URL %v\n", url.String())
-	request, _ := http.NewRequest(c.method, url.String(), c.body)
+	request, _ := http.NewRequestWithContext(context.Background(), c.method, url.String(), c.body)
 	for k, v := range c.header {
 		request.Header.Add(k, v)
 	}

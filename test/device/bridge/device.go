@@ -78,7 +78,7 @@ func (d *Device) GetRetryInterval(int) time.Duration {
 
 func (d *Device) GetDefaultResources() schema.ResourceLinks {
 	testResources := TestResources
-	for i := 0; i < d.testResources; i++ {
+	for i := range d.testResources {
 		testResources = append(testResources, schema.ResourceLink{
 			Href:          bridgeDevice.GetTestResourceHref(i),
 			ResourceTypes: []string{bridgeDevice.TestResourceType},

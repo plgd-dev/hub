@@ -71,7 +71,7 @@ func addEventsForGetEventsToDB(ctx context.Context, t *testing.T, store *cqldb.E
 	var resourceVersion [getEventsResourceCount]uint64
 	var resourceTimestamp [getEventsResourceCount]int64
 	var resourceEvents [getEventsResourceCount][]eventstore.Event
-	for i := 0; i < eventCount; i++ {
+	for i := range eventCount {
 		deviceIndex := i % getEventsDeviceCount
 		resourceIndex := i % getEventsResourceCount
 		serviceIndex := i % getEventsServiceIDsCount
@@ -141,7 +141,7 @@ func runGetEvents(t *testing.T, cfg runGetEventsConfig) {
 
 	weakRng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	start := time.Now()
-	for i := 0; i < cfg.iterations; i++ {
+	for range cfg.iterations {
 		if cfg.queries != nil {
 			getEventsByTimestamp(ctx, t, store, cfg.queries, int64(weakRng.Intn(eventCount+1)))
 		} else {

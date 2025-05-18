@@ -310,7 +310,7 @@ func TestCreateAndDeleteResource(t *testing.T) {
 	const switchID = "1"
 
 	isDiscoveryResourceBatchObservable := test.IsDiscoveryResourceBatchObservable(ctx, t, deviceID)
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		fmt.Printf("iteration %v\n", i)
 		// for update resource-directory cache
 		time.Sleep(time.Second)

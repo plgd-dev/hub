@@ -106,7 +106,7 @@ func (p *Projection) Unregister(deviceID string) error {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 	var errors *multierror.Error
-	for i := 0; i < 2; i++ {
+	for range 2 {
 		if err := p.release(r); err != nil {
 			errors = multierror.Append(errors, fmt.Errorf("cannot unregister projection for %v: %w", deviceID, err))
 		}

@@ -32,7 +32,7 @@ import (
 
 func CreateDeviceResourceLinks(deviceID string, numResources int, tdEnabled bool) []*commands.Resource {
 	resources := make([]*commands.Resource, 0, numResources)
-	for i := 0; i < numResources; i++ {
+	for i := range numResources {
 		resources = append(resources, &commands.Resource{
 			Href:          fmt.Sprintf("/res-%v", i),
 			DeviceId:      deviceID,
@@ -148,7 +148,7 @@ func CreateDevice(ctx context.Context, t *testing.T, name string, deviceID strin
 	})
 	assert.NoError(t, err) //nolint:testifylint
 
-	for i := 0; i < numResources; i++ {
+	for i := range numResources {
 		_, err = raClient.NotifyResourceChanged(ctx, &commands.NotifyResourceChangedRequest{
 			ResourceId: commands.NewResourceID(deviceID, fmt.Sprintf("/res-%v", i)),
 			CommandMetadata: &commands.CommandMetadata{
@@ -233,7 +233,7 @@ func CreateDevices(ctx context.Context, t *testing.T, numDevices int, numResourc
 
 	numGoRoutines := int64(8)
 	sem := semaphore.NewWeighted(numGoRoutines)
-	for i := 0; i < numDevices; i++ {
+	for i := range numDevices {
 		err = sem.Acquire(ctx, 1)
 		require.NoError(t, err)
 		go func(i int) {

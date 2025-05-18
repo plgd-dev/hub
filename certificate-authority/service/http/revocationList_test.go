@@ -57,7 +57,7 @@ func addRevocationLists(ctx context.Context, t *testing.T, s store.Store) map[st
 		ValidUntil: now.Add(time.Minute * 10).UnixNano(),
 		Number:     "1",
 	}
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		rlc := test.GetCertificate(i, now, now.Add(time.Hour))
 		rl1.Certificates = append(rl1.Certificates, rlc)
 	}
@@ -68,7 +68,7 @@ func addRevocationLists(ctx context.Context, t *testing.T, s store.Store) map[st
 		Id:     test.GetIssuerID(1),
 		Number: "2",
 	}
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		rlc := test.GetCertificate(i, now, now.Add(time.Hour))
 		rl2.Certificates = append(rl2.Certificates, rlc)
 	}
@@ -81,7 +81,7 @@ func addRevocationLists(ctx context.Context, t *testing.T, s store.Store) map[st
 		ValidUntil: now.Add(-time.Minute).UnixNano(),
 		Number:     "3",
 	}
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		rlc := test.GetCertificate(i, now.Add(-time.Hour), now.Add(-time.Minute))
 		rl3.Certificates = append(rl3.Certificates, rlc)
 	}

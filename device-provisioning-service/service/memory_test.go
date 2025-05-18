@@ -114,12 +114,12 @@ func testNConnections(t *testing.T, n int, debugging bool) {
 		time.Sleep(time.Second * 10)
 	}
 
-	for i := 0; i < n; i++ {
+	for i := range n {
 		fmt.Printf("connect %d\n", i)
 		connect(t, dpsCfg)
 	}
 
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		fmt.Printf("gc %d\n", i)
 		time.Sleep(time.Second)
 		runtime.GC()

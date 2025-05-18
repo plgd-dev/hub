@@ -335,7 +335,7 @@ func TestEmptyName(t *testing.T) {
 	c := pkgJwt.Claims{}
 	name, err := c.GetName()
 	require.NoError(t, err)
-	require.Equal(t, "", name)
+	require.Empty(t, name)
 }
 
 func TestInvalidName(t *testing.T) {
@@ -344,7 +344,7 @@ func TestInvalidName(t *testing.T) {
 	}
 	name, err := c.GetName()
 	require.ErrorIs(t, err, jwt.ErrInvalidType)
-	require.Equal(t, "", name)
+	require.Empty(t, name)
 }
 
 func TestValidName(t *testing.T) {

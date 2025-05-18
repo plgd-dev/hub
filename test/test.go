@@ -832,7 +832,7 @@ func MustGetHostname() string {
 
 func MustFindDeviceByName(name string, getResourceOpts ...device.GetResourceOpts) (deviceID string) {
 	var err error
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
 		deviceID, err = device.FindDeviceByName(ctx, name, getResourceOpts...)
@@ -861,7 +861,7 @@ func MustFindTestDevice() device.Device {
 
 	var deviceID string
 	var err error
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 		defer cancel()
 		deviceID, err = device.FindDeviceByName(ctx, TestDeviceName, getResourceOpts...)
@@ -1033,7 +1033,7 @@ type ListenSockets []ListenSocket
 func (ls ListenSockets) CheckForClosedSockets(t require.TestingT) {
 	// wait for all sockets to be closed - max 3 minutes = 900*200
 	socketClosed := make([]bool, len(ls))
-	for j := 0; j < 900; j++ {
+	for range 900 {
 		allClosed := true
 		for i, socket := range ls {
 			if socketClosed[i] {

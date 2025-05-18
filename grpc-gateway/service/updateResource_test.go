@@ -306,7 +306,7 @@ func TestRequestHandlerRunMultipleUpdateResource(t *testing.T) {
 	_, shutdownDevSim := test.OnboardDevSim(ctx, t, c, deviceID, config.ACTIVE_COAP_SCHEME+"://"+config.COAP_GW_HOST, resources)
 	defer shutdownDevSim()
 
-	for i := 0; i < numIteration; i++ {
+	for i := range numIteration {
 		func() {
 			t.Logf("TestRequestHandlerMultipleUpdateResource:run %v\n", i)
 			lightHref := test.TestResourceLightInstanceHref("1")
@@ -391,7 +391,7 @@ func TestRequestHandlerRunMultipleParallelUpdateResource(t *testing.T) {
 
 	var wg sync.WaitGroup
 	wg.Add(numIteration)
-	for i := 0; i < numIteration; i++ {
+	for i := range numIteration {
 		t.Logf("TestRequestHandlerRunMultipleParallelUpdateResource:run %v\n", i)
 		go func() {
 			defer wg.Done()

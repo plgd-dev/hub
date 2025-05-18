@@ -98,10 +98,7 @@ func C2CURI(uri string) string {
 
 func GetUniqueSubscriptionID(subIDS ...string) string {
 	id := uuid.NewString()
-	for {
-		if !slices.Contains(subIDS, id) {
-			break
-		}
+	for slices.Contains(subIDS, id) {
 		id = uuid.NewString()
 	}
 	return id

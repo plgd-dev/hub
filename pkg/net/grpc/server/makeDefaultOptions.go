@@ -160,7 +160,7 @@ func setGrpcRequest(ctx context.Context, v interface{}) {
 		return
 	}
 	marshaler := serverMux.NewJsonMarshaler()
-	marshaler.JSONPb.MarshalOptions.EmitUnpopulated = false
+	marshaler.EmitUnpopulated = false
 	data, err := marshaler.Marshal(v)
 	if err == nil && len(data) > 2 {
 		span.SetAttributes(attribute.String("grpc.request", string(data)))

@@ -92,7 +92,7 @@ func SetUpCloudWithConnector(t *testing.T) (tearDown func()) {
 	c2cConnectorCfg.APIs.HTTP.Connection.Addr = C2C_CONNECTOR_HOST
 	c2cConnectorCfg.APIs.HTTP.Authorization = MakeAuthorizationConfig()
 	c2cConnectorCfg.APIs.HTTP.Authorization.Authority = http.HTTPS_SCHEME + OAUTH_HOST
-	c2cConnectorCfg.APIs.HTTP.Authorization.Config.RedirectURL = C2C_CONNECTOR_OAUTH_CALLBACK
+	c2cConnectorCfg.APIs.HTTP.Authorization.RedirectURL = C2C_CONNECTOR_OAUTH_CALLBACK
 	c2cConnectorCfg.APIs.HTTP.Server = config.MakeHttpServerConfig()
 	c2cConnectorCfg.Clients.Storage.MongoDB.Database = C2C_CONNECTOR_DB
 	c2cConnectorCfg.Clients.IdentityStore.Connection.Addr = IDENTITY_STORE_HOST

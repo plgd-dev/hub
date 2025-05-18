@@ -79,7 +79,7 @@ func TestCertificateSignerSign(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
-			for i := 0; i < len(tt.want); i++ {
+			for i := range len(tt.want) {
 				block, rest := pem.Decode(got)
 				require.NotEmpty(t, block.Bytes)
 				cert, err := x509.ParseCertificate(block.Bytes)

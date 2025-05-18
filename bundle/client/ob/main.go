@@ -26,7 +26,7 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
-func getServiceToken(authAddr string) (string, error) {
+func getServiceToken(ctx context.Context, authAddr string) (string, error) {
 	reqBody := map[string]string{
 		"grant_type":    string(service.AllowedGrantType_CLIENT_CREDENTIALS),
 		uri.ClientIDKey: oauthTest.ClientTest,
@@ -37,7 +37,7 @@ func getServiceToken(authAddr string) (string, error) {
 		return "", err
 	}
 
-	request, err := http.NewRequest(http.MethodPost, "https://"+authAddr+"/oauth/token", bytes.NewReader(d))
+	request, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://"+authAddr+"/oauth/token", bytes.NewReader(d))
 	if err != nil {
 		return "", err
 	}
@@ -88,8 +88,8 @@ func ownAndOnboard(ctx context.Context, c *OcfClient, deviceID, apn, authCode st
 	}
 }
 
-func getAccessToken(authAddr string) string {
-	accessToken, err := getServiceToken(authAddr)
+func getAccessToken(ctx context.Context, authAddr string) string {
+	accessToken, err := getServiceToken(ctx, authAddr)
 	if err != nil {
 		log.Fatalf("cannot get access token: %v", err)
 	}
@@ -166,11 +166,13 @@ func main() {
 	maxNum := flag.Int("maxNum", 1, "maximum number of devices which will be onboarded")
 	flag.Parse()
 
+	ctx, cancel := context.WithTimeout(context.Background(), *discoverDuration+15*time.Second*(time.Duration(*maxNum+1)))
+	defer cancel()
 	if *authAddr == "" {
 		*authAddr = *addr
 	}
 	if *accessToken == "" {
-		*accessToken = getAccessToken(*authAddr)
+		*accessToken = getAccessToken(ctx, *authAddr)
 	}
 
 	*addr = getAddress(*addr)
@@ -180,14 +182,12 @@ func main() {
 	}
 	grpcConn, err := grpc.NewClient(*addr, grpc.WithTransportCredentials(credentials.NewTLS(&tlsCfg)))
 	if err != nil {
-		log.Fatalf("cannot connect to grpc: %v", err)
+		panic(fmt.Errorf("cannot connect to grpc: %w", err))
 	}
 	defer func() {
 		_ = grpcConn.Close()
 	}()
 
-	ctx, cancel := context.WithTimeout(context.Background(), *discoverDuration+15*time.Second*(time.Duration(*maxNum+1)))
-	defer cancel()
 	ctx = grpcCloud.CtxWithToken(ctx, *accessToken)
 
 	hubConfiguration := getHubConfiguration(ctx, grpcConn)

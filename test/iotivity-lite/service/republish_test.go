@@ -69,10 +69,7 @@ func TestRepublishAfterRefresh(t *testing.T) {
 	shutdownDevSim := test.OnboardDevice(ctx, t, c, d, string(schema.TCPSecureScheme)+"://"+config.COAP_GW_HOST, nil)
 	defer shutdownDevSim()
 
-	for {
-		if time.Now().Add(time.Second * 10).After(deadline) {
-			break
-		}
+	for !time.Now().Add(time.Second * 10).After(deadline) {
 		time.Sleep(time.Second)
 	}
 }

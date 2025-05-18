@@ -21,7 +21,7 @@ func addEventsForDeleteToDB(ctx context.Context, t *testing.T, store *cqldb.Even
 	var resourceVersion [resourceCount]uint64
 	var resourceTimestamp [resourceCount]int64
 	var resourceEvents [resourceCount][]eventstore.Event
-	for i := 0; i < eventCount; i++ {
+	for i := range eventCount {
 		deviceIndex := i % deviceCount
 		resourceIndex := i % resourceCount
 		if i < resourceCount {

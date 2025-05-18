@@ -59,7 +59,7 @@ func getConfigurations(t *testing.T, n int, calcVersion calculateInitialVersionN
 	versions := make(map[int]uint64, RuntimeConfig.NumConfigurations)
 	owners := make(map[int]string, RuntimeConfig.NumConfigurations)
 	configurations := make(map[string]store.Configuration)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		version, ok := versions[i%RuntimeConfig.NumConfigurations]
 		if !ok {
 			version = 0

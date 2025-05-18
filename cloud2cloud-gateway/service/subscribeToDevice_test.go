@@ -129,7 +129,7 @@ func TestRequestHandlerSubscribeToDevice(t *testing.T) {
 			require.Empty(t, links)
 			continue
 		}
-		require.Fail(t, "unexpected event %v", ev.GetHeader().EventType)
+		require.Failf(t, "unexpected event", "%v", ev.GetHeader().EventType)
 	}
 
 	const switchID1 = "1"

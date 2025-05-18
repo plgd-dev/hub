@@ -68,9 +68,9 @@ func (s *Server) Close() error {
 		err = s.listener.Close()
 	} else {
 		if s.gracefulStop {
-			s.Server.GracefulStop()
+			s.GracefulStop()
 		} else {
-			s.Server.Stop()
+			s.Stop()
 		}
 	}
 	s.closeFunc.Execute()

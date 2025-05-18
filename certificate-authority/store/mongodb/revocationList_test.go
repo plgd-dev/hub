@@ -198,7 +198,7 @@ func TestParallelUpdateRevocationList(t *testing.T) {
 	firstCount := 10
 	secondCount := 10
 	certificates := make([]*store.RevocationListCertificate, firstCount+secondCount)
-	for i := 0; i < firstCount+secondCount; i++ {
+	for i := range firstCount + secondCount {
 		certificates[i] = test.GetCertificate(i, time.Now(), time.Now().Add(time.Hour))
 	}
 
