@@ -468,7 +468,7 @@ func NewLogger(config Config) *WrapSuggarLogger {
 
 	encoderConfig.NewReflectedEncoder = func(w io.Writer) zapcore.ReflectedEncoder {
 		var h codec.JsonHandle
-		h.BasicHandle.Canonical = true
+		h.Canonical = true
 		return codec.NewEncoder(w, &h)
 	}
 	// First, define our level-handling logic.

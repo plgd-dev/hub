@@ -92,7 +92,7 @@ func checkAndValidateUpdate(ctx context.Context, t *testing.T, rac raservice.Res
 		},
 		CorrelationId: correlationID,
 	})
-	for i := 0; i < 2; i++ {
+	for range 2 {
 		ev := waitForEvent(ctx, t, recvChan)
 		switch {
 		case ev.GetResourceUpdated() != nil:

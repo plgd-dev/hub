@@ -29,6 +29,6 @@ func EncodeToBlob(data []byte, buffer *strings.Builder) {
 	buffer.Grow(buffer.Len() + 2 + len(data)*2)
 	buffer.WriteString("0x")
 	for _, v := range data {
-		buffer.WriteString(fmt.Sprintf("%02x", v))
+		fmt.Fprintf(buffer, "%02x", v)
 	}
 }

@@ -104,7 +104,7 @@ func (c *AuthorizationConfig) Validate() error {
 		return fmt.Errorf("providers('%v')", c.Providers)
 	}
 	duplicitProviderNames := make(map[string]bool, 4)
-	for i := 0; i < len(c.Providers); i++ {
+	for i := range len(c.Providers) {
 		if c.Providers[i].GrantType == oauth.ClientCredentials && c.OwnerClaim == "sub" {
 			return fmt.Errorf("providers[%v].grantType - %w", i, fmt.Errorf("combination of ownerClaim set to '%v' is not compatible if at least one authorization provider uses grant type '%v'", c.OwnerClaim, c.Providers[i].GrantType))
 		}

@@ -76,7 +76,7 @@ func createDevices(ctx context.Context, t *testing.T, numDevices int, protocol c
 	raClient := raPb.NewResourceAggregateClient(raConn)
 
 	devices := make([]virtualDevice, 0, numDevices)
-	for i := 0; i < numDevices; i++ {
+	for i := range numDevices {
 		tdEnabled := (i%2 == 0)
 		devices = append(devices, virtualDevice{
 			name:      fmt.Sprintf("dev-%v", i),
@@ -172,7 +172,7 @@ func TestBridgeDeviceGetThings(t *testing.T) {
 	defer shutdownHttp()
 
 	var devIDs []string
-	for i := 0; i < bridgeDeviceCfg.NumGeneratedBridgedDevices; i++ {
+	for i := range bridgeDeviceCfg.NumGeneratedBridgedDevices {
 		bdName := test.TestBridgeDeviceInstanceName(strconv.Itoa(i))
 		bdID := test.MustFindDeviceByName(bdName, func(d *core.Device) deviceCoap.OptionFunc {
 			return deviceCoap.WithQuery("di=" + d.DeviceID())
@@ -258,7 +258,7 @@ func getPatchedTD(t *testing.T, deviceCfg bridgeDevice.Config, deviceID string, 
 	require.NoError(t, err)
 	td.Properties[schemaMaintenance.ResourceURI] = mnt
 
-	for i := 0; i < deviceCfg.NumResourcesPerDevice; i++ {
+	for i := range deviceCfg.NumResourcesPerDevice {
 		href := bridgeDevice.GetTestResourceHref(i)
 		prop := bridgeDevice.GetPropertyDescriptionForTestResource()
 		prop, err := bridgeDevice.PatchTestResourcePropertyElement(prop, deviceUUID, propertyBaseURL+href, message.AppJSON, httpgwService.CreateHTTPForms)
@@ -321,7 +321,7 @@ func TestBridgeDeviceGetThing(t *testing.T) {
 
 	deviceIDs := make([]string, 0, 2)
 	validLinkedDevices := make(map[string]struct{}, 2)
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		bdID, shutdownBd := onboardBridgeDevice(ctx, t, i, c, bridgeDeviceCfg)
 		defer shutdownBd()
 		deviceIDs = append(deviceIDs, bdID)

@@ -560,7 +560,7 @@ func BenchmarkSigningRecords(b *testing.B) {
 	data := make([]*store.SigningRecord, 0, 5001)
 	date := time.Now().Add(time.Hour)
 	dataCap := cap(data)
-	for i := 0; i < dataCap; i++ {
+	for i := range dataCap {
 		data = append(data, &store.SigningRecord{
 			Id:           hubTest.GenerateDeviceIDbyIdx(i),
 			Owner:        "owner",
@@ -581,7 +581,7 @@ func BenchmarkSigningRecords(b *testing.B) {
 	b.ResetTimer()
 	s, cleanUpStore := test.NewCQLStore(b)
 	defer cleanUpStore()
-	for i := uint32(0); i < uint32(b.N); i++ {
+	for range uint32(b.N) {
 		b.StopTimer()
 		err := s.ClearTable(ctx)
 		require.NoError(b, err)

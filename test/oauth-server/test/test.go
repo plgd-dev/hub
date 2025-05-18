@@ -180,7 +180,7 @@ func (c *RequestBuilder) Build() *http.Request {
 		query.Set(k, v)
 	}
 	url.RawQuery = query.Encode()
-	request, _ := http.NewRequest(c.method, url.String(), c.body)
+	request, _ := http.NewRequestWithContext(context.Background(), c.method, url.String(), c.body)
 	for k, v := range c.header {
 		request.Header.Add(k, v)
 	}

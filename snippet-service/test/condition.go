@@ -59,7 +59,7 @@ func getConditions(n int, calcVersion calculateInitialVersionNumber) map[string]
 	versions := make(map[int]uint64, RuntimeConfig.NumConditions)
 	owners := make(map[int]string, RuntimeConfig.NumConditions)
 	conditions := make(map[string]store.Condition)
-	for i := 0; i < n; i++ {
+	for i := range n {
 		version, ok := versions[i%RuntimeConfig.NumConditions]
 		if !ok {
 			version = 0

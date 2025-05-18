@@ -46,7 +46,7 @@ func (h *testDeviceResourcesBaseObservationHandler) OnClose() {
 
 func (h *testDeviceResourcesBaseObservationHandler) waitForEvents(t *testing.T, subID, correlationID string, eventsCount int) []*pb.Event {
 	gotEvents := make([]*pb.Event, 0, eventsCount)
-	for i := 0; i < eventsCount; i++ {
+	for range eventsCount {
 		select {
 		case res := <-h.res:
 			event := pbTest.ToEvent(res)

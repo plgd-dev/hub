@@ -453,7 +453,7 @@ func BenchmarkEnrollmentGroups(b *testing.B) {
 		ratioSharedCertificateNames = 1
 	}
 	owner := uuid.NewString()
-	for i := 0; i < numEnrollmentGroups; i++ {
+	for i := range numEnrollmentGroups {
 		commonName := strconv.Itoa(i % ratioSharedCertificateNames)
 		err := s.CreateEnrollmentGroup(ctx, owner, &store.EnrollmentGroup{
 			Id: uuid.NewString(),
@@ -470,7 +470,7 @@ func BenchmarkEnrollmentGroups(b *testing.B) {
 	}
 
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		var h testEnrollmentGroupHandler
 		b.StartTimer()
 		err := s.LoadEnrollmentGroups(ctx, owner, &pb.GetEnrollmentGroupsRequest{AttestationMechanismX509CertificateNames: []string{strconv.Itoa(i % ratioSharedCertificateNames)}}, h.Handle)

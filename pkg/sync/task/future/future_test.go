@@ -57,7 +57,7 @@ func TestFutureGetMultithreaded(t *testing.T) {
 
 	var wg sync.WaitGroup
 	defer wg.Wait()
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -109,7 +109,7 @@ func TestFutureRepeatedSet(t *testing.T) {
 	var wg sync.WaitGroup
 	const workerCount = 5
 	wg.Add(workerCount)
-	for i := 0; i < workerCount; i++ {
+	for range workerCount {
 		go func() {
 			wg.Wait()
 			set(val, nil)

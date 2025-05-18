@@ -185,8 +185,8 @@ func TestResourceProjectionTestLoadParallelModels(t *testing.T) {
 	numResources := 500
 	numParallelRequests := 6
 
-	for i := 0; i < numDevices; i++ {
-		for j := 0; j < numResources; j++ {
+	for i := range numDevices {
+		for j := range numResources {
 			resourceID := commands.NewResourceID(fmt.Sprintf("dev-%v", i), fmt.Sprintf("res-%v", j))
 			eventstore.Append(resourceID.GetDeviceId(), resourceID.ToUUID().String(), mockEvents.MakeResourceStateSnapshotTaken(resourceID, &events.ResourceChanged{Content: &commands.Content{}, EventMetadata: resourceChangedEventMetadata}, makeEventMeta("a", 0), mockEvents.MakeAuditContext("userId", "2"), []string{"type1", "type2"}))
 		}
@@ -210,7 +210,7 @@ func TestResourceProjectionTestLoadParallelModels(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(numParallelRequests)
 	t.Logf("starting %v requests\n", numParallelRequests)
-	for i := 0; i < numParallelRequests; i++ {
+	for i := range numParallelRequests {
 		go func(v int) {
 			defer wg.Done()
 			n := time.Now()

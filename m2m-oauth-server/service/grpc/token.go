@@ -95,8 +95,8 @@ func setOwnerClaim(token jwt.Token, tokenReq tokenRequest) error {
 }
 
 func setName(token jwt.Token, tokenReq tokenRequest) error {
-	if tokenReq.CreateTokenRequest.GetTokenName() != "" && tokenReq.ownerClaim != "name" {
-		return token.Set("name", tokenReq.CreateTokenRequest.GetTokenName())
+	if tokenReq.GetTokenName() != "" && tokenReq.ownerClaim != "name" {
+		return token.Set("name", tokenReq.GetTokenName())
 	}
 	return nil
 }
@@ -110,8 +110,8 @@ func setOriginTokenClaims(token jwt.Token, tokenReq tokenRequest) error {
 
 func getExpirationTime(clientCfg *oauthsigner.Client, tokenReq tokenRequest) time.Time {
 	var wantExpiration time.Time
-	if tokenReq.CreateTokenRequest.GetExpiration() > 0 {
-		wantExpiration = time.Unix(tokenReq.CreateTokenRequest.GetExpiration(), 0)
+	if tokenReq.GetExpiration() > 0 {
+		wantExpiration = time.Unix(tokenReq.GetExpiration(), 0)
 	}
 	if !wantExpiration.IsZero() && tokenReq.issuedAt.After(wantExpiration) {
 		return time.Time{}
@@ -177,13 +177,13 @@ func sliceContains[T comparable](s []T, sub []T) bool {
 }
 
 func validateExpiration(clientCfg *oauthsigner.Client, tokenReq *tokenRequest) error {
-	if tokenReq.CreateTokenRequest.GetExpiration() > 0 {
-		if tokenReq.CreateTokenRequest.GetExpiration() < tokenReq.issuedAt.Unix() {
-			return fmt.Errorf("expiration(%v) must be greater than issuedAt(%v)", time.Unix(tokenReq.CreateTokenRequest.GetExpiration(), 0), tokenReq.issuedAt)
+	if tokenReq.GetExpiration() > 0 {
+		if tokenReq.GetExpiration() < tokenReq.issuedAt.Unix() {
+			return fmt.Errorf("expiration(%v) must be greater than issuedAt(%v)", time.Unix(tokenReq.GetExpiration(), 0), tokenReq.issuedAt)
 		}
 		if clientCfg.AccessTokenLifetime > 0 {
-			if tokenReq.CreateTokenRequest.GetExpiration() > tokenReq.issuedAt.Add(clientCfg.AccessTokenLifetime).Unix() {
-				return fmt.Errorf("expiration(%v) must be less than or equal to issuedAt + client accessTokenLifetime(%v)", time.Unix(tokenReq.CreateTokenRequest.GetExpiration(), 0), tokenReq.issuedAt.Add(clientCfg.AccessTokenLifetime))
+			if tokenReq.GetExpiration() > tokenReq.issuedAt.Add(clientCfg.AccessTokenLifetime).Unix() {
+				return fmt.Errorf("expiration(%v) must be less than or equal to issuedAt + client accessTokenLifetime(%v)", time.Unix(tokenReq.GetExpiration(), 0), tokenReq.issuedAt.Add(clientCfg.AccessTokenLifetime))
 			}
 		}
 	}
@@ -217,9 +217,9 @@ func (s *M2MOAuthServiceServer) validateTokenRequest(ctx context.Context, client
 
 func validateClient(clientCfg *oauthsigner.Client, tokenReq *tokenRequest) error {
 	if clientCfg == nil {
-		return fmt.Errorf("client(%v) not found", tokenReq.CreateTokenRequest.GetClientId())
+		return fmt.Errorf("client(%v) not found", tokenReq.GetClientId())
 	}
-	if clientCfg.Secret != "" && !clientCfg.JWTPrivateKey.Enabled && clientCfg.Secret != tokenReq.CreateTokenRequest.GetClientSecret() {
+	if clientCfg.Secret != "" && !clientCfg.JWTPrivateKey.Enabled && clientCfg.Secret != tokenReq.GetClientSecret() {
 		return errors.New("invalid client secret")
 	}
 	return nil
@@ -227,45 +227,45 @@ func validateClient(clientCfg *oauthsigner.Client, tokenReq *tokenRequest) error
 
 func validateGrantType(clientCfg *oauthsigner.Client, tokenReq *tokenRequest) error {
 	// clientCfg.AllowedGrantTypes is always non-empty
-	if !sliceContains(clientCfg.AllowedGrantTypes, []oauthsigner.GrantType{oauthsigner.GrantType(tokenReq.CreateTokenRequest.GetGrantType())}) {
-		return fmt.Errorf("invalid grant type(%v)", tokenReq.CreateTokenRequest.GetGrantType())
+	if !sliceContains(clientCfg.AllowedGrantTypes, []oauthsigner.GrantType{oauthsigner.GrantType(tokenReq.GetGrantType())}) {
+		return fmt.Errorf("invalid grant type(%v)", tokenReq.GetGrantType())
 	}
 	return nil
 }
 
 func validateAudience(clientCfg *oauthsigner.Client, tokenReq *tokenRequest) error {
-	if !sliceContains(clientCfg.AllowedAudiences, tokenReq.CreateTokenRequest.GetAudience()) {
-		return fmt.Errorf("invalid audience(%v)", tokenReq.CreateTokenRequest.GetAudience())
+	if !sliceContains(clientCfg.AllowedAudiences, tokenReq.GetAudience()) {
+		return fmt.Errorf("invalid audience(%v)", tokenReq.GetAudience())
 	}
 	return nil
 }
 
 func validateScopes(clientCfg *oauthsigner.Client, tokenReq *tokenRequest) error {
-	if len(tokenReq.CreateTokenRequest.GetScope()) == 0 {
-		tokenReq.CreateTokenRequest.Scope = clientCfg.AllowedScopes
+	if len(tokenReq.GetScope()) == 0 {
+		tokenReq.Scope = clientCfg.AllowedScopes
 	}
-	if !sliceContains(clientCfg.AllowedScopes, tokenReq.CreateTokenRequest.GetScope()) {
-		return fmt.Errorf("invalid scope(%v)", tokenReq.CreateTokenRequest.GetScope())
+	if !sliceContains(clientCfg.AllowedScopes, tokenReq.GetScope()) {
+		return fmt.Errorf("invalid scope(%v)", tokenReq.GetScope())
 	}
 	return nil
 }
 
 func validateClientAssertionType(clientCfg *oauthsigner.Client, tokenReq *tokenRequest) error {
-	if tokenReq.CreateTokenRequest.GetClientAssertionType() != "" && clientCfg.JWTPrivateKey.Enabled && tokenReq.CreateTokenRequest.GetClientAssertionType() != uri.ClientAssertionTypeJWT {
-		return fmt.Errorf("invalid client assertion type(%v)", tokenReq.CreateTokenRequest.GetClientAssertionType())
+	if tokenReq.GetClientAssertionType() != "" && clientCfg.JWTPrivateKey.Enabled && tokenReq.GetClientAssertionType() != uri.ClientAssertionTypeJWT {
+		return fmt.Errorf("invalid client assertion type(%v)", tokenReq.GetClientAssertionType())
 	}
 	return nil
 }
 
 func (s *M2MOAuthServiceServer) validateClientAssertion(ctx context.Context, tokenReq *tokenRequest) error {
-	if tokenReq.CreateTokenRequest.GetClientAssertion() == "" {
+	if tokenReq.GetClientAssertion() == "" {
 		return nil
 	}
-	v, ok := s.signer.GetValidator(tokenReq.CreateTokenRequest.GetClientId())
+	v, ok := s.signer.GetValidator(tokenReq.GetClientId())
 	if !ok {
 		return errors.New("invalid client assertion")
 	}
-	token, err := v.GetParser().ParseWithContext(ctx, tokenReq.CreateTokenRequest.GetClientAssertion())
+	token, err := v.GetParser().ParseWithContext(ctx, tokenReq.GetClientAssertion())
 	if err != nil {
 		return fmt.Errorf("invalid client assertion: %w", err)
 	}

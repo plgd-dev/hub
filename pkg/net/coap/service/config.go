@@ -64,7 +64,7 @@ func (c *Config) Validate() error {
 	if len(c.Protocols) == 0 {
 		return fmt.Errorf("protocols('%v')", c.Protocols)
 	}
-	for i := 0; i < len(c.Protocols); i++ {
+	for i := range len(c.Protocols) {
 		switch c.Protocols[i] {
 		case TCP, UDP:
 		default:

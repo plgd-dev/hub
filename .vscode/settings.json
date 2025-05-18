@@ -67,5 +67,8 @@
     },
     "[proto3]": {
         "editor.formatOnSave": false
+    },
+    "[yaml]": {
+        "editor.formatOnSave": false
     }
 }

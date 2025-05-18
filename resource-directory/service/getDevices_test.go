@@ -78,7 +78,7 @@ func TestRequestHandlerGetDevicesParallel(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(numParallelRequests)
 	t.Logf("starting %v requests\n", numParallelRequests)
-	for i := 0; i < numParallelRequests; i++ {
+	for i := range numParallelRequests {
 		go func(v int) {
 			defer wg.Done()
 			n := time.Now()

@@ -234,7 +234,7 @@ func getSignInDataFromClaims(ctx context.Context, client *session, signIn CoapSi
 			return "", time.Time{}, fmt.Errorf("access token will expire (%v) in less time than the interval for checking expiration (%v)", expTime.Time, 2*client.server.config.APIs.COAP.OwnerCacheExpiration)
 		}
 		// set expiration time before token expiration to allow sign off device.
-		validUntil = expTime.Time.Add(-2 * client.server.config.APIs.COAP.OwnerCacheExpiration)
+		validUntil = expTime.Add(-2 * client.server.config.APIs.COAP.OwnerCacheExpiration)
 	}
 
 	return deviceID, validUntil, nil

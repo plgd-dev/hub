@@ -37,7 +37,7 @@ func TestGetLatestDeviceETAG(t *testing.T) {
 
 	start := time.Now()
 	limit := 1
-	for i := 0; i < getEventsDeviceCount; i++ {
+	for i := range getEventsDeviceCount {
 		etags, err := store.GetLatestDeviceETags(ctx, getDeviceID(i), uint32(limit))
 		require.NoError(t, err)
 		assert.Equal(t, getNLatestETag(i, limit), etags)
@@ -45,7 +45,7 @@ func TestGetLatestDeviceETAG(t *testing.T) {
 	fmt.Printf("event store - GetLatestDeviceETAGs(limit=%v) %v\n", limit, time.Since(start))
 	start = time.Now()
 	limit = 0
-	for i := 0; i < getEventsDeviceCount; i++ {
+	for i := range getEventsDeviceCount {
 		etags, err := store.GetLatestDeviceETags(ctx, getDeviceID(i), uint32(limit))
 		require.NoError(t, err)
 		assert.Equal(t, getNLatestETag(i, limit), etags)

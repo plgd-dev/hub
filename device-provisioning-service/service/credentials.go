@@ -196,7 +196,7 @@ func provisionCredentials(ctx context.Context, req *mux.Message, session *Sessio
 		session.SetDeviceID(deviceID)
 
 		identityCert := make([]byte, 0, 1024)
-		for i := 0; i < len(chain)-1; i++ {
+		for i := range len(chain) - 1 {
 			identityCert = append(identityCert, certToPem(chain[i])...)
 		}
 		identityCertPem = string(identityCert)

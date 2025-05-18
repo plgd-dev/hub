@@ -93,7 +93,7 @@ func TestNormalizeIDFilter(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require.EqualValues(t, tt.want, pb.NormalizeIdFilter(tt.filter))
+			require.Equal(t, tt.want, pb.NormalizeIdFilter(tt.filter))
 		})
 	}
 }
@@ -151,7 +151,7 @@ func TestIDFilterFromString(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			require.EqualValues(t, tt.want, pb.IDFilterFromString(tt.filter))
+			require.Equal(t, tt.want, pb.IDFilterFromString(tt.filter))
 		})
 	}
 }

@@ -115,7 +115,7 @@ func TestDeviceProvisionServiceServerGetProvisioningRecords(t *testing.T) {
 				dev.CreationDate = 0
 				got = append(got, &dev)
 			}
-			require.Equal(t, len(tt.want), len(got))
+			require.Len(t, got, len(tt.want))
 			tt.want.Sort()
 			got.Sort()
 			for i := range got {

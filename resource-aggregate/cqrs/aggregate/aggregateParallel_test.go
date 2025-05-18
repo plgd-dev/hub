@@ -95,11 +95,11 @@ func TestParallelRequest(t *testing.T) {
 	numParallel := 3
 	var wg sync.WaitGroup
 	var anyError atomic.Error
-	for i := 0; i < numParallel; i++ {
+	for i := range numParallel {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
-			for j := 0; j < 1000; j++ {
+			for j := range 1000 {
 				if anyError.Load() != nil {
 					return
 				}

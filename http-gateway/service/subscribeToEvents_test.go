@@ -78,7 +78,7 @@ func (u *updateChecker) checkUpdateLightResource(ctx context.Context, t *testing
 	require.NoError(t, err)
 
 	var updCorrelationID string
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		ev, err := u.recv()
 		require.NoError(t, err)
 		switch {

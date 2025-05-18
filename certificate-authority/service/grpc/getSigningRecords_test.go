@@ -117,7 +117,7 @@ func TestCertificateAuthorityServerGetSigningRecords(t *testing.T) {
 				require.NoError(t, err)
 				got = append(got, r)
 			}
-			require.Equal(t, len(tt.want), len(got))
+			require.Len(t, got, len(tt.want))
 			tt.want.Sort()
 			got.Sort()
 			for i := range got {

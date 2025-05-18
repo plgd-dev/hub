@@ -422,7 +422,7 @@ func BenchmarkProvisioningRecords(b *testing.B) {
 	data := make([]*store.ProvisioningRecord, 0, 5001)
 	const owner = "owner"
 	dataCap := cap(data)
-	for i := 0; i < dataCap; i++ {
+	for i := range dataCap {
 		data = append(data, &store.ProvisioningRecord{
 			Id:                "mfgID" + strconv.Itoa(i),
 			EnrollmentGroupId: "enrollmentGroupID",
@@ -454,7 +454,7 @@ func BenchmarkProvisioningRecords(b *testing.B) {
 	b.ResetTimer()
 	s, cleanUpStore := test.NewMongoStore(b)
 	defer cleanUpStore()
-	for i := uint32(0); i < uint32(b.N); i++ {
+	for range uint32(b.N) {
 		b.StopTimer()
 		err := s.Clear(ctx)
 		require.NoError(b, err)

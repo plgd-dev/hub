@@ -1,28 +1,8 @@
-linters-settings:
-  exhaustive:
-    default-signifies-exhaustive: true
-  gocyclo:
-    min-complexity: 15
-  gomodguard:
-    blocked:
-      modules:
-        - github.com/pkg/errors:
-            recommendations:
-              - errors
-  gomoddirectives:
-    replace-allow-list:
-      - github.com/go-json-experiment/json
-      - golang.org/x/exp
-  gosec:
-    excludes:
-      - G402
-  govet:
-    enable:
-      - nilness
-      - shadow
-  stylecheck:
-    checks: ["all", "-ST1003"]
-
+version: "2"
+run:
+  go: "1.23"
+# issues:
+#   fix: true
 linters:
   enable:
     - asasalint        # Check for pass []any as any in variadic func(...any)
@@ -40,29 +20,23 @@ linters:
     - errname          # Checks that sentinel errors are prefixed with the `Err` and error types are suffixed with the `Error`.
     - errorlint        # errorlint is a linter for that can be used to find code that will cause problems with the error wrapping scheme introduced in Go 1.13.
     # - forcetypeassert  # finds forced type assertions
-    - gci              # Gci control golang package import order and make it always deterministic.
     - gocheckcompilerdirectives  # Checks that go compiler directive comments (//go:) are valid.
     - gocognit         # Computes and checks the cognitive complexity of functions
     - goconst          # Finds repeated strings that could be replaced by a constant
     - gocritic         # The most opinionated Go source code linter
     - gocyclo          # Computes and checks the cyclomatic complexity of functions
-    # - godox            # Tool for detection of FIXME, TODO and other comment keywords
     # - goerr113         # Golang linter to check the errors handling expressions
-    - gofmt            # Gofmt checks whether code was gofmt-ed. By default this tool runs with -s option to check for code simplification
-    - gofumpt          # Gofumpt checks whether code was gofumpt-ed.
     - goheader         # Checks is file header matches to pattern
-    - goimports        # Goimports does everything that gofmt does. Additionally it checks unused imports
-    - gomoddirectives  # Manage the use of 'replace', 'retract', and 'excludes' directives in go.mod.
+    # - gomoddirectives  # Manage the use of 'replace', 'retract', and 'excludes' directives in go.mod.
     - gomodguard       # Allow and block list linter for direct Go module dependencies. This is different from depguard where there are different block types for example version constraints and module recommendations.
     - goprintffuncname # Checks that printf-like functions are named with `f` at the end
     - gosec            # Inspects source code for security problems
     - gosmopolitan     # Report certain i18n/l10n anti-patterns in your Go codebase
-    - gosimple         # Linter for Go source code that specializes in simplifying a code
     - govet            # Vet examines Go source code and reports suspicious constructs, such as Printf calls whose arguments do not align with the format string
     - grouper          # An analyzer to analyze expression groups
     - importas         # Enforces consistent import aliases
     - ineffassign      # Detects when assignments to existing variables are not used
-    # - intrange         # Intrange is a linter to find places where for loops could make use of an integer range
+    - intrange         # Intrange is a linter to find places where for loops could make use of an integer range
     - loggercheck      # Checks key value pairs for common logger libraries (kitlog,klog,logr,zap).
     - mirror           # Reports wrong mirror patterns of bytes/strings usage
     - misspell         # Finds commonly misspelled English words in comments
@@ -70,7 +44,7 @@ linters:
     - nestif           # Reports deeply nested if statements
     - nilerr           # Finds the code that returns nil even if it checks that the error is not nil.
     # - nilnil           # Checks that there is no simultaneous return of `nil` error and an invalid value.
-    # - noctx            # noctx finds sending http request without context.Context
+    - noctx            # noctx finds sending http request without context.Context
     - nolintlint       # Reports ill-formed or insufficient nolint directives
     - nosprintfhostport # Checks for misuse of Sprintf to construct a host with port in a URL
     - perfsprint       # Checks that fmt.Sprintf can be replaced with a faster alternative.
@@ -82,11 +56,8 @@ linters:
     - sloglint         # Ensure consistent code style when using log/slog
     - spancheck        # Checks for mistakes with OpenTelemetry/Census spans
     - staticcheck      # Staticcheck is a go vet on steroids, applying a ton of static analysis checks
-    - stylecheck       # Stylecheck is a replacement for golint
-    - tenv             # tenv is analyzer that detects using os.Setenv instead of t.Setenv since Go1.17
     - testifylint      # Checks usage of github.com/stretchr/testify.
     - tparallel        # tparallel detects inappropriate usage of t.Parallel() method in your Go test codes
-    - typecheck        # Like the front-end of a Go compiler, parses and type-checks Go code
     - unconvert        # Remove unnecessary type conversions
     - unparam          # Reports unused function parameters
     - unused           # Checks Go code for unused constants, variables, functions and types
@@ -105,7 +76,7 @@ linters:
     - gochecknoglobals # Checks that no globals are present in Go code
     - gochecknoinits   # Checks that no init functions are present in Go code
     - godot            # Check if comments end in a period
-    - gomnd            # An analyzer to detect magic numbers.
+    - godox            # Tool for detection of FIXME, TODO and other comment keywords
     - inamedparam      # Reports interfaces with unnamed method parameters.
     - interfacebloat   # A linter that checks the number of methods inside an interface
     - ireturn          # Accept Interfaces, Return Concrete Types
@@ -126,57 +97,72 @@ linters:
     - varnamelen       # checks that the length of a variable's name matches its scope
     - wrapcheck        # Checks that errors returned from external packages are wrapped
     - wsl              # Whitespace Linter - Forces you to use empty lines!
-
-issues:
-  exclude-dirs:
-    - dependency
-    - http-gateway/grpc-websocket-proxy
-  exclude-files:
-    - ".*\\.pb\\.go$"
-    - ".*\\.pb\\.gw\\.go$"
-  exclude-rules:
-    - path: _test.go
-      linters:
-        - dupl
-        - goconst
-        - gosec
-    - path: test
-      linters:
-        - gocognit
-        - gocyclo
-        - gosec
-    - path: m2m-oauth-server/uri/uri.go
-      text: "G101:"
-      linters:
-        - gosec
-    - path: pkg/time/delay.go
-      text: "G404:"
-      linters:
-        - gosec
-    - text: "var-naming:|exported:"
-      linters:
-        - revive
-    - path: grpc-gateway/client/subscription.go
-      text: "SA1019:"
-      linters:
-        - staticcheck
-    - path: grpc-gateway/client/client.go
-      linters:
-        - dupword
-    - path: coap-gateway/service/session.go
-      linters:
-        - dupl
-    - path: grpc-gateway/client/subscription.go
-      linters:
-        - dupl
-    - path: resource-aggregate/events/resourceLinks.*.go|resource-aggregate/client/sync.*.go|resource-aggregate/service/grpcApi.go|resource-aggregate/events/resource.*.go
-      linters:
-        - dupl
-    - path: device-provisioning-service/test/provisionHandler.go
-      linters:
-        - dupl
-  # Fix found issues (if it's supported by the linter).
-  # fix: true
-
-run:
-  go: "1.23"
+  settings:
+    gocyclo:
+      min-complexity: 15
+    gosec:
+      excludes:
+        - G402
+    govet:
+      enable:
+        - nilness
+        - shadow
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    # Log a warning if an exclusion rule is unused.
+    # Default: false
+    warn-unused: true
+    rules:
+      - linters:
+          - dupl
+          - goconst
+          - gosec
+        path: _test.go
+      - linters:
+          - gocognit
+          - gocyclo
+          - gosec
+        path: test
+      - linters:
+          - gosec
+        path: pkg/time/delay.go
+        text: 'G404:'
+      - linters:
+          - revive
+        text: 'var-naming:|exported:'
+      - linters:
+          - staticcheck
+        path: grpc-gateway/client/subscription.go
+        text: 'SA1019:'
+      - linters:
+          - dupword
+        path: grpc-gateway/client/client.go
+      - linters:
+          - dupl
+        path: coap-gateway/service/session.go
+      - linters:
+          - dupl
+        path: grpc-gateway/client/subscription.go
+      - linters:
+          - dupl
+        path: resource-aggregate/events/resourceLinks.*.go|resource-aggregate/client/sync.*.go|resource-aggregate/service/grpcApi.go|resource-aggregate/events/resource.*.go
+      - linters:
+          - dupl
+        path: device-provisioning-service/test/provisionHandler.go
+    paths:
+      - .*\.pb\.go$
+      - .*\.pb\.gw\.go$
+      - http-gateway/grpc-websocket-proxy
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+    - goimports
+  exclusions:
+    generated: lax

@@ -622,7 +622,7 @@ func (s *Service) createServices(fileWatcher *fsnotify.Watcher, logger log.Logge
 		coapService.WithOnInactivityConnection(s.onInactivityConnection),
 		coapService.WithMessagePool(s.messagePool),
 		coapService.WithOverrideTLS(func(cfg *tls.Config, verifyByCRL pkgX509.VerifyByCRL) *tls.Config {
-			tlsCfg := MakeGetConfigForClient(cfg, s.config.APIs.COAP.InjectedCOAPConfig.TLSConfig.IdentityPropertiesRequired, s.config.APIs.COAP.Config.TLS.Embedded.CRL.Enabled, verifyByCRL)
+			tlsCfg := MakeGetConfigForClient(cfg, s.config.APIs.COAP.InjectedCOAPConfig.TLSConfig.IdentityPropertiesRequired, s.config.APIs.COAP.TLS.Embedded.CRL.Enabled, verifyByCRL)
 			return &tlsCfg
 		}),
 	)

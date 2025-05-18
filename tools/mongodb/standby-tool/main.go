@@ -591,7 +591,7 @@ func (app *App) updateHiddenMemberConfig(member string, config primitive.M) (pri
 }
 
 func (app *App) movePrimary(ctx context.Context, client *mongo.Client, standbyMembers []string) (string, error) {
-	for tries := 0; tries < app.Config.ReplicaSet.MaxWaitsForReady; tries++ {
+	for tries := range app.Config.ReplicaSet.MaxWaitsForReady {
 		status, err := app.getStatus(ctx, client)
 		if err != nil {
 			return "", fmt.Errorf(errGetReplicaStatusFmt, err)

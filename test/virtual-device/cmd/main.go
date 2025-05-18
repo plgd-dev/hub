@@ -270,7 +270,7 @@ func publishResources(ctx context.Context, deviceID string, co *client.Conn, num
 		},
 		InstanceID: 136750592,
 	})
-	for i := 0; i < numResources; i++ {
+	for i := range numResources {
 		links = append(links, schema.ResourceLink{
 			Href: test.TestResourceLightInstanceHref(strconv.Itoa(i + 1)),
 			Interfaces: []string{
@@ -418,7 +418,7 @@ func processBatchResourceLinks(w *responsewriter.ResponseWriter[*client.Conn], d
 	for i := 0; i < len(dataString); i++ {
 		dataString[i] = (byte(i) % 32) + 'a'
 	}
-	for i := 0; i < numResources; i++ {
+	for i := range numResources {
 		data = append(data, resources.BatchRepresentation{
 			HrefRaw: ocfSchemePrefix + deviceID + test.TestResourceLightInstanceHref(strconv.Itoa(i+1)),
 			Content: encodeLightResource(i, dataString, w),
@@ -494,7 +494,7 @@ func processGetResourceLinks(w *responsewriter.ResponseWriter[*client.Conn], dev
 		InstanceID: 136750593,
 	},
 	)
-	for i := 0; i < numResources; i++ {
+	for i := range numResources {
 		links = append(links, schema.ResourceLink{
 			Anchor:   ocfSchemePrefix + deviceID + test.TestResourceLightInstanceHref(strconv.Itoa(i+1)),
 			DeviceID: deviceID,
@@ -624,7 +624,7 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	for i := 0; i < *numDevices; i++ {
+	for i := range *numDevices {
 		for {
 			c, err := runDevice(ctx, signerCert, signerKey, test.GenerateDeviceIDbyIdx(i), *numResource, *resourceDataSize)
 			if err == nil {
