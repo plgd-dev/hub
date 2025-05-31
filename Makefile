@@ -277,12 +277,12 @@ http-gateway-www/clean:
 
 # standard device
 DEVICE_SIMULATOR_NAME := devsim
-DEVICE_SIMULATOR_IMG := ghcr.io/iotivity/iotivity-lite/cloud-server-debug:vnext
+DEVICE_SIMULATOR_IMG := ghcr.io/iotivity/iotivity-lite/cloud-server-debug:vnext-pr655
 # device with /oic/res observable
 # note: iotivity-lite runs only grpc-gateway tests and this second device is not started; thus 
 # the grpc-gateway are expected to succeed with a single non-oic/rec observable device
 DEVICE_SIMULATOR_RES_OBSERVABLE_NAME := devsim-resobs
-DEVICE_SIMULATOR_RES_OBSERVABLE_IMG := ghcr.io/iotivity/iotivity-lite/cloud-server-discovery-resource-observable-debug:vnext
+DEVICE_SIMULATOR_RES_OBSERVABLE_IMG := ghcr.io/iotivity/iotivity-lite/cloud-server-discovery-resource-observable-debug:vnext-pr655
 
 # Pull latest device simulator with given name and run it
 #
@@ -401,7 +401,7 @@ DPS_DEVICE_LOG_LEVEL ?= debug
 DPS_DEVICE_OC_LOG_LEVEL ?= info
 DPS_DEVICE_SIMULATOR_OBT_NAME := dps-devsim-obt
 DPS_DEVICE_SIMULATOR_NAME := dps-devsim
-DPS_DEVICE_SIMULATOR_IMG := ghcr.io/iotivity/iotivity-lite/dps-cloud-server-debug:vnext
+DPS_DEVICE_SIMULATOR_IMG := ghcr.io/iotivity/iotivity-lite/dps-cloud-server-debug:vnext-pr655
 
 # Pull latest DPS device simulator with given name and run it
 #
