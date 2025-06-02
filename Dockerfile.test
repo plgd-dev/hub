@@ -8,7 +8,7 @@ WORKDIR /
 # apt: ca-certificates git make sudo
 RUN git clone https://github.com/udhos/update-golang.git \
     && cd update-golang \
-    && sudo RELEASE=1.22.7 ./update-golang.sh \
+    && sudo RELEASE=1.23.9 ./update-golang.sh \
     && ln -s /usr/local/go/bin/go /usr/bin/go
 WORKDIR $GOPATH/src/github.com/plgd-dev/hub
 COPY go.mod go.sum ./
