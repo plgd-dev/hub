@@ -171,7 +171,7 @@ func TestBridgeDeviceGetThings(t *testing.T) {
 	shutdownHttp := httpgwTest.New(t, httpgwCfg)
 	defer shutdownHttp()
 
-	var devIDs []string
+	devIDs := make([]string, 0, bridgeDeviceCfg.NumGeneratedBridgedDevices)
 	for i := range bridgeDeviceCfg.NumGeneratedBridgedDevices {
 		bdName := test.TestBridgeDeviceInstanceName(strconv.Itoa(i))
 		bdID := test.MustFindDeviceByName(bdName, func(d *core.Device) deviceCoap.OptionFunc {

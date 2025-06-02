@@ -11,15 +11,15 @@ import (
 	pkgMessage "github.com/plgd-dev/hub/v2/coap-gateway/service/message"
 	"github.com/plgd-dev/hub/v2/pkg/opentelemetry"
 	"github.com/plgd-dev/kit/v2/codec/json"
-	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.10.0"
+	semconv1_30 "go.opentelemetry.io/otel/semconv/v1.30.0"
 	"go.opentelemetry.io/otel/trace"
 )
 
 var (
-	messageSent       = MessageType(otelgrpc.RPCMessageTypeSent)
-	messageReceived   = MessageType(otelgrpc.RPCMessageTypeReceived)
+	messageSent       = MessageType(semconv1_30.RPCMessageTypeSent)
+	messageReceived   = MessageType(semconv1_30.RPCMessageTypeReceived)
 	COAPStatusCodeKey = attribute.Key("coap.status_code")
 	COAPMethodKey     = attribute.Key("coap.method")
 	COAPPathKey       = attribute.Key("coap.path")
