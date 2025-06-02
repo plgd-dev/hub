@@ -27,7 +27,7 @@ RUN go build \
     -o /go/bin/http-gateway \
     ./cmd/service
 
-FROM alpine:3.20 AS security-provider
+FROM alpine:3.22 AS security-provider
 RUN apk add -U --no-cache ca-certificates \
     && addgroup -S nonroot \
     && adduser -S nonroot -G nonroot

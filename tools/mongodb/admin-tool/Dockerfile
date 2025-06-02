@@ -23,12 +23,12 @@ RUN CGO_ENABLED=0 go build \
     -o /go/bin/mongodb-admin-tool \
     ./
 
-FROM alpine:3.20 AS security-provider
+FROM alpine:3.22 AS security-provider
 RUN apk add -U --no-cache ca-certificates \
     && addgroup -S nonroot \
     && adduser -S nonroot -G nonroot
 
-FROM alpine:3.20 AS service
+FROM alpine:3.22 AS service
 RUN apk add -U --no-cache bash
 COPY --from=security-provider /etc/passwd /etc/passwd
 COPY --from=security-provider /etc/group /etc/group
