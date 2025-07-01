@@ -148,6 +148,6 @@ require (
 
 // last versions for Go 1.22.0
 replace (
-	github.com/go-json-experiment/json => github.com/go-json-experiment/json v0.0.0-20240815174924-0599f16bf0e2
+	github.com/go-json-experiment/json => github.com/go-json-experiment/json 1a886bd29d1b
 	golang.org/x/exp => golang.org/x/exp v0.0.0-20240823005443-9b4947da3948
 )
