@@ -144,13 +144,14 @@ scylla/clean:
 	sudo rm -rf $(WORKING_DIRECTORY)/.tmp/scylla || :
 
 scylla: scylla/clean
-	mkdir -p $(WORKING_DIRECTORY)/.tmp/scylla/data $(WORKING_DIRECTORY)/.tmp/scylla/commitlog $(WORKING_DIRECTORY)/.tmp/scylla/hints $(WORKING_DIRECTORY)/.tmp/scylla/view_hints $(WORKING_DIRECTORY)/.tmp/scylla/etc
+	mkdir -p $(WORKING_DIRECTORY)/.tmp/scylla/etc ;
 	docker run --rm \
+		--user $(USER_ID):$(GROUP_ID) \
 		-v $(WORKING_DIRECTORY)/.tmp/scylla/etc:/etc-scylla-tmp \
 		--entrypoint /bin/cp \
 		scylladb/scylla \
 		/etc/scylla/scylla.yaml /etc-scylla-tmp/scylla.yaml
-	sudo chown $(shell whoami) $(WORKING_DIRECTORY)/.tmp/scylla/etc/scylla.yaml
+	sudo chown $(shell whoami):$(shell id -gn) $(WORKING_DIRECTORY)/.tmp/scylla/etc/scylla.yaml
 
 	yq -i '.server_encryption_options.internode_encryption="all"' $(WORKING_DIRECTORY)/.tmp/scylla/etc/scylla.yaml
 	yq -i '.server_encryption_options.certificate="/certs/http.crt"' $(WORKING_DIRECTORY)/.tmp/scylla/etc/scylla.yaml
@@ -175,17 +176,22 @@ scylla: scylla/clean
 
 	docker run \
 		-d \
-		--network=host \
 		--name=scylla \
+		--network=host \
 		-v $(WORKING_DIRECTORY)/.tmp/scylla/etc/scylla.yaml:/etc/scylla/scylla.yaml \
-		-v $(WORKING_DIRECTORY)/.tmp/scylla:/var/lib/scylla \
 		-v $(CERT_PATH):/certs \
 		scylladb/scylla --developer-mode 1 --listen-address 127.0.0.1
 
+	@MAX_RETRIES=300; \
+	i=0; \
 	while true; do \
 		i=$$((i+1)); \
 		if openssl s_client -connect 127.0.0.1:9142 -cert $(CERT_PATH)/http.crt -key $(CERT_PATH)/http.key <<< "Q" 2>/dev/null > /dev/null; then \
 			break; \
+		fi; \
+		if [ "$$i" -ge "$$MAX_RETRIES" ]; then \
+			echo "Scylla did not become ready after $$i seconds. Exiting."; \
+			exit 1; \
 		fi; \
 		echo "Try to reconnect to scylla(127.0.0.1:9142) $$i"; \
 		sleep 1; \
