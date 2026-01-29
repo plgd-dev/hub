@@ -1,9 +1,6 @@
 module github.com/plgd-dev/hub/v2
 
-go 1.23.0
-
-// use export GOTOOLCHAIN=go1.23.0 before calling go mod tidy to avoid tidy adding
-// the toolchain directive with your local go version
+go 1.25
 
 require (
 	github.com/favadi/protoc-go-inject-tag v1.4.0
@@ -149,4 +146,4 @@ require (
 )
 
 // last versions for Go 1.23
-replace github.com/go-json-experiment/json => github.com/go-json-experiment/json v0.0.0-20240815175050-ebd3a8989ca1
+//replace github.com/go-json-experiment/json => github.com/go-json-experiment/json v0.0.0-20240815175050-ebd3a8989ca1
