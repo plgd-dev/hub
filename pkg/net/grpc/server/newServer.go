@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net"
@@ -22,7 +23,7 @@ type Server struct {
 // NewServer instantiates a gRPC server.
 // When passing addr with an unspecified port or ":", use Addr().
 func NewServer(addr string, opts ...grpc.ServerOption) (*Server, error) {
-	lis, err := net.Listen("tcp", addr)
+	lis, err := (&net.ListenConfig{}).Listen(context.Background(), "tcp", addr)
 	if err != nil {
 		return nil, fmt.Errorf("listening failed: %w", err)
 	}

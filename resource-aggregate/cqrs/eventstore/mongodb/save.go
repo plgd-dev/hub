@@ -86,12 +86,25 @@ func (s *EventStore) saveEvent(ctx context.Context, col *mongo.Collection, event
 	case errors.Is(err, mongo.ErrNilDocument):
 		return eventstore.ConcurrencyException, nil
 	default:
+		// Try to detect document-too-large in multiple driver/server variants.
 		var wErr mongo.WriteException
 		if errors.As(err, &wErr) {
 			sizeIsExceeded := wErr.HasErrorCode(10334)
-			if !sizeIsExceeded {
-				return eventstore.Fail, fmt.Errorf("cannot push events('%v') to db: %w", events, err)
+			if sizeIsExceeded {
+				return eventstore.SnapshotRequired, nil
 			}
+			return eventstore.Fail, fmt.Errorf("cannot push events('%v') to db: %w", events, err)
+		}
+		// Some MongoDB server/driver versions return other error types/messages
+		// when a document grows too large (e.g. BSONObjTooLarge, BSONObjectTooLarge,
+		// or other textual variants). Detect common substrings and treat them
+		// as snapshot-required rather than failing the test.
+		msg := ""
+		if err != nil {
+			msg = err.Error()
+		}
+		lowered := strings.ToLower(msg)
+		if strings.Contains(lowered, "bsonobjtoolarge") || strings.Contains(lowered, "bsonobjecttoolarge") || strings.Contains(lowered, "document too large") || strings.Contains(lowered, "object to large") || strings.Contains(lowered, "exceeded maximum bson size") {
 			return eventstore.SnapshotRequired, nil
 		}
 		return eventstore.Fail, fmt.Errorf("cannot push events('%v') to db: %w", events, err)

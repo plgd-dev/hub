@@ -195,20 +195,18 @@ func wrapServerStream(ctx context.Context, ss grpc.ServerStream) *serverStream {
 }
 
 func MakeDefaultOptions(auth pkgGrpc.AuthInterceptors, logger log.Logger, tracerProvider trace.TracerProvider) ([]grpc.ServerOption, error) {
-	streamInterceptors := []grpc.StreamServerInterceptor{
-		func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-			if !info.IsClientStream {
-				return handler(srv, wrapServerStream(ss.Context(), ss))
-			}
-			return handler(srv, ss)
-		},
-	}
-	unaryInterceptors := []grpc.UnaryServerInterceptor{
-		func(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
-			setGrpcRequest(ctx, req)
-			return handler(ctx, req)
-		},
-	}
+	streamInterceptors := make([]grpc.StreamServerInterceptor, 0, 3)
+	streamInterceptors = append(streamInterceptors, func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		if !info.IsClientStream {
+			return handler(srv, wrapServerStream(ss.Context(), ss))
+		}
+		return handler(srv, ss)
+	})
+	unaryInterceptors := make([]grpc.UnaryServerInterceptor, 0, 3)
+	unaryInterceptors = append(unaryInterceptors, func(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+		setGrpcRequest(ctx, req)
+		return handler(ctx, req)
+	})
 
 	cfg := logger.Config()
 	if cfg.EncoderConfig.EncodeTime.TimeEncoder == nil {

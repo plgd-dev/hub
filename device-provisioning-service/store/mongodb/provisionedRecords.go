@@ -43,7 +43,7 @@ func (s *Store) UpdateProvisioningRecord(_ context.Context, owner string, provis
 }
 
 func toProvisioningRecordsQueryFilter(owner string, queries *store.ProvisioningRecordsQuery) bson.D {
-	or := []bson.D{}
+	or := make([]bson.D, 0, len(queries.GetIdFilter())+len(queries.GetEnrollmentGroupIdFilter())+len(queries.GetDeviceIdFilter())+1)
 	for _, q := range queries.GetIdFilter() {
 		or = append(or, addOwnerToFilter(owner, bson.D{{Key: store.IDKey, Value: q}}))
 	}

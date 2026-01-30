@@ -292,8 +292,8 @@ func TestStoreGetConditions(t *testing.T) {
 			args: args{
 				query: &pb.GetConditionsRequest{
 					IdFilter: func() []*pb.IDFilter {
-						var idFilters []*pb.IDFilter
 						c := conds[test.ConditionID(0)]
+						idFilters := make([]*pb.IDFilter, 0, len(c.Versions)+1)
 						for _, v := range c.Versions {
 							idFilters = append(idFilters, &pb.IDFilter{
 								Id: test.ConditionID(0),

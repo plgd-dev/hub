@@ -100,7 +100,7 @@ type switchableHandler struct {
 	}
 }
 
-func NewSwitchableHandler(atLifetime int64) *switchableHandler { //nolint:revive
+func NewSwitchableHandler(atLifetime int64) *switchableHandler {
 	return &switchableHandler{
 		CoapHandlerWithCounter: iotService.NewCoapHandlerWithCounter(atLifetime),
 	}

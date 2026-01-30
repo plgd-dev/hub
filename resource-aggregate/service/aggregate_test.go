@@ -372,7 +372,7 @@ func TestAggregateHandleUnpublishResourceSubset(t *testing.T) {
 }
 
 func testMakePublishResourceRequest(deviceID string, href []string) *commands.PublishResourceLinksRequest {
-	resources := []*commands.Resource{}
+	resources := make([]*commands.Resource, 0, len(href))
 	for _, h := range href {
 		resources = append(resources, testNewResource(h, deviceID))
 	}

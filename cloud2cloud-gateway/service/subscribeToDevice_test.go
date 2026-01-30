@@ -24,7 +24,11 @@ import (
 )
 
 func testSubscribeToDeviceDecodeResources(links ...schema.ResourceLinks) []*commands.Resource {
-	resources := make([]*commands.Resource, 0)
+	total := 0
+	for _, link := range links {
+		total += len(link)
+	}
+	resources := make([]*commands.Resource, 0, total)
 	for _, link := range links {
 		for _, l := range link {
 			pl := commands.SchemaResourceLinkToResource(l, time.Time{})

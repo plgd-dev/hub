@@ -70,7 +70,8 @@ func toIDQueryFilter(owner string, id string) bson.D {
 }
 
 func toSigningRecordsQueryFilter(owner string, queries *store.SigningRecordsQuery) interface{} {
-	or := []bson.D{}
+	n := len(queries.GetIdFilter()) + len(queries.GetCommonNameFilter()) + len(queries.GetDeviceIdFilter())
+	or := make([]bson.D, 0, n)
 	for _, q := range queries.GetIdFilter() {
 		or = append(or, toIDQueryFilter(owner, q))
 	}

@@ -60,7 +60,7 @@ func addOwnerToFilter(owner string, q bson.D) bson.D {
 }
 
 func toEnrollmentGroupIDFilter(owner string, queries *store.EnrollmentGroupsQuery) ([]bson.D, *mongo.IndexModel) {
-	or := []bson.D{}
+	or := make([]bson.D, 0, len(queries.GetIdFilter()))
 	for _, q := range queries.GetIdFilter() {
 		or = append(or, addOwnerToFilter(owner, bson.D{
 			{Key: store.IDKey, Value: q},
