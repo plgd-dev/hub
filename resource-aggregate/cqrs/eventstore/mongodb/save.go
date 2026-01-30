@@ -77,38 +77,37 @@ func (s *EventStore) saveEvent(ctx context.Context, col *mongo.Collection, event
 	}
 
 	res, err := col.UpdateOne(ctx, filter, update, opts)
-	switch {
-	case err == nil:
+	if err == nil {
 		if res.ModifiedCount == 0 {
 			return eventstore.ConcurrencyException, nil
 		}
 		return eventstore.Ok, nil
-	case errors.Is(err, mongo.ErrNilDocument):
+	}
+	if errors.Is(err, mongo.ErrNilDocument) {
 		return eventstore.ConcurrencyException, nil
-	default:
-		// Try to detect document-too-large in multiple driver/server variants.
-		var wErr mongo.WriteException
-		if errors.As(err, &wErr) {
-			sizeIsExceeded := wErr.HasErrorCode(10334)
-			if sizeIsExceeded {
-				return eventstore.SnapshotRequired, nil
-			}
-			return eventstore.Fail, fmt.Errorf("cannot push events('%v') to db: %w", events, err)
-		}
-		// Some MongoDB server/driver versions return other error types/messages
-		// when a document grows too large (e.g. BSONObjTooLarge, BSONObjectTooLarge,
-		// or other textual variants). Detect common substrings and treat them
-		// as snapshot-required rather than failing the test.
-		msg := ""
-		if err != nil {
-			msg = err.Error()
-		}
-		lowered := strings.ToLower(msg)
-		if strings.Contains(lowered, "bsonobjtoolarge") || strings.Contains(lowered, "bsonobjecttoolarge") || strings.Contains(lowered, "document too large") || strings.Contains(lowered, "object to large") || strings.Contains(lowered, "exceeded maximum bson size") {
+	}
+	return handleUpdateOneError(err, events)
+}
+
+func handleUpdateOneError(err error, events []eventstore.Event) (eventstore.SaveStatus, error) {
+	// Try to detect document-too-large in multiple driver/server variants.
+	var wErr mongo.WriteException
+	if errors.As(err, &wErr) {
+		if wErr.HasErrorCode(10334) {
 			return eventstore.SnapshotRequired, nil
 		}
 		return eventstore.Fail, fmt.Errorf("cannot push events('%v') to db: %w", events, err)
 	}
+	// Some MongoDB server/driver versions return other error types/messages
+	// when a document grows too large (e.g. BSONObjTooLarge, BSONObjectTooLarge,
+	// or other textual variants). Detect common substrings and treat them
+	// as snapshot-required rather than failing the test.
+	msg := err.Error()
+	lowered := strings.ToLower(msg)
+	if strings.Contains(lowered, "bsonobjtoolarge") || strings.Contains(lowered, "bsonobjecttoolarge") || strings.Contains(lowered, "document too large") || strings.Contains(lowered, "object to large") || strings.Contains(lowered, "exceeded maximum bson size") {
+		return eventstore.SnapshotRequired, nil
+	}
+	return eventstore.Fail, fmt.Errorf("cannot push events('%v') to db: %w", events, err)
 }
 
 // Save save events to eventstore.
