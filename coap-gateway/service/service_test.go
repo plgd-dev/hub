@@ -52,7 +52,7 @@ func TestServiceConfig(t *testing.T) {
 	cfg.APIs.COAP.Authorization.DeviceIDClaim = ""
 	require.NoError(t, cfg.Validate())
 	var cfg2 coapgwService.Config
-	fmt.Printf(cfg.String())
+	fmt.Printf("%v", cfg.String())
 	err := yaml.Unmarshal([]byte(cfg.String()), &cfg2)
 	require.NoError(t, err)
 	require.NoError(t, cfg2.Validate())
