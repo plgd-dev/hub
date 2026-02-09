@@ -204,11 +204,11 @@ ARG service=device-provisioning-service
 WORKDIR $root_directory/$service
 RUN go build \
     -ldflags "-linkmode external -extldflags -static \
-    -X github.com.plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE \
-    -X github.com.plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT \
-    -X github.com.plgd-dev/hub/v2/pkg/build.BuildDate=$DATE \
-    -X github.com.plgd-dev/hub/v2/pkg/build.Version=$VERSION \
-    -X github.com.plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" \
+    -X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE \
+    -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT \
+    -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE \
+    -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION \
+    -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" \
     -o "/go/bin/$service" \
     ./cmd/service
 
