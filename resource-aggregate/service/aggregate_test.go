@@ -566,7 +566,7 @@ func testMakeConfirmResourceDeleteRequest(deviceID, href, correlationID string, 
 	return &r
 }
 
-func testNewResource(href string, deviceID string) *commands.Resource {
+func testNewResource(href, deviceID string) *commands.Resource {
 	return &commands.Resource{
 		Href:          href,
 		DeviceId:      deviceID,

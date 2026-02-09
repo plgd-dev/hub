@@ -73,8 +73,8 @@ RUN apkArch="$(apk --print-arch)"; \
     x86_64) ARCH='amd64' ;; \
     *) echo >&2 "error: unsupported architecture: $apkArch"; exit 1 ;; \
     esac; \
-    curl -L https://github.com/nats-io/nats-server/releases/download/v2.3.1/nats-server-v2.3.1-linux-${ARCH}.zip -o ./nats-server.zip ; \
-    curl -L https://github.com/nats-io/natscli/releases/download/0.0.24/nats-0.0.24-linux-${ARCH}.zip -o ./nats.zip
+    curl -L "https://github.com/nats-io/nats-server/releases/download/v2.3.1/nats-server-v2.3.1-linux-${ARCH}.zip" -o ./nats-server.zip ; \
+    curl -L "https://github.com/nats-io/natscli/releases/download/0.0.24/nats-0.0.24-linux-${ARCH}.zip" -o ./nats.zip
 RUN mkdir -p ./nats-server
 RUN unzip ./nats-server.zip -d ./nats-server
 RUN cp ./nats-server/*/nats-server /go/bin/nats-server

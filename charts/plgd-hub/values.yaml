@@ -209,6 +209,7 @@ mongodb:
     enabled: false
   image:
     debug: true
+    registry: public.ecr.aws
   tls:
     enabled: false
   standbyTool:

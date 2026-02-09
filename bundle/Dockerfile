@@ -202,7 +202,13 @@ RUN go build \
 #device-provisioning-service
 ARG service=device-provisioning-service
 WORKDIR $root_directory/$service
-RUN go build -ldflags "-linkmode external -extldflags -static -X github.com/plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE -X github.com/plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT -X github.com/plgd-dev/hub/v2/pkg/build.BuildDate=$DATE -X github.com/plgd-dev/hub/v2/pkg/build.Version=$VERSION -X github.com/plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" \
+RUN go build \
+    -ldflags "-linkmode external -extldflags -static \
+    -X github.com.plgd-dev/hub/v2/pkg/build.CommitDate=$COMMIT_DATE \
+    -X github.com.plgd-dev/hub/v2/pkg/build.CommitHash=$SHORT_COMMIT \
+    -X github.com.plgd-dev/hub/v2/pkg/build.BuildDate=$DATE \
+    -X github.com.plgd-dev/hub/v2/pkg/build.Version=$VERSION \
+    -X github.com.plgd-dev/hub/v2/pkg/build.ReleaseURL=$RELEASE_URL" \
     -o "/go/bin/$service" \
     ./cmd/service
 
@@ -216,8 +222,8 @@ RUN apkArch="$(apk --print-arch)"; \
     x86_64) ARCH='amd64' ;; \
     *) echo >&2 "error: unsupported architecture: $apkArch"; exit 1 ;; \
     esac; \
-    curl -L https://github.com/nats-io/nats-server/releases/download/v2.3.1/nats-server-v2.3.1-linux-${ARCH}.zip -o ./nats-server.zip ; \
-    curl -L https://github.com/nats-io/natscli/releases/download/0.0.24/nats-0.0.24-linux-${ARCH}.zip -o ./nats.zip \
+    curl -L "https://github.com/nats-io/nats-server/releases/download/v2.3.1/nats-server-v2.3.1-linux-${ARCH}.zip" -o ./nats-server.zip ; \
+    curl -L "https://github.com/nats-io/natscli/releases/download/0.0.24/nats-0.0.24-linux-${ARCH}.zip" -o ./nats.zip \
     && mkdir -p ./nats-server \
     && unzip ./nats-server.zip -d ./nats-server \
     && cp ./nats-server/*/nats-server /go/bin/nats-server \

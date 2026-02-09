@@ -1,7 +1,7 @@
 FROM ubuntu:22.04 AS hub-test
 RUN apt-get update \
     && DEBIAN_FRONTEND="noninteractive" apt-get install -y --no-install-recommends \
-    build-essential ca-certificates curl git make patch lsof sudo \
+    build-essential ca-certificates curl git lsof make patch sudo \
     && apt-get clean \
     && curl --proto "=https" -sSL https://get.docker.com/ | sh
 WORKDIR /

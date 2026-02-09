@@ -158,7 +158,7 @@ func (i *watchIterator) Next(ctx context.Context) (event store.Event, id string,
 		return "", "", false
 	}
 	var v StreamEnrollmentGroupEvent
-	if err := i.iter.Decode(&v); err != nil {
+	if i.iter.Decode(&v) != nil {
 		return "", "", false
 	}
 	if v.DocumentKey != nil {

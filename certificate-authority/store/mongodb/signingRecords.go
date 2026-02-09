@@ -39,7 +39,7 @@ func (s *Store) UpdateSigningRecord(ctx context.Context, signingRecord *store.Si
 	return err
 }
 
-func toCommonNameQueryFilter(owner string, commonName string) bson.D {
+func toCommonNameQueryFilter(owner, commonName string) bson.D {
 	f := bson.D{
 		{Key: store.CommonNameKey, Value: commonName},
 	}
@@ -49,7 +49,7 @@ func toCommonNameQueryFilter(owner string, commonName string) bson.D {
 	return f
 }
 
-func toDeviceIDQueryFilter(owner string, deviceID string) bson.D {
+func toDeviceIDQueryFilter(owner, deviceID string) bson.D {
 	f := bson.D{
 		{Key: store.DeviceIDKey, Value: deviceID},
 	}
@@ -59,7 +59,7 @@ func toDeviceIDQueryFilter(owner string, deviceID string) bson.D {
 	return f
 }
 
-func toIDQueryFilter(owner string, id string) bson.D {
+func toIDQueryFilter(owner, id string) bson.D {
 	f := bson.D{
 		{Key: "_id", Value: id},
 	}
