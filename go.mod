@@ -1,9 +1,6 @@
 module github.com/plgd-dev/hub/v2
 
-go 1.23.0
-
-// use export GOTOOLCHAIN=go1.23.0 before calling go mod tidy to avoid tidy adding
-// the toolchain directive with your local go version
+go 1.25
 
 require (
 	github.com/favadi/protoc-go-inject-tag v1.4.0
@@ -44,7 +41,7 @@ require (
 	github.com/ugorji/go/codec v1.2.14
 	github.com/vincent-petithory/dataurl v1.0.0
 	github.com/web-of-things-open-source/thingdescription-go v0.0.0-20250521114616-3895cda67f5d
-	go.mongodb.org/mongo-driver v1.17.3
+	go.mongodb.org/mongo-driver v1.17.7
 	go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo v0.61.0
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.61.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.61.0
@@ -149,4 +146,4 @@ require (
 )
 
 // last versions for Go 1.23
-replace github.com/go-json-experiment/json => github.com/go-json-experiment/json v0.0.0-20240815175050-ebd3a8989ca1
+//replace github.com/go-json-experiment/json => github.com/go-json-experiment/json v0.0.0-20240815175050-ebd3a8989ca1

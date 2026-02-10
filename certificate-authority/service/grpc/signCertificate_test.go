@@ -34,20 +34,24 @@ func testSigningByFunction(t *testing.T, signFn ClientSignFunc, csr ...[]byte) {
 	type args struct {
 		req *pb.SignCertificateRequest
 	}
-	tests := []struct {
+	tests := make([]struct {
+		name    string
+		args    args
+		want    *pb.SignCertificateResponse
+		wantErr bool
+	}, 0, 1+len(csr))
+	tests = append(tests, struct {
 		name    string
 		args    args
 		want    *pb.SignCertificateResponse
 		wantErr bool
 	}{
-		{
-			name: "invalid csr",
-			args: args{
-				req: &pb.SignCertificateRequest{},
-			},
-			wantErr: true,
+		name: "invalid csr",
+		args: args{
+			req: &pb.SignCertificateRequest{},
 		},
-	}
+		wantErr: true,
+	})
 	for idx, csr := range csr {
 		tests = append(tests, struct {
 			name    string

@@ -39,7 +39,7 @@ import (
 )
 
 func countOpenFiles() int64 {
-	out, err := exec.Command("/bin/sh", "-c", fmt.Sprintf("lsof -p %v", os.Getpid())).Output()
+	out, err := exec.CommandContext(context.Background(), "/bin/sh", "-c", fmt.Sprintf("lsof -p %v", os.Getpid())).Output()
 	if err != nil {
 		fmt.Println(err.Error())
 	}

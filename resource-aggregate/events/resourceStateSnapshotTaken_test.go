@@ -49,7 +49,8 @@ func TestResourceStateSnapshotTakenResourceTypes(t *testing.T) {
 		hubID    = "hubID"
 		userID   = "userID"
 	)
-	resourceTypes := []string{"type1", "type2"}
+	resourceTypes := make([]string, 0, 3)
+	resourceTypes = append(resourceTypes, "type1", "type2")
 
 	e := events.NewResourceStateSnapshotTaken()
 	require.Empty(t, e.Types())

@@ -1,4 +1,4 @@
-FROM golang:1.23.9-alpine AS build
+FROM golang:1.25.6-alpine AS build
 RUN apk add --no-cache build-base curl git
 WORKDIR $GOPATH/src/github.com/plgd-dev/hub
 COPY go.mod go.sum ./
@@ -42,8 +42,8 @@ RUN apkArch="$(apk --print-arch)"; \
 	x86_64) ARCH='amd64' ;; \
 	*) echo >&2 "error: unsupported architecture: $apkArch"; exit 1 ;; \
 	esac; \
-	curl -L --proto "=https" https://github.com/nats-io/nats-server/releases/download/v2.3.1/nats-server-v2.3.1-linux-${ARCH}.zip -o ./nats-server.zip \
-	&& curl -L --proto "=https" https://github.com/nats-io/natscli/releases/download/0.0.24/nats-0.0.24-linux-${ARCH}.zip -o ./nats.zip \
+	curl -L --proto "=https" "https://github.com/nats-io/nats-server/releases/download/v2.3.1/nats-server-v2.3.1-linux-${ARCH}.zip" -o ./nats-server.zip \
+	&& curl -L --proto "=https" "https://github.com/nats-io/natscli/releases/download/0.0.24/nats-0.0.24-linux-${ARCH}.zip" -o ./nats.zip \
 	&& mkdir -p ./nats-server \
 	&& unzip ./nats-server.zip -d ./nats-server \
 	&& cp ./nats-server/*/nats-server /go/bin/nats-server \
@@ -55,7 +55,7 @@ FROM ubuntu:22.04 AS service
 RUN apt update \
 	&& DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends install -y ca-certificates curl gnupg iproute2 lsb-release netcat-traditional openssl systemctl \
 	&& curl -L --proto "=https" https://www.mongodb.org/static/pgp/server-6.0.asc | gpg --dearmor | tee /usr/share/keyrings/mongodb.gpg > /dev/null \
-	&& ARCH="$(dpkg --print-architecture)" ; curl -L --proto "=https" https://github.com/mikefarah/yq/releases/download/v4.6.3/yq_linux_${ARCH} -o /usr/bin/yq \
+	&& ARCH="$(dpkg --print-architecture)" ; curl -L --proto "=https" "https://github.com/mikefarah/yq/releases/download/v4.6.3/yq_linux_${ARCH}" -o /usr/bin/yq \
 	&& chmod +x /usr/bin/yq \
 	&& echo "deb [ arch=${ARCH} signed-by=/usr/share/keyrings/mongodb.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/6.0 multiverse" | tee /etc/apt/sources.list.d/mongodb-org-6.0.list \
 	&& curl -fsSL --proto "=https" https://download.docker.com/linux/ubuntu/gpg | /usr/bin/gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg \

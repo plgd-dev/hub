@@ -1,23 +1,24 @@
 package test
 
 import (
+	"context"
 	"os/exec"
 
 	"github.com/plgd-dev/kit/v2/codec/json"
 )
 
 func RestartDockerContainer(dockerName string) error {
-	cmd := exec.Command("docker", "restart", dockerName)
+	cmd := exec.CommandContext(context.Background(), "docker", "restart", dockerName)
 	return cmd.Run()
 }
 
 func SendSignalToDocker(dockerName, signal string) error {
-	cmd := exec.Command("docker", "kill", "-s", signal, dockerName)
+	cmd := exec.CommandContext(context.Background(), "docker", "kill", "-s", signal, dockerName)
 	return cmd.Run()
 }
 
 func SendSignalToProcess(pid, signal string) error {
-	cmd := exec.Command("kill", "-s", signal, pid)
+	cmd := exec.CommandContext(context.Background(), "kill", "-s", signal, pid)
 	return cmd.Run()
 }
 

@@ -163,9 +163,12 @@ func TestConvertToSubjects(t *testing.T) {
 				owner: "c",
 			},
 			want: func() []string {
-				subjects := []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID(resourceID.GetDeviceId()), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType()))}
-				subjects = append(subjects, utils.GetResourceEventSubjects("c", resourceID, (&events.ResourceChanged{}).EventType(), false)...)
-				return append(subjects, isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")))
+				resourceSubjects := utils.GetResourceEventSubjects("c", resourceID, (&events.ResourceChanged{}).EventType(), false)
+				subjects := make([]string, 0, 2+len(resourceSubjects))
+				subjects = append(subjects, isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID(resourceID.GetDeviceId()), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType())))
+				subjects = append(subjects, resourceSubjects...)
+				subjects = append(subjects, isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")))
+				return subjects
 			}(),
 		},
 		{
@@ -182,9 +185,12 @@ func TestConvertToSubjects(t *testing.T) {
 				leadRTEnabled: true,
 			},
 			want: func() []string {
-				subjects := []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID(resourceID.GetDeviceId()), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType()))}
-				subjects = append(subjects, utils.GetResourceEventSubjects("c", resourceID, (&events.ResourceChanged{}).EventType(), true)...)
-				return append(subjects, isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")))
+				resourceSubjects := utils.GetResourceEventSubjects("c", resourceID, (&events.ResourceChanged{}).EventType(), true)
+				subjects := make([]string, 0, 2+len(resourceSubjects))
+				subjects = append(subjects, isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID(resourceID.GetDeviceId()), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType())))
+				subjects = append(subjects, resourceSubjects...)
+				subjects = append(subjects, isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")))
+				return subjects
 			}(),
 		},
 		{
@@ -199,9 +205,12 @@ func TestConvertToSubjects(t *testing.T) {
 				owner: "c",
 			},
 			want: func() []string {
-				subjects := []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID("*"), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType()))}
-				subjects = append(subjects, utils.GetResourceEventSubjects("c", commands.NewResourceID("*", resourceID.GetHref()), (&events.ResourceChanged{}).EventType(), false)...)
-				return append(subjects, isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")))
+				resourceSubjects := utils.GetResourceEventSubjects("c", commands.NewResourceID("*", resourceID.GetHref()), (&events.ResourceChanged{}).EventType(), false)
+				subjects := make([]string, 0, 2+len(resourceSubjects))
+				subjects = append(subjects, isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID("*"), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType())))
+				subjects = append(subjects, resourceSubjects...)
+				subjects = append(subjects, isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")))
+				return subjects
 			}(),
 		},
 		{
@@ -217,9 +226,12 @@ func TestConvertToSubjects(t *testing.T) {
 				leadRTEnabled: true,
 			},
 			want: func() []string {
-				subjects := []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID("*"), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType()))}
-				subjects = append(subjects, utils.GetResourceEventSubjects("c", commands.NewResourceID("*", resourceID.GetHref()), (&events.ResourceChanged{}).EventType(), true)...)
-				return append(subjects, isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")))
+				resourceSubjects := utils.GetResourceEventSubjects("c", commands.NewResourceID("*", resourceID.GetHref()), (&events.ResourceChanged{}).EventType(), true)
+				subjects := make([]string, 0, 2+len(resourceSubjects))
+				subjects = append(subjects, isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID("*"), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType())))
+				subjects = append(subjects, resourceSubjects...)
+				subjects = append(subjects, isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")))
+				return subjects
 			}(),
 		},
 		{
@@ -234,9 +246,12 @@ func TestConvertToSubjects(t *testing.T) {
 				owner: "c",
 			},
 			want: func() []string {
-				subjects := []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID("*"), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType()))}
-				subjects = append(subjects, utils.GetResourceEventSubjects("c", commands.NewResourceID("*", resourceID.GetHref()), (&events.ResourceChanged{}).EventType(), false)...)
-				return append(subjects, isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")))
+				resourceSubjects := utils.GetResourceEventSubjects("c", commands.NewResourceID("*", resourceID.GetHref()), (&events.ResourceChanged{}).EventType(), false)
+				subjects := make([]string, 0, 2+len(resourceSubjects))
+				subjects = append(subjects, isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID("*"), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType())))
+				subjects = append(subjects, resourceSubjects...)
+				subjects = append(subjects, isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")))
+				return subjects
 			}(),
 		},
 		{
@@ -252,8 +267,10 @@ func TestConvertToSubjects(t *testing.T) {
 				leadRTEnabled: true,
 			},
 			want: func() []string {
-				subjects := []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID("*"), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType()))}
-				subjects = append(subjects, utils.GetResourceEventSubjects("c", commands.NewResourceID("*", resourceID.GetHref()), (&events.ResourceChanged{}).EventType(), true)...)
+				resourceSubjects := utils.GetResourceEventSubjects("c", commands.NewResourceID("*", resourceID.GetHref()), (&events.ResourceChanged{}).EventType(), true)
+				subjects := make([]string, 0, 2+len(resourceSubjects))
+				subjects = append(subjects, isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID("*"), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType())))
+				subjects = append(subjects, resourceSubjects...)
 				return append(subjects, isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")))
 			}(),
 		},
@@ -270,9 +287,12 @@ func TestConvertToSubjects(t *testing.T) {
 				owner: "c",
 			},
 			want: func() []string {
-				subjects := []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID(resourceID.GetDeviceId()), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType()))}
-				subjects = append(subjects, utils.GetResourceEventSubjects("c", commands.NewResourceID(resourceID.GetDeviceId(), "*"), (&events.ResourceChanged{}).EventType(), false)...)
-				return append(subjects, isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")))
+				resourceSubjects := utils.GetResourceEventSubjects("c", commands.NewResourceID(resourceID.GetDeviceId(), "*"), (&events.ResourceChanged{}).EventType(), false)
+				subjects := make([]string, 0, 2+len(resourceSubjects))
+				subjects = append(subjects, isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID(resourceID.GetDeviceId()), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType())))
+				subjects = append(subjects, resourceSubjects...)
+				subjects = append(subjects, isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")))
+				return subjects
 			}(),
 		},
 		{
@@ -289,9 +309,12 @@ func TestConvertToSubjects(t *testing.T) {
 				leadRTEnabled: true,
 			},
 			want: func() []string {
-				subjects := []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID(resourceID.GetDeviceId()), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType()))}
-				subjects = append(subjects, utils.GetResourceEventSubjects("c", commands.NewResourceID(resourceID.GetDeviceId(), "*"), (&events.ResourceChanged{}).EventType(), true)...)
-				return append(subjects, isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")))
+				resourceSubjects := utils.GetResourceEventSubjects("c", commands.NewResourceID(resourceID.GetDeviceId(), "*"), (&events.ResourceChanged{}).EventType(), true)
+				subjects := make([]string, 0, 2+len(resourceSubjects))
+				subjects = append(subjects, isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID(resourceID.GetDeviceId()), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType())))
+				subjects = append(subjects, resourceSubjects...)
+				subjects = append(subjects, isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")))
+				return subjects
 			}(),
 		},
 		{
@@ -308,8 +331,10 @@ func TestConvertToSubjects(t *testing.T) {
 				owner: "c",
 			},
 			want: func() []string {
-				subjects := []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID(resourceID.GetDeviceId()), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType()))}
-				subjects = append(subjects, utils.GetResourceEventSubjects("c", resourceID, (&events.ResourceChanged{}).EventType(), false)...)
+				resourceSubjects := utils.GetResourceEventSubjects("c", resourceID, (&events.ResourceChanged{}).EventType(), false)
+				subjects := make([]string, 0, 2+len(resourceSubjects))
+				subjects = append(subjects, isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID(resourceID.GetDeviceId()), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType())))
+				subjects = append(subjects, resourceSubjects...)
 				return append(subjects, isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")))
 			}(),
 		},
@@ -328,8 +353,10 @@ func TestConvertToSubjects(t *testing.T) {
 				leadRTEnabled: true,
 			},
 			want: func() []string {
-				subjects := []string{isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID(resourceID.GetDeviceId()), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType()))}
-				subjects = append(subjects, utils.GetResourceEventSubjects("c", resourceID, (&events.ResourceChanged{}).EventType(), true)...)
+				resourceSubjects := utils.GetResourceEventSubjects("c", resourceID, (&events.ResourceChanged{}).EventType(), true)
+				subjects := make([]string, 0, 2+len(resourceSubjects))
+				subjects = append(subjects, isEvents.ToSubject(utils.PlgdOwnersOwnerDevicesDeviceMetadataEvent, isEvents.WithOwner("c"), utils.WithDeviceID(resourceID.GetDeviceId()), isEvents.WithEventType((&events.DeviceMetadataUpdated{}).EventType())))
+				subjects = append(subjects, resourceSubjects...)
 				return append(subjects, isEvents.ToSubject(isEvents.PlgdOwnersOwnerRegistrations+".>", isEvents.WithOwner("c")))
 			}(),
 		},

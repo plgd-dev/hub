@@ -1,4 +1,4 @@
-FROM golang:1.23.9-alpine AS build
+FROM golang:1.25.6-alpine AS build
 ARG DIRECTORY
 ARG NAME
 ARG VERSION
@@ -23,7 +23,7 @@ RUN CGO_ENABLED=0 go build \
     -o /go/bin/cert-tool \
     ./
 
-FROM alpine:3.22 AS security-provider
+FROM alpine:3.23 AS security-provider
 RUN addgroup -S nonroot \
     && adduser -S nonroot -G nonroot
 

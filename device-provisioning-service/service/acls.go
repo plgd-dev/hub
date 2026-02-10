@@ -61,47 +61,47 @@ func (RequestHandle) ProcessACLs(_ context.Context, req *mux.Message, session *S
 
 func provisionACLs(req *mux.Message, session *Session, linkedHubs []*LinkedHub) (*pool.Message, []*pb.AccessControl, error) {
 	var resp acl.UpdateRequest
-	allowedHubResources := []acl.Resource{
-		// allow to update device's name from hub
-		{
-			Interfaces: []string{"*"},
-			Href:       configuration.ResourceURI,
-		},
-		// allow to update device from hub
-		{
-			Interfaces: []string{"*"},
-			Href:       softwareupdate.ResourceURI,
-		},
-		// allow to update maintenance from hub
-		{
-			Interfaces: []string{"*"},
-			Href:       maintenance.ResourceURI,
-		},
-		// allow to update time from hub
-		{
-			Interfaces: []string{"*"},
-			Href:       plgdtime.ResourceURI,
-		},
-	}
+	// prepare allowedHubResources with capacity for builtins + allResources
+	allowedHubResources := make([]acl.Resource, 0, 4+len(acl.AllResources))
+	// allow to update device's name from hub
+	allowedHubResources = append(allowedHubResources, acl.Resource{
+		Interfaces: []string{"*"},
+		Href:       configuration.ResourceURI,
+	})
+	// allow to update device from hub
+	allowedHubResources = append(allowedHubResources, acl.Resource{
+		Interfaces: []string{"*"},
+		Href:       softwareupdate.ResourceURI,
+	})
+	// allow to update maintenance from hub
+	allowedHubResources = append(allowedHubResources, acl.Resource{
+		Interfaces: []string{"*"},
+		Href:       maintenance.ResourceURI,
+	})
+	// allow to update time from hub
+	allowedHubResources = append(allowedHubResources, acl.Resource{
+		Interfaces: []string{"*"},
+		Href:       plgdtime.ResourceURI,
+	})
 	// allow to access all resources ordinal resources from hub
 	allowedHubResources = append(allowedHubResources, acl.AllResources...)
 
-	allowedOwnerResources := []acl.Resource{
-		// allow access to cloud configuration resource
-		{
-			Interfaces: []string{"*"},
-			Href:       cloud.ResourceURI,
-		},
-		// allow access security profile resource
-		{
-			Interfaces: []string{"*"},
-			Href:       sp.ResourceURI,
-		},
-		{
-			Interfaces: []string{"*"},
-			Href:       plgdtime.ResourceURI,
-		},
-	}
+	// prepare allowedOwnerResources with capacity for base + allowedHubResources
+	allowedOwnerResources := make([]acl.Resource, 0, 3+len(allowedHubResources))
+	// allow access to cloud configuration resource
+	allowedOwnerResources = append(allowedOwnerResources, acl.Resource{
+		Interfaces: []string{"*"},
+		Href:       cloud.ResourceURI,
+	})
+	// allow access security profile resource
+	allowedOwnerResources = append(allowedOwnerResources, acl.Resource{
+		Interfaces: []string{"*"},
+		Href:       sp.ResourceURI,
+	})
+	allowedOwnerResources = append(allowedOwnerResources, acl.Resource{
+		Interfaces: []string{"*"},
+		Href:       plgdtime.ResourceURI,
+	})
 	allowedOwnerResources = append(allowedOwnerResources, allowedHubResources...)
 
 	resp.AccessControlList = []acl.AccessControl{

@@ -396,9 +396,9 @@ func StringToApplicationProtocol(p string) commands.Connection_Protocol {
 
 func AddDeviceSwitchResources(ctx context.Context, t *testing.T, deviceID string, c pb.GrpcGatewayClient, resourceIDs ...string) []schema.ResourceLink {
 	toStringArray := func(v interface{}) []string {
-		var result []string
 		arr, ok := v.([]interface{})
 		require.True(t, ok)
+		result := make([]string, 0, len(arr))
 		for _, val := range arr {
 			str, ok := val.(string)
 			require.True(t, ok)

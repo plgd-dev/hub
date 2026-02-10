@@ -49,7 +49,8 @@ func (s *Store) UpdateHub(ctx context.Context, owner string, hub *store.Hub) err
 }
 
 func toHubFilter(owner string, queries *store.HubsQuery) bson.D {
-	or := []bson.D{}
+	n := len(queries.GetIdFilter()) + len(queries.GetHubIdFilter())
+	or := make([]bson.D, 0, n)
 	for _, q := range queries.GetIdFilter() {
 		or = append(or, addOwnerToFilter(owner, bson.D{{Key: store.IDKey, Value: q}}))
 	}
