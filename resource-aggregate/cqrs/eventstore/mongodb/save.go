@@ -100,9 +100,15 @@ func handleUpdateOneError(err error, events []eventstore.Event) (eventstore.Save
 	// Some MongoDB server/driver versions return other error types/messages
 	// when a document grows too large (e.g. BSONObjTooLarge, BSONObjectTooLarge,
 	// or other textual variants). Detect common substrings and treat them
-	// as snapshot-required rather than failing the test.
+	// as snapshot-required at runtime (return SnapshotRequired instead of failing the save).
 	lowered := strings.ToLower(err.Error())
-	if strings.Contains(lowered, "bsonobjtoolarge") || strings.Contains(lowered, "bsonobjecttoolarge") || strings.Contains(lowered, "document too large") || strings.Contains(lowered, "object to large") || strings.Contains(lowered, "exceeded maximum bson size") || strings.Contains(lowered, "document after update is larger than") {
+	if strings.Contains(lowered, "bsonobjtoolarge") ||
+		strings.Contains(lowered, "bsonobjecttoolarge") ||
+		strings.Contains(lowered, "document too large") ||
+		strings.Contains(lowered, "object too large") || // correct spelling
+		strings.Contains(lowered, "object to large") ||  // keep legacy/typo variant
+		strings.Contains(lowered, "exceeded maximum bson size") ||
+		strings.Contains(lowered, "document after update is larger than") {
 		return eventstore.SnapshotRequired, nil
 	}
 	return eventstore.Fail, fmt.Errorf("cannot push events('%v') to db: %w", events, err)

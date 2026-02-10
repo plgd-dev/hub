@@ -268,7 +268,9 @@ func AcceptanceTest(ctx context.Context, t *testing.T, store eventstore.EventSto
 
 	bigEv.VersionI++
 	saveStatus, err = store.Save(ctx, bigEv)
-	t.Logf("saver error: type %T, value %v", err, err)
+	if err != nil {
+		t.Logf("saver error: type %T, value %v", err, err)
+	}
 	require.NoError(t, err)
 	require.Equal(t, eventstore.SnapshotRequired, saveStatus)
 
