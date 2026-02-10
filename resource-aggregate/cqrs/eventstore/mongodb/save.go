@@ -106,7 +106,7 @@ func handleUpdateOneError(err error, events []eventstore.Event) (eventstore.Save
 		strings.Contains(lowered, "bsonobjecttoolarge") ||
 		strings.Contains(lowered, "document too large") ||
 		strings.Contains(lowered, "object too large") || // correct spelling
-		strings.Contains(lowered, "object to large") ||  // keep legacy/typo variant
+		strings.Contains(lowered, "object to large") || // keep legacy/typo variant
 		strings.Contains(lowered, "exceeded maximum bson size") ||
 		strings.Contains(lowered, "document after update is larger than") {
 		return eventstore.SnapshotRequired, nil
