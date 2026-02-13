@@ -23,6 +23,6 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           charts_url: https://charts.plgd.dev
-          helm_version: "3.7.1"
+          helm_version: "3.10.0"
           app_version: "${{ steps.get_version.outputs.VERSION }}"
           chart_version: "${{ steps.get_version.outputs.VERSION }}"
