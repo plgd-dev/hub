@@ -28,14 +28,14 @@ require (
 	github.com/lestrrat-go/jwx/v2 v2.1.6
 	github.com/nats-io/nats.go v1.42.0
 	github.com/panjf2000/ants/v2 v2.11.3
-	github.com/pion/dtls/v3 v3.0.6
-	github.com/pion/logging v0.2.3
+	github.com/pion/dtls/v3 v3.0.11
+	github.com/pion/logging v0.2.4
 	github.com/plgd-dev/device/v2 v2.5.4-0.20250702172018-fc6360af1de6
 	github.com/plgd-dev/go-coap/v3 v3.3.7-0.20250702164925-f431046ea1ce
 	github.com/plgd-dev/kit/v2 v2.0.0-20211006190727-057b33161b90
 	github.com/pseudomuto/protoc-gen-doc v1.5.1
 	github.com/sirupsen/logrus v1.9.3
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 	github.com/tidwall/gjson v1.18.0
 	github.com/tidwall/sjson v1.2.5
 	github.com/ugorji/go/codec v1.2.14
@@ -111,7 +111,7 @@ require (
 	github.com/nats-io/nkeys v0.4.11 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/pelletier/go-toml/v2 v2.1.0 // indirect
-	github.com/pion/transport/v3 v3.0.7 // indirect
+	github.com/pion/transport/v4 v4.0.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/pseudomuto/protokit v0.2.0 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
