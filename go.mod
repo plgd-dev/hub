@@ -6,7 +6,7 @@ require (
 	github.com/favadi/protoc-go-inject-tag v1.4.0
 	github.com/felixge/httpsnoop v1.0.4
 	github.com/fsnotify/fsnotify v1.9.0
-	github.com/fullstorydev/grpchan v1.1.1
+	github.com/fullstorydev/grpchan v1.1.2
 	github.com/fxamacker/cbor/v2 v2.8.0
 	github.com/go-co-op/gocron/v2 v2.16.2
 	github.com/gocql/gocql v1.7.0
